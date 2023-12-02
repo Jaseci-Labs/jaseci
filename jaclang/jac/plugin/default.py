@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
 from jaclang.jac.plugin import hookimpl
-from jaclang.jac.plugin.spec import AT, T
+from jaclang.jac.plugin.spec import AT, ArchitypeProtocol, T
 
 
 class JacFeatureDefaults:
@@ -14,7 +14,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def bind_architype(arch: AT, arch_type: str) -> None:
+    def bind_architype(arch: Type[AT], arch_type: str) -> None:
         """Create a new architype."""
         arch._jac_ = None
 
@@ -44,6 +44,7 @@ class JacFeatureDefaults:
     @hookimpl
     def ignore(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
+        return True
 
     @staticmethod
     @hookimpl
@@ -55,6 +56,7 @@ class JacFeatureDefaults:
     @hookimpl
     def disengage(walker_obj: Any) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
+        return True
 
     @staticmethod
     @hookimpl
@@ -91,6 +93,10 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def get_root() -> AT:
+    def get_root() -> ArchitypeProtocol:
         """Jac's assign comprehension feature."""
-        return None
+
+        class Blank(ArchitypeProtocol):
+            _jac_: Any = None
+
+        return Blank()

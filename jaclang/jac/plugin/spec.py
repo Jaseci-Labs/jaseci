@@ -1,7 +1,7 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, Protocol, TypeVar
+from typing import Any, Callable, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac.constant import EdgeDir
 
@@ -25,7 +25,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def bind_architype(arch: AT, arch_type: str) -> None:
+    def bind_architype(arch: Type[AT], arch_type: str) -> None:
         """Create a new architype."""
         raise NotImplementedError
 
