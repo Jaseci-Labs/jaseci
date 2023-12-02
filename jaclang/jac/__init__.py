@@ -1,3 +1,4 @@
+# type: ignore
 """Jac compiler tools."""
 import contextlib
 import logging
