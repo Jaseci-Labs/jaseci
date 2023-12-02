@@ -55,6 +55,25 @@ class PyastGenPass(Pass):
         )
         self.already_added.append("jimport")
 
+    def needs_typing(self) -> None:
+        """Check if enum is needed."""
+        if "enum" in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.Import(
+                    names=[
+                        self.sync(
+                            ast3.alias(name="typing", asname="_jac_typ"),
+                            jac_node=self.ir,
+                        ),
+                    ]
+                ),
+                jac_node=self.ir,
+            )
+        )
+        self.already_added.append("enum")
+
     def needs_enum(self) -> None:
         """Check if enum is needed."""
         if "enum" in self.already_added:
@@ -790,7 +809,29 @@ class PyastGenPass(Pass):
         name_ref: NameType,
         arch: Token,
         """
-        node.gen.py_ast = node.name_ref.gen.py_ast
+        if node.arch.name == Tok.TYPE_OP:
+            self.needs_typing()
+            if (
+                isinstance(node.name_ref, ast.SpecialVarRef)
+                and node.name_ref.var.name == Tok.ROOT_OP
+            ):
+                node.gen.py_ast = self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                        attr="Any",
+                        ctx=ast3.Load(),
+                    )
+                )
+            else:
+                node.gen.py_ast = self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                        attr=node.name_ref.sym_name,
+                        ctx=ast3.Load(),
+                    )
+                )
+        else:
+            node.gen.py_ast = node.name_ref.gen.py_ast
 
     def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.

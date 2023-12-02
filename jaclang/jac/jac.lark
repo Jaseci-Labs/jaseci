@@ -44,13 +44,15 @@ inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
 
 sub_name: COLON NAME
 
-any_ref: special_ref
-        | named_ref
+any_ref: named_ref
+        | arch_ref
 
-named_ref: KWESC_NAME
+named_ref: special_ref
+         | KWESC_NAME
          | NAME
 
 special_ref: INIT_OP
+       //      | POST_INIT_OP
             | ROOT_OP
             | SUPER_OP
             | SELF_OP
@@ -341,13 +343,13 @@ arch_ref: object_ref
         | node_ref
         | type_ref
 
-type_ref: TYPE_OP (NAME | builtin_type)
-node_ref: NODE_OP NAME
-edge_ref: EDGE_OP NAME
-walker_ref: WALKER_OP NAME
+type_ref: TYPE_OP (named_ref | builtin_type)
+node_ref: NODE_OP named_ref
+edge_ref: EDGE_OP named_ref
+walker_ref: WALKER_OP named_ref
 object_ref: OBJECT_OP named_ref
-enum_ref: ENUM_OP NAME
-ability_ref: ABILITY_OP (special_ref | named_ref)
+enum_ref: ENUM_OP named_ref
+ability_ref: ABILITY_OP named_ref
 
 arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
 abil_to_arch_chain: arch_or_ability_chain? arch_ref

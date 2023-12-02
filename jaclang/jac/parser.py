@@ -509,21 +509,22 @@ class JacParser(Pass):
         def any_ref(self, kid: list[ast.AstNode]) -> ast.NameSpec:
             """Grammar rule.
 
-            any_ref: special_ref
-                    | named_ref
+            any_ref: named_ref
+                    | arch_ref
             """
             if isinstance(kid[0], ast.NameSpec):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
 
-        def named_ref(self, kid: list[ast.AstNode]) -> ast.Name:
+        def named_ref(self, kid: list[ast.AstNode]) -> ast.NameSpec:
             """Grammar rule.
 
-            named_ref: KWESC_NAME
+            named_ref: special_ref
+                    | KWESC_NAME
                     | NAME
             """
-            if isinstance(kid[0], ast.Name):
+            if isinstance(kid[0], ast.NameSpec):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
