@@ -119,15 +119,19 @@ class PyastGenPass(Pass):
                 new_body.append(i) if i else None
         return new_body
 
-    def sync(self, py_node: T, jac_node: Optional[ast.AstNode] = None) -> T:
+    def sync(
+        self, py_node: T, jac_node: Optional[ast.AstNode] = None, deep: bool = False
+    ) -> T:
         """Sync ast locations."""
         if not jac_node:
             jac_node = self.cur_node
-        py_node.lineno = jac_node.loc.first_line
-        py_node.col_offset = jac_node.loc.col_start
-        py_node.end_lineno = jac_node.loc.last_line
-        py_node.end_col_offset = jac_node.loc.col_end
-        py_node.jac_link: ast.AstNode = jac_node
+        for i in ast3.walk(py_node) if deep else [py_node]:
+            if isinstance(i, ast3.AST):
+                i.lineno = jac_node.loc.first_line
+                i.col_offset = jac_node.loc.col_start
+                i.end_lineno = jac_node.loc.last_line
+                i.end_col_offset = jac_node.loc.col_end
+                i.jac_link: ast.AstNode = jac_node
         return py_node
 
     def resolve_stmt_block(
@@ -1904,19 +1908,14 @@ class PyastGenPass(Pass):
 
         var: Token,
         """
-        node.gen.py_ast = (
-            self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
-            if node.var.name != Tok.SUPER_OP
-            else self.sync(
-                ast3.Call(
-                    func=self.sync(
-                        ast3.Name(id="super", ctx=ast3.Load()),
-                    ),
-                    args=[],
-                    keywords=[],
-                )
-            )
-        )
+        try:
+            var_ast_expr = ast3.parse(node.sym_name).body[0]
+            if not isinstance(var_ast_expr, ast3.Expr):
+                raise self.ice("Invalid special var ref for pyast generation")
+            var_ast = var_ast_expr.value
+        except Exception:
+            raise self.ice("Invalid special var ref for pyast generation")
+        node.gen.py_ast = self.sync(var_ast, deep=True)
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
