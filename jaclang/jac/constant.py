@@ -199,6 +199,7 @@ class Tokens(str, Enum):
     HERE_OP = "HERE_OP"
     SELF_OP = "SELF_OP"
     INIT_OP = "INIT_OP"
+    POST_INIT_OP = "POST_INIT_OP"
     SUPER_OP = "SUPER_OP"
     ROOT_OP = "ROOT_OP"
     WALKER_OP = "WALKER_OP"

@@ -52,7 +52,7 @@ named_ref: special_ref
          | NAME
 
 special_ref: INIT_OP
-       //      | POST_INIT_OP
+            | POST_INIT_OP
             | ROOT_OP
             | SUPER_OP
             | SELF_OP
@@ -515,6 +515,7 @@ CARROW_R_P1: /\+\[/
 HERE_OP: /<h>|<here>/
 SELF_OP: /<s>|<self>/
 INIT_OP: /<i>|<init>/
+POST_INIT_OP: /<pi>|<post_init>/
 SUPER_OP: /<sup>|<super>/
 ROOT_OP: /<r>|<root>/
 
