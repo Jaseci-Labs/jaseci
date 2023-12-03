@@ -28,7 +28,7 @@ from jaclang.vendor.mypy.semanal_main import (
 )
 
 
-class MyPyTypeCheckPass(Pass):
+class JacTypeCheckPass(Pass):
     """Python and bytecode file printing pass."""
 
     mypy_message_cb: Callable[[str | None, List[str], bool], None]

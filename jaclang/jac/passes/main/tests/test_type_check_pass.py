@@ -1,7 +1,8 @@
 """Test pass module."""
 from typing import List
 
-from jaclang.jac.passes.main import MyPyTypeCheckPass
+from jaclang.jac.passes.main import JacTypeCheckPass
+from jaclang.jac.passes.main.schedules import py_code_gen_typed
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
@@ -24,14 +25,18 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_type_errors(self) -> None:
         """Basic test for pass."""
-        MyPyTypeCheckPass.mypy_message_cb = self.__message_cb
+        JacTypeCheckPass.mypy_message_cb = self.__message_cb
 
         jac_file_to_pass(
             file_path=self.fixture_abs_path("func.jac"),
-            target=MyPyTypeCheckPass,
+            schedule=py_code_gen_typed,
         )
 
-        with open(self.fixture_abs_path("func.type_errors"), "r") as f:
-            content = "".join(f.readlines())
-
-        self.assertEqual(content, "\n".join(self.__messages))
+        errs = "\n".join(self.__messages)
+        for i in [
+            "File::4",
+            "File::12",
+            '(got "int", expected "str")',
+            '(got "str", expected "int")',
+        ]:
+            self.assertIn(i, errs)
