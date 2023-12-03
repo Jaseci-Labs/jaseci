@@ -3,7 +3,7 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
-import:py from jaclang.jac.plugin, Architype, AbsRootNode, hookimpl;
+import:py from jaclang.jac.plugin, Architype, AbsRootHook, hookimpl;
 
 include:jac corelib_impl;
 
@@ -99,17 +99,17 @@ obj WalkerInterface:DataSpatialInterface: {
     can disengage_now;
     can __call__(nd: Node);
 }
+obj Root:AbsRootHook: {
+    has _jac_: NodeInterface;
+    has RootType: type;
+}
 
 obj Master {
-    obj Root:AbsRootNode: {
-        has _jac_: NodeInterface = NodeInterface();
-        has RootType: type;
-    }
     has _jac_: ElementInterface = ElementInterface();
-    has root_node: Root = Root(Root);
+    has root_node: Root = Root(NodeInterface(), Root);
 }
 
 obj JacPlugin {
-    static can bind_architype(arch: AT, arch_type: str) -> None;
+    static can bind_architype(arch: AT, arch_type: str) -> bool;
     static can get_root() -> Architype;
 }

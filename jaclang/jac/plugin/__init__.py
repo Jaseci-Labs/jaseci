@@ -2,6 +2,6 @@
 from __future__ import annotations
 
 from .default import hookimpl
-from .spec import AbsRootNode, Architype
+from .spec import AbsRootHook, Architype
 
-__all__ = ["Architype", "AbsRootNode", "hookimpl"]
+__all__ = ["Architype", "AbsRootHook", "hookimpl"]

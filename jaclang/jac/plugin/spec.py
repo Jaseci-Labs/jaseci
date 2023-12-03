@@ -24,7 +24,7 @@ class Architype:
             return self._jac_(target)
 
 
-class AbsRootNode:
+class AbsRootHook:
     """Abstract Root Node."""
 
 
@@ -37,7 +37,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def bind_architype(arch: Type[AT], arch_type: str) -> None:
+    def bind_architype(arch: Type[AT], arch_type: str) -> bool:
         """Create a new architype."""
         raise NotImplementedError
 

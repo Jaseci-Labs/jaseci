@@ -294,7 +294,7 @@ import:py from jaclang.jac.plugin, hookimpl;
 
 @hookimpl
 :obj:JacPlugin:can:bind_architype
-(arch: AT, arch_type: str) -> None {
+(arch: AT, arch_type: str) -> bool {
     match arch_type {
         case 'obj':
             arch._jac_ = ObjectInterface();
@@ -307,6 +307,7 @@ import:py from jaclang.jac.plugin, hookimpl;
         case _:
             raise ("Invalid archetype type") :> TypeError;
     }
+    return True;
 }
 
 @hookimpl
