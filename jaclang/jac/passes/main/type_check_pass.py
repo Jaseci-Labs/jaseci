@@ -30,9 +30,7 @@ class JacTypeCheckPass(Pass):
 
     def enter_module(self, node: ast.Module) -> None:
         """Call mypy checks on module level only."""
-        jac_file_path = node.loc.mod_path
-        if "corelib.jac" not in jac_file_path and "cli.jac" not in jac_file_path:
-            self.api(node, node.loc.mod_path)
+        self.api(node, node.loc.mod_path)
         self.terminate()
 
     def default_message_cb(
@@ -40,7 +38,7 @@ class JacTypeCheckPass(Pass):
     ) -> None:
         """Mypy errors reporter."""
         for msg in new_messages:
-            print("Jac Checker:", msg)
+            self.warning(msg)
 
     def api(self, node: ast.Module, mod_path: str) -> None:
         """Call mypy APIs to implement type checking in Jac."""

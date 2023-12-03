@@ -564,6 +564,7 @@ class PyastGenPass(Pass):
                 keywords=[],
                 body=body,
                 decorator_list=decorators,
+                type_params=[],
             )
         )
 
@@ -607,6 +608,7 @@ class PyastGenPass(Pass):
                 keywords=[],
                 body=body,
                 decorator_list=decorators,
+                type_params=[],
             )
         )
 
@@ -641,6 +643,7 @@ class PyastGenPass(Pass):
                 keywords=[],
                 body=body,
                 decorator_list=decorators,
+                type_params=[],
             )
         )
 
