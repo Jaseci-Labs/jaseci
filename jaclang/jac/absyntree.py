@@ -644,6 +644,14 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, decl_link=decl_link)
 
+    @property
+    def is_method(self) -> bool:
+        """Check if is method."""
+        return (
+            len(self.target.archs) > 1
+            and self.target.archs[-2].arch.name != Tok.ABILITY_OP
+        )
+
 
 class FuncSignature(AstNode):
     """FuncSignature node type for Jac Ast."""
@@ -663,9 +671,7 @@ class FuncSignature(AstNode):
     def is_method(self) -> bool:
         """Check if is method."""
         return (isinstance(self.parent, Ability) and self.parent.is_method) or (
-            isinstance(self.parent, AbilityDef)
-            and isinstance(self.parent.decl_link, Ability)
-            and self.parent.decl_link.is_method
+            isinstance(self.parent, AbilityDef) and self.parent.is_method
         )
 
     @property
