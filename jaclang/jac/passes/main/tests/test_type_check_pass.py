@@ -25,7 +25,7 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_type_errors(self) -> None:
         """Basic test for pass."""
-        JacTypeCheckPass.mypy_message_cb = self.__message_cb
+        JacTypeCheckPass.message_cb = self.__message_cb
 
         jac_file_to_pass(
             file_path=self.fixture_abs_path("func.jac"),

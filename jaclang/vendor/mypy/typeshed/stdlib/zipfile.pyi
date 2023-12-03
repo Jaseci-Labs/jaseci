@@ -26,7 +26,9 @@ __all__ = [
 if sys.version_info >= (3, 8):
     __all__ += ["Path"]
 
-_DateTuple: TypeAlias = tuple[int, int, int, int, int, int]
+# TODO: use TypeAlias when mypy bugs are fixed
+# https://github.com/python/mypy/issues/16581
+_DateTuple = tuple[int, int, int, int, int, int]  # noqa: Y026
 _ReadWriteMode: TypeAlias = Literal["r", "w"]
 _ReadWriteBinaryMode: TypeAlias = Literal["r", "w", "rb", "wb"]
 _ZipFileMode: TypeAlias = Literal["r", "w", "x", "a"]
@@ -210,6 +212,8 @@ class ZipFile:
             self, zinfo_or_directory_name: str | ZipInfo, mode: int = 0o777
         ) -> None: ...
 
+    def __del__(self) -> None: ...
+
 class PyZipFile(ZipFile):
     def __init__(
         self,
@@ -274,7 +278,7 @@ if sys.version_info >= (3, 8):
         def make(cls, source: ZipFile) -> CompleteDirs: ...
         @overload
         @classmethod
-        def make(cls: type[Self], source: StrPath | IO[bytes]) -> Self: ...
+        def make(cls, source: StrPath | IO[bytes]) -> Self: ...
 
     class Path:
         root: CompleteDirs

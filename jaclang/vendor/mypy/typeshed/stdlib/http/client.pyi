@@ -198,7 +198,7 @@ class HTTPConnection:
         skip_host: bool = False,
         skip_accept_encoding: bool = False,
     ) -> None: ...
-    def putheader(self, header: str, *argument: str) -> None: ...
+    def putheader(self, header: str | bytes, *argument: str | bytes) -> None: ...
     def endheaders(
         self, message_body: _DataType | None = None, *, encode_chunked: bool = False
     ) -> None: ...
@@ -211,7 +211,7 @@ class HTTPSConnection(HTTPConnection):
         def __init__(
             self,
             host: str,
-            port: str | None = None,
+            port: int | None = None,
             *,
             timeout: float | None = ...,
             source_address: tuple[str, int] | None = None,

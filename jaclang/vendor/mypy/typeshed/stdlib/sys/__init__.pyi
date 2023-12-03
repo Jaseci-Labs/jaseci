@@ -20,7 +20,10 @@ _OptExcInfo: TypeAlias = (
 # Intentionally omits one deprecated and one optional method of `importlib.abc.MetaPathFinder`
 class _MetaPathFinder(Protocol):
     def find_spec(
-        self, fullname: str, path: Sequence[str] | None, target: ModuleType | None = ...
+        self,
+        __fullname: str,
+        __path: Sequence[str] | None,
+        __target: ModuleType | None = ...,
     ) -> ModuleSpec | None: ...
 
 # ----- sys variables -----

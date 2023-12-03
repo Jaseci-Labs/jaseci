@@ -15,7 +15,7 @@ class XMLGenerator(handler.ContentHandler):
         | RawIOBase
         | StreamWriter
         | StreamReaderWriter
-        | SupportsWrite[str]
+        | SupportsWrite[bytes]
         | None = None,
         encoding: str = "iso-8859-1",
         short_empty_elements: bool = False,

@@ -72,9 +72,7 @@ class AbstractAsyncContextManager(Protocol[_T_co]):
 class ContextDecorator:
     def __call__(self, func: _F) -> _F: ...
 
-class _GeneratorContextManager(
-    AbstractContextManager[_T_co], ContextDecorator, Generic[_T_co]
-):
+class _GeneratorContextManager(AbstractContextManager[_T_co], ContextDecorator):
     # __init__ and all instance attributes are actually inherited from _GeneratorContextManagerBase
     # _GeneratorContextManagerBase is more trouble than it's worth to include in the stub; see #6676
     def __init__(
@@ -113,7 +111,7 @@ if sys.version_info >= (3, 10):
         def __call__(self, func: _AF) -> _AF: ...
 
     class _AsyncGeneratorContextManager(
-        AbstractAsyncContextManager[_T_co], AsyncContextDecorator, Generic[_T_co]
+        AbstractAsyncContextManager[_T_co], AsyncContextDecorator
     ):
         # __init__ and these attributes are actually defined in the base class _GeneratorContextManagerBase,
         # which is more trouble than it's worth to include in the stub (see #6676)

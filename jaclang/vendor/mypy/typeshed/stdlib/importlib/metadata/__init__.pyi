@@ -232,7 +232,7 @@ if sys.version_info >= (3, 12):
 
 elif sys.version_info >= (3, 10):
     @overload
-    def entry_points() -> SelectableGroups: ...  # type: ignore[misc]
+    def entry_points() -> SelectableGroups: ...  # type: ignore[overload-overlap]
     @overload
     def entry_points(
         *,

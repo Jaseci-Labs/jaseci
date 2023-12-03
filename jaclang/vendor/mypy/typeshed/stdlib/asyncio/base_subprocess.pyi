@@ -61,6 +61,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
     def _call_connection_lost(
         self, exc: BaseException | None
     ) -> None: ...  # undocumented
+    def __del__(self) -> None: ...
 
 class WriteSubprocessPipeProto(protocols.BaseProtocol):  # undocumented
     def __init__(self, proc: BaseSubprocessTransport, fd: int) -> None: ...

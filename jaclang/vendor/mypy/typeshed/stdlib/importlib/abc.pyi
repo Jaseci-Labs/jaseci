@@ -71,9 +71,9 @@ if sys.version_info >= (3, 12):
         # Not defined on the actual class, but expected to exist.
         def find_spec(
             self,
-            fullname: str,
-            path: Sequence[str] | None,
-            target: types.ModuleType | None = ...,
+            __fullname: str,
+            __path: Sequence[str] | None,
+            __target: types.ModuleType | None = ...,
         ) -> ModuleSpec | None: ...
 
     class PathEntryFinder(metaclass=ABCMeta):
@@ -93,9 +93,9 @@ else:
         # Not defined on the actual class, but expected to exist.
         def find_spec(
             self,
-            fullname: str,
-            path: Sequence[str] | None,
-            target: types.ModuleType | None = ...,
+            __fullname: str,
+            __path: Sequence[str] | None,
+            __target: types.ModuleType | None = ...,
         ) -> ModuleSpec | None: ...
 
     class PathEntryFinder(Finder):
@@ -147,20 +147,20 @@ if sys.version_info >= (3, 9):
             def joinpath(self, __child: str) -> Traversable: ...
 
         # The documentation and runtime protocol allows *args, **kwargs arguments,
-        # but this would mean that all implementors would have to support them,
+        # but this would mean that all implementers would have to support them,
         # which is not the case.
         @overload
         @abstractmethod
         def open(
             self,
-            mode: Literal["r", "w"] = "r",
+            __mode: Literal["r", "w"] = "r",
             *,
             encoding: str | None = None,
             errors: str | None = None
         ) -> IO[str]: ...
         @overload
         @abstractmethod
-        def open(self, mode: Literal["rb", "wb"]) -> IO[bytes]: ...
+        def open(self, __mode: Literal["rb", "wb"]) -> IO[bytes]: ...
         @property
         @abstractmethod
         def name(self) -> str: ...

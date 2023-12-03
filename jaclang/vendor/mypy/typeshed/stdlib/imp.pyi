@@ -47,9 +47,9 @@ class _FileLike(Protocol):
     def __enter__(self) -> Any: ...
     def __exit__(
         self,
-        typ: type[BaseException] | None,
-        exc: BaseException | None,
-        tb: TracebackType | None,
+        __typ: type[BaseException] | None,
+        __exc: BaseException | None,
+        __tb: TracebackType | None,
     ) -> Any: ...
 
 # PathLike doesn't work for the pathname argument here

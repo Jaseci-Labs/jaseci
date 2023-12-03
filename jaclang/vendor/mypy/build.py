@@ -865,13 +865,7 @@ class BuildManager:
         return find_module_simple(id, self) is not None
 
     def parse_file(
-        self,
-        id: str,
-        path: str,
-        source: str,
-        ignore_errors: bool,
-        options: Options,
-        **kwargs,
+        self, id: str, path: str, source: str, ignore_errors: bool, options: Options
     ) -> MypyFile:
         """Parse the source of a file with the given name.
 
@@ -880,10 +874,7 @@ class BuildManager:
         t0 = time.time()
         if ignore_errors:
             self.errors.ignored_files.add(path)
-        if "jac_tree" in kwargs:
-            tree = kwargs["jac_tree"]
-        else:
-            tree = parse(source, path, id, self.errors, options=options)
+        tree = parse(source, path, id, self.errors, options=options)
         tree._fullname = id
         self.add_stats(
             files_parsed=1,
@@ -2001,7 +1992,6 @@ class State:
         # process it. With this flag, any changes to external state as well
         # as error reporting should be avoided.
         temporary: bool = False,
-        **kwargs,
     ) -> None:
         if not temporary:
             assert id or path or source is not None, "Neither id, path nor source given"
@@ -2089,9 +2079,7 @@ class State:
                 # we need to re-calculate dependencies.
                 # NOTE: see comment below for why we skip this in fine grained mode.
                 if exist_added_packages(self.suppressed, manager, self.options):
-                    self.parse_file(
-                        **kwargs
-                    )  # This is safe because the cache is anyway stale.
+                    self.parse_file()  # This is safe because the cache is anyway stale.
                     self.compute_dependencies()
         else:
             # When doing a fine-grained cache load, pretend we only
@@ -2102,7 +2090,7 @@ class State:
                 raise ModuleNotFound
 
             # Parse the file (and then some) to get the dependencies.
-            self.parse_file(temporary=temporary, **kwargs)
+            self.parse_file(temporary=temporary)
             self.compute_dependencies()
 
     @property
@@ -2224,7 +2212,7 @@ class State:
 
     # Methods for processing modules from source code.
 
-    def parse_file(self, *, temporary: bool = False, **kwargs) -> None:
+    def parse_file(self, *, temporary: bool = False) -> None:
         """Parse file and run first pass of semantic analysis.
 
         Everything done here is local to the file. Don't depend on imported
@@ -2292,7 +2280,6 @@ class State:
                     source,
                     self.ignore_all or self.options.ignore_errors,
                     self.options,
-                    **kwargs,
                 )
 
             else:
