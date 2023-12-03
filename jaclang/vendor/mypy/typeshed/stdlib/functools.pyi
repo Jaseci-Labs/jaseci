@@ -35,10 +35,10 @@ _S = TypeVar("_S")
 
 @overload
 def reduce(
-    function: Callable[[_T, _S], _T], sequence: Iterable[_S], initial: _T
+    __function: Callable[[_T, _S], _T], __sequence: Iterable[_S], __initial: _T
 ) -> _T: ...
 @overload
-def reduce(function: Callable[[_T, _T], _T], sequence: Iterable[_T]) -> _T: ...
+def reduce(__function: Callable[[_T, _T], _T], __sequence: Iterable[_T]) -> _T: ...
 
 class _CacheInfo(NamedTuple):
     hits: int

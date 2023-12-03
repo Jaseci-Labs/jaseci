@@ -18,6 +18,7 @@ from _typeshed import (
     SupportsAiter,
     SupportsAnext,
     SupportsDivMod,
+    SupportsFlush,
     SupportsIter,
     SupportsKeysAndGetItem,
     SupportsLenAndGetItem,
@@ -71,6 +72,7 @@ from typing_extensions import (
     TypeAlias,
     TypeGuard,
     TypeVarTuple,
+    deprecated,
     final,
 )
 
@@ -172,8 +174,9 @@ class classmethod(Generic[_T, _P, _R_co]):
         def __wrapped__(self) -> Callable[Concatenate[type[_T], _P], _R_co]: ...
 
 class type:
+    # object.__base__ is None. Otherwise, it would be a type.
     @property
-    def __base__(self) -> type: ...
+    def __base__(self) -> type | None: ...
     __bases__: tuple[type, ...]
     @property
     def __basicsize__(self) -> int: ...
@@ -1046,6 +1049,10 @@ class bool(int):
     @overload
     def __rxor__(self, __value: int) -> int: ...
     def __getnewargs__(self) -> tuple[int]: ...
+    @deprecated(
+        "Will throw an error in Python 3.14. Use `not` for logical negation of bools instead."
+    )
+    def __invert__(self) -> int: ...
 
 @final
 class slice:
@@ -1421,7 +1428,7 @@ if sys.version_info >= (3, 10):
     # See discussion in #7491 and pure-Python implementation of `anext` at https://github.com/python/cpython/blob/ea786a882b9ed4261eafabad6011bc7ef3b5bf94/Lib/test/test_asyncgen.py#L52-L80
     def anext(__i: _SupportsSynchronousAnext[_AwaitableT]) -> _AwaitableT: ...
     @overload
-    async def anext(__i: SupportsAnext[_T], default: _VT) -> _T | _VT: ...
+    async def anext(__i: SupportsAnext[_T], __default: _VT) -> _T | _VT: ...
 
 # compile() returns a CodeType, unless the flags argument includes PyCF_ONLY_AST (=1024),
 # in which case it returns ast.AST. We have overloads for flag 0 (the default) and for
@@ -1571,10 +1578,10 @@ def getattr(__o: object, __name: str, __default: None) -> Any | None: ...
 @overload
 def getattr(__o: object, __name: str, __default: bool) -> Any | bool: ...
 @overload
-def getattr(__o: object, name: str, __default: list[Any]) -> Any | list[Any]: ...
+def getattr(__o: object, __name: str, __default: list[Any]) -> Any | list[Any]: ...
 @overload
 def getattr(
-    __o: object, name: str, __default: dict[Any, Any]
+    __o: object, __name: str, __default: dict[Any, Any]
 ) -> Any | dict[Any, Any]: ...
 @overload
 def getattr(__o: object, __name: str, __default: _T) -> Any | _T: ...
@@ -1590,13 +1597,13 @@ class _GetItemIterable(Protocol[_T_co]):
     def __getitem__(self, __i: int) -> _T_co: ...
 
 @overload
-def iter(__iterable: SupportsIter[_SupportsNextT]) -> _SupportsNextT: ...
+def iter(__object: SupportsIter[_SupportsNextT]) -> _SupportsNextT: ...
 @overload
-def iter(__iterable: _GetItemIterable[_T]) -> Iterator[_T]: ...
+def iter(__object: _GetItemIterable[_T]) -> Iterator[_T]: ...
 @overload
-def iter(__function: Callable[[], _T | None], __sentinel: None) -> Iterator[_T]: ...
+def iter(__object: Callable[[], _T | None], __sentinel: None) -> Iterator[_T]: ...
 @overload
-def iter(__function: Callable[[], _T], __sentinel: object) -> Iterator[_T]: ...
+def iter(__object: Callable[[], _T], __sentinel: object) -> Iterator[_T]: ...
 
 # Keep this alias in sync with unittest.case._ClassInfo
 if sys.version_info >= (3, 10):
@@ -1818,8 +1825,9 @@ def open(
 ) -> IO[Any]: ...
 def ord(__c: str | bytes | bytearray) -> int: ...
 
-class _SupportsWriteAndFlush(SupportsWrite[_T_contra], Protocol[_T_contra]):
-    def flush(self) -> None: ...
+class _SupportsWriteAndFlush(
+    SupportsWrite[_T_contra], SupportsFlush, Protocol[_T_contra]
+): ...
 
 @overload
 def print(
@@ -2004,11 +2012,11 @@ _SupportsSumNoDefaultT = TypeVar(
 # Instead, we special-case the most common examples of this: bool and literal integers.
 if sys.version_info >= (3, 8):
     @overload
-    def sum(__iterable: Iterable[bool], start: int = 0) -> int: ...  # type: ignore[misc]
+    def sum(__iterable: Iterable[bool], start: int = 0) -> int: ...  # type: ignore[overload-overlap]
 
 else:
     @overload
-    def sum(__iterable: Iterable[bool], __start: int = 0) -> int: ...  # type: ignore[misc]
+    def sum(__iterable: Iterable[bool], __start: int = 0) -> int: ...  # type: ignore[overload-overlap]
 
 @overload
 def sum(
@@ -2031,7 +2039,7 @@ else:
 # (A "SupportsDunderDict" protocol doesn't work)
 # Use a type: ignore to make complaints about overlapping overloads go away
 @overload
-def vars(__object: type) -> types.MappingProxyType[str, Any]: ...  # type: ignore[misc]
+def vars(__object: type) -> types.MappingProxyType[str, Any]: ...  # type: ignore[overload-overlap]
 @overload
 def vars(__object: Any = ...) -> dict[str, Any]: ...
 

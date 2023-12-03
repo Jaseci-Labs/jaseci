@@ -295,6 +295,7 @@ class PyastGenPass(Pass):
                 decorator_list=[],
                 returns=self.sync(ast3.Constant(value=None)),
                 type_comment=None,
+                type_params=[],
             ),
         )
         func.body.insert(
@@ -509,6 +510,7 @@ class PyastGenPass(Pass):
                 keywords=[],
                 body=body,
                 decorator_list=decorators,
+                type_params=[],
             )
         )
 
@@ -710,6 +712,7 @@ class PyastGenPass(Pass):
                 returns=node.signature.return_type.gen.py_ast
                 if node.signature and node.signature.return_type
                 else self.sync(ast3.Constant(value=None)),
+                type_params=[],
             )
         )
 
@@ -732,6 +735,7 @@ class PyastGenPass(Pass):
                 returns=node.signature.return_type.gen.py_ast
                 if node.signature and node.signature.return_type
                 else self.sync(ast3.Constant(value=None)),
+                type_params=[],
             )
         )
 

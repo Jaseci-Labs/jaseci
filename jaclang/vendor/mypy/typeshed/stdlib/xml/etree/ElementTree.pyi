@@ -95,10 +95,7 @@ class Element:
     text: str | None
     tail: str | None
     def __init__(
-        self,
-        tag: str | Callable[..., Element],
-        attrib: dict[str, str] = ...,
-        **extra: str,
+        self, tag: str, attrib: dict[str, str] = ..., **extra: str
     ) -> None: ...
     def append(self, __subelement: Element) -> None: ...
     def clear(self) -> None: ...
@@ -159,7 +156,7 @@ def SubElement(
 def Comment(text: str | None = None) -> Element: ...
 def ProcessingInstruction(target: str, text: str | None = None) -> Element: ...
 
-PI: Callable[..., Element]
+PI = ProcessingInstruction
 
 class QName:
     text: str

@@ -3870,8 +3870,9 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         self,
         left: Type,
         right: Type,
-        original_container: Type | None = None,
         *,
+        original_container: Type | None = None,
+        seen_types: set[tuple[Type, Type]] | None = None,
         prefer_literal: bool = True,
     ) -> bool:
         """Check for dangerous non-overlapping comparisons like 42 == 'no'.
@@ -3891,6 +3892,12 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         """
         if not self.chk.options.strict_equality:
             return False
+
+        if seen_types is None:
+            seen_types = set()
+        if (left, right) in seen_types:
+            return False
+        seen_types.add((left, right))
 
         left, right = get_proper_types((left, right))
 
@@ -3949,7 +3956,9 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                 abstract_set = self.chk.lookup_typeinfo("typing.AbstractSet")
                 left = map_instance_to_supertype(left, abstract_set)
                 right = map_instance_to_supertype(right, abstract_set)
-                return self.dangerous_comparison(left.args[0], right.args[0])
+                return self.dangerous_comparison(
+                    left.args[0], right.args[0], seen_types=seen_types
+                )
             elif left.type.has_base("typing.Mapping") and right.type.has_base(
                 "typing.Mapping"
             ):
@@ -3958,13 +3967,17 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                 left = map_instance_to_supertype(left, abstract_map)
                 right = map_instance_to_supertype(right, abstract_map)
                 return self.dangerous_comparison(
-                    left.args[0], right.args[0]
-                ) or self.dangerous_comparison(left.args[1], right.args[1])
+                    left.args[0], right.args[0], seen_types=seen_types
+                ) or self.dangerous_comparison(
+                    left.args[1], right.args[1], seen_types=seen_types
+                )
             elif (
                 left_name in ("builtins.list", "builtins.tuple")
                 and right_name == left_name
             ):
-                return self.dangerous_comparison(left.args[0], right.args[0])
+                return self.dangerous_comparison(
+                    left.args[0], right.args[0], seen_types=seen_types
+                )
             elif left_name in OVERLAPPING_BYTES_ALLOWLIST and right_name in (
                 OVERLAPPING_BYTES_ALLOWLIST
             ):
@@ -6624,11 +6637,16 @@ class PolyTranslator(TypeTranslator):
     See docstring for apply_poly() for details.
     """
 
-    def __init__(self, poly_tvars: Sequence[TypeVarLikeType]) -> None:
+    def __init__(
+        self,
+        poly_tvars: Iterable[TypeVarLikeType],
+        bound_tvars: frozenset[TypeVarLikeType] = frozenset(),
+        seen_aliases: frozenset[TypeInfo] = frozenset(),
+    ) -> None:
         self.poly_tvars = set(poly_tvars)
         # This is a simplified version of TypeVarScope used during semantic analysis.
-        self.bound_tvars: set[TypeVarLikeType] = set()
-        self.seen_aliases: set[TypeInfo] = set()
+        self.bound_tvars = bound_tvars
+        self.seen_aliases = seen_aliases
 
     def collect_vars(self, t: CallableType | Parameters) -> list[TypeVarLikeType]:
         found_vars = []
@@ -6706,10 +6724,13 @@ class PolyTranslator(TypeTranslator):
         if t.args and t.type.is_protocol and t.type.protocol_members == ["__call__"]:
             if t.type in self.seen_aliases:
                 raise PolyTranslationError()
-            self.seen_aliases.add(t.type)
             call = find_member("__call__", t, t, is_operator=True)
             assert call is not None
-            return call.accept(self)
+            return call.accept(
+                PolyTranslator(
+                    self.poly_tvars, self.bound_tvars, self.seen_aliases | {t.type}
+                )
+            )
         return super().visit_instance(t)
 
 

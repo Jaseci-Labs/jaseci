@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import MutableSequence, Sequence
 from typing import Any, TypeVar
 from typing_extensions import TypeAlias
 
@@ -20,7 +20,7 @@ def sorted_list_difference(
     expected: Sequence[_T], actual: Sequence[_T]
 ) -> tuple[list[_T], list[_T]]: ...
 def unorderable_list_difference(
-    expected: Sequence[_T], actual: Sequence[_T]
+    expected: MutableSequence[_T], actual: MutableSequence[_T]
 ) -> tuple[list[_T], list[_T]]: ...
 def three_way_cmp(x: Any, y: Any) -> int: ...
 def _count_diff_all_purpose(

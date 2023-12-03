@@ -67,7 +67,7 @@ class Match(Generic[AnyStr]):
     @overload
     def expand(self: Match[str], template: str) -> str: ...
     @overload
-    def expand(self: Match[bytes], template: ReadableBuffer) -> bytes: ...  # type: ignore[misc]
+    def expand(self: Match[bytes], template: ReadableBuffer) -> bytes: ...  # type: ignore[overload-overlap]
     @overload
     def expand(self, template: AnyStr) -> AnyStr: ...
     # group() returns "AnyStr" or "AnyStr | None", depending on the pattern.
@@ -121,7 +121,7 @@ class Pattern(Generic[AnyStr]):
         self: Pattern[str], string: str, pos: int = 0, endpos: int = sys.maxsize
     ) -> Match[str] | None: ...
     @overload
-    def search(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Match[bytes] | None: ...  # type: ignore[misc]
+    def search(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Match[bytes] | None: ...  # type: ignore[overload-overlap]
     @overload
     def search(
         self, string: AnyStr, pos: int = 0, endpos: int = sys.maxsize
@@ -131,7 +131,7 @@ class Pattern(Generic[AnyStr]):
         self: Pattern[str], string: str, pos: int = 0, endpos: int = sys.maxsize
     ) -> Match[str] | None: ...
     @overload
-    def match(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Match[bytes] | None: ...  # type: ignore[misc]
+    def match(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Match[bytes] | None: ...  # type: ignore[overload-overlap]
     @overload
     def match(
         self, string: AnyStr, pos: int = 0, endpos: int = sys.maxsize
@@ -141,7 +141,7 @@ class Pattern(Generic[AnyStr]):
         self: Pattern[str], string: str, pos: int = 0, endpos: int = sys.maxsize
     ) -> Match[str] | None: ...
     @overload
-    def fullmatch(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Match[bytes] | None: ...  # type: ignore[misc]
+    def fullmatch(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Match[bytes] | None: ...  # type: ignore[overload-overlap]
     @overload
     def fullmatch(
         self, string: AnyStr, pos: int = 0, endpos: int = sys.maxsize
@@ -177,7 +177,7 @@ class Pattern(Generic[AnyStr]):
         self: Pattern[str], string: str, pos: int = 0, endpos: int = sys.maxsize
     ) -> Iterator[Match[str]]: ...
     @overload
-    def finditer(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Iterator[Match[bytes]]: ...  # type: ignore[misc]
+    def finditer(self: Pattern[bytes], string: ReadableBuffer, pos: int = 0, endpos: int = sys.maxsize) -> Iterator[Match[bytes]]: ...  # type: ignore[overload-overlap]
     @overload
     def finditer(
         self, string: AnyStr, pos: int = 0, endpos: int = sys.maxsize
@@ -190,7 +190,7 @@ class Pattern(Generic[AnyStr]):
         count: int = 0,
     ) -> str: ...
     @overload
-    def sub(  # type: ignore[misc]
+    def sub(  # type: ignore[overload-overlap]
         self: Pattern[bytes],
         repl: ReadableBuffer | Callable[[Match[bytes]], ReadableBuffer],
         string: ReadableBuffer,
@@ -211,7 +211,7 @@ class Pattern(Generic[AnyStr]):
         count: int = 0,
     ) -> tuple[str, int]: ...
     @overload
-    def subn(  # type: ignore[misc]
+    def subn(  # type: ignore[overload-overlap]
         self: Pattern[bytes],
         repl: ReadableBuffer | Callable[[Match[bytes]], ReadableBuffer],
         string: ReadableBuffer,

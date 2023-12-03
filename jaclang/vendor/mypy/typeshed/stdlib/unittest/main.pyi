@@ -12,7 +12,7 @@ MODULE_EXAMPLES: str
 
 class _TestRunner(Protocol):
     def run(
-        self, test: unittest.suite.TestSuite | unittest.case.TestCase
+        self, __test: unittest.suite.TestSuite | unittest.case.TestCase
     ) -> unittest.result.TestResult: ...
 
 # not really documented

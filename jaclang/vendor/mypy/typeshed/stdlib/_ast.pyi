@@ -598,7 +598,7 @@ if sys.version_info >= (3, 10):
 
     class MatchSingleton(pattern):
         __match_args__ = ("value",)
-        value: Literal[True, False, None]
+        value: Literal[True, False] | None
 
     class MatchSequence(pattern):
         __match_args__ = ("patterns",)
