@@ -1641,6 +1641,8 @@ class SpecialVarRef(NameSpec):
             return Con.HERE.value
         elif self.var.name == Tok.INIT_OP:
             return "__init__"
+        elif self.var.name == Tok.POST_INIT_OP:
+            return "__post_init__"
         else:
             raise NotImplementedError("ICE: Special var reference not implemented")
 

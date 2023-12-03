@@ -1,4 +1,7 @@
 """Plugin interface for Jac."""
-import pluggy
+from __future__ import annotations
 
-hookimpl = pluggy.HookimplMarker("jac")
+from .default import hookimpl
+from .spec import AbsRootNode, Architype
+
+__all__ = ["Architype", "AbsRootNode", "hookimpl"]

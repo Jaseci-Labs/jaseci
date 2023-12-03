@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable
+from typing import Callable, TypeAlias
 
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac import jac_lark as jl
+from jaclang.jac import jac_lark as jl  # type: ignore
 from jaclang.jac.constant import EdgeDir, Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
@@ -98,7 +98,7 @@ class JacParser(Pass):
     comment_cache: list[jl.Token] = []
 
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
-    JacTransformer = jl.Transformer[jl.Tree[str], ast.AstNode]
+    JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.AstNode]
 
     class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
@@ -509,21 +509,22 @@ class JacParser(Pass):
         def any_ref(self, kid: list[ast.AstNode]) -> ast.NameSpec:
             """Grammar rule.
 
-            any_ref: special_ref
-                    | named_ref
+            any_ref: named_ref
+                    | arch_ref
             """
             if isinstance(kid[0], ast.NameSpec):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
 
-        def named_ref(self, kid: list[ast.AstNode]) -> ast.Name:
+        def named_ref(self, kid: list[ast.AstNode]) -> ast.NameSpec:
             """Grammar rule.
 
-            named_ref: KWESC_NAME
+            named_ref: special_ref
+                    | KWESC_NAME
                     | NAME
             """
-            if isinstance(kid[0], ast.Name):
+            if isinstance(kid[0], ast.NameSpec):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
