@@ -16,6 +16,7 @@ MODULES = [
     "dolly",
     "llm",
     "cl_summer",
+    "gen_text",
 ]
 
 
