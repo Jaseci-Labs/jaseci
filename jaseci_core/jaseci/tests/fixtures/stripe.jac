@@ -194,3 +194,10 @@ walker create_billing_portal_session {
         return_url="https://example.com/account"
     );
 }
+
+walker list_customer {
+    has email="test12@gmail.com", limit=12;
+    can stripe.customer_list;
+
+    stripe.customer_list(email=email, limit=limit);
+}
