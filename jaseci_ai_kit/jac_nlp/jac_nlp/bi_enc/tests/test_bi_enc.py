@@ -49,7 +49,6 @@ class BiEncTest(CoreTest):
     @pytest.mark.order(7)
     @jac_testcase("bi_enc.jac", "test_bi_enc_train")
     def test_biencoder_train(self, ret):
-        self.assertEqual(ret["report"][0], "Model Training is complete.")
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(8)

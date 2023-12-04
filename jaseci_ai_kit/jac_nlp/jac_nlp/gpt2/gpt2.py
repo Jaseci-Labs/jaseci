@@ -12,7 +12,8 @@ from fastapi import HTTPException
 from typing import List, Union
 import os
 from .train import prepare_data, load_dataset, get_trainer
-import shutil
+from jaseci.utils.model_manager import ModelManager
+from jaseci.utils.utils import model_base_path
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -20,18 +21,32 @@ model = None
 tokenizer = None
 generator = None
 
+MODEL_BASE_PATH = str(model_base_path("jac_nlp/gpt2"))
+model_manager = ModelManager(MODEL_BASE_PATH)
+
 
 @jaseci_action(act_group=["gpt2"], allow_remote=True)
 def setup(model_name: str = "gpt2", get_embeddings: bool = False):
-    global model, tokenizer, generator
+    global model, tokenizer, generator, active_model_path
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
+    else:
+        active_model_path = str(model_manager.create_version_path())
+        tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        model = GPT2Model.from_pretrained(model_name).to(device)
+        model.save_pretrained(active_model_path)
+        tokenizer.save_vocabulary(active_model_path)
     if get_embeddings:
         generator = None
-        tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        tokenizer = GPT2Tokenizer.from_pretrained(active_model_path)
         tokenizer.pad_token = tokenizer.eos_token
-        model = GPT2Model.from_pretrained(model_name).to(device)
+        model = GPT2Model.from_pretrained(active_model_path).to(device)
     else:
         model, tokenizer = None, None
-        generator = pipeline("text-generation", model=model_name, tokenizer="gpt2")
+        generator = pipeline(
+            "text-generation", model=active_model_path, tokenizer="gpt2"
+        )
+    print(f"Model Loded with version id: {os.path.basename(active_model_path)}")
 
 
 @jaseci_action(act_group=["gpt2"], allow_remote=True)
@@ -44,8 +59,7 @@ def generate(
     global generator, model, tokenizer
     if generator is None:
         model, tokenizer = None, None
-        model_name = "./gpt2-trained" if os.path.exists("gpt2-trained") else "gpt2"
-        setup(model_name=model_name, get_embeddings=False)
+        setup(get_embeddings=False)
     try:
         if isinstance(text, str):
             text = [text]
@@ -65,7 +79,7 @@ def get_embeddings(text: Union[List[str], str]) -> List:
     global model, tokenizer, generator, device
     if model is None or tokenizer is None:
         generator = None
-        setup(model_name="gpt2", get_embeddings=True)
+        setup(get_embeddings=True)
     try:
         if isinstance(text, str):
             text = [text]
@@ -82,31 +96,30 @@ def get_embeddings(text: Union[List[str], str]) -> List:
 def train(
     text: Union[List[str], str], epochs: int = 1, use_prev_trained=True, freeze=True
 ):
+    global active_model_path, generator
     if not use_prev_trained:
-        shutil.rmtree("gpt2-trained", ignore_errors=True)
+        model_manager.set_latest_version()
+        active_model_path = str(model_manager.create_version_path())
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
     train_path, test_path = prepare_data(text)
     train_dataset, test_dataset, data_collator = load_dataset(
         train_path, test_path, tokenizer
     )
-    model_name = (
-        "./gpt2-trained"
-        if os.path.exists("gpt2-trained") and use_prev_trained
-        else "gpt2"
-    )
+    model_name = active_model_path if use_prev_trained else "gpt2"
     model = AutoModelWithLMHead.from_pretrained(model_name)
 
     if freeze:
         for param in model.parameters():
             param.requires_grad = False
         model.lm_head.weight.requires_grad = True
-
-    trainer = get_trainer(model, train_dataset, test_dataset, data_collator, epochs)
+    active_model_path = str(model_manager.create_version_path())
+    trainer = get_trainer(
+        model, train_dataset, test_dataset, data_collator, epochs, active_model_path
+    )
     trainer.train()
     trainer.save_model()
 
-    global generator
-    generator = pipeline("text-generation", model="./gpt2-trained", tokenizer="gpt2")
+    generator = pipeline("text-generation", model=active_model_path, tokenizer="gpt2")
 
 
 if __name__ == "__main__":

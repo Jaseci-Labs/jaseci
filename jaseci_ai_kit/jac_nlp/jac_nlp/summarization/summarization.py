@@ -5,13 +5,12 @@ from jaseci.jsorc.live_actions import jaseci_action
 from fastapi import HTTPException
 import requests
 from bs4 import BeautifulSoup
+from jaseci.utils.model_manager import ModelManager
 from jaseci.utils.utils import model_base_path
-import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-SUM_ROOT = str(model_base_path("jac_nlp/sum"))
+MODEL_BASE_PATH = model_base_path("jac_nlp/sum")
 
-os.makedirs(SUM_ROOT, exist_ok=True)
 
 global tokenizer, model
 
@@ -19,19 +18,21 @@ global tokenizer, model
 @jaseci_action(act_group=["summarization"], allow_remote=True)
 def setup(model_name: str = "philschmid/bart-large-cnn-samsum"):
     global tokenizer, model
-    if all(
-        os.path.isfile(os.path.join(SUM_ROOT, f_name))
-        for f_name in ["vocab.json", "pytorch_model.bin", "config.json"]
-    ):
-        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
+    model_manager = ModelManager(MODEL_BASE_PATH)
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
+        tokenizer = AutoTokenizer.from_pretrained(
+            active_model_path, local_files_only=True
+        )
         model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_name, local_files_only=True
+            active_model_path, local_files_only=True
         ).to(device)
     else:
+        active_model_path = model_manager.create_version_path()
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
-        model.save_pretrained(SUM_ROOT)
-        tokenizer.save_vocabulary(SUM_ROOT)
+        model.save_pretrained(active_model_path)
+        tokenizer.save_vocabulary(active_model_path)
     print(f"Loaded model: {model_name}")
 
 

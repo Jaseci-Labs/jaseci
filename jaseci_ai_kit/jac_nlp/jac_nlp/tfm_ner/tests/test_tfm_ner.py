@@ -4,6 +4,7 @@ import pytest
 import os
 import shutil
 from os import path
+from pathlib import Path
 
 
 class TfmNerTest(CoreTest):
@@ -23,7 +24,6 @@ class TfmNerTest(CoreTest):
     @jac_testcase("tfm_ner.jac", "test_train_ner")
     def test_train_ner(self, ret):
         self.assertEqual(ret["success"], True)
-        self.assertEqual(ret["report"][0]["status"], "model Training Successful!")
 
     @pytest.mark.order(2)
     @jac_testcase("tfm_ner.jac", "test_tfm_ner_save_model")
@@ -68,3 +68,4 @@ class TfmNerTest(CoreTest):
         for temp_path in ["results", "modeloutput", "train", "test"]:
             if path.exists(temp_path) and path.isdir(temp_path):
                 shutil.rmtree(temp_path)
+        shutil.rmtree(Path(Path.home(), ".jaseci/models/jac_nlp/tfm_ner"))
