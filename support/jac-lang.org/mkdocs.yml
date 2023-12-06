@@ -14,7 +14,9 @@ nav:
         - 'learn/contrib.md'
       - ~/w.i.p$:
         # - 'learn/py_to_jac_example.md'
+        - 'learn/style_guide.md'
         - 'learn/ast_doc.md'
+        - 'learn/formatted_jac_output.md'
         # - ~/book$:
         #   - book/main.md
         #   - book/general.md
