@@ -181,7 +181,7 @@ This is an example of a Shape class in Jac. A couple things to note here.
     --8<-- "examples/manual_code/circle_clean_impl.jac"
     ```
 === "circle_clean_tests.jac"
-    ```python linenums="1"
+    ```jac linenums="1"
     --8<-- "examples/manual_code/circle_clean_tests.jac"
     ```
 

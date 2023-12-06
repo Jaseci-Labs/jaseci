@@ -7,7 +7,7 @@ nav:
     - ~/start$: 'start.md'
     - ~/learn$:
       - ~/for_coders:
-        - 'learn/learn.md'
+        - 'learn/guide.md'
         # - 'learn/coders/no_indent.md'
         # - 'learn/coders/defs_decls.md'
       - ~/for_contributors:
