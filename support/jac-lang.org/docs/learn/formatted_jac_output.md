@@ -133,20 +133,20 @@ obj Memory {
     has index:dict[(UUID, Element)]  = {},
         save_queue:list[Element]  = [];
     #* Main Accessors *#
-    can get_obj (caller_id: UUID,item_id: UUID,override: bool=False) -> Element; 
-    can has_obj (item_id: UUID) -> bool; 
-    can save_obj (caller_id: UUID,item: Element); 
-    can del_obj (caller_id: UUID,item: Element); 
+    can get_obj (caller_id: UUID,item_id: UUID,override: bool=False) -> Element;
+    can has_obj (item_id: UUID) -> bool;
+    can save_obj (caller_id: UUID,item: Element);
+    can del_obj (caller_id: UUID,item: Element);
     #* Utility Functions *#
-    can get_object_distribution -> dict; 
-    can get_mem_size -> float; 
+    can get_object_distribution -> dict;
+    can get_mem_size -> float;
 }
 
 obj ExecutionContext {
     has master:Master = :> uuid4,
         memory:Memory = Memory();
-    can reset; 
-    can get_root () -> Node; 
+    can reset;
+    can get_root () -> Node;
 }
 
 "Global Execution Context, should be monkey patched by the user."
@@ -161,16 +161,16 @@ obj ElementInterface {
         ro_access:set = :> set,
         owner_id:UUID = exec_ctx.master,
         mem:Memory = exec_ctx.memory;
-    can make_public_ro; 
-    can make_public_rw; 
-    can make_private; 
-    can is_public_ro -> bool; 
-    can is_public_rw -> bool; 
-    can is_private -> bool; 
-    can is_readable (caller_id: UUID) -> bool; 
-    can is_writable (caller_id: UUID) -> bool; 
-    can give_access (caller_id: UUID,read_write: bool=False); 
-    can revoke_access (caller_id: UUID); 
+    can make_public_ro;
+    can make_public_rw;
+    can make_private;
+    can is_public_ro -> bool;
+    can is_public_rw -> bool;
+    can is_private -> bool;
+    can is_readable (caller_id: UUID) -> bool;
+    can is_writable (caller_id: UUID) -> bool;
+    can give_access (caller_id: UUID,read_write: bool=False);
+    can revoke_access (caller_id: UUID);
 }
 
 obj ObjectInterface :ElementInterface: {
@@ -179,24 +179,24 @@ obj ObjectInterface :ElementInterface: {
 obj DataSpatialInterface :ObjectInterface: {
     static has ds_entry_funcs:list[dict]  = [],
                 ds_exit_funcs:list[dict]  = [];
-    static can on_entry (cls: type,triggers: list[type] ); 
-    static can on_exit (cls: type,triggers: list[type] ); 
+    static can on_entry (cls: type,triggers: list[type] );
+    static can on_exit (cls: type,triggers: list[type] );
 }
 
 obj NodeInterface :DataSpatialInterface: {
-    has edges:dict[(EdgeDir, list[Edge] )]  = {EdgeDir.IN:[], EdgeDir.OUT:[]}; 
-    can connect_node (nd: Node,edg: Edge) -> Node; 
-    can edges_to_nodes (dir: EdgeDir) -> list[Node] ; 
-    can __call__ (walk: Walker); 
+    has edges:dict[(EdgeDir, list[Edge] )]  = {EdgeDir.IN:[], EdgeDir.OUT:[]};
+    can connect_node (nd: Node,edg: Edge) -> Node;
+    can edges_to_nodes (dir: EdgeDir) -> list[Node] ;
+    can __call__ (walk: Walker);
 }
 
 obj EdgeInterface :DataSpatialInterface: {
     has source:Node = None,
         target:Node = None,
         dir:EdgeDir = None;
-    can apply_dir (dir: EdgeDir) -> Edge; 
-    can attach (src: Node,trg: Node) -> Edge; 
-    can __call__ (walk: Walker); 
+    can apply_dir (dir: EdgeDir) -> Edge;
+    can attach (src: Node,trg: Node) -> Edge;
+    can __call__ (walk: Walker);
 }
 
 obj WalkerInterface :DataSpatialInterface: {
@@ -204,23 +204,23 @@ obj WalkerInterface :DataSpatialInterface: {
         next:list[Node]  = [],
         ignores:list[Node]  = [],
         disengaged:bool = False;
-    can visit_node (nds: list[Node]  | list[Edge]  | Node | Edge); 
-    can ignore_node (nds: list[Node]  | list[Edge]  | Node | Edge); 
-    can disengage_now; 
-    can __call__ (nd: Node); 
+    can visit_node (nds: list[Node]  | list[Edge]  | Node | Edge);
+    can ignore_node (nds: list[Node]  | list[Edge]  | Node | Edge);
+    can disengage_now;
+    can __call__ (nd: Node);
 }
 
 obj Master {
     obj Root {
-        has _jac_:NodeInterface = NodeInterface(); 
+        has _jac_:NodeInterface = NodeInterface();
     }
-    has _jac_:ElementInterface = ElementInterface(); 
-    has root_node:Root = Root(); 
+    has _jac_:ElementInterface = ElementInterface();
+    has root_node:Root = Root();
 }
 
 obj JacPlugin {
-    static can bind_architype (arch: AT,arch_type: str) -> None; 
-    static can get_root () -> AT; 
+    static can bind_architype (arch: AT,arch_type: str) -> None;
+    static can get_root () -> AT;
 }
 
 
@@ -556,11 +556,11 @@ import: py from jaclang.jac.plugin, hookimpl;
 
 
 :obj:Memory:can:get_obj (caller_id: UUID,item_id: UUID,override: bool=False) -> Element {
-    ret = item_id |> <self>.index.get; 
+    ret = item_id |> <self>.index.get;
     if override
         or ( ret is not None and caller_id |> ret.__is_readable ) {
         return ret;
-    }    
+    }
 }
 
 :obj:Memory:can:has_obj (item_id: UUID) -> bool {
@@ -569,15 +569,15 @@ import: py from jaclang.jac.plugin, hookimpl;
 
 :obj:Memory:can:save_obj (caller_id: UUID,item: Element) {
     if caller_id |> item.is_writable {
-        <self>.index[item.id]  = item; 
+        <self>.index[item.id]  = item;
         if item._persist {
             item |> <self>.save_obj_list.add;
-        }    
-    }    
-    <self>.mem[item.id]  = item; 
+        }
+    }
+    <self>.mem[item.id]  = item;
     if item._persist {
         item |> <self>.save_obj_list.add;
-    }    
+    }
 }
 
 :obj:Memory:can:del_obj (caller_id: UUID,item: Element) {
@@ -585,18 +585,18 @@ import: py from jaclang.jac.plugin, hookimpl;
         <self>.index.pop(item.id);
         if item._persist {
             item |> <self>.save_obj_list.remove;
-        }    
-    }    
+        }
+    }
 }
 
 :obj:Memory:can:get_object_distribution -> dict {
-    dist = {}; 
+    dist = {};
     for i in |> <self>.index.keys {
-        t = <self>.index[i]  |> type; 
+        t = <self>.index[i]  |> type;
         if t in dist {
-            dist[t] +=1; 
+            dist[t] +=1;
         } else {
-            dist[t]  = 1; 
+            dist[t]  = 1;
         }
     }
     return dist;
@@ -608,8 +608,8 @@ import: py from jaclang.jac.plugin, hookimpl;
 
 :obj:ExecutionContext:c:get_root () {
     if <self>.master :> type == UUID {
-        <self>.master = Master(); 
-    }    
+        <self>.master = Master();
+    }
     return <self>.master.root_node;
 }
 
@@ -625,15 +625,15 @@ import: py from jaclang.jac.plugin, hookimpl;
 }
 
 :obj:ElementInterface:can:make_public_ro  {
-    <self>.__jinfo.access_mode = AccessMode.READ_ONLY; 
+    <self>.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
 :obj:ElementInterface:can:make_public_rw  {
-    <self>.__jinfo.access_mode = AccessMode.READ_WRITE; 
+    <self>.__jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
 :obj:ElementInterface:can:make_private  {
-    <self>.__jinfo.access_mode = AccessMode.PRIVATE; 
+    <self>.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
 :obj:ElementInterface:can:is_public_ro -> bool {
@@ -702,7 +702,7 @@ import: py from jaclang.jac.plugin, hookimpl;
 }
 
 :obj:NodeInterface:can:edges_to_nodes (dir: EdgeDir) -> list[Node]  {
-    ret_nodes = []; 
+    ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
         for i in <self>.edges[EdgeDir.OUT]  {
             ret_nodes.append(i.target);
@@ -711,24 +711,24 @@ import: py from jaclang.jac.plugin, hookimpl;
         for i in <self>.edges[EdgeDir.IN]  {
             ret_nodes.append(i.source);
         }
-    }    
+    }
     return ret_nodes;
 }
 
 :obj:EdgeInterface:can:apply_dir (dir: EdgeDir) -> Edge {
-    <self>.dir = dir; 
+    <self>.dir = dir;
     return <self>;
 }
 
 :obj:EdgeInterface:can:attach (src: Node,trg: Node) -> Edge {
     if <self>.dir == EdgeDir.IN {
-        <self>.source = trg; 
-        <self>.target = src; 
+        <self>.source = trg;
+        <self>.target = src;
         <self> :> src._jac_.edges[EdgeDir.IN] .append;
         <self> :> trg._jac_.edges[EdgeDir.OUT] .append;
     } else {
-        <self>.source = src; 
-        <self>.target = trg; 
+        <self>.source = src;
+        <self>.target = trg;
         <self> :> src._jac_.edges[EdgeDir.OUT] .append;
         <self> :> trg._jac_.edges[EdgeDir.IN] .append;
     }
@@ -740,11 +740,11 @@ import: py from jaclang.jac.plugin, hookimpl;
         for i in nds {
             if ( i not in <self>.ignores ) {
                 i :> <self>.next.append;
-            }    
+            }
         }
     } elif nds not in <self>.ignores {
         nds :> <self>.next.append;
-    }    
+    }
     return len(nds) if isinstance(nds,list) else 1;
 }
 
@@ -759,87 +759,87 @@ import: py from jaclang.jac.plugin, hookimpl;
 }
 
 :obj:WalkerInterface:can:disengage_now  {
-    <self>.next = []; 
-    <self>.disengaged = True; 
+    <self>.next = [];
+    <self>.disengaged = True;
 }
 
 :obj:NodeInterface:can:__call__ (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ( "Argument must be a Walker instance" ) :> TypeError;
-    }    
+    }
     <self> :> walk;
 }
 
 :obj:EdgeInterface:can:__call__ (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ( "Argument must be a Walker instance" ) :> TypeError;
-    }    
+    }
     <self>._jac_.target :> walk;
 }
 
 :obj:WalkerInterface:can:__call__ (nd: Node) {
-    <self>._jac_.path = []; 
-    <self>._jac_.next = [nd]; 
-    walker_type = <self>.__class__.__name__; 
+    <self>._jac_.path = [];
+    <self>._jac_.next = [nd];
+    walker_type = <self>.__class__.__name__;
     while <self>._jac_.next :> len {
-        nd = 0 :> <self>._jac_.next.pop; 
-        node_type = nd.__class__.__name__; 
+        nd = 0 :> <self>._jac_.next.pop;
+        node_type = nd.__class__.__name__;
         for i in nd._jac_ds_.ds_entry_funcs {
             if i['func'] .__qualname__.split(".")[0]  == node_type
                 and <self> :> type in i['types'] {
                 (nd, <self>) :> i['func'] ;
-            }    
+            }
             if <self>._jac_.disengaged {
                 return;
-            }    
+            }
         }
         for i in <self>._jac_ds_.ds_entry_funcs {
             if i['func'] .__qualname__.split(".")[0]  == walker_type
                 and ( nd :> type in i['types']
                 or nd in i['types'] )  { # if nd==root direct chec
                 (<self>, nd) :> i['func'] ;
-            }    
+            }
             if <self>._jac_.disengaged {
                 return;
-            }    
+            }
         }
         for i in <self>._jac_ds_.ds_exit_funcs {
             if i['func'] .__qualname__.split(".")[0]  == walker_type
                 and ( nd :> type in i['types']
                 or nd in i['types'] ) {
                 (<self>, nd) :> i['func'] ;
-            }    
+            }
             if <self>._jac_.disengaged {
                 return;
-            }    
+            }
         }
         for i in nd._jac_ds_.ds_exit_funcs {
             if i['func'] .__qualname__.split(".")[0]  == node_type
                 and <self> :> type in i['types'] {
                 (nd, <self>) :> i['func'] ;
-            }    
+            }
             if <self>._jac_.disengaged {
                 return;
-            }    
+            }
         }
         nd :> <self>._jac_.path.append;
     }
-    <self>._jac_.ignores = []; 
+    <self>._jac_.ignores = [];
 }
 
 @hookimpl
 :obj:JacPlugin:can:bind_architype (arch: AT,arch_type: str) -> None {
     match arch_type { case 'obj':
-        arch._jac_ = ObjectInterface();    
+        arch._jac_ = ObjectInterface();
      case 'node':
-        arch._jac_ = NodeInterface();    
+        arch._jac_ = NodeInterface();
      case 'edge':
-        arch._jac_ = EdgeInterface();    
+        arch._jac_ = EdgeInterface();
      case 'walker':
-        arch._jac_ = WalkerInterface();    
+        arch._jac_ = WalkerInterface();
      case _:
-        raise ( "Invalid archetype type" ) :> TypeError;    
-     }    
+        raise ( "Invalid archetype type" ) :> TypeError;
+     }
 }
 
 @hookimpl
