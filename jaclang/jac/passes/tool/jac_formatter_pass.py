@@ -481,7 +481,6 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-
         start = True
         prev_token = None
         for i in node.kid:
