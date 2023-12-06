@@ -116,7 +116,6 @@ obj JacPlugin {
     static can get_root() -> AT;
 }
 ```
-
 ### Formatted Jac Code
 ```jac
 """Jac's Key Elemental Abstractions"""
@@ -546,7 +545,6 @@ import:py from jaclang.jac.plugin, hookimpl;
     return exec_ctx.get_root();
 }
 ```
-
 ### Formatted Jac Code
 ```jac
 """Jac's Key Elemental Abstractions"""
@@ -848,6 +846,4 @@ import: py from jaclang.jac.plugin, hookimpl;
 :obj:JacPlugin:can:get_root () -> None {
     return exec_ctx.get_root();
 }
-
-
 ```
