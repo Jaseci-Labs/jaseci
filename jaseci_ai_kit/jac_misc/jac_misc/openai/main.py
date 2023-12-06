@@ -8,6 +8,7 @@ Features:
 
 Requires OpenAI API Key
 """
+from enum import Enum
 from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import logger
 from openai import OpenAI
@@ -15,6 +16,12 @@ from openai._base_client import DEFAULT_MAX_RETRIES
 from typing import Union, Mapping
 
 openai_client = None
+
+
+class SetupResponse(int, Enum):
+    SUCCESS = 1
+    FAILED = 0
+    IGNORED = 2
 
 
 def client() -> OpenAI:
@@ -51,21 +58,31 @@ def setup(
     """
     try:
         global openai_client
-        openai_client = OpenAI(
-            api_key=api_key,
-            organization=organization,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-            default_headers=default_headers,
-            default_query=default_query,
-            http_client=http_client,
-            _strict_response_validation=_strict_response_validation,
-        )
-        return True
+        if not openai_client:
+            openai_client = OpenAI(
+                api_key=api_key,
+                organization=organization,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+                default_query=default_query,
+                http_client=http_client,
+                _strict_response_validation=_strict_response_validation,
+            )
+            return SetupResponse.SUCCESS
+        return SetupResponse.IGNORED
     except Exception:
         logger.error("Error occured during initialization!")
-        return False
+        return SetupResponse.FAILED
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def close():
+    global openai_client
+    if openai_client:
+        openai_client.close()
+        openai_client = None
 
 
 @jaseci_action(act_group=["openai"], allow_remote=True)
@@ -192,7 +209,7 @@ def chat(
         frequency_penalty=frequency_penalty,
         **kwargs,
     )
-    response = [x.message for x in response.choices]
+    response = [x.message.dict() for x in response.choices]
     return response
 
 
