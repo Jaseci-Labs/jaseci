@@ -2,11 +2,12 @@
 
 This is a pass for formatting Jac code.
 """
+import re
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
-import re
 
 
 class JacFormatPass(Pass):
