@@ -1,8 +1,6 @@
 """Jaclang setup file."""
 from __future__ import annotations
 
-from jaclang.cli import cli  # noqa: F401
-
 from setuptools import find_packages, setup  # type: ignore
 
 
