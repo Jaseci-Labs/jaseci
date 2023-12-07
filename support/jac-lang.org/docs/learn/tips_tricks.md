@@ -6,9 +6,10 @@ Here are some general tips, tricks, and how-tos for Jac.
 
 In pure python, say you have the following streamlit app
 
-```python linenums="1"
---8<-- "examples/myca/streamlit_demo.py"
-```
+=== "streamlit_demo.py"
+    ```python linenums="1"
+    --8<-- "examples/myca/streamlit_demo.py"
+    ```
 
 Now typically you'd have to run this with a command like `streamlit run demo.py`.
 
