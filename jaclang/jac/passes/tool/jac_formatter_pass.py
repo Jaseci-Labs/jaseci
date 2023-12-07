@@ -6,6 +6,7 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
+import re
 
 
 class JacFormatPass(Pass):
@@ -427,7 +428,7 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Semi):
                 self.emit(node, f"{i.gen.jac} ")
             elif i.gen.jac.startswith(":"):
-                self.emit(node, f"{i.gen.jac}")
+                self.emit(node, f"{re.sub(r'\s+', '', i.gen.jac.strip())}")
             else:
                 if start or i.gen.jac == ",":
                     self.emit(node, f"{i.gen.jac}")
@@ -1201,7 +1202,7 @@ class JacFormatPass(Pass):
                 f"{node.stop.gen.jac if node.stop else ''}] ",
             )
         elif node.start:
-            self.emit(node, f"[{node.start.gen.jac}] ")
+            self.emit(node, f"[{node.start.gen.jac}]")
         else:
             self.ice("Something went horribly wrong.")
 
@@ -1225,7 +1226,6 @@ class JacFormatPass(Pass):
         values: list[ExprType],
         """
         if node.values is not None:
-            # self.comma_sep_node_list(node.values)
             self.emit(
                 node,
                 f"{{{node.values.gen.jac}}}",
