@@ -75,5 +75,5 @@ class PyOutPass(Pass):
         out_dir = os.path.join(gen_path, mod_dir)
         os.makedirs(out_dir, exist_ok=True)
         out_path_py = os.path.join(out_dir, f"{base_name}.py")
-        out_path_pyc = os.path.join(out_dir, f"{base_name}.pyc")
+        out_path_pyc = os.path.join(out_dir, f"{base_name}.jbc")
         return node.loc.mod_path, out_path_py, out_path_pyc

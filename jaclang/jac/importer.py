@@ -40,7 +40,7 @@ def jac_import(
     full_target = path.normpath(path.join(caller_dir, file_name))
 
     py_file_path = path.join(gen_dir, module_name + ".py")
-    pyc_file_path = path.join(gen_dir, module_name + ".pyc")
+    pyc_file_path = path.join(gen_dir, module_name + ".jbc")
     if (
         cachable
         and path.exists(py_file_path)

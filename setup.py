@@ -4,7 +4,7 @@ from __future__ import annotations
 from setuptools import find_packages, setup  # type: ignore
 
 
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 
 setup(
     name="jaclang",
@@ -12,7 +12,7 @@ setup(
     packages=find_packages(include=["jaclang", "jaclang.*"]),
     install_requires=[],
     package_data={
-        "": ["*.ini", "*.jac"],
+        "": ["*.ini", "*.jac", "*.jbc"],
     },
     entry_points={
         "console_scripts": [
