@@ -35,7 +35,6 @@ class JacFeature:
                 ):
                     new_method_name = f"{arch_type[0]}_{cls.__name__}_c_{attr_name}"  # TODO: Generalize me
                     cls_module_globals = inspect.getmodule(cls).__dict__
-                    # Check if a function with the new name exists in the global scope
                     if new_method_name in cls_module_globals:
                         setattr(cls, attr_name, cls_module_globals[new_method_name])
                         func_module_globals = cls_module_globals[
@@ -44,7 +43,7 @@ class JacFeature:
                         for k, v in cls_module_globals.items():  # Risky!
                             if k not in func_module_globals and not k.startswith("__"):
                                 func_module_globals[k] = v
-            cls = dataclass(cls)
+            cls = dataclass(unsafe_hash=True)(cls)
             if not issubclass(cls, Architype):
                 cls = type(cls.__name__, (cls, Architype), {})
             JacFeature.bind_architype(cls, arch_type)
