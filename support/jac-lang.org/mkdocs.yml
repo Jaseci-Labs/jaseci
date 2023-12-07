@@ -8,6 +8,7 @@ nav:
     - ~/learn$:
       - ~/for_coders:
         - 'learn/guide.md'
+        - 'learn/tips_tricks.md'
         # - 'learn/coders/no_indent.md'
         # - 'learn/coders/defs_decls.md'
       - ~/for_contributors:
