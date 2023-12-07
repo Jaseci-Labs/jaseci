@@ -18,6 +18,6 @@ Here is how you can have a Jac program with the same functionality.
 --8<-- "examples/myca/streamlit_demo.jac"
 ```
 
-Now you can use `jac run demo.jac`.
+Now you can simply use `jac run demo.jac` as normal. Basically, you can take that `sl_start` ability and add it to any streamlit jac project, note that there is a hardcoded value in the function for the name of your app. I'll leave it as a challenge to you on how to have that automatically resolve the file name. *sneeze* `__file__` *sneeze*
 
 Note that If you are unable to run the pure python one, you have to get over that milestone before thinking about the Jac version.
