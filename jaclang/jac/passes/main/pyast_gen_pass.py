@@ -728,19 +728,19 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        body = self.resolve_stmt_block(node.body)
-        node.gen.py_ast = self.sync(
-            ast3.FunctionDef(
-                name=node.target.flat_name(),
-                args=node.signature.gen.py_ast if node.signature else [],
-                body=body,
-                decorator_list=node.decorators.gen.py_ast if node.decorators else [],
-                returns=node.signature.return_type.gen.py_ast
-                if node.signature and node.signature.return_type
-                else self.sync(ast3.Constant(value=None)),
-                type_params=[],
-            )
-        )
+        # body = self.resolve_stmt_block(node.body)
+        # node.gen.py_ast = self.sync(
+        #     ast3.FunctionDef(
+        #         name=node.target.flat_name(),
+        #         args=node.signature.gen.py_ast if node.signature else [],
+        #         body=body,
+        #         decorator_list=node.decorators.gen.py_ast if node.decorators else [],
+        #         returns=node.signature.return_type.gen.py_ast
+        #         if node.signature and node.signature.return_type
+        #         else self.sync(ast3.Constant(value=None)),
+        #         type_params=[],
+        #     )
+        # )
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
