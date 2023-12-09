@@ -98,3 +98,12 @@ class JacLanguageTests(TestCase):
             self.skipTest(
                 "Test failed, but skipping instead of failing since data spatial lib not in yet."
             )
+
+    def test_dataclass_hasability(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("hashcheck", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("check"), 2)

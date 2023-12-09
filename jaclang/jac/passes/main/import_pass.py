@@ -59,7 +59,6 @@ class ImportPass(Pass):
         is_absorb: bool,
         self.sub_module = None
         """
-        self.cur_node = node
         if node.path.alias and node.sub_module:
             node.sub_module.name = node.path.alias.value
         # Items matched during def/decl pass
