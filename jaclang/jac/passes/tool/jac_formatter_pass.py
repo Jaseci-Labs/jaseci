@@ -77,7 +77,6 @@ class JacFormatPass(Pass):
         body: Sequence[ElementStmt],
         is_imported: bool,
         """
-        segment = False
         for i in node.kid:
             if isinstance(i, ast.String):
                 self.emit_ln(node, f" {i.gen.jac}")
