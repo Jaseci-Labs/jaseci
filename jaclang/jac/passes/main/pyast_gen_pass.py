@@ -150,7 +150,7 @@ class PyastGenPass(Pass):
                 i.col_offset = jac_node.loc.col_start
                 i.end_lineno = jac_node.loc.last_line
                 i.end_col_offset = jac_node.loc.col_end
-                setattr(i, "jac_link", jac_node)  # noqa: B010
+                i.jac_link = jac_node
         return py_node
 
     def resolve_stmt_block(
@@ -522,51 +522,6 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        body = self.resolve_stmt_block(node.body)
-        base_classes = (
-            node.decl_link.base_classes.gen.py_ast
-            if node.decl_link and node.decl_link.base_classes
-            else []
-        )
-        decorators = (
-            node.decl_link.decorators.gen.py_ast
-            if node.decl_link and isinstance(node.decl_link.decorators, ast.SubNodeList)
-            else []
-        )
-        if isinstance(decorators, list):
-            decorators.append(
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="make_architype",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[
-                            self.sync(
-                                ast3.Constant(value=node.decl_link.arch_type.value)
-                            )
-                        ]
-                        if node.decl_link
-                        else [],
-                        keywords=[],
-                    )
-                )
-            )
-        node.gen.py_ast = self.sync(
-            ast3.ClassDef(
-                name=node.target.flat_name(),
-                bases=base_classes,
-                keywords=[],
-                body=body,
-                decorator_list=decorators,
-                type_params=[],
-            )
-        )
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
@@ -620,32 +575,6 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        self.needs_enum()
-        body = self.resolve_stmt_block(node.body)
-        base_classes = (
-            node.decl_link.base_classes.gen.py_ast
-            if node.decl_link and node.decl_link.base_classes
-            else []
-        )
-        if isinstance(base_classes, list):
-            base_classes.append(
-                self.sync(ast3.Name(id="__jac_Enum__", ctx=ast3.Load()))
-            )
-        decorators = (
-            node.decl_link.decorators.gen.py_ast
-            if node.decl_link and isinstance(node.decl_link.decorators, ast.SubNodeList)
-            else []
-        )
-        node.gen.py_ast = self.sync(
-            ast3.ClassDef(
-                name=node.target.flat_name(),
-                bases=base_classes,
-                keywords=[],
-                body=body,
-                decorator_list=decorators,
-                type_params=[],
-            )
-        )
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -707,8 +636,7 @@ class PyastGenPass(Pass):
                 )
             )
         if not body:
-            print("WWUUTT", node.pp())
-
+            self.error("Ability has no body. Perhaps an impl must be imported.", node)
         node.gen.py_ast = self.sync(
             func_type(
                 name=node.name_ref.sym_name,
@@ -731,19 +659,6 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        # body = self.resolve_stmt_block(node.body)
-        # node.gen.py_ast = self.sync(
-        #     ast3.FunctionDef(
-        #         name=node.target.flat_name(),
-        #         args=node.signature.gen.py_ast if node.signature else [],
-        #         body=body,
-        #         decorator_list=node.decorators.gen.py_ast if node.decorators else [],
-        #         returns=node.signature.return_type.gen.py_ast
-        #         if node.signature and node.signature.return_type
-        #         else self.sync(ast3.Constant(value=None)),
-        #         type_params=[],
-        #     )
-        # )
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
