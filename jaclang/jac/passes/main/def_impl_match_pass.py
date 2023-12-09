@@ -14,15 +14,14 @@ from jaclang.jac.symtable import SymbolTable, SymbolType
 class DeclDefMatchPass(Pass):
     """Decls and Def matching pass."""
 
-    def before_pass(self) -> None:
-        """Before pass."""
-        if not self.ir.sym_tab:
+    def enter_module(self, node: ast.Module) -> None:
+        """Enter module."""
+        if not node.sym_tab:
             self.error(
-                f"Expected symbol table on node {self.ir.__class__.__name__}. Perhaps an earlier pass failed."
+                f"Expected symbol table on node {node.__class__.__name__}. Perhaps an earlier pass failed."
             )
         else:
-            self.connect_def_impl(self.ir.sym_tab)
-        self.terminate()
+            self.connect_def_impl(node.sym_tab)
 
     def after_pass(self) -> None:
         """Rebuild sub node table."""
