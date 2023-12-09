@@ -150,7 +150,7 @@ class PyastGenPass(Pass):
                 i.col_offset = jac_node.loc.col_start
                 i.end_lineno = jac_node.loc.last_line
                 i.end_col_offset = jac_node.loc.col_end
-                i.jac_link: ast.AstNode = jac_node
+                setattr(i, "jac_link", jac_node)  # noqa: B010
         return py_node
 
     def resolve_stmt_block(
@@ -185,7 +185,7 @@ class PyastGenPass(Pass):
         self, attribute_list: list[str], sync_node_list: Sequence[ast.AstNode]
     ) -> ast3.AST:
         """Convert list to attribute."""
-        attr_node = self.sync(
+        attr_node: ast3.Name | ast3.Attribute = self.sync(
             ast3.Name(id=attribute_list[0], ctx=ast3.Load()), sync_node_list[0]
         )
         for i in range(len(attribute_list)):
