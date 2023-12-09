@@ -363,6 +363,33 @@ class PyastGenPass(Pass):
             level = 1
             py_compat_path_str = node.path.path_str[1:]
         if node.lang.tag.value == Con.JAC_LANG_IMP:
+            # path = [x.value for x in node.path.path]
+
+            # def class_def_creator(path: list[str]) -> ast3.AST:
+            #     """Create class def."""
+            #     if len(path) == 1:
+            #         inner: list[ast3.AST] = (
+            #             self.flatten(
+            #                 [x.gen.py_ast for x in node.sub_module.body if x.gen.py_ast]
+            #             )
+            #             if node.sub_module and len(node.sub_module.body)
+            #             else []
+            #         )
+            #         inner = inner if len(inner) else [self.sync(ast3.Pass())]
+            #     else:
+            #         inner = [class_def_creator(path[1:])]
+            #     return self.sync(
+            #         ast3.ClassDef(
+            #             name=path[0],
+            #             bases=[],
+            #             keywords=[],
+            #             body=inner,
+            #             decorator_list=[],
+            #             type_params=[],
+            #         )
+            #     )
+
+            # py_nodes.append(class_def_creator(path))
             self.needs_jac_import()
             py_nodes.append(
                 self.sync(
@@ -706,6 +733,9 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        if not body:
+            print("WWUUTT", node.pp())
+
         node.gen.py_ast = self.sync(
             func_type(
                 name=node.name_ref.sym_name,
