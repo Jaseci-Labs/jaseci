@@ -5,14 +5,15 @@ module: (doc_tag? element (element_with_doc | element)*)?
 
 element_with_doc: doc_tag element
 
-element: py_code_block
+element: import_stmt
        | include_stmt
-       | import_stmt
        | ability
        | architype
-       | free_code
-       | test
        | global_var
+       | free_code
+       | py_code_block
+       | test
+
 
 global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
