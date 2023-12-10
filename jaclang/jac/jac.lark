@@ -7,21 +7,14 @@ element_with_doc: doc_tag element
 
 element: import_stmt
        | include_stmt
-       | ability
        | architype
+       | ability
        | global_var
        | free_code
        | py_code_block
        | test
 
-
-global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
-access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
-test: KW_TEST NAME? code_block
-free_code: KW_WITH KW_ENTRY sub_name? code_block
-doc_tag: ( STRING | DOC_STRING )
-py_code_block: PYNLINE
-
+// Imports and includes
 import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
            | KW_IMPORT sub_name import_path SEMI
 
@@ -29,6 +22,8 @@ include_stmt: KW_INCLUDE sub_name import_path SEMI
 import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
 import_items: (import_item COMMA)* import_item
 import_item: named_ref (KW_AS NAME)?
+
+// Architypes
 architype: decorators? (enum | architype_def | architype_decl)
 architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
@@ -38,11 +33,60 @@ arch_type: KW_WALKER
           | KW_EDGE
           | KW_NODE
 
+member_block: LBRACE member_stmt* RBRACE
+member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
+has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
+has_assign_list: (has_assign_list COMMA)? typed_has_clause
+typed_has_clause: named_ref type_tag (EQ expression)?
+
+// Enumerations
+enum: enum_def
+     | enum_decl
+
+enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
+enum_def: arch_to_enum_chain enum_block
+enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
+
+enum_stmt: NAME EQ expression
+         | NAME
+         | py_code_block
+
+// Abilities
+ability: decorators? ability_def
+        | decorators? KW_ASYNC ability_decl
+        | decorators? ability_decl
+
+ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
+abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
+func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
+func_decl_params: (param_var COMMA)* param_var
+param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
+
+// Global variables
+global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
+
+// Free code
+free_code: KW_WITH KW_ENTRY sub_name? code_block
+
+// Inline python
+py_code_block: PYNLINE
+
+// Tests
+test: KW_TEST NAME? code_block
+
+doc_tag: ( STRING | DOC_STRING )
+
 decorators: (DECOR_OP atomic_chain)+
 
 inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
                | COLON (atomic_chain COMMA)* atomic_chain COLON
 
+
+
+type_tag: COLON expression
+access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
 sub_name: COLON NAME
 
 any_ref: named_ref
@@ -59,34 +103,6 @@ special_ref: INIT_OP
             | SELF_OP
             | HERE_OP
 
-enum: enum_def
-     | enum_decl
-
-enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
-enum_def: arch_to_enum_chain enum_block
-enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
-
-enum_stmt: NAME EQ expression
-         | NAME
-         | py_code_block
-
-ability: decorators? ability_def
-        | decorators? KW_ASYNC ability_decl
-        | decorators? ability_decl
-
-ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
-ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
-func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
-func_decl_params: (param_var COMMA)* param_var
-param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
-member_block: LBRACE member_stmt* RBRACE
-member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
-has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
-has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: named_ref type_tag (EQ expression)?
-type_tag: COLON expression
 return_type_tag: RETURN_HINT expression
 
 builtin_type: TYP_TYPE
