@@ -76,160 +76,99 @@ py_code_block: PYNLINE
 // Tests
 test: KW_TEST NAME? code_block
 
-doc_tag: ( STRING | DOC_STRING )
+// Implementations
+arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
+abil_to_arch_chain: arch_or_ability_chain? arch_ref
+arch_to_abil_chain: arch_or_ability_chain? ability_ref
+arch_to_enum_chain: arch_or_ability_chain? enum_ref
 
-decorators: (DECOR_OP atomic_chain)+
-
-inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
-               | COLON (atomic_chain COMMA)* atomic_chain COLON
-
-
-
-type_tag: COLON expression
-access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
-sub_name: COLON NAME
-
-any_ref: named_ref
-        | arch_ref
-
-named_ref: special_ref
-         | KWESC_NAME
-         | NAME
-
-special_ref: INIT_OP
-            | POST_INIT_OP
-            | ROOT_OP
-            | SUPER_OP
-            | SELF_OP
-            | HERE_OP
-
-return_type_tag: RETURN_HINT expression
-
-builtin_type: TYP_TYPE
-            | TYP_ANY
-            | TYP_BOOL
-            | TYP_DICT
-            | TYP_SET
-            | TYP_TUPLE
-            | TYP_LIST
-            | TYP_FLOAT
-            | TYP_INT
-            | TYP_BYTES
-            | TYP_STRING
-
+// Codeblocks and Statements
 code_block: LBRACE statement_list? RBRACE
 statement_list: statement+
 
-statement: py_code_block
-          | walker_stmt
-          | return_stmt SEMI
-          | report_stmt SEMI
-          | delete_stmt SEMI
-          | ctrl_stmt SEMI
-          | assert_stmt SEMI
-          | raise_stmt SEMI
-          | with_stmt
-          | while_stmt
-          | for_stmt
-          | try_stmt
-          | if_stmt
-          | expression SEMI
-          | yield_expr SEMI
-          | assignment SEMI
-          | global_ref SEMI
-          | nonlocal_ref SEMI
-          | typed_ctx_block
-          | ability
-          | architype
-          | import_stmt
-          | match_stmt
-          | SEMI
+statement: import_stmt
+       | ability
+       | architype
+       | if_stmt
+       | while_stmt
+       | for_stmt
+       | try_stmt
+       | match_stmt
+       | with_stmt
+       | global_ref SEMI
+       | nonlocal_ref SEMI
+       | typed_ctx_block
+       | return_stmt SEMI
+       | yield_expr SEMI
+       | raise_stmt SEMI
+       | assert_stmt SEMI
+       | assignment SEMI
+       | delete_stmt SEMI
+       | report_stmt SEMI
+       | expression SEMI
+       | ctrl_stmt SEMI
+       | py_code_block
+       | walker_stmt
+       | SEMI
 
-typed_ctx_block: RETURN_HINT expression code_block
+
 if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
 elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
 else_stmt: KW_ELSE code_block
+while_stmt: KW_WHILE expression code_block
+for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY assignment code_block else_stmt?
+       | KW_ASYNC? KW_FOR atomic_chain KW_IN expression code_block else_stmt?
 try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
 except_list: except_def+
 except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
 finally_stmt: KW_FINALLY code_block
-
-for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY assignment code_block else_stmt?
-        | KW_ASYNC? KW_FOR atomic_chain KW_IN expression code_block else_stmt?
-
-while_stmt: KW_WHILE expression code_block
+match_stmt: KW_MATCH expression LBRACE match_case_block+ RBRACE
+match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
 with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
 expr_as_list: (expr_as COMMA)* expr_as
 expr_as: expression (KW_AS expression)?
+global_ref: GLOBAL_OP name_list
+nonlocal_ref: NONLOCAL_OP name_list
+typed_ctx_block: RETURN_HINT expression code_block
+return_stmt: KW_RETURN expression?
+yield_expr: KW_YIELD KW_FROM? expression
 raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
 assert_stmt: KW_ASSERT expression (COMMA expression)?
-ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
 delete_stmt: KW_DELETE expression
 report_stmt: KW_REPORT expression
-return_stmt: KW_RETURN expression?
-walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
-ignore_stmt: KW_IGNORE expression SEMI
+ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
+
+// Walker statements
+walker_stmt: visit_stmt
+       | revisit_stmt
+       | disengage_stmt
+       | ignore_stmt
+
 visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 disengage_stmt: KW_DISENGAGE SEMI
-global_ref: GLOBAL_OP name_list
-nonlocal_ref: NONLOCAL_OP name_list
+ignore_stmt: KW_IGNORE expression SEMI
 
+// Assignments
 assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_expr | expression)
           | atomic_chain type_tag (EQ (yield_expr | expression))?
           | atomic_chain aug_op (yield_expr | expression)
 
-expression: pipe KW_IF expression KW_ELSE expression
-          | pipe
-          | lambda_expr
-
+// Expressions
+expression: pipe (KW_IF expression KW_ELSE expression)? | lambda_expr
 lambda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
-
-pipe: pipe PIPE_FWD pipe_back
-    | pipe_back
-
-pipe_back: elvis_check PIPE_BKWD pipe_back
-         | elvis_check
-
-elvis_check: bitwise_or ELVIS_OP elvis_check
-           | bitwise_or
-
-bitwise_or: bitwise_xor BW_OR bitwise_or
-          | bitwise_xor
-
-bitwise_xor: bitwise_and BW_XOR bitwise_xor
-           | bitwise_and
-
-bitwise_and: shift BW_AND bitwise_and
-           | shift
-
-shift: logical RSHIFT shift
-     | logical LSHIFT shift
-     | logical
-
-logical: NOT logical
-       | compare KW_OR logical
-       | compare KW_AND logical
-       | compare
-
-compare: arithmetic cmp_op compare
-       | arithmetic
-
-arithmetic: term MINUS arithmetic
-          | term PLUS arithmetic
-          | term
-
-term: factor MOD term
-    | factor DIV term
-    | factor FLOOR_DIV term
-    | factor STAR_MUL term
-    | factor DECOR_OP term
-    | factor
-
-factor: power
-      | BW_NOT factor
-      | MINUS factor
-      | PLUS factor
+pipe: (pipe PIPE_FWD)? pipe_back
+pipe_back: elvis_check (PIPE_BKWD pipe_back)?
+elvis_check: bitwise_or (ELVIS_OP elvis_check)?
+bitwise_or: bitwise_xor (BW_OR bitwise_or)?
+bitwise_xor: bitwise_and (BW_XOR bitwise_xor)?
+bitwise_and: shift (BW_AND bitwise_and)?
+shift: logical ((RSHIFT | LSHIFT) shift)?
+logical: compare ((KW_OR | KW_AND) logical)? | NOT logical
+compare: arithmetic (cmp_op compare)?
+arithmetic: term ((MINUS | PLUS) arithmetic)?
+term: factor ((MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP) term)?
+factor: power | (BW_NOT | MINUS | PLUS) factor
 
 power: connect STAR_POW power
      | connect
@@ -301,9 +240,6 @@ atom: edge_op_ref
     | atom_collection
     | atom_literal
 
-yield_expr: KW_YIELD KW_FROM expression
-          | KW_YIELD expression
-
 atom_literal: builtin_type
             | NULL
             | BOOL
@@ -322,6 +258,44 @@ atom_collection: dict_compr
                | set_val
                | tuple_val
                | list_val
+
+doc_tag: ( STRING | DOC_STRING )
+decorators: (DECOR_OP atomic_chain)+
+
+inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
+               | COLON (atomic_chain COMMA)* atomic_chain COLON
+
+type_tag: COLON expression
+access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
+sub_name: COLON NAME
+
+any_ref: named_ref
+        | arch_ref
+
+named_ref: special_ref
+         | KWESC_NAME
+         | NAME
+
+special_ref: INIT_OP
+            | POST_INIT_OP
+            | ROOT_OP
+            | SUPER_OP
+            | SELF_OP
+            | HERE_OP
+
+return_type_tag: RETURN_HINT expression
+
+builtin_type: TYP_TYPE
+            | TYP_ANY
+            | TYP_BOOL
+            | TYP_DICT
+            | TYP_SET
+            | TYP_TUPLE
+            | TYP_LIST
+            | TYP_FLOAT
+            | TYP_INT
+            | TYP_BYTES
+            | TYP_STRING
 
 multistring: (fstring | STRING)+
 fstring: FSTR_START fstr_parts FSTR_END
@@ -368,11 +342,6 @@ object_ref: OBJECT_OP named_ref
 enum_ref: ENUM_OP named_ref
 ability_ref: ABILITY_OP named_ref
 
-arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
-abil_to_arch_chain: arch_or_ability_chain? arch_ref
-arch_to_abil_chain: arch_or_ability_chain? ability_ref
-arch_to_enum_chain: arch_or_ability_chain? enum_ref
-
 edge_op_ref: edge_any
            | edge_from
            | edge_to
@@ -403,9 +372,6 @@ assign_compr: LPAREN STAR_MUL kw_expr_list RPAREN
 filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 
 filter_compare_item: named_ref cmp_op expression
-
-match_stmt: KW_MATCH expression LBRACE match_case_block+ RBRACE
-match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
 
 pattern_seq: (or_pattern | as_pattern)
 or_pattern: (pattern BW_OR)* pattern
