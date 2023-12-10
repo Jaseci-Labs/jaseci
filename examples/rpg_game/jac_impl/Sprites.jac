@@ -8,7 +8,7 @@ include:jac Map;
 
 obj Spritesheet {
     can <init>(file: str) {
-        self.sheet = pygame.image.load(file).convert();   
+        self.sheet = pygame.image.load(file).convert();
     }
 
     can get_sprite(x: int, y: int, width: int, height: int) {
@@ -39,7 +39,7 @@ obj Player:pygame.sprite.Sprite:{
         self.animation_loop = 1;
 
         self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height);
-        
+
         self.rect = self.image.get_rect();
         self.rect.x = self.x;
         self.rect.y = self.y;
@@ -63,29 +63,29 @@ obj Player:pygame.sprite.Sprite:{
     can movement(){
         keys = pygame.key.get_pressed();
         if keys[pygame.K_LEFT]{
-            for sprite in self.game.all_sprites{sprite.rect.x += PLAYER_SPEED;}               
+            for sprite in self.game.all_sprites{sprite.rect.x += PLAYER_SPEED;}
             self.x_change -= PLAYER_SPEED;
             self.facing = 'left';
         }
-            
+
         if keys[pygame.K_RIGHT]{
             for sprite in self.game.all_sprites{sprite.rect.x -= PLAYER_SPEED;}
             self.x_change += PLAYER_SPEED;
             self.facing = 'right';
         }
-            
+
         if keys[pygame.K_UP]{
-            for sprite in self.game.all_sprites{sprite.rect.y += PLAYER_SPEED;}    
+            for sprite in self.game.all_sprites{sprite.rect.y += PLAYER_SPEED;}
             self.y_change -= PLAYER_SPEED;
             self.facing = 'up';
         }
-            
+
         if keys[pygame.K_DOWN]{
             for sprite in self.game.all_sprites{sprite.rect.y -= PLAYER_SPEED;}
             self.y_change += PLAYER_SPEED;
             self.facing = 'down';
         }
-            
+
     }
 
     can collide_enemy(){
@@ -94,7 +94,7 @@ obj Player:pygame.sprite.Sprite:{
             self.kill();
             self.game.playing = False;
         }
-            
+
     }
 
     can collide_blocks(direction: str){
@@ -105,35 +105,35 @@ obj Player:pygame.sprite.Sprite:{
                     self.rect.x = hits[0].rect.left - self.rect.width;
                     for sprite in self.game.all_sprites{sprite.rect.x += PLAYER_SPEED;}
                 }
-                    
+
                 if self.x_change < 0{
                     self.rect.x = hits[0].rect.right;
                     for sprite in self.game.all_sprites{sprite.rect.x -= PLAYER_SPEED;}
-                        
+
                 }
-                    
+
             }
-                
+
         }
-            
+
         if direction == "y"{
             hits = pygame.sprite.spritecollide(self, self.game.blocks, False);
             if hits{
                 if self.y_change > 0{
                     self.rect.y = hits[0].rect.top - self.rect.height;
-                    for sprite in self.game.all_sprites{sprite.rect.y += PLAYER_SPEED;}     
+                    for sprite in self.game.all_sprites{sprite.rect.y += PLAYER_SPEED;}
                 }
-                    
+
                 if self.y_change < 0{
                     self.rect.y = hits[0].rect.bottom;
                     for sprite in self.game.all_sprites {sprite.rect.y -= PLAYER_SPEED;}
-                        
+
                 }
-                    
+
             }
-                
+
         }
-            
+
     }
 
     can animate(){
@@ -159,7 +159,7 @@ obj Player:pygame.sprite.Sprite:{
             } else {
                 self.image = down_animations[math.floor(self.animation_loop)];
                 self.animation_loop += 0.1;
-                if self.animation_loop >= 3{self.animation_loop = 1;}                    
+                if self.animation_loop >= 3{self.animation_loop = 1;}
             }
         }
         if self.facing == "up"{
@@ -175,17 +175,17 @@ obj Player:pygame.sprite.Sprite:{
             } else {
                 self.image = right_animations[math.floor(self.animation_loop)];
                 self.animation_loop += 0.1;
-                if self.animation_loop >= 3{self.animation_loop = 1;}  
-            }    
+                if self.animation_loop >= 3{self.animation_loop = 1;}
+            }
         }
         if self.facing == "left"{
             if self.x_change == 0{self.image = self.game.character_spritesheet.get_sprite(3, 98, self.width, self.height);
             } else {
                 self.image = left_animations[math.floor(self.animation_loop)];
                 self.animation_loop += 0.1;
-                if self.animation_loop >= 3{self.animation_loop = 1;}     
-            }     
-        }      
+                if self.animation_loop >= 3{self.animation_loop = 1;}
+            }
+        }
     }
 }
 
@@ -210,7 +210,7 @@ obj Enemy:pygame.sprite.Sprite:{
         self.max_travel = random.randint(7,30);
 
         self.image = self.game.enemy_spritesheet.get_sprite(3, 2, self.width, self.height);
-        
+
         self.rect = self.image.get_rect();
         self.rect.x = self.x;
         self.rect.y = self.y;
@@ -226,7 +226,7 @@ obj Enemy:pygame.sprite.Sprite:{
         self.collide_blocks('y');
 
         self.x_change = 0;
-        self.y_change = 0; 
+        self.y_change = 0;
     }
 
     can movement(){
@@ -235,27 +235,27 @@ obj Enemy:pygame.sprite.Sprite:{
             self.movement_loop -= 1;
             if self.movement_loop <= -self.max_travel{self.facing = 'right';}
         }
-            
+
 
         if self.facing == 'right'{
             self.x_change += ENEMY_SPEED;
             self.movement_loop += 1;
             if self.movement_loop >= self.max_travel{self.facing = 'left';}
         }
-            
-        
+
+
         if self.facing == 'up'{
             self.y_change += ENEMY_SPEED;
             self.movement_loop += 1;
-            if self.movement_loop >= self.max_travel{self.facing = 'down';} 
+            if self.movement_loop >= self.max_travel{self.facing = 'down';}
         }
-            
+
 
         if self.facing == 'down'{
             self.y_change -= ENEMY_SPEED;
             self.movement_loop -= 1;
-            if self.movement_loop <= -self.max_travel{self.facing = 'up';}    
-        }  
+            if self.movement_loop <= -self.max_travel{self.facing = 'up';}
+        }
     }
 
     can animate(){
@@ -274,31 +274,31 @@ obj Enemy:pygame.sprite.Sprite:{
         right_animations = [self.game.enemy_spritesheet.get_sprite(3, 66, self.width, self.height),
                             self.game.enemy_spritesheet.get_sprite(35, 66, self.width, self.height),
                             self.game.enemy_spritesheet.get_sprite(68, 66, self.width, self.height)];
-        
+
         if self.facing == "down"{
             self.image = down_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.1;
             if self.animation_loop >= 3{self.animation_loop = 1;}
         }
-            
+
         if self.facing == "up"{
             self.image = up_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.1;
             if self.animation_loop >= 3{self.animation_loop = 1;}
         }
-            
+
         if self.facing == "right"{
             self.image = right_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.1;
-            if self.animation_loop >= 3{self.animation_loop = 1;}    
+            if self.animation_loop >= 3{self.animation_loop = 1;}
         }
-            
+
         if self.facing == "left"{
             self.image = left_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.1;
             if self.animation_loop >= 3{self.animation_loop = 1;}
         }
-            
+
     }
 
     can collide_blocks(direction: str){
@@ -307,15 +307,15 @@ obj Enemy:pygame.sprite.Sprite:{
             if hits{
                 if self.x_change > 0{self.rect.x = hits[0].rect.left - self.rect.width;}
                 if self.x_change < 0{self.rect.x = hits[0].rect.right;}
-            }      
+            }
         }
-            
+
         if direction == "y"{
             hits = pygame.sprite.spritecollide(self, self.game.blocks, False);
             if hits{
                 if self.y_change > 0{self.rect.y = hits[0].rect.top - self.rect.height;}
-                if self.y_change < 0{self.rect.y = hits[0].rect.bottom;}                    
-            }                
+                if self.y_change < 0{self.rect.y = hits[0].rect.bottom;}
+            }
         }
     }
 }
@@ -339,7 +339,7 @@ obj Block:pygame.sprite.Sprite:{
         self.rect.y = self.y;
     }
 
-        
+
 }
 
 obj Ground:pygame.sprite.Sprite:{
@@ -361,7 +361,7 @@ obj Ground:pygame.sprite.Sprite:{
         self.rect.y = self.y;
     }
 
-        
+
 }
 
 obj Button{
@@ -388,7 +388,7 @@ obj Button{
         self.text_rect = self.text.get_rect(center=(self.width/2, self.width/2));
         self.image.blit(self.text, self.text_rect);
     }
-        
+
 
     can is_pressed(pos: tuple, pressed:list){
         if self.rect.collidepoint(pos){
@@ -397,10 +397,10 @@ obj Button{
             }
             return False;
         }
-            
+
         return False;
     }
-        
+
 }
 
 obj Attack:pygame.sprite.Sprite:{
@@ -423,16 +423,16 @@ obj Attack:pygame.sprite.Sprite:{
         self.rect.x = self.x;
         self.rect.y = self.y;
     }
-    
+
     can update(){
         self.animate();
         self.collide();
     }
-        
+
     can collide(){
         hits = pygame.sprite.spritecollide(self, self.game.enemies, True);
     }
-        
+
     can animate(){
         direction = self.game.player.facing;
 
@@ -464,27 +464,27 @@ obj Attack:pygame.sprite.Sprite:{
             self.image = up_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.5;
             if self.animation_loop >= 5{self.kill();}
-        }   
-        
+        }
+
         if direction == 'down'{
             self.image = down_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.5;
-            if self.animation_loop >= 5{self.kill();}   
+            if self.animation_loop >= 5{self.kill();}
         }
-        
+
         if direction == 'left'{
             self.image = left_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.5;
             if self.animation_loop >= 5{self.kill();}
         }
-            
+
         if direction == 'right'{
             self.image = right_animations[math.floor(self.animation_loop)];
             self.animation_loop += 0.5;
-            if self.animation_loop >= 5{self.kill();}     
-        }   
-    } 
+            if self.animation_loop >= 5{self.kill();}
+        }
+    }
 }
-    
-    
-    
+
+
+

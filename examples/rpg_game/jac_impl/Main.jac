@@ -126,7 +126,7 @@ obj Game {
 
             self.screen.blit(self.go_background, (0,0));
             self.screen.blit(text, text_rect);
-            self.screen.blit(restart_button.image, restart_button.rect)   ; 
+            self.screen.blit(restart_button.image, restart_button.rect)   ;
             self.clock.tick(FPS);
             pygame.display.update();
         }
@@ -186,7 +186,7 @@ obj Game {
 
             self.screen.blit(self.intro_background, (0,0));
             self.screen.blit(text, text_rect);
-            self.screen.blit(restart_button.image, restart_button.rect)   ; 
+            self.screen.blit(restart_button.image, restart_button.rect)   ;
             self.clock.tick(FPS);
             pygame.display.update();
         }
@@ -206,7 +206,7 @@ with entry {
             print(g.won);
             g.game_over();
         }
-    }   
+    }
 
     pygame.quit();
     sys.exit();
