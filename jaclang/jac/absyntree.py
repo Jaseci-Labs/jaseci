@@ -571,7 +571,7 @@ class Ability(
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
-        signature: Optional[FuncSignature | Expr | EventSignature],
+        signature: Optional[FuncSignature | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -1366,7 +1366,7 @@ class TupleVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr | KWPair] | SubNodeList[Expr]],
+        values: Optional[SubNodeList[Expr | KWPair]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""

@@ -51,16 +51,21 @@ class PyOutPass(Pass):
         """Generate Python."""
         try:
             with open(out_path, "w") as f:
-                f.write(ast3.unparse(node.gen.py_ast))
+                f.write(node.gen.py)
         except Exception as e:
             print(ast3.dump(node.gen.py_ast, indent=2))
             raise e
 
     def compile_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""
-        codeobj = compile(source=node.gen.py_ast, filename=mod_path, mode="exec")
-        with open(out_path, "wb") as f:
-            marshal.dump(codeobj, f)
+        if isinstance(node.gen.py_ast, ast3.Module):
+            codeobj = compile(source=node.gen.py_ast, filename=mod_path, mode="exec")
+            with open(out_path, "wb") as f:
+                marshal.dump(codeobj, f)
+        else:
+            self.error(
+                f"Soemthing went wrong with {node.loc.mod_path} compilation.", node
+            )
 
     def get_output_targets(self, node: ast.Module) -> tuple[str, str, str]:
         """Get output targets."""
