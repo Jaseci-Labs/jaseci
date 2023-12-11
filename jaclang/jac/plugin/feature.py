@@ -26,16 +26,7 @@ class JacFeature:
 
         def decorator(cls: Type[AT]) -> Type[AT]:
             """Decorate class."""
-
-            def new_hash(self: object) -> int:
-                return hash(id(self))
-
-            def new_eq(self: object, other: object) -> bool:
-                return id(self) == id(other)
-
-            cls = dataclass(cls)
-            cls.__hash__ = new_hash  # type: ignore
-            cls.__eq__ = new_eq  # type: ignore
+            cls = dataclass(eq=False)(cls)
             if not issubclass(cls, Architype):
                 cls = type(cls.__name__, (cls, Architype), {})
             JacFeature.bind_architype(cls, arch_type)
