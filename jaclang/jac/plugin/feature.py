@@ -21,7 +21,9 @@ class JacFeature:
     RootType: Type[AbsRootHook] = AbsRootHook
 
     @staticmethod
-    def make_architype(arch_type: str) -> Callable[[type], type]:
+    def make_architype(
+        arch_type: str, on_entry: list[str], on_exit: list[str]
+    ) -> Callable[[type], type]:
         """Create a new architype."""
 
         def decorator(cls: Type[AT]) -> Type[AT]:
@@ -29,6 +31,8 @@ class JacFeature:
             cls = dataclass(eq=False)(cls)
             if not issubclass(cls, Architype):
                 cls = type(cls.__name__, (cls, Architype), {})
+            cls._jac_on_entry_ = on_entry
+            cls._jac_on_exit_ = on_exit
             JacFeature.bind_architype(cls, arch_type)
             return cls
 
@@ -38,11 +42,6 @@ class JacFeature:
     def bind_architype(arch: Type[AT], arch_type: str) -> bool:
         """Create a new architype."""
         return JacFeature.pm.hook.bind_architype(arch=arch, arch_type=arch_type)
-
-    @staticmethod
-    def make_ds_ability(event: str, trigger: Optional[type]) -> Callable[[type], type]:
-        """Create a new architype."""
-        return JacFeature.pm.hook.make_ds_ability(event=event, trigger=trigger)
 
     @staticmethod
     def elvis(op1: Optional[T], op2: T) -> T:  # noqa: ANN401

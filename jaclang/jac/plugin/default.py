@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-from typing import Any, Callable, Optional, Type
+from typing import Any, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
 from jaclang.jac.plugin.spec import AT, Architype, T
@@ -21,17 +21,6 @@ class JacFeatureDefaults:
         """Create a new architype."""
         arch._jac_ = None
         return True
-
-    @staticmethod
-    @hookimpl
-    def make_ds_ability(event: str, trigger: Optional[type]) -> Callable[[type], type]:
-        """Create a new architype."""
-
-        def decorator(func: type) -> type:
-            """Decorate class."""
-            return func
-
-        return decorator
 
     @staticmethod
     @hookimpl

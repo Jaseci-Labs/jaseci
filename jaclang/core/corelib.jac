@@ -370,7 +370,7 @@ obj JacPlugin {
     <self>.path = [];
     <self>.next = [nd];
     walker_type = <self>.__class__.__name__;
-    while <self>.next :> len {
+    while len(<self>.next) {
         nd = 0 :> <self>.next.pop;
         node_type = nd.__class__.__name__;
 
