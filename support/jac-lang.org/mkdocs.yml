@@ -2,27 +2,18 @@ site_name: The Jac Programming Language
 site_url: https://jac-lang.org
 nav:
     - ~$: 'index.md'
-    # - ~/tour$: 'tour.md'
-    # - ~/example$: 'example.md'
     - ~/start$: 'start.md'
     - ~/learn$:
       - ~/for_coders:
         - 'learn/guide.md'
         - 'learn/tips_tricks.md'
-        # - 'learn/coders/no_indent.md'
-        # - 'learn/coders/defs_decls.md'
       - ~/for_contributors:
         - 'learn/contrib.md'
       - ~/w.i.p$:
-        - 'learn/style_guide.md'
         - 'learn/ast_doc.md'
         - 'learn/jac_ref.md'
-        # - ~/book$:
-        #   - book/main.md
-        #   - book/general.md
-        #   - book/blue.md
-        #   - book/purple.md
-        #   - book/red.md
+        - ~/projects$:
+          - 'projects/auto_ref.md'
 
     - ~/why$: 'why.md'
     # - ~/roadmap$: 'roadmap.md'
