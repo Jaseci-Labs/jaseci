@@ -19,9 +19,7 @@ class MypyTypeCheckPassTests(TestCase):
         self, filename: str | None, new_messages: list[str], is_serious: bool
     ) -> None:
         for message in new_messages:
-            self.__messages.append(
-                message.replace(self.fixture_abs_path("func.jac"), "")
-            )
+            self.__messages.append(message)
 
     def test_type_errors(self) -> None:
         """Basic test for pass."""
@@ -34,8 +32,8 @@ class MypyTypeCheckPassTests(TestCase):
 
         errs = "\n".join(self.__messages)
         for i in [
-            "File::4",
-            "File::12",
+            f"File:{self.fixture_abs_path('func.jac')}:4",
+            f"File:{self.fixture_abs_path('func.jac')}:12",
             '(got "int", expected "str")',
             '(got "str", expected "int")',
         ]:
