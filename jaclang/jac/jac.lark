@@ -41,6 +41,7 @@ arch_type: KW_WALKER
           | KW_EDGE
           | KW_NODE
 
+// Architype bodies
 member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
@@ -54,6 +55,8 @@ enum: enum_def
 
 enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
+
+// Enumeration Bodies
 enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
 
 enum_stmt: NAME EQ expression
@@ -123,42 +126,78 @@ statement: import_stmt
        | SEMI
 
 
+// If statements
 if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
 elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
 else_stmt: KW_ELSE code_block
+
+// While statements
 while_stmt: KW_WHILE expression code_block
+
+// For statements
 for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY assignment code_block else_stmt?
        | KW_ASYNC? KW_FOR atomic_chain KW_IN expression code_block else_stmt?
+
+// Try statements
 try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
 except_list: except_def+
 except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
 finally_stmt: KW_FINALLY code_block
+
+// Match statements
 match_stmt: KW_MATCH expression LBRACE match_case_block+ RBRACE
 match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
+
+// Context managers
 with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
 expr_as_list: (expr_as COMMA)* expr_as
 expr_as: expression (KW_AS expression)?
+
+// Global and nonlocal statements
 global_ref: GLOBAL_OP name_list
 nonlocal_ref: NONLOCAL_OP name_list
 name_list: (named_ref COMMA)* named_ref
+
+// Data spatial typed context blocks
 typed_ctx_block: RETURN_HINT expression code_block
+
+// Return statements
 return_stmt: KW_RETURN expression?
+
+// Yield statements
 yield_expr: KW_YIELD KW_FROM? expression
+
+// Raise statements
 raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
+
+// Assert statements
 assert_stmt: KW_ASSERT expression (COMMA expression)?
+
+// Delete statements
 delete_stmt: KW_DELETE expression
+
+// Report statements
 report_stmt: KW_REPORT expression
+
+// Control statements
 ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
 
-// Walker statements
+// Data spatail Walker statements
 walker_stmt: visit_stmt
        | revisit_stmt
        | disengage_stmt
        | ignore_stmt
 
+// Visit statements
 visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
+
+// Revisit statements
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
+
+// Disengage statements
 disengage_stmt: KW_DISENGAGE SEMI
+
+// Ignore statements
 ignore_stmt: KW_IGNORE expression SEMI
 
 // Assignments
