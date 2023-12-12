@@ -284,3 +284,14 @@ class AstTool:
                 return ""
         else:
             return "Not a .jac file."
+
+    def lang_ref(self) -> str:
+        """Generate language reference."""
+        grammar_lines = []
+        with open(os.path.join(os.path.dirname(__file__), "../jac/jac.lark")) as f:
+            grammar_lines = f.readlines()
+        out = ""
+        for i in grammar_lines:
+            if i.startswith("//"):
+                out += f"{i[2:]}\n"
+        return f"Jac Language Reference Goes Here\n\n{out}"

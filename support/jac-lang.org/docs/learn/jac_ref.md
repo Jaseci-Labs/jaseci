@@ -72,3 +72,28 @@
 --8<-- "jaclang/jac/jac.lark:100:126"
 ```
 
+## Match statements
+```yaml linenums="148"
+--8<-- "jaclang/jac/jac.lark:148:149"
+```
+```jac linenums="1"
+with entry {
+    a=8;
+    match a {
+        case 7:
+            print("Nope");
+        case 8:
+            print("Yep");
+        case _:
+            print("Not possible");
+    }
+}
+```
+
+## Match patterns
+```yaml linenums="152"
+--8<-- "jaclang/jac/jac.lark:152:161"
+```
+```jac linenums="1"
+--8<-- "examples/micro/match.jac"
+```
