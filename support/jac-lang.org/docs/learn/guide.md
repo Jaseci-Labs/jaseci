@@ -18,6 +18,12 @@ jac run test.jac;
 rm test.jac;"
 ```
 
+> **Important Note :**
+>
+> If you have a previous jaclang installation please bash `jac clean` in order to remove all cached files, before uninstallation.
+> 
+> If you have already uninstalled the previous jaclang version, bash `source scripts/clean_jac_gen.sh` from source, before installation.
+
 If that command prints `hello world`, Jac is working.
 
 Ok now lets jump into learning Jac!
