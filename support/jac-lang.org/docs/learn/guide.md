@@ -15,8 +15,6 @@ pip install jaclang
 > 
 > If you have already uninstalled the previous jaclang version, bash `source scripts/clean_jac_gen.sh` from source, before installation.
 
-If that command prints `hello world`, Jac is working.
-
 Validate Jac works.
 
 ```bash
@@ -24,6 +22,8 @@ echo "with entry { print('hello world'); }" > test.jac;
 jac run test.jac;
 rm test.jac;"
 ```
+
+If that command prints `hello world`, Jac is working.
 
 Ok now lets jump into learning Jac!
 ## A Complete Example
