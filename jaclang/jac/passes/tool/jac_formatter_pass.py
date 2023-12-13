@@ -407,7 +407,7 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Semi):
                 self.emit(node, f"{i.gen.jac} ")
             elif i.gen.jac.startswith(":"):
-                self.emit(node, f"{re.sub(r'\s+', '', i.gen.jac.strip())}")
+                self.emit(node, re.sub(r"\s+", "", i.gen.jac.strip()))
             else:
                 if start or i.gen.jac == ",":
                     self.emit(node, f"{i.gen.jac}")
