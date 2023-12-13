@@ -57,7 +57,7 @@ class PyastGenPass(Pass):
 
     def needs_typing(self) -> None:
         """Check if enum is needed."""
-        if "enum" in self.already_added:
+        if "typing" in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -72,7 +72,7 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("enum")
+        self.already_added.append("typing")
 
     def needs_enum(self) -> None:
         """Check if enum is needed."""
@@ -482,6 +482,23 @@ class PyastGenPass(Pass):
             if isinstance(node.decorators, ast.SubNodeList)
             else []
         )
+        ds_on_entry = []
+        ds_on_exit = []
+        for i in (
+            node.body.body.items
+            if isinstance(node.body, ast.ArchDef)
+            else node.body.items
+            if node.body
+            else []
+        ):
+            if isinstance(i, ast.Ability) and isinstance(
+                i.signature, ast.EventSignature
+            ):
+                ds_on_entry.append(
+                    self.sync(ast3.Constant(value=i.sym_name))
+                ) if i.signature.event.name == Tok.KW_ENTRY else ds_on_exit.append(
+                    self.sync(ast3.Constant(value=i.sym_name))
+                )
         if isinstance(decorators, list):
             decorators.append(
                 self.sync(
@@ -496,7 +513,24 @@ class PyastGenPass(Pass):
                             )
                         ),
                         args=[self.sync(ast3.Constant(value=node.arch_type.value))],
-                        keywords=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="on_entry",
+                                    value=self.sync(
+                                        ast3.List(elts=ds_on_entry, ctx=ast3.Load())
+                                    ),
+                                )
+                            ),
+                            self.sync(
+                                ast3.keyword(
+                                    arg="on_exit",
+                                    value=self.sync(
+                                        ast3.List(elts=ds_on_exit, ctx=ast3.Load())
+                                    ),
+                                )
+                            ),
+                        ],
                     )
                 )
             )
@@ -607,33 +641,6 @@ class PyastGenPass(Pass):
         if node.is_static:
             decorator_list.insert(
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
-            )
-        if isinstance(node.signature, ast.EventSignature):
-            self.needs_jac_feature()
-            decorator_list.append(
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="make_ds_ability",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[
-                            self.sync(ast3.Constant(value=node.signature.event.value)),
-                            self.sync(
-                                node.signature.arch_tag_info.gen.py_ast
-                                if node.signature.arch_tag_info
-                                else ast3.Constant(value=None),
-                                node.signature,
-                            ),
-                        ],
-                        keywords=[],
-                    )
-                )
             )
         if not body:
             self.error("Ability has no body. Perhaps an impl must be imported.", node)
@@ -825,10 +832,32 @@ class PyastGenPass(Pass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
+        annotation = node.type_tag.gen.py_ast if node.type_tag else None
+        if (
+            node.parent
+            and node.parent.parent
+            and isinstance(node.parent.parent, ast.ArchHas)
+            and node.parent.parent.is_static
+        ):
+            self.needs_typing()
+            annotation = self.sync(
+                ast3.Subscript(
+                    value=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                            attr="ClassVar",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    slice=annotation,
+                    ctx=ast3.Load(),
+                )
+            )
+
         node.gen.py_ast = self.sync(
             ast3.AnnAssign(
                 target=node.name.gen.py_ast,
-                annotation=node.type_tag.gen.py_ast if node.type_tag else None,
+                annotation=annotation,
                 value=node.value.gen.py_ast if node.value else None,
                 simple=int(not node.value),
             )

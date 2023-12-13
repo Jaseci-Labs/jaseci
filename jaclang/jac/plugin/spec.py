@@ -1,7 +1,7 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, Protocol, Type, TypeVar
+from typing import Any, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac.constant import EdgeDir
 
@@ -17,6 +17,8 @@ class Architype:
         """Architype Protocol."""
 
     _jac_: ArchitypeProtocol
+    _jac_on_entry_: list[str]
+    _jac_on_exit_: list[str]
 
     def __call__(self, target: Architype) -> None:
         """Call the architype's data spatial behavior."""
@@ -38,12 +40,6 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def bind_architype(arch: Type[AT], arch_type: str) -> bool:
-        """Create a new architype."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def make_ds_ability(event: str, trigger: Optional[type]) -> Callable[[type], type]:
         """Create a new architype."""
         raise NotImplementedError
 
