@@ -1,0 +1,10 @@
+can foo(first: int, second: int) -> None {
+    print(first + second);
+}
+
+with entry {
+    val1 = (3,) + (4,);
+    val2 = (val1[0] * val1[1], val1[0] + val1[1]);
+    # Investigate: val2 = (val1[0]*val1[1], val1[0]+val1[1]);
+    (first=val2[0], second=val2[1]) |> foo; # Jac-style Tuple
+}
