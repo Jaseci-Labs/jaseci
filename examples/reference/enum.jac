@@ -36,9 +36,3 @@ with entry{
         print_color(Color.GREEN);
 }
 
-
-with entry{
-#list comprehension
-numbers=[1,2,3,4];
-a=[i+1 for i in numbers];    #????? why walrus assign????
-print(a);}
