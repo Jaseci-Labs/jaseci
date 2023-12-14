@@ -1445,6 +1445,7 @@ class PyastGenPass(Pass):
                 )
             )
         elif node.op.name in [Tok.WALRUS_EQ]:
+            node.left.gen.py_ast.ctx = ast3.Store()  # TODO: Short term fix
             node.gen.py_ast = self.sync(
                 ast3.NamedExpr(
                     target=node.left.gen.py_ast,
