@@ -358,23 +358,23 @@ obj JacPlugin {
 
 
 :obj:EdgeInterface:can:__call__
-(walk: Walker) {
-    if not (walk, Walker) :> isinstance {
-        raise ("Argument must be a Walker instance") :> TypeError;
+(walk: object) {
+    if not isinstance(walk._jac_, WalkerInterface) {
+        raise TypeError("Argument must be a Walker instance");
     }
-    <self>._jac_.target :> walk;
+    walk(<self>._jac_.target);
 }
 
 :obj:WalkerInterface:can:__call__
-(nd: Node) {
+(nd: object) {
     <self>.path = [];
     <self>.next = [nd];
-    walker_type = <self>.__class__.__name__;
+    # walker_type = <self>.__class__.__name__;
     while len(<self>.next) {
-        nd = 0 :> <self>.next.pop;
-        node_type = nd.__class__.__name__;
-
-        for i in nd.ds_entry_funcs {
+        nd = <self>.next.pop(0);
+        # node_type = nd.__class__.__name__;
+        print(nd.__class__.__name__, <self>.ob._jac_on_entry_);
+        for i in nd._jac_on_entry_ {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
