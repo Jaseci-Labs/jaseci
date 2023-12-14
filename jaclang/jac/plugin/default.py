@@ -17,9 +17,16 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def bind_architype(arch: Type[AT], arch_type: str) -> bool:
+    def bind_architype(
+        arch: Type[AT], arch_type: str, on_entry: list[str], on_exit: list[str]
+    ) -> bool:
         """Create a new architype."""
-        arch._jac_ = None
+
+        class DummyAP(Architype.ArchitypeProtocol):
+            ds_entry_funcs: list[str] = []
+            ds_exit_funcs: list[str] = []
+
+        arch._jac_ = DummyAP()
         return True
 
     @staticmethod

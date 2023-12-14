@@ -16,9 +16,10 @@ class Architype:
     class ArchitypeProtocol(Protocol):
         """Architype Protocol."""
 
+        ds_entry_funcs: list[str]
+        ds_exit_funcs: list[str]
+
     _jac_: ArchitypeProtocol
-    _jac_on_entry_: list[str]
-    _jac_on_exit_: list[str]
 
     def __call__(self, target: Architype) -> None:
         """Call the architype's data spatial behavior."""
@@ -39,7 +40,9 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def bind_architype(arch: Type[AT], arch_type: str) -> bool:
+    def bind_architype(
+        arch: Type[AT], arch_type: str, on_entry: list[str], on_exit: list[str]
+    ) -> bool:
         """Create a new architype."""
         raise NotImplementedError
 
