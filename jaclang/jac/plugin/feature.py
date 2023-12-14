@@ -10,7 +10,6 @@ from jaclang.jac.plugin.spec import (
     AT,
     AbsRootHook,
     Architype,
-    DSFunc,
     JacFeatureSpec,
     T,
 )
@@ -20,6 +19,8 @@ import pluggy
 
 class JacFeature:
     """Jac Feature."""
+
+    from jaclang.jac.plugin.spec import DSFunc
 
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)
