@@ -2467,11 +2467,13 @@ class JacParser(Pass):
             else:
                 first_expr = chomp[0]
                 chomp = chomp[2:]
-            expr_list = chomp[0].kid
-            chomp = chomp[1:]
+            expr_list = []
             if len(chomp):
+                expr_list = chomp[0].kid
                 chomp = chomp[1:]
-                expr_list = [*expr_list, *chomp[0].kid]
+                if len(chomp):
+                    chomp = chomp[1:]
+                    expr_list = [*expr_list, *chomp[0].kid]
             expr_list = [first_expr, *expr_list]
             valid_kid = [i for i in expr_list if isinstance(i, (ast.Expr, ast.KWPair))]
             return self.nu(

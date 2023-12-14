@@ -4,6 +4,10 @@ with entry{
   squares_generator = (num**2 for num in range(1, 6));
   squares_list = [num**2 for num in squares_generator];
 
-  if (x := 5) > 4 {print("x is greater than 4");}
   print("\n".join([str(squares), str(even_squares_set), str(squares_list)]));
+
+  print({"a": "b", "c": "d"}, # Dictionary value
+        {"a"}, # Set value
+        ("a",), # Tuple value
+        ['a']); # List value
 }
