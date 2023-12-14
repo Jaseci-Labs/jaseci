@@ -6,7 +6,14 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
 from jaclang.jac.plugin.default import JacFeatureDefaults
-from jaclang.jac.plugin.spec import AT, AbsRootHook, Architype, JacFeatureSpec, T
+from jaclang.jac.plugin.spec import (
+    AT,
+    AbsRootHook,
+    Architype,
+    DSFunc,
+    JacFeatureSpec,
+    T,
+)
 
 import pluggy
 
@@ -22,7 +29,7 @@ class JacFeature:
 
     @staticmethod
     def make_architype(
-        arch_type: str, on_entry: list[str], on_exit: list[str]
+        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a new architype."""
 
@@ -38,7 +45,7 @@ class JacFeature:
 
     @staticmethod
     def bind_architype(
-        arch: Type[AT], arch_type: str, on_entry: list[str], on_exit: list[str]
+        arch: Type[AT], arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> bool:
         """Create a new architype."""
         return JacFeature.pm.hook.bind_architype(

@@ -6,7 +6,7 @@ node item {
 
 walker Creator {
     has count: int = 0;
-    can create with `<root>|item entry {
+    can create with (`<root>, item) entry {
         <here> ++> :> item;
         <self>.count += 1;
         if <self>.count < 10 {

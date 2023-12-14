@@ -3,7 +3,7 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
-import:py from jaclang.jac.plugin, Architype as Arch, AbsRootHook, hookimpl;
+import:py from jaclang.jac.plugin, Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl;
 
 enum AccessMode;
 
@@ -57,9 +57,9 @@ obj ElementAnchor {
     can revoke_access(caller_id: UUID);
 }
 
-obj ObjectAnchor:ElementAnchor,Arch.ArchitypeProtocol: {
-    has ds_entry_funcs: list[dict],
-        ds_exit_funcs: list[dict];
+obj ObjectAnchor:ElementAnchor,ArchitypeProtocol: {
+    has ds_entry_funcs: list[DSFunc],
+        ds_exit_funcs: list[DSFunc];
 
     static can on_entry(cls: type, triggers: list[type]);
     static can on_exit(cls: type, triggers: list[type]);
@@ -115,7 +115,7 @@ obj JacPlugin {
     @hookimpl
     static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
     @hookimpl
-    static can get_root() -> Arch;
+    static can get_root() -> Architype;
 }
 
 :obj:Memory:can:get_obj
@@ -407,7 +407,7 @@ obj JacPlugin {
 
 
 :obj:JacPlugin:can:bind_architype
-(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool {
+(arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
             arch._jac_ = ObjectAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
