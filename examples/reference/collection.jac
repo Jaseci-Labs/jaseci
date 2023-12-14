@@ -5,6 +5,7 @@ with entry{
   squares_list = [num**2 for num in squares_generator];
   # BREAKS: squares_list = [num**2 for num in squares_generator if num != 9];
 
+  # TODO: Issure with '\n' below, its being escaped
   print("\n".join([str(squares), str(even_squares_set), str(squares_list)]));
 
   print({"a": "b", "c": "d"}, # Dictionary value
