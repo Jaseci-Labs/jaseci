@@ -109,7 +109,7 @@ The automation function in the lang_tools package will parse these headers from 
 
 ## Concrete Steps
 
-* [TeamRise] First in `examples/reference` we need to have a single jac file for each section in addition to a single .py file for each example, the programs should logically produce the same output.
+* [TeamRise] First in `examples/reference` we need to have a single `.jac` file for each section in addition to a single `.py` file for each example, the programs should logically produce the same output.
 
     * The Jac example only have to pass parse errors.
     * The python should produce expected output.
