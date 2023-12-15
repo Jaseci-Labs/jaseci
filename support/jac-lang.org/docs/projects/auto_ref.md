@@ -113,6 +113,7 @@ The automation function in the lang_tools package will parse these headers from 
 
     * The Jac example only have to pass parse errors.
     * The python should produce expected output.
+    * If the example is Jac-only, create a python file with our naming convention, however have it just `print("Jac only feature")`
     * Reach Goal: 30 sections, both jac and python.
 
 * [MarsNinja] Automated testing infrastructure to run both jac programs and python programs to check outputs match

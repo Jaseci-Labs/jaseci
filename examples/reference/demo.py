@@ -1,0 +1,3 @@
+import collection
+
+collection.foo()
