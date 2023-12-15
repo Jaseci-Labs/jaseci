@@ -197,7 +197,7 @@ class JSXSocialLoginView(SocialLoginView):
         self.serializer = self.get_serializer(data=self.request.data)
         self.serializer.is_valid(raise_exception=True)
         data = self.serializer.validated_data
-        self.user = data.get("user")
+        self.user = data.pop("user")
 
         expiry = (
             knox_settings.TOKEN_TTL
@@ -214,13 +214,14 @@ class JSXSocialLoginView(SocialLoginView):
         auth_user = authenticate(
             request=self.request, username=self.user.email, password=self.user.password
         )
-        login_type = data.get("type")
+        login_type = data.pop("type")
         resp = {
             "email": auth_user.email if auth_user else self.user.email,
             "token": token,
             "exp": instance.expiry,
             "type": login_type.name,
             "details": login_type.value,
+            "provider": data,
         }
 
         self.response_log(resp)
