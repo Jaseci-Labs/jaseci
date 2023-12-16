@@ -37,6 +37,8 @@ class JacFeature:
         def decorator(cls: Type[AT]) -> Type[AT]:
             """Decorate class."""
             cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
             if not issubclass(cls, Architype):
                 cls = type(cls.__name__, (cls, Architype), {})
             JacFeature.bind_architype(cls, arch_type, on_entry, on_exit)

@@ -1,7 +1,7 @@
 """Example of simple walker walking nodes."""
 
 node item {
-    has value: int;
+    has value: int = 1;
 }
 
 walker Creator {
@@ -13,6 +13,7 @@ walker Creator {
             x=3;
             visit -->;
         }
+        print("i was here");
     }
 }
 

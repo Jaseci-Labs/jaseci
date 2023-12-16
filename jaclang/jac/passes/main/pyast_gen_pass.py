@@ -753,7 +753,9 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.arguments(
                 posonlyargs=[],
-                args=[here],
+                args=[self.sync(ast3.arg(arg="self", annotation=None)), here]
+                if node.is_method
+                else [here],
                 kwonlyargs=[],
                 vararg=None,
                 kwargs=None,

@@ -380,9 +380,8 @@ obj JacPlugin {
             if <self>.disengaged {return;}
         }
         for i in <self>.ds_entry_funcs {
-            if i['func'].__qualname__.split(".")[0] == walker_type and
-                (nd:>type in i['types'] or nd in i['types']) {  # if nd==root direct chec
-                i['func'](<self>, nd);
+            if isinstance(nd.ob, i.trigger) {
+                i.func(<self>.ob, nd);
             }
             if <self>.disengaged {return;}
         }

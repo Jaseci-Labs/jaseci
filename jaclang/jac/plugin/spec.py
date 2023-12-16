@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol, Type, TypeVar
+from typing import Any, Callable, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac.constant import EdgeDir
 
@@ -17,6 +17,11 @@ class DSFunc:
 
     name: str
     trigger: type | tuple[type, ...] | None
+    func: Callable[[Any, Any], Any] | None = None
+
+    def resolve(self, cls: type) -> None:
+        """Resolve the function."""
+        self.func = getattr(cls, self.name)
 
 
 class ArchitypeProtocol(Protocol):
