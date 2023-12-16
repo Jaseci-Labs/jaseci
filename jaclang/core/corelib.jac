@@ -364,7 +364,7 @@ obj JacPlugin {
 }
 
 :obj:WalkerAnchor:can:__call__
-(nd: object) {
+(nd: NodeInterface) {
     <self>.path = [];
     <self>.next = [nd];
     # walker_type = <self>.__class__.__name__;
@@ -373,9 +373,8 @@ obj JacPlugin {
         # node_type = nd.__class__.__name__;
         print(nd.__class__.__name__, <self>.ds_entry_funcs);
         for i in nd.ds_entry_funcs {
-            if i['func'].__qualname__.split(".")[0] == node_type and
-                <self>:>type in i['types'] {
-                (nd, <self>) :> i['func'];
+            if isinstance(<self>.ob, i.trigger) {
+                i.func(nd.ob, <self>);
             }
             if <self>.disengaged {return;}
         }
@@ -386,16 +385,14 @@ obj JacPlugin {
             if <self>.disengaged {return;}
         }
         for i in <self>.ds_exit_funcs {
-            if i['func'].__qualname__.split(".")[0] == walker_type and
-            (nd:>type in i['types'] or nd in i['types']) {
-                 i['func'](<self>, nd);
+            if isinstance(nd.ob, i.trigger) {
+                i.func(<self>.ob, nd);
             }
             if <self>.disengaged {return;}
         }
         for i in nd.ds_exit_funcs {
-            if i['func'].__qualname__.split(".")[0] == node_type and
-                <self>:>type in i['types'] {
-                (nd, <self>) :> i['func'];
+            if isinstance(<self>.ob, i.trigger) {
+                i.func(nd.ob, <self>);
             }
             if <self>.disengaged {return;}
         }
