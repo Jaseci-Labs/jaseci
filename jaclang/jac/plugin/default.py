@@ -12,6 +12,12 @@ import pluggy
 hookimpl = pluggy.HookimplMarker("jac")
 
 
+class BlankArch(Architype):
+    """Blank Architype."""
+
+    _jac_: Any = None
+
+
 class JacFeatureDefaults:
     """Jac Feature."""
 
@@ -48,7 +54,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def visit(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         return True
 
@@ -70,12 +76,14 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def connect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
+    def connect(
+        left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]
+    ) -> T:  # noqa: ANN401
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
-        return ret if (ret := op1) is not None else op2
+        return ret if (ret := left) is not None else right
 
     @staticmethod
     @hookimpl
@@ -95,8 +103,12 @@ class JacFeatureDefaults:
     @hookimpl
     def get_root() -> Architype:
         """Jac's assign comprehension feature."""
+        return BlankArch()
 
-        class Blank(Architype):
-            _jac_: Any = None
-
-        return Blank()
+    @staticmethod
+    @hookimpl
+    def build_edge(
+        edge_spec: tuple[int, Optional[tuple], Optional[tuple]]
+    ) -> Architype:
+        """Jac's root getter."""
+        return BlankArch()

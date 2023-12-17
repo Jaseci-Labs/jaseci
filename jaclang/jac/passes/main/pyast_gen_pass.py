@@ -1245,7 +1245,7 @@ class PyastGenPass(Pass):
                                             id=Con.JAC_FEATURE.value, ctx=ast3.Load()
                                         )
                                     ),
-                                    attr="visit",
+                                    attr="visit_node",
                                     ctx=ast3.Load(),
                                 )
                             ),
