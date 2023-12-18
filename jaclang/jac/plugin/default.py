@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
-from jaclang.jac.plugin.spec import AT, Architype, T
+from jaclang.jac.plugin.spec import AT, Architype, ArchitypeProtocol, DSFunc, T
 
 import pluggy
 
@@ -17,9 +17,16 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def bind_architype(arch: Type[AT], arch_type: str) -> bool:
+    def bind_architype(
+        arch: Type[AT], arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> bool:
         """Create a new architype."""
-        arch._jac_ = None
+
+        class DummyAP(ArchitypeProtocol):
+            ds_entry_funcs: list[DSFunc] = on_entry
+            ds_exit_funcs: list[DSFunc] = on_exit
+
+        arch._jac_ = DummyAP()
         return True
 
     @staticmethod

@@ -1,6 +1,7 @@
 """Jac Language Features."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac.constant import EdgeDir
@@ -10,15 +11,25 @@ import pluggy
 hookspec = pluggy.HookspecMarker("jac")
 
 
+@dataclass(eq=False)
+class DSFunc:
+    """Data Spatial Function."""
+
+    name: str
+    trigger: type | tuple[type, ...] | None
+
+
+class ArchitypeProtocol(Protocol):
+    """Architype Protocol."""
+
+    ds_entry_funcs: list[DSFunc]
+    ds_exit_funcs: list[DSFunc]
+
+
 class Architype:
     """Architype Protocol."""
 
-    class ArchitypeProtocol(Protocol):
-        """Architype Protocol."""
-
     _jac_: ArchitypeProtocol
-    _jac_on_entry_: list[str]
-    _jac_on_exit_: list[str]
 
     def __call__(self, target: Architype) -> None:
         """Call the architype's data spatial behavior."""
@@ -39,7 +50,9 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def bind_architype(arch: Type[AT], arch_type: str) -> bool:
+    def bind_architype(
+        arch: Type[AT], arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> bool:
         """Create a new architype."""
         raise NotImplementedError
 

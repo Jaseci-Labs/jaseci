@@ -482,23 +482,7 @@ class PyastGenPass(Pass):
             if isinstance(node.decorators, ast.SubNodeList)
             else []
         )
-        ds_on_entry = []
-        ds_on_exit = []
-        for i in (
-            node.body.body.items
-            if isinstance(node.body, ast.ArchDef)
-            else node.body.items
-            if node.body
-            else []
-        ):
-            if isinstance(i, ast.Ability) and isinstance(
-                i.signature, ast.EventSignature
-            ):
-                ds_on_entry.append(
-                    self.sync(ast3.Constant(value=i.sym_name))
-                ) if i.signature.event.name == Tok.KW_ENTRY else ds_on_exit.append(
-                    self.sync(ast3.Constant(value=i.sym_name))
-                )
+        ds_on_entry, ds_on_exit = self.collect_events(node)
         if isinstance(decorators, list):
             decorators.append(
                 self.sync(
@@ -547,6 +531,49 @@ class PyastGenPass(Pass):
                 type_params=[],
             )
         )
+
+    def collect_events(
+        self, node: ast.Architype
+    ) -> tuple[list[ast3.AST], list[ast3.AST]]:
+        """Collect events."""
+        ds_on_entry: list[ast3.AST] = []
+        ds_on_exit: list[ast3.AST] = []
+        for i in (
+            node.body.body.items
+            if isinstance(node.body, ast.ArchDef)
+            else node.body.items
+            if node.body
+            else []
+        ):
+            if isinstance(i, ast.Ability) and isinstance(
+                i.signature, ast.EventSignature
+            ):
+                func_spec = self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="DSFunc",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[
+                            self.sync(ast3.Constant(value=i.sym_name)),
+                            i.signature.arch_tag_info.gen.py_ast
+                            if i.signature.arch_tag_info
+                            else self.sync(ast3.Constant(value=None)),
+                        ],
+                        keywords=[],
+                    )
+                )
+                ds_on_entry.append(
+                    func_spec
+                ) if i.signature.event.name == Tok.KW_ENTRY else ds_on_exit.append(
+                    func_spec
+                )
+        return ds_on_entry, ds_on_exit
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -1418,6 +1445,7 @@ class PyastGenPass(Pass):
                 )
             )
         elif node.op.name in [Tok.WALRUS_EQ]:
+            node.left.gen.py_ast.ctx = ast3.Store()  # TODO: Short term fix
             node.gen.py_ast = self.sync(
                 ast3.NamedExpr(
                     target=node.left.gen.py_ast,

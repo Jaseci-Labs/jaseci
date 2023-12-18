@@ -3,7 +3,7 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
-import:py from jaclang.jac.plugin, Architype, AbsRootHook, hookimpl;
+import:py from jaclang.jac.plugin, Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl;
 
 enum AccessMode;
 
@@ -34,7 +34,7 @@ obj ExecutionContext {
 "Global Execution Context, should be monkey patched by the user."
 glob exec_ctx = ExecutionContext();
 
-obj ElementInterface {
+obj ElementAnchor {
     has ob: object,
         jid: UUID = :>uuid4,
         timestamp: datetime = :>datetime.now,
@@ -57,17 +57,15 @@ obj ElementInterface {
     can revoke_access(caller_id: UUID);
 }
 
-obj ObjectInterface:ElementInterface: {}
-
-obj DataSpatialInterface:ObjectInterface: {
-    static has ds_entry_funcs: list[dict]=[],
-               ds_exit_funcs: list[dict]=[];
+obj ObjectAnchor:ElementAnchor,ArchitypeProtocol: {
+    has ds_entry_funcs: list[DSFunc],
+        ds_exit_funcs: list[DSFunc];
 
     static can on_entry(cls: type, triggers: list[type]);
     static can on_exit(cls: type, triggers: list[type]);
 }
 
-obj NodeInterface:DataSpatialInterface: {
+obj NodeAnchor:ObjectAnchor: {
     has edges: dict[EdgeDir, list[Edge]]
         = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
@@ -76,7 +74,7 @@ obj NodeInterface:DataSpatialInterface: {
     can __call__(walk: Walker);
 }
 
-obj EdgeInterface:DataSpatialInterface: {
+obj EdgeAnchor:ObjectAnchor: {
     has source: Node = None,
         target: Node = None,
         dir: EdgeDir = None;
@@ -86,7 +84,7 @@ obj EdgeInterface:DataSpatialInterface: {
     can __call__(walk: Walker);
 }
 
-obj WalkerInterface:DataSpatialInterface: {
+obj WalkerAnchor:ObjectAnchor: {
     has path: list[Node] = [],
         next: list[Node] = [],
         ignores: list[Node] = [],
@@ -99,23 +97,23 @@ obj WalkerInterface:DataSpatialInterface: {
 }
 obj Root:AbsRootHook: {
     has RootType: type;
-    has _jac_: NodeInterface|None = None;
+    has _jac_: NodeAnchor|None = None;
     can <pi> {
-        <self>._jac_ = NodeInterface(<self>);
+        <self>._jac_ = NodeAnchor(<self>, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
 
 obj Master {
-    has _jac_: ElementInterface|None = None;
+    has _jac_: ElementAnchor|None = None;
     has root_node: Root = Root(Root);
     can <pi> {
-            <self>._jac_ = ElementInterface(<self>);
+            <self>._jac_ = ElementAnchor(<self>);
     }
 }
 
 obj JacPlugin {
     @hookimpl
-    static can bind_architype(arch: AT, arch_type: str) -> bool;
+    static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
     @hookimpl
     static can get_root() -> Architype;
 }
@@ -195,31 +193,31 @@ obj JacPlugin {
     PRIVATE
 }
 
-:obj:ElementInterface:can:make_public_ro {
+:obj:ElementAnchor:can:make_public_ro {
     <self>.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:obj:ElementInterface:can:make_public_rw {
+:obj:ElementAnchor:can:make_public_rw {
     <self>.__jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:obj:ElementInterface:can:make_private {
+:obj:ElementAnchor:can:make_private {
     <self>.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:obj:ElementInterface:can:is_public_ro -> bool {
+:obj:ElementAnchor:can:is_public_ro -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:obj:ElementInterface:can:is_public_rw -> bool {
+:obj:ElementAnchor:can:is_public_rw -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:obj:ElementInterface:can:is_private -> bool {
+:obj:ElementAnchor:can:is_private -> bool {
     return <self>.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:obj:ElementInterface:can:is_readable
+:obj:ElementAnchor:can:is_readable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -229,7 +227,7 @@ obj JacPlugin {
         );
 }
 
-:obj:ElementInterface:can:is_writable
+:obj:ElementAnchor:can:is_writable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -238,7 +236,7 @@ obj JacPlugin {
         );
 }
 
-:obj:ElementInterface:can:give_access
+:obj:ElementAnchor:can:give_access
 (caller_id: UUID, read_write: bool = False) {
     if read_write {
         caller_id |> <self>.rw_access.add;
@@ -248,14 +246,14 @@ obj JacPlugin {
     }
 }
 
-:obj:ElementInterface:can:revoke_access
+:obj:ElementAnchor:can:revoke_access
 (caller_id: UUID) {
     caller_id |> <self>.ro_access.discard;
     caller_id |> <self>.rw_access.discard;
 }
 
 
-:obj:DataSpatialInterface:can:on_entry
+:obj:ObjectAnchor:can:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append({'types': triggers, 'func': func});
@@ -267,7 +265,7 @@ obj JacPlugin {
     return decorator;
 }
 
-:obj:DataSpatialInterface:can:on_exit
+:obj:ObjectAnchor:can:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append({'types': triggers, 'func': func});
@@ -279,13 +277,13 @@ obj JacPlugin {
     return decorator;
 }
 
-:obj:NodeInterface:can:connect_node
+:obj:NodeAnchor:can:connect_node
 (nd: Node, edg: Edge) -> Node {
     (<self>.py_obj, nd) :> edg.attach;
     return <self>;
 }
 
-:obj:NodeInterface:can:edges_to_nodes
+:obj:NodeAnchor:can:edges_to_nodes
 (dir: EdgeDir) -> list[Node] {
     ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
@@ -300,13 +298,13 @@ obj JacPlugin {
     return ret_nodes;
 }
 
-:obj:EdgeInterface:can:apply_dir
+:obj:EdgeAnchor:can:apply_dir
 (dir: EdgeDir) -> Edge {
     <self>.dir = dir;
     return <self>;
 }
 
-:obj:EdgeInterface:can:attach
+:obj:EdgeAnchor:can:attach
 (src: Node, trg: Node) -> Edge {
     if <self>.dir == EdgeDir.IN {
         <self>.source = trg;
@@ -323,7 +321,7 @@ obj JacPlugin {
     return <self>;
 }
 
-:obj:WalkerInterface:can:visit_node
+:obj:WalkerAnchor:can:visit_node
 (nds: list[Node]|list[Edge]|Node|Edge) {
     if isinstance(nds, list) {
         for i in nds {
@@ -333,7 +331,7 @@ obj JacPlugin {
     return len(nds) if isinstance(nds, list) else 1;
 }
 
-:obj:WalkerInterface:can:ignore_node
+:obj:WalkerAnchor:can:ignore_node
 (nds: list[Node]|list[Edge]|Node|Edge) {
     if isinstance(nds, list) {
         for i in nds {
@@ -342,38 +340,38 @@ obj JacPlugin {
     } else { nds :> <self>.ignores.append; }
 }
 
-:obj:WalkerInterface:can:disengage_now {
+:obj:WalkerAnchor:can:disengage_now {
     <self>.next = [];
     <self>.disengaged = True;
 }
 
 
-:obj:NodeInterface:can:__call__
+:obj:NodeAnchor:can:__call__
 (walk: object) {
-    if not isinstance(walk._jac_, WalkerInterface) {
+    if not isinstance(walk._jac_, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
     }
     walk(<self>);
 }
 
 
-:obj:EdgeInterface:can:__call__
-(walk: Walker) {
-    if not (walk, Walker) :> isinstance {
-        raise ("Argument must be a Walker instance") :> TypeError;
+:obj:EdgeAnchor:can:__call__
+(walk: object) {
+    if not isinstance(walk._jac_, WalkerAnchor) {
+        raise TypeError("Argument must be a Walker instance");
     }
-    <self>._jac_.target :> walk;
+    walk(<self>._jac_.target);
 }
 
-:obj:WalkerInterface:can:__call__
-(nd: Node) {
+:obj:WalkerAnchor:can:__call__
+(nd: object) {
     <self>.path = [];
     <self>.next = [nd];
-    walker_type = <self>.__class__.__name__;
+    # walker_type = <self>.__class__.__name__;
     while len(<self>.next) {
-        nd = 0 :> <self>.next.pop;
-        node_type = nd.__class__.__name__;
-
+        nd = <self>.next.pop(0);
+        # node_type = nd.__class__.__name__;
+        print(nd.__class__.__name__, <self>.ds_entry_funcs);
         for i in nd.ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
@@ -409,16 +407,16 @@ obj JacPlugin {
 
 
 :obj:JacPlugin:can:bind_architype
-(arch: AT, arch_type: str) -> bool {
+(arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
-            arch._jac_ = ObjectInterface(arch);
+            arch._jac_ = ObjectAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
         case 'node':
-            arch._jac_ = NodeInterface(arch);
+            arch._jac_ = NodeAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
         case 'edge':
-            arch._jac_ = EdgeInterface(arch);
+            arch._jac_ = EdgeAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
         case 'walker':
-            arch._jac_ = WalkerInterface(arch);
+            arch._jac_ = WalkerAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
         case _:
             raise ("Invalid archetype type") :> TypeError;
     }
