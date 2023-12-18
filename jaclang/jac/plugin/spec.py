@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol, Type, TypeVar
+from typing import Any, Callable, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac.constant import EdgeDir
 
@@ -17,6 +17,11 @@ class DSFunc:
 
     name: str
     trigger: type | tuple[type, ...] | None
+    func: Callable[[Any, Any], Any] | None = None
+
+    def resolve(self, cls: type) -> None:
+        """Resolve the function."""
+        self.func = getattr(cls, self.name)
 
 
 class ArchitypeProtocol(Protocol):
@@ -76,7 +81,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def visit(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         raise NotImplementedError
 
@@ -96,7 +101,9 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def connect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
+    def connect(
+        left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]
+    ) -> T:  # noqa: ANN401
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
@@ -120,5 +127,13 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def get_root() -> Architype:
+        """Jac's root getter."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def build_edge(
+        edge_spec: tuple[int, Optional[tuple], Optional[tuple]]
+    ) -> Architype:
         """Jac's root getter."""
         raise NotImplementedError

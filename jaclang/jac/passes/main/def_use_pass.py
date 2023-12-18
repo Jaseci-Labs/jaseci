@@ -34,7 +34,7 @@ class DefUsePass(SymTabPass):
         body: Optional[SubNodeList[ArchStmt]],
         sym_tab: Optional[SymbolTable],
         """
-        if node.arch_type.value == Tok.KW_WALKER:
+        if node.arch_type.name == Tok.KW_WALKER:
             for i in (
                 self.get_all_sub_nodes(node, ast.VisitStmt)
                 + self.get_all_sub_nodes(node, ast.IgnoreStmt)

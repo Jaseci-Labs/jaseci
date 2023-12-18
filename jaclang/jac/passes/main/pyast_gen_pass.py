@@ -753,7 +753,9 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.arguments(
                 posonlyargs=[],
-                args=[here],
+                args=[self.sync(ast3.arg(arg="self", annotation=None)), here]
+                if node.is_method
+                else [here],
                 kwonlyargs=[],
                 vararg=None,
                 kwargs=None,
@@ -1243,7 +1245,7 @@ class PyastGenPass(Pass):
                                             id=Con.JAC_FEATURE.value, ctx=ast3.Load()
                                         )
                                     ),
-                                    attr="visit",
+                                    attr="visit_node",
                                     ctx=ast3.Load(),
                                 )
                             ),

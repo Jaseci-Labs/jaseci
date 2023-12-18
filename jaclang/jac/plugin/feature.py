@@ -37,6 +37,8 @@ class JacFeature:
         def decorator(cls: Type[AT]) -> Type[AT]:
             """Decorate class."""
             cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
             if not issubclass(cls, Architype):
                 cls = type(cls.__name__, (cls, Architype), {})
             JacFeature.bind_architype(cls, arch_type, on_entry, on_exit)
@@ -69,9 +71,9 @@ class JacFeature:
         return JacFeature.pm.hook.ignore(walker_obj=walker_obj, expr=expr)
 
     @staticmethod
-    def visit(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
-        return JacFeature.pm.hook.visit(walker_obj=walker_obj, expr=expr)
+        return JacFeature.pm.hook.visit_node(walker_obj=walker_obj, expr=expr)
 
     @staticmethod
     def disengage(walker_obj: Any) -> bool:  # noqa: ANN401
@@ -90,12 +92,14 @@ class JacFeature:
         )
 
     @staticmethod
-    def connect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
+    def connect(
+        left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]
+    ) -> T:  # noqa: ANN401
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
-        return JacFeature.pm.hook.connect(op1=op1, op2=op2, op=op)
+        return JacFeature.pm.hook.connect(left=left, right=right, edge_spec=edge_spec)
 
     @staticmethod
     def disconnect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
@@ -113,3 +117,10 @@ class JacFeature:
     def get_root() -> Architype:
         """Jac's assign comprehension feature."""
         return JacFeature.pm.hook.get_root()
+
+    @staticmethod
+    def build_edge(
+        edge_spec: tuple[int, Optional[tuple], Optional[tuple]]
+    ) -> Architype:
+        """Jac's root getter."""
+        return JacFeature.pm.hook.build_edge(edge_spec=edge_spec)

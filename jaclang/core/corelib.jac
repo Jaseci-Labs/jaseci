@@ -28,7 +28,7 @@ obj ExecutionContext {
         memory: Memory = Memory();
 
     can reset;
-    can get_root() -> Node;
+    can get_root() -> Architype;
 }
 
 "Global Execution Context, should be monkey patched by the user."
@@ -95,11 +95,19 @@ obj WalkerAnchor:ObjectAnchor: {
     can disengage_now;
     can __call__(nd: Node);
 }
+
 obj Root:AbsRootHook: {
     has RootType: type;
     has _jac_: NodeAnchor|None = None;
     can <pi> {
         <self>._jac_ = NodeAnchor(<self>, ds_entry_funcs=[], ds_exit_funcs=[]);
+    }
+}
+
+obj GenericEdge:ArchitypeProtocol: {
+    has _jac_: EdgeAnchor|None = None;
+    can <pi> {
+        <self>._jac_ = EdgeAnchor(<self>, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
 
@@ -116,6 +124,12 @@ obj JacPlugin {
     static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
     @hookimpl
     static can get_root() -> Architype;
+    @hookimpl
+    static can build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
+    @hookimpl
+    static can connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
+    @hookimpl
+    static can visit_node(walker_obj: Any, expr: Any) -> bool;
 }
 
 :obj:Memory:can:get_obj
@@ -278,8 +292,8 @@ obj JacPlugin {
 }
 
 :obj:NodeAnchor:can:connect_node
-(nd: Node, edg: Edge) -> Node {
-    (<self>.py_obj, nd) :> edg.attach;
+(nd: NodeInterface, edg: EdgeInterface) -> Node {
+    edg.attach(<self>, nd);
     return <self>;
 }
 
@@ -305,17 +319,17 @@ obj JacPlugin {
 }
 
 :obj:EdgeAnchor:can:attach
-(src: Node, trg: Node) -> Edge {
+(src: NodeInterface, trg: NodeInterface) -> Edge {
     if <self>.dir == EdgeDir.IN {
         <self>.source = trg;
         <self>.target = src;
-        <self> :> src._jac_.edges[EdgeDir.IN].append;
-        <self> :> trg._jac_.edges[EdgeDir.OUT].append;
+        <self> :> src.edges[EdgeDir.IN].append;
+        <self> :> trg.edges[EdgeDir.OUT].append;
     } else {
         <self>.source = src;
         <self>.target = trg;
-        <self> :> src._jac_.edges[EdgeDir.OUT].append;
-        <self> :> trg._jac_.edges[EdgeDir.IN].append;
+        <self> :> src.edges[EdgeDir.OUT].append;
+        <self> :> trg.edges[EdgeDir.IN].append;
     }
 
     return <self>;
@@ -356,7 +370,7 @@ obj JacPlugin {
 
 
 :obj:EdgeAnchor:can:__call__
-(walk: object) {
+(walk: EdgeInterface) {
     if not isinstance(walk._jac_, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
     }
@@ -364,39 +378,33 @@ obj JacPlugin {
 }
 
 :obj:WalkerAnchor:can:__call__
-(nd: object) {
+(nd: NodeInterface) {
     <self>.path = [];
     <self>.next = [nd];
-    # walker_type = <self>.__class__.__name__;
     while len(<self>.next) {
         nd = <self>.next.pop(0);
-        # node_type = nd.__class__.__name__;
         print(nd.__class__.__name__, <self>.ds_entry_funcs);
         for i in nd.ds_entry_funcs {
-            if i['func'].__qualname__.split(".")[0] == node_type and
-                <self>:>type in i['types'] {
-                (nd, <self>) :> i['func'];
+            if isinstance(<self>.ob, i.trigger) {
+                i.func(nd.ob, <self>);
             }
             if <self>.disengaged {return;}
         }
         for i in <self>.ds_entry_funcs {
-            if i['func'].__qualname__.split(".")[0] == walker_type and
-                (nd:>type in i['types'] or nd in i['types']) {  # if nd==root direct chec
-                i['func'](<self>, nd);
+            if isinstance(nd.ob, i.trigger) {
+                i.func(<self>.ob, nd);
             }
             if <self>.disengaged {return;}
         }
         for i in <self>.ds_exit_funcs {
-            if i['func'].__qualname__.split(".")[0] == walker_type and
-            (nd:>type in i['types'] or nd in i['types']) {
-                 i['func'](<self>, nd);
+            if isinstance(nd.ob, i.trigger) {
+                i.func(<self>.ob, nd);
             }
             if <self>.disengaged {return;}
         }
         for i in nd.ds_exit_funcs {
-            if i['func'].__qualname__.split(".")[0] == node_type and
-                <self>:>type in i['types'] {
-                (nd, <self>) :> i['func'];
+            if isinstance(<self>.ob, i.trigger) {
+                i.func(nd.ob, <self>);
             }
             if <self>.disengaged {return;}
         }
@@ -426,4 +434,24 @@ obj JacPlugin {
 :obj:JacPlugin:can:get_root
 () -> None {
     return exec_ctx.get_root();
+}
+
+:obj:JacPlugin:can:build_edge
+(edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
+    if(not edge_spec[1]) { edg_type = GenericEdge; }
+    else { edg_type = edge_spec[1]; }
+    edg = edg_type(*(edge_spec[2])) if edge_spec[2] else edg_type();
+    edg._jac_.apply_dir(edge_spec[0]);
+    return edg;
+}
+
+:obj:JacPlugin:can:connect
+(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
+    edg = JacPlugin.build_edge(edge_spec);
+    left.connect_node(right._jac_, edg._jac_);
+}
+
+:obj:JacPlugin:can:visit_node
+(walker_obj: Any, expr: Any) -> bool {
+    return walker_obj._jac_.visit_node(expr);
 }
