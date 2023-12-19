@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
-from jaclang.jac.plugin.default import JacFeatureDefaults
-from jaclang.jac.plugin.spec import (
+from jaclang.plugin.default import JacFeatureDefaults
+from jaclang.plugin.spec import (
     AT,
     AbsRootHook,
     Architype,
@@ -20,7 +20,7 @@ import pluggy
 class JacFeature:
     """Jac Feature."""
 
-    from jaclang.jac.plugin.spec import DSFunc
+    from jaclang.plugin.spec import DSFunc
 
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)

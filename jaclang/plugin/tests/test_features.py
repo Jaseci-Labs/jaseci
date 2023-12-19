@@ -6,9 +6,9 @@ import traceback
 from typing import List, Type
 
 from jaclang.cli import cmds
-from jaclang.jac.plugin.default import JacFeatureDefaults
-from jaclang.jac.plugin.feature import JacFeature
-from jaclang.jac.plugin.spec import JacFeatureSpec
+from jaclang.plugin.default import JacFeatureDefaults
+from jaclang.plugin.feature import JacFeature
+from jaclang.plugin.spec import JacFeatureSpec
 from jaclang.utils.test import TestCase
 
 

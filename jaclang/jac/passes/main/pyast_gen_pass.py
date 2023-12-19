@@ -100,7 +100,7 @@ class PyastGenPass(Pass):
         self.preamble.append(
             self.sync(
                 ast3.ImportFrom(
-                    module="jaclang.jac.plugin.feature",
+                    module="jaclang.plugin.feature",
                     names=[
                         self.sync(
                             ast3.alias(name="JacFeature", asname=Con.JAC_FEATURE.value)

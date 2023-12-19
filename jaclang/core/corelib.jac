@@ -3,7 +3,7 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
-import:py from jaclang.jac.plugin, Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl;
+import:py from jaclang.plugin, Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl;
 
 enum AccessMode;
 
