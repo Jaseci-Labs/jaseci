@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Type
 
-from jaclang.jac.constant import EdgeDir
+from jaclang.compiler.constant import EdgeDir
 from jaclang.plugin.default import JacFeatureDefaults
 from jaclang.plugin.spec import (
     AT,

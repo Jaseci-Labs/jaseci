@@ -2,7 +2,7 @@
 import:py os;
 import:py shutil;
 import:py unittest;
-import:py from jaclang.jac.constant, Constants as C;
+import:py from jaclang.compiler.constant, Constants as C;
 
 """Load a .jac file and return the entrypoint function."""
 :c:run

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Type
 
-from jaclang.jac.constant import EdgeDir
+from jaclang.compiler.constant import EdgeDir
 from jaclang.plugin.spec import AT, Architype, ArchitypeProtocol, DSFunc, T
 
 import pluggy

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from jaclang.jac.absyntree import AstNode, SymbolTable
+    from jaclang.compiler.absyntree import AstNode, SymbolTable
 
 
 def print_ast_tree(
@@ -15,7 +15,7 @@ def print_ast_tree(
     max_depth: Optional[int] = None,
 ) -> str:
     """Recursively print ast tree."""
-    from jaclang.jac.absyntree import AstSymbolNode, Token
+    from jaclang.compiler.absyntree import AstSymbolNode, Token
 
     def __node_repr_in_tree(node: AstNode) -> str:
         if isinstance(node, Token):
