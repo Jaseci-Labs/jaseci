@@ -21,17 +21,17 @@ obj Game {
         score:int = 0,
         deaths:int = 0,
         
-        character_spritesheet:pygame.surface.Surface = Spritesheet('img/character.png'),
-        terrain_spritesheet:pygame.surface.Surface = Spritesheet('img/terrain.png'),
-        enemy_spritesheet:pygame.surface.Surface = Spritesheet('img/enemy.png'),
-        attack_spritesheet:pygame.surface.Surface = Spritesheet('img/attack.png'),
-        intro_background:pygame.surface.Surface = pygame.image.load('./img/introbackground.png'),
-        go_background:pygame.surface.Surface = pygame.image.load('./img/gameover.png');
+        character_spritesheet:pygame.surface.Surface = Spritesheet('../img/character.png'),
+        terrain_spritesheet:pygame.surface.Surface = Spritesheet('../img/terrain.png'),
+        enemy_spritesheet:pygame.surface.Surface = Spritesheet('../img/enemy.png'),
+        attack_spritesheet:pygame.surface.Surface = Spritesheet('../img/attack.png'),
+        intro_background:pygame.surface.Surface = pygame.image.load('../img/introbackground.png'),
+        go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png');
     
-    can <post_init>(){
+    can <init>(){
         pygame.init();
         
-        <self>.font = pygame.font.Font('8bitoperator_jve.ttf', 32);
+        <self>.font = pygame.font.Font(GENERAL_FONT, 32);
     }
      
     # Generate the map according to the tilemap variable in map.jac

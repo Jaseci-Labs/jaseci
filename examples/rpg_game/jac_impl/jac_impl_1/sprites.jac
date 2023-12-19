@@ -403,7 +403,7 @@ Object class for buttons used in the game (Start, Restart)
 obj Button{
     
     can <init>(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int){
-        <self>.font = pygame.font.Font('8bitoperator_jve.ttf', fontsize);
+        <self>.font = pygame.font.Font(GENERAL_FONT, fontsize);
         <self>.content = content;
 
         <self>.x = x;

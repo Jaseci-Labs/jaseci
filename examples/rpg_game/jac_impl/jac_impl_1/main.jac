@@ -18,18 +18,18 @@ obj Game {
 
         <self>.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT));
         <self>.clock = pygame.time.Clock();
-        <self>.font = pygame.font.Font('8bitoperator_jve.ttf', 32);
+        <self>.font = pygame.font.Font(GENERAL_FONT, 32);
         <self>.running = True;
         <self>.won = False;
         <self>.score = 0;
         <self>.deaths = 0;
 
-        <self>.character_spritesheet = Spritesheet('img/character.png');
-        <self>.terrain_spritesheet = Spritesheet('img/terrain.png');
-        <self>.enemy_spritesheet = Spritesheet('img/enemy.png');
-        <self>.attack_spritesheet = Spritesheet('img/attack.png');
-        <self>.intro_background = pygame.image.load('./img/introbackground.png');
-        <self>.go_background = pygame.image.load('./img/gameover.png');
+        <self>.character_spritesheet = Spritesheet('../img/character.png');
+        <self>.terrain_spritesheet = Spritesheet('../img/terrain.png');
+        <self>.enemy_spritesheet = Spritesheet('../img/enemy.png');
+        <self>.attack_spritesheet = Spritesheet('../img/attack.png');
+        <self>.intro_background = pygame.image.load('../img/introbackground.png');
+        <self>.go_background = pygame.image.load('../img/gameover.png');
     }
 
     # Generate the map according to the tilemap variable in map.jac
