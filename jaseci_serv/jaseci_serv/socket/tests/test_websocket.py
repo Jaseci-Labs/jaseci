@@ -35,7 +35,8 @@ class WebSocketTests(TestCaseHelper, TestCase):
         connected, subprotocol = await communicator.connect()
         self.assertTrue(connected)
         response: dict = loads(await communicator.receive_from())
-        self.assertTrue(self.is_valid_uuid(response.pop("session_id")))
+        self.assertTrue(self.is_valid_uuid(response.pop("group")))
+        self.assertTrue(response.pop("channel").startswith("specific."))
         self.assertEqual(response, {"type": "connect", "authenticated": False})
 
         await communicator.send_to(text_data='{"test": true}')
