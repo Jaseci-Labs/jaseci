@@ -1,0 +1,46 @@
+import sys
+import signal
+import asyncio
+from os import environ
+from jaseci_socket.jssocket import JsSocket
+
+HOST = ("host", str)
+PORT = ("port", int)
+ARGS = {
+    "-h": HOST,
+    "--host": HOST,
+    "-p": PORT,
+    "--port": PORT
+}
+
+async def main(*args, **kwargs):
+    # Set the stop condition when receiving SIGTERM.
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+
+    idx = 1
+    args_len = len(sys.argv)
+
+    args = []
+    kwargs = {}
+    while idx < args_len:
+        arg = ARGS.get(sys.argv[idx])
+        if arg:
+            idx += 1
+            kwargs[arg[0]] = arg[1](sys.argv[idx])
+        else:
+            args.append(sys.argv[idx])
+        idx += 1
+
+    if not kwargs.get("host"):
+        kwargs["host"] = environ.get("SOCKET_HOST", "0.0.0.0")
+
+    if not kwargs.get("port"):
+        kwargs["port"] = int(environ.get("SOCKET_PORT", "8001"))
+
+    async with JsSocket().serve(*args, **kwargs):
+        await stop
+
+if __name__ == "__main__":
+    asyncio.run(main())
