@@ -16,3 +16,5 @@ glob RED = (255, 0, 0);
 glob BLACK = (0, 0, 0);
 glob BLUE = (0, 0, 255);
 glob WHITE = (255, 255, 255);
+
+glob GENERAL_FONT = '../fonts/8bitoperator_jve.ttf';
