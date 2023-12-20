@@ -8,11 +8,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Base Module structure.jac"
+    --8<-- "examples/reference/base_module_structure.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Base Module structure.py"
+    --8<-- "examples/reference/base_module_structure.py"
     ```
 
 ## Import/Include Statements
@@ -21,11 +21,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Import/Include Statements.jac"
+    --8<-- "examples/reference/import_include_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Import/Include Statements.py"
+    --8<-- "examples/reference/import_include_statements.py"
     ```
 
 ## Architypes
@@ -34,11 +34,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Architypes.jac"
+    --8<-- "examples/reference/architypes.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Architypes.py"
+    --8<-- "examples/reference/architypes.py"
     ```
 
 ## Architype bodies
@@ -47,11 +47,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Architype bodies.jac"
+    --8<-- "examples/reference/architype_bodies.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Architype bodies.py"
+    --8<-- "examples/reference/architype_bodies.py"
     ```
 
 ## Enumerations
@@ -60,11 +60,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Enumerations.jac"
+    --8<-- "examples/reference/enumerations.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Enumerations.py"
+    --8<-- "examples/reference/enumerations.py"
     ```
 
 ## Enumeration Bodies
@@ -73,11 +73,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Enumeration Bodies.jac"
+    --8<-- "examples/reference/enumeration_bodies.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Enumeration Bodies.py"
+    --8<-- "examples/reference/enumeration_bodies.py"
     ```
 
 ## Abilities
@@ -86,11 +86,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Abilities.jac"
+    --8<-- "examples/reference/abilities.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Abilities.py"
+    --8<-- "examples/reference/abilities.py"
     ```
 
 ## Global variables
@@ -99,11 +99,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Global variables.jac"
+    --8<-- "examples/reference/global_variables.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Global variables.py"
+    --8<-- "examples/reference/global_variables.py"
     ```
 
 ## Free code
@@ -112,11 +112,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Free code.jac"
+    --8<-- "examples/reference/free_code.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Free code.py"
+    --8<-- "examples/reference/free_code.py"
     ```
 
 ## Inline python
@@ -125,11 +125,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Inline python.jac"
+    --8<-- "examples/reference/inline_python.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Inline python.py"
+    --8<-- "examples/reference/inline_python.py"
     ```
 
 ## Tests
@@ -138,11 +138,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Tests.jac"
+    --8<-- "examples/reference/tests.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Tests.py"
+    --8<-- "examples/reference/tests.py"
     ```
 
 ## Implementations
@@ -151,11 +151,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Implementations.jac"
+    --8<-- "examples/reference/implementations.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Implementations.py"
+    --8<-- "examples/reference/implementations.py"
     ```
 
 ## Codeblocks and Statements
@@ -164,11 +164,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Codeblocks and Statements.jac"
+    --8<-- "examples/reference/codeblocks_and_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Codeblocks and Statements.py"
+    --8<-- "examples/reference/codeblocks_and_statements.py"
     ```
 
 ## If statements
@@ -177,11 +177,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/If statements.jac"
+    --8<-- "examples/reference/if_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/If statements.py"
+    --8<-- "examples/reference/if_statements.py"
     ```
 
 ## While statements
@@ -190,11 +190,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/While statements.jac"
+    --8<-- "examples/reference/while_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/While statements.py"
+    --8<-- "examples/reference/while_statements.py"
     ```
 
 ## For statements
@@ -203,11 +203,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/For statements.jac"
+    --8<-- "examples/reference/for_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/For statements.py"
+    --8<-- "examples/reference/for_statements.py"
     ```
 
 ## Try statements
@@ -216,11 +216,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Try statements.jac"
+    --8<-- "examples/reference/try_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Try statements.py"
+    --8<-- "examples/reference/try_statements.py"
     ```
 
 ## Match statements
@@ -229,11 +229,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match statements.jac"
+    --8<-- "examples/reference/match_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match statements.py"
+    --8<-- "examples/reference/match_statements.py"
     ```
 
 ## Match patterns
@@ -242,11 +242,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match patterns.jac"
+    --8<-- "examples/reference/match_patterns.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match patterns.py"
+    --8<-- "examples/reference/match_patterns.py"
     ```
 
 ## Match litteral patterns
@@ -255,11 +255,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match litteral patterns.jac"
+    --8<-- "examples/reference/match_litteral_patterns.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match litteral patterns.py"
+    --8<-- "examples/reference/match_litteral_patterns.py"
     ```
 
 ## Match singleton patterns
@@ -268,11 +268,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match singleton patterns.jac"
+    --8<-- "examples/reference/match_singleton_patterns.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match singleton patterns.py"
+    --8<-- "examples/reference/match_singleton_patterns.py"
     ```
 
 ## Match capture patterns (e.g. 'case _:')
@@ -281,11 +281,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match capture patterns (e.g. 'case _:').jac"
+    --8<-- "examples/reference/match_capture_patterns_(e.g._'case__:').jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match capture patterns (e.g. 'case _:').py"
+    --8<-- "examples/reference/match_capture_patterns_(e.g._'case__:').py"
     ```
 
 ## Match sequence patterns
@@ -294,11 +294,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match sequence patterns.jac"
+    --8<-- "examples/reference/match_sequence_patterns.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match sequence patterns.py"
+    --8<-- "examples/reference/match_sequence_patterns.py"
     ```
 
 ## Match mapping patterns
@@ -307,11 +307,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match mapping patterns.jac"
+    --8<-- "examples/reference/match_mapping_patterns.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match mapping patterns.py"
+    --8<-- "examples/reference/match_mapping_patterns.py"
     ```
 
 ## Match class patterns
@@ -320,11 +320,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Match class patterns.jac"
+    --8<-- "examples/reference/match_class_patterns.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Match class patterns.py"
+    --8<-- "examples/reference/match_class_patterns.py"
     ```
 
 ## Context managers
@@ -333,11 +333,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Context managers.jac"
+    --8<-- "examples/reference/context_managers.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Context managers.py"
+    --8<-- "examples/reference/context_managers.py"
     ```
 
 ## Global and nonlocal statements
@@ -346,11 +346,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Global and nonlocal statements.jac"
+    --8<-- "examples/reference/global_and_nonlocal_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Global and nonlocal statements.py"
+    --8<-- "examples/reference/global_and_nonlocal_statements.py"
     ```
 
 ## Data spatial typed context blocks
@@ -359,11 +359,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Data spatial typed context blocks.jac"
+    --8<-- "examples/reference/data_spatial_typed_context_blocks.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Data spatial typed context blocks.py"
+    --8<-- "examples/reference/data_spatial_typed_context_blocks.py"
     ```
 
 ## Return statements
@@ -372,11 +372,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Return statements.jac"
+    --8<-- "examples/reference/return_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Return statements.py"
+    --8<-- "examples/reference/return_statements.py"
     ```
 
 ## Yield statements
@@ -385,11 +385,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Yield statements.jac"
+    --8<-- "examples/reference/yield_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Yield statements.py"
+    --8<-- "examples/reference/yield_statements.py"
     ```
 
 ## Raise statements
@@ -398,11 +398,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Raise statements.jac"
+    --8<-- "examples/reference/raise_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Raise statements.py"
+    --8<-- "examples/reference/raise_statements.py"
     ```
 
 ## Assert statements
@@ -411,11 +411,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Assert statements.jac"
+    --8<-- "examples/reference/assert_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Assert statements.py"
+    --8<-- "examples/reference/assert_statements.py"
     ```
 
 ## Delete statements
@@ -424,11 +424,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Delete statements.jac"
+    --8<-- "examples/reference/delete_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Delete statements.py"
+    --8<-- "examples/reference/delete_statements.py"
     ```
 
 ## Report statements
@@ -437,11 +437,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Report statements.jac"
+    --8<-- "examples/reference/report_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Report statements.py"
+    --8<-- "examples/reference/report_statements.py"
     ```
 
 ## Control statements
@@ -450,11 +450,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Control statements.jac"
+    --8<-- "examples/reference/control_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Control statements.py"
+    --8<-- "examples/reference/control_statements.py"
     ```
 
 ## Data spatail Walker statements
@@ -463,11 +463,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Data spatail Walker statements.jac"
+    --8<-- "examples/reference/data_spatail_walker_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Data spatail Walker statements.py"
+    --8<-- "examples/reference/data_spatail_walker_statements.py"
     ```
 
 ## Visit statements
@@ -476,11 +476,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Visit statements.jac"
+    --8<-- "examples/reference/visit_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Visit statements.py"
+    --8<-- "examples/reference/visit_statements.py"
     ```
 
 ## Revisit statements
@@ -489,11 +489,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Revisit statements.jac"
+    --8<-- "examples/reference/revisit_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Revisit statements.py"
+    --8<-- "examples/reference/revisit_statements.py"
     ```
 
 ## Disengage statements
@@ -502,11 +502,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Disengage statements.jac"
+    --8<-- "examples/reference/disengage_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Disengage statements.py"
+    --8<-- "examples/reference/disengage_statements.py"
     ```
 
 ## Ignore statements
@@ -515,11 +515,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Ignore statements.jac"
+    --8<-- "examples/reference/ignore_statements.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Ignore statements.py"
+    --8<-- "examples/reference/ignore_statements.py"
     ```
 
 ## Assignments
@@ -528,11 +528,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Assignments.jac"
+    --8<-- "examples/reference/assignments.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Assignments.py"
+    --8<-- "examples/reference/assignments.py"
     ```
 
 ## Expressions
@@ -541,11 +541,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Expressions.jac"
+    --8<-- "examples/reference/expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Expressions.py"
+    --8<-- "examples/reference/expressions.py"
     ```
 
 ## Lambda expressions
@@ -554,11 +554,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Lambda expressions.jac"
+    --8<-- "examples/reference/lambda_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Lambda expressions.py"
+    --8<-- "examples/reference/lambda_expressions.py"
     ```
 
 ## Pipe expressions
@@ -567,11 +567,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Pipe expressions.jac"
+    --8<-- "examples/reference/pipe_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Pipe expressions.py"
+    --8<-- "examples/reference/pipe_expressions.py"
     ```
 
 ## Pipe back expressions
@@ -580,11 +580,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Pipe back expressions.jac"
+    --8<-- "examples/reference/pipe_back_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Pipe back expressions.py"
+    --8<-- "examples/reference/pipe_back_expressions.py"
     ```
 
 ## Elvis expressions
@@ -593,11 +593,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Elvis expressions.jac"
+    --8<-- "examples/reference/elvis_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Elvis expressions.py"
+    --8<-- "examples/reference/elvis_expressions.py"
     ```
 
 ## Bitwise expressions
@@ -606,11 +606,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Bitwise expressions.jac"
+    --8<-- "examples/reference/bitwise_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Bitwise expressions.py"
+    --8<-- "examples/reference/bitwise_expressions.py"
     ```
 
 ## Logical and compare expressions
@@ -619,11 +619,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Logical and compare expressions.jac"
+    --8<-- "examples/reference/logical_and_compare_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Logical and compare expressions.py"
+    --8<-- "examples/reference/logical_and_compare_expressions.py"
     ```
 
 ## Arithmetic expressions
@@ -632,11 +632,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Arithmetic expressions.jac"
+    --8<-- "examples/reference/arithmetic_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Arithmetic expressions.py"
+    --8<-- "examples/reference/arithmetic_expressions.py"
     ```
 
 ## Connect expressions
@@ -645,11 +645,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Connect expressions.jac"
+    --8<-- "examples/reference/connect_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Connect expressions.py"
+    --8<-- "examples/reference/connect_expressions.py"
     ```
 
 ## Atomic expressions
@@ -658,11 +658,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Atomic expressions.jac"
+    --8<-- "examples/reference/atomic_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Atomic expressions.py"
+    --8<-- "examples/reference/atomic_expressions.py"
     ```
 
 ## Atomic pipe back expressions
@@ -671,11 +671,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Atomic pipe back expressions.jac"
+    --8<-- "examples/reference/atomic_pipe_back_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Atomic pipe back expressions.py"
+    --8<-- "examples/reference/atomic_pipe_back_expressions.py"
     ```
 
 ## Unpack expressions
@@ -684,11 +684,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Unpack expressions.jac"
+    --8<-- "examples/reference/unpack_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Unpack expressions.py"
+    --8<-- "examples/reference/unpack_expressions.py"
     ```
 
 ## References (unused)
@@ -697,11 +697,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/References (unused).jac"
+    --8<-- "examples/reference/references_(unused).jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/References (unused).py"
+    --8<-- "examples/reference/references_(unused).py"
     ```
 
 ## Walrus assignments
@@ -710,11 +710,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Walrus assignments.jac"
+    --8<-- "examples/reference/walrus_assignments.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Walrus assignments.py"
+    --8<-- "examples/reference/walrus_assignments.py"
     ```
 
 ## Data spatial calls
@@ -723,11 +723,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Data spatial calls.jac"
+    --8<-- "examples/reference/data_spatial_calls.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Data spatial calls.py"
+    --8<-- "examples/reference/data_spatial_calls.py"
     ```
 
 ## Subscripted and dotted expressions
@@ -736,11 +736,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Subscripted and dotted expressions.jac"
+    --8<-- "examples/reference/subscripted_and_dotted_expressions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Subscripted and dotted expressions.py"
+    --8<-- "examples/reference/subscripted_and_dotted_expressions.py"
     ```
 
 ## Function calls
@@ -749,11 +749,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Function calls.jac"
+    --8<-- "examples/reference/function_calls.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Function calls.py"
+    --8<-- "examples/reference/function_calls.py"
     ```
 
 ## Atom
@@ -762,11 +762,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Atom.jac"
+    --8<-- "examples/reference/atom.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Atom.py"
+    --8<-- "examples/reference/atom.py"
     ```
 
 ## Collections
@@ -775,11 +775,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Collections.jac"
+    --8<-- "examples/reference/collections.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Collections.py"
+    --8<-- "examples/reference/collections.py"
     ```
 
 ## Tuples and Jac Tuples
@@ -788,11 +788,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Tuples and Jac Tuples.jac"
+    --8<-- "examples/reference/tuples_and_jac_tuples.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Tuples and Jac Tuples.py"
+    --8<-- "examples/reference/tuples_and_jac_tuples.py"
     ```
 
 ## Data Spatial References
@@ -801,11 +801,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Data Spatial References.jac"
+    --8<-- "examples/reference/data_spatial_references.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Data Spatial References.py"
+    --8<-- "examples/reference/data_spatial_references.py"
     ```
 
 ## Special Comprehensions
@@ -814,11 +814,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Special Comprehensions.jac"
+    --8<-- "examples/reference/special_comprehensions.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Special Comprehensions.py"
+    --8<-- "examples/reference/special_comprehensions.py"
     ```
 
 ## Names and references
@@ -827,11 +827,11 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/Names and references.jac"
+    --8<-- "examples/reference/names_and_references.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/Names and references.py"
+    --8<-- "examples/reference/names_and_references.py"
     ```
 
 ## f-string tokens
@@ -840,10 +840,10 @@
 ```
 === "jac"
     ```jac linenums="1"
-    --8<-- "examples/reference/f-string tokens.jac"
+    --8<-- "examples/reference/f_string_tokens.jac"
     ```
 === "python"
     ```python linenums="1"
-    --8<-- "examples/reference/f-string tokens.py"
+    --8<-- "examples/reference/f_string_tokens.py"
     ```
 

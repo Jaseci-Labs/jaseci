@@ -319,7 +319,7 @@ class AstTool:
             md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
         for heading, lines in result.items():
             print(f"{heading}: {lines}")
-            content = f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- "jaclang/jac/jac.lark:{lines[0]}:{lines[1]}"\n```\n=== "jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/{heading}.jac"\n    ```\n=== "python"\n    ```python linenums="1"\n    --8<-- "examples/reference/{heading}.py"\n    ```\n'
+            content = f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- "jaclang/jac/jac.lark:{lines[0]}:{lines[1]}"\n```\n=== "jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/{heading.replace("/","_").replace("-","_").replace(" ", "_").lower()}.jac"\n    ```\n=== "python"\n    ```python linenums="1"\n    --8<-- "examples/reference/{heading.replace("-","_").replace("/","_").replace(" ", "_").lower()}.py"\n    ```\n'
             with open(created_file_path, "a") as md_file:
                 # Write the content to the destination file
                 md_file.write(f"{content}\n")
