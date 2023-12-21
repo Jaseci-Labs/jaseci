@@ -2,7 +2,7 @@
 """Calculator object with static method"""
 obj Calculator{
     #static ability(function)
-    
+
     static can :priv multiply(a :float, b :float) -> float{
         return a*b;
     }
@@ -55,7 +55,7 @@ can greet(name: str) -> str;
 :can:greet
 (name: str) -> str {
     print(f"Hey, {name} Welcome to Jaseci!");
-   
+
 }
 with entry{
     #ability calling
@@ -71,6 +71,6 @@ can add(*a :tuple) -> int {
 with entry{
     #ability calling
      print(add(9,-3,4));
-    
+
 }
 

@@ -50,11 +50,11 @@ obj Game {
         }
     }
 
-    # Start a new game 
+    # Start a new game
     can new(){
         <self>.playing = True;
         <self>.won = False;
-        
+
 
         <self>.all_sprites = pygame.sprite.LayeredUpdates();
         <self>.blocks = pygame.sprite.LayeredUpdates();
@@ -116,10 +116,10 @@ obj Game {
     # Game over screen
     can game_over(){
 
-        
+
         <self>.score -= 2;
         print(<self>.score);
-        
+
         text = <self>.font.render('GaMe OvEr', True, RED);
         text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));
 
@@ -216,11 +216,11 @@ obj Game {
             pygame.display.update();
         }
 
-        
+
     }
 }
 
-""" 
+"""
 The implementation of the game
 """
 

@@ -23,7 +23,7 @@ with entry{
        for color in Color{
           print(color);
         }
-        
+
        # Comparing enum members
         if Color.RED == Color.BLUE{
                 print("Colors are the same");
@@ -31,7 +31,7 @@ with entry{
         else{
                 print("Colors are different");  # output: Colors are different
                 }
-        
+
         # Using the enum in a function
         print_color(Color.GREEN);    # output: It's green!
 }

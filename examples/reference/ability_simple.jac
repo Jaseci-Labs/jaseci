@@ -7,6 +7,6 @@ can add(*a :tuple) -> int {
 with entry{
     #ability calling
      print(add(9,-3,4));
-    
+
 }
 

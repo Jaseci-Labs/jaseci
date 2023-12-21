@@ -7,11 +7,11 @@ for number in range(1, 5){
     }
 }
 
-with entry{     
-    
+with entry{
+
     for i=1 to i<10 by i+=2 {    # Loop from 1 to 10 with a step of 2
          print(i * 5);  # Print multiples of 5
-        } 
+        }
     else{
         print("Loop completed.");}
     }

@@ -1,7 +1,3 @@
-global z 
-z=10
+global z
+z = 10
 print(z)
-
-
-
-

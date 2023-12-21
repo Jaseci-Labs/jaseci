@@ -8,5 +8,5 @@ with entry{
 
     #assign_compre
     print(* "abc" in l);
-  
+
 }

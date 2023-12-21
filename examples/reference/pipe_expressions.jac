@@ -14,6 +14,6 @@ with entry{
     print(result1);
     print(result2);
 
-    print <| result1; 
+    print <| result1;
     print <| type <| "Hello";   # pipe_back
     }

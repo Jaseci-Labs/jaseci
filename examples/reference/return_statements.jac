@@ -3,6 +3,6 @@ can foo(){
     return a;
 }
 
-with entry{ 
+with entry{
     print("Returned:", foo());
 }

@@ -15,25 +15,25 @@ The Game base class
 obj Game {
     has screen:pygame.surface.Surface = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT)),
         clock:pygame.time.Clock = pygame.time.Clock(),
-        
+
         running:bool = True,
         won:bool = False,
         score:int = 0,
         deaths:int = 0,
-        
+
         character_spritesheet:pygame.surface.Surface = Spritesheet('../img/character.png'),
         terrain_spritesheet:pygame.surface.Surface = Spritesheet('../img/terrain.png'),
         enemy_spritesheet:pygame.surface.Surface = Spritesheet('../img/enemy.png'),
         attack_spritesheet:pygame.surface.Surface = Spritesheet('../img/attack.png'),
         intro_background:pygame.surface.Surface = pygame.image.load('../img/introbackground.png'),
         go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png');
-    
+
     can <init>(){
         pygame.init();
-        
+
         <self>.font = pygame.font.Font(GENERAL_FONT, 32);
     }
-     
+
     # Generate the map according to the tilemap variable in map.jac
     can createTilemap(){
         for (i, row) in enumerate(tilemap){
@@ -52,11 +52,11 @@ obj Game {
         }
     }
 
-    # Start a new game 
+    # Start a new game
     can new(){
         <self>.playing = True;
         <self>.won = False;
-        
+
 
         <self>.all_sprites = pygame.sprite.LayeredUpdates();
         <self>.blocks = pygame.sprite.LayeredUpdates();
@@ -118,10 +118,10 @@ obj Game {
     # Game over screen
     can game_over(){
 
-        
+
         <self>.score -= 2;
         print(<self>.score);
-        
+
         text = <self>.font.render('GaMe OvEr', True, RED);
         text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));
 
@@ -218,11 +218,11 @@ obj Game {
             pygame.display.update();
         }
 
-        
+
     }
 }
 
-""" 
+"""
 The implementation of the game
 """
 

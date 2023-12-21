@@ -8,7 +8,7 @@ with entry{
     person = {"name": "Jane", "age": 25};
     print(f"Hello, {person['name']}! You're {person['age']} years old.");       #*This is comment
     #whitespace comment still didnot write yet
-    #*This is comment 
+    #*This is comment
                in multiline *#
     print("This is the first line.\n This is the second line.");
     print("This willnot print.\r This will be  printed");

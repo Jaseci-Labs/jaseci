@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 # Animal abstaract class with an abstract methods
 class Animal(ABC):
     """Abstract class for animals."""
@@ -9,6 +10,7 @@ class Animal(ABC):
         """Abstract method for making a sound."""
         pass
 
+
 # Concrete class representing a Dog
 class Dog(Animal):
     """Class representing a Dog."""
@@ -17,6 +19,7 @@ class Dog(Animal):
         """Method to make a dog sound."""
         return "Woof! Woof!"
 
+
 # Concrete class representing a Cat
 class Cat(Animal):
     """Class representing a Cat."""
@@ -24,6 +27,7 @@ class Cat(Animal):
     def make_sound(self):
         """Method to make a cat sound."""
         return "Meow!"
+
 
 # Function to simulate interactions with animals
 def interact_with_animal(animal: Animal):

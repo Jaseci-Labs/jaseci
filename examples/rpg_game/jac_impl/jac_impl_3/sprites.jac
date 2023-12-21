@@ -31,14 +31,14 @@ obj Player:pygame.sprite.Sprite:{
         y_change:int = 0,
         facing:str = 'down',
         animation_loop:int = 1;
-        
+
     can <init>(game: None, x: int, y: int);
     can update;
     can movement;
     can collide_enemy;
     can animate;
     can collide_blocks(direction: str);
-    
+
 }
 
 """
@@ -53,13 +53,13 @@ obj Enemy:pygame.sprite.Sprite:{
         y_change:int = 0,
         animation_loop:int = 0,
         movement_loop:int = 0;
-    
+
     can <init>(game: None, x: int, y: int);
     can update;
     can movement;
     can animate;
     can collide_blocks(direction: str);
-    
+
 }
 
 """
@@ -70,7 +70,7 @@ obj Block:pygame.sprite.Sprite:{
     has _layer:int = BLOCK_LAYER,
         width:int = TILESIZE,
         height:int = TILESIZE;
-    
+
     can <init>(game: None, x: int, y: int);
 
 }
@@ -83,7 +83,7 @@ obj Ground:pygame.sprite.Sprite:{
     has _layer:int = GROUND_LAYER,
         width:int = TILESIZE,
         height:int = TILESIZE;
-    
+
     can <init>(game: None, x: int, y: int);
 
 }
@@ -110,7 +110,7 @@ obj Attack:pygame.sprite.Sprite:{
 Object class for buttons used in the game (Start, Restart)
 """
 obj Button{
-    
+
     can <init>(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int);
     can is_pressed(pos: tuple, pressed:list);
 
@@ -137,14 +137,14 @@ obj Button{
         <self>.y = y * TILESIZE;
 
         <self>.image = <self>.game.character_spritesheet.get_sprite(3, 2, <self>.width, <self>.height);
-        
+
         <self>.rect = <self>.image.get_rect();
         <self>.rect.x = <self>.x;
         <self>.rect.y = <self>.y;
 
     }
 
-    # Update the player actions 
+    # Update the player actions
 :obj:Player:can:update{
         <self>.movement();
         <self>.animate();
@@ -308,7 +308,7 @@ obj Button{
     <self>.rect.y = <self>.y;
 }
 
-    # Update the enemy actions 
+    # Update the enemy actions
 :obj:Enemy:can:update{
     <self>.movement();
     <self>.animate();
@@ -461,7 +461,7 @@ obj Button{
     <self>.rect.y = <self>.y;
 }
 
-    # Update the attack interations 
+    # Update the attack interations
 :obj:Attack:can:update{
     <self>.animate();
     <self>.collide();
@@ -526,7 +526,7 @@ obj Button{
 }
 
 :obj:Button:can:<init>(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int){
-        
+
     <self>.font = pygame.font.Font(GENERAL_FONT, fontsize);
     <self>.content = content;
 

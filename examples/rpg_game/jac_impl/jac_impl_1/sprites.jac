@@ -56,7 +56,7 @@ obj Player:pygame.sprite.Sprite:{
 
     }
 
-    # Update the player actions 
+    # Update the player actions
     can update(){
         <self>.movement();
         <self>.animate();
@@ -203,14 +203,14 @@ obj Player:pygame.sprite.Sprite:{
 
     }
 
-    
+
 }
 
 """
 Object for enemies with type pygame.sprite.Sprite
 """
 obj Enemy:pygame.sprite.Sprite:{
-    
+
     can <init>(game: None, x: int, y:int){
         <self>.game = game;
         <self>._layer = ENEMY_LAYER;
@@ -237,7 +237,7 @@ obj Enemy:pygame.sprite.Sprite:{
         <self>.rect.y = <self>.y;
     }
 
-    # Update the enemy actions 
+    # Update the enemy actions
     can update(){
         <self>.movement();
         <self>.animate();
@@ -349,7 +349,7 @@ obj Enemy:pygame.sprite.Sprite:{
 Object for blocks (Walls) with type pygame.sprite.Sprite
 """
 obj Block:pygame.sprite.Sprite:{
-    
+
     can <init>(game: None, x: int, y: int){
         <self>.game = game;
         <self>._layer = BLOCK_LAYER;
@@ -374,7 +374,7 @@ obj Block:pygame.sprite.Sprite:{
 Object for ground with type pygame.sprite.Sprite
 """
 obj Ground:pygame.sprite.Sprite:{
-    
+
     can <init>(game: None, x: int, y: int){
         <self>.game = game;
         <self>._layer = GROUND_LAYER;
@@ -401,7 +401,7 @@ obj Ground:pygame.sprite.Sprite:{
 Object class for buttons used in the game (Start, Restart)
 """
 obj Button{
-    
+
     can <init>(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int){
         <self>.font = pygame.font.Font(GENERAL_FONT, fontsize);
         <self>.content = content;
@@ -464,7 +464,7 @@ obj Attack:pygame.sprite.Sprite:{
         <self>.rect.y = <self>.y;
     }
 
-    # Update the attack interations 
+    # Update the attack interations
     can update(){
         <self>.animate();
         <self>.collide();

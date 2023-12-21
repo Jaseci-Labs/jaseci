@@ -5,7 +5,7 @@ glob z = 20;
 
 
 with entry{
-    
+
     print(a,X,y,z);
-    
+
     }

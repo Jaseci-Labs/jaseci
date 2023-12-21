@@ -13,10 +13,11 @@ def divide_numbers(a, b):
     finally:
         print("This block always executes, regardless of success or failure.")
 
+
 # Example usage
 try:
-    divide_numbers(10, 2)   # Normal division
-    divide_numbers(10, 0)   # Division by zero (ZeroDivisionError)
-    divide_numbers(10, '2') # Type error (TypeError)
+    divide_numbers(10, 2)  # Normal division
+    divide_numbers(10, 0)  # Division by zero (ZeroDivisionError)
+    divide_numbers(10, "2")  # Type error (TypeError)
 except Exception as e:
     print(f"Exception caught in the outer try-except block: {e}")

@@ -1,4 +1,4 @@
-print('hello')
-print(len('hello'))
+print("hello")
+print(len("hello"))
 
 print(type("hello"))

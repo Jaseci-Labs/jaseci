@@ -285,20 +285,23 @@ class AstTool:
         else:
             return "Not a .jac file."
 
-    def automate_ref(self):
-        def extract_headings(file_path):
+    def automate_ref(self) -> None:
+        """Automate the reference guide generation."""
+
+        def extract_headings(file_path: str) -> dict[str, tuple[int, int]]:
             with open(file_path, "r") as file:
                 lines = file.readlines()
             headings = {}
             current_heading = None
+            start_line = 0
             for idx, line in enumerate(lines, start=1):
-                if line.startswith("//"):
+                if line.strip().startswith("//"):
                     if current_heading is not None:
                         headings[current_heading] = (
                             start_line,
                             idx - 2,
                         )  # Subtract 1 to get the correct end line
-                    current_heading = line.strip("//").strip()
+                    current_heading = line.strip()[2:]
                     start_line = idx + 1
             # Add the last heading
             if current_heading is not None:
@@ -319,7 +322,15 @@ class AstTool:
             md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
         for heading, lines in result.items():
             print(f"{heading}: {lines}")
-            content = f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- "jaclang/jac/jac.lark:{lines[0]}:{lines[1]}"\n```\n=== "jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/{heading.replace("/","_").replace("-","_").replace(" ", "_").lower()}.jac"\n    ```\n=== "python"\n    ```python linenums="1"\n    --8<-- "examples/reference/{heading.replace("-","_").replace("/","_").replace(" ", "_").lower()}.py"\n    ```\n'
+            content = (
+                f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
+                f'"jaclang/jac/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
+                f'=== "jac"\n    ```jac linenums="1"\n    --8<-- '
+                f'"examples/reference/'
+                f'{heading.replace("/", "_").replace("-", "_").replace(" ", "_").lower()}.jac"\n'
+                f'    ```\n=== "python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
+                f'{heading.replace("-", "_").replace("/", "_").replace(" ", "_").lower()}.py"\n    ```\n'
+            )
             with open(created_file_path, "a") as md_file:
                 # Write the content to the destination file
                 md_file.write(f"{content}\n")

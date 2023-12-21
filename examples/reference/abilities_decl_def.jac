@@ -5,7 +5,7 @@ can greet(name: str) -> str;
 :can:greet
 (name: str) -> str {
     print(f"Hey, {name} Welcome to Jaseci!");
-   
+
 }
 with entry{
     #ability calling
