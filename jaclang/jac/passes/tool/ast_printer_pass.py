@@ -84,8 +84,16 @@ class AstDotGraphPass(Pass):
         # Get token value and name
         if isinstance(node, ast.Token):
             info_to_be_dumped.append(("name", info_of_value, node.name))
-            # info_to_be_dumped.append(("value", info_of_value, node.value))
-            info_to_be_dumped.append(("value", info_of_value, "mmm"))
+
+            def change_html_entity(input_string: str) -> str:
+                # Replace ">" with "&gt;"
+                escaped_string = input_string.replace(">", "&gt;")
+                # Replace "<" with "&lt;"
+                escaped_string = escaped_string.replace("<", "&lt;")
+                return escaped_string
+
+            replacement_value = change_html_entity(node.value)
+            info_to_be_dumped.append(("value", info_of_value, replacement_value))
         return info_to_be_dumped
 
     def enter_node(self, node: ast.AstNode) -> None:
