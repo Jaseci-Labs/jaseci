@@ -285,13 +285,41 @@ class AstTool:
         else:
             return "Not a .jac file."
 
-    def lang_ref(self) -> str:
-        """Generate language reference."""
-        grammar_lines = []
-        with open(os.path.join(os.path.dirname(__file__), "../jac/jac.lark")) as f:
-            grammar_lines = f.readlines()
-        out = ""
-        for i in grammar_lines:
-            if i.startswith("//"):
-                out += f"{i[2:]}\n"
-        return f"Jac Language Reference Goes Here\n\n{out}"
+    def automate_ref(self):
+        def extract_headings(file_path):
+            with open(file_path, "r") as file:
+                lines = file.readlines()
+            headings = {}
+            current_heading = None
+            for idx, line in enumerate(lines, start=1):
+                if line.startswith("//"):
+                    if current_heading is not None:
+                        headings[current_heading] = (
+                            start_line,
+                            idx - 2,
+                        )  # Subtract 1 to get the correct end line
+                    current_heading = line.strip("//").strip()
+                    start_line = idx + 1
+            # Add the last heading
+            if current_heading is not None:
+                headings[current_heading] = (start_line, len(lines))
+            return headings
+
+        # Jac lark path
+        file_path = os.path.join(
+            os.path.split(os.path.dirname(__file__))[0], "../jaclang/jac/jac.lark"
+        )
+        result = extract_headings(file_path)
+        created_file_path = os.path.join(
+            os.path.split(os.path.dirname(__file__))[0],
+            "../support/jac-lang.org/docs/learn/jac_ref.md",
+        )
+        with open(created_file_path, "w") as md_file:
+            # Write the content to the destination file
+            md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
+        for heading, lines in result.items():
+            print(f"{heading}: {lines}")
+            content = f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- "jaclang/jac/jac.lark:{lines[0]}:{lines[1]}"\n```\n=== "jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/{heading.replace("/","_").replace("-","_").replace(" ", "_").lower()}.jac"\n    ```\n=== "python"\n    ```python linenums="1"\n    --8<-- "examples/reference/{heading.replace("-","_").replace("/","_").replace(" ", "_").lower()}.py"\n    ```\n'
+            with open(created_file_path, "a") as md_file:
+                # Write the content to the destination file
+                md_file.write(f"{content}\n")
