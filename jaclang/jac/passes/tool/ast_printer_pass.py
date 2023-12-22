@@ -85,13 +85,7 @@ class AstDotGraphPass(Pass):
         # Get token value and name
         if isinstance(node, ast.Token):
             info_to_be_dumped.append(("name", info_of_value, node.name))
-
-            def convert_tags_to_entities(input_string: str) -> str:
-                converted_text = html.escape(input_string)
-                return converted_text
-
-            converted_text = convert_tags_to_entities(node.value)
-            info_to_be_dumped.append(("value", info_of_value, converted_text))
+            info_to_be_dumped.append(("value", info_of_value, html.escape(node.value)))
         return info_to_be_dumped
 
     def enter_node(self, node: ast.AstNode) -> None:
