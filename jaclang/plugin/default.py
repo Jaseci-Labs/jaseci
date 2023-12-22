@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any, Optional, Type
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.spec import AT, Architype, ArchitypeProtocol, DSFunc, T
+from jaclang.core.construct import EdgeAnchor, NodeAnchor, ObjectAnchor, WalkerAnchor
+from jaclang.plugin.spec import AT, Architype, DSFunc, T
+
 
 import pluggy
 
@@ -27,12 +29,25 @@ class JacFeatureDefaults:
         arch: Type[AT], arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> bool:
         """Create a new architype."""
-
-        class DummyAP(ArchitypeProtocol):
-            ds_entry_funcs: list[DSFunc] = on_entry
-            ds_exit_funcs: list[DSFunc] = on_exit
-
-        arch._jac_ = DummyAP()
+        match arch_type:
+            case "obj":
+                arch._jac_ = ObjectAnchor(
+                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                )
+            case "node":
+                arch._jac_ = NodeAnchor(
+                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                )
+            case "edge":
+                arch._jac_ = EdgeAnchor(
+                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                )
+            case "walker":
+                arch._jac_ = WalkerAnchor(
+                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                )
+            case _:
+                raise TypeError("Invalid archetype type")
         return True
 
     @staticmethod

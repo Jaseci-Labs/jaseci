@@ -1,45 +1,27 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Callable, Optional, Protocol, Type, TypeVar
+
+from typing import Any, Optional, Type, TypeVar
 
 from jaclang.compiler.constant import EdgeDir
+from jaclang.core.construct import DSFunc, ObjectAnchor
+
 
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
 
 
-class ArchitypeProtocol(Protocol):
-    """Architype Protocol."""
-
-    ds_entry_funcs: list[DSFunc]
-    ds_exit_funcs: list[DSFunc]
-
-
 class Architype:
     """Architype Protocol."""
 
-    _jac_: ArchitypeProtocol
+    _jac_: ObjectAnchor
 
     def __call__(self, target: Architype) -> None:
         """Call the architype's data spatial behavior."""
         if callable(self._jac_):
             return self._jac_(target)
-
-
-@dataclass(eq=False)
-class DSFunc:
-    """Data Spatial Function."""
-
-    name: str
-    trigger: type | tuple[type, ...] | None
-    func: Callable[[Any, Any], Any] | None = None
-
-    def resolve(self, cls: type) -> None:
-        """Resolve the function."""
-        self.func = getattr(cls, self.name)
 
 
 class AbsRootHook:

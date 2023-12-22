@@ -2,6 +2,6 @@
 from __future__ import annotations
 
 from .default import hookimpl
-from .spec import AbsRootHook, Architype, ArchitypeProtocol, DSFunc
+from .spec import AbsRootHook, Architype, DSFunc
 
-__all__ = ["Architype", "ArchitypeProtocol", "AbsRootHook", "DSFunc", "hookimpl"]
+__all__ = ["Architype", "AbsRootHook", "DSFunc", "hookimpl"]
