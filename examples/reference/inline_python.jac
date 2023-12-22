@@ -1,9 +1,9 @@
 with entry{
 
-#jbjbjb
+#code_block
 
 }
 
 ::py::
-#snd,n,
+#python-code
 ::py::

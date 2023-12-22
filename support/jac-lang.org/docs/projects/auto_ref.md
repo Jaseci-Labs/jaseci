@@ -56,7 +56,7 @@ These files will serve as modules that will be automatically assembled into a si
 A function will be added to the lang_tools package in jaclang that will do this assembling while also generating the correct inlined sections of `jac.lark`.
 
 
-Fro example for the section:
+For example for the section:
 
 ``` linenums="1"
 --8<-- "jaclang/jac/jac.lark::27"
