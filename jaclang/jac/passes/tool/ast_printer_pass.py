@@ -1,4 +1,5 @@
 """Jac Blue pass for drawing AST."""
+import html
 import inspect
 from typing import Optional
 
@@ -85,15 +86,12 @@ class AstDotGraphPass(Pass):
         if isinstance(node, ast.Token):
             info_to_be_dumped.append(("name", info_of_value, node.name))
 
-            def change_html_entity(input_string: str) -> str:
-                # Replace ">" with "&gt;"
-                escaped_string = input_string.replace(">", "&gt;")
-                # Replace "<" with "&lt;"
-                escaped_string = escaped_string.replace("<", "&lt;")
-                return escaped_string
+            def convert_tags_to_entities(input_string: str) -> str:
+                converted_text = html.escape(input_string)
+                return converted_text
 
-            replacement_value = change_html_entity(node.value)
-            info_to_be_dumped.append(("value", info_of_value, replacement_value))
+            converted_text = convert_tags_to_entities(node.value)
+            info_to_be_dumped.append(("value", info_of_value, converted_text))
         return info_to_be_dumped
 
     def enter_node(self, node: ast.AstNode) -> None:
