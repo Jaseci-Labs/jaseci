@@ -642,15 +642,24 @@ class JacParser(Pass):
         def ability(self, kid: list[ast.AstNode]) -> ast.Ability | ast.AbilityDef:
             """Grammar rule.
 
-            ability: decorators ability
-                    | ability_def
-                    | KW_ASYNC ability_decl
-                    | ability_decl
+            ability: decorators? ability_def
+                    | decorators? KW_ASYNC ability_decl
+                    | decorators? ability_decl
             """
             if isinstance(kid[0], ast.SubNodeList):
                 if isinstance(kid[1], (ast.Ability, ast.AbilityDef)):
-                    kid[1].decorators = kid[0]
-                    kid[1].add_kids_left([kid[0]])
+                    for dec in kid[0].items:
+                        if (
+                            isinstance(dec, ast.NameSpec)
+                            and dec.sym_name == "staticmethod"
+                            and isinstance(kid[1], (ast.Ability))
+                        ):
+                            kid[1].is_static = True
+                            kid[0].items.remove(dec)
+                            break
+                    if len(kid[0].items):
+                        kid[1].decorators = kid[0]
+                        kid[1].add_kids_left([kid[0]])
                     return self.nu(kid[1])
                 else:
                     raise self.ice()

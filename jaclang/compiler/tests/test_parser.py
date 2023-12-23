@@ -43,6 +43,19 @@ class TestLarkParser(TestCaseMicroSuite):
         )
         self.assertFalse(prse.errors_had)
 
+    def test_staticmethod_checks_out(self) -> None:
+        """Parse micro jac file."""
+        prse = JacParser(
+            input_ir=JacSource(
+                self.load_fixture("staticcheck.jac"),
+                mod_path="",
+            )
+        )
+        out = prse.ir.pp()
+        print(out)
+        self.assertFalse(prse.errors_had)
+        self.assertNotIn("staticmethod", out)
+
     def test_parser_kwesc(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(

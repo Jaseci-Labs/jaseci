@@ -7,13 +7,12 @@ import sys
 from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.passes.main.schedules import DeclDefMatchPass
 from jaclang.compiler.passes.tool.schedules import (
     AstDotGraphPass,
-    AstPrinterPass,
     SymbolTableDotGraphPass,
     SymbolTablePrinterPass,
     full_ast_dot_gen,
-    full_ast_print,
     sym_tab_dot_gen,
     sym_tab_print,
 )
@@ -238,8 +237,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, AstPrinterPass, full_ast_print)
-            return ""
+            return jac_file_to_pass(file_name, DeclDefMatchPass).ir.pp()
         else:
             return "Not a .jac file."
 
