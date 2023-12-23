@@ -5,7 +5,13 @@ from __future__ import annotations
 from typing import Any, Optional, Type
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.construct import EdgeAnchor, NodeAnchor, ObjectAnchor, WalkerAnchor
+from jaclang.core.construct import (
+    EdgeAnchor,
+    NodeAnchor,
+    ObjectAnchor,
+    WalkerAnchor,
+    root,
+)
 from jaclang.plugin.spec import AT, Architype, DSFunc, T
 
 
@@ -118,7 +124,7 @@ class JacFeatureDefaults:
     @hookimpl
     def get_root() -> Architype:
         """Jac's assign comprehension feature."""
-        return BlankArch()
+        return root
 
     @staticmethod
     @hookimpl

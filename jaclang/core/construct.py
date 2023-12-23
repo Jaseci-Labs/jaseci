@@ -32,17 +32,13 @@ class DSFunc:
         self.func = getattr(cls, self.name)
 
 
-class RootTypeHook:
-    """Abstract Root Node."""
-
-
 @dataclass(eq=False)
-class Root(RootTypeHook):
+class Root(Architype):
     """Generic Root Node."""
 
-    _jac_: NodeAnchor | None = None
+    _jac_: NodeAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create default root node."""
         self._jac_ = NodeAnchor(obj=self, ds_entry_funcs=[], ds_exit_funcs=[])
 
