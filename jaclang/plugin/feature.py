@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.constant import EdgeDir
+from jaclang.core.construct import RootTypeHook
 from jaclang.plugin.default import JacFeatureDefaults
 from jaclang.plugin.spec import (
     AT,
-    AbsRootHook,
     Architype,
     JacFeatureSpec,
     T,
@@ -26,7 +26,7 @@ class JacFeature:
     pm.add_hookspecs(JacFeatureSpec)
     pm.register(JacFeatureDefaults)
 
-    RootType: Type[AbsRootHook] = AbsRootHook
+    RootType: Type[RootTypeHook] = RootTypeHook
 
     @staticmethod
     def make_architype(

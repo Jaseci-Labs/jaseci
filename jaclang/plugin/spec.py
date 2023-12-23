@@ -5,27 +5,12 @@ from __future__ import annotations
 from typing import Any, Optional, Type, TypeVar
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.construct import DSFunc, ObjectAnchor
+from jaclang.core.construct import Architype, DSFunc
 
 
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
-
-
-class Architype:
-    """Architype Protocol."""
-
-    _jac_: ObjectAnchor
-
-    def __call__(self, target: Architype) -> None:
-        """Call the architype's data spatial behavior."""
-        if callable(self._jac_):
-            return self._jac_(target)
-
-
-class AbsRootHook:
-    """Abstract Root Node."""
 
 
 T = TypeVar("T")

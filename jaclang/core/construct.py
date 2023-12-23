@@ -32,11 +32,26 @@ class DSFunc:
         self.func = getattr(cls, self.name)
 
 
+class RootTypeHook:
+    """Abstract Root Node."""
+
+
+@dataclass(eq=False)
+class Root(RootTypeHook):
+    """Generic Root Node."""
+
+    _jac_: NodeAnchor | None = None
+
+    def __post_init__(self) -> None:
+        """Create default root node."""
+        self._jac_ = NodeAnchor(obj=self, ds_entry_funcs=[], ds_exit_funcs=[])
+
+
 @dataclass(eq=False)
 class ElementAnchor:
     """Element Anchor."""
 
-    ob: object
+    obj: object
 
 
 @dataclass(eq=False)
@@ -173,36 +188,39 @@ class WalkerAnchor(ObjectAnchor):
         while len(self.next):
             nd = self.next.pop(0)
             for i in nd.ds_entry_funcs:
-                if not i.trigger or isinstance(self.ob, i.trigger):
+                if not i.trigger or isinstance(self.obj, i.trigger):
                     if i.func:
-                        i.func(nd.ob, self)
+                        i.func(nd.obj, self)
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
             for i in self.ds_entry_funcs:
-                if not i.trigger or isinstance(nd.ob, i.trigger):
+                if not i.trigger or isinstance(nd.obj, i.trigger):
                     if i.func:
-                        i.func(self.ob, nd)
+                        i.func(self.obj, nd)
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
             for i in self.ds_exit_funcs:
-                if not i.trigger or isinstance(nd.ob, i.trigger):
+                if not i.trigger or isinstance(nd.obj, i.trigger):
                     if i.func:
-                        i.func(self.ob, nd)
+                        i.func(self.obj, nd)
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
             for i in nd.ds_exit_funcs:
-                if not i.trigger or isinstance(self.ob, i.trigger):
+                if not i.trigger or isinstance(self.obj, i.trigger):
                     if i.func:
-                        i.func(nd.ob, self)
+                        i.func(nd.obj, self)
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
             self.path.append(nd)
         self.ignores = []
+
+
+root = Root()

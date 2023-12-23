@@ -97,7 +97,6 @@ obj WalkerAnchor:ObjectAnchor: {
 }
 
 obj Root:AbsRootHook: {
-    has RootType: type;
     has _jac_: NodeAnchor|None = None;
     can <pi> {
         <self>._jac_ = NodeAnchor(<self>, ds_entry_funcs=[], ds_exit_funcs=[]);

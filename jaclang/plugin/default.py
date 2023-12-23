@@ -32,19 +32,19 @@ class JacFeatureDefaults:
         match arch_type:
             case "obj":
                 arch._jac_ = ObjectAnchor(
-                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
                 )
             case "node":
                 arch._jac_ = NodeAnchor(
-                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
                 )
             case "edge":
                 arch._jac_ = EdgeAnchor(
-                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
                 )
             case "walker":
                 arch._jac_ = WalkerAnchor(
-                    ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
                 )
             case _:
                 raise TypeError("Invalid archetype type")
