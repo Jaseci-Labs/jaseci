@@ -8,7 +8,7 @@ from jaclang.compiler.constant import EdgeDir
 from jaclang.core.construct import Root
 from jaclang.plugin.default import JacFeatureDefaults
 from jaclang.plugin.spec import (
-    AT,
+    ArchBound,
     Architype,
     JacFeatureSpec,
     T,
@@ -34,7 +34,7 @@ class JacFeature:
     ) -> Callable[[type], type]:
         """Create a new architype."""
 
-        def decorator(cls: Type[AT]) -> Type[AT]:
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
             """Decorate class."""
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
@@ -48,7 +48,10 @@ class JacFeature:
 
     @staticmethod
     def bind_architype(
-        arch: Type[AT], arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+        arch: Type[ArchBound],
+        arch_type: str,
+        on_entry: list[DSFunc],
+        on_exit: list[DSFunc],
     ) -> bool:
         """Create a new architype."""
         return JacFeature.pm.hook.bind_architype(
@@ -56,7 +59,7 @@ class JacFeature:
         )
 
     @staticmethod
-    def elvis(op1: Optional[T], op2: T) -> T:  # noqa: ANN401
+    def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)
 
@@ -93,8 +96,10 @@ class JacFeature:
 
     @staticmethod
     def connect(
-        left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]
-    ) -> T:  # noqa: ANN401
+        left: Architype | list[Architype],
+        right: Architype | list[Architype],
+        edge_spec: Architype,
+    ) -> Architype | list[Architype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
@@ -120,7 +125,11 @@ class JacFeature:
 
     @staticmethod
     def build_edge(
-        edge_spec: tuple[int, Optional[tuple], Optional[tuple]]
+        edge_dir: EdgeDir,
+        conn_type: Optional[Type[Architype]],
+        conn_assign: Optional[tuple],
     ) -> Architype:
         """Jac's root getter."""
-        return JacFeature.pm.hook.build_edge(edge_spec=edge_spec)
+        return JacFeature.pm.hook.build_edge(
+            edge_dir=edge_dir, conn_type=conn_type, conn_assign=conn_assign
+        )

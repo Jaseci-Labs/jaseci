@@ -7,23 +7,18 @@ from typing import Any, Optional, Type
 from jaclang.compiler.constant import EdgeDir
 from jaclang.core.construct import (
     EdgeAnchor,
+    GenericEdge,
     NodeAnchor,
     ObjectAnchor,
     WalkerAnchor,
     root,
 )
-from jaclang.plugin.spec import AT, Architype, DSFunc, T
+from jaclang.plugin.spec import ArchBound, Architype, DSFunc, T
 
 
 import pluggy
 
 hookimpl = pluggy.HookimplMarker("jac")
-
-
-class BlankArch(Architype):
-    """Blank Architype."""
-
-    _jac_: Any = None
 
 
 class JacFeatureDefaults:
@@ -32,7 +27,10 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def bind_architype(
-        arch: Type[AT], arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+        arch: ArchBound,
+        arch_type: str,
+        on_entry: list[DSFunc],
+        on_exit: list[DSFunc],
     ) -> bool:
         """Create a new architype."""
         match arch_type:
@@ -69,45 +67,82 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def ignore(walker: Any, expr: Any) -> bool:  # noqa: ANN401
+    def ignore(
+        walker: WalkerAnchor,
+        expr: list[NodeAnchor] | list[EdgeAnchor] | NodeAnchor | EdgeAnchor,
+    ) -> bool:
         """Jac's ignore stmt feature."""
         return True
 
     @staticmethod
     @hookimpl
     def visit_node(
-        walker: WalkerAnchor,
+        walker: Architype,
         expr: list[NodeAnchor] | list[EdgeAnchor] | NodeAnchor | EdgeAnchor,
     ) -> bool:
         """Jac's visit stmt feature."""
-        return walker._jac_.visit_node(expr)
+        if isinstance(walker._jac_, WalkerAnchor):
+            return walker._jac_.visit_node(expr)
+        else:
+            raise TypeError("Invalid walker object")
 
     @staticmethod
     @hookimpl
-    def disengage(walker: Any) -> bool:  # noqa: ANN401
+    def disengage(walker: WalkerAnchor) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
         return True
 
     @staticmethod
     @hookimpl
     def edge_ref(
-        node_obj: NodeAnchor,
+        node_obj: Architype,
         dir: EdgeDir,
         filter_type: Optional[type],
-    ) -> list[NodeAnchor]:
+    ) -> list[Architype]:
         """Jac's apply_dir stmt feature."""
-        return node_obj.edges_to_nodes(dir, filter_type)
+        if isinstance(node_obj._jac_, NodeAnchor):
+            ret = node_obj._jac_.edges_to_nodes(dir, filter_type)
+            print(ret)
+            return ret
+        else:
+            raise TypeError("Invalid node object")
 
     @staticmethod
     @hookimpl
     def connect(
-        left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]
-    ) -> T:
+        left: Architype | list[Architype],
+        right: Architype | list[Architype],
+        edge_spec: Architype,
+    ) -> Architype | list[Architype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
-        return ret if (ret := left) is not None else right
+        if isinstance(left, list):
+            if isinstance(right, list):
+                for i in left:
+                    if not isinstance(i._jac_, NodeAnchor):
+                        raise TypeError("Invalid node object")
+                    for j in right:
+                        if not isinstance(j._jac_, NodeAnchor):
+                            raise TypeError("Invalid node object")
+                        i._jac_.connect_node(j, edge_spec)
+            else:
+                for i in left:
+                    if not isinstance(i._jac_, NodeAnchor):
+                        raise TypeError("Invalid node object")
+                    i._jac_.connect_node(right, edge_spec)
+        else:
+            if not isinstance(left._jac_, NodeAnchor):
+                raise TypeError("Invalid node object")
+            if isinstance(right, list):
+                for i in right:
+                    if not isinstance(i._jac_, NodeAnchor):
+                        raise TypeError("Invalid node object")
+                    left._jac_.connect_node(i, edge_spec)
+            else:
+                left._jac_.connect_node(right, edge_spec)
+        return left
 
     @staticmethod
     @hookimpl
@@ -132,7 +167,15 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def build_edge(
-        edge_spec: tuple[int, Optional[tuple], Optional[tuple]]
+        edge_dir: EdgeDir,
+        conn_type: Optional[Type[Architype]],
+        conn_assign: Optional[tuple],
     ) -> Architype:
         """Jac's root getter."""
-        return BlankArch()
+        conn_type = conn_type if conn_type else GenericEdge
+        edge = conn_type()
+        if isinstance(edge._jac_, EdgeAnchor):
+            edge._jac_.dir = edge_dir
+        else:
+            raise TypeError("Invalid edge object")
+        return edge

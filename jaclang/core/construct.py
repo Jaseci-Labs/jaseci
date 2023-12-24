@@ -44,10 +44,21 @@ class Root(Architype):
 
 
 @dataclass(eq=False)
+class GenericEdge(Architype):
+    """Generic Root Node."""
+
+    _jac_: EdgeAnchor
+
+    def __init__(self) -> None:
+        """Create default root node."""
+        self._jac_ = EdgeAnchor(obj=self, ds_entry_funcs=[], ds_exit_funcs=[])
+
+
+@dataclass(eq=False)
 class ElementAnchor:
     """Element Anchor."""
 
-    obj: object
+    obj: Architype
 
 
 @dataclass(eq=False)
@@ -66,33 +77,38 @@ class NodeAnchor(ObjectAnchor):
         default_factory=lambda: {EdgeDir.IN: [], EdgeDir.OUT: []}
     )
 
-    def connect_node(self, nd: NodeAnchor, edg: EdgeAnchor) -> NodeAnchor:
+    def connect_node(self, nd: Architype, edg: Architype) -> NodeAnchor:
         """Connect a node with given edge."""
-        edg.attach(self, nd)
-        return self
+        if isinstance(edg._jac_, EdgeAnchor):
+            if isinstance(nd._jac_, NodeAnchor):
+                edg._jac_.attach(self, nd._jac_)
+                return self
+            else:
+                raise TypeError("Invalid node type.")
+        raise TypeError("Invalid edge type.")
 
     def edges_to_nodes(
         self, dir: EdgeDir, filter_type: Optional[type]
-    ) -> list[NodeAnchor]:
+    ) -> list[Architype]:
         """Get set of nodes connected to this node."""
-        ret_nodes: list[NodeAnchor] = []
+        ret_nodes: list[Architype] = []
         if dir in [EdgeDir.OUT, EdgeDir.ANY]:
             for i in self.edges[EdgeDir.OUT]:
                 if i.target and (
                     not filter_type or isinstance(i.target.obj, filter_type)
                 ):
-                    ret_nodes.append(i.target)
+                    ret_nodes.append(i.target.obj)
         elif dir in [EdgeDir.IN, EdgeDir.ANY]:
             for i in self.edges[EdgeDir.IN]:
                 if i.source and (
                     not filter_type or isinstance(i.source.obj, filter_type)
                 ):
-                    ret_nodes.append(i.source)
+                    ret_nodes.append(i.source.obj)
         return ret_nodes
 
-    def __call__(self, walk: WalkerAnchor) -> None:
+    def __call__(self, walk: Architype) -> None:
         """Invoke data spatial call."""
-        walk(self)
+        walk(self.obj)
 
 
 @dataclass(eq=False)
@@ -122,19 +138,19 @@ class EdgeAnchor(ObjectAnchor):
             self.target.edges[EdgeDir.IN].append(self)
         return self
 
-    def __call__(self, walk: WalkerAnchor) -> None:
+    def __call__(self, walk: Architype) -> None:
         """Invoke data spatial call."""
         if self.target:
-            walk(self.target)
+            walk(self.target.obj)
 
 
 @dataclass(eq=False)
 class WalkerAnchor(ObjectAnchor):
     """Walker Anchor."""
 
-    path: list[NodeAnchor] = field(default_factory=lambda: [])
-    next: list[NodeAnchor] = field(default_factory=lambda: [])
-    ignores: list[NodeAnchor] = field(default_factory=lambda: [])
+    path: list[Architype] = field(default_factory=lambda: [])
+    next: list[Architype] = field(default_factory=lambda: [])
+    ignores: list[Architype] = field(default_factory=lambda: [])
     disengaged: bool = False
 
     def visit_node(
@@ -183,22 +199,22 @@ class WalkerAnchor(ObjectAnchor):
         """Disengage walker from traversal."""
         self.disengaged = True
 
-    def __call__(self, nd: NodeAnchor) -> None:
+    def __call__(self, nd: Architype) -> None:
         """Invoke data spatial call."""
         self.path = []
         self.next = [nd]
         while len(self.next):
             nd = self.next.pop(0)
-            for i in nd.ds_entry_funcs:
+            for i in nd._jac_.ds_entry_funcs:
                 if not i.trigger or isinstance(self.obj, i.trigger):
                     if i.func:
-                        i.func(nd.obj, self)
+                        i.func(nd, self.obj)
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
             for i in self.ds_entry_funcs:
-                if not i.trigger or isinstance(nd.obj, i.trigger):
+                if not i.trigger or isinstance(nd, i.trigger):
                     if i.func:
                         i.func(self.obj, nd)
                     else:
@@ -206,17 +222,17 @@ class WalkerAnchor(ObjectAnchor):
                 if self.disengaged:
                     return
             for i in self.ds_exit_funcs:
-                if not i.trigger or isinstance(nd.obj, i.trigger):
+                if not i.trigger or isinstance(nd, i.trigger):
                     if i.func:
                         i.func(self.obj, nd)
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
-            for i in nd.ds_exit_funcs:
+            for i in nd._jac_.ds_exit_funcs:
                 if not i.trigger or isinstance(self.obj, i.trigger):
                     if i.func:
-                        i.func(nd.obj, self)
+                        i.func(nd, self.obj)
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:

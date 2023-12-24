@@ -2006,8 +2006,17 @@ class PyastGenPass(Pass):
         edge_dir: EdgeDir,
         """
         node.gen.py_ast = self.sync(
-            ast3.Tuple(
-                elts=[
+            ast3.Call(
+                func=self.sync(
+                    ast3.Attribute(
+                        value=self.sync(
+                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                        ),
+                        attr="build_edge",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[
                     self.sync(ast3.Constant(value=node.edge_dir.value)),
                     node.conn_type.gen.py_ast
                     if node.conn_type
@@ -2016,7 +2025,7 @@ class PyastGenPass(Pass):
                     if node.conn_assign
                     else self.sync(ast3.Constant(value=None)),
                 ],
-                ctx=ast3.Load(),
+                keywords=[],
             )
         )
 

@@ -14,7 +14,7 @@ hookspec = pluggy.HookspecMarker("jac")
 
 
 T = TypeVar("T")
-AT = TypeVar("AT", bound=Architype)
+ArchBound = TypeVar("ArchBound", bound=Architype)
 
 
 class JacFeatureSpec:
@@ -23,14 +23,17 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def bind_architype(
-        arch: Type[AT], arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+        arch: Type[ArchBound],
+        arch_type: str,
+        on_entry: list[DSFunc],
+        on_exit: list[DSFunc],
     ) -> bool:
         """Create a new architype."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def elvis(op1: Optional[T], op2: T) -> T:  # noqa: ANN401
+    def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         raise NotImplementedError
 
@@ -69,8 +72,10 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def connect(
-        left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]
-    ) -> T:  # noqa: ANN401
+        left: Architype | list[Architype],
+        right: Architype | list[Architype],
+        edge_spec: Architype,
+    ) -> Architype | list[Architype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
@@ -100,7 +105,9 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def build_edge(
-        edge_spec: tuple[int, Optional[tuple], Optional[tuple]]
+        edge_dir: EdgeDir,
+        conn_type: Optional[Type[Architype]],
+        conn_assign: Optional[tuple],
     ) -> Architype:
         """Jac's root getter."""
         raise NotImplementedError
