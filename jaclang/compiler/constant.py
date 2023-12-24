@@ -7,7 +7,7 @@ class Constants(str, Enum):
 
     JAC_LANG_IMP = "jac"
     HERE = "_jac_here_"
-    JAC_FEATURE = "_JacFeature"
+    JAC_FEATURE = "_Jac"
     ROOT = f"{JAC_FEATURE}.get_root()"
     EDGES_TO_NODE = "_jac_.edges_to_nodes"
     EDGE_REF = "_jac_.edge_ref"

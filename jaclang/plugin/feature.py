@@ -4,12 +4,24 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Type
 
-from jaclang.compiler.constant import EdgeDir
-from jaclang.core.construct import Root
 from jaclang.plugin.default import JacFeatureDefaults
 from jaclang.plugin.spec import (
+    EdgeAnchor,
+    GenericEdge,
+    NodeAnchor,
+    ObjectAnchor,
+    WalkerAnchor,
+    NodeArchitype,
+    EdgeArchitype,
+    WalkerArchitype,
+    Architype,
+    DSFunc,
+    EdgeDir,
+    root,
+    Root,
     ArchBound,
     Architype,
+    EdgeDir,
     JacFeatureSpec,
     T,
 )
@@ -27,35 +39,15 @@ class JacFeature:
     pm.register(JacFeatureDefaults)
 
     RootType: Type[Root] = Root
+    EdgeDir: Type[EdgeDir] = EdgeDir
 
     @staticmethod
     def make_architype(
         arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a new architype."""
-
-        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
-            """Decorate class."""
-            cls = dataclass(eq=False)(cls)
-            for i in on_entry + on_exit:
-                i.resolve(cls)
-            if not issubclass(cls, Architype):
-                cls = type(cls.__name__, (cls, Architype), {})
-            JacFeature.bind_architype(cls, arch_type, on_entry, on_exit)
-            return cls
-
-        return decorator
-
-    @staticmethod
-    def bind_architype(
-        arch: Type[ArchBound],
-        arch_type: str,
-        on_entry: list[DSFunc],
-        on_exit: list[DSFunc],
-    ) -> bool:
-        """Create a new architype."""
-        return JacFeature.pm.hook.bind_architype(
-            arch=arch, arch_type=arch_type, on_entry=on_entry, on_exit=on_exit
+        return JacFeature.pm.hook.make_architype(
+            arch_type=arch_type, on_entry=on_entry, on_exit=on_exit
         )
 
     @staticmethod

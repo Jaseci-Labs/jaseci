@@ -9,13 +9,19 @@ edge Checking {}
 walker Creator {
     has count: int = 0;
     can create with `<root>|Item entry {
+        print("on", id(<here>));
+        print("edges before:", len(<here>._jac_.edges[_Jac.EdgeDir.OUT]));
         <here> ++> :> Item;
+        print("edges after:", len(<here>._jac_.edges[_Jac.EdgeDir.OUT]));
+        print([id(i) for i in <self>._jac_.next]);
         <self>.count += 1;
         if <self>.count < 10 {
             x=3;
+            print([id(i) for i in <self>._jac_.next]);
             visit -->;
+            print([id(i) for i in <self>._jac_.next]);
         }
-        print("i was here");
+        print("i was here", <self>.count);
     }
 }
 
@@ -36,7 +42,7 @@ walker Walk {
 
 can test_run {
     :> Creator |> <root>;
-    :> Walk |> <root>;
+    # :> Walk |> <root>;
 }
 
 with entry {

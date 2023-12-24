@@ -1,19 +1,26 @@
 """Jac Language Features."""
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, Type
 
-from typing import Any, Optional, Type
 
-from jaclang.compiler.constant import EdgeDir
-from jaclang.core.construct import (
+from jaclang.plugin.spec import (
     EdgeAnchor,
     GenericEdge,
     NodeAnchor,
     ObjectAnchor,
     WalkerAnchor,
+    NodeArchitype,
+    EdgeArchitype,
+    WalkerArchitype,
+    Architype,
+    DSFunc,
+    EdgeDir,
     root,
+    ArchBound,
+    T,
 )
-from jaclang.plugin.spec import ArchBound, Architype, DSFunc, T
 
 
 import pluggy
@@ -26,6 +33,46 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def make_architype(
+        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a new architype."""
+
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+            """Decorate class."""
+            cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
+            if not issubclass(cls, Architype):
+                match arch_type:
+                    case "obj":
+                        cls = type(cls.__name__, (cls, Architype), {})
+                        cls._jac_ = ObjectAnchor(
+                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                        )
+                    case "node":
+                        cls = type(cls.__name__, (cls, NodeArchitype), {})
+                        cls._jac_ = NodeAnchor(
+                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                        )
+                    case "edge":
+                        cls = type(cls.__name__, (cls, EdgeArchitype), {})
+                        cls._jac_ = EdgeAnchor(
+                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                        )
+                    case "walker":
+                        cls = type(cls.__name__, (cls, WalkerArchitype), {})
+                        cls._jac_ = WalkerAnchor(
+                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
+                        )
+                    case _:
+                        raise TypeError("Invalid archetype type")
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def bind_architype(
         arch: ArchBound,
         arch_type: str,
@@ -33,25 +80,7 @@ class JacFeatureDefaults:
         on_exit: list[DSFunc],
     ) -> bool:
         """Create a new architype."""
-        match arch_type:
-            case "obj":
-                arch._jac_ = ObjectAnchor(
-                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                )
-            case "node":
-                arch._jac_ = NodeAnchor(
-                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                )
-            case "edge":
-                arch._jac_ = EdgeAnchor(
-                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                )
-            case "walker":
-                arch._jac_ = WalkerAnchor(
-                    obj=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                )
-            case _:
-                raise TypeError("Invalid archetype type")
+
         return True
 
     @staticmethod
@@ -77,8 +106,8 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def visit_node(
-        walker: Architype,
-        expr: list[NodeAnchor] | list[EdgeAnchor] | NodeAnchor | EdgeAnchor,
+        walker: WalkerArchitype,
+        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Jac's visit stmt feature."""
         if isinstance(walker._jac_, WalkerAnchor):
@@ -101,9 +130,7 @@ class JacFeatureDefaults:
     ) -> list[Architype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj._jac_, NodeAnchor):
-            ret = node_obj._jac_.edges_to_nodes(dir, filter_type)
-            print(ret)
-            return ret
+            return node_obj._jac_.edges_to_nodes(dir, filter_type)
         else:
             raise TypeError("Invalid node object")
 

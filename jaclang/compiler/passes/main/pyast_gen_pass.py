@@ -1973,7 +1973,23 @@ class PyastGenPass(Pass):
                 ),
                 args=[
                     loc,
-                    self.sync(ast3.Constant(value=node.edge_dir.value)),
+                    self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
+                                        )
+                                    ),
+                                    attr="EdgeDir",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            attr=node.edge_dir.name,
+                            ctx=ast3.Load(),
+                        )
+                    ),
                     node.filter_type.gen.py_ast
                     if node.filter_type
                     else self.sync(ast3.Constant(value=None)),
@@ -2017,7 +2033,23 @@ class PyastGenPass(Pass):
                     )
                 ),
                 args=[
-                    self.sync(ast3.Constant(value=node.edge_dir.value)),
+                    self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
+                                        )
+                                    ),
+                                    attr="EdgeDir",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            attr=node.edge_dir.name,
+                            ctx=ast3.Load(),
+                        )
+                    ),
                     node.conn_type.gen.py_ast
                     if node.conn_type
                     else self.sync(ast3.Constant(value=None)),

@@ -2,11 +2,23 @@
 from __future__ import annotations
 
 
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
 
-from jaclang.compiler.constant import EdgeDir
-from jaclang.core.construct import Architype, DSFunc
-
+from jaclang.core.construct import (
+    EdgeAnchor,
+    GenericEdge,
+    NodeAnchor,
+    ObjectAnchor,
+    WalkerAnchor,
+    NodeArchitype,
+    EdgeArchitype,
+    WalkerArchitype,
+    Architype,
+    DSFunc,
+    EdgeDir,
+    root,
+    Root,
+)
 
 import pluggy
 
@@ -22,12 +34,9 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def bind_architype(
-        arch: Type[ArchBound],
-        arch_type: str,
-        on_entry: list[DSFunc],
-        on_exit: list[DSFunc],
-    ) -> bool:
+    def make_architype(
+        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
         """Create a new architype."""
         raise NotImplementedError
 
