@@ -66,19 +66,19 @@ class JacFeature:
         return JacFeature.pm.hook.report(expr=expr)
 
     @staticmethod
-    def ignore(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def ignore(walker: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
-        return JacFeature.pm.hook.ignore(walker_obj=walker_obj, expr=expr)
+        return JacFeature.pm.hook.ignore(walker=walker, expr=expr)
 
     @staticmethod
-    def visit_node(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(walker: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
-        return JacFeature.pm.hook.visit_node(walker_obj=walker_obj, expr=expr)
+        return JacFeature.pm.hook.visit_node(walker=walker, expr=expr)
 
     @staticmethod
-    def disengage(walker_obj: Any) -> bool:  # noqa: ANN401
+    def disengage(walker: Any) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
-        return JacFeature.pm.hook.disengage(walker_obj=walker_obj)
+        return JacFeature.pm.hook.disengage(walker=walker)
 
     @staticmethod
     def edge_ref(

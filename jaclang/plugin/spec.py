@@ -42,19 +42,19 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def ignore(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def ignore(walker: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def visit_node(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(walker: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def disengage(walker_obj: Any) -> bool:  # noqa: ANN401
+    def disengage(walker: Any) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
         raise NotImplementedError
 

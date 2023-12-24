@@ -71,16 +71,22 @@ class NodeAnchor(ObjectAnchor):
         edg.attach(self, nd)
         return self
 
-    def edges_to_nodes(self, dir: EdgeDir) -> list[NodeAnchor]:
+    def edges_to_nodes(
+        self, dir: EdgeDir, filter_type: Optional[type]
+    ) -> list[NodeAnchor]:
         """Get set of nodes connected to this node."""
         ret_nodes: list[NodeAnchor] = []
         if dir in [EdgeDir.OUT, EdgeDir.ANY]:
             for i in self.edges[EdgeDir.OUT]:
-                if i.target:
+                if i.target and (
+                    not filter_type or isinstance(i.target.obj, filter_type)
+                ):
                     ret_nodes.append(i.target)
         elif dir in [EdgeDir.IN, EdgeDir.ANY]:
             for i in self.edges[EdgeDir.IN]:
-                if i.source:
+                if i.source and (
+                    not filter_type or isinstance(i.source.obj, filter_type)
+                ):
                     ret_nodes.append(i.source)
         return ret_nodes
 

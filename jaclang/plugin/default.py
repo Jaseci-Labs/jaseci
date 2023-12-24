@@ -58,7 +58,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def elvis(op1: Optional[T], op2: T) -> T:  # noqa: ANN401
+    def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return ret if (ret := op1) is not None else op2
 
@@ -69,37 +69,40 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def ignore(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def ignore(walker: Any, expr: Any) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
         return True
 
     @staticmethod
     @hookimpl
-    def visit_node(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(
+        walker: WalkerAnchor,
+        expr: list[NodeAnchor] | list[EdgeAnchor] | NodeAnchor | EdgeAnchor,
+    ) -> bool:
         """Jac's visit stmt feature."""
-        return True
+        return walker._jac_.visit_node(expr)
 
     @staticmethod
     @hookimpl
-    def disengage(walker_obj: Any) -> bool:  # noqa: ANN401
+    def disengage(walker: Any) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
         return True
 
     @staticmethod
     @hookimpl
     def edge_ref(
-        node_obj: Any,  # noqa: ANN401
+        node_obj: NodeAnchor,
         dir: EdgeDir,
         filter_type: Optional[type],
-    ) -> list[Any]:  # noqa: ANN401
+    ) -> list[NodeAnchor]:
         """Jac's apply_dir stmt feature."""
-        return []
+        return node_obj.edges_to_nodes(dir, filter_type)
 
     @staticmethod
     @hookimpl
     def connect(
         left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]
-    ) -> T:  # noqa: ANN401
+    ) -> T:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
