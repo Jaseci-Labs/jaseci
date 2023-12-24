@@ -1,30 +1,17 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Callable, Optional, Type
 
 from jaclang.plugin.default import JacFeatureDefaults
 from jaclang.plugin.spec import (
-    EdgeAnchor,
-    GenericEdge,
-    NodeAnchor,
-    ObjectAnchor,
-    WalkerAnchor,
-    NodeArchitype,
-    EdgeArchitype,
-    WalkerArchitype,
-    Architype,
-    DSFunc,
-    EdgeDir,
-    root,
-    Root,
-    ArchBound,
     Architype,
     EdgeDir,
     JacFeatureSpec,
+    Root,
     T,
 )
+
 
 import pluggy
 
