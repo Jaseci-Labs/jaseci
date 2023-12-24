@@ -7,20 +7,20 @@ from typing import Any, Callable, Optional, Type
 
 
 from jaclang.plugin.spec import (
-    EdgeAnchor,
-    GenericEdge,
-    NodeAnchor,
-    ObjectAnchor,
-    WalkerAnchor,
-    NodeArchitype,
-    EdgeArchitype,
-    WalkerArchitype,
+    ArchBound,
     Architype,
     DSFunc,
+    EdgeAnchor,
+    EdgeArchitype,
     EdgeDir,
-    root,
-    ArchBound,
+    GenericEdge,
+    NodeAnchor,
+    NodeArchitype,
+    ObjectAnchor,
     T,
+    WalkerAnchor,
+    WalkerArchitype,
+    root,
 )
 
 
@@ -47,24 +47,28 @@ class JacFeatureDefaults:
             if not issubclass(cls, Architype):
                 match arch_type:
                     case "obj":
-                        ArchClass = Architype
+                        arch_cls = Architype
+                        arch_anc = ObjectAnchor
                     case "node":
-                        ArchClass = NodeArchitype
+                        arch_cls = NodeArchitype
+                        arch_anc = NodeAnchor
                     case "edge":
-                        ArchClass = EdgeArchitype
+                        arch_cls = EdgeArchitype
+                        arch_anc = EdgeAnchor
                     case "walker":
-                        ArchClass = WalkerArchitype
+                        arch_cls = WalkerArchitype
+                        arch_anc = WalkerAnchor
                     case _:
                         raise TypeError("Invalid archetype type")
-                cls = type(cls.__name__, (cls, ArchClass), {})
+                cls = type(cls.__name__, (cls, arch_cls), {})
                 cls._jac_entry_funcs_ = on_entry
                 cls._jac_exit_funcs_ = on_exit
                 original_init = cls.__init__
 
                 @wraps(original_init)
-                def new_init(self, *args, **kwargs) -> None:
+                def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
                     original_init(self, *args, **kwargs)
-                    ArchClass.__init__(self)
+                    self._jac_ = arch_anc(obj=self)  # type: ignore
 
                 cls.__init__ = new_init
             return cls
@@ -105,8 +109,9 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def disengage(walker: WalkerAnchor) -> bool:  # noqa: ANN401
+    def disengage(walker: WalkerArchitype) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
+        walker._jac_.disengage_now()
         return True
 
     @staticmethod

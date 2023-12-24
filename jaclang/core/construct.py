@@ -32,10 +32,6 @@ class NodeArchitype(Architype):
 
     _jac_: NodeAnchor
 
-    def __init__(self) -> None:
-        """Post init."""
-        self._jac_ = NodeAnchor(obj=self)
-
 
 @dataclass(eq=False)
 class EdgeArchitype(Architype):
@@ -43,20 +39,12 @@ class EdgeArchitype(Architype):
 
     _jac_: EdgeAnchor
 
-    def __init__(self) -> None:
-        """Post init."""
-        self._jac_ = EdgeAnchor(obj=self)
-
 
 @dataclass(eq=False)
 class WalkerArchitype(Architype):
     """Walker Architype Protocol."""
 
     _jac_: WalkerAnchor
-
-    def __init__(self) -> None:
-        """Post init."""
-        self._jac_ = WalkerAnchor(obj=self)
 
 
 @dataclass(eq=False)
@@ -197,7 +185,6 @@ class WalkerAnchor(ObjectAnchor):
         nds: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Walker visits node."""
-
         nd_list: list[NodeArchitype | EdgeArchitype]
         if not isinstance(nds, list):
             nd_list = [nds]

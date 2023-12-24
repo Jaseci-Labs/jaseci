@@ -1277,29 +1277,33 @@ class PyastGenPass(Pass):
             if node.from_walker
             else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
         )
-        node.gen.py_ast = self.sync(
-            ast3.Expr(
-                value=self.sync(
-                    self.sync(
-                        ast3.Call(
-                            func=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Name(
-                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
-                                        )
-                                    ),
-                                    attr="disengage",
-                                    ctx=ast3.Load(),
-                                )
-                            ),
-                            args=[loc],
-                            keywords=[],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Expr(
+                    value=self.sync(
+                        self.sync(
+                            ast3.Call(
+                                func=self.sync(
+                                    ast3.Attribute(
+                                        value=self.sync(
+                                            ast3.Name(
+                                                id=Con.JAC_FEATURE.value,
+                                                ctx=ast3.Load(),
+                                            )
+                                        ),
+                                        attr="disengage",
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                                args=[loc],
+                                keywords=[],
+                            )
                         )
                     )
                 )
-            )
-        )
+            ),
+            self.sync(ast3.Return()),
+        ]
 
     def exit_await_expr(self, node: ast.AwaitExpr) -> None:
         """Sub objects.
