@@ -13,19 +13,17 @@ class Architype:
     """Architype Protocol."""
 
     _jac_: ObjectAnchor
+    _jac_entry_funcs_: list[DSFunc]
+    _jac_exit_funcs_: list[DSFunc]
+
+    def __init__(self) -> None:
+        """Post init."""
+        self._jac_ = ObjectAnchor(obj=self)
 
     def __call__(self, target: Architype) -> None:
         """Call the architype's data spatial behavior."""
         if callable(self._jac_):
             return self._jac_(target)
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        self._jac_ = ObjectAnchor(
-            obj=self,
-            ds_entry_funcs=self._jac_.ds_entry_funcs,
-            ds_exit_funcs=self._jac_.ds_exit_funcs,
-        )
 
 
 @dataclass(eq=False)
@@ -34,13 +32,9 @@ class NodeArchitype(Architype):
 
     _jac_: NodeAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Post init."""
-        self._jac_ = NodeAnchor(
-            obj=self,
-            ds_entry_funcs=self._jac_.ds_entry_funcs,
-            ds_exit_funcs=self._jac_.ds_exit_funcs,
-        )
+        self._jac_ = NodeAnchor(obj=self)
 
 
 @dataclass(eq=False)
@@ -49,13 +43,9 @@ class EdgeArchitype(Architype):
 
     _jac_: EdgeAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Post init."""
-        self._jac_ = EdgeAnchor(
-            obj=self,
-            ds_entry_funcs=self._jac_.ds_entry_funcs,
-            ds_exit_funcs=self._jac_.ds_exit_funcs,
-        )
+        self._jac_ = EdgeAnchor(obj=self)
 
 
 @dataclass(eq=False)
@@ -64,13 +54,9 @@ class WalkerArchitype(Architype):
 
     _jac_: WalkerAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Post init."""
-        self._jac_ = WalkerAnchor(
-            obj=self,
-            ds_entry_funcs=self._jac_.ds_entry_funcs,
-            ds_exit_funcs=self._jac_.ds_exit_funcs,
-        )
+        self._jac_ = WalkerAnchor(obj=self)
 
 
 @dataclass(eq=False)
@@ -81,7 +67,9 @@ class Root(NodeArchitype):
 
     def __init__(self) -> None:
         """Create default root node."""
-        self._jac_ = NodeAnchor(obj=self, ds_entry_funcs=[], ds_exit_funcs=[])
+        self._jac_ = NodeAnchor(obj=self)
+        self._jac_entry_funcs_ = []
+        self._jac_exit_funcs_ = []
 
 
 @dataclass(eq=False)
@@ -92,7 +80,9 @@ class GenericEdge(EdgeArchitype):
 
     def __init__(self) -> None:
         """Create default root node."""
-        self._jac_ = EdgeAnchor(obj=self, ds_entry_funcs=[], ds_exit_funcs=[])
+        self._jac_ = EdgeAnchor(obj=self)
+        self._jac_entry_funcs_ = []
+        self._jac_exit_funcs_ = []
 
 
 @dataclass(eq=False)
@@ -119,9 +109,6 @@ class ElementAnchor:
 class ObjectAnchor(ElementAnchor):
     """Object Anchor."""
 
-    ds_entry_funcs: list[DSFunc]
-    ds_exit_funcs: list[DSFunc]
-
 
 @dataclass(eq=False)
 class NodeAnchor(ObjectAnchor):
@@ -142,13 +129,13 @@ class NodeAnchor(ObjectAnchor):
     ) -> list[Architype]:
         """Get set of nodes connected to this node."""
         ret_nodes: list[Architype] = []
-        if dir in [EdgeDir.OUT, EdgeDir.ANY]:
+        if dir in [EdgeDir.OUT]:
             for i in self.edges[EdgeDir.OUT]:
                 if i._jac_.target and (
                     not filter_type or isinstance(i._jac_.target, filter_type)
                 ):
                     ret_nodes.append(i._jac_.target)
-        elif dir in [EdgeDir.IN, EdgeDir.ANY]:
+        elif dir in [EdgeDir.IN]:
             for i in self.edges[EdgeDir.IN]:
                 if i._jac_.source and (
                     not filter_type or isinstance(i._jac_.source, filter_type)
@@ -210,6 +197,7 @@ class WalkerAnchor(ObjectAnchor):
         nds: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Walker visits node."""
+
         nd_list: list[NodeArchitype | EdgeArchitype]
         if not isinstance(nds, list):
             nd_list = [nds]
@@ -258,7 +246,7 @@ class WalkerAnchor(ObjectAnchor):
         self.next = [nd]
         while len(self.next):
             nd = self.next.pop(0)
-            for i in nd._jac_.ds_entry_funcs:
+            for i in nd._jac_entry_funcs_:
                 if not i.trigger or isinstance(self.obj, i.trigger):
                     if i.func:
                         i.func(nd, self.obj)
@@ -266,7 +254,7 @@ class WalkerAnchor(ObjectAnchor):
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
-            for i in self.ds_entry_funcs:
+            for i in self.obj._jac_entry_funcs_:
                 if not i.trigger or isinstance(nd, i.trigger):
                     if i.func:
                         i.func(self.obj, nd)
@@ -274,7 +262,7 @@ class WalkerAnchor(ObjectAnchor):
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
-            for i in self.ds_exit_funcs:
+            for i in self.obj._jac_exit_funcs_:
                 if not i.trigger or isinstance(nd, i.trigger):
                     if i.func:
                         i.func(self.obj, nd)
@@ -282,7 +270,7 @@ class WalkerAnchor(ObjectAnchor):
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
                     return
-            for i in nd._jac_.ds_exit_funcs:
+            for i in nd._jac_exit_funcs_:
                 if not i.trigger or isinstance(self.obj, i.trigger):
                     if i.func:
                         i.func(nd, self.obj)

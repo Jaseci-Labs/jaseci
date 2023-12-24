@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import wraps
 from typing import Any, Callable, Optional, Type
 
 
@@ -46,42 +47,29 @@ class JacFeatureDefaults:
             if not issubclass(cls, Architype):
                 match arch_type:
                     case "obj":
-                        cls = type(cls.__name__, (cls, Architype), {})
-                        cls._jac_ = ObjectAnchor(
-                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                        )
+                        ArchClass = Architype
                     case "node":
-                        cls = type(cls.__name__, (cls, NodeArchitype), {})
-                        cls._jac_ = NodeAnchor(
-                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                        )
+                        ArchClass = NodeArchitype
                     case "edge":
-                        cls = type(cls.__name__, (cls, EdgeArchitype), {})
-                        cls._jac_ = EdgeAnchor(
-                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                        )
+                        ArchClass = EdgeArchitype
                     case "walker":
-                        cls = type(cls.__name__, (cls, WalkerArchitype), {})
-                        cls._jac_ = WalkerAnchor(
-                            obj=cls, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit
-                        )
+                        ArchClass = WalkerArchitype
                     case _:
                         raise TypeError("Invalid archetype type")
+                cls = type(cls.__name__, (cls, ArchClass), {})
+                cls._jac_entry_funcs_ = on_entry
+                cls._jac_exit_funcs_ = on_exit
+                original_init = cls.__init__
+
+                @wraps(original_init)
+                def new_init(self, *args, **kwargs) -> None:
+                    original_init(self, *args, **kwargs)
+                    ArchClass.__init__(self)
+
+                cls.__init__ = new_init
             return cls
 
         return decorator
-
-    @staticmethod
-    @hookimpl
-    def bind_architype(
-        arch: ArchBound,
-        arch_type: str,
-        on_entry: list[DSFunc],
-        on_exit: list[DSFunc],
-    ) -> bool:
-        """Create a new architype."""
-
-        return True
 
     @staticmethod
     @hookimpl
@@ -137,10 +125,10 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def connect(
-        left: Architype | list[Architype],
-        right: Architype | list[Architype],
-        edge_spec: Architype,
-    ) -> Architype | list[Architype]:
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        edge_spec: EdgeArchitype,
+    ) -> NodeArchitype | list[NodeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
@@ -148,24 +136,14 @@ class JacFeatureDefaults:
         if isinstance(left, list):
             if isinstance(right, list):
                 for i in left:
-                    if not isinstance(i._jac_, NodeAnchor):
-                        raise TypeError("Invalid node object")
                     for j in right:
-                        if not isinstance(j._jac_, NodeAnchor):
-                            raise TypeError("Invalid node object")
                         i._jac_.connect_node(j, edge_spec)
             else:
                 for i in left:
-                    if not isinstance(i._jac_, NodeAnchor):
-                        raise TypeError("Invalid node object")
                     i._jac_.connect_node(right, edge_spec)
         else:
-            if not isinstance(left._jac_, NodeAnchor):
-                raise TypeError("Invalid node object")
             if isinstance(right, list):
                 for i in right:
-                    if not isinstance(i._jac_, NodeAnchor):
-                        raise TypeError("Invalid node object")
                     left._jac_.connect_node(i, edge_spec)
             else:
                 left._jac_.connect_node(right, edge_spec)
