@@ -308,7 +308,7 @@ class AstTool:
 
         # Jac lark path
         file_path = os.path.join(
-            os.path.split(os.path.dirname(__file__))[0], "../jaclang/jac/jac.lark"
+            os.path.split(os.path.dirname(__file__))[0], "../jaclang/compiler/jac.lark"
         )
         result = extract_headings(file_path)
         created_file_path = os.path.join(
@@ -319,6 +319,7 @@ class AstTool:
             # Write the content to the destination file
             md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
         for heading, lines in result.items():
+            heading = heading.strip()
             print(f"{heading}: {lines}")
             content = (
                 f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
