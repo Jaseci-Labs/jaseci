@@ -1,6 +1,7 @@
 """Core constructs for Jac Language."""
 from __future__ import annotations
 
+import types
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
@@ -78,7 +79,7 @@ class DSFunc:
     """Data Spatial Function."""
 
     name: str
-    trigger: type | tuple[type, ...] | None
+    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
     func: Callable[[Any, Any], Any] | None = None
 
     def resolve(self, cls: type) -> None:

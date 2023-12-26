@@ -89,11 +89,14 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def ignore(
-        walker: WalkerAnchor,
-        expr: list[NodeAnchor] | list[EdgeAnchor] | NodeAnchor | EdgeAnchor,
+        walker: WalkerArchitype,
+        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Jac's ignore stmt feature."""
-        return True
+        if isinstance(walker, WalkerArchitype):
+            return walker._jac_.ignore_node(expr)
+        else:
+            raise TypeError("Invalid walker object")
 
     @staticmethod
     @hookimpl
@@ -102,7 +105,7 @@ class JacFeatureDefaults:
         expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Jac's visit stmt feature."""
-        if isinstance(walker._jac_, WalkerAnchor):
+        if isinstance(walker, WalkerArchitype):
             return walker._jac_.visit_node(expr)
         else:
             raise TypeError("Invalid walker object")
