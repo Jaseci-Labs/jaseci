@@ -203,10 +203,11 @@ class WalkerAnchor(ObjectAnchor):
         return len(self.next) > before_len
 
     def ignore_node(
-        self, nds: list[NodeAnchor] | list[EdgeAnchor] | NodeAnchor | EdgeAnchor
+        self,
+        nds: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Walker ignores node."""
-        nd_list: list[NodeAnchor | EdgeAnchor]
+        nd_list: list[NodeArchitype | EdgeArchitype]
         if not isinstance(nds, list):
             nd_list = [nds]
         else:
@@ -214,11 +215,11 @@ class WalkerAnchor(ObjectAnchor):
         before_len = len(self.ignores)
         for i in nd_list:
             if i not in self.ignores:
-                if isinstance(i, NodeAnchor):
+                if isinstance(i, NodeArchitype):
                     self.ignores.append(i)
-                elif isinstance(i, EdgeAnchor):
-                    if i.target:
-                        self.ignores.append(i.target)
+                elif isinstance(i, EdgeArchitype):
+                    if i._jac_.target:
+                        self.ignores.append(i._jac_.target)
                     else:
                         raise ValueError("Edge has no target.")
         return len(self.ignores) > before_len

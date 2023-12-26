@@ -12,7 +12,6 @@ walker Creator {
         <here> ++> Item();
         <self>.count += 1;
         if <self>.count < 10 {
-            x=3;
             visit -->;
         }
     }

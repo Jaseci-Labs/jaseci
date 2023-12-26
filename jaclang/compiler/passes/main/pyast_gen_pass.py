@@ -771,7 +771,6 @@ class PyastGenPass(Pass):
         arch: Token,
         """
         if node.arch.name == Tok.TYPE_OP:
-            self.needs_typing()
             if (
                 isinstance(node.name_ref, ast.SpecialVarRef)
                 and node.name_ref.var.name == Tok.ROOT_OP
@@ -786,6 +785,7 @@ class PyastGenPass(Pass):
                     )
                 )
             else:
+                self.needs_typing()
                 node.gen.py_ast = self.sync(
                     ast3.Attribute(
                         value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
