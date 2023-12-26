@@ -70,37 +70,45 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def ignore(walker: Any, expr: Any) -> bool:  # noqa: ANN401
+    def ignore(
+        walker: WalkerArchitype,
+        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+    ) -> bool:
         """Jac's ignore stmt feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def visit_node(walker: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(
+        walker: WalkerArchitype,
+        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+    ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def disengage(walker: Any) -> bool:  # noqa: ANN401
+    def disengage(walker: WalkerArchitype) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
     def edge_ref(
-        node_obj: Any, dir: EdgeDir, filter_type: Optional[type]  # noqa: ANN401
-    ) -> list[Any]:
+        node_obj: NodeArchitype,
+        dir: EdgeDir,
+        filter_type: Optional[type],
+    ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
     def connect(
-        left: Architype | list[Architype],
-        right: Architype | list[Architype],
-        edge_spec: Architype,
-    ) -> Architype | list[Architype]:
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        edge_spec: EdgeArchitype,
+    ) -> NodeArchitype | list[NodeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op

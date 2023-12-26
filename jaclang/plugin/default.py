@@ -120,12 +120,12 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def edge_ref(
-        node_obj: Architype,
+        node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
-    ) -> list[Architype]:
+    ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
-        if isinstance(node_obj._jac_, NodeAnchor):
+        if isinstance(node_obj, NodeArchitype):
             return node_obj._jac_.edges_to_nodes(dir, filter_type)
         else:
             raise TypeError("Invalid node object")

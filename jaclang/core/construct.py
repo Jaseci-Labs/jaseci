@@ -115,9 +115,9 @@ class NodeAnchor(ObjectAnchor):
 
     def edges_to_nodes(
         self, dir: EdgeDir, filter_type: Optional[type]
-    ) -> list[Architype]:
+    ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
-        ret_nodes: list[Architype] = []
+        ret_nodes: list[NodeArchitype] = []
         if dir in [EdgeDir.OUT]:
             for i in self.edges[EdgeDir.OUT]:
                 if i._jac_.target and (

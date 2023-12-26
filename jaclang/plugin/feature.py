@@ -6,10 +6,13 @@ from typing import Any, Callable, Optional, Type
 from jaclang.plugin.default import JacFeatureDefaults
 from jaclang.plugin.spec import (
     Architype,
+    EdgeArchitype,
     EdgeDir,
     JacFeatureSpec,
+    NodeArchitype,
     Root,
     T,
+    WalkerArchitype,
 )
 
 
@@ -48,26 +51,32 @@ class JacFeature:
         return JacFeature.pm.hook.report(expr=expr)
 
     @staticmethod
-    def ignore(walker: Any, expr: Any) -> bool:  # noqa: ANN401
+    def ignore(
+        walker: WalkerArchitype,
+        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+    ) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
         return JacFeature.pm.hook.ignore(walker=walker, expr=expr)
 
     @staticmethod
-    def visit_node(walker: Any, expr: Any) -> bool:  # noqa: ANN401
+    def visit_node(
+        walker: WalkerArchitype,
+        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+    ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         return JacFeature.pm.hook.visit_node(walker=walker, expr=expr)
 
     @staticmethod
-    def disengage(walker: Any) -> bool:  # noqa: ANN401
+    def disengage(walker: WalkerArchitype) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
         return JacFeature.pm.hook.disengage(walker=walker)
 
     @staticmethod
     def edge_ref(
-        node_obj: Any,  # noqa: ANN401
+        node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
-    ) -> list[Any]:  # noqa: ANN401
+    ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         return JacFeature.pm.hook.edge_ref(
             node_obj=node_obj, dir=dir, filter_type=filter_type
@@ -75,10 +84,10 @@ class JacFeature:
 
     @staticmethod
     def connect(
-        left: Architype | list[Architype],
-        right: Architype | list[Architype],
-        edge_spec: Architype,
-    ) -> Architype | list[Architype]:
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        edge_spec: EdgeArchitype,
+    ) -> NodeArchitype | list[NodeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
