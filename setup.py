@@ -18,7 +18,6 @@ setup(
         "console_scripts": [
             "jac = jaclang.cli:cli.start_cli",
         ],
-        "jac": ["corelib = jaclang.core:JacPlugin"],
     },
     author="Jason Mars",
     author_email="jason@jaseci.org",

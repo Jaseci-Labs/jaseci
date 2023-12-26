@@ -2,8 +2,8 @@
 
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
-import:py from jaclang.jac.constant, EdgeDir;
-import:py from jaclang.jac.plugin, Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl;
+import:py from jaclang.compiler.constant, EdgeDir;
+import:py from jaclang.plugin, Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl;
 
 enum AccessMode;
 
@@ -97,7 +97,6 @@ obj WalkerAnchor:ObjectAnchor: {
 }
 
 obj Root:AbsRootHook: {
-    has RootType: type;
     has _jac_: NodeAnchor|None = None;
     can <pi> {
         <self>._jac_ = NodeAnchor(<self>, ds_entry_funcs=[], ds_exit_funcs=[]);

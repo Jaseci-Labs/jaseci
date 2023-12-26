@@ -9,13 +9,11 @@ edge Checking {}
 walker Creator {
     has count: int = 0;
     can create with `<root>|Item entry {
-        <here> ++> :> Item;
+        <here> ++> Item();
         <self>.count += 1;
         if <self>.count < 10 {
-            x=3;
             visit -->;
         }
-        print("i was here");
     }
 }
 
