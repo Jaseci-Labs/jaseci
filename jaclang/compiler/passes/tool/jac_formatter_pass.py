@@ -5,7 +5,6 @@ This is a pass for formatting Jac code.
 import re
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
 
@@ -706,6 +705,7 @@ class JacFormatPass(Pass):
                     Tok.PIPE_FWD,
                     Tok.KW_SPAWN,
                     Tok.A_PIPE_FWD,
+                    Tok.ELVIS_OP,
                 ]
                 or (
                     node.op.name == Tok.PIPE_FWD
@@ -726,13 +726,6 @@ class JacFormatPass(Pass):
                         node,
                         f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
                     )
-            elif node.op.name == Tok.ELVIS_OP:
-                self.emit(
-                    node,
-                    f"{Con.JAC_TMP} "
-                    f"if ({Con.JAC_TMP} := ({node.left.gen.jac})) is not None "
-                    f"else {node.right.gen.jac}",
-                )
             else:
                 self.error(
                     f"Binary operator {node.op.value} not supported in bootstrap Jac"

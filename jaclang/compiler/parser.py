@@ -127,7 +127,9 @@ class JacParser(Pass):
             """
             return self.nu(kid[0])
 
-        def module(self, kid: list[ast.ElementStmt | ast.String]) -> ast.Module:
+        def module(
+            self, kid: list[ast.ElementStmt | ast.String | ast.EmptyToken]
+        ) -> ast.Module:
             """Grammar rule.
 
             module: (doc_tag? element (element_with_doc | element)*)?
@@ -142,7 +144,7 @@ class JacParser(Pass):
                 doc=doc,
                 body=body,
                 is_imported=False,
-                kid=kid,
+                kid=kid if len(kid) else [ast.EmptyToken()],
             )
             return self.nu(mod)
 
@@ -2032,9 +2034,9 @@ class JacParser(Pass):
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice )
+            atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
-                        | atomic_call
+                        | (atomic_call | atom)
             """
             if len(kid) < 2 and isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
@@ -3514,6 +3516,8 @@ class JacParser(Pass):
                 ret_type = ast.String
             elif token.type == Tok.BOOL:
                 ret_type = ast.Bool
+            elif token.type == Tok.PYNLINE and isinstance(token.value, str):
+                token.value = token.value.replace("::py::", "")
             return self.nu(
                 ret_type(
                     file_path=self.parse_ref.mod_path,

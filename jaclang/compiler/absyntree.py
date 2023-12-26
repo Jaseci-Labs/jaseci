@@ -256,7 +256,7 @@ class Module(AstDocNode):
         name: str,
         source: JacSource,
         doc: Optional[String],
-        body: Sequence[ElementStmt | String],
+        body: Sequence[ElementStmt | String | EmptyToken],
         is_imported: bool,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1708,7 +1708,7 @@ class ConnectOp(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class FilterCompr(AstNode):
+class FilterCompr(AtomExpr):
     """FilterCtx node type for Jac Ast."""
 
     def __init__(
@@ -1719,9 +1719,15 @@ class FilterCompr(AstNode):
         """Initialize filter_cond context expression node."""
         self.compares = compares
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
-class AssignCompr(AstNode):
+class AssignCompr(AtomExpr):
     """AssignCtx node type for Jac Ast."""
 
     def __init__(
@@ -1732,6 +1738,12 @@ class AssignCompr(AstNode):
         """Initialize assign compr expression node."""
         self.assigns = assigns
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
 # Match Nodes
