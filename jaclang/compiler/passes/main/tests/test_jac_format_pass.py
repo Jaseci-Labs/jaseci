@@ -63,6 +63,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         for i in range(len(code_gen_pure.ir.gen.py.split("\n"))):
             if "test_" in code_gen_pure.ir.gen.py.split("\n")[i]:
                 continue
+            before = ""
+            after = ""
             try:
                 if not isinstance(code_gen_pure.ir, ast.Module) or not isinstance(
                     code_gen_jac.ir, ast.Module

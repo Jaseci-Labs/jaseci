@@ -1254,7 +1254,7 @@ class JacFormatPass(Pass):
         out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"({node.out_expr.gen.jac} {node.compr.gen.jac},)")
+        self.emit(node, f"({node.out_expr.gen.jac} {node.compr.gen.jac})")
 
     def exit_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
