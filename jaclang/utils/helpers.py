@@ -3,7 +3,7 @@ import re
 import textwrap
 
 
-import jaclang.jac.absyntree as ast
+import jaclang.compiler.absyntree as ast
 
 
 def pascal_to_snake(pascal_string: str) -> str:

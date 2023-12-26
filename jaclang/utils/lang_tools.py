@@ -6,9 +6,9 @@ import os
 import sys
 from typing import List, Optional, Type
 
-import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.main.schedules import DeclDefMatchPass
-from jaclang.jac.passes.tool.schedules import (
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.passes.main.schedules import DeclDefMatchPass
+from jaclang.compiler.passes.tool.schedules import (
     AstDotGraphPass,
     SymbolTableDotGraphPass,
     SymbolTablePrinterPass,
@@ -16,7 +16,7 @@ from jaclang.jac.passes.tool.schedules import (
     sym_tab_dot_gen,
     sym_tab_print,
 )
-from jaclang.jac.transpiler import jac_file_to_pass
+from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.helpers import pascal_to_snake
 
 
@@ -116,8 +116,8 @@ class AstTool:
     def pass_template(self) -> str:
         """Generate pass template."""
         output = (
-            "import jaclang.jac.absyntree as ast\n"
-            "from jaclang.jac.passes import Pass\n\n"
+            "import jaclang.compiler.absyntree as ast\n"
+            "from jaclang.compiler.passes import Pass\n\n"
             "class SomePass(Pass):\n"
         )
 
@@ -139,7 +139,7 @@ class AstTool:
 
             emit('    """\n')
         output = (
-            output.replace("jaclang.jac.absyntree.", "")
+            output.replace("jaclang.compiler.absyntree.", "")
             .replace("typing.", "")
             .replace("<enum '", "")
             .replace("'>", "")
@@ -151,7 +151,7 @@ class AstTool:
 
     def py_ast_nodes(self) -> str:
         """List python ast nodes."""
-        from jaclang.jac.passes.main import PyastBuildPass
+        from jaclang.compiler.passes.main import PyastBuildPass
 
         visit_methods = [
             method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore

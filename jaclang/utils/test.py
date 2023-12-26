@@ -8,7 +8,7 @@ from unittest import TestCase as _TestCase
 
 
 import jaclang
-from jaclang.jac.passes import Pass
+from jaclang.compiler.passes import Pass
 from jaclang.utils.helpers import get_ast_nodes_as_snake_case as ast_snakes
 
 
