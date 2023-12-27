@@ -203,12 +203,12 @@ class JacFormatPass(Pass):
                             self.emit_ln(node, "")
                             self.indent_level += 1
                         else:
-                            self.emit(node, f"{ stmt.gen.jac}")
+                            self.emit(node, f" {stmt.gen.jac}")
+                        self.emit_ln(node, "")
                     else:
                         if not node.gen.jac.endswith("\n"):
                             self.emit_ln(node, "")
                         self.emit_ln(node, stmt.gen.jac)
-                    self.emit_ln(node, "")
                 elif stmt.gen.jac == ",":
                     self.emit(node, f"{stmt.value} ")
                 elif stmt.value == "=":
