@@ -1596,13 +1596,14 @@ class JacParser(Pass):
                 isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_FREEZE
             )
             is_aug = None
+            assignees = []
             chomp = chomp[1:] if is_frozen else chomp
             if (
                 len(chomp) > 1
                 and isinstance(chomp[1], ast.Token)
                 and chomp[1].name != Tok.EQ
             ):
-                assignees = [chomp[0]]
+                assignees += [chomp[0]]
                 is_aug = chomp[1]
                 chomp = chomp[2:]
             elif (
@@ -1610,7 +1611,6 @@ class JacParser(Pass):
                 and isinstance(chomp[1], ast.Token)
                 and chomp[1].name == Tok.EQ
             ):
-                assignees = []
                 while (
                     isinstance(chomp[0], ast.Expr)
                     and len(chomp) > 1
@@ -1620,7 +1620,7 @@ class JacParser(Pass):
                     assignees += [chomp[0], chomp[1]]
                     chomp = chomp[2:]
             elif isinstance(chomp[0], ast.Expr):
-                assignees = [chomp[0]]
+                assignees += [chomp[0]]
                 chomp = chomp[1:]
             else:
                 raise self.ice()
@@ -1630,7 +1630,7 @@ class JacParser(Pass):
                 kid=assignees,
             )
             kid = [x for x in kid if x not in assignees]
-            kid.insert(0, new_targ)
+            kid.insert(1, new_targ) if is_frozen else kid.insert(0, new_targ)
             type_tag = (
                 chomp[0]
                 if len(chomp) > 0 and isinstance(chomp[0], ast.SubTag)
