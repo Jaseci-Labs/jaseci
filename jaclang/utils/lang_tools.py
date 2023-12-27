@@ -323,7 +323,7 @@ class AstTool:
             print(f"{heading}: {lines}")
             content = (
                 f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
-                f'"jaclang/jac/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
+                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
                 f'=== "jac"\n    ```jac linenums="1"\n    --8<-- '
                 f'"examples/reference/'
                 f'{heading.replace("/", "_").replace("-", "_").replace(" ", "_").lower()}.jac"\n'
