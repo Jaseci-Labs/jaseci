@@ -1080,7 +1080,9 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
                     # self.emit_ln(node, "")
-            elif isinstance(i, ast.Semi):
+            elif isinstance(i, ast.Semi) or (
+                isinstance(i, ast.Token) and i.name == Tok.KW_FREEZE
+            ):
                 self.emit(node, f"{i.gen.jac} ")
             else:
                 self.emit(node, i.gen.jac)
