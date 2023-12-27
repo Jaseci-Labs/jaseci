@@ -8,7 +8,7 @@ from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
-from jaclang.utils.treeprinter import print_ast_tree
+from jaclang.utils.treeprinter import print_ast_tree, dotgen_ast_tree
 
 
 class AstNode:
@@ -94,6 +94,10 @@ class AstNode:
     def pp(self, depth: Optional[int] = None) -> str:
         """Print ast."""
         return print_ast_tree(self, max_depth=depth)
+
+    def dotgen(self, depth: Optional[int] = None) -> str:
+        """Print ast."""
+        return dotgen_ast_tree(self)
 
 
 class AstSymbolNode(AstNode):
