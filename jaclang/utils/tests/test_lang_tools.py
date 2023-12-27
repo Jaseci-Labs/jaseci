@@ -23,7 +23,7 @@ class JacFormatPassTests(TestCase):
         self.assertGreater(out.count("def exit_"), 20)
 
     def test_gendotfile(self) -> None:
-        """Testing for HTML entity"""
+        """Testing for HTML entity."""
         current_directory = os.getcwd()
         for root, _, files in os.walk(current_directory):
             for jac_file in files:
