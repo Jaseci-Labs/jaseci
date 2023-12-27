@@ -355,10 +355,13 @@ class Errors(mye.Errors):
             end_line=end_line,
             end_column=end_column,
         )
-        self.cur_pass.error(
-            msg=message,
-            node_override=mypy_to_jac_node_map[(line, column, end_line, end_column)],
-        )
+        if (line, column, end_line, end_column) in mypy_to_jac_node_map:
+            self.cur_pass.warning(
+                msg=message,
+                node_override=mypy_to_jac_node_map[
+                    (line, column, end_line, end_column)
+                ],
+            )
 
 
 __all__ = [

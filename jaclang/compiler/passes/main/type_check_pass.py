@@ -37,8 +37,6 @@ class JacTypeCheckPass(Pass):
         self, filename: str | None, new_messages: list[str], is_serious: bool
     ) -> None:
         """Mypy errors reporter."""
-        for msg in new_messages:
-            self.warning(msg)
 
     def api(self, node: ast.Module, mod_path: str) -> None:
         """Call mypy APIs to implement type checking in Jac."""
