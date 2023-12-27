@@ -4,6 +4,10 @@ from __future__ import annotations
 import ast
 
 import jaclang.vendor.mypy.build as myb
+import jaclang.vendor.mypy.errors as mye
+import jaclang.vendor.mypy.fastparse as myfp
+from jaclang.compiler.absyntree import AstNode
+from jaclang.compiler.passes import Pass
 from jaclang.vendor.mypy.build import BuildSource
 from jaclang.vendor.mypy.build import BuildSourceSet
 from jaclang.vendor.mypy.build import FileSystemCache
@@ -11,10 +15,11 @@ from jaclang.vendor.mypy.build import compute_search_paths
 from jaclang.vendor.mypy.build import load_graph
 from jaclang.vendor.mypy.build import load_plugins
 from jaclang.vendor.mypy.build import process_graph
-from jaclang.vendor.mypy.errors import Errors
-from jaclang.vendor.mypy.fastparse import ASTConverter
 from jaclang.vendor.mypy.options import Options
 from jaclang.vendor.mypy.semanal_main import semantic_analysis_for_scc
+
+
+mypy_to_jac_node_map: dict[tuple[int, int | None, int | None, int | None], AstNode] = {}
 
 
 class BuildManager(myb.BuildManager):
@@ -283,6 +288,77 @@ class State(myb.State):
             self.check_blockers()
 
         manager.ast_cache[self.id] = (self.tree, self.early_errors)
+
+
+class ASTConverter(myfp.ASTConverter):
+    """Overrides to mypy AST converter for direct AST pass through."""
+
+    def visit(self, node: ast.AST | None) -> myfp.Any:  # noqa: ANN401
+        """Override to mypy AST converter for direct AST pass through."""
+        if node is None:
+            return None
+        typeobj = type(node)
+        visitor = self.visitor_cache.get(typeobj)
+        if visitor is None:
+            method = "visit_" + node.__class__.__name__
+            visitor = getattr(self, method)
+            self.visitor_cache[typeobj] = visitor
+        ret = visitor(node)
+        if hasattr(node, "jac_link"):
+            node.jac_link.gen.mypy_ast.append(ret)
+            mypy_to_jac_node_map[
+                (ret.line, ret.column, ret.end_line, ret.end_column)
+            ] = node.jac_link
+        else:
+            raise Exception("AST node not linked to Jac node")
+        return ret
+
+
+class Errors(mye.Errors):
+    """Overrides to mypy errors for direct AST pass through."""
+
+    def __init__(self, cur_pass: Pass, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        """Override to mypy errors for direct AST pass through."""
+        self.cur_pass = cur_pass
+        super().__init__(*args, **kwargs)
+
+    def report(
+        self,
+        line: int,
+        column: int | None,
+        message: str,
+        code: mye.ErrorCode | None = None,
+        *,
+        blocker: bool = False,
+        severity: str = "error",
+        file: str | None = None,
+        only_once: bool = False,
+        allow_dups: bool = False,
+        origin_span: mye.Iterable[int] | None = None,
+        offset: int = 0,
+        end_line: int | None = None,
+        end_column: int | None = None,
+    ) -> None:
+        """Override to mypy errors for direct AST pass through."""
+        super().report(
+            line,
+            column,
+            message,
+            code=code,
+            blocker=blocker,
+            severity=severity,
+            file=file,
+            only_once=only_once,
+            allow_dups=allow_dups,
+            origin_span=origin_span,
+            offset=offset,
+            end_line=end_line,
+            end_column=end_column,
+        )
+        self.cur_pass.error(
+            msg=message,
+            node_override=mypy_to_jac_node_map[(line, column, end_line, end_column)],
+        )
 
 
 __all__ = [
