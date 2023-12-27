@@ -17,7 +17,6 @@ from jaclang.compiler.passes.tool.schedules import (
     sym_tab_print,
 )
 from jaclang.compiler.transpiler import jac_file_to_pass
-from jaclang.utils.treeprinter import dotgen_ast_tree
 from jaclang.utils.helpers import pascal_to_snake
 
 
@@ -238,7 +237,6 @@ class AstTool:
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
             return jac_file_to_pass(file_name, DeclDefMatchPass).ir.dotgen()
-            # return 
         else:
             return "Not a .jac file."
 

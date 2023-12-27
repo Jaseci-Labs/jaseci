@@ -1,8 +1,7 @@
 """Tree Printing Helpers for Jac."""
 from __future__ import annotations
-import html
-import inspect
 
+import html
 from typing import Optional, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
@@ -25,7 +24,7 @@ def dotgen_ast_tree(
     root: AstNode,
     dot_lines: Optional[list[str]] = None,
 ) -> str:
-    """Recursively generate ast tree in dot format"""
+    """Recursively generate ast tree in dot format."""
     global id_bag, id_used
     starting_call = False
     if dot_lines is None:
@@ -33,7 +32,7 @@ def dotgen_ast_tree(
         dot_lines = []
 
     def gen_node_id(node: ast.AstNode) -> int:
-        """ "Generate number for each nodes"""
+        """Generate number for each nodes."""
         global id_bag, id_used
         if id(node) not in id_bag:
             id_bag[id(node)] = id_used
