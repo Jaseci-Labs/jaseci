@@ -23,25 +23,13 @@ class JacFormatPassTests(TestCase):
         self.assertGreater(out.count("def exit_"), 20)
 
     def test_gendotfile(self) -> None:
-        """Testing for "<", ">", and ">>" in the dot file generation."""
-        """run in Main Jaclang directory."""
+        """Testing for HTML entity"""
         current_directory = os.getcwd()
-        dummy_dotout = os.path.join(os.path.dirname(__file__), "dummy_output.dot")
-        l: int = 0
         for root, _, files in os.walk(current_directory):
             for jac_file in files:
                 if jac_file.endswith(".jac"):
-                    l += 1
                     jac_file_path = os.path.join(root, jac_file)
-                    dummy_args = [jac_file_path, dummy_dotout]
-                    AstTool().gen_dotfile(dummy_args)
-                    with open(dummy_dotout, "r") as file:
-                        file_content = file.read()
-                        forbidden_strings = ["<<", ">>", "<init>", "<super>"]
-                        if any(
-                            forbidden_string in file_content
-                            for forbidden_string in forbidden_strings
-                        ):
-                            raise AssertionError(f"Assertion failed in file {jac_file}")
-                        else:
-                            print(l, jac_file, " PASSED")
+                    out = AstTool().dot_gen([jac_file_path])
+                    forbidden_strings = ["<<", ">>", "<init>", "<super>"]
+                    for i in forbidden_strings:
+                        self.assertNotIn(i, out)
