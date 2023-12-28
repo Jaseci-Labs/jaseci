@@ -9,10 +9,8 @@ from typing import List, Optional, Type
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.schedules import DeclDefMatchPass
 from jaclang.compiler.passes.tool.schedules import (
-    AstDotGraphPass,
     SymbolTableDotGraphPass,
     SymbolTablePrinterPass,
-    full_ast_dot_gen,
     sym_tab_dot_gen,
     sym_tab_print,
 )
@@ -201,27 +199,6 @@ class AstTool:
             output += "```\n\n"
             output += f"{cls.doc} \n\n"
         return output
-
-    def gen_dotfile(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: gen_dotfile <file_path> [<output_path>]"
-
-        file_name: str = args[0]
-        AstDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            jac_file_to_pass(file_name, AstDotGraphPass, full_ast_dot_gen)
-            if AstDotGraphPass.OUTPUT_FILE_PATH:
-                return f"Dot file generated at {AstDotGraphPass.OUTPUT_FILE_PATH}"
-            else:
-                return ""
-        else:
-            return "Not a .jac file."
 
     def dot_gen(self, args: List[str]) -> str:
         """Generate a dot file for AST."""

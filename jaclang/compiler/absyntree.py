@@ -95,7 +95,7 @@ class AstNode:
         """Print ast."""
         return print_ast_tree(self, max_depth=depth)
 
-    def dotgen(self, depth: Optional[int] = None) -> str:
+    def dotgen(self) -> str:
         """Print ast."""
         return dotgen_ast_tree(self)
 
