@@ -33,3 +33,19 @@ class JacFormatPassTests(TestCase):
                     forbidden_strings = ["<<", ">>", "<init>", "<super>"]
                     for i in forbidden_strings:
                         self.assertNotIn(i, out)
+
+    def test_print(self) -> None:
+        """Testing for print AstTool."""
+        current_directory = os.getcwd()
+        jac_directory = current_directory + "/examples/reference/"
+        jac_files = [f for f in os.listdir(jac_directory) if f.endswith(".jac")]
+        exclude = ["match_litteral_patterns.jac"]
+        for jac_file in jac_files:
+            if jac_file in exclude:
+                continue
+            if jac_file.endswith(".jac"):
+                # # Check the forbidden strings in the output of AstTool().print
+                msg = "error in " + jac_file
+                out = AstTool().print([jac_directory + jac_file])
+                self.assertIn("+-- Token", out, msg)
+                self.assertIsNotNone(out, msg=msg)
