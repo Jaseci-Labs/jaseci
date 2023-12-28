@@ -12,7 +12,11 @@ setup(
     packages=find_packages(include=["jaclang", "jaclang.*"]),
     install_requires=[],
     package_data={
-        "": ["*.ini", "*.jac", "*.jbc"],
+        "": [
+            "*.ini",
+            "*.jac",
+            "*.jbc",
+        ],
     },
     entry_points={
         "console_scripts": [
