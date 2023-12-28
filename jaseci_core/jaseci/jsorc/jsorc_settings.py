@@ -218,9 +218,9 @@ class JsOrcSettings:
         "enabled": False,
         "quiet": False,
         "automated": False,
-        "url": os.getenv("SOCKET_URL", "ws://jaseci-socket/ws"),
-        "ping_url": os.getenv("SOCKET_PING_URL", "http://jaseci-socket/healthz"),
-        "auth": os.getenv("SOCKET_AUTH", "12345678"),
+        "url": getenv("SOCKET_URL", "ws://jaseci-socket/ws"),
+        "ping_url": getenv("SOCKET_PING_URL", "http://jaseci-socket/healthz"),
+        "auth": getenv("SOCKET_AUTH", "12345678"),
     }
 
     SOCKET_MANIFEST = load_default_yaml("socket")
