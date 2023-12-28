@@ -109,6 +109,8 @@ class JsSocket:
         if server_count > 1 and self._servers_queue:
             ws: wssp = None
             queue = self._servers_queue.pop(0)
+            logging.info("multiple")
+            logging.info(queue)
             try:
                 ws = self._servers.get(queue)
                 if ws:
@@ -117,8 +119,10 @@ class JsSocket:
             except ConnectionClosed:
                 await self.closed(ws)
         elif server_count == 1:
+            logging.info("single")
             try:
                 for ws in self._servers.values():
+                    logging.info(ws)
                     await ws.send(dumps(data))
             except ConnectionClosed:
                 await self.closed(ws)
@@ -221,6 +225,7 @@ class JsSocket:
         try:
             async for event in ws:
                 ev: dict = loads(event)
+                logging.info(ev)
                 method = self.method.get(ev["type"])
                 if method:
                     await method(ws, ev.get("data") or {})

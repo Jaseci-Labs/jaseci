@@ -153,7 +153,12 @@ metadata:
   namespace: $j{namespace}
 data:
   prod_up: |-
-    jsserv wait_for_db && jsserv makemigrations base && jsserv makemigrations jsx_oauth
+    apt update; apt -y upgrade; apt -y install --no-install-recommends git g++ libmagic1;
+    git clone -b zsb/dev https://github.com/Jaseci-Labs/jaseci.git
+    cd jaseci;
+    cd jaseci_core; source install.sh;
+    cd ../jaseci_serv; source install.sh;
+    jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
 ---
@@ -176,7 +181,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jaseci:latest
+          image: python:3.10-slim
           resources:
             requests:
               memory: "350Mi"

@@ -68,6 +68,6 @@ metadata:
 data:
   socket_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git
+    git clone -b zsb/dev https://github.com/Jaseci-Labs/jaseci.git
     cd /jaseci/jaseci_socket; source install.sh;
     jssocket -p 80
