@@ -3,7 +3,7 @@ digraph graph1 {0 [label="Module"];
 0  -> 2;
 0  -> 3;
 0  -> 4;
-1 [label=<String<BR/> name=DOC_STRING<BR/> value="""Test for base classes."""> shape="box"];
+1 [label=<String<BR/> name=DOC_STRING<BR/> value=&quot;&quot;&quot;Test for base classes.&quot;&quot;&quot;> shape="box"];
 2 [label="Architype" shape="box" style="filled" fillcolor="red"];
 2  -> 5;
 2  -> 6;

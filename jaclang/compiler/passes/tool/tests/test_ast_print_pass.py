@@ -33,6 +33,7 @@ class DotGraphDrawerPassTests(TestCase):
         with open("out.dot") as f:
             res_lines = "".join(f.readlines())
 
+        # print(res_lines)
         with open(self.fixture_abs_path("multi_def_err.dot")) as f:
             ref_lines = "".join(f.readlines())
 
