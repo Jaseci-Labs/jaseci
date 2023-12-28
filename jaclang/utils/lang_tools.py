@@ -209,7 +209,6 @@ class AstTool:
 
         file_name: str = args[0]
         AstDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
-
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
 
@@ -221,6 +220,23 @@ class AstTool:
                 return f"Dot file generated at {AstDotGraphPass.OUTPUT_FILE_PATH}"
             else:
                 return ""
+        else:
+            return "Not a .jac file."
+
+    def dot_gen(self, args: List[str]) -> str:
+        """Generate a dot file for AST."""
+        if len(args) == 0:
+            return "Usage: print <file_path>"
+
+        file_name: str = args[0]
+
+        if not os.path.isfile(file_name):
+            return f"Error: {file_name} not found"
+
+        if file_name.endswith(".jac"):
+            [base, mod] = os.path.split(file_name)
+            base = base if base else "./"
+            return jac_file_to_pass(file_name, DeclDefMatchPass).ir.dotgen()
         else:
             return "Not a .jac file."
 

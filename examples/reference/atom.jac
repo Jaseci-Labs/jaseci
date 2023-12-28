@@ -4,7 +4,7 @@
    }
  glob  c=(3,4,5);
 with entry{
-    #do we need to give example for what are atoms?
+    #do we need to give example for what are atoms ?
    enum x;
    print(x.y.value);
 }
