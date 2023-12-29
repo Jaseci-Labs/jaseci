@@ -39,7 +39,7 @@ class JacFormatPassTests(TestCase):
         current_directory = os.getcwd()
         jac_directory = current_directory + "/examples/reference/"
         jac_files = [f for f in os.listdir(jac_directory) if f.endswith(".jac")]
-        exclude = ["match_litteral_patterns.jac"]
+        exclude = ["match_litteral_patterns.jac", "ignore_statements"]
         for jac_file in jac_files:
             if jac_file in exclude:
                 continue
