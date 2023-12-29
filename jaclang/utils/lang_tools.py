@@ -15,7 +15,7 @@ from jaclang.compiler.passes.tool.schedules import (
     sym_tab_print,
 )
 from jaclang.compiler.transpiler import jac_file_to_pass
-from jaclang.utils.helpers import pascal_to_snake
+from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
 
 
 class AstKidInfo:
@@ -278,27 +278,6 @@ class AstTool:
 
     def automate_ref(self) -> None:
         """Automate the reference guide generation."""
-
-        def extract_headings(file_path: str) -> dict[str, tuple[int, int]]:
-            with open(file_path, "r") as file:
-                lines = file.readlines()
-            headings = {}
-            current_heading = None
-            start_line = 0
-            for idx, line in enumerate(lines, start=1):
-                if line.strip().startswith("//"):
-                    if current_heading is not None:
-                        headings[current_heading] = (
-                            start_line,
-                            idx - 2,
-                        )  # Subtract 1 to get the correct end line
-                    current_heading = line.strip()[2:]
-                    start_line = idx + 1
-            # Add the last heading
-            if current_heading is not None:
-                headings[current_heading] = (start_line, len(lines))
-            return headings
-
         # Jac lark path
         file_path = os.path.join(
             os.path.split(os.path.dirname(__file__))[0], "../jaclang/compiler/jac.lark"
@@ -308,21 +287,37 @@ class AstTool:
             os.path.split(os.path.dirname(__file__))[0],
             "../support/jac-lang.org/docs/learn/jac_ref.md",
         )
+        destination_folder = os.path.join(
+            os.path.split(os.path.dirname(__file__))[0], "../examples/reference/"
+        )
         with open(created_file_path, "w") as md_file:
             # Write the content to the destination file
             md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
         for heading, lines in result.items():
             heading = heading.strip()
-            print(f"{heading}: {lines}")
+            heading_snakecase = heading_to_snake(heading)
+            if heading == "Names and references":
+                continue
+            # print(f"{heading}: {lines}")
             content = (
                 f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
-                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
-                f'=== "jac"\n    ```jac linenums="1"\n    --8<-- '
+                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n--8<-- '
                 f'"examples/reference/'
-                f'{heading.replace("/", "_").replace("-", "_").replace(" ", "_").lower()}.jac"\n'
-                f'    ```\n=== "python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
-                f'{heading.replace("-", "_").replace("/", "_").replace(" ", "_").lower()}.py"\n    ```\n'
+                f'{heading_snakecase}.md"\n'
             )
             with open(created_file_path, "a") as md_file:
                 # Write the content to the destination file
                 md_file.write(f"{content}\n")
+            # Generate a Markdown file name based on the heading
+            md_file_name = f"{heading_snakecase}.md"
+            # Full path for the new Markdown file
+            md_file_path = os.path.join(destination_folder, md_file_name)
+            content = (
+                f'=== "Jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/'
+                f'{heading_snakecase}.jac"\n'
+                f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
+                f'{heading_snakecase}.py"\n    ```\n'
+            )
+            with open(md_file_path, "w") as md_file:
+                # Write the content to the destination file
+                md_file.write(content)
