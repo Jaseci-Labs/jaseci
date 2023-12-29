@@ -1,10 +1,78 @@
 """Tree Printing Helpers for Jac."""
 from __future__ import annotations
 
+import html
 from typing import Optional, TYPE_CHECKING
 
+import jaclang.compiler.absyntree as ast
+
+
 if TYPE_CHECKING:
-    from jaclang.jac.absyntree import AstNode, SymbolTable
+    from jaclang.compiler.absyntree import AstNode, SymbolTable
+
+id_bag: dict = {}
+id_used: int = 0
+CLASS_COLOR_MAP: dict[str, str] = {
+    "Architype": "red",
+    "Ability": "green",
+    "ArchDef": "blue",
+    "AbilityDef": "yellow",
+}
+
+
+def dotgen_ast_tree(
+    root: AstNode,
+    dot_lines: Optional[list[str]] = None,
+) -> str:
+    """Recursively generate ast tree in dot format."""
+    global id_bag, id_used
+    starting_call = False
+    if dot_lines is None:
+        starting_call = True
+        dot_lines = []
+
+    def gen_node_id(node: ast.AstNode) -> int:
+        """Generate number for each nodes."""
+        global id_bag, id_used
+        if id(node) not in id_bag:
+            id_bag[id(node)] = id_used
+            id_used += 1
+        return id_bag[id(node)]
+
+    def gen_node_parameters(node: ast.AstNode) -> str:
+        shape = ""
+        fillcolor = ""
+        style = ""
+        _class__ = str(node.__class__)[35:-2]
+        if _class__ in CLASS_COLOR_MAP:
+            shape = 'shape="box"'
+            style = 'style="filled"'
+            fillcolor = f'fillcolor="{CLASS_COLOR_MAP[_class__]}"'
+        info1: list[tuple[str, str, str]] = []
+        if isinstance(node, ast.Token):
+            """ "Only tokens and some declared types are box(others are oval )"""
+            shape = 'shape="box"'
+            info1.append(("name", "=", node.name))
+            info1.append(("value", "=", html.escape(node.value)))
+
+        if len(info1) == 0:
+            label = f'"{node.__class__.__name__}"'
+        else:
+            label = f"<{node.__class__.__name__}"
+            for i in info1:
+                label += f"<BR/> {i[0]}{i[1]}{i[2]}"
+            label += ">"
+
+        label = f"{label} {shape} {style} {fillcolor}".strip()
+        return f"[label={label}]"
+
+    dot_lines.append(f"{gen_node_id(root)} {gen_node_parameters(root)};")
+    for i in root.kid:
+        dot_lines.append(f"{gen_node_id(root)}  -> {gen_node_id(i)};")
+        dotgen_ast_tree(i, dot_lines)
+    if starting_call:
+        return "\ndigraph graph1 {" + "\n".join(list(set(dot_lines))) + "}"
+    return " "
 
 
 def print_ast_tree(
@@ -15,7 +83,7 @@ def print_ast_tree(
     max_depth: Optional[int] = None,
 ) -> str:
     """Recursively print ast tree."""
-    from jaclang.jac.absyntree import AstSymbolNode, Token
+    from jaclang.compiler.absyntree import AstSymbolNode, Token
 
     def __node_repr_in_tree(node: AstNode) -> str:
         if isinstance(node, Token):

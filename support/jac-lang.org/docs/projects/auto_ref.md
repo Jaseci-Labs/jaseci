@@ -56,7 +56,7 @@ These files will serve as modules that will be automatically assembled into a si
 A function will be added to the lang_tools package in jaclang that will do this assembling while also generating the correct inlined sections of `jac.lark`.
 
 
-Fro example for the section:
+For example for the section:
 
 ``` linenums="1"
 --8<-- "jaclang/jac/jac.lark::27"
@@ -106,3 +106,25 @@ The automation function in the lang_tools package will parse these headers from 
 - Jac and python versions are needed for each example
 - Both programs should run and produce the same output
 - Ultimately there will be automated testes for the correctness of these programs
+
+## Concrete Steps
+
+* [TeamRise] First in `examples/reference` we need to have a single `.jac` file for each section in addition to a single `.py` file for each example, the programs should logically produce the same output.
+
+    * The Jac example only have to pass parse errors.
+    * The python should produce expected output.
+    * If the example is Jac-only, create a python file with our naming convention, however have it just `print("Jac only feature")`
+    * Reach Goal: 30 sections, both jac and python.
+
+* PR into Kug's branch
+* Kug and team tests the jac_ref generation
+* Homogenize all examples and file names
+* Update targets file
+* Push branch
+* Write auto test that all py files run in reference (see test_language.py)
+
+
+
+* [MarsNinja] Automated testing infrastructure to run both jac programs and python programs to check outputs match
+
+* ... reference gen infra.
