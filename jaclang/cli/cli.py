@@ -1,207 +1,107 @@
-"""This is the implementation of the command line interface tool for the Jac language.
+"""Command line interface tool for the Jac language."""
+import os
+import shutil
+import unittest
 
-It's built with the Jac language via bootstraping and
-represents the first such complete Jac program.
-"""
-from __future__ import annotations
-
-import argparse
-import cmd
-import inspect
-import typing as _jac_typ
-
-from jaclang.jac.plugin.feature import JacFeature as _JacFeature
-
-
-@_JacFeature.make_architype("obj", on_entry=[], on_exit=[])
-class Command:
-    """
-    Represents a command in the command line interface.
-
-    Attributes:
-    - func: The callable function associated with the command.
-    - sig: The signature of the function.
-    """
-
-    func: callable
-    sig: inspect.Signature
-
-    def __init__(self, func: callable) -> None:
-        """
-        Initialize a Command instance.
-
-        Parameters:
-        - func: The callable function associated with the command.
-        """
-        self.func = func
-        self.sig = inspect.signature(func)
-
-    def call(self, *args: list, **kwargs: dict) -> None:
-        """
-        Call the associated function with the specified arguments and keyword arguments.
-
-        Parameters:
-        - *args: Positional arguments.
-        - **kwargs: Keyword arguments.
-        """
-        return self.func(*args, **kwargs)
-
-
-@_JacFeature.make_architype("obj", on_entry=[], on_exit=[])
-class CommandRegistry:
-    """
-    Registry for managing commands in the command line interface.
-
-    Attributes:
-    - registry: A dictionary mapping command names to Command instances.
-    - sub_parsers: Argument parser sub-parsers for individual commands.
-    - parser: Main argument parser for the CLI.
-
-    Methods:
-    - register(func: callable) -> None: Register a command in the registry.
-    - get(name: str) -> Command: Get the Command instance for a given command name.
-    - items() -> dict[str, Command]: Get all registered commands as a dictionary.
-    """
-
-    registry: dict[str, Command]
-    sub_parsers: argparse._SubParsersActionp
-    parser: argparse.ArgumentParser
-
-    def __init__(self) -> None:
-        """Initialize a CommandRegistry instance."""
-        self.registry = {}
-        self.parser = argparse.ArgumentParser(prog="CLI")
-        self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
-
-    def register(self, func: callable) -> None:
-        """
-        Register a command in the registry.
-
-        Parameters:
-        - func: The callable function representing the command.
-
-        Returns:
-        - None
-        """
-        name = func.__name__
-        cmd = Command(func)
-        self.registry[name] = cmd
-        cmd_parser = self.sub_parsers.add_parser(name)
-        # param_items = cmd.sig.parameters.items
-        first = True
-        for param_name, param in cmd.sig.parameters.items():
-            if param_name == "args":
-                cmd_parser.add_argument("args", nargs=argparse.REMAINDER)
-            elif param.default is param.empty:
-                if first:
-                    first = False
-                    cmd_parser.add_argument(
-                        f"{param_name}", type=eval(param.annotation)
-                    )
-                else:
-                    cmd_parser.add_argument(
-                        f"-{param_name[:1]}",
-                        f"--{param_name}",
-                        required=True,
-                        type=eval(param.annotation),
-                    )
-            elif first:
-                first = False
-                cmd_parser.add_argument(
-                    f"{param_name}", default=param.default, type=eval(param.annotation)
-                )
-            else:
-                cmd_parser.add_argument(
-                    f"-{param_name[:1]}",
-                    f"--{param_name}",
-                    default=param.default,
-                    type=eval(param.annotation),
-                )
-        return func
-
-    def get(self, name: str) -> Command:
-        """
-        Get the Command instance for a given command name.
-
-        Parameters:
-        - name: The name of the command.
-
-        Returns:
-        - Command: The Command instance for the specified command name.
-        """
-        return self.registry.get(name)
-
-    def items(self) -> dict[str, Command]:
-        """
-        Get all registered commands as a dictionary.
-
-        Returns:
-        - dict[str, Command]: A dictionary mapping command names to Command instances.
-        """
-        return self.registry.items()
-
-
-@_JacFeature.make_architype("obj", on_entry=[], on_exit=[])
-class CommandShell(cmd.Cmd):
-    """
-    Command shell for the command line interface.
-
-    Attributes:
-    - intro: Introduction message displayed at the start.
-    - prompt: Prompt string.
-    - cmd_reg: CommandRegistry instance.
-
-    Methods:
-    - do_exit(arg: list) -> bool: Exit the command shell.
-    - default(line: str) -> None: Default method for processing commands.
-    """
-
-    intro: _jac_typ.ClassVar[str] = "Welcome to the Jac CLI!"
-    prompt: _jac_typ.ClassVar[str] = "jac> "
-    cmd_reg: CommandRegistry
-
-    def __init__(self, cmd_reg: CommandRegistry) -> None:
-        """
-        Initialize a CommandShell instance.
-
-        Parameters:
-        - cmd_reg: CommandRegistry instance.
-        """
-        self.cmd_reg = cmd_reg
-        super().__init__()
-
-    def do_exit(self, arg: list) -> bool:
-        """
-        Exit the command shell.
-
-        Parameters:
-        - arg: Command arguments.
-
-        Returns:
-        - bool: True to exit the shell.
-        """
-        return True
-
-    def default(self, line: str) -> None:
-        """
-        Process the command line input.
-
-        Parameters:
-        - line: The command line input.
-        """
-        try:
-            args = vars(self.cmd_reg.parser.parse_args(line.split()))
-            command = self.cmd_reg.get(args["command"])
-            if command:
-                args.pop("command")
-                ret = command.call(**args)
-                if ret:
-                    print(ret)
-        except Exception as e:
-            print(e)
+from jaclang import jac_import as __jac_import__
+from jaclang.cli.cmdreg import CommandRegistry, CommandShell
+from jaclang.jac.constant import Constants
+from jaclang.utils.lang_tools import AstTool
 
 
 cmd_registry = CommandRegistry()
+
+
+@cmd_registry.register
+def run(filename: str, main: bool = True) -> None:
+    """Run the specified .jac file.
+
+    :param filename: The path to the .jac file.
+    :param main: If True, use '__main__' as the module name, else use the actual module name.
+    """
+    if filename.endswith(".jac"):
+        base, mod = os.path.split(filename)
+        base = base if base else "./"
+        mod = mod[:-4]
+        __jac_import__(
+            target=mod, base_path=base, override_name="__main__" if main else None
+        )
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def enter(filename: str, entrypoint: str, args: list) -> None:
+    """Run the specified entrypoint function in the given .jac file.
+
+    :param filename: The path to the .jac file.
+    :param entrypoint: The name of the entrypoint function.
+    :param args: Arguments to pass to the entrypoint function.
+    """
+    if filename.endswith(".jac"):
+        base, mod = os.path.split(filename)
+        base = base if base else "./"
+        mod = mod[:-4]
+        mod = __jac_import__(target=mod, base_path=base)
+        if not mod:
+            print("Errors occurred while importing the module.")
+            return
+        else:
+            getattr(mod, entrypoint)(*args)
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def test(filename: str) -> None:
+    """Run the test suite in the specified .jac file.
+
+    :param filename: The path to the .jac file.
+    """
+    if filename.endswith(".jac"):
+        base, mod = os.path.split(filename)
+        base = base if base else "./"
+        mod = mod[:-4]
+        mod = __jac_import__(target=mod, base_path=base)
+        unittest.TextTestRunner().run(mod.__jac_suite__)
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def ast_tool(tool: str, args: list = None) -> None:
+    """Run the specified AST tool with optional arguments.
+
+    :param tool: The name of the AST tool to run.
+    :param args: Optional arguments for the AST tool.
+    """
+    if hasattr(AstTool, tool):
+        try:
+            if args and len(args):
+                print(getattr(AstTool(), tool)(*args))
+            else:
+                print(getattr(AstTool(), tool)())
+        except Exception:
+            print(f"Error while running ast tool {tool}, check args.")
+    else:
+        print(f"Ast tool {tool} not found.")
+
+
+@cmd_registry.register
+def clean() -> None:
+    """Remove the __jac_gen__ , __pycache__ folders.
+
+    from the current directory recursively.
+    """
+    current_dir = os.getcwd()
+    py_cache = "__pycache__"
+    for root, dirs, _files in os.walk(current_dir, topdown=True):
+        for folder_name in dirs[:]:
+            if folder_name == Constants.JAC_GEN_DIR or folder_name == py_cache:
+                folder_to_remove = os.path.join(root, folder_name)
+                shutil.rmtree(folder_to_remove)
+                print(f"Removed folder: {folder_to_remove}")
+    print("Done cleaning.")
 
 
 def start_cli() -> None:
@@ -221,8 +121,7 @@ def start_cli() -> None:
         if ret:
             print(ret)
     else:
-        shell = CommandShell(cmd_registry).cmdloop()
-        shell.cmdloop()
+        CommandShell(cmd_registry).cmdloop()
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 import io
 import sys
 
-from jaclang.cli import cmds
+from jaclang.cli import cli
 from jaclang.utils.test import TestCase
 
 
@@ -19,7 +19,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.run(self.fixture_abs_path("../../../../examples/manual_code/circle.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("../../../../examples/manual_code/circle.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -40,7 +40,7 @@ class JacCliTests(TestCase):
         sys.stderr = captured_output
 
         # Execute the function
-        cmds.test(self.fixture_abs_path("../../../../examples/manual_code/circle.jac"))  # type: ignore
+        cli.test(self.fixture_abs_path("../../../../examples/manual_code/circle.jac"))  # type: ignore
 
         sys.stderr = sys.__stderr__
         stderr_value = captured_output.getvalue()
@@ -53,7 +53,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.run(self.fixture_abs_path("../../../../examples/manual_code/circle_clean.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("../../../../examples/manual_code/circle_clean.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -71,7 +71,7 @@ class JacCliTests(TestCase):
         sys.stderr = captured_output
 
         # Execute the function
-        cmds.test(self.fixture_abs_path("../../../../examples/manual_code/circle_clean_tests.jac"))  # type: ignore
+        cli.test(self.fixture_abs_path("../../../../examples/manual_code/circle_clean_tests.jac"))  # type: ignore
 
         sys.stderr = sys.__stderr__
         stderr_value = captured_output.getvalue()
