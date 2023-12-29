@@ -2,8 +2,9 @@
 import io
 import sys
 
-import jaclang.core.construct as construct
-from jaclang.cli import cmds, jac_import
+from jaclang import jac_import
+from jaclang.cli import cli
+from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
 
@@ -20,7 +21,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.run(self.fixture_abs_path("sub_abil_sep.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("sub_abil_sep.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -37,7 +38,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.run(self.fixture_abs_path("sub_abil_sep_multilev.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("sub_abil_sep_multilev.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()

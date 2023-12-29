@@ -32,13 +32,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Set up test."""
         return super().setUp()
 
-    def test_jac_cli(self) -> None:
-        """Basic test for pass."""
-        code_gen = jac_file_to_pass(
-            self.fixture_abs_path("../../../../../cli/cli.jac"), target=PyastGenPass
-        )
-        self.assertFalse(code_gen.errors_had)
-
     def test_hodge_podge(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_pass(
