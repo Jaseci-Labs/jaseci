@@ -5,7 +5,7 @@ import unittest
 
 from jaclang import jac_import as __jac_import__
 from jaclang.cli.cmdreg import CommandRegistry, CommandShell
-from jaclang.jac.constant import Constants
+from jaclang.compiler.constant import Constants
 from jaclang.utils.lang_tools import AstTool
 
 
