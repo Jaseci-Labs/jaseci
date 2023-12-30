@@ -33,8 +33,8 @@ walker Walk {
 }
 
 can test_run {
-    :> Creator |> <root>;
-    :> Walk |> <root>;
+    <root> spawn Creator();
+    <root> spawn Walk();
 }
 
 with entry {

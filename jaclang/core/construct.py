@@ -17,15 +17,6 @@ class Architype:
     _jac_entry_funcs_: list[DSFunc]
     _jac_exit_funcs_: list[DSFunc]
 
-    def __init__(self) -> None:
-        """Post init."""
-        self._jac_ = ObjectAnchor(obj=self)
-
-    def __call__(self, target: Architype) -> None:
-        """Call the architype's data spatial behavior."""
-        if callable(self._jac_):
-            return self._jac_(target)
-
 
 @dataclass(eq=False)
 class NodeArchitype(Architype):
@@ -98,6 +89,10 @@ class ElementAnchor:
 class ObjectAnchor(ElementAnchor):
     """Object Anchor."""
 
+    def spawn_call(self, walk: WalkerArchitype) -> None:
+        """Invoke data spatial call."""
+        walk._jac_.spawn_call(self.obj)
+
 
 @dataclass(eq=False)
 class NodeAnchor(ObjectAnchor):
@@ -132,10 +127,6 @@ class NodeAnchor(ObjectAnchor):
                     ret_nodes.append(i._jac_.source)
         return ret_nodes
 
-    def __call__(self, walk: WalkerArchitype) -> None:
-        """Invoke data spatial call."""
-        walk(self.obj)
-
 
 @dataclass(eq=False)
 class EdgeAnchor(ObjectAnchor):
@@ -165,10 +156,10 @@ class EdgeAnchor(ObjectAnchor):
             self.target._jac_.edges[EdgeDir.IN].append(self.obj)
         return self
 
-    def __call__(self, walk: WalkerArchitype) -> None:
+    def spawn_call(self, walk: WalkerArchitype) -> None:
         """Invoke data spatial call."""
         if self.target:
-            walk(self.target)
+            walk._jac_.spawn_call(self.target)
 
 
 @dataclass(eq=False)
@@ -229,7 +220,7 @@ class WalkerAnchor(ObjectAnchor):
         """Disengage walker from traversal."""
         self.disengaged = True
 
-    def __call__(self, nd: NodeArchitype) -> None:
+    def spawn_call(self, nd: Architype) -> None:
         """Invoke data spatial call."""
         self.path = []
         self.next = [nd]

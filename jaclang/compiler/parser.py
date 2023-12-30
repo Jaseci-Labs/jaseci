@@ -1905,8 +1905,14 @@ class JacParser(Pass):
         def atomic_pipe_back(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atomic_pipe_back: unpack
-                            | atomic_pipe_back A_PIPE_BKWD unpack
+            atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
+            """
+            return self.binary_expr_unwind(kid)
+
+        def ds_spawn(self, kid: list[ast.AstNode]) -> ast.Expr:
+            """Grammar rule.
+
+            ds_spawn: (ds_spawn KW_SPAWN)? unpack
             """
             return self.binary_expr_unwind(kid)
 
@@ -1952,15 +1958,15 @@ class JacParser(Pass):
         def walrus_assign(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            walrus_assign: ds_call walrus_op walrus_assign
-                         | ds_call
+            walrus_assign: pipe_call walrus_op walrus_assign
+                         | pipe_call
             """
             return self.binary_expr_unwind(kid)
 
-        def ds_call(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def pipe_call(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            ds_call: atomic_chain
+            pipe_call: atomic_chain
                 | PIPE_FWD atomic_chain
                 | A_PIPE_FWD atomic_chain
                 | KW_SPAWN atomic_chain

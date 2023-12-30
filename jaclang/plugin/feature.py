@@ -46,6 +46,11 @@ class JacFeature:
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
+    def spawn_call(op1: Architype, op2: Architype) -> Architype:
+        """Jac's spawn operator feature."""
+        return JacFeature.pm.hook.spawn_call(op1=op1, op2=op2)
+
+    @staticmethod
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
         return JacFeature.pm.hook.report(expr=expr)

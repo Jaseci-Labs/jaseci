@@ -40,5 +40,5 @@ node turn {
 
 # # Run the game
 with entry {
-    :> GuessGame :> <root>;
+    <root> spawn GuessGame();
 }
