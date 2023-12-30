@@ -307,7 +307,10 @@ connect: atomic_pipe ((connect_op | disconnect_op) connect)?
 atomic_pipe: (atomic_pipe (KW_SPAWN | A_PIPE_FWD))? atomic_pipe_back
 
 // Atomic pipe back expressions
-atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? unpack
+atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
+
+// Data spatial spawn expressions
+ds_spawn: (ds_spawn KW_SPAWN)? unpack
 
 // Unpack expressions
 unpack: (STAR_MUL | STAR_POW) unpack | ref
@@ -316,10 +319,10 @@ unpack: (STAR_MUL | STAR_POW) unpack | ref
 ref: BW_AND? walrus_assign
 
 // Walrus assignments
-walrus_assign: ds_call (WALRUS_EQ walrus_assign)?
+walrus_assign: pipe_call (WALRUS_EQ walrus_assign)?
 
 // Data spatial calls
-ds_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
+pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // Subscripted and dotted expressions
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
