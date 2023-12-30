@@ -5,7 +5,7 @@ import sys
 import traceback
 from typing import List, Type
 
-from jaclang.cli import cmds
+from jaclang.cli import cli
 from jaclang.plugin.default import JacFeatureDefaults
 from jaclang.plugin.feature import JacFeature
 from jaclang.plugin.spec import JacFeatureSpec
@@ -58,7 +58,7 @@ class TestFeatures(TestCase):
 
         try:
             # Execute the function that is expected to raise an exception
-            cmds.run(self.fixture_abs_path("impl_match.jac"))  # type: ignore
+            cli.run(self.fixture_abs_path("impl_match.jac"))  # type: ignore
         except Exception:
             # Print the full stack trace to the captured output
             traceback.print_exc(file=captured_output)
