@@ -83,6 +83,12 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def spawn_call(op1: Architype, op2: Architype) -> Architype:
+        """Jac's spawn operator feature."""
+        return op1._jac_.spawn_call(op2)
+
+    @staticmethod
+    @hookimpl
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
 

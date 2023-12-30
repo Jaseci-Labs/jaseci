@@ -1477,7 +1477,6 @@ class PyastGenPass(Pass):
             raise self.ice()
         elif node.op.name in [
             Tok.PIPE_FWD,
-            Tok.KW_SPAWN,
             Tok.A_PIPE_FWD,
         ]:
             func_node = ast.FuncCall(
@@ -1489,6 +1488,23 @@ class PyastGenPass(Pass):
             )
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
+        elif node.op.name in [Tok.KW_SPAWN]:
+            self.needs_jac_feature()
+            return self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                            ),
+                            attr="spawn_call",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=[node.left.gen.py_ast, node.right.gen.py_ast],
+                    keywords=[],
+                )
+            )
         elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
             func_node = ast.FuncCall(
                 target=node.left,

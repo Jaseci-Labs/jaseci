@@ -36,8 +36,8 @@ node turn {
 
 # # Run the game
 with entry {
-    GuessGame()(<root>);
+    <root> spawn GuessGame();
     print('');
-    GuessGame2()(<root>);
+    <root> spawn GuessGame2();
     print('');
 }

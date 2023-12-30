@@ -64,6 +64,12 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def spawn_call(op1: Architype, op2: Architype) -> Architype:
+        """Jac's spawn operator feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
         raise NotImplementedError
