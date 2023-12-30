@@ -167,7 +167,7 @@ literal_pattern: (INT | FLOAT | multistring)
 // Match singleton patterns
 singleton_pattern: (NULL | BOOL)
 
-// Match capture patterns (e.g. 'case _:')
+// Match capture patterns
 capture_pattern: NAME
 
 // Match sequence patterns
