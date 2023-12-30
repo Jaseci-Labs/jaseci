@@ -1,49 +1,19 @@
+"""A Docstring can be added the head of any module.
+
+Any element in the module can also have a docstring.
+If there is only one docstring before the first element,
+it is assumed to be a module docstring.
 """
-A Docstring
-Is required at the head of every
-module
-"""
 
-# This is a single line comment
-
-#* This is
-A Multiline
-Comment *#
-
-glob ver = "0.0.1";  # global variable
-
-import:py os; # import a python module
-
-obj mytype {}  # define a new type
-
-node mynode:this,that: {}  # define a new node
-
-edge parent {}  # define a new edge
-
-"""
-Doc strings can only appear before
-a declaration of an element,
-and should target users, Use comments otherwise
-"""
-walker travelor {  # define a new walker
-    can say_hello;
+"""A docstring for add function"""
+can add(a: int, b: int) -> int {
+    return a + b;
 }
 
-#* Declarations and definitions
-can be separate in Jac *#
-:walker:travelor:can:say_hello {
-    "Hello" |> print;  # |> is a pipe forward operator
+can subtract(a: int, b: int) -> int {
+    return a - b;
 }
 
-can myablty -> int {} # define a data spacial freestyle ability
-
-can myfunc() -> None {} # define a function
-
-with entry {
-    # module level freestyle code
-}
-
-"""A test of my functionality"""
-test mytest {
-   # test code here
+with entry:__main__ {
+    print(add(1, subtract(3, 1)));
 }
