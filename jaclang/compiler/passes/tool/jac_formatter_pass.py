@@ -470,7 +470,9 @@ class JacFormatPass(Pass):
         prev_token = None
 
         for i in node.kid:
-            if not i.gen.jac:
+            if i.gen.jac == "can" and node.is_static:
+                i.gen.jac = "static can"
+            if not i.gen.jac or i.gen.jac == "static":
                 continue
             if isinstance(i, ast.String):
                 self.emit_ln(node, i.gen.jac)

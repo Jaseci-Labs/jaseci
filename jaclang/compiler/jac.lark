@@ -360,7 +360,7 @@ multistring: (fstring | STRING)+
 fstring: FSTR_START fstr_parts FSTR_END
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
-// Collections
+// Collection values
 atom_collection: dict_compr
                | set_compr
                | gen_compr
