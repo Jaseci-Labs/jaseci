@@ -1,4 +1,3 @@
-"""You can import python modules freely."""
 import:py os;
 import:py from math, sqrt as square_root;
 import:py datetime as dt;

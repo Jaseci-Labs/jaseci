@@ -1,43 +1,70 @@
-from enum import Enum
+# Defining the base class
+class Animal:
+    def __init__(self):
+        self.type = "Animal"
 
 
-# Enum for superhero powers
-class Superpower(Enum):
-    FLYING = "Flying"
-    SUPER_STRENGTH = "Super Strength"
-    TELEPORTATION = "Teleportation"
+# Defining another base class
+class Domesticated:
+    def __init__(self):
+        self.domesticated = True
 
 
-# Superhero Class
-class Superhero:
-    def __init__(self, name: str, power: Superpower):
-        self.name = name
-        self.power = power
-
-    def introduce(self) -> str:
-        return f"I am {self.name}, a superhero with the power of {self.power.value}!"
+# Defining the first derived class with multiple inheritance
+class Mammal(Animal, Domesticated):
+    def __init__(self):
+        Animal.__init__(self)
+        Domesticated.__init__(self)
+        self.classification = "Mammal"
 
 
-# Subclass representing a Superhero with a cape
-class SuperheroWithCape(Superhero):
-    def __init__(self, name: str, power: Superpower, cape_color: str):
-        super().__init__(name, power)
-        self.cape_color = cape_color
-
-    def describe_with_cape(self) -> str:
-        return f"{self.introduce()} I have a stylish {self.cape_color} cape!"
+# Defining the second derived class
+class Dog(Mammal):
+    def __init__(self):
+        super().__init__()
+        self.species = "Dog"
 
 
-# Creating an instance of the Superhero class
-hero = Superhero("Captain Marvel", Superpower.FLYING)
+# Defining the third derived class
+class Labrador(Dog):
+    def __init__(self):
+        super().__init__()
+        self.breed = "Labrador"
 
-# Introducing the superhero
-print(hero.introduce())
 
-# Creating an instance of the SuperheroWithCape subclass
-hero_with_cape = SuperheroWithCape(
-    name="Batman", power=Superpower.TELEPORTATION, cape_color="Black"
-)
+def print_hierarchy(cls):
+    """
+    Recursively collects all base classes in the inheritance hierarchy of the given class.
+    """
+    bases = list(cls.__bases__)
+    for base in bases:
+        bases.extend(print_hierarchy(base))
+    return bases
 
-# Describing the superhero with a cape
-print(hero_with_cape.describe_with_cape())
+
+def print_base_classes(cls):
+    """
+    Decorator that prints all classes in the inheritance hierarchy of the given class.
+    """
+
+    def wrapper():
+        hierarchy = print_hierarchy(cls)
+        unique_hierarchy = set(h.__name__ for h in hierarchy)  # Remove duplicates
+        print(
+            f"Classes in the hierarchy of {cls.__name__}: {', '.join(unique_hierarchy)}"
+        )
+        return cls()
+
+    return wrapper
+
+
+# Applying the decorator to the last class
+@print_base_classes
+class DecoratedLabrador(Labrador):
+    pass
+
+
+# Example of using the decorated class
+decorated_labrador = (
+    DecoratedLabrador()
+)  # This prints the base classes of DecoratedLabrador

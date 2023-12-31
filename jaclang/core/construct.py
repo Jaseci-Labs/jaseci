@@ -3,86 +3,17 @@ from __future__ import annotations
 
 import types
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 
 from jaclang.compiler.constant import EdgeDir
 
 
 @dataclass(eq=False)
-class Architype:
-    """Architype Protocol."""
-
-    _jac_: ObjectAnchor
-    _jac_entry_funcs_: list[DSFunc]
-    _jac_exit_funcs_: list[DSFunc]
-
-
-@dataclass(eq=False)
-class NodeArchitype(Architype):
-    """Node Architype Protocol."""
-
-    _jac_: NodeAnchor
-
-
-@dataclass(eq=False)
-class EdgeArchitype(Architype):
-    """Edge Architype Protocol."""
-
-    _jac_: EdgeAnchor
-
-
-@dataclass(eq=False)
-class WalkerArchitype(Architype):
-    """Walker Architype Protocol."""
-
-    _jac_: WalkerAnchor
-
-
-@dataclass(eq=False)
-class Root(NodeArchitype):
-    """Generic Root Node."""
-
-    _jac_: NodeAnchor
-
-    def __init__(self) -> None:
-        """Create default root node."""
-        self._jac_ = NodeAnchor(obj=self)
-        self._jac_entry_funcs_ = []
-        self._jac_exit_funcs_ = []
-
-
-@dataclass(eq=False)
-class GenericEdge(EdgeArchitype):
-    """Generic Root Node."""
-
-    _jac_: EdgeAnchor
-
-    def __init__(self) -> None:
-        """Create default root node."""
-        self._jac_ = EdgeAnchor(obj=self)
-        self._jac_entry_funcs_ = []
-        self._jac_exit_funcs_ = []
-
-
-@dataclass(eq=False)
-class DSFunc:
-    """Data Spatial Function."""
-
-    name: str
-    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
-    func: Callable[[Any, Any], Any] | None = None
-
-    def resolve(self, cls: type) -> None:
-        """Resolve the function."""
-        self.func = getattr(cls, self.name)
-
-
-@dataclass(eq=False)
 class ElementAnchor:
     """Element Anchor."""
 
-    obj: Architype
+    obj: Optional[Architype]
 
 
 @dataclass(eq=False)
@@ -259,6 +190,73 @@ class WalkerAnchor(ObjectAnchor):
                 if self.disengaged:
                     return
         self.ignores = []
+
+
+@dataclass(eq=False)
+class Architype:
+    """Architype Protocol."""
+
+    _jac_: ObjectAnchor = ObjectAnchor(obj=None)
+    _jac_entry_funcs_: ClassVar[list[DSFunc]]
+    _jac_exit_funcs_: ClassVar[list[DSFunc]]
+
+
+@dataclass(eq=False)
+class NodeArchitype(Architype):
+    """Node Architype Protocol."""
+
+    _jac_: NodeAnchor
+
+
+@dataclass(eq=False)
+class EdgeArchitype(Architype):
+    """Edge Architype Protocol."""
+
+    _jac_: EdgeAnchor
+
+
+@dataclass(eq=False)
+class WalkerArchitype(Architype):
+    """Walker Architype Protocol."""
+
+    _jac_: WalkerAnchor
+
+
+@dataclass(eq=False)
+class Root(NodeArchitype):
+    """Generic Root Node."""
+
+    _jac_: NodeAnchor
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
+
+    def __init__(self) -> None:
+        """Create default root node."""
+        self._jac_ = NodeAnchor(obj=self)
+
+
+@dataclass(eq=False)
+class GenericEdge(EdgeArchitype):
+    """Generic Root Node."""
+
+    _jac_: EdgeAnchor
+
+    def __init__(self) -> None:
+        """Create default root node."""
+        self._jac_ = EdgeAnchor(obj=self)
+
+
+@dataclass(eq=False)
+class DSFunc:
+    """Data Spatial Function."""
+
+    name: str
+    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
+    func: Callable[[Any, Any], Any] | None = None
+
+    def resolve(self, cls: type) -> None:
+        """Resolve the function."""
+        self.func = getattr(cls, self.name)
 
 
 root = Root()

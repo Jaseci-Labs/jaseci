@@ -44,33 +44,34 @@ class JacFeatureDefaults:
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
                 i.resolve(cls)
+
+            match arch_type:
+                case "obj":
+                    arch_cls = Architype
+                    arch_anc = ObjectAnchor
+                case "node":
+                    arch_cls = NodeArchitype
+                    arch_anc = NodeAnchor
+                case "edge":
+                    arch_cls = EdgeArchitype
+                    arch_anc = EdgeAnchor
+                case "walker":
+                    arch_cls = WalkerArchitype
+                    arch_anc = WalkerAnchor
+                case _:
+                    raise TypeError("Invalid archetype type")
             if not issubclass(cls, Architype):
-                match arch_type:
-                    case "obj":
-                        arch_cls = Architype
-                        arch_anc = ObjectAnchor
-                    case "node":
-                        arch_cls = NodeArchitype
-                        arch_anc = NodeAnchor
-                    case "edge":
-                        arch_cls = EdgeArchitype
-                        arch_anc = EdgeAnchor
-                    case "walker":
-                        arch_cls = WalkerArchitype
-                        arch_anc = WalkerAnchor
-                    case _:
-                        raise TypeError("Invalid archetype type")
                 cls = type(cls.__name__, (cls, arch_cls), {})
-                cls._jac_entry_funcs_ = on_entry
-                cls._jac_exit_funcs_ = on_exit
-                original_init = cls.__init__
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            original_init = cls.__init__
 
-                @wraps(original_init)
-                def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
-                    original_init(self, *args, **kwargs)
-                    self._jac_ = arch_anc(obj=self)  # type: ignore
+            @wraps(original_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                original_init(self, *args, **kwargs)
+                arch_cls.__init__(self, arch_anc(obj=self))  # type: ignore
 
-                cls.__init__ = new_init
+            cls.__init__ = new_init
             return cls
 
         return decorator
