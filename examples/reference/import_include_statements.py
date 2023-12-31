@@ -1,15 +1,12 @@
+"""You can import python modules freely."""
+from __future__ import annotations
+from jaclang import jac_import as __jac_import__
+import os
+from math import sqrt as square_root
 import datetime as dt
-from math import sqrt
-import random
 
-# Generate a random number between 1 and 10
-random_number = random.randint(1, 10)
-print("Random number:", random_number)
+__jac_import__(target="base_module_structure", base_path=__file__)
+from base_module_structure import add, subtract
 
-# Calculate the square root of 16
-s_root = sqrt(16)
-print("Square root:", s_root)
-
-# Get the current time
-current_time = dt.datetime.now()
-print("Current time:", current_time)
+for i in range(int(square_root(dt.datetime.now().year))):
+    print(os.getcwd(), add(i, subtract(i, 1)))

@@ -10,6 +10,7 @@ can add(a: int, b: int) -> int {
     return a + b;
 }
 
+# No docstring for subtract function
 can subtract(a: int, b: int) -> int {
     return a - b;
 }

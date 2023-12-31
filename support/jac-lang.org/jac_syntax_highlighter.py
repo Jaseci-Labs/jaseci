@@ -331,7 +331,6 @@ class JacLexer(RegexLexer):
                         "pub",
                         "protect",
                         "has",
-                        "can",
                     ),
                     suffix=r"\b",
                 ),

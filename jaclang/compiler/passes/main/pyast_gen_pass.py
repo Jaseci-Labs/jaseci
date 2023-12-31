@@ -159,9 +159,10 @@ class PyastGenPass(Pass):
         | ast.SubNodeList[ast.ArchBlockStmt]
         | ast.SubNodeList[ast.EnumBlockStmt]
         | None,
+        doc: Optional[ast.String] = None,
     ) -> list[ast3.AST]:
         """Unwind codeblock."""
-        return (
+        ret: list[ast3.AST] = (
             [self.sync(ast3.Pass(), node)]
             if isinstance(node, ast.SubNodeList) and not node.items
             else self.flatten(
@@ -174,6 +175,9 @@ class PyastGenPass(Pass):
             if node and isinstance(node.gen.py_ast, list)
             else []
         )
+        if doc:
+            ret = [self.sync(ast3.Expr(value=doc.gen.py_ast), jac_node=doc), *ret]
+        return ret
 
     def sync_many(self, py_nodes: list[T], jac_node: ast.AstNode) -> list[T]:
         """Sync ast locations."""
@@ -291,7 +295,7 @@ class PyastGenPass(Pass):
                         defaults=[],
                     )
                 ),
-                body=self.resolve_stmt_block(node.body),
+                body=self.resolve_stmt_block(node.body, doc=node.doc),
                 decorator_list=[],
                 returns=self.sync(ast3.Constant(value=None)),
                 type_comment=None,
@@ -316,7 +320,14 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
         """
-        node.gen.py_ast = node.body.gen.py_ast
+        if node.doc:
+            doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc)
+            if isinstance(node.body.gen.py_ast, list):
+                node.gen.py_ast = [doc] + node.body.gen.py_ast
+            else:
+                raise self.ice()
+        else:
+            node.gen.py_ast = node.body.gen.py_ast
         if node.name:
             node.gen.py_ast = self.sync(
                 ast3.If(
@@ -329,7 +340,7 @@ class PyastGenPass(Pass):
                             ],
                         )
                     ),
-                    body=node.body.gen.py_ast,
+                    body=node.gen.py_ast,
                     orelse=[],
                 )
             )
@@ -340,7 +351,14 @@ class PyastGenPass(Pass):
         code: Token,
         doc: Optional[String],
         """
-        node.gen.py_ast = [*ast3.parse(node.code.value).body]
+        if node.doc:
+            doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc)
+            if isinstance(doc, ast3.AST):
+                node.gen.py_ast = [doc] + [*ast3.parse(node.code.value).body]
+            else:
+                raise self.ice()
+        else:
+            node.gen.py_ast = [*ast3.parse(node.code.value).body]
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -355,6 +373,10 @@ class PyastGenPass(Pass):
         """
         py_nodes: list[ast3.AST] = []
         level = 0
+        if node.doc:
+            py_nodes.append(
+                self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc)
+            )
         py_compat_path_str = node.path.path_str
         if node.path.path_str.startswith(".."):
             level = 2
@@ -468,15 +490,9 @@ class PyastGenPass(Pass):
         """
         self.needs_jac_feature()
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.ArchDef) else node.body
+            node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
+            doc=node.doc,
         )
-        if not isinstance(body, list):
-            raise self.ice()
-        if node.doc:
-            body = [
-                self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc),
-                *body,
-            ]
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, ast.SubNodeList)
@@ -596,15 +612,9 @@ class PyastGenPass(Pass):
         """
         self.needs_enum()
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.EnumDef) else node.body
+            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
+            doc=node.doc,
         )
-        if not isinstance(body, list):
-            raise self.ice()
-        if node.doc:
-            body = [
-                self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc),
-                *body,
-            ]
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, ast.SubNodeList)
@@ -653,10 +663,16 @@ class PyastGenPass(Pass):
         """
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
         body = (
-            [self.sync(ast3.Pass(), node.body)]
+            [
+                self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc),
+                self.sync(ast3.Pass(), node.body),
+            ]
+            if node.doc and node.is_abstract
+            else [self.sync(ast3.Pass(), node.body)]
             if node.is_abstract
             else self.resolve_stmt_block(
-                node.body.body if isinstance(node.body, ast.AbilityDef) else node.body
+                node.body.body if isinstance(node.body, ast.AbilityDef) else node.body,
+                doc=node.doc,
             )
         )
         if node.is_abstract and node.body:
