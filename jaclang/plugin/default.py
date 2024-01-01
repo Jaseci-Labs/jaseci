@@ -14,11 +14,8 @@ from jaclang.plugin.spec import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
-    NodeAnchor,
     NodeArchitype,
-    ObjectAnchor,
     T,
-    WalkerAnchor,
     WalkerArchitype,
     root,
 )
@@ -48,19 +45,15 @@ class JacFeatureDefaults:
             match arch_type:
                 case "obj":
                     arch_cls = Architype
-                    arch_anc = ObjectAnchor
                 case "node":
                     arch_cls = NodeArchitype
-                    arch_anc = NodeAnchor
                 case "edge":
                     arch_cls = EdgeArchitype
-                    arch_anc = EdgeAnchor
                 case "walker":
                     arch_cls = WalkerArchitype
-                    arch_anc = WalkerAnchor
                 case _:
                     raise TypeError("Invalid archetype type")
-            if not issubclass(cls, Architype):
+            if not issubclass(cls, arch_cls):
                 cls = type(cls.__name__, (cls, arch_cls), {})
             cls._jac_entry_funcs_ = on_entry
             cls._jac_exit_funcs_ = on_exit
@@ -69,7 +62,7 @@ class JacFeatureDefaults:
             @wraps(original_init)
             def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
                 original_init(self, *args, **kwargs)
-                arch_cls.__init__(self, arch_anc(obj=self))  # type: ignore
+                arch_cls.__init__(self)
 
             cls.__init__ = new_init
             return cls

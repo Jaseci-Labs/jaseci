@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import types
 from dataclasses import dataclass, field
-from typing import Any, Callable, ClassVar, Optional
+from typing import Any, Callable, Optional
 
 
 from jaclang.compiler.constant import EdgeDir
@@ -98,9 +98,9 @@ class WalkerAnchor(ObjectAnchor):
     """Walker Anchor."""
 
     obj: WalkerArchitype
-    path: list[NodeArchitype] = field(default_factory=lambda: [])
-    next: list[NodeArchitype] = field(default_factory=lambda: [])
-    ignores: list[NodeArchitype] = field(default_factory=lambda: [])
+    path: list[Architype] = field(default_factory=lambda: [])
+    next: list[Architype] = field(default_factory=lambda: [])
+    ignores: list[Architype] = field(default_factory=lambda: [])
     disengaged: bool = False
 
     def visit_node(
@@ -192,58 +192,53 @@ class WalkerAnchor(ObjectAnchor):
         self.ignores = []
 
 
-@dataclass(eq=False)
 class Architype:
     """Architype Protocol."""
 
-    _jac_: ObjectAnchor = ObjectAnchor(obj=None)
-    _jac_entry_funcs_: ClassVar[list[DSFunc]]
-    _jac_exit_funcs_: ClassVar[list[DSFunc]]
+    _jac_entry_funcs_: list[DSFunc]
+    _jac_exit_funcs_: list[DSFunc]
+
+    def __init__(self) -> None:
+        """Create default architype."""
+        self._jac_ = ObjectAnchor(obj=self)
 
 
-@dataclass(eq=False)
 class NodeArchitype(Architype):
     """Node Architype Protocol."""
 
-    _jac_: NodeAnchor
-
-
-@dataclass(eq=False)
-class EdgeArchitype(Architype):
-    """Edge Architype Protocol."""
-
-    _jac_: EdgeAnchor
-
-
-@dataclass(eq=False)
-class WalkerArchitype(Architype):
-    """Walker Architype Protocol."""
-
-    _jac_: WalkerAnchor
-
-
-@dataclass(eq=False)
-class Root(NodeArchitype):
-    """Generic Root Node."""
-
-    _jac_: NodeAnchor
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
-
     def __init__(self) -> None:
-        """Create default root node."""
+        """Create node architype."""
         self._jac_ = NodeAnchor(obj=self)
 
 
-@dataclass(eq=False)
+class EdgeArchitype(Architype):
+    """Edge Architype Protocol."""
+
+    def __init__(self) -> None:
+        """Create edge architype."""
+        self._jac_ = EdgeAnchor(obj=self)
+
+
+class WalkerArchitype(Architype):
+    """Walker Architype Protocol."""
+
+    def __init__(self) -> None:
+        """Create walker architype."""
+        self._jac_ = WalkerAnchor(obj=self)
+
+
+class Root(NodeArchitype):
+    """Generic Root Node."""
+
+    _jac_entry_funcs_ = []
+    _jac_exit_funcs_ = []
+
+
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
-    _jac_: EdgeAnchor
-
-    def __init__(self) -> None:
-        """Create default root node."""
-        self._jac_ = EdgeAnchor(obj=self)
+    _jac_entry_funcs_ = []
+    _jac_exit_funcs_ = []
 
 
 @dataclass(eq=False)
