@@ -60,39 +60,34 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                     self.assertEqual(tokens[i + 1], "{")
             self.assertEqual(num_test, 3)
             return
-        for i in range(len(code_gen_pure.ir.gen.py.split("\n"))):
-            if "test_" in code_gen_pure.ir.gen.py.split("\n")[i]:
-                continue
-            before = ""
-            after = ""
-            try:
-                if not isinstance(code_gen_pure.ir, ast.Module) or not isinstance(
-                    code_gen_jac.ir, ast.Module
-                ):
-                    raise Exception("Not modules")
-                self.assertEqual(
-                    len(code_gen_pure.ir.source.comments),
-                    len(code_gen_jac.ir.source.comments),
-                )
-                before = ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2)
-                after = ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2)
-                self.assertEqual(
-                    len(
-                        "\n".join(unified_diff(before.splitlines(), after.splitlines()))
-                    ),
-                    0,
-                )
+        before = ""
+        after = ""
+        try:
+            if not isinstance(code_gen_pure.ir, ast.Module) or not isinstance(
+                code_gen_jac.ir, ast.Module
+            ):
+                raise Exception("Not modules")
+            self.assertEqual(
+                len(code_gen_pure.ir.source.comments),
+                len(code_gen_jac.ir.source.comments),
+            )
+            before = ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2)
+            after = ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2)
+            self.assertEqual(
+                len("\n".join(unified_diff(before.splitlines(), after.splitlines()))),
+                0,
+            )
 
-            except Exception:
-                from jaclang.utils.helpers import add_line_numbers
+        except Exception:
+            from jaclang.utils.helpers import add_line_numbers
 
-                print(add_line_numbers(code_gen_pure.ir.source.code))
-                print("\n+++++++++++++++++++++++++++++++++++++++\n")
-                print(add_line_numbers(code_gen_format.ir.gen.jac))
-                print("\n+++++++++++++++++++++++++++++++++++++++\n")
-                print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
-                self.skipTest("Test failed, but skipping instead of failing.")
-                # raise e
+            print(add_line_numbers(code_gen_pure.ir.source.code))
+            print("\n+++++++++++++++++++++++++++++++++++++++\n")
+            print(add_line_numbers(code_gen_format.ir.gen.jac))
+            print("\n+++++++++++++++++++++++++++++++++++++++\n")
+            print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
+            self.skipTest("Test failed, but skipping instead of failing.")
+            # raise e
 
 
 JacFormatPassTests.self_attach_micro_tests()
