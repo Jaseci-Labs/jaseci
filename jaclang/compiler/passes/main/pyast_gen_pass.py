@@ -904,7 +904,7 @@ class PyastGenPass(Pass):
                 target=node.name.gen.py_ast,
                 annotation=annotation,
                 value=node.value.gen.py_ast if node.value else None,
-                simple=int(not node.value),
+                simple=int(isinstance(node, ast.Name)),
             )
         )
 
@@ -1372,7 +1372,7 @@ class PyastGenPass(Pass):
                     target=node.target.gen.py_ast,
                     annotation=node.type_tag.gen.py_ast,
                     value=node.value.gen.py_ast if node.value else None,
-                    simple=int(node.value is None),
+                    simple=int(isinstance(node.target.gen.py_ast, ast3.Name)),
                 )
             )
         elif not node.value:
