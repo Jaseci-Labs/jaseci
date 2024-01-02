@@ -1,6 +1,7 @@
 """Test Jac cli module."""
 import io
 import os
+import subprocess
 import sys
 from contextlib import redirect_stdout
 from typing import Callable, Optional
@@ -139,17 +140,35 @@ class JacReferenceTests(TestCase):
     def micro_suite_test(self, filename: str) -> None:
         """Test file."""
 
-        def execute_and_capture_output(code: str) -> str:
+        def execute_and_capture_output_py(code: str) -> str:
             f = io.StringIO()
             with redirect_stdout(f):
                 exec(code)
             return f.getvalue()
 
-        # with open(filename, "r") as file:
-        #     code_content = file.read()
-        # output1 = execute_and_capture_output(code_content)
-        # output2 = execute_and_capture_output(code_content)
-        # return output1 == output2
+        def execute_and_capture_output_jac(filename: str) -> None:
+            command = ["jac", "run", filename]
+            try:
+                result = subprocess.run(command, capture_output=True)
+                output = result.stdout.decode("utf-8")
+                return output
+
+            except subprocess.CalledProcessError as e:
+                # Handle any errors that occurred during the execution
+                print(
+                    f"Error in running jac file. Jac example may not be complete!: {e}"
+                )
+                return None
+
+        output_jac = execute_and_capture_output_jac(filename)
+
+        filename = filename.replace(".jac", ".py")
+        with open(filename, "r") as file:
+            code_content = file.read()
+        output_py = execute_and_capture_output_py(code_content)
+
+        self.assertEqual(output_py, output_jac)
+        return output_py == output_jac
 
 
 JacReferenceTests.self_attach_ref_tests()
