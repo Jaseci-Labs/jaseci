@@ -904,7 +904,7 @@ class PyastGenPass(Pass):
                 target=node.name.gen.py_ast,
                 annotation=annotation,
                 value=node.value.gen.py_ast if node.value else None,
-                simple=int(isinstance(node, ast.Name)),
+                simple=int(isinstance(node.name, ast.Name)),
             )
         )
 
