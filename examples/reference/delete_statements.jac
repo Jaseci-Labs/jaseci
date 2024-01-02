@@ -5,8 +5,5 @@ with entry{
         del x;
 
         # Raises NameError because x is deleted
-        # print("After Delete:", x)
-
-
-
+         #print("After Delete:", x);
 }

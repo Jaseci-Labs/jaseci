@@ -1,12 +1,9 @@
 with entry{
-    l=["abc","b","c"];
-
+    l=["abc","b","c","ooo"];
     #need to implement filter_comprehension
-    a=3;
-    t=3;
-    print(= a is t);
+    # print(= "abc" in l);         this is not implemented
 
     #assign_compre
-    print(* "abc" in l);
+    print(*"abc" in l);
 
 }
