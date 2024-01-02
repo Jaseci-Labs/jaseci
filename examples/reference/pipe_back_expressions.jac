@@ -11,7 +11,7 @@ can add_five(x:int)-> int{
 
 with entry{
     number  = int(input(("Give a number:")));
-# pipe back 
+# pipe back
     result = add_five <|double <| square <| numbers;
 
     print(result);

@@ -1,5 +1,5 @@
 with entry{
-   
+
    can foo(x: int, v: int, u: int) -> int{
     return f"The result is: {x|v * u }";
     }

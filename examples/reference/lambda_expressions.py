@@ -1,4 +1,3 @@
-
 calculate_rectangle_area = lambda length, width: length * width
 
 # Example usage

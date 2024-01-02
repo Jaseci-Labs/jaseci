@@ -7,8 +7,8 @@ with entry{
 
 with entry{
 
-    for i=1 to i<10 by i+=2 {    
-         print(i * 5);  
+    for i=1 to i<10 by i+=2 {
+         print(i * 5);
     }
     else{
         print("Loop completed.");}

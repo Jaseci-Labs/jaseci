@@ -247,7 +247,9 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            return jac_file_to_pass(file_name, SymbolTablePrinterPass, sym_tab_print).ir.pp()
+            return jac_file_to_pass(
+                file_name, SymbolTablePrinterPass, sym_tab_print
+            ).ir.pp()
         else:
             return "Not a .jac file."
 
