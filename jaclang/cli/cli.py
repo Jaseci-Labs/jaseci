@@ -2,6 +2,7 @@
 import os
 import shutil
 import unittest
+from typing import Optional
 
 from jaclang import jac_import as __jac_import__
 from jaclang.cli.cmdreg import CommandRegistry, CommandShell
@@ -69,7 +70,7 @@ def test(filename: str) -> None:
 
 
 @cmd_registry.register
-def ast_tool(tool: str, args: list = None) -> None:
+def ast_tool(tool: str, args: Optional[list] = None) -> None:
     """Run the specified AST tool with optional arguments.
 
     :param tool: The name of the AST tool to run.
@@ -78,7 +79,7 @@ def ast_tool(tool: str, args: list = None) -> None:
     if hasattr(AstTool, tool):
         try:
             if args and len(args):
-                print(getattr(AstTool(), tool)(*args))
+                print(getattr(AstTool(), tool)(args))
             else:
                 print(getattr(AstTool(), tool)())
         except Exception:

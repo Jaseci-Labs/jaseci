@@ -58,3 +58,27 @@ class JacCliTests(TestCase):
         # Assertions or verifications
         self.assertIn("Sub objects.", stdout_value)
         self.assertGreater(stdout_value.count("def exit_"), 10)
+
+    def test_ast_print(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.ast_tool("print", [f"{self.fixture_abs_path('hello.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        # Assertions or verifications
+        self.assertIn("+-- Token", stdout_value)
+
+    def test_ast_dotgen(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.ast_tool("dot_gen", [f"{self.fixture_abs_path('hello.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        # Assertions or verifications
+        self.assertIn('[label="MultiString"]', stdout_value)
