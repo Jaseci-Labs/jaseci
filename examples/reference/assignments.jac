@@ -2,10 +2,8 @@ with entry{
 
     a=b=5;
     froz c = 10;
-    print(a);
-    print(b);
-    print(c);
-
+    print(a,b,c);
+   
  # Right Shift Equal (>>=)
     x=16;   
     x>>=2;   
