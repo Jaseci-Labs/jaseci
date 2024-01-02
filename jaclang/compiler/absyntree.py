@@ -1229,7 +1229,7 @@ class BinaryExpr(Expr):
         AstNode.__init__(self, kid=kid)
 
 
-class LambdaExpr(AstNode):
+class LambdaExpr(Expr):
     """ExprLambda node type for Jac Ast."""
 
     def __init__(

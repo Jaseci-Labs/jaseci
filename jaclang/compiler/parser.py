@@ -1731,19 +1731,24 @@ class JacParser(Pass):
             return_type = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
             chomp = chomp[1:] if return_type else chomp
             chomp = chomp[1:]
-            kid = [kid[0]]
-            kid.append(params) if params else None
-            kid.append(return_type) if return_type else None
+            sig_kid: list[ast.AstNode] = []
+            if params:
+                sig_kid.append(params)
+            if return_type:
+                sig_kid.append(return_type)
+            signature = ast.FuncSignature(
+                params=params,
+                return_type=return_type,
+                kid=sig_kid,
+            )
+            new_kid = [i for i in kid if i != params and i != return_type]
+            new_kid.insert(1, signature)
             if isinstance(chomp[0], ast.Expr):
                 return self.nu(
                     ast.LambdaExpr(
-                        signature=ast.FuncSignature(
-                            params=params,
-                            return_type=return_type,
-                            kid=kid,
-                        ),
+                        signature=signature,
                         body=chomp[0],
-                        kid=[i for i in kid if i != params and i != return_type],
+                        kid=new_kid,
                     )
                 )
             else:
