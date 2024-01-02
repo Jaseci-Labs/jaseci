@@ -57,11 +57,11 @@ class JacFeatureDefaults:
                 cls = type(cls.__name__, (cls, arch_cls), {})
             cls._jac_entry_funcs_ = on_entry
             cls._jac_exit_funcs_ = on_exit
-            original_init = cls.__init__
+            inner_init = cls.__init__
 
-            @wraps(original_init)
+            @wraps(inner_init)
             def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
-                original_init(self, *args, **kwargs)
+                inner_init(self, *args, **kwargs)
                 arch_cls.__init__(self)
 
             cls.__init__ = new_init

@@ -76,8 +76,7 @@ def jac_import(
 
         setattr(sys.modules[package_path], module_name, module)
         sys.modules[f"{package_path}.{module_name}"] = module
-    else:
-        sys.modules[module_name] = module
+    sys.modules[module_name] = module
 
     exec(codeobj, module.__dict__)
 

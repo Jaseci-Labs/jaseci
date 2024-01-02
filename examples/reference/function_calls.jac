@@ -1,8 +1,10 @@
 with entry{
-    can foo(a: int, b:int)-> int{
-       return 8*(a+b);
+
+   can foo(x: int, v: int, u: int) -> int{
+    return f"The result is: {x|v * u }";
     }
 
-     print(foo(5,4));
-     print(foo(9 if 5/2 == 1 else 5,4));
+   # Function call with a mix of positional and named parameters
+   print(foo(8, v=9 if 5 / 2 == 1 else 5, u=7));
+
 }
