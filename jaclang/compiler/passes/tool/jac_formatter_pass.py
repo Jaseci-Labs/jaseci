@@ -1194,16 +1194,15 @@ class JacFormatPass(Pass):
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
 
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubTag[ExprType]],
-        body: ExprType,
+        signature: FuncSignature,
+        body: Expr,
         """
         out = ""
-        if node.params:
-            self.comma_sep_node_list(node.params)
-            out += node.params.gen.jac
-        if node.return_type:
-            out += f" -> {node.return_type.tag.gen.jac}"
+        if node.signature.params:
+            self.comma_sep_node_list(node.signature.params)
+            out += node.signature.params.gen.jac
+        if node.signature.return_type:
+            out += f" -> {node.signature.return_type.tag.gen.jac}"
         self.emit(node, f"with {out} can {node.body.gen.jac}")
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
