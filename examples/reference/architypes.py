@@ -1,43 +1,36 @@
-from enum import Enum
+from jaclang.plugin.feature import JacFeature as Jac
 
 
-# Enum for superhero powers
-class Superpower(Enum):
-    FLYING = "Flying"
-    SUPER_STRENGTH = "Super Strength"
-    TELEPORTATION = "Teleportation"
+def print_base_classes(cls: type) -> type:
+    print(f"Base classes of {cls.__name__}: {[c.__name__ for c in cls.__bases__]}")
+    return cls
 
 
-# Superhero Class
-class Superhero:
-    def __init__(self, name: str, power: Superpower):
-        self.name = name
-        self.power = power
-
-    def introduce(self) -> str:
-        return f"I am {self.name}, a superhero with the power of {self.power.value}!"
+class Animal:
+    pass
 
 
-# Subclass representing a Superhero with a cape
-class SuperheroWithCape(Superhero):
-    def __init__(self, name: str, power: Superpower, cape_color: str):
-        super().__init__(name, power)
-        self.cape_color = cape_color
-
-    def describe_with_cape(self) -> str:
-        return f"{self.introduce()} I have a stylish {self.cape_color} cape!"
+class Domesticated:
+    pass
 
 
-# Creating an instance of the Superhero class
-hero = Superhero("Captain Marvel", Superpower.FLYING)
+@print_base_classes
+@Jac.make_architype("node", on_entry=[], on_exit=[])
+class Mammal(Animal, Domesticated):
+    pass
 
-# Introducing the superhero
-print(hero.introduce())
 
-# Creating an instance of the SuperheroWithCape subclass
-hero_with_cape = SuperheroWithCape(
-    name="Batman", power=Superpower.TELEPORTATION, cape_color="Black"
-)
+@Jac.make_architype("walker", on_entry=[], on_exit=[])
+class Dog(Mammal):
+    pass
 
-# Describing the superhero with a cape
-print(hero_with_cape.describe_with_cape())
+
+@Jac.make_architype("walker", on_entry=[], on_exit=[])
+class Labrador(Dog):
+    pass
+
+
+@print_base_classes
+@Jac.make_architype("walker", on_entry=[], on_exit=[])
+class DecoratedLabrador(Labrador):
+    pass

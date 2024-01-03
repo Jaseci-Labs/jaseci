@@ -316,7 +316,7 @@ class JacLexer(RegexLexer):
                         "as",
                         "with",
                         # -----
-                        "froz",
+                        "let",
                         "abs",
                         "ignore",
                         "visit",
@@ -331,7 +331,6 @@ class JacLexer(RegexLexer):
                         "pub",
                         "protect",
                         "has",
-                        "can",
                     ),
                     suffix=r"\b",
                 ),

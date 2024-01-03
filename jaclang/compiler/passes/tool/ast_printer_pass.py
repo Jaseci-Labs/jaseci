@@ -1,4 +1,5 @@
 """Jac Blue pass for drawing AST."""
+import html
 import inspect
 from typing import Optional
 
@@ -84,7 +85,7 @@ class AstDotGraphPass(Pass):
         # Get token value and name
         if isinstance(node, ast.Token):
             info_to_be_dumped.append(("name", info_of_value, node.name))
-            info_to_be_dumped.append(("value", info_of_value, node.value))
+            info_to_be_dumped.append(("value", info_of_value, html.escape(node.value)))
         return info_to_be_dumped
 
     def enter_node(self, node: ast.AstNode) -> None:

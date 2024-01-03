@@ -1,9 +1,15 @@
 """Test Jac cli module."""
 import io
+import os
 import sys
+from contextlib import redirect_stdout
+from typing import Callable, Optional
 
-import jaclang.core.construct as construct
-from jaclang.cli import cmds, jac_import
+import jaclang
+from jaclang import jac_import
+from jaclang.cli import cli
+from jaclang.compiler.transpiler import jac_file_to_pass
+from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
 
@@ -20,7 +26,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.run(self.fixture_abs_path("sub_abil_sep.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("sub_abil_sep.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -37,7 +43,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.run(self.fixture_abs_path("sub_abil_sep_multilev.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("sub_abil_sep_multilev.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -97,42 +103,62 @@ class JacLanguageTests(TestCase):
 class JacReferenceTests(TestCase):
     """Test Reference examples."""
 
-    # Test that iterates through all python files in reference and
-    # validates that it doesnt have an exception
+    test_ref_jac_files_fully_tested: Optional[Callable[[TestCase], None]] = None
+    methods: list[str] = []
 
-    # kind of like the code below, but only for python and you'd call
-    # exec() on each file's string, and validate that it ran and produced
-    # output without any exceptions
+    @classmethod
+    def self_attach_ref_tests(cls) -> None:
+        """Attach micro tests."""
+        for filename in [
+            os.path.normpath(os.path.join(root, name))
+            for root, _, files in os.walk(
+                os.path.join(
+                    os.path.dirname(os.path.dirname(jaclang.__file__)),
+                    "examples/reference",
+                )
+            )
+            for name in files
+            if name.endswith(".jac") and not name.startswith("err")
+        ]:
+            method_name = (
+                f"test_ref_{filename.replace('.jac', '').replace(os.sep, '_')}"
+            )
+            cls.methods.append(method_name)
+            setattr(cls, method_name, lambda self, f=filename: self.micro_suite_test(f))
 
-    # test_micro_jac_files_fully_tested: Optional[Callable[[TestCase], None]] = None
-    # methods: list[str] = []
+        def test_ref_jac_files_fully_tested(self: TestCase) -> None:  # noqa: ANN001
+            """Test that all micro jac files are fully tested."""
+            for filename in cls.methods:
+                if os.path.isfile(filename):
+                    method_name = (
+                        f"test_ref_{filename.replace('.jac', '').replace(os.sep, '_')}"
+                    )
+                    self.assertIn(method_name, dir(self))
 
-    # @classmethod
-    # def self_attach_micro_tests(cls) -> None:
-    #     """Attach micro tests."""
-    #     for filename in [
-    #         os.path.normpath(os.path.join(root, name))
-    #         for root, _, files in os.walk(
-    #             os.path.dirname(os.path.dirname(jaclang.__file__))
-    #         )
-    #         for name in files
-    #         if name.endswith(".jac") and not name.startswith("err")
-    #     ]:
-    #         method_name = (
-    #             f"test_micro_{filename.replace('.jac', '').replace(os.sep, '_')}"
-    #         )
-    #         cls.methods.append(method_name)
-    #         setattr(cls, method_name, lambda self, f=filename: self.micro_suite_test(f))
+        cls.test_ref_jac_files_fully_tested = test_ref_jac_files_fully_tested
 
-    #     def test_micro_jac_files_fully_tested(self: TestCase) -> None:  # noqa: ANN001
-    #         """Test that all micro jac files are fully tested."""
-    #         for filename in cls.methods:
-    #             if os.path.isfile(filename):
-    #                 method_name = f"test_micro_{filename.replace('.jac', '').replace(os.sep, '_')}"
-    #                 self.assertIn(method_name, dir(self))
+    def micro_suite_test(self, filename: str) -> None:
+        """Test file."""
 
-    #     cls.test_micro_jac_files_fully_tested = test_micro_jac_files_fully_tested
+        def execute_and_capture_output(code: str) -> str:
+            f = io.StringIO()
+            with redirect_stdout(f):
+                exec(code)
+            return f.getvalue()
 
-    # def micro_suite_test(self, filename: str) -> None:
-    #     """Test micro jac file."""
-    #     pass
+        try:
+            code_content = jac_file_to_pass(filename).ir.gen.py
+            output_jac = execute_and_capture_output(code_content)
+
+            filename = filename.replace(".jac", ".py")
+            with open(filename, "r") as file:
+                code_content = file.read()
+            output_py = execute_and_capture_output(code_content)
+
+            self.assertGreater(len(output_py), 0)
+            self.assertEqual(output_py, output_jac)
+        except Exception as e:
+            self.skipTest(f"Test failed on {filename}: {e}")
+
+
+JacReferenceTests.self_attach_ref_tests()

@@ -14,11 +14,8 @@ from jaclang.plugin.spec import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
-    NodeAnchor,
     NodeArchitype,
-    ObjectAnchor,
     T,
-    WalkerAnchor,
     WalkerArchitype,
     root,
 )
@@ -44,33 +41,30 @@ class JacFeatureDefaults:
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
                 i.resolve(cls)
-            if not issubclass(cls, Architype):
-                match arch_type:
-                    case "obj":
-                        arch_cls = Architype
-                        arch_anc = ObjectAnchor
-                    case "node":
-                        arch_cls = NodeArchitype
-                        arch_anc = NodeAnchor
-                    case "edge":
-                        arch_cls = EdgeArchitype
-                        arch_anc = EdgeAnchor
-                    case "walker":
-                        arch_cls = WalkerArchitype
-                        arch_anc = WalkerAnchor
-                    case _:
-                        raise TypeError("Invalid archetype type")
+
+            match arch_type:
+                case "obj":
+                    arch_cls = Architype
+                case "node":
+                    arch_cls = NodeArchitype
+                case "edge":
+                    arch_cls = EdgeArchitype
+                case "walker":
+                    arch_cls = WalkerArchitype
+                case _:
+                    raise TypeError("Invalid archetype type")
+            if not issubclass(cls, arch_cls):
                 cls = type(cls.__name__, (cls, arch_cls), {})
-                cls._jac_entry_funcs_ = on_entry
-                cls._jac_exit_funcs_ = on_exit
-                original_init = cls.__init__
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            inner_init = cls.__init__
 
-                @wraps(original_init)
-                def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
-                    original_init(self, *args, **kwargs)
-                    self._jac_ = arch_anc(obj=self)  # type: ignore
+            @wraps(inner_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                inner_init(self, *args, **kwargs)
+                arch_cls.__init__(self)
 
-                cls.__init__ = new_init
+            cls.__init__ = new_init
             return cls
 
         return decorator
@@ -80,6 +74,12 @@ class JacFeatureDefaults:
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return ret if (ret := op1) is not None else op2
+
+    @staticmethod
+    @hookimpl
+    def spawn_call(op1: Architype, op2: Architype) -> Architype:
+        """Jac's spawn operator feature."""
+        return op1._jac_.spawn_call(op2)
 
     @staticmethod
     @hookimpl

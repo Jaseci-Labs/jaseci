@@ -1,42 +1,20 @@
-# Superhero Archetype
-"""Enum for superhero powers"""
-enum Superpower {
-        FLYING = "Flying",
-        SUPER_STRENGTH = "Super Strength",
-        TELEPORTATION = "Teleportation"
-    }
-
-obj Superhero {
-
-    has name: str, power: Superpower;
-
-    """Method to introduce the superhero"""
-    can introduce() -> str {
-        return f"I am {self.name}, a superhero with the power of {self.power.value}!";
-    }
+can print_base_classes(cls: type) -> type {
+    print(
+        f"Base classes of {cls.__name__}: {[c.__name__ for c in cls.__bases__]}"
+    );
+    return cls;
 }
 
-# Subclass representing a Superhero with a cape, Superhero is inherited to define superhero's Cape
-obj SuperheroWithCape:Superhero: {
+obj Animal {}
 
-    has:protect cape_color: str;
+obj Domesticated {}
 
-    """Method to describe the superhero with a cape"""
-    can describe_with_cape() -> str {
-        return f"{self.introduce()} I have a stylish {self.cape_color} cape!";
-    }
-}
+@print_base_classes
+node Mammal:Animal,Domesticated: {}
 
-with entry {
-    # Creating an instance of the Superhero architype
-    hero = Superhero("Captain Marvel",Superpower.FLYING);
+walker Dog:Mammal: {}
 
-    # Introducing the superhero
-    print(hero.introduce());
+walker Labrador:Dog: {}
 
-    # Creating an instance of the SuperheroWithCape subclass
-    hero_with_cape = SuperheroWithCape("Batman", Superpower.TELEPORTATION, "Black");
-
-    # Describing the superhero with a cape
-    hero_with_cape.describe_with_cape() |> print;
-}
+@print_base_classes
+walker DecoratedLabrador:Labrador: {}

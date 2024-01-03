@@ -6,7 +6,6 @@ mypy apis into Jac and use jac py ast in it.
 import os
 import pathlib
 import sys
-from typing import Callable, List, Optional
 
 
 import jaclang.compiler.absyntree as ast
@@ -16,8 +15,6 @@ from jaclang.compiler.passes import Pass
 
 class JacTypeCheckPass(Pass):
     """Python and bytecode file printing pass."""
-
-    message_cb: Optional[Callable[[str | None, List[str], bool], None]] = None
 
     def before_pass(self) -> None:
         """Before pass."""
@@ -47,11 +44,6 @@ class JacTypeCheckPass(Pass):
         search_paths = myab.compute_search_paths([], options, str(self.__path))
         plugin, snapshot = myab.load_plugins(options, errors, sys.stdout, [])
 
-        if self.message_cb is not None:
-            message_cb = self.message_cb
-        else:
-            message_cb = self.default_message_cb
-
         manager = myab.BuildManager(
             data_dir=".",
             search_paths=search_paths,
@@ -63,7 +55,7 @@ class JacTypeCheckPass(Pass):
             plugin=plugin,
             plugins_snapshot=snapshot,
             errors=errors,
-            flush_errors=message_cb,
+            flush_errors=self.default_message_cb,
             fscache=fs_cache,
             stdout=sys.stdout,
             stderr=sys.stderr,

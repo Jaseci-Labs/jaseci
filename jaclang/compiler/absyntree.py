@@ -8,7 +8,7 @@ from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
-from jaclang.utils.treeprinter import print_ast_tree
+from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 
 class AstNode:
@@ -94,6 +94,10 @@ class AstNode:
     def pp(self, depth: Optional[int] = None) -> str:
         """Print ast."""
         return print_ast_tree(self, max_depth=depth)
+
+    def dotgen(self) -> str:
+        """Print ast."""
+        return dotgen_ast_tree(self)
 
 
 class AstSymbolNode(AstNode):
@@ -1225,7 +1229,7 @@ class BinaryExpr(Expr):
         AstNode.__init__(self, kid=kid)
 
 
-class LambdaExpr(AstNode):
+class LambdaExpr(Expr):
     """ExprLambda node type for Jac Ast."""
 
     def __init__(
@@ -2119,22 +2123,18 @@ class String(Literal):
     @property
     def lit_value(self) -> str:
         """Return literal value in its python type."""
-        return self.ast_str
-
-    @property
-    def ast_str(self) -> str:
-        """Return ast string."""
         if (self.value.startswith("'''") and self.value.endswith("'''")) or (
             self.value.startswith('"""') and self.value.endswith('"""')
         ):
-            ast_str = self.value[3:-3]
+            ret_str = self.value[3:-3]
         elif (self.value.startswith("'") and self.value.endswith("'")) or (
             self.value.startswith('"') and self.value.endswith('"')
         ):
-            ast_str = self.value[1:-1]
+            ret_str = self.value[1:-1]
         else:
-            ast_str = self.value
-        return ast_str
+            ret_str = self.value
+        ret_str = ret_str.encode().decode("unicode_escape")
+        return ret_str
 
 
 class Bool(Literal):

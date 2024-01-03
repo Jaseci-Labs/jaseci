@@ -4,7 +4,7 @@ from __future__ import annotations
 from setuptools import find_packages, setup  # type: ignore
 
 
-VERSION = "0.3.6"
+VERSION = "0.4.2"
 
 setup(
     name="jaclang",
@@ -12,11 +12,11 @@ setup(
     packages=find_packages(include=["jaclang", "jaclang.*"]),
     install_requires=[],
     package_data={
-        "": ["*.ini", "*.jac", "*.jbc"],
+        "": ["*.ini"],
     },
     entry_points={
         "console_scripts": [
-            "jac = jaclang.cli:cli.start_cli",
+            "jac = jaclang.cli.cli:start_cli",
         ],
     },
     author="Jason Mars",

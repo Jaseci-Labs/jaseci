@@ -10,10 +10,6 @@ from jaclang.compiler.passes.main.import_pass import ImportPass  # noqa: I100
 from jaclang.compiler.passes.main.sym_tab_build_pass import (
     SymTabBuildPass,
 )  # noqa: I100
-from jaclang.compiler.passes.tool.ast_printer_pass import (  # noqa: I100
-    AstDotGraphPass,
-    AstPrinterPass,
-)
 from jaclang.compiler.passes.tool.fuse_comments_pass import (
     FuseCommentsPass,
 )  # noqa: I100
@@ -22,28 +18,6 @@ from jaclang.compiler.passes.tool.sym_tab_printer_pass import (  # noqa: I100
     SymbolTableDotGraphPass,
     SymbolTablePrinterPass,
 )
-
-ast_dot_gen = [
-    AstDotGraphPass,
-]
-
-full_ast_dot_gen = [
-    SubNodeTabPass,
-    ImportPass,
-    SymTabBuildPass,
-    DeclDefMatchPass,
-    AstDotGraphPass,
-]
-
-ast_print = [AstPrinterPass]
-
-full_ast_print = [
-    SubNodeTabPass,
-    ImportPass,
-    SymTabBuildPass,
-    DeclDefMatchPass,
-    AstPrinterPass,
-]
 
 sym_tab_print = [
     SubNodeTabPass,
@@ -64,16 +38,10 @@ sym_tab_dot_gen = [
 format_pass: list[Type[Pass]] = [FuseCommentsPass, JacFormatPass]
 
 __all__ = [
-    "AstPrinterPass",
-    "AstDotGraphPass",
     "SymbolTablePrinterPass",
     "SymbolTableDotGraphPass",
     "FuseCommentsPass",
     "JacFormatPass",
-    "ast_dot_gen",
-    "full_ast_dot_gen",
-    "ast_print",
-    "full_ast_print",
     "sym_tab_print",
     "sym_tab_dot_gen",
     "format_pass",

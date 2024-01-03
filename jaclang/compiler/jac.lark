@@ -44,7 +44,7 @@ arch_type: KW_WALKER
 // Architype bodies
 member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
-has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
+has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: named_ref type_tag (EQ expression)?
 type_tag: COLON expression
@@ -78,7 +78,7 @@ param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 return_type_tag: RETURN_HINT expression
 
 // Global variables
-global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
+global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
 assignment_list: (assignment_list COMMA)? assignment
 
 // Free code
@@ -167,7 +167,7 @@ literal_pattern: (INT | FLOAT | multistring)
 // Match singleton patterns
 singleton_pattern: (NULL | BOOL)
 
-// Match capture patterns (e.g. 'case _:')
+// Match capture patterns
 capture_pattern: NAME
 
 // Match sequence patterns
@@ -239,7 +239,7 @@ disengage_stmt: KW_DISENGAGE SEMI
 ignore_stmt: KW_IGNORE expression SEMI
 
 // Assignments
-assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_expr | expression)
+assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
           | atomic_chain type_tag (EQ (yield_expr | expression))?
           | atomic_chain aug_op (yield_expr | expression)
 
@@ -307,7 +307,10 @@ connect: atomic_pipe ((connect_op | disconnect_op) connect)?
 atomic_pipe: (atomic_pipe (KW_SPAWN | A_PIPE_FWD))? atomic_pipe_back
 
 // Atomic pipe back expressions
-atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? unpack
+atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
+
+// Data spatial spawn expressions
+ds_spawn: (ds_spawn KW_SPAWN)? unpack
 
 // Unpack expressions
 unpack: (STAR_MUL | STAR_POW) unpack | ref
@@ -316,10 +319,10 @@ unpack: (STAR_MUL | STAR_POW) unpack | ref
 ref: BW_AND? walrus_assign
 
 // Walrus assignments
-walrus_assign: ds_call (WALRUS_EQ walrus_assign)?
+walrus_assign: pipe_call (WALRUS_EQ walrus_assign)?
 
 // Data spatial calls
-ds_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
+pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // Subscripted and dotted expressions
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
@@ -357,7 +360,7 @@ multistring: (fstring | STRING)+
 fstring: FSTR_START fstr_parts FSTR_END
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
-// Collections
+// Collection values
 atom_collection: dict_compr
                | set_compr
                | gen_compr
@@ -479,7 +482,7 @@ TYP_BOOL: "bool"
 TYP_BYTES: "bytes"
 TYP_ANY: "any"
 TYP_TYPE: "type"
-KW_FREEZE: "froz"
+KW_LET: "let"
 KW_ABSTRACT: "abs"
 KW_OBJECT: "obj"
 KW_ENUM: "enum"
@@ -535,16 +538,16 @@ KW_CASE: "case"
 ARROW_L: /<--/
 ARROW_R: /-->/
 ARROW_BI: /<-->/
-ARROW_L_P1: /<-\[/
-ARROW_R_P2: /]->/
-ARROW_L_P2: /]-/
-ARROW_R_P1: /-\[/
+ARROW_L_P1: /<-\:/
+ARROW_R_P2: /:->/
+ARROW_L_P2: /:-/
+ARROW_R_P1: /-\:/
 CARROW_L: /<\+\+/
 CARROW_R: /\+\+>/
-CARROW_L_P1: /<\+\[/
-CARROW_R_P2: /]\+>/
-CARROW_L_P2: /]\+/
-CARROW_R_P1: /\+\[/
+CARROW_L_P1: /<\+\:/
+CARROW_R_P2: /:\+>/
+CARROW_L_P2: /:\+/
+CARROW_R_P1: /\+\:/
 
 HERE_OP: /<h>|<here>/
 SELF_OP: /<s>|<self>/

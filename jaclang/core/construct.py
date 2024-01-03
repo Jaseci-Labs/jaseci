@@ -10,93 +10,19 @@ from jaclang.compiler.constant import EdgeDir
 
 
 @dataclass(eq=False)
-class Architype:
-    """Architype Protocol."""
-
-    _jac_: ObjectAnchor
-    _jac_entry_funcs_: list[DSFunc]
-    _jac_exit_funcs_: list[DSFunc]
-
-    def __init__(self) -> None:
-        """Post init."""
-        self._jac_ = ObjectAnchor(obj=self)
-
-    def __call__(self, target: Architype) -> None:
-        """Call the architype's data spatial behavior."""
-        if callable(self._jac_):
-            return self._jac_(target)
-
-
-@dataclass(eq=False)
-class NodeArchitype(Architype):
-    """Node Architype Protocol."""
-
-    _jac_: NodeAnchor
-
-
-@dataclass(eq=False)
-class EdgeArchitype(Architype):
-    """Edge Architype Protocol."""
-
-    _jac_: EdgeAnchor
-
-
-@dataclass(eq=False)
-class WalkerArchitype(Architype):
-    """Walker Architype Protocol."""
-
-    _jac_: WalkerAnchor
-
-
-@dataclass(eq=False)
-class Root(NodeArchitype):
-    """Generic Root Node."""
-
-    _jac_: NodeAnchor
-
-    def __init__(self) -> None:
-        """Create default root node."""
-        self._jac_ = NodeAnchor(obj=self)
-        self._jac_entry_funcs_ = []
-        self._jac_exit_funcs_ = []
-
-
-@dataclass(eq=False)
-class GenericEdge(EdgeArchitype):
-    """Generic Root Node."""
-
-    _jac_: EdgeAnchor
-
-    def __init__(self) -> None:
-        """Create default root node."""
-        self._jac_ = EdgeAnchor(obj=self)
-        self._jac_entry_funcs_ = []
-        self._jac_exit_funcs_ = []
-
-
-@dataclass(eq=False)
-class DSFunc:
-    """Data Spatial Function."""
-
-    name: str
-    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
-    func: Callable[[Any, Any], Any] | None = None
-
-    def resolve(self, cls: type) -> None:
-        """Resolve the function."""
-        self.func = getattr(cls, self.name)
-
-
-@dataclass(eq=False)
 class ElementAnchor:
     """Element Anchor."""
 
-    obj: Architype
+    obj: Optional[Architype]
 
 
 @dataclass(eq=False)
 class ObjectAnchor(ElementAnchor):
     """Object Anchor."""
+
+    def spawn_call(self, walk: WalkerArchitype) -> None:
+        """Invoke data spatial call."""
+        walk._jac_.spawn_call(self.obj)
 
 
 @dataclass(eq=False)
@@ -132,10 +58,6 @@ class NodeAnchor(ObjectAnchor):
                     ret_nodes.append(i._jac_.source)
         return ret_nodes
 
-    def __call__(self, walk: WalkerArchitype) -> None:
-        """Invoke data spatial call."""
-        walk(self.obj)
-
 
 @dataclass(eq=False)
 class EdgeAnchor(ObjectAnchor):
@@ -165,10 +87,10 @@ class EdgeAnchor(ObjectAnchor):
             self.target._jac_.edges[EdgeDir.IN].append(self.obj)
         return self
 
-    def __call__(self, walk: WalkerArchitype) -> None:
+    def spawn_call(self, walk: WalkerArchitype) -> None:
         """Invoke data spatial call."""
         if self.target:
-            walk(self.target)
+            walk._jac_.spawn_call(self.target)
 
 
 @dataclass(eq=False)
@@ -176,9 +98,9 @@ class WalkerAnchor(ObjectAnchor):
     """Walker Anchor."""
 
     obj: WalkerArchitype
-    path: list[NodeArchitype] = field(default_factory=lambda: [])
-    next: list[NodeArchitype] = field(default_factory=lambda: [])
-    ignores: list[NodeArchitype] = field(default_factory=lambda: [])
+    path: list[Architype] = field(default_factory=lambda: [])
+    next: list[Architype] = field(default_factory=lambda: [])
+    ignores: list[Architype] = field(default_factory=lambda: [])
     disengaged: bool = False
 
     def visit_node(
@@ -229,7 +151,7 @@ class WalkerAnchor(ObjectAnchor):
         """Disengage walker from traversal."""
         self.disengaged = True
 
-    def __call__(self, nd: NodeArchitype) -> None:
+    def spawn_call(self, nd: Architype) -> None:
         """Invoke data spatial call."""
         self.path = []
         self.next = [nd]
@@ -268,6 +190,68 @@ class WalkerAnchor(ObjectAnchor):
                 if self.disengaged:
                     return
         self.ignores = []
+
+
+class Architype:
+    """Architype Protocol."""
+
+    _jac_entry_funcs_: list[DSFunc]
+    _jac_exit_funcs_: list[DSFunc]
+
+    def __init__(self) -> None:
+        """Create default architype."""
+        self._jac_ = ObjectAnchor(obj=self)
+
+
+class NodeArchitype(Architype):
+    """Node Architype Protocol."""
+
+    def __init__(self) -> None:
+        """Create node architype."""
+        self._jac_ = NodeAnchor(obj=self)
+
+
+class EdgeArchitype(Architype):
+    """Edge Architype Protocol."""
+
+    def __init__(self) -> None:
+        """Create edge architype."""
+        self._jac_ = EdgeAnchor(obj=self)
+
+
+class WalkerArchitype(Architype):
+    """Walker Architype Protocol."""
+
+    def __init__(self) -> None:
+        """Create walker architype."""
+        self._jac_ = WalkerAnchor(obj=self)
+
+
+class Root(NodeArchitype):
+    """Generic Root Node."""
+
+    _jac_entry_funcs_ = []
+    _jac_exit_funcs_ = []
+
+
+class GenericEdge(EdgeArchitype):
+    """Generic Root Node."""
+
+    _jac_entry_funcs_ = []
+    _jac_exit_funcs_ = []
+
+
+@dataclass(eq=False)
+class DSFunc:
+    """Data Spatial Function."""
+
+    name: str
+    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
+    func: Callable[[Any, Any], Any] | None = None
+
+    def resolve(self, cls: type) -> None:
+        """Resolve the function."""
+        self.func = getattr(cls, self.name)
 
 
 root = Root()
