@@ -39,7 +39,7 @@ with entry {
     game() spawn <root>;
 }
 
-#=Walker=&=Node=Abilities========================================
+#=Walker=&=Node=Abilities======================================
 
 :walker:game:can:start_game {
     <self>.g = Game();
