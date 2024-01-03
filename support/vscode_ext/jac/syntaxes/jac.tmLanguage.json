@@ -583,7 +583,7 @@
 				},
 				{
 					"name": "storage.modifier.declaration.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    priv|protect|pub|static|froz|abs\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    priv|protect|pub|static|let|abs\n  )\\b\n"
 				},
 				{
 					"name": "storage.type.class.jac",

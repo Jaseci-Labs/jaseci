@@ -1,7 +1,7 @@
 with entry{
 
     a=b=5;
-    froz c = 10;
+    let c = 10;
     print(a,b,c);
 
  # Right Shift Equal (>>=)

@@ -316,7 +316,7 @@ class JacLexer(RegexLexer):
                         "as",
                         "with",
                         # -----
-                        "froz",
+                        "let",
                         "abs",
                         "ignore",
                         "visit",

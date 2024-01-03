@@ -44,7 +44,7 @@ arch_type: KW_WALKER
 // Architype bodies
 member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
-has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
+has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: named_ref type_tag (EQ expression)?
 type_tag: COLON expression
@@ -78,7 +78,7 @@ param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 return_type_tag: RETURN_HINT expression
 
 // Global variables
-global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
+global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
 assignment_list: (assignment_list COMMA)? assignment
 
 // Free code
@@ -239,7 +239,7 @@ disengage_stmt: KW_DISENGAGE SEMI
 ignore_stmt: KW_IGNORE expression SEMI
 
 // Assignments
-assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_expr | expression)
+assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
           | atomic_chain type_tag (EQ (yield_expr | expression))?
           | atomic_chain aug_op (yield_expr | expression)
 
@@ -482,7 +482,7 @@ TYP_BOOL: "bool"
 TYP_BYTES: "bytes"
 TYP_ANY: "any"
 TYP_TYPE: "type"
-KW_FREEZE: "froz"
+KW_LET: "let"
 KW_ABSTRACT: "abs"
 KW_OBJECT: "obj"
 KW_ENUM: "enum"
