@@ -1,1 +1,8 @@
-print("Jac only feature : Jacastic!")
+print("hello ")
+
+
+def foo():
+    print("world")
+
+
+foo()

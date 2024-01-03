@@ -19,12 +19,12 @@ walker Creator {
 
 walker Walk {
     has count: int = 0;
-    can skip_root with `<root> entry { x=3; visit -->; }
+    can skip_root with `<root> entry { visit -->; }
     can step with Item entry {
         <here>.value = <self>.count;
         <self>.count += 1;
         visit --> else {
-            f"Final Value: {<here>.value-1}" |> print;
+            print(f"Final Value: {<here>.value-1}");
             "Done walking." |> print;
             disengage;
         }
@@ -34,9 +34,9 @@ walker Walk {
 
 can test_run {
     <root> spawn Creator();
-    <root> spawn Walk();
+    Walk() spawn <root>;
 }
 
 with entry {
-    |> test_run;
+    test_run();
 }
