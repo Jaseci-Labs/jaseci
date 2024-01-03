@@ -46,26 +46,7 @@ obj Game {
 
 }
 
-"""
-The implementation of the game
-"""
-
-# with entry {
-#     g = Game();
-#     g.intro_screen();
-#     g.new();
-#     while g.running {
-#         g.main();
-#         if g.won == True{
-#             g.game_won();
-#         } else {
-#             g.game_over();
-#         }
-#     }
-
-#     pygame.quit();
-#     sys.exit();
-# }
+#=Object=Abilities ===================================================
 
 :obj:Game:can:createTilemap{
         for (i, row) in enumerate(tilemap){
