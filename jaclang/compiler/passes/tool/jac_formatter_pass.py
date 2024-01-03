@@ -208,9 +208,7 @@ class JacFormatPass(Pass):
                             self.emit(node, f" {stmt.gen.jac}")
                         self.emit_ln(node, "")
                     else:
-                        if not node.gen.jac.endswith("\n") or isinstance(
-                            prev_token(ast.HasVar, ast.ArchHas)
-                        ):
+                        if not node.gen.jac.endswith("\n"):
                             self.emit_ln(node, "")
                         self.emit_ln(node, stmt.gen.jac)
                 elif stmt.gen.jac == ",":
