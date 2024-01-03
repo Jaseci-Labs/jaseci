@@ -72,15 +72,13 @@ class JacFormatPassTests(TestCase):
                 )
                 created_files.append(file_path)
         all_reference_files = [
-            os.path.join(refr_path, file) for file in os.listdir(refr_path)
+            os.path.join(refr_path, file)
+            for file in os.listdir(refr_path)
+            if os.path.isfile(os.path.join(refr_path, file))
         ]
-
         other_reference_files = [
             os.path.basename(file)
             for file in all_reference_files
             if file not in created_files
         ]
-
-        print(
-            "\n\nother files in Reference folder:\n", "\n".join(other_reference_files)
-        )
+        self.assertEqual(len(other_reference_files), 0)
