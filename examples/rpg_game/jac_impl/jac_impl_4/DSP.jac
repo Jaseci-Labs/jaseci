@@ -21,7 +21,7 @@ node start_screen {
     has game_started:bool = False;
 
     can intro_screen with game entry;
-    can exit_game with game exit; 
+    can exit_game with game exit;
 
 }
 
@@ -39,14 +39,13 @@ with entry {
     game() spawn <root>;
 }
 
-#=Walker=&=Node=Abilities======================================
+#=Walker=&=Node=Abilities=======================================
 
 :walker:game:can:start_game {
     <self>.g = Game();
     <here> ++> start_screen();
     visit -->;
 }
-
 :node:level:can:run_game {
     <here>.g.new();
     <here>.g.main();
@@ -61,7 +60,6 @@ with entry {
         visit <--;
     }
 }
-
 :node:level:can:exit_game {
     if <here>.g.running == False {
         pygame.quit();
@@ -69,7 +67,6 @@ with entry {
         disengage;
     } 
 }
-
 :node:start_screen:can:intro_screen {
     if <self>.game_started == False {
         <self>.game_started = True;
