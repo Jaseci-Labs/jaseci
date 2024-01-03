@@ -32,8 +32,8 @@ class MypyTypeCheckPassTests(TestCase):
 
         errs = "\n".join(self.__messages)
         for i in [
-            f"File:{self.fixture_abs_path('func.jac')}:4",
-            f"File:{self.fixture_abs_path('func.jac')}:12",
+            f"File:{self.fixture_abs_path('func2.jac')}:2",
+            f"File:{self.fixture_abs_path('func.jac')}:10",
             '(got "int", expected "str")',
             '(got "str", expected "int")',
         ]:
