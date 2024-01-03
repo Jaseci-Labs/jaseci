@@ -182,9 +182,9 @@ class JacParser(Pass):
         def global_var(self, kid: list[ast.AstNode]) -> ast.GlobalVars:
             """Grammar rule.
 
-            global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
+            global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
             """
-            is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_FREEZE
+            is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_LET
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
             assignments = kid[2] if access else kid[1]
             if isinstance(assignments, ast.SubNodeList):
@@ -890,16 +890,14 @@ class JacParser(Pass):
         def has_stmt(self, kid: list[ast.AstNode]) -> ast.ArchHas:
             """Grammar rule.
 
-            has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
+            has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
             """
             chomp = [*kid]
             is_static = (
                 isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
             )
             chomp = chomp[1:] if is_static else chomp
-            is_freeze = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_FREEZE
-            )
+            is_freeze = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
             chomp = chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
             chomp = chomp[1:] if access else chomp
@@ -1587,14 +1585,12 @@ class JacParser(Pass):
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
 
-            assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
+            assignment: KW_LET? (atomic_chain EQ)+ (yield_stmt | expression)
                     | atomic_chain type_tag (EQ (yield_stmt | expression))?
                     | atomic_chain aug_op (yield_stmt | expression)
             """
             chomp = [*kid]
-            is_frozen = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_FREEZE
-            )
+            is_frozen = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
             is_aug = None
             assignees = []
             chomp = chomp[1:] if is_frozen else chomp

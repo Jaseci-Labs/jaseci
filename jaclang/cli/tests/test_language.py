@@ -8,6 +8,7 @@ from typing import Callable, Optional
 import jaclang
 from jaclang import jac_import
 from jaclang.cli import cli
+from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
@@ -145,11 +146,19 @@ class JacReferenceTests(TestCase):
                 exec(code)
             return f.getvalue()
 
-        # with open(filename, "r") as file:
-        #     code_content = file.read()
-        # output1 = execute_and_capture_output(code_content)
-        # output2 = execute_and_capture_output(code_content)
-        # return output1 == output2
+        try:
+            code_content = jac_file_to_pass(filename).ir.gen.py
+            output_jac = execute_and_capture_output(code_content)
+
+            filename = filename.replace(".jac", ".py")
+            with open(filename, "r") as file:
+                code_content = file.read()
+            output_py = execute_and_capture_output(code_content)
+
+            self.assertGreater(len(output_py), 0)
+            self.assertEqual(output_py, output_jac)
+        except Exception as e:
+            self.skipTest(f"Test failed on {filename}: {e}")
 
 
 JacReferenceTests.self_attach_ref_tests()

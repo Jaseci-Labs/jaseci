@@ -1,4 +1,4 @@
-x = int(input("x="))
+x = 3
 if 0 <= x <= 5:
     print("ok")
 elif 6 <= x <= 10:

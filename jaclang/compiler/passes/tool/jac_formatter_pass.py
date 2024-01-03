@@ -1105,7 +1105,7 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, i.gen.jac)
                     # self.emit_ln(node, "")
             elif isinstance(i, ast.Semi) or (
-                isinstance(i, ast.Token) and i.name == Tok.KW_FREEZE
+                isinstance(i, ast.Token) and i.name == Tok.KW_LET
             ):
                 self.emit(node, f"{i.gen.jac} ")
             else:
@@ -1194,16 +1194,15 @@ class JacFormatPass(Pass):
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
 
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubTag[ExprType]],
-        body: ExprType,
+        signature: FuncSignature,
+        body: Expr,
         """
         out = ""
-        if node.params:
-            self.comma_sep_node_list(node.params)
-            out += node.params.gen.jac
-        if node.return_type:
-            out += f" -> {node.return_type.tag.gen.jac}"
+        if node.signature.params:
+            self.comma_sep_node_list(node.signature.params)
+            out += node.signature.params.gen.jac
+        if node.signature.return_type:
+            out += f" -> {node.signature.return_type.tag.gen.jac}"
         self.emit(node, f"with {out} can {node.body.gen.jac}")
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:

@@ -2123,22 +2123,18 @@ class String(Literal):
     @property
     def lit_value(self) -> str:
         """Return literal value in its python type."""
-        return self.ast_str
-
-    @property
-    def ast_str(self) -> str:
-        """Return ast string."""
         if (self.value.startswith("'''") and self.value.endswith("'''")) or (
             self.value.startswith('"""') and self.value.endswith('"""')
         ):
-            ast_str = self.value[3:-3]
+            ret_str = self.value[3:-3]
         elif (self.value.startswith("'") and self.value.endswith("'")) or (
             self.value.startswith('"') and self.value.endswith('"')
         ):
-            ast_str = self.value[1:-1]
+            ret_str = self.value[1:-1]
         else:
-            ast_str = self.value
-        return ast_str
+            ret_str = self.value
+        ret_str = ret_str.encode().decode("unicode_escape")
+        return ret_str
 
 
 class Bool(Literal):
