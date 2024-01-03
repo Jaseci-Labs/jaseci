@@ -1,7 +1,6 @@
 with entry {
-
-    with open("tst.txt", 'r') as file{
-           print(file.read());
-
-     }
+    with open(__file__, 'r') as file{
+        print(file.read());
+    }
 }
+
