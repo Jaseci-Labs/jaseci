@@ -91,14 +91,18 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.SubTag):
                 for j in i.kid:
                     self.emit(node, j.gen.jac)
+        last_element = None
         for i in node.body:
             if isinstance(i, ast.Import):
                 self.emit_ln(node, i.gen.jac)
             else:
+                if isinstance(last_element, ast.Import):
+                    self.emit_ln(node, "")
                 self.emit_ln(node, i.gen.jac)
                 if not node.gen.jac.endswith("\n"):
                     self.emit_ln(node, "")
                 self.emit_ln(node, "")
+            last_element = i
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.

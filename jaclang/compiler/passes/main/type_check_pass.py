@@ -23,19 +23,24 @@ class JacTypeCheckPass(Pass):
             / "vendor"
             / "mypy"
         )
+        self.__modules: list[ast.Module] = []
         return super().before_pass()
 
     def enter_module(self, node: ast.Module) -> None:
         """Call mypy checks on module level only."""
-        self.api(node, node.loc.mod_path)
-        self.terminate()
+        self.__modules.append(node)
+
+    def after_pass(self) -> None:
+        """Call mypy api after traversing all the modules."""
+        self.api()
+        return super().after_pass()
 
     def default_message_cb(
         self, filename: str | None, new_messages: list[str], is_serious: bool
     ) -> None:
         """Mypy errors reporter."""
 
-    def api(self, node: ast.Module, mod_path: str) -> None:
+    def api(self) -> None:
         """Call mypy APIs to implement type checking in Jac."""
         # Creating mypy api obbjects
         options = myab.Options()
@@ -61,22 +66,26 @@ class JacTypeCheckPass(Pass):
             stderr=sys.stderr,
         )
 
-        tree = myab.ASTConverter(
-            options=options,
-            is_stub=False,
-            errors=errors,
-            ignore_errors=False,
-            strip_function_bodies=False,
-        ).visit(node.gen.py_ast)
+        mypy_graph = {}
 
-        st = myab.State(
-            id="Jac Module",
-            path="File:" + mod_path,
-            source="",
-            manager=manager,
-            root_source=False,
-            ast_override=tree,
-        )
+        for module in self.__modules:
+            tree = myab.ASTConverter(
+                options=options,
+                is_stub=False,
+                errors=errors,
+                ignore_errors=False,
+                strip_function_bodies=False,
+            ).visit(module.gen.py_ast)
+
+            st = myab.State(
+                id=module.name,
+                path="File:" + module.loc.mod_path,
+                source="",
+                manager=manager,
+                root_source=False,
+                ast_override=tree,
+            )
+            mypy_graph[module.name] = st
 
         graph = myab.load_graph(
             [
@@ -86,8 +95,7 @@ class JacTypeCheckPass(Pass):
                 )
             ],
             manager,
-            old_graph={"JacTree": st},
+            old_graph=mypy_graph,
         )
         myab.process_graph(graph, manager)
-
-        myab.semantic_analysis_for_scc(graph, ["JacTree"], errors)
+        myab.semantic_analysis_for_scc(graph, [self.__modules[0].name], errors)
