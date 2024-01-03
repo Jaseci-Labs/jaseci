@@ -220,6 +220,12 @@ class JacFormatPass(Pass):
                     continue
             elif isinstance(stmt, ast.Semi):
                 self.emit(node, f"{stmt.gen.jac} ")
+            elif isinstance(prev_token, (ast.HasVar, ast.ArchHas)) and not isinstance(
+                stmt, (ast.HasVar, ast.ArchHas)
+            ):
+                if not isinstance(prev_token.kid[-1], ast.CommentToken):
+                    self.emit_ln(node, "")
+                self.emit(node, f"{stmt.gen.jac}")
             else:
                 self.emit(node, f"{stmt.gen.jac}")
             prev_token = stmt
@@ -558,6 +564,7 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                 elif not node.gen.jac.endswith("\n"):
                     self.emit_ln(node, "")
+                    self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
                 else:
                     self.emit_ln(node, i.gen.jac)
@@ -584,7 +591,6 @@ class JacFormatPass(Pass):
                 if i.gen.jac == "static":
                     indent_val = indent_val * 3
         if isinstance(node.kid[-1], ast.Semi) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
             self.emit_ln(node, "")
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
@@ -779,6 +785,10 @@ class JacFormatPass(Pass):
                     ) else self.emit(node, f"{j.gen.jac} ")
             else:
                 self.emit(node, f" {i.gen.jac}")
+        if isinstance(node.kid[-1], ast.CommentToken) and not node.gen.jac.endswith(
+            "\n"
+        ):
+            self.emit_ln(node, "")
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
@@ -1298,12 +1308,15 @@ class JacFormatPass(Pass):
         kv_pairs: list["KVPair"],
         """
         start = True
+        prev_token = None
         for i in node.kid:
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
                 else:
                     self.emit_ln(node, i.gen.jac)
+            elif isinstance(prev_token, ast.Token) and prev_token.name == "LBRACE":
+                self.emit(node, f"{i.gen.jac}")
             elif isinstance(i, ast.Semi) or i.gen.jac == ",":
                 self.emit(node, i.gen.jac)
             else:
@@ -1312,6 +1325,7 @@ class JacFormatPass(Pass):
                     start = False
                 else:
                     self.emit(node, f" {i.gen.jac}")
+            prev_token = i
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
