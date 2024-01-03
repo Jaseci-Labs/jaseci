@@ -65,7 +65,7 @@ with entry {
         pygame.quit();
         sys.exit();
         disengage;
-    } 
+    }
 }
 :node:start_screen:can:intro_screen {
     if <self>.game_started == False {
@@ -76,13 +76,13 @@ with entry {
     } else {
         <self> ++> level();
         visit -->;
-    } 
+    }
 }
 :node:start_screen:can:exit_game {
     if <here>.g.running == False {
         pygame.quit();
         sys.exit();
         disengage;
-    } 
+    }
 }
 
