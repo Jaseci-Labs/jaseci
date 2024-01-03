@@ -62,6 +62,7 @@ class JacFormatPassTests(TestCase):
             os.path.dirname(jaclang.__file__), "../examples/reference"
         )
         file_extensions = [".py", ".jac", ".md"]
+        created_files = []
         for heading_name in snake_case_headings:
             for extension in file_extensions:
                 file_name = heading_name + extension
@@ -69,3 +70,17 @@ class JacFormatPassTests(TestCase):
                 self.assertTrue(
                     os.path.exists(file_path), f"File '{file_path}' does not exist."
                 )
+                created_files.append(file_path)
+        all_reference_files = [
+            os.path.join(refr_path, file) for file in os.listdir(refr_path)
+        ]
+
+        other_reference_files = [
+            os.path.basename(file)
+            for file in all_reference_files
+            if file not in created_files
+        ]
+
+        print(
+            "\n\nother files in Reference folder:\n", "\n".join(other_reference_files)
+        )
