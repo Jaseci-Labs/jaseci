@@ -2532,13 +2532,14 @@ class JacParser(Pass):
         def list_compr(self, kid: list[ast.AstNode]) -> ast.ListCompr:
             """Grammar rule.
 
-            list_compr: LSQUARE expression inner_compr RSQUARE
+            list_compr: LSQUARE expression inner_compr+ RSQUARE
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.InnerCompr):
+            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
+            if isinstance(kid[1], ast.Expr):
                 return self.nu(
                     ast.ListCompr(
                         out_expr=kid[1],
-                        compr=kid[2],
+                        compr=comprs,
                         kid=kid,
                     )
                 )
@@ -2548,13 +2549,14 @@ class JacParser(Pass):
         def gen_compr(self, kid: list[ast.AstNode]) -> ast.GenCompr:
             """Grammar rule.
 
-            gen_compr: LSQUARE expression inner_compr RSQUARE
+            gen_compr: LSQUARE expression inner_compr+ RSQUARE
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.InnerCompr):
+            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
+            if isinstance(kid[1], ast.Expr):
                 return self.nu(
                     ast.GenCompr(
                         out_expr=kid[1],
-                        compr=kid[2],
+                        compr=comprs,
                         kid=kid,
                     )
                 )
@@ -2564,13 +2566,14 @@ class JacParser(Pass):
         def set_compr(self, kid: list[ast.AstNode]) -> ast.SetCompr:
             """Grammar rule.
 
-            set_compr: LSQUARE expression inner_compr RSQUARE
+            set_compr: LSQUARE expression inner_compr+ RSQUARE
             """
+            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
             if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.SetCompr(
                         out_expr=kid[1],
-                        compr=kid[2],
+                        compr=comprs,
                         kid=kid,
                     )
                 )
@@ -2580,13 +2583,14 @@ class JacParser(Pass):
         def dict_compr(self, kid: list[ast.AstNode]) -> ast.DictCompr:
             """Grammar rule.
 
-            dict_compr: LBRACE kv_pair inner_compr RBRACE
+            dict_compr: LBRACE kv_pair inner_compr+ RBRACE
             """
+            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
             if isinstance(kid[1], ast.KVPair) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.DictCompr(
                         kv_pair=kid[1],
-                        compr=kid[2],
+                        compr=comprs,
                         kid=kid,
                     )
                 )

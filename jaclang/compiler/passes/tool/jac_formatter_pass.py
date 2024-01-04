@@ -1355,7 +1355,9 @@ class JacFormatPass(Pass):
         out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"[{node.out_expr.gen.jac} {node.compr.gen.jac}]")
+        self.emit(
+            node, f"[{node.out_expr.gen.jac} {' '.join(i.gen.jac for i in node.compr)}]"
+        )
 
     def exit_gen_compr(self, node: ast.GenCompr) -> None:
         """Sub objects.
@@ -1363,7 +1365,9 @@ class JacFormatPass(Pass):
         out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"({node.out_expr.gen.jac} {node.compr.gen.jac})")
+        self.emit(
+            node, f"({node.out_expr.gen.jac} {' '.join(i.gen.jac for i in node.compr)})"
+        )
 
     def exit_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
@@ -1371,7 +1375,10 @@ class JacFormatPass(Pass):
         out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"{{{node.out_expr.gen.jac} {node.compr.gen.jac}}}")
+        self.emit(
+            node,
+            f"{{{node.out_expr.gen.jac} {' '.join(i.gen.jac for i in node.compr)}}}",
+        )
 
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
@@ -1379,7 +1386,10 @@ class JacFormatPass(Pass):
         kv_pair: KVPair,
         compr: InnerCompr,
         """
-        self.emit(node, f"{{{node.kv_pair.gen.jac} {node.compr.gen.jac}}}")
+        self.emit(
+            node,
+            f"{{{node.kv_pair.gen.jac} {' '.join(i.gen.jac for i in node.compr)}}}",
+        )
 
     def exit_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.

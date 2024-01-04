@@ -370,10 +370,10 @@ atom_collection: dict_compr
                | tuple_val
                | list_val
 
-list_compr: LSQUARE expression inner_compr RSQUARE
-gen_compr: LPAREN expression inner_compr RPAREN
-set_compr: LBRACE expression inner_compr RBRACE
-dict_compr: LBRACE kv_pair inner_compr RBRACE
+list_compr: LSQUARE expression inner_compr+ RSQUARE
+gen_compr: LPAREN expression inner_compr+ RPAREN
+set_compr: LBRACE expression inner_compr+ RBRACE
+dict_compr: LBRACE kv_pair inner_compr+ RBRACE
 inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN walrus_assign (KW_IF expression)?
 
 dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE

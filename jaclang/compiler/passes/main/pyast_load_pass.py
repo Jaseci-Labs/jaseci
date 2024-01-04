@@ -21,7 +21,7 @@ class PyastBuildPass(Pass):
         self.mod_path = input_ir.loc.mod_path
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
-    def nu(self, node: ast.AstNode) -> ast.AstNode:
+    def nu(self, node: T) -> T:
         """Update node."""
         self.cur_node = node
         return node
@@ -53,7 +53,11 @@ class PyastBuildPass(Pass):
             type_ignores: list[TypeIgnore]
         """
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
-        valid = [i for i in elements if isinstance(i, ast.ElementStmt)]
+        valid = [
+            i
+            for i in elements
+            if isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
+        ]
         if len(valid) != len(elements):
             self.error("Invalid module body")
         ret = ast.Module(

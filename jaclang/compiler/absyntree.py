@@ -1458,7 +1458,7 @@ class ListCompr(AtomExpr):
     def __init__(
         self,
         out_expr: Expr,
-        compr: InnerCompr,
+        compr: list[InnerCompr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
@@ -1487,7 +1487,7 @@ class DictCompr(AtomExpr):
     def __init__(
         self,
         kv_pair: KVPair,
-        compr: InnerCompr,
+        compr: list[InnerCompr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""

@@ -1784,7 +1784,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.ListComp(
                 elt=node.out_expr.gen.py_ast,
-                generators=[node.compr.gen.py_ast],
+                generators=[i.gen.py_ast for i in node.compr],
             )
         )
 
@@ -1797,7 +1797,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.GeneratorExp(
                 elt=node.out_expr.gen.py_ast,
-                generators=[node.compr.gen.py_ast],
+                generators=[i.gen.py_ast for i in node.compr],
             )
         )
 
@@ -1810,7 +1810,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.SetComp(
                 elt=node.out_expr.gen.py_ast,
-                generators=[node.compr.gen.py_ast],
+                generators=[i.gen.py_ast for i in node.compr],
             )
         )
 
@@ -1826,7 +1826,7 @@ class PyastGenPass(Pass):
             ast3.DictComp(
                 key=node.kv_pair.key.gen.py_ast,
                 value=node.kv_pair.value.gen.py_ast,
-                generators=[node.compr.gen.py_ast],
+                generators=[i.gen.py_ast for i in node.compr],
             )
         )
 
