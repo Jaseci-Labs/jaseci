@@ -27,6 +27,8 @@ class SocketService(JsOrc.CommonService):
             on_message=self.on_message,
             on_error=self.on_error,
             on_close=self.on_close,
+            on_ping=self.on_ping,
+            on_pong=self.on_pong,
         )
         self.ping()
 
@@ -84,16 +86,22 @@ class SocketService(JsOrc.CommonService):
         self.failed(Exception(error))
 
     def on_close(self, ws: wsa, close_status_code, close_msg):
+        msg = f"Socket connection closed!\n{close_msg}"
         if not self.quiet:
-            msg = f"Socket connection closed!\n{close_msg}"
             logger.info(msg)
-            self.failed(Exception(msg))
+        self.failed(Exception(msg))
 
     def on_open(self, ws: wsa):
         self.send(
             ws,
             {"type": "server_connect", "data": {"auth": self.config.get("auth")}},
         )
+
+    def on_ping(self, ws: wsa, data: bytes):
+        pass
+
+    def on_pong(self, ws: wsa, data: bytes):
+        pass
 
     ###################################################
     #                     CLEANER                     #

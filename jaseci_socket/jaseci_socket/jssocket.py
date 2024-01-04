@@ -46,7 +46,7 @@ class JsSocket:
 
     _servers = dict[str, wssp]()
     _clients = dict[str, wssp]()
-    _groups = dict[str, str]()
+    _groups = dict[str, set]()
 
     _servers_queue = list()
 
@@ -126,14 +126,9 @@ class JsSocket:
 
     async def client_connect(self, ws: wssp, data: dict):
         ws_id = str(ws.id)
-        if not getattr(ws, "connected", None):
-            self._clients[ws_id] = ws
-            data["target"] = ws_id
-            await self.server_send({"type": "client_connect", "data": data})
-        else:
-            await self.client_send(
-                ws, {"type": "client_connected", "data": {"target": ws_id}}
-            )
+        self._clients[ws_id] = ws
+        data["target"] = ws_id
+        await self.server_send({"type": "client_connect", "data": data})
         await self.cleanup()
 
     async def client_disconnect(self, ws: wssp, data: dict):
@@ -162,6 +157,14 @@ class JsSocket:
                     self._groups[user] = set([ws_id])
                 else:
                     group.add(ws_id)
+
+                old_group = getattr(ws, "group", None)
+                if old_group:
+                    group: set = self._groups.get(old_group)
+                    if ws_id in group:
+                        logging.info(f"Removing {ws_id} on group {old_group}")
+                        group.remove(ws_id)
+
                 ws.group = user
                 ws.connected = True
                 await self.client_send(ws, {"type": "client_connected", "data": data})
