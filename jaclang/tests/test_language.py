@@ -58,7 +58,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("micro.simple_walk", self.fixture_abs_path("../../../../examples/"))
+        jac_import("micro.simple_walk", self.fixture_abs_path("../../../examples/"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
