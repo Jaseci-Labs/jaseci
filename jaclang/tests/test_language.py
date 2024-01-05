@@ -79,6 +79,18 @@ class JacLanguageTests(TestCase):
             "Too high!\nToo low!\nToo high!\nCongratulations! You guessed correctly.\n",
         )
 
+    def test_chandra_bugs(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("chandra_bugs", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "{'new_val': 3, 'where': 'from_foo'}\n",
+        )
+
     def test_ignore(self) -> None:
         """Parse micro jac file."""
         construct.root._jac_.edges[construct.EdgeDir.OUT].clear()

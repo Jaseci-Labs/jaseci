@@ -128,30 +128,6 @@ class DefUsePass(SymTabPass):
         chain = self.unwind_atom_trailer(node)
         self.chain_use_lookup(chain)
 
-    def unwind_atom_trailer(self, node: ast.AtomTrailer) -> list[ast.AstSymbolNode]:
-        """Sub objects.
-
-        target: ExprType,
-        right: AtomType,
-        is_scope_contained: bool,
-        """
-        left = node.right if isinstance(node.right, ast.AtomTrailer) else node.target
-        right = node.target if isinstance(node.right, ast.AtomTrailer) else node.right
-        trag_list: list[ast.AstSymbolNode] = (
-            [right] if isinstance(right, ast.AstSymbolNode) else []
-        )
-        if not trag_list:
-            self.ice("Something went very wrong with atom trailer not valid")
-        while isinstance(left, ast.AtomTrailer) and left.is_attr:
-            if isinstance(left.right, ast.AstSymbolNode):
-                trag_list.insert(0, left.right)
-            else:
-                raise self.ice("Something went very wrong with atom trailer not valid")
-            left = left.target
-        if isinstance(left, ast.AstSymbolNode):
-            trag_list.insert(0, left)
-        return trag_list
-
     def enter_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 

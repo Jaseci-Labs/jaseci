@@ -234,6 +234,28 @@ class AstTool:
         else:
             return "Not a .jac file."
 
+    def print_py(self, args: List[str]) -> str:
+        """Generate a dot file for AST."""
+        if len(args) == 0:
+            return "Usage: print <file_path>"
+
+        file_name: str = args[0]
+
+        if not os.path.isfile(file_name):
+            return f"Error: {file_name} not found"
+
+        if file_name.endswith(".jac"):
+            [base, mod] = os.path.split(file_name)
+            base = base if base else "./"
+            pyast = jac_file_to_pass(file_name).ir.gen.py_ast
+            return (
+                py_ast.dump(pyast, indent=2)
+                if isinstance(pyast, py_ast.AST)
+                else "Compile failed."
+            )
+        else:
+            return "Not a .jac file."
+
     def symtab_print(self, args: List[str]) -> str:
         """Generate a dot file for AST."""
         if len(args) == 0:
