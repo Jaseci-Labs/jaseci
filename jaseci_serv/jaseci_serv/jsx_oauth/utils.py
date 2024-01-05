@@ -245,6 +245,7 @@ class JSXSocialLoginView(SocialLoginView):
         master = self.user.get_master()
         hook = master._h
 
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
         tot_time = time() - request.start_time
         save_count = len(hook.save_obj_list)
         touch_count = len(hook.mem.keys())
@@ -275,6 +276,7 @@ class JSXSocialLoginView(SocialLoginView):
             "objects_saved": save_count,
             "caller_name": master.name,
             "caller_jid": master.jid,
+            "user_agent": user_agent,
         }
         try:
             api_result_str = dumps(resp)[:OBJECT_LOG_LIMIT]
