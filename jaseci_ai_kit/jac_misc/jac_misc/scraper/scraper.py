@@ -6,6 +6,11 @@ from copy import deepcopy
 
 
 @jaseci_action(act_group=["wbs"], allow_remote=True)
+def setup():
+    pass
+
+
+@jaseci_action(act_group=["wbs"], allow_remote=True)
 def url_to_filename(url: str):
     return "".join(c for c in url if c.isalnum())
 
