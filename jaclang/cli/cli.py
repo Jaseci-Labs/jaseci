@@ -40,10 +40,10 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
     :param args: Arguments to pass to the entrypoint function.
     """
     if filename.endswith(".jac"):
-        base, mod = os.path.split(filename)
+        base, mod_name = os.path.split(filename)
         base = base if base else "./"
-        mod = mod[:-4]
-        mod = __jac_import__(target=mod, base_path=base)
+        mod_name = mod_name[:-4]
+        mod = __jac_import__(target=mod_name, base_path=base)
         if not mod:
             print("Errors occurred while importing the module.")
             return
@@ -60,11 +60,14 @@ def test(filename: str) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        base, mod = os.path.split(filename)
+        base, mod_name = os.path.split(filename)
         base = base if base else "./"
-        mod = mod[:-4]
-        mod = __jac_import__(target=mod, base_path=base)
-        unittest.TextTestRunner().run(mod.__jac_suite__)
+        mod_name = mod_name[:-4]
+        mod = __jac_import__(target=mod_name, base_path=base)
+        if hasattr(mod, "__jac_suite__"):
+            unittest.TextTestRunner().run(getattr(mod, "__jac_suite__"))  # noqa: B009
+        else:
+            print("No tests found.")
     else:
         print("Not a .jac file.")
 
@@ -116,9 +119,9 @@ def start_cli() -> None:
     args = parser.parse_args()
     command = cmd_registry.get(args.command)
     if command:
-        args = vars(args)
-        args.pop("command")
-        ret = command.call(**args)
+        args_dict = vars(args)
+        args_dict.pop("command")
+        ret = command.call(**args_dict)
         if ret:
             print(ret)
     else:
