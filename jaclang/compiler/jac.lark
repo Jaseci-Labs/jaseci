@@ -413,8 +413,6 @@ assign_compr: LPAREN STAR_MUL kw_expr_list RPAREN
 filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 filter_compare_item: named_ref cmp_op expression
 
-
-
 // Names and references
 any_ref: named_ref
         | arch_ref

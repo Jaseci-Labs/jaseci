@@ -52,7 +52,7 @@ class JacReferenceTests(TestCase):
         def execute_and_capture_output(code: str) -> str:
             f = io.StringIO()
             with redirect_stdout(f):
-                exec(code)
+                exec(code, {})
             return f.getvalue()
 
         try:
