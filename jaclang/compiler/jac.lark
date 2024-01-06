@@ -297,7 +297,7 @@ cmp_op: KW_ISN
 // Arithmetic expressions
 arithmetic: (arithmetic (MINUS | PLUS))? term
 term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? factor
-factor: (factor (BW_NOT | MINUS | PLUS))? power
+factor: (BW_NOT | MINUS | PLUS) factor | power
 power: (power STAR_POW)? connect
 
 // Connect expressions
