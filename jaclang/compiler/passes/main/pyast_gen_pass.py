@@ -2327,8 +2327,10 @@ class PyastGenPass(Pass):
             node.gen.py_ast = self.sync(ast3.Sub())
         elif node.name in [Tok.BW_NOT, Tok.BW_NOT_EQ]:
             node.gen.py_ast = self.sync(ast3.Invert())
-        elif node.name in [Tok.NOT, Tok.NE]:
+        elif node.name in [Tok.NOT]:
             node.gen.py_ast = self.sync(ast3.Not())
+        elif node.name in [Tok.EQ]:
+            node.gen.py_ast = self.sync(ast3.NotEq())
         elif node.name == Tok.EE:
             node.gen.py_ast = self.sync(ast3.Eq())
         elif node.name == Tok.GT:

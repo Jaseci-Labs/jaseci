@@ -6,5 +6,6 @@ with entry {
     mydict = {'new_val':1, 'where':0 };
     (mydict['new_val'], mydict['where']) = foo(1, bar=2);
     print(mydict);
+    print(1!=2);
 }
 
