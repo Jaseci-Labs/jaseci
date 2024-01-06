@@ -100,30 +100,30 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        valid_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
-        if len(valid_body) != len(body):
+        valid = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
+        if len(valid) != len(body):
             self.error("Length mismatch in function body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
+        valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
-        valid_decorators = [i for i in decorators if isinstance(i, ast.ExprType)]
-        if len(valid_decorators) != len(decorators):
+        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
+        if len(valid_dec) != len(decorators):
             self.error("Length mismatch in decorators on function")
         valid_decorators = (
-            ast.SubNodeList[ast.ExprType](items=valid_decorators, kid=decorators)
-            if len(valid_decorators)
+            ast.SubNodeList[ast.Expr](items=valid_dec, kid=decorators)
+            if len(valid_dec)
             else None
         )
         res = self.convert(node.args)
-        sig: Optional[ast.FuncSignature] | ast.ExprType = (
+        sig: Optional[ast.FuncSignature] | ast.Expr = (
             res if isinstance(res, ast.FuncSignature) else None
         )
         ret_sig = self.convert(node.returns) if node.returns else None
-        if isinstance(ret_sig, ast.ExprType):
+        if isinstance(ret_sig, ast.Expr):
             if not sig:
                 sig = ret_sig
             else:
-                sig.return_type = ast.SubTag[ast.ExprType](tag=ret_sig, kid=[ret_sig])
+                sig.return_type = ast.SubTag[ast.Expr](tag=ret_sig, kid=[ret_sig])
                 sig.add_kids_right([sig.return_type])
         kid = [name, sig, valid_body] if sig else [name, valid_body]
         return ast.Ability(
@@ -210,11 +210,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid_body, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
-        valid_decorators = [i for i in decorators if isinstance(i, ast.ExprType)]
+        valid_decorators = [i for i in decorators if isinstance(i, ast.Expr)]
         if len(valid_decorators) != len(decorators):
             self.error("Length mismatch in decorators in class")
         valid_decorators = (
-            ast.SubNodeList[ast.ExprType](items=valid_decorators, kid=decorators)
+            ast.SubNodeList[ast.Expr](items=valid_decorators, kid=decorators)
             if len(valid_decorators)
             else None
         )
@@ -230,7 +230,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             decorators=valid_decorators,
         )
 
-    def proc_return(self, node: py_ast.Return) -> ast.ExprType | None:
+    def proc_return(self, node: py_ast.Return) -> ast.Expr | None:
         """Process python node.
 
         class Return(stmt):
@@ -238,7 +238,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value: expr | None
         """
         value = self.convert(node.value) if node.value else None
-        if value and not isinstance(value, ast.ExprType):
+        if value and not isinstance(value, ast.Expr):
             self.error("Invalid return value")
         else:
             return value
@@ -277,7 +277,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice("Length mismatch in assignment targets")
         value = self.convert(node.value)
-        if isinstance(value, ast.ExprType):
+        if isinstance(value, ast.Expr):
             return ast.Assignment(
                 target=valid_targets,
                 value=value,
@@ -300,8 +300,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         op = self.convert(node.op)
         value = self.convert(node.value)
         if (
-            isinstance(value, ast.ExprType)
-            and isinstance(target, ast.ExprType)
+            isinstance(value, ast.Expr)
+            and isinstance(target, ast.Expr)
             and isinstance(op, ast.Token)
         ):
             return ast.BinaryExpr(
@@ -325,16 +325,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         target = self.convert(node.target)
         annotation = self.convert(node.annotation)
-        if isinstance(annotation, ast.ExprType):
-            annotation = ast.SubTag[ast.ExprType](tag=annotation, kid=[annotation])
+        if isinstance(annotation, ast.Expr):
+            annotation = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
         else:
             raise self.ice()
         value = self.convert(node.value) if node.value else None
-        valid_types = Union[ast.ExprType, ast.YieldExpr]
+        valid_types = Union[ast.Expr, ast.YieldExpr]
         if (
             isinstance(target, ast.SubNodeList)
             and (isinstance(value, valid_types) or not value)
-            and isinstance(annotation, ast.ExprType)
+            and isinstance(annotation, ast.Expr)
         ):
             return ast.Assignment(
                 target=target,
@@ -506,8 +506,30 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_compare(self, node: py_ast.Compare) -> None:
         """Process python node."""
 
-    def proc_constant(self, node: py_ast.Constant) -> None:
-        """Process python node."""
+    def proc_constant(self, node: py_ast.Constant) -> ast.Literal:
+        """Process python node.
+
+        class Constant(expr):
+            value: Any  # None, str, bytes, bool, int, float, complex, Ellipsis
+            kind: str | None
+            # Aliases for value, for backwards compatibility
+            s: Any
+            n: int | float | complex
+        """
+        if isinstance(node.value, str):
+            return ast.String(
+                file_path=self.mod_path,
+                name=Tok.STRING,
+                value=node.value,
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + len(node.value),
+                pos_start=0,
+                pos_end=0,
+                kid=[],
+            )
+        else:
+            raise self.ice()
 
     def proc_continue(self, node: py_ast.Continue) -> None:
         """Process python node."""
@@ -524,8 +546,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_except_handler(self, node: py_ast.ExceptHandler) -> None:
         """Process python node."""
 
-    def proc_expr(self, node: py_ast.Expr) -> None:
-        """Process python node."""
+    def proc_expr(self, node: py_ast.Expr) -> ast.Expr:
+        """Process python node.
+
+        class Expr(stmt):
+            value: expr
+        """
+        value = self.convert(node.value)
+        if isinstance(value, ast.Expr):
+            return value
+        else:
+            raise self.ice()
 
     def proc_formatted_value(self, node: py_ast.FormattedValue) -> None:
         """Process python node."""
