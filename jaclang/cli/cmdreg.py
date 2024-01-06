@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import cmd
 import inspect
-from typing import Callable
+from typing import Callable, Optional
 
 
 class Command:
@@ -110,9 +110,9 @@ class CommandRegistry:
                 )
         return func
 
-    def get(self, name: str) -> Command:
+    def get(self, name: str) -> Optional[Command]:
         """Get the Command instance for a given command name."""
-        return self.registry[name]
+        return self.registry.get(name)
 
 
 class CommandShell(cmd.Cmd):

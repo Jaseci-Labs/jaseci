@@ -1,6 +1,8 @@
 """Test Jac cli module."""
 import io
+import subprocess
 import sys
+
 
 from jaclang.cli import cli
 from jaclang.utils.test import TestCase
@@ -24,7 +26,6 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
 
-        # Assertions or verifications
         self.assertIn("Hello World!", stdout_value)
 
     def test_jac_cli_alert_based_err(self) -> None:
@@ -43,7 +44,6 @@ class JacCliTests(TestCase):
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         # print(stdout_value)
-        # Assertions or verifications
         self.assertIn("Errors occurred", stdout_value)
 
     def test_jac_ast_tool_pass_template(self) -> None:
@@ -55,9 +55,21 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        # Assertions or verifications
         self.assertIn("Sub objects.", stdout_value)
         self.assertGreater(stdout_value.count("def exit_"), 10)
+
+    def test_jac_cmd_line(self) -> None:
+        """Basic test for pass."""
+        process = subprocess.Popen(
+            ["jac"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout_value, _ = process.communicate(input="exit\n")
+        self.assertEqual(process.returncode, 0, "Process did not exit successfully")
+        self.assertIn("Welcome to the Jac CLI!", stdout_value)
 
     def test_ast_print(self) -> None:
         """Testing for print AstTool."""
@@ -68,7 +80,6 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        # Assertions or verifications
         self.assertIn("+-- Token", stdout_value)
 
     def test_ast_dotgen(self) -> None:
@@ -80,5 +91,4 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        # Assertions or verifications
         self.assertIn('[label="MultiString"]', stdout_value)
