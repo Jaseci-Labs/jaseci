@@ -118,15 +118,11 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")
 
-    # def test_need_import(self) -> None:
-    #     """Test importing python."""
-    #     captured_output = io.StringIO()
-    #     sys.stdout = captured_output
-    #     jac_import("needs_import", self.fixture_abs_path("./"))
-    #     sys.stdout = sys.__stdout__
-    #     stdout_value = captured_output.getvalue()
-    #     print(stdout_value)
-    #     self.assertEqual(
-    #         stdout_value,
-    #         "{'new_val': 3, 'where': 'from_foo'}\nTrue\n",
-    #     )
+    def test_need_import(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("needs_import", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("<module 'pyfunc' from", stdout_value)

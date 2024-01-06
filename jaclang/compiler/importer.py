@@ -74,6 +74,12 @@ def jac_import(
         sys.modules[f"{package_path}.{module_name}"] = module
     sys.modules[module_name] = module
 
+    path_added = False
+    if caller_dir not in sys.path:
+        sys.path.append(caller_dir)
+        path_added = True
     exec(codeobj, module.__dict__)
+    if path_added:
+        sys.path.remove(caller_dir)
 
     return module
