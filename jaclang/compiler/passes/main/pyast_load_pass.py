@@ -13,7 +13,7 @@ from jaclang.utils.helpers import pascal_to_snake
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class PyastBuildPass(Pass):
+class PyastBuildPass(Pass[ast.PythonModuleAst]):
     """Jac Parser."""
 
     def __init__(self, input_ir: ast.PythonModuleAst) -> None:
@@ -34,6 +34,7 @@ class PyastBuildPass(Pass):
 
     def convert(self, node: py_ast.AST) -> ast.AstNode:
         """Get python node type."""
+        print(f"working on {type(node).__name__}")
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             return getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
