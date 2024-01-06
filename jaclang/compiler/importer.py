@@ -46,8 +46,6 @@ def jac_import(
         and path.exists(py_file_path)
         and path.getmtime(py_file_path) > path.getmtime(full_target)
     ):
-        # with open(py_file_path, "r") as f:
-        #     code_string = f.read()
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
@@ -57,8 +55,6 @@ def jac_import(
                     print(e)
                     logging.error(e)
             return None
-        # with open(py_file_path, "r") as f:
-        #     code_string = f.read()
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
 
