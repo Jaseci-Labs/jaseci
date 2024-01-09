@@ -49,6 +49,8 @@ with entry {
     visit -->;
 }
 :node:level:can:run_game {
+    print("Walker Entry ->", <self>.level_id);
+    
     if <self>.played == False {
   
         <here>.g.new();
@@ -80,14 +82,18 @@ with entry {
     }
 }
 :node:start_screen:can:intro_screen {
+    print("Walker Entry -> Intro Screen");
     if <self>.game_started == False {
         <self>.game_started = True;
         <here>.g.intro_screen();
         <self> ++> level(game_level = 1, level_id = str(1) + "_" + str(random.randint(1000, 9000)));
         visit -->;
     } else {
-        visit(level(game_level = 1, level_id = str(1) + "_" + str(random.randint(1000, 9000))));
-        print(":-: Visiting Into Screen | ");
+        ID = str(1) + "_" + str(random.randint(1000, 9000));
+        <self> ++> level(game_level = 1, level_id = ID);
+        print(":-: Visiting Intro Screen | Created Level ID :", ID);
+        visit -->;
+        
     }
 }
 :node:start_screen:can:exit_game {
