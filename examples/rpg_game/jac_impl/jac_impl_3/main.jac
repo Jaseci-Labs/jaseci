@@ -142,9 +142,6 @@ with entry {
         }
     }
 
-    if <self>.won == False{
-        <self>.playing = False;
-    }
 }
 
     # Game over screen

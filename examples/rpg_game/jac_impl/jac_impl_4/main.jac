@@ -123,16 +123,13 @@ obj Game {
         }
     }
 
-    if <self>.won == False{
-        <self>.playing = False;
-    }
 }
 
     # Game over screen
 :obj:Game:can:game_over(){
 
     <self>.score -= 2;
-    print(<self>.score);
+    # print(<self>.score);
 
     text = <self>.font.render('GaMe OvEr', True, RED);
     text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));
@@ -200,7 +197,7 @@ obj Game {
 :obj:Game:can:game_won {
 
     <self>.score += 5;
-    print(<self>.score);
+    # print(<self>.score);
 
     text = <self>.font.render('YOU WON!', True, BLUE);
     text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));
