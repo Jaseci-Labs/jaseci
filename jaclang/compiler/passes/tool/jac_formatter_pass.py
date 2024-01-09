@@ -178,11 +178,13 @@ class JacFormatPass(Pass):
                     ):
                         self.emit(node, f" {stmt.value}")
                     else:
-                        self.emit_ln(node, f" {stmt.value} ")
+                        self.emit(node, f" {stmt.value}")
                     self.indent_level += 1
                 elif stmt.name == "RBRACE":
                     self.indent_level -= 1
-                    if isinstance(
+                    if stmt.parent.gen.jac.strip() == "{":
+                        self.emit_ln(node, stmt.gen.jac.strip())
+                    elif isinstance(
                         stmt.parent.parent,
                         (ast.ElseIf, ast.IfStmt, ast.IterForStmt, ast.TryStmt),
                     ):
@@ -224,13 +226,18 @@ class JacFormatPass(Pass):
                     continue
             elif isinstance(stmt, ast.Semi):
                 self.emit(node, f"{stmt.gen.jac} ")
-            elif isinstance(prev_token, (ast.HasVar, ast.ArchHas)) and not isinstance(
-                stmt, (ast.HasVar, ast.ArchHas)
+            elif (
+                isinstance(prev_token, (ast.HasVar, ast.ArchHas))
+                and not isinstance(stmt, (ast.HasVar, ast.ArchHas))
+            ) or (
+                isinstance(prev_token, ast.Ability) and isinstance(stmt, ast.Ability)
             ):
                 if not isinstance(prev_token.kid[-1], ast.CommentToken):
                     self.emit_ln(node, "")
                 self.emit(node, f"{stmt.gen.jac}")
             else:
+                if prev_token and prev_token.gen.jac.strip() == "{":
+                    self.emit_ln(node, "")
                 self.emit(node, f"{stmt.gen.jac}")
             prev_token = stmt
 
@@ -991,14 +998,6 @@ class JacFormatPass(Pass):
             node.kid[-1], (ast.Semi, ast.CommentToken)
         ) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, "")
-        # if node.name:
-        #     self.emit(
-        #         node,
-        #         f"except {node.ex_type.gen.jac} as {node.name.value}",  # noqa
-        #     )
-        # else:
-        #     self.emit(node, f"except {node.ex_type.gen.jac}")
-        # self.emit(node, node.body.gen.jac)
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
