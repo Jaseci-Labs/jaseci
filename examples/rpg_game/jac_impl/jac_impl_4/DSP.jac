@@ -12,7 +12,8 @@ include:jac main;
 '''The walker that initiates the game and runs an instance of the game'''
 walker game{
 
-    has g:Game = None;
+    has g:Game = None,
+        fwd_dir:bool = True;
     can start_game with `<root> entry;
 }
 
@@ -59,19 +60,25 @@ with entry {
         
         if <here>.g.won == True{
             <here>.g.game_won();
-            # print('Attach');
+            print('Attach');
             <self>.played = True;
             <here>.g.won = False;
-            visit(level(game_level = <self>.game_level+1, level_id = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000))));
+            <here>.fwd_dir =True;
+            new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
+            visit(level(game_level = <self>.game_level+1, level_id = new_ID));
         } else {
             <here>.g.game_over();
             <self>.played = True;
             <here>.g.won = False;
+            <here>.fwd_dir =False;
             visit <--;
         }
-    } else {
-        print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
-        visit(level(game_level = <self>.game_level+1, level_id = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000))));
+    } elif <here>.fwd_dir == False{
+        print('lost');
+        new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
+        print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played), '| Created Level ID :', new_ID);
+        <here>.fwd_dir = True;
+        visit(level(game_level = <self>.game_level+1, level_id = new_ID));
     }
 }
 :node:level:can:exit_game {
@@ -86,12 +93,15 @@ with entry {
     if <self>.game_started == False {
         <self>.game_started = True;
         <here>.g.intro_screen();
-        <self> ++> level(game_level = 1, level_id = str(1) + "_" + str(random.randint(1000, 9000)));
+        new_ID = str(1) + "_" + str(random.randint(1000, 9000));
+        <self> ++> level(game_level = 1, level_id = new_ID);
+        <here>.fwd_dir = True;
         visit -->;
     } else {
-        ID = str(1) + "_" + str(random.randint(1000, 9000));
-        <self> ++> level(game_level = 1, level_id = ID);
-        print(":-: Visiting Intro Screen | Created Level ID :", ID);
+        new_ID = str(1) + "_" + str(random.randint(1000, 9000));
+        <self> ++> level(game_level = 1, level_id = new_ID);
+        print(":-: Visiting Intro Screen | Created Level ID :", new_ID);
+        <here>.fwd_dir = True;
         visit -->;
         
     }
