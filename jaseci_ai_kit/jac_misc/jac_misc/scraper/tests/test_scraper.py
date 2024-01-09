@@ -29,13 +29,11 @@ class ScraperTest(CoreTest):
         )
 
         self.assertEqual(
-            set(
-                [
-                    "https://fiber.google.com/speedtest/",
-                    "https://www.google.com/search?q=speed+test",
-                ]
-            ),
-            set(scraper["scanned"]),
+            [
+                {"url": "https://www.google.com/search?q=speed+test"},
+                {"url": "https://fiber.google.com/speedtest/"},
+            ],
+            scraper["scanned"],
         )
 
         self.assertEqual(

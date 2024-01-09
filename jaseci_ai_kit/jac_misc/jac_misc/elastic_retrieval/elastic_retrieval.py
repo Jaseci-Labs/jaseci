@@ -1,5 +1,5 @@
 from openai import OpenAI
-from os import environ, unlink
+from os import getenv, unlink
 from datetime import datetime
 from requests import get
 from uuid import uuid4
@@ -12,21 +12,19 @@ OAI_CLIENT = None
 ES_CLIENT = None
 CONFIG = {
     "elastic": {
-        "url": environ.get("ELASTICSEARCH_URL", "http://localhost:9200"),
-        "key": environ.get("ELASTICSEARCH_API_KEY"),
+        "url": getenv("ELASTICSEARCH_URL", "http://localhost:9200"),
+        "key": getenv("ELASTICSEARCH_API_KEY"),
         "index_template": {
-            "name": environ.get("ELASTICSEARCH_INDEX_TEMPLATE") or "openai-embeddings",
+            "name": getenv("ELASTICSEARCH_INDEX_TEMPLATE") or "openai-embeddings",
             "index_patterns": (
-                environ.get("ELASTICSEARCH_INDEX_PATTERNS") or "oai-emb-*"
+                getenv("ELASTICSEARCH_INDEX_PATTERNS") or "oai-emb-*"
             ).split(","),
             "priority": 500,
             "version": 1,
             "template": {
                 "settings": {
-                    "number_of_shards": int(environ.get("ELASTICSEARCH_SHARDS", "1")),
-                    "number_of_replicas": int(
-                        environ.get("ELASTICSEARCH_REPLICAS", "1")
-                    ),
+                    "number_of_shards": int(getenv("ELASTICSEARCH_SHARDS", "1")),
+                    "number_of_replicas": int(getenv("ELASTICSEARCH_REPLICAS", "1")),
                     "refresh_interval": "1s",
                 },
                 "mappings": {
@@ -35,13 +33,9 @@ CONFIG = {
                         "id": {"type": "keyword"},
                         "embedding": {
                             "type": "dense_vector",
-                            "dims": int(
-                                environ.get("ELASTICSEARCH_VECTOR_SIZE", "1536")
-                            ),
+                            "dims": int(getenv("ELASTICSEARCH_VECTOR_SIZE", "1536")),
                             "index": True,
-                            "similarity": environ.get(
-                                "ELASTICSEARCH_SIMILARITY", "cosine"
-                            ),
+                            "similarity": getenv("ELASTICSEARCH_SIMILARITY", "cosine"),
                         },
                         "version": {"type": "keyword"},
                     },
@@ -49,17 +43,17 @@ CONFIG = {
             },
         },
     },
-    "openai": {"api_key": environ.get("OPENAI_API_KEY")},
+    "openai": {"api_key": getenv("OPENAI_API_KEY")},
     "openai_embedding": {
-        "model": environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"),
+        "model": getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"),
     },
     "chunk_config": {
-        "chunk_size": int(environ.get("CHUNK_SIZE", "200")),
-        "min_chunk_size_chars": int(environ.get("MIN_CHUNK_SIZE_CHARS", "350")),
-        "min_chunk_length_to_embed": int(environ.get("MIN_CHUNK_LENGTH_TO_EMBED", "5")),
-        "max_num_chunks": int(environ.get("MAX_NUM_CHUNKS", "10000")),
+        "chunk_size": int(getenv("CHUNK_SIZE", "200")),
+        "min_chunk_size_chars": int(getenv("MIN_CHUNK_SIZE_CHARS", "350")),
+        "min_chunk_length_to_embed": int(getenv("MIN_CHUNK_LENGTH_TO_EMBED", "5")),
+        "max_num_chunks": int(getenv("MAX_NUM_CHUNKS", "10000")),
     },
-    "batch_size": int(environ.get("BATCH_SIZE", "100")),
+    "batch_size": int(getenv("BATCH_SIZE", "100")),
 }
 
 

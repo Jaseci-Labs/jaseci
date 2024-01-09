@@ -74,3 +74,8 @@ def delete(fn: str):
         return True
     else:
         return False
+
+
+@jaseci_action()
+def url_to_filename(url: str):
+    return "".join(c for c in url if c.isalnum())

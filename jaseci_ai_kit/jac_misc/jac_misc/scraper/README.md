@@ -1,26 +1,19 @@
 # **SCRAPER (`Playwright Python`)**
-
-## wbs.**`url_to_filename`**
-> **`Arguments`:** \
-> **url**: str
->
-> **`Return`:** \
-> str
->
-> **`Usage`:** \
-> To convert url to a valid file name
->
-
-##### **`HOW TO TRIGGER`**
-```js
-wbs.url_to_filename("https://google.com")
+## **`!IMPORTANT!`**
+remote action scraper needs to be run via `FastAPI` instead of `jaseci serv_action`. Remote action runs via uvicorn and this will require running playwright asynchronously and currently, remote action use non async function hence creating dedicated async scrape api. This is to allow local and remote scraper.
+To run remotely:
+```bash
+export SCRAPER_SOCKET_ENABLED=true
+export SCRAPER_SOCKET_URL=ws://your-websocket/ws # defaults to ws://jaseci-socket/ws
+uvicorn jac_misc.scraper:app --host 0.0.0.0 --port 80 --reload
 ```
 
 ## wbs.**`scrape`**
 > **`Arguments`:** \
 > **pages**: list (structure below) \
 > **pre_configs**: list (structure below)\
-> **detailed**: bool = False
+> **detailed**: bool = False\
+> **target**: str = None
 >
 > **`Return`:** \
 > str or dict
@@ -29,7 +22,8 @@ wbs.url_to_filename("https://google.com")
 > To scrape specified url
 >
 > **`Remarks`:** \
-> **detailed** true will return dict with scanned/scraped urls
+> **detailed** true will return dict with scanned/scraped urls\
+> **target** optional client id for websocket progress notifications
 >
 ##### **`STRUCTURE`**
 ```python

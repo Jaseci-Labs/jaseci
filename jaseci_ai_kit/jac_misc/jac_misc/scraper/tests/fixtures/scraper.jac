@@ -1,6 +1,6 @@
 walker test_scraper {
-    can wbs.scrape, wbs.url_to_filename;
-    report wbs.url_to_filename("https://www.google.com/search?q=speed+test");
+    can wbs.scrape, file.url_to_filename;
+    report file.url_to_filename("https://www.google.com/search?q=speed+test");
     report wbs.scrape(pages = [{
         "goto": {
             "url": "https://www.google.com/search?q=speed+test"
