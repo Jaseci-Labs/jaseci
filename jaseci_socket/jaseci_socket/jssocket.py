@@ -62,6 +62,14 @@ class JsSocket:
             "notify_all": self.notify_all,
         }
 
+    def is_admin(self, ws: wssp) -> bool:
+        is_ad = getattr(ws, "is_admin", False)
+        if not is_ad:
+            auth = ws.request_headers.get("auth")
+            if auth and bcrypt.checkpw(auth.encode("utf-8"), self.auth):
+                ws.is_admin = is_ad = True
+        return is_ad
+
     async def cleanup(self):
         global EVENT_COUNT, EVENT_THRESHOLD
         EVENT_COUNT += 1
@@ -116,7 +124,7 @@ class JsSocket:
                 await self.closed(ws)
 
     async def server_connect(self, ws: wssp, data: dict):
-        if bcrypt.checkpw(data.get("auth").encode("utf-8"), self.auth):
+        if self.is_admin(ws):
             await self.add_server(ws)
             await self.client_send(ws, {"type": "server_connect", "data": True})
             await self.cleanup()
@@ -147,7 +155,7 @@ class JsSocket:
         await ws.close()
 
     async def client_connected(self, ws: wssp, data: dict):
-        if self._servers.get(str(ws.id)):
+        if self.is_admin(ws):
             ws = self._clients.get(data.get("target"))
             if ws:
                 ws_id = str(ws.id)
@@ -169,22 +177,28 @@ class JsSocket:
                 ws.connected = True
                 await self.client_send(ws, {"type": "client_connected", "data": data})
 
+    async def notify_sender(self, ws: wssp, data: dict):
+        callback = data.get("callback")
+        if callback:
+            await self.client_send(ws, {"type": "callback", "data": callback})
+
     async def notify_all(self, ws: wssp, data: dict):
-        if self._servers.get(str(ws.id)):
+        if self.is_admin(ws):
             for clt in self._clients.copy().values():
                 await self.client_send(clt, data)
 
     async def notify_client(self, ws: wssp, data: dict):
-        ws_id = str(ws.id)
-        if self._servers.get(ws_id) or getattr(ws, "connected", None):
-            target = data.get("target") or ws_id
+        if self.is_admin(ws) or getattr(ws, "connected", None):
+            target = data.get("target") or str(ws.id)
             if target:
                 client = self._clients.get(target)
                 if client:
                     await self.client_send(client, data.get("data") or {})
 
+            await self.notify_sender(ws, data)
+
     async def notify_group(self, ws: wssp, data: dict):
-        if self._servers.get(str(ws.id)) or getattr(ws, "connected", None):
+        if self.is_admin(ws) or getattr(ws, "connected", None):
             group = None
             target = data.get("target") or "public"
             client = self._clients.get(target)
@@ -200,6 +214,8 @@ class JsSocket:
                     clt = self._clients.get(clt)
                     if clt:
                         await self.client_send(clt, data)
+
+            await self.notify_sender(ws, data)
 
     async def consume(self, ws: wssp):
         try:

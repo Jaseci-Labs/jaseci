@@ -23,6 +23,7 @@ class SocketService(JsOrc.CommonService):
         self.prefix = self.config.get("prefix") or "jws-"
         self.app = websocket.WebSocketApp(
             self.config.get("url"),
+            header={"auth": self.config["auth"]},
             on_open=self.on_open,
             on_message=self.on_message,
             on_error=self.on_error,
@@ -94,7 +95,7 @@ class SocketService(JsOrc.CommonService):
     def on_open(self, ws: wsa):
         self.send(
             ws,
-            {"type": "server_connect", "data": {"auth": self.config.get("auth")}},
+            {"type": "server_connect", "data": {}},
         )
 
     def on_ping(self, ws: wsa, data: bytes):
