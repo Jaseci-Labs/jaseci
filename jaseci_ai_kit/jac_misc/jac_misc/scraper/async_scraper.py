@@ -101,6 +101,9 @@ async def scrape(
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
+                ws.create_connection()
+                ws.notify_client(target, pages, urls, {"url": url, "status": "failed"})
+
         await browser.close()
 
     content = " ".join(content.split())
