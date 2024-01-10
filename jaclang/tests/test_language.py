@@ -128,11 +128,13 @@ class JacLanguageTests(TestCase):
         self.assertIn("<module 'pyfunc' from", stdout_value)
 
     def test_filter_compr(self) -> None:
-        """Testing filter comprehension"""
+        """Testing filter comprehension."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("reference.special_comprehensions", self.fixture_abs_path("../../../examples/"))
+        jac_import(
+            "reference.special_comprehensions",
+            self.fixture_abs_path("../../../examples/"),
+        )
         sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()        
-        self.assertIn("TestObj",stdout_value)
-       
+        stdout_value = captured_output.getvalue()
+        self.assertIn("TestObj", stdout_value)
