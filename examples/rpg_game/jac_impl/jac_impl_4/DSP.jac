@@ -19,7 +19,7 @@ walker game{
 
 '''Start screen node which operate as the virtual root node'''
 node start_screen {
-    
+
     has game_started:bool = False;
 
     can intro_screen with game entry;
@@ -51,13 +51,13 @@ with entry {
 }
 :node:level:can:run_game {
     # print("Walker Entry ->", <self>.level_id);
-    
+
     if <self>.played == False {
-  
+
         <here>.g.new();
         print(":-: Playing Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
         <here>.g.main();
-        
+
         if <here>.g.won == True{
             <here>.g.game_won();
             <self>.played = True;
@@ -103,7 +103,7 @@ with entry {
         print(":-: Visiting Intro Screen | Created Level ID :", new_ID);
         <here>.fwd_dir = True;
         visit -->;
-        
+
     }
 }
 :node:start_screen:can:exit_game {
