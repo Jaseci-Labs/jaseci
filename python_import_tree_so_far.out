@@ -1,0 +1,37 @@
+1:1 - 7:2       Module
+1:1 - 1:36      +-- String - """Test of jac importing python."""
+2:1 - 2:18      +-- Import
+2:1 - 2:7       |   +-- Token - import
+2:7 - 2:10      |   +-- SubTag
+2:7 - 2:8       |   |   +-- Token - :
+2:8 - 2:10      |   |   +-- Name - py
+2:11 - 2:17     |   +-- ModulePath - pyfunc
+2:11 - 2:17     |   |   +-- Name - pyfunc
+2:17 - 2:18     |   +-- Semi - ;
+3:1 - 3:33      +-- Import
+3:1 - 3:7       |   +-- Token - import
+3:7 - 3:10      |   +-- SubTag
+3:7 - 3:8       |   |   +-- Token - :
+3:8 - 3:10      |   |   +-- Name - py
+3:11 - 3:15     |   +-- Token - from
+3:16 - 3:22     |   +-- ModulePath - pyfunc
+3:16 - 3:22     |   |   +-- Name - pyfunc
+3:22 - 3:23     |   +-- Token - ,
+3:24 - 3:32     |   +-- SubNodeList
+3:24 - 3:32     |   |   +-- ModuleItem - my_print
+3:24 - 3:32     |   |       +-- Name - my_print
+3:32 - 3:33     |   +-- Semi - ;
+5:1 - 7:2       +-- ModuleCode
+5:1 - 5:5           +-- Token - with
+5:6 - 5:11          +-- Token - entry
+5:12 - 7:2          +-- SubNodeList
+5:12 - 5:13             +-- Token - {
+6:5 - 6:22              +-- ExprStmt
+6:5 - 6:21              |   +-- FuncCall
+6:5 - 6:13              |   |   +-- Name - my_print
+6:13 - 6:14             |   |   +-- Token - (
+6:14 - 6:20             |   |   +-- SubNodeList
+6:14 - 6:20             |   |   |   +-- Name - pyfunc
+6:20 - 6:21             |   |   +-- Token - )
+6:21 - 6:22             |   +-- Semi - ;
+7:1 - 7:2               +-- Token - }

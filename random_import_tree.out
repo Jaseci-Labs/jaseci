@@ -1,0 +1,3909 @@
+Module(
+  body=[
+    Expr(
+      value=Constant(value='Random variable generators.\n\n    bytes\n    -----\n           uniform bytes (values between 0 and 255)\n\n    integers\n    --------\n           uniform within range\n\n    sequences\n    ---------\n           pick random element\n           pick random sample\n           pick weighted random sample\n           generate random permutation\n\n    distributions on the real line:\n    ------------------------------\n           uniform\n           triangular\n           normal (Gaussian)\n           lognormal\n           negative exponential\n           gamma\n           beta\n           pareto\n           Weibull\n\n    distributions on the circle (angles 0 to 2pi)\n    ---------------------------------------------\n           circular uniform\n           von Mises\n\nGeneral notes on the underlying Mersenne Twister core generator:\n\n* The period is 2**19937-1.\n* It is one of the most extensively tested generators in existence.\n* The random() method is implemented in C, executes in a single Python step,\n  and is, therefore, threadsafe.\n\n')),
+    ImportFrom(
+      module='warnings',
+      names=[
+        alias(name='warn', asname='_warn')],
+      level=0),
+    ImportFrom(
+      module='math',
+      names=[
+        alias(name='log', asname='_log'),
+        alias(name='exp', asname='_exp'),
+        alias(name='pi', asname='_pi'),
+        alias(name='e', asname='_e'),
+        alias(name='ceil', asname='_ceil')],
+      level=0),
+    ImportFrom(
+      module='math',
+      names=[
+        alias(name='sqrt', asname='_sqrt'),
+        alias(name='acos', asname='_acos'),
+        alias(name='cos', asname='_cos'),
+        alias(name='sin', asname='_sin')],
+      level=0),
+    ImportFrom(
+      module='math',
+      names=[
+        alias(name='tau', asname='TWOPI'),
+        alias(name='floor', asname='_floor'),
+        alias(name='isfinite', asname='_isfinite')],
+      level=0),
+    ImportFrom(
+      module='os',
+      names=[
+        alias(name='urandom', asname='_urandom')],
+      level=0),
+    ImportFrom(
+      module='_collections_abc',
+      names=[
+        alias(name='Set', asname='_Set'),
+        alias(name='Sequence', asname='_Sequence')],
+      level=0),
+    ImportFrom(
+      module='operator',
+      names=[
+        alias(name='index', asname='_index')],
+      level=0),
+    ImportFrom(
+      module='itertools',
+      names=[
+        alias(name='accumulate', asname='_accumulate'),
+        alias(name='repeat', asname='_repeat')],
+      level=0),
+    ImportFrom(
+      module='bisect',
+      names=[
+        alias(name='bisect', asname='_bisect')],
+      level=0),
+    Import(
+      names=[
+        alias(name='os', asname='_os')]),
+    Import(
+      names=[
+        alias(name='_random')]),
+    Try(
+      body=[
+        ImportFrom(
+          module='_sha512',
+          names=[
+            alias(name='sha512', asname='_sha512')],
+          level=0)],
+      handlers=[
+        ExceptHandler(
+          type=Name(id='ImportError', ctx=Load()),
+          body=[
+            ImportFrom(
+              module='hashlib',
+              names=[
+                alias(name='sha512', asname='_sha512')],
+              level=0)])],
+      orelse=[],
+      finalbody=[]),
+    Assign(
+      targets=[
+        Name(id='__all__', ctx=Store())],
+      value=List(
+        elts=[
+          Constant(value='Random'),
+          Constant(value='SystemRandom'),
+          Constant(value='betavariate'),
+          Constant(value='choice'),
+          Constant(value='choices'),
+          Constant(value='expovariate'),
+          Constant(value='gammavariate'),
+          Constant(value='gauss'),
+          Constant(value='getrandbits'),
+          Constant(value='getstate'),
+          Constant(value='lognormvariate'),
+          Constant(value='normalvariate'),
+          Constant(value='paretovariate'),
+          Constant(value='randbytes'),
+          Constant(value='randint'),
+          Constant(value='random'),
+          Constant(value='randrange'),
+          Constant(value='sample'),
+          Constant(value='seed'),
+          Constant(value='setstate'),
+          Constant(value='shuffle'),
+          Constant(value='triangular'),
+          Constant(value='uniform'),
+          Constant(value='vonmisesvariate'),
+          Constant(value='weibullvariate')],
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='NV_MAGICCONST', ctx=Store())],
+      value=BinOp(
+        left=BinOp(
+          left=Constant(value=4),
+          op=Mult(),
+          right=Call(
+            func=Name(id='_exp', ctx=Load()),
+            args=[
+              UnaryOp(
+                op=USub(),
+                operand=Constant(value=0.5))],
+            keywords=[])),
+        op=Div(),
+        right=Call(
+          func=Name(id='_sqrt', ctx=Load()),
+          args=[
+            Constant(value=2.0)],
+          keywords=[]))),
+    Assign(
+      targets=[
+        Name(id='LOG4', ctx=Store())],
+      value=Call(
+        func=Name(id='_log', ctx=Load()),
+        args=[
+          Constant(value=4.0)],
+        keywords=[])),
+    Assign(
+      targets=[
+        Name(id='SG_MAGICCONST', ctx=Store())],
+      value=BinOp(
+        left=Constant(value=1.0),
+        op=Add(),
+        right=Call(
+          func=Name(id='_log', ctx=Load()),
+          args=[
+            Constant(value=4.5)],
+          keywords=[]))),
+    Assign(
+      targets=[
+        Name(id='BPF', ctx=Store())],
+      value=Constant(value=53)),
+    Assign(
+      targets=[
+        Name(id='RECIP_BPF', ctx=Store())],
+      value=BinOp(
+        left=Constant(value=2),
+        op=Pow(),
+        right=UnaryOp(
+          op=USub(),
+          operand=Name(id='BPF', ctx=Load())))),
+    Assign(
+      targets=[
+        Name(id='_ONE', ctx=Store())],
+      value=Constant(value=1)),
+    ClassDef(
+      name='Random',
+      bases=[
+        Attribute(
+          value=Name(id='_random', ctx=Load()),
+          attr='Random',
+          ctx=Load())],
+      keywords=[],
+      body=[
+        Expr(
+          value=Constant(value="Random number generator base class used by bound module functions.\n\n    Used to instantiate instances of Random to get generators that don't\n    share state.\n\n    Class Random can also be subclassed if you want to use a different basic\n    generator of your own devising: in that case, override the following\n    methods:  random(), seed(), getstate(), and setstate().\n    Optionally, implement a getrandbits() method so that randrange()\n    can cover arbitrarily large ranges.\n\n    ")),
+        Assign(
+          targets=[
+            Name(id='VERSION', ctx=Store())],
+          value=Constant(value=3)),
+        FunctionDef(
+          name='__init__',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='x')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[
+              Constant(value=None)]),
+          body=[
+            Expr(
+              value=Constant(value='Initialize an instance.\n\n        Optional argument x controls seeding, as for Random.seed().\n        ')),
+            Expr(
+              value=Call(
+                func=Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='seed',
+                  ctx=Load()),
+                args=[
+                  Name(id='x', ctx=Load())],
+                keywords=[])),
+            Assign(
+              targets=[
+                Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='gauss_next',
+                  ctx=Store())],
+              value=Constant(value=None))],
+          decorator_list=[]),
+        FunctionDef(
+          name='seed',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='a'),
+              arg(arg='version')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[
+              Constant(value=None),
+              Constant(value=2)]),
+          body=[
+            Expr(
+              value=Constant(value='Initialize internal state from a seed.\n\n        The only supported seed types are None, int, float,\n        str, bytes, and bytearray.\n\n        None or no argument seeds from current time or from an operating\n        system specific randomness source if available.\n\n        If *a* is an int, all bits are used.\n\n        For version 2 (the default), all of the bits are used if *a* is a str,\n        bytes, or bytearray.  For version 1 (provided for reproducing random\n        sequences from older versions of Python), the algorithm for str and\n        bytes generates a narrower range of seeds.\n\n        ')),
+            If(
+              test=BoolOp(
+                op=And(),
+                values=[
+                  Compare(
+                    left=Name(id='version', ctx=Load()),
+                    ops=[
+                      Eq()],
+                    comparators=[
+                      Constant(value=1)]),
+                  Call(
+                    func=Name(id='isinstance', ctx=Load()),
+                    args=[
+                      Name(id='a', ctx=Load()),
+                      Tuple(
+                        elts=[
+                          Name(id='str', ctx=Load()),
+                          Name(id='bytes', ctx=Load())],
+                        ctx=Load())],
+                    keywords=[])]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='a', ctx=Store())],
+                  value=IfExp(
+                    test=Call(
+                      func=Name(id='isinstance', ctx=Load()),
+                      args=[
+                        Name(id='a', ctx=Load()),
+                        Name(id='bytes', ctx=Load())],
+                      keywords=[]),
+                    body=Call(
+                      func=Attribute(
+                        value=Name(id='a', ctx=Load()),
+                        attr='decode',
+                        ctx=Load()),
+                      args=[
+                        Constant(value='latin-1')],
+                      keywords=[]),
+                    orelse=Name(id='a', ctx=Load()))),
+                Assign(
+                  targets=[
+                    Name(id='x', ctx=Store())],
+                  value=IfExp(
+                    test=Name(id='a', ctx=Load()),
+                    body=BinOp(
+                      left=Call(
+                        func=Name(id='ord', ctx=Load()),
+                        args=[
+                          Subscript(
+                            value=Name(id='a', ctx=Load()),
+                            slice=Constant(value=0),
+                            ctx=Load())],
+                        keywords=[]),
+                      op=LShift(),
+                      right=Constant(value=7)),
+                    orelse=Constant(value=0))),
+                For(
+                  target=Name(id='c', ctx=Store()),
+                  iter=Call(
+                    func=Name(id='map', ctx=Load()),
+                    args=[
+                      Name(id='ord', ctx=Load()),
+                      Name(id='a', ctx=Load())],
+                    keywords=[]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='x', ctx=Store())],
+                      value=BinOp(
+                        left=BinOp(
+                          left=BinOp(
+                            left=Constant(value=1000003),
+                            op=Mult(),
+                            right=Name(id='x', ctx=Load())),
+                          op=BitXor(),
+                          right=Name(id='c', ctx=Load())),
+                        op=BitAnd(),
+                        right=Constant(value=18446744073709551615)))],
+                  orelse=[]),
+                AugAssign(
+                  target=Name(id='x', ctx=Store()),
+                  op=BitXor(),
+                  value=Call(
+                    func=Name(id='len', ctx=Load()),
+                    args=[
+                      Name(id='a', ctx=Load())],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Name(id='a', ctx=Store())],
+                  value=IfExp(
+                    test=Compare(
+                      left=Name(id='x', ctx=Load()),
+                      ops=[
+                        Eq()],
+                      comparators=[
+                        UnaryOp(
+                          op=USub(),
+                          operand=Constant(value=1))]),
+                    body=UnaryOp(
+                      op=USub(),
+                      operand=Constant(value=2)),
+                    orelse=Name(id='x', ctx=Load())))],
+              orelse=[
+                If(
+                  test=BoolOp(
+                    op=And(),
+                    values=[
+                      Compare(
+                        left=Name(id='version', ctx=Load()),
+                        ops=[
+                          Eq()],
+                        comparators=[
+                          Constant(value=2)]),
+                      Call(
+                        func=Name(id='isinstance', ctx=Load()),
+                        args=[
+                          Name(id='a', ctx=Load()),
+                          Tuple(
+                            elts=[
+                              Name(id='str', ctx=Load()),
+                              Name(id='bytes', ctx=Load()),
+                              Name(id='bytearray', ctx=Load())],
+                            ctx=Load())],
+                        keywords=[])]),
+                  body=[
+                    If(
+                      test=Call(
+                        func=Name(id='isinstance', ctx=Load()),
+                        args=[
+                          Name(id='a', ctx=Load()),
+                          Name(id='str', ctx=Load())],
+                        keywords=[]),
+                      body=[
+                        Assign(
+                          targets=[
+                            Name(id='a', ctx=Store())],
+                          value=Call(
+                            func=Attribute(
+                              value=Name(id='a', ctx=Load()),
+                              attr='encode',
+                              ctx=Load()),
+                            args=[],
+                            keywords=[]))],
+                      orelse=[]),
+                    Assign(
+                      targets=[
+                        Name(id='a', ctx=Store())],
+                      value=Call(
+                        func=Attribute(
+                          value=Name(id='int', ctx=Load()),
+                          attr='from_bytes',
+                          ctx=Load()),
+                        args=[
+                          BinOp(
+                            left=Name(id='a', ctx=Load()),
+                            op=Add(),
+                            right=Call(
+                              func=Attribute(
+                                value=Call(
+                                  func=Name(id='_sha512', ctx=Load()),
+                                  args=[
+                                    Name(id='a', ctx=Load())],
+                                  keywords=[]),
+                                attr='digest',
+                                ctx=Load()),
+                              args=[],
+                              keywords=[]))],
+                        keywords=[]))],
+                  orelse=[
+                    If(
+                      test=UnaryOp(
+                        op=Not(),
+                        operand=Call(
+                          func=Name(id='isinstance', ctx=Load()),
+                          args=[
+                            Name(id='a', ctx=Load()),
+                            Tuple(
+                              elts=[
+                                Call(
+                                  func=Name(id='type', ctx=Load()),
+                                  args=[
+                                    Constant(value=None)],
+                                  keywords=[]),
+                                Name(id='int', ctx=Load()),
+                                Name(id='float', ctx=Load()),
+                                Name(id='str', ctx=Load()),
+                                Name(id='bytes', ctx=Load()),
+                                Name(id='bytearray', ctx=Load())],
+                              ctx=Load())],
+                          keywords=[])),
+                      body=[
+                        Raise(
+                          exc=Call(
+                            func=Name(id='TypeError', ctx=Load()),
+                            args=[
+                              Constant(value='The only supported seed types are: None,\nint, float, str, bytes, and bytearray.')],
+                            keywords=[]))],
+                      orelse=[])])]),
+            Expr(
+              value=Call(
+                func=Attribute(
+                  value=Call(
+                    func=Name(id='super', ctx=Load()),
+                    args=[],
+                    keywords=[]),
+                  attr='seed',
+                  ctx=Load()),
+                args=[
+                  Name(id='a', ctx=Load())],
+                keywords=[])),
+            Assign(
+              targets=[
+                Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='gauss_next',
+                  ctx=Store())],
+              value=Constant(value=None))],
+          decorator_list=[]),
+        FunctionDef(
+          name='getstate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Return internal state; can be passed to setstate() later.')),
+            Return(
+              value=Tuple(
+                elts=[
+                  Attribute(
+                    value=Name(id='self', ctx=Load()),
+                    attr='VERSION',
+                    ctx=Load()),
+                  Call(
+                    func=Attribute(
+                      value=Call(
+                        func=Name(id='super', ctx=Load()),
+                        args=[],
+                        keywords=[]),
+                      attr='getstate',
+                      ctx=Load()),
+                    args=[],
+                    keywords=[]),
+                  Attribute(
+                    value=Name(id='self', ctx=Load()),
+                    attr='gauss_next',
+                    ctx=Load())],
+                ctx=Load()))],
+          decorator_list=[]),
+        FunctionDef(
+          name='setstate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='state')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Restore internal state from object returned by getstate().')),
+            Assign(
+              targets=[
+                Name(id='version', ctx=Store())],
+              value=Subscript(
+                value=Name(id='state', ctx=Load()),
+                slice=Constant(value=0),
+                ctx=Load())),
+            If(
+              test=Compare(
+                left=Name(id='version', ctx=Load()),
+                ops=[
+                  Eq()],
+                comparators=[
+                  Constant(value=3)]),
+              body=[
+                Assign(
+                  targets=[
+                    Tuple(
+                      elts=[
+                        Name(id='version', ctx=Store()),
+                        Name(id='internalstate', ctx=Store()),
+                        Attribute(
+                          value=Name(id='self', ctx=Load()),
+                          attr='gauss_next',
+                          ctx=Store())],
+                      ctx=Store())],
+                  value=Name(id='state', ctx=Load())),
+                Expr(
+                  value=Call(
+                    func=Attribute(
+                      value=Call(
+                        func=Name(id='super', ctx=Load()),
+                        args=[],
+                        keywords=[]),
+                      attr='setstate',
+                      ctx=Load()),
+                    args=[
+                      Name(id='internalstate', ctx=Load())],
+                    keywords=[]))],
+              orelse=[
+                If(
+                  test=Compare(
+                    left=Name(id='version', ctx=Load()),
+                    ops=[
+                      Eq()],
+                    comparators=[
+                      Constant(value=2)]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Tuple(
+                          elts=[
+                            Name(id='version', ctx=Store()),
+                            Name(id='internalstate', ctx=Store()),
+                            Attribute(
+                              value=Name(id='self', ctx=Load()),
+                              attr='gauss_next',
+                              ctx=Store())],
+                          ctx=Store())],
+                      value=Name(id='state', ctx=Load())),
+                    Try(
+                      body=[
+                        Assign(
+                          targets=[
+                            Name(id='internalstate', ctx=Store())],
+                          value=Call(
+                            func=Name(id='tuple', ctx=Load()),
+                            args=[
+                              GeneratorExp(
+                                elt=BinOp(
+                                  left=Name(id='x', ctx=Load()),
+                                  op=Mod(),
+                                  right=BinOp(
+                                    left=Constant(value=2),
+                                    op=Pow(),
+                                    right=Constant(value=32))),
+                                generators=[
+                                  comprehension(
+                                    target=Name(id='x', ctx=Store()),
+                                    iter=Name(id='internalstate', ctx=Load()),
+                                    ifs=[],
+                                    is_async=0)])],
+                            keywords=[]))],
+                      handlers=[
+                        ExceptHandler(
+                          type=Name(id='ValueError', ctx=Load()),
+                          name='e',
+                          body=[
+                            Raise(
+                              exc=Name(id='TypeError', ctx=Load()),
+                              cause=Name(id='e', ctx=Load()))])],
+                      orelse=[],
+                      finalbody=[]),
+                    Expr(
+                      value=Call(
+                        func=Attribute(
+                          value=Call(
+                            func=Name(id='super', ctx=Load()),
+                            args=[],
+                            keywords=[]),
+                          attr='setstate',
+                          ctx=Load()),
+                        args=[
+                          Name(id='internalstate', ctx=Load())],
+                        keywords=[]))],
+                  orelse=[
+                    Raise(
+                      exc=Call(
+                        func=Name(id='ValueError', ctx=Load()),
+                        args=[
+                          BinOp(
+                            left=Constant(value='state with version %s passed to Random.setstate() of version %s'),
+                            op=Mod(),
+                            right=Tuple(
+                              elts=[
+                                Name(id='version', ctx=Load()),
+                                Attribute(
+                                  value=Name(id='self', ctx=Load()),
+                                  attr='VERSION',
+                                  ctx=Load())],
+                              ctx=Load()))],
+                        keywords=[]))])])],
+          decorator_list=[]),
+        FunctionDef(
+          name='__getstate__',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Return(
+              value=Call(
+                func=Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='getstate',
+                  ctx=Load()),
+                args=[],
+                keywords=[]))],
+          decorator_list=[]),
+        FunctionDef(
+          name='__setstate__',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='state')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Call(
+                func=Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='setstate',
+                  ctx=Load()),
+                args=[
+                  Name(id='state', ctx=Load())],
+                keywords=[]))],
+          decorator_list=[]),
+        FunctionDef(
+          name='__reduce__',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Return(
+              value=Tuple(
+                elts=[
+                  Attribute(
+                    value=Name(id='self', ctx=Load()),
+                    attr='__class__',
+                    ctx=Load()),
+                  Tuple(elts=[], ctx=Load()),
+                  Call(
+                    func=Attribute(
+                      value=Name(id='self', ctx=Load()),
+                      attr='getstate',
+                      ctx=Load()),
+                    args=[],
+                    keywords=[])],
+                ctx=Load()))],
+          decorator_list=[]),
+        FunctionDef(
+          name='__init_subclass__',
+          args=arguments(
+            posonlyargs=[
+              arg(arg='cls')],
+            args=[],
+            kwonlyargs=[],
+            kw_defaults=[],
+            kwarg=arg(arg='kwargs'),
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Control how subclasses generate random integers.\n\n        The algorithm a subclass can use depends on the random() and/or\n        getrandbits() implementation available to it and determines\n        whether it can generate random integers from arbitrarily large\n        ranges.\n        ')),
+            For(
+              target=Name(id='c', ctx=Store()),
+              iter=Attribute(
+                value=Name(id='cls', ctx=Load()),
+                attr='__mro__',
+                ctx=Load()),
+              body=[
+                If(
+                  test=Compare(
+                    left=Constant(value='_randbelow'),
+                    ops=[
+                      In()],
+                    comparators=[
+                      Attribute(
+                        value=Name(id='c', ctx=Load()),
+                        attr='__dict__',
+                        ctx=Load())]),
+                  body=[
+                    Break()],
+                  orelse=[]),
+                If(
+                  test=Compare(
+                    left=Constant(value='getrandbits'),
+                    ops=[
+                      In()],
+                    comparators=[
+                      Attribute(
+                        value=Name(id='c', ctx=Load()),
+                        attr='__dict__',
+                        ctx=Load())]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Attribute(
+                          value=Name(id='cls', ctx=Load()),
+                          attr='_randbelow',
+                          ctx=Store())],
+                      value=Attribute(
+                        value=Name(id='cls', ctx=Load()),
+                        attr='_randbelow_with_getrandbits',
+                        ctx=Load())),
+                    Break()],
+                  orelse=[]),
+                If(
+                  test=Compare(
+                    left=Constant(value='random'),
+                    ops=[
+                      In()],
+                    comparators=[
+                      Attribute(
+                        value=Name(id='c', ctx=Load()),
+                        attr='__dict__',
+                        ctx=Load())]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Attribute(
+                          value=Name(id='cls', ctx=Load()),
+                          attr='_randbelow',
+                          ctx=Store())],
+                      value=Attribute(
+                        value=Name(id='cls', ctx=Load()),
+                        attr='_randbelow_without_getrandbits',
+                        ctx=Load())),
+                    Break()],
+                  orelse=[])],
+              orelse=[])],
+          decorator_list=[]),
+        FunctionDef(
+          name='_randbelow_with_getrandbits',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='n')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Return a random int in the range [0,n).  Defined for n > 0.')),
+            Assign(
+              targets=[
+                Name(id='getrandbits', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='getrandbits',
+                ctx=Load())),
+            Assign(
+              targets=[
+                Name(id='k', ctx=Store())],
+              value=Call(
+                func=Attribute(
+                  value=Name(id='n', ctx=Load()),
+                  attr='bit_length',
+                  ctx=Load()),
+                args=[],
+                keywords=[])),
+            Assign(
+              targets=[
+                Name(id='r', ctx=Store())],
+              value=Call(
+                func=Name(id='getrandbits', ctx=Load()),
+                args=[
+                  Name(id='k', ctx=Load())],
+                keywords=[])),
+            While(
+              test=Compare(
+                left=Name(id='r', ctx=Load()),
+                ops=[
+                  GtE()],
+                comparators=[
+                  Name(id='n', ctx=Load())]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='r', ctx=Store())],
+                  value=Call(
+                    func=Name(id='getrandbits', ctx=Load()),
+                    args=[
+                      Name(id='k', ctx=Load())],
+                    keywords=[]))],
+              orelse=[]),
+            Return(
+              value=Name(id='r', ctx=Load()))],
+          decorator_list=[]),
+        FunctionDef(
+          name='_randbelow_without_getrandbits',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='n'),
+              arg(arg='maxsize')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[
+              BinOp(
+                left=Constant(value=1),
+                op=LShift(),
+                right=Name(id='BPF', ctx=Load()))]),
+          body=[
+            Expr(
+              value=Constant(value='Return a random int in the range [0,n).  Defined for n > 0.\n\n        The implementation does not use getrandbits, but only random.\n        ')),
+            Assign(
+              targets=[
+                Name(id='random', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='random',
+                ctx=Load())),
+            If(
+              test=Compare(
+                left=Name(id='n', ctx=Load()),
+                ops=[
+                  GtE()],
+                comparators=[
+                  Name(id='maxsize', ctx=Load())]),
+              body=[
+                Expr(
+                  value=Call(
+                    func=Name(id='_warn', ctx=Load()),
+                    args=[
+                      Constant(value='Underlying random() generator does not supply \nenough bits to choose from a population range this large.\nTo remove the range limitation, add a getrandbits() method.')],
+                    keywords=[])),
+                Return(
+                  value=Call(
+                    func=Name(id='_floor', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=Call(
+                          func=Name(id='random', ctx=Load()),
+                          args=[],
+                          keywords=[]),
+                        op=Mult(),
+                        right=Name(id='n', ctx=Load()))],
+                    keywords=[]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='rem', ctx=Store())],
+              value=BinOp(
+                left=Name(id='maxsize', ctx=Load()),
+                op=Mod(),
+                right=Name(id='n', ctx=Load()))),
+            Assign(
+              targets=[
+                Name(id='limit', ctx=Store())],
+              value=BinOp(
+                left=BinOp(
+                  left=Name(id='maxsize', ctx=Load()),
+                  op=Sub(),
+                  right=Name(id='rem', ctx=Load())),
+                op=Div(),
+                right=Name(id='maxsize', ctx=Load()))),
+            Assign(
+              targets=[
+                Name(id='r', ctx=Store())],
+              value=Call(
+                func=Name(id='random', ctx=Load()),
+                args=[],
+                keywords=[])),
+            While(
+              test=Compare(
+                left=Name(id='r', ctx=Load()),
+                ops=[
+                  GtE()],
+                comparators=[
+                  Name(id='limit', ctx=Load())]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='r', ctx=Store())],
+                  value=Call(
+                    func=Name(id='random', ctx=Load()),
+                    args=[],
+                    keywords=[]))],
+              orelse=[]),
+            Return(
+              value=BinOp(
+                left=Call(
+                  func=Name(id='_floor', ctx=Load()),
+                  args=[
+                    BinOp(
+                      left=Name(id='r', ctx=Load()),
+                      op=Mult(),
+                      right=Name(id='maxsize', ctx=Load()))],
+                  keywords=[]),
+                op=Mod(),
+                right=Name(id='n', ctx=Load())))],
+          decorator_list=[]),
+        Assign(
+          targets=[
+            Name(id='_randbelow', ctx=Store())],
+          value=Name(id='_randbelow_with_getrandbits', ctx=Load())),
+        FunctionDef(
+          name='randbytes',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='n')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Generate n random bytes.')),
+            Return(
+              value=Call(
+                func=Attribute(
+                  value=Call(
+                    func=Attribute(
+                      value=Name(id='self', ctx=Load()),
+                      attr='getrandbits',
+                      ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=Name(id='n', ctx=Load()),
+                        op=Mult(),
+                        right=Constant(value=8))],
+                    keywords=[]),
+                  attr='to_bytes',
+                  ctx=Load()),
+                args=[
+                  Name(id='n', ctx=Load()),
+                  Constant(value='little')],
+                keywords=[]))],
+          decorator_list=[]),
+        FunctionDef(
+          name='randrange',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='start'),
+              arg(arg='stop'),
+              arg(arg='step')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[
+              Constant(value=None),
+              Name(id='_ONE', ctx=Load())]),
+          body=[
+            Expr(
+              value=Constant(value='Choose a random item from range(stop) or range(start, stop[, step]).\n\n        Roughly equivalent to ``choice(range(start, stop, step))`` but\n        supports arbitrarily large ranges and is optimized for common cases.\n\n        ')),
+            Try(
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='istart', ctx=Store())],
+                  value=Call(
+                    func=Name(id='_index', ctx=Load()),
+                    args=[
+                      Name(id='start', ctx=Load())],
+                    keywords=[]))],
+              handlers=[
+                ExceptHandler(
+                  type=Name(id='TypeError', ctx=Load()),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='istart', ctx=Store())],
+                      value=Call(
+                        func=Name(id='int', ctx=Load()),
+                        args=[
+                          Name(id='start', ctx=Load())],
+                        keywords=[])),
+                    If(
+                      test=Compare(
+                        left=Name(id='istart', ctx=Load()),
+                        ops=[
+                          NotEq()],
+                        comparators=[
+                          Name(id='start', ctx=Load())]),
+                      body=[
+                        Expr(
+                          value=Call(
+                            func=Name(id='_warn', ctx=Load()),
+                            args=[
+                              Constant(value='randrange() will raise TypeError in the future'),
+                              Name(id='DeprecationWarning', ctx=Load()),
+                              Constant(value=2)],
+                            keywords=[])),
+                        Raise(
+                          exc=Call(
+                            func=Name(id='ValueError', ctx=Load()),
+                            args=[
+                              Constant(value='non-integer arg 1 for randrange()')],
+                            keywords=[]))],
+                      orelse=[]),
+                    Expr(
+                      value=Call(
+                        func=Name(id='_warn', ctx=Load()),
+                        args=[
+                          Constant(value='non-integer arguments to randrange() have been deprecated since Python 3.10 and will be removed in a subsequent version'),
+                          Name(id='DeprecationWarning', ctx=Load()),
+                          Constant(value=2)],
+                        keywords=[]))])],
+              orelse=[],
+              finalbody=[]),
+            If(
+              test=Compare(
+                left=Name(id='stop', ctx=Load()),
+                ops=[
+                  Is()],
+                comparators=[
+                  Constant(value=None)]),
+              body=[
+                If(
+                  test=Compare(
+                    left=Name(id='step', ctx=Load()),
+                    ops=[
+                      IsNot()],
+                    comparators=[
+                      Name(id='_ONE', ctx=Load())]),
+                  body=[
+                    Raise(
+                      exc=Call(
+                        func=Name(id='TypeError', ctx=Load()),
+                        args=[
+                          Constant(value='Missing a non-None stop argument')],
+                        keywords=[]))],
+                  orelse=[]),
+                If(
+                  test=Compare(
+                    left=Name(id='istart', ctx=Load()),
+                    ops=[
+                      Gt()],
+                    comparators=[
+                      Constant(value=0)]),
+                  body=[
+                    Return(
+                      value=Call(
+                        func=Attribute(
+                          value=Name(id='self', ctx=Load()),
+                          attr='_randbelow',
+                          ctx=Load()),
+                        args=[
+                          Name(id='istart', ctx=Load())],
+                        keywords=[]))],
+                  orelse=[]),
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='empty range for randrange()')],
+                    keywords=[]))],
+              orelse=[]),
+            Try(
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='istop', ctx=Store())],
+                  value=Call(
+                    func=Name(id='_index', ctx=Load()),
+                    args=[
+                      Name(id='stop', ctx=Load())],
+                    keywords=[]))],
+              handlers=[
+                ExceptHandler(
+                  type=Name(id='TypeError', ctx=Load()),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='istop', ctx=Store())],
+                      value=Call(
+                        func=Name(id='int', ctx=Load()),
+                        args=[
+                          Name(id='stop', ctx=Load())],
+                        keywords=[])),
+                    If(
+                      test=Compare(
+                        left=Name(id='istop', ctx=Load()),
+                        ops=[
+                          NotEq()],
+                        comparators=[
+                          Name(id='stop', ctx=Load())]),
+                      body=[
+                        Expr(
+                          value=Call(
+                            func=Name(id='_warn', ctx=Load()),
+                            args=[
+                              Constant(value='randrange() will raise TypeError in the future'),
+                              Name(id='DeprecationWarning', ctx=Load()),
+                              Constant(value=2)],
+                            keywords=[])),
+                        Raise(
+                          exc=Call(
+                            func=Name(id='ValueError', ctx=Load()),
+                            args=[
+                              Constant(value='non-integer stop for randrange()')],
+                            keywords=[]))],
+                      orelse=[]),
+                    Expr(
+                      value=Call(
+                        func=Name(id='_warn', ctx=Load()),
+                        args=[
+                          Constant(value='non-integer arguments to randrange() have been deprecated since Python 3.10 and will be removed in a subsequent version'),
+                          Name(id='DeprecationWarning', ctx=Load()),
+                          Constant(value=2)],
+                        keywords=[]))])],
+              orelse=[],
+              finalbody=[]),
+            Assign(
+              targets=[
+                Name(id='width', ctx=Store())],
+              value=BinOp(
+                left=Name(id='istop', ctx=Load()),
+                op=Sub(),
+                right=Name(id='istart', ctx=Load()))),
+            Try(
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='istep', ctx=Store())],
+                  value=Call(
+                    func=Name(id='_index', ctx=Load()),
+                    args=[
+                      Name(id='step', ctx=Load())],
+                    keywords=[]))],
+              handlers=[
+                ExceptHandler(
+                  type=Name(id='TypeError', ctx=Load()),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='istep', ctx=Store())],
+                      value=Call(
+                        func=Name(id='int', ctx=Load()),
+                        args=[
+                          Name(id='step', ctx=Load())],
+                        keywords=[])),
+                    If(
+                      test=Compare(
+                        left=Name(id='istep', ctx=Load()),
+                        ops=[
+                          NotEq()],
+                        comparators=[
+                          Name(id='step', ctx=Load())]),
+                      body=[
+                        Expr(
+                          value=Call(
+                            func=Name(id='_warn', ctx=Load()),
+                            args=[
+                              Constant(value='randrange() will raise TypeError in the future'),
+                              Name(id='DeprecationWarning', ctx=Load()),
+                              Constant(value=2)],
+                            keywords=[])),
+                        Raise(
+                          exc=Call(
+                            func=Name(id='ValueError', ctx=Load()),
+                            args=[
+                              Constant(value='non-integer step for randrange()')],
+                            keywords=[]))],
+                      orelse=[]),
+                    Expr(
+                      value=Call(
+                        func=Name(id='_warn', ctx=Load()),
+                        args=[
+                          Constant(value='non-integer arguments to randrange() have been deprecated since Python 3.10 and will be removed in a subsequent version'),
+                          Name(id='DeprecationWarning', ctx=Load()),
+                          Constant(value=2)],
+                        keywords=[]))])],
+              orelse=[],
+              finalbody=[]),
+            If(
+              test=Compare(
+                left=Name(id='istep', ctx=Load()),
+                ops=[
+                  Eq()],
+                comparators=[
+                  Constant(value=1)]),
+              body=[
+                If(
+                  test=Compare(
+                    left=Name(id='width', ctx=Load()),
+                    ops=[
+                      Gt()],
+                    comparators=[
+                      Constant(value=0)]),
+                  body=[
+                    Return(
+                      value=BinOp(
+                        left=Name(id='istart', ctx=Load()),
+                        op=Add(),
+                        right=Call(
+                          func=Attribute(
+                            value=Name(id='self', ctx=Load()),
+                            attr='_randbelow',
+                            ctx=Load()),
+                          args=[
+                            Name(id='width', ctx=Load())],
+                          keywords=[])))],
+                  orelse=[]),
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=Constant(value='empty range for randrange() (%d, %d, %d)'),
+                        op=Mod(),
+                        right=Tuple(
+                          elts=[
+                            Name(id='istart', ctx=Load()),
+                            Name(id='istop', ctx=Load()),
+                            Name(id='width', ctx=Load())],
+                          ctx=Load()))],
+                    keywords=[]))],
+              orelse=[]),
+            If(
+              test=Compare(
+                left=Name(id='istep', ctx=Load()),
+                ops=[
+                  Gt()],
+                comparators=[
+                  Constant(value=0)]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='n', ctx=Store())],
+                  value=BinOp(
+                    left=BinOp(
+                      left=BinOp(
+                        left=Name(id='width', ctx=Load()),
+                        op=Add(),
+                        right=Name(id='istep', ctx=Load())),
+                      op=Sub(),
+                      right=Constant(value=1)),
+                    op=FloorDiv(),
+                    right=Name(id='istep', ctx=Load())))],
+              orelse=[
+                If(
+                  test=Compare(
+                    left=Name(id='istep', ctx=Load()),
+                    ops=[
+                      Lt()],
+                    comparators=[
+                      Constant(value=0)]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='n', ctx=Store())],
+                      value=BinOp(
+                        left=BinOp(
+                          left=BinOp(
+                            left=Name(id='width', ctx=Load()),
+                            op=Add(),
+                            right=Name(id='istep', ctx=Load())),
+                          op=Add(),
+                          right=Constant(value=1)),
+                        op=FloorDiv(),
+                        right=Name(id='istep', ctx=Load())))],
+                  orelse=[
+                    Raise(
+                      exc=Call(
+                        func=Name(id='ValueError', ctx=Load()),
+                        args=[
+                          Constant(value='zero step for randrange()')],
+                        keywords=[]))])]),
+            If(
+              test=Compare(
+                left=Name(id='n', ctx=Load()),
+                ops=[
+                  LtE()],
+                comparators=[
+                  Constant(value=0)]),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='empty range for randrange()')],
+                    keywords=[]))],
+              orelse=[]),
+            Return(
+              value=BinOp(
+                left=Name(id='istart', ctx=Load()),
+                op=Add(),
+                right=BinOp(
+                  left=Name(id='istep', ctx=Load()),
+                  op=Mult(),
+                  right=Call(
+                    func=Attribute(
+                      value=Name(id='self', ctx=Load()),
+                      attr='_randbelow',
+                      ctx=Load()),
+                    args=[
+                      Name(id='n', ctx=Load())],
+                    keywords=[]))))],
+          decorator_list=[]),
+        FunctionDef(
+          name='randint',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='a'),
+              arg(arg='b')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Return random integer in range [a, b], including both end points.\n        ')),
+            Return(
+              value=Call(
+                func=Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='randrange',
+                  ctx=Load()),
+                args=[
+                  Name(id='a', ctx=Load()),
+                  BinOp(
+                    left=Name(id='b', ctx=Load()),
+                    op=Add(),
+                    right=Constant(value=1))],
+                keywords=[]))],
+          decorator_list=[]),
+        FunctionDef(
+          name='choice',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='seq')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Choose a random element from a non-empty sequence.')),
+            If(
+              test=UnaryOp(
+                op=Not(),
+                operand=Call(
+                  func=Name(id='len', ctx=Load()),
+                  args=[
+                    Name(id='seq', ctx=Load())],
+                  keywords=[])),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='IndexError', ctx=Load()),
+                    args=[
+                      Constant(value='Cannot choose from an empty sequence')],
+                    keywords=[]))],
+              orelse=[]),
+            Return(
+              value=Subscript(
+                value=Name(id='seq', ctx=Load()),
+                slice=Call(
+                  func=Attribute(
+                    value=Name(id='self', ctx=Load()),
+                    attr='_randbelow',
+                    ctx=Load()),
+                  args=[
+                    Call(
+                      func=Name(id='len', ctx=Load()),
+                      args=[
+                        Name(id='seq', ctx=Load())],
+                      keywords=[])],
+                  keywords=[]),
+                ctx=Load()))],
+          decorator_list=[]),
+        FunctionDef(
+          name='shuffle',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='x')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Shuffle list x in place, and return None.')),
+            Assign(
+              targets=[
+                Name(id='randbelow', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='_randbelow',
+                ctx=Load())),
+            For(
+              target=Name(id='i', ctx=Store()),
+              iter=Call(
+                func=Name(id='reversed', ctx=Load()),
+                args=[
+                  Call(
+                    func=Name(id='range', ctx=Load()),
+                    args=[
+                      Constant(value=1),
+                      Call(
+                        func=Name(id='len', ctx=Load()),
+                        args=[
+                          Name(id='x', ctx=Load())],
+                        keywords=[])],
+                    keywords=[])],
+                keywords=[]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='j', ctx=Store())],
+                  value=Call(
+                    func=Name(id='randbelow', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=Name(id='i', ctx=Load()),
+                        op=Add(),
+                        right=Constant(value=1))],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Tuple(
+                      elts=[
+                        Subscript(
+                          value=Name(id='x', ctx=Load()),
+                          slice=Name(id='i', ctx=Load()),
+                          ctx=Store()),
+                        Subscript(
+                          value=Name(id='x', ctx=Load()),
+                          slice=Name(id='j', ctx=Load()),
+                          ctx=Store())],
+                      ctx=Store())],
+                  value=Tuple(
+                    elts=[
+                      Subscript(
+                        value=Name(id='x', ctx=Load()),
+                        slice=Name(id='j', ctx=Load()),
+                        ctx=Load()),
+                      Subscript(
+                        value=Name(id='x', ctx=Load()),
+                        slice=Name(id='i', ctx=Load()),
+                        ctx=Load())],
+                    ctx=Load()))],
+              orelse=[])],
+          decorator_list=[]),
+        FunctionDef(
+          name='sample',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='population'),
+              arg(arg='k')],
+            kwonlyargs=[
+              arg(arg='counts')],
+            kw_defaults=[
+              Constant(value=None)],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value="Chooses k unique random elements from a population sequence.\n\n        Returns a new list containing elements from the population while\n        leaving the original population unchanged.  The resulting list is\n        in selection order so that all sub-slices will also be valid random\n        samples.  This allows raffle winners (the sample) to be partitioned\n        into grand prize and second place winners (the subslices).\n\n        Members of the population need not be hashable or unique.  If the\n        population contains repeats, then each occurrence is a possible\n        selection in the sample.\n\n        Repeated elements can be specified one at a time or with the optional\n        counts parameter.  For example:\n\n            sample(['red', 'blue'], counts=[4, 2], k=5)\n\n        is equivalent to:\n\n            sample(['red', 'red', 'red', 'red', 'blue', 'blue'], k=5)\n\n        To choose a sample from a range of integers, use range() for the\n        population argument.  This is especially fast and space efficient\n        for sampling from a large population:\n\n            sample(range(10000000), 60)\n\n        ")),
+            If(
+              test=UnaryOp(
+                op=Not(),
+                operand=Call(
+                  func=Name(id='isinstance', ctx=Load()),
+                  args=[
+                    Name(id='population', ctx=Load()),
+                    Name(id='_Sequence', ctx=Load())],
+                  keywords=[])),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='TypeError', ctx=Load()),
+                    args=[
+                      Constant(value='Population must be a sequence.  For dicts or sets, use sorted(d).')],
+                    keywords=[]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='n', ctx=Store())],
+              value=Call(
+                func=Name(id='len', ctx=Load()),
+                args=[
+                  Name(id='population', ctx=Load())],
+                keywords=[])),
+            If(
+              test=Compare(
+                left=Name(id='counts', ctx=Load()),
+                ops=[
+                  IsNot()],
+                comparators=[
+                  Constant(value=None)]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='cum_counts', ctx=Store())],
+                  value=Call(
+                    func=Name(id='list', ctx=Load()),
+                    args=[
+                      Call(
+                        func=Name(id='_accumulate', ctx=Load()),
+                        args=[
+                          Name(id='counts', ctx=Load())],
+                        keywords=[])],
+                    keywords=[])),
+                If(
+                  test=Compare(
+                    left=Call(
+                      func=Name(id='len', ctx=Load()),
+                      args=[
+                        Name(id='cum_counts', ctx=Load())],
+                      keywords=[]),
+                    ops=[
+                      NotEq()],
+                    comparators=[
+                      Name(id='n', ctx=Load())]),
+                  body=[
+                    Raise(
+                      exc=Call(
+                        func=Name(id='ValueError', ctx=Load()),
+                        args=[
+                          Constant(value='The number of counts does not match the population')],
+                        keywords=[]))],
+                  orelse=[]),
+                Assign(
+                  targets=[
+                    Name(id='total', ctx=Store())],
+                  value=Call(
+                    func=Attribute(
+                      value=Name(id='cum_counts', ctx=Load()),
+                      attr='pop',
+                      ctx=Load()),
+                    args=[],
+                    keywords=[])),
+                If(
+                  test=UnaryOp(
+                    op=Not(),
+                    operand=Call(
+                      func=Name(id='isinstance', ctx=Load()),
+                      args=[
+                        Name(id='total', ctx=Load()),
+                        Name(id='int', ctx=Load())],
+                      keywords=[])),
+                  body=[
+                    Raise(
+                      exc=Call(
+                        func=Name(id='TypeError', ctx=Load()),
+                        args=[
+                          Constant(value='Counts must be integers')],
+                        keywords=[]))],
+                  orelse=[]),
+                If(
+                  test=Compare(
+                    left=Name(id='total', ctx=Load()),
+                    ops=[
+                      LtE()],
+                    comparators=[
+                      Constant(value=0)]),
+                  body=[
+                    Raise(
+                      exc=Call(
+                        func=Name(id='ValueError', ctx=Load()),
+                        args=[
+                          Constant(value='Total of counts must be greater than zero')],
+                        keywords=[]))],
+                  orelse=[]),
+                Assign(
+                  targets=[
+                    Name(id='selections', ctx=Store())],
+                  value=Call(
+                    func=Attribute(
+                      value=Name(id='self', ctx=Load()),
+                      attr='sample',
+                      ctx=Load()),
+                    args=[
+                      Call(
+                        func=Name(id='range', ctx=Load()),
+                        args=[
+                          Name(id='total', ctx=Load())],
+                        keywords=[])],
+                    keywords=[
+                      keyword(
+                        arg='k',
+                        value=Name(id='k', ctx=Load()))])),
+                Assign(
+                  targets=[
+                    Name(id='bisect', ctx=Store())],
+                  value=Name(id='_bisect', ctx=Load())),
+                Return(
+                  value=ListComp(
+                    elt=Subscript(
+                      value=Name(id='population', ctx=Load()),
+                      slice=Call(
+                        func=Name(id='bisect', ctx=Load()),
+                        args=[
+                          Name(id='cum_counts', ctx=Load()),
+                          Name(id='s', ctx=Load())],
+                        keywords=[]),
+                      ctx=Load()),
+                    generators=[
+                      comprehension(
+                        target=Name(id='s', ctx=Store()),
+                        iter=Name(id='selections', ctx=Load()),
+                        ifs=[],
+                        is_async=0)]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='randbelow', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='_randbelow',
+                ctx=Load())),
+            If(
+              test=UnaryOp(
+                op=Not(),
+                operand=Compare(
+                  left=Constant(value=0),
+                  ops=[
+                    LtE(),
+                    LtE()],
+                  comparators=[
+                    Name(id='k', ctx=Load()),
+                    Name(id='n', ctx=Load())])),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='Sample larger than population or is negative')],
+                    keywords=[]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='result', ctx=Store())],
+              value=BinOp(
+                left=List(
+                  elts=[
+                    Constant(value=None)],
+                  ctx=Load()),
+                op=Mult(),
+                right=Name(id='k', ctx=Load()))),
+            Assign(
+              targets=[
+                Name(id='setsize', ctx=Store())],
+              value=Constant(value=21)),
+            If(
+              test=Compare(
+                left=Name(id='k', ctx=Load()),
+                ops=[
+                  Gt()],
+                comparators=[
+                  Constant(value=5)]),
+              body=[
+                AugAssign(
+                  target=Name(id='setsize', ctx=Store()),
+                  op=Add(),
+                  value=BinOp(
+                    left=Constant(value=4),
+                    op=Pow(),
+                    right=Call(
+                      func=Name(id='_ceil', ctx=Load()),
+                      args=[
+                        Call(
+                          func=Name(id='_log', ctx=Load()),
+                          args=[
+                            BinOp(
+                              left=Name(id='k', ctx=Load()),
+                              op=Mult(),
+                              right=Constant(value=3)),
+                            Constant(value=4)],
+                          keywords=[])],
+                      keywords=[])))],
+              orelse=[]),
+            If(
+              test=Compare(
+                left=Name(id='n', ctx=Load()),
+                ops=[
+                  LtE()],
+                comparators=[
+                  Name(id='setsize', ctx=Load())]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='pool', ctx=Store())],
+                  value=Call(
+                    func=Name(id='list', ctx=Load()),
+                    args=[
+                      Name(id='population', ctx=Load())],
+                    keywords=[])),
+                For(
+                  target=Name(id='i', ctx=Store()),
+                  iter=Call(
+                    func=Name(id='range', ctx=Load()),
+                    args=[
+                      Name(id='k', ctx=Load())],
+                    keywords=[]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='j', ctx=Store())],
+                      value=Call(
+                        func=Name(id='randbelow', ctx=Load()),
+                        args=[
+                          BinOp(
+                            left=Name(id='n', ctx=Load()),
+                            op=Sub(),
+                            right=Name(id='i', ctx=Load()))],
+                        keywords=[])),
+                    Assign(
+                      targets=[
+                        Subscript(
+                          value=Name(id='result', ctx=Load()),
+                          slice=Name(id='i', ctx=Load()),
+                          ctx=Store())],
+                      value=Subscript(
+                        value=Name(id='pool', ctx=Load()),
+                        slice=Name(id='j', ctx=Load()),
+                        ctx=Load())),
+                    Assign(
+                      targets=[
+                        Subscript(
+                          value=Name(id='pool', ctx=Load()),
+                          slice=Name(id='j', ctx=Load()),
+                          ctx=Store())],
+                      value=Subscript(
+                        value=Name(id='pool', ctx=Load()),
+                        slice=BinOp(
+                          left=BinOp(
+                            left=Name(id='n', ctx=Load()),
+                            op=Sub(),
+                            right=Name(id='i', ctx=Load())),
+                          op=Sub(),
+                          right=Constant(value=1)),
+                        ctx=Load()))],
+                  orelse=[])],
+              orelse=[
+                Assign(
+                  targets=[
+                    Name(id='selected', ctx=Store())],
+                  value=Call(
+                    func=Name(id='set', ctx=Load()),
+                    args=[],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Name(id='selected_add', ctx=Store())],
+                  value=Attribute(
+                    value=Name(id='selected', ctx=Load()),
+                    attr='add',
+                    ctx=Load())),
+                For(
+                  target=Name(id='i', ctx=Store()),
+                  iter=Call(
+                    func=Name(id='range', ctx=Load()),
+                    args=[
+                      Name(id='k', ctx=Load())],
+                    keywords=[]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='j', ctx=Store())],
+                      value=Call(
+                        func=Name(id='randbelow', ctx=Load()),
+                        args=[
+                          Name(id='n', ctx=Load())],
+                        keywords=[])),
+                    While(
+                      test=Compare(
+                        left=Name(id='j', ctx=Load()),
+                        ops=[
+                          In()],
+                        comparators=[
+                          Name(id='selected', ctx=Load())]),
+                      body=[
+                        Assign(
+                          targets=[
+                            Name(id='j', ctx=Store())],
+                          value=Call(
+                            func=Name(id='randbelow', ctx=Load()),
+                            args=[
+                              Name(id='n', ctx=Load())],
+                            keywords=[]))],
+                      orelse=[]),
+                    Expr(
+                      value=Call(
+                        func=Name(id='selected_add', ctx=Load()),
+                        args=[
+                          Name(id='j', ctx=Load())],
+                        keywords=[])),
+                    Assign(
+                      targets=[
+                        Subscript(
+                          value=Name(id='result', ctx=Load()),
+                          slice=Name(id='i', ctx=Load()),
+                          ctx=Store())],
+                      value=Subscript(
+                        value=Name(id='population', ctx=Load()),
+                        slice=Name(id='j', ctx=Load()),
+                        ctx=Load()))],
+                  orelse=[])]),
+            Return(
+              value=Name(id='result', ctx=Load()))],
+          decorator_list=[]),
+        FunctionDef(
+          name='choices',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='population'),
+              arg(arg='weights')],
+            kwonlyargs=[
+              arg(arg='cum_weights'),
+              arg(arg='k')],
+            kw_defaults=[
+              Constant(value=None),
+              Constant(value=1)],
+            defaults=[
+              Constant(value=None)]),
+          body=[
+            Expr(
+              value=Constant(value='Return a k sized list of population elements chosen with replacement.\n\n        If the relative weights or cumulative weights are not specified,\n        the selections are made with equal probability.\n\n        ')),
+            Assign(
+              targets=[
+                Name(id='random', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='random',
+                ctx=Load())),
+            Assign(
+              targets=[
+                Name(id='n', ctx=Store())],
+              value=Call(
+                func=Name(id='len', ctx=Load()),
+                args=[
+                  Name(id='population', ctx=Load())],
+                keywords=[])),
+            If(
+              test=Compare(
+                left=Name(id='cum_weights', ctx=Load()),
+                ops=[
+                  Is()],
+                comparators=[
+                  Constant(value=None)]),
+              body=[
+                If(
+                  test=Compare(
+                    left=Name(id='weights', ctx=Load()),
+                    ops=[
+                      Is()],
+                    comparators=[
+                      Constant(value=None)]),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='floor', ctx=Store())],
+                      value=Name(id='_floor', ctx=Load())),
+                    AugAssign(
+                      target=Name(id='n', ctx=Store()),
+                      op=Add(),
+                      value=Constant(value=0.0)),
+                    Return(
+                      value=ListComp(
+                        elt=Subscript(
+                          value=Name(id='population', ctx=Load()),
+                          slice=Call(
+                            func=Name(id='floor', ctx=Load()),
+                            args=[
+                              BinOp(
+                                left=Call(
+                                  func=Name(id='random', ctx=Load()),
+                                  args=[],
+                                  keywords=[]),
+                                op=Mult(),
+                                right=Name(id='n', ctx=Load()))],
+                            keywords=[]),
+                          ctx=Load()),
+                        generators=[
+                          comprehension(
+                            target=Name(id='i', ctx=Store()),
+                            iter=Call(
+                              func=Name(id='_repeat', ctx=Load()),
+                              args=[
+                                Constant(value=None),
+                                Name(id='k', ctx=Load())],
+                              keywords=[]),
+                            ifs=[],
+                            is_async=0)]))],
+                  orelse=[]),
+                Try(
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='cum_weights', ctx=Store())],
+                      value=Call(
+                        func=Name(id='list', ctx=Load()),
+                        args=[
+                          Call(
+                            func=Name(id='_accumulate', ctx=Load()),
+                            args=[
+                              Name(id='weights', ctx=Load())],
+                            keywords=[])],
+                        keywords=[]))],
+                  handlers=[
+                    ExceptHandler(
+                      type=Name(id='TypeError', ctx=Load()),
+                      body=[
+                        If(
+                          test=UnaryOp(
+                            op=Not(),
+                            operand=Call(
+                              func=Name(id='isinstance', ctx=Load()),
+                              args=[
+                                Name(id='weights', ctx=Load()),
+                                Name(id='int', ctx=Load())],
+                              keywords=[])),
+                          body=[
+                            Raise()],
+                          orelse=[]),
+                        Assign(
+                          targets=[
+                            Name(id='k', ctx=Store())],
+                          value=Name(id='weights', ctx=Load())),
+                        Raise(
+                          exc=Call(
+                            func=Name(id='TypeError', ctx=Load()),
+                            args=[
+                              JoinedStr(
+                                values=[
+                                  Constant(value='The number of choices must be a keyword argument: k='),
+                                  FormattedValue(
+                                    value=Name(id='k', ctx=Load()),
+                                    conversion=114)])],
+                            keywords=[]),
+                          cause=Constant(value=None))])],
+                  orelse=[],
+                  finalbody=[])],
+              orelse=[
+                If(
+                  test=Compare(
+                    left=Name(id='weights', ctx=Load()),
+                    ops=[
+                      IsNot()],
+                    comparators=[
+                      Constant(value=None)]),
+                  body=[
+                    Raise(
+                      exc=Call(
+                        func=Name(id='TypeError', ctx=Load()),
+                        args=[
+                          Constant(value='Cannot specify both weights and cumulative weights')],
+                        keywords=[]))],
+                  orelse=[])]),
+            If(
+              test=Compare(
+                left=Call(
+                  func=Name(id='len', ctx=Load()),
+                  args=[
+                    Name(id='cum_weights', ctx=Load())],
+                  keywords=[]),
+                ops=[
+                  NotEq()],
+                comparators=[
+                  Name(id='n', ctx=Load())]),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='The number of weights does not match the population')],
+                    keywords=[]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='total', ctx=Store())],
+              value=BinOp(
+                left=Subscript(
+                  value=Name(id='cum_weights', ctx=Load()),
+                  slice=UnaryOp(
+                    op=USub(),
+                    operand=Constant(value=1)),
+                  ctx=Load()),
+                op=Add(),
+                right=Constant(value=0.0))),
+            If(
+              test=Compare(
+                left=Name(id='total', ctx=Load()),
+                ops=[
+                  LtE()],
+                comparators=[
+                  Constant(value=0.0)]),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='Total of weights must be greater than zero')],
+                    keywords=[]))],
+              orelse=[]),
+            If(
+              test=UnaryOp(
+                op=Not(),
+                operand=Call(
+                  func=Name(id='_isfinite', ctx=Load()),
+                  args=[
+                    Name(id='total', ctx=Load())],
+                  keywords=[])),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='Total of weights must be finite')],
+                    keywords=[]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='bisect', ctx=Store())],
+              value=Name(id='_bisect', ctx=Load())),
+            Assign(
+              targets=[
+                Name(id='hi', ctx=Store())],
+              value=BinOp(
+                left=Name(id='n', ctx=Load()),
+                op=Sub(),
+                right=Constant(value=1))),
+            Return(
+              value=ListComp(
+                elt=Subscript(
+                  value=Name(id='population', ctx=Load()),
+                  slice=Call(
+                    func=Name(id='bisect', ctx=Load()),
+                    args=[
+                      Name(id='cum_weights', ctx=Load()),
+                      BinOp(
+                        left=Call(
+                          func=Name(id='random', ctx=Load()),
+                          args=[],
+                          keywords=[]),
+                        op=Mult(),
+                        right=Name(id='total', ctx=Load())),
+                      Constant(value=0),
+                      Name(id='hi', ctx=Load())],
+                    keywords=[]),
+                  ctx=Load()),
+                generators=[
+                  comprehension(
+                    target=Name(id='i', ctx=Store()),
+                    iter=Call(
+                      func=Name(id='_repeat', ctx=Load()),
+                      args=[
+                        Constant(value=None),
+                        Name(id='k', ctx=Load())],
+                      keywords=[]),
+                    ifs=[],
+                    is_async=0)]))],
+          decorator_list=[]),
+        FunctionDef(
+          name='uniform',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='a'),
+              arg(arg='b')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Get a random number in the range [a, b) or [a, b] depending on rounding.')),
+            Return(
+              value=BinOp(
+                left=Name(id='a', ctx=Load()),
+                op=Add(),
+                right=BinOp(
+                  left=BinOp(
+                    left=Name(id='b', ctx=Load()),
+                    op=Sub(),
+                    right=Name(id='a', ctx=Load())),
+                  op=Mult(),
+                  right=Call(
+                    func=Attribute(
+                      value=Name(id='self', ctx=Load()),
+                      attr='random',
+                      ctx=Load()),
+                    args=[],
+                    keywords=[]))))],
+          decorator_list=[]),
+        FunctionDef(
+          name='triangular',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='low'),
+              arg(arg='high'),
+              arg(arg='mode')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[
+              Constant(value=0.0),
+              Constant(value=1.0),
+              Constant(value=None)]),
+          body=[
+            Expr(
+              value=Constant(value='Triangular distribution.\n\n        Continuous distribution bounded by given lower and upper limits,\n        and having a given mode value in-between.\n\n        http://en.wikipedia.org/wiki/Triangular_distribution\n\n        ')),
+            Assign(
+              targets=[
+                Name(id='u', ctx=Store())],
+              value=Call(
+                func=Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='random',
+                  ctx=Load()),
+                args=[],
+                keywords=[])),
+            Try(
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='c', ctx=Store())],
+                  value=IfExp(
+                    test=Compare(
+                      left=Name(id='mode', ctx=Load()),
+                      ops=[
+                        Is()],
+                      comparators=[
+                        Constant(value=None)]),
+                    body=Constant(value=0.5),
+                    orelse=BinOp(
+                      left=BinOp(
+                        left=Name(id='mode', ctx=Load()),
+                        op=Sub(),
+                        right=Name(id='low', ctx=Load())),
+                      op=Div(),
+                      right=BinOp(
+                        left=Name(id='high', ctx=Load()),
+                        op=Sub(),
+                        right=Name(id='low', ctx=Load())))))],
+              handlers=[
+                ExceptHandler(
+                  type=Name(id='ZeroDivisionError', ctx=Load()),
+                  body=[
+                    Return(
+                      value=Name(id='low', ctx=Load()))])],
+              orelse=[],
+              finalbody=[]),
+            If(
+              test=Compare(
+                left=Name(id='u', ctx=Load()),
+                ops=[
+                  Gt()],
+                comparators=[
+                  Name(id='c', ctx=Load())]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='u', ctx=Store())],
+                  value=BinOp(
+                    left=Constant(value=1.0),
+                    op=Sub(),
+                    right=Name(id='u', ctx=Load()))),
+                Assign(
+                  targets=[
+                    Name(id='c', ctx=Store())],
+                  value=BinOp(
+                    left=Constant(value=1.0),
+                    op=Sub(),
+                    right=Name(id='c', ctx=Load()))),
+                Assign(
+                  targets=[
+                    Tuple(
+                      elts=[
+                        Name(id='low', ctx=Store()),
+                        Name(id='high', ctx=Store())],
+                      ctx=Store())],
+                  value=Tuple(
+                    elts=[
+                      Name(id='high', ctx=Load()),
+                      Name(id='low', ctx=Load())],
+                    ctx=Load()))],
+              orelse=[]),
+            Return(
+              value=BinOp(
+                left=Name(id='low', ctx=Load()),
+                op=Add(),
+                right=BinOp(
+                  left=BinOp(
+                    left=Name(id='high', ctx=Load()),
+                    op=Sub(),
+                    right=Name(id='low', ctx=Load())),
+                  op=Mult(),
+                  right=Call(
+                    func=Name(id='_sqrt', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=Name(id='u', ctx=Load()),
+                        op=Mult(),
+                        right=Name(id='c', ctx=Load()))],
+                    keywords=[]))))],
+          decorator_list=[]),
+        FunctionDef(
+          name='normalvariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='mu'),
+              arg(arg='sigma')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[
+              Constant(value=0.0),
+              Constant(value=1.0)]),
+          body=[
+            Expr(
+              value=Constant(value='Normal distribution.\n\n        mu is the mean, and sigma is the standard deviation.\n\n        ')),
+            Assign(
+              targets=[
+                Name(id='random', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='random',
+                ctx=Load())),
+            While(
+              test=Constant(value=True),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='u1', ctx=Store())],
+                  value=Call(
+                    func=Name(id='random', ctx=Load()),
+                    args=[],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Name(id='u2', ctx=Store())],
+                  value=BinOp(
+                    left=Constant(value=1.0),
+                    op=Sub(),
+                    right=Call(
+                      func=Name(id='random', ctx=Load()),
+                      args=[],
+                      keywords=[]))),
+                Assign(
+                  targets=[
+                    Name(id='z', ctx=Store())],
+                  value=BinOp(
+                    left=BinOp(
+                      left=Name(id='NV_MAGICCONST', ctx=Load()),
+                      op=Mult(),
+                      right=BinOp(
+                        left=Name(id='u1', ctx=Load()),
+                        op=Sub(),
+                        right=Constant(value=0.5))),
+                    op=Div(),
+                    right=Name(id='u2', ctx=Load()))),
+                Assign(
+                  targets=[
+                    Name(id='zz', ctx=Store())],
+                  value=BinOp(
+                    left=BinOp(
+                      left=Name(id='z', ctx=Load()),
+                      op=Mult(),
+                      right=Name(id='z', ctx=Load())),
+                    op=Div(),
+                    right=Constant(value=4.0))),
+                If(
+                  test=Compare(
+                    left=Name(id='zz', ctx=Load()),
+                    ops=[
+                      LtE()],
+                    comparators=[
+                      UnaryOp(
+                        op=USub(),
+                        operand=Call(
+                          func=Name(id='_log', ctx=Load()),
+                          args=[
+                            Name(id='u2', ctx=Load())],
+                          keywords=[]))]),
+                  body=[
+                    Break()],
+                  orelse=[])],
+              orelse=[]),
+            Return(
+              value=BinOp(
+                left=Name(id='mu', ctx=Load()),
+                op=Add(),
+                right=BinOp(
+                  left=Name(id='z', ctx=Load()),
+                  op=Mult(),
+                  right=Name(id='sigma', ctx=Load()))))],
+          decorator_list=[]),
+        FunctionDef(
+          name='gauss',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='mu'),
+              arg(arg='sigma')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[
+              Constant(value=0.0),
+              Constant(value=1.0)]),
+          body=[
+            Expr(
+              value=Constant(value='Gaussian distribution.\n\n        mu is the mean, and sigma is the standard deviation.  This is\n        slightly faster than the normalvariate() function.\n\n        Not thread-safe without a lock around calls.\n\n        ')),
+            Assign(
+              targets=[
+                Name(id='random', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='random',
+                ctx=Load())),
+            Assign(
+              targets=[
+                Name(id='z', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='gauss_next',
+                ctx=Load())),
+            Assign(
+              targets=[
+                Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='gauss_next',
+                  ctx=Store())],
+              value=Constant(value=None)),
+            If(
+              test=Compare(
+                left=Name(id='z', ctx=Load()),
+                ops=[
+                  Is()],
+                comparators=[
+                  Constant(value=None)]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='x2pi', ctx=Store())],
+                  value=BinOp(
+                    left=Call(
+                      func=Name(id='random', ctx=Load()),
+                      args=[],
+                      keywords=[]),
+                    op=Mult(),
+                    right=Name(id='TWOPI', ctx=Load()))),
+                Assign(
+                  targets=[
+                    Name(id='g2rad', ctx=Store())],
+                  value=Call(
+                    func=Name(id='_sqrt', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=UnaryOp(
+                          op=USub(),
+                          operand=Constant(value=2.0)),
+                        op=Mult(),
+                        right=Call(
+                          func=Name(id='_log', ctx=Load()),
+                          args=[
+                            BinOp(
+                              left=Constant(value=1.0),
+                              op=Sub(),
+                              right=Call(
+                                func=Name(id='random', ctx=Load()),
+                                args=[],
+                                keywords=[]))],
+                          keywords=[]))],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Name(id='z', ctx=Store())],
+                  value=BinOp(
+                    left=Call(
+                      func=Name(id='_cos', ctx=Load()),
+                      args=[
+                        Name(id='x2pi', ctx=Load())],
+                      keywords=[]),
+                    op=Mult(),
+                    right=Name(id='g2rad', ctx=Load()))),
+                Assign(
+                  targets=[
+                    Attribute(
+                      value=Name(id='self', ctx=Load()),
+                      attr='gauss_next',
+                      ctx=Store())],
+                  value=BinOp(
+                    left=Call(
+                      func=Name(id='_sin', ctx=Load()),
+                      args=[
+                        Name(id='x2pi', ctx=Load())],
+                      keywords=[]),
+                    op=Mult(),
+                    right=Name(id='g2rad', ctx=Load())))],
+              orelse=[]),
+            Return(
+              value=BinOp(
+                left=Name(id='mu', ctx=Load()),
+                op=Add(),
+                right=BinOp(
+                  left=Name(id='z', ctx=Load()),
+                  op=Mult(),
+                  right=Name(id='sigma', ctx=Load()))))],
+          decorator_list=[]),
+        FunctionDef(
+          name='lognormvariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='mu'),
+              arg(arg='sigma')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value="Log normal distribution.\n\n        If you take the natural logarithm of this distribution, you'll get a\n        normal distribution with mean mu and standard deviation sigma.\n        mu can have any value, and sigma must be greater than zero.\n\n        ")),
+            Return(
+              value=Call(
+                func=Name(id='_exp', ctx=Load()),
+                args=[
+                  Call(
+                    func=Attribute(
+                      value=Name(id='self', ctx=Load()),
+                      attr='normalvariate',
+                      ctx=Load()),
+                    args=[
+                      Name(id='mu', ctx=Load()),
+                      Name(id='sigma', ctx=Load())],
+                    keywords=[])],
+                keywords=[]))],
+          decorator_list=[]),
+        FunctionDef(
+          name='expovariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='lambd')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Exponential distribution.\n\n        lambd is 1.0 divided by the desired mean.  It should be\n        nonzero.  (The parameter would be called "lambda", but that is\n        a reserved word in Python.)  Returned values range from 0 to\n        positive infinity if lambd is positive, and from negative\n        infinity to 0 if lambd is negative.\n\n        ')),
+            Return(
+              value=BinOp(
+                left=UnaryOp(
+                  op=USub(),
+                  operand=Call(
+                    func=Name(id='_log', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=Constant(value=1.0),
+                        op=Sub(),
+                        right=Call(
+                          func=Attribute(
+                            value=Name(id='self', ctx=Load()),
+                            attr='random',
+                            ctx=Load()),
+                          args=[],
+                          keywords=[]))],
+                    keywords=[])),
+                op=Div(),
+                right=Name(id='lambd', ctx=Load())))],
+          decorator_list=[]),
+        FunctionDef(
+          name='vonmisesvariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='mu'),
+              arg(arg='kappa')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Circular data distribution.\n\n        mu is the mean angle, expressed in radians between 0 and 2*pi, and\n        kappa is the concentration parameter, which must be greater than or\n        equal to zero.  If kappa is equal to zero, this distribution reduces\n        to a uniform random angle over the range 0 to 2*pi.\n\n        ')),
+            Assign(
+              targets=[
+                Name(id='random', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='random',
+                ctx=Load())),
+            If(
+              test=Compare(
+                left=Name(id='kappa', ctx=Load()),
+                ops=[
+                  LtE()],
+                comparators=[
+                  Constant(value=1e-06)]),
+              body=[
+                Return(
+                  value=BinOp(
+                    left=Name(id='TWOPI', ctx=Load()),
+                    op=Mult(),
+                    right=Call(
+                      func=Name(id='random', ctx=Load()),
+                      args=[],
+                      keywords=[])))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='s', ctx=Store())],
+              value=BinOp(
+                left=Constant(value=0.5),
+                op=Div(),
+                right=Name(id='kappa', ctx=Load()))),
+            Assign(
+              targets=[
+                Name(id='r', ctx=Store())],
+              value=BinOp(
+                left=Name(id='s', ctx=Load()),
+                op=Add(),
+                right=Call(
+                  func=Name(id='_sqrt', ctx=Load()),
+                  args=[
+                    BinOp(
+                      left=Constant(value=1.0),
+                      op=Add(),
+                      right=BinOp(
+                        left=Name(id='s', ctx=Load()),
+                        op=Mult(),
+                        right=Name(id='s', ctx=Load())))],
+                  keywords=[]))),
+            While(
+              test=Constant(value=True),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='u1', ctx=Store())],
+                  value=Call(
+                    func=Name(id='random', ctx=Load()),
+                    args=[],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Name(id='z', ctx=Store())],
+                  value=Call(
+                    func=Name(id='_cos', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=Name(id='_pi', ctx=Load()),
+                        op=Mult(),
+                        right=Name(id='u1', ctx=Load()))],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Name(id='d', ctx=Store())],
+                  value=BinOp(
+                    left=Name(id='z', ctx=Load()),
+                    op=Div(),
+                    right=BinOp(
+                      left=Name(id='r', ctx=Load()),
+                      op=Add(),
+                      right=Name(id='z', ctx=Load())))),
+                Assign(
+                  targets=[
+                    Name(id='u2', ctx=Store())],
+                  value=Call(
+                    func=Name(id='random', ctx=Load()),
+                    args=[],
+                    keywords=[])),
+                If(
+                  test=BoolOp(
+                    op=Or(),
+                    values=[
+                      Compare(
+                        left=Name(id='u2', ctx=Load()),
+                        ops=[
+                          Lt()],
+                        comparators=[
+                          BinOp(
+                            left=Constant(value=1.0),
+                            op=Sub(),
+                            right=BinOp(
+                              left=Name(id='d', ctx=Load()),
+                              op=Mult(),
+                              right=Name(id='d', ctx=Load())))]),
+                      Compare(
+                        left=Name(id='u2', ctx=Load()),
+                        ops=[
+                          LtE()],
+                        comparators=[
+                          BinOp(
+                            left=BinOp(
+                              left=Constant(value=1.0),
+                              op=Sub(),
+                              right=Name(id='d', ctx=Load())),
+                            op=Mult(),
+                            right=Call(
+                              func=Name(id='_exp', ctx=Load()),
+                              args=[
+                                Name(id='d', ctx=Load())],
+                              keywords=[]))])]),
+                  body=[
+                    Break()],
+                  orelse=[])],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='q', ctx=Store())],
+              value=BinOp(
+                left=Constant(value=1.0),
+                op=Div(),
+                right=Name(id='r', ctx=Load()))),
+            Assign(
+              targets=[
+                Name(id='f', ctx=Store())],
+              value=BinOp(
+                left=BinOp(
+                  left=Name(id='q', ctx=Load()),
+                  op=Add(),
+                  right=Name(id='z', ctx=Load())),
+                op=Div(),
+                right=BinOp(
+                  left=Constant(value=1.0),
+                  op=Add(),
+                  right=BinOp(
+                    left=Name(id='q', ctx=Load()),
+                    op=Mult(),
+                    right=Name(id='z', ctx=Load()))))),
+            Assign(
+              targets=[
+                Name(id='u3', ctx=Store())],
+              value=Call(
+                func=Name(id='random', ctx=Load()),
+                args=[],
+                keywords=[])),
+            If(
+              test=Compare(
+                left=Name(id='u3', ctx=Load()),
+                ops=[
+                  Gt()],
+                comparators=[
+                  Constant(value=0.5)]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='theta', ctx=Store())],
+                  value=BinOp(
+                    left=BinOp(
+                      left=Name(id='mu', ctx=Load()),
+                      op=Add(),
+                      right=Call(
+                        func=Name(id='_acos', ctx=Load()),
+                        args=[
+                          Name(id='f', ctx=Load())],
+                        keywords=[])),
+                    op=Mod(),
+                    right=Name(id='TWOPI', ctx=Load())))],
+              orelse=[
+                Assign(
+                  targets=[
+                    Name(id='theta', ctx=Store())],
+                  value=BinOp(
+                    left=BinOp(
+                      left=Name(id='mu', ctx=Load()),
+                      op=Sub(),
+                      right=Call(
+                        func=Name(id='_acos', ctx=Load()),
+                        args=[
+                          Name(id='f', ctx=Load())],
+                        keywords=[])),
+                    op=Mod(),
+                    right=Name(id='TWOPI', ctx=Load())))]),
+            Return(
+              value=Name(id='theta', ctx=Load()))],
+          decorator_list=[]),
+        FunctionDef(
+          name='gammavariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='alpha'),
+              arg(arg='beta')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Gamma distribution.  Not the gamma function!\n\n        Conditions on the parameters are alpha > 0 and beta > 0.\n\n        The probability distribution function is:\n\n                    x ** (alpha - 1) * math.exp(-x / beta)\n          pdf(x) =  --------------------------------------\n                      math.gamma(alpha) * beta ** alpha\n\n        ')),
+            If(
+              test=BoolOp(
+                op=Or(),
+                values=[
+                  Compare(
+                    left=Name(id='alpha', ctx=Load()),
+                    ops=[
+                      LtE()],
+                    comparators=[
+                      Constant(value=0.0)]),
+                  Compare(
+                    left=Name(id='beta', ctx=Load()),
+                    ops=[
+                      LtE()],
+                    comparators=[
+                      Constant(value=0.0)])]),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='gammavariate: alpha and beta must be > 0.0')],
+                    keywords=[]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='random', ctx=Store())],
+              value=Attribute(
+                value=Name(id='self', ctx=Load()),
+                attr='random',
+                ctx=Load())),
+            If(
+              test=Compare(
+                left=Name(id='alpha', ctx=Load()),
+                ops=[
+                  Gt()],
+                comparators=[
+                  Constant(value=1.0)]),
+              body=[
+                Assign(
+                  targets=[
+                    Name(id='ainv', ctx=Store())],
+                  value=Call(
+                    func=Name(id='_sqrt', ctx=Load()),
+                    args=[
+                      BinOp(
+                        left=BinOp(
+                          left=Constant(value=2.0),
+                          op=Mult(),
+                          right=Name(id='alpha', ctx=Load())),
+                        op=Sub(),
+                        right=Constant(value=1.0))],
+                    keywords=[])),
+                Assign(
+                  targets=[
+                    Name(id='bbb', ctx=Store())],
+                  value=BinOp(
+                    left=Name(id='alpha', ctx=Load()),
+                    op=Sub(),
+                    right=Name(id='LOG4', ctx=Load()))),
+                Assign(
+                  targets=[
+                    Name(id='ccc', ctx=Store())],
+                  value=BinOp(
+                    left=Name(id='alpha', ctx=Load()),
+                    op=Add(),
+                    right=Name(id='ainv', ctx=Load()))),
+                While(
+                  test=Constant(value=True),
+                  body=[
+                    Assign(
+                      targets=[
+                        Name(id='u1', ctx=Store())],
+                      value=Call(
+                        func=Name(id='random', ctx=Load()),
+                        args=[],
+                        keywords=[])),
+                    If(
+                      test=UnaryOp(
+                        op=Not(),
+                        operand=Compare(
+                          left=Constant(value=1e-07),
+                          ops=[
+                            Lt(),
+                            Lt()],
+                          comparators=[
+                            Name(id='u1', ctx=Load()),
+                            Constant(value=0.9999999)])),
+                      body=[
+                        Continue()],
+                      orelse=[]),
+                    Assign(
+                      targets=[
+                        Name(id='u2', ctx=Store())],
+                      value=BinOp(
+                        left=Constant(value=1.0),
+                        op=Sub(),
+                        right=Call(
+                          func=Name(id='random', ctx=Load()),
+                          args=[],
+                          keywords=[]))),
+                    Assign(
+                      targets=[
+                        Name(id='v', ctx=Store())],
+                      value=BinOp(
+                        left=Call(
+                          func=Name(id='_log', ctx=Load()),
+                          args=[
+                            BinOp(
+                              left=Name(id='u1', ctx=Load()),
+                              op=Div(),
+                              right=BinOp(
+                                left=Constant(value=1.0),
+                                op=Sub(),
+                                right=Name(id='u1', ctx=Load())))],
+                          keywords=[]),
+                        op=Div(),
+                        right=Name(id='ainv', ctx=Load()))),
+                    Assign(
+                      targets=[
+                        Name(id='x', ctx=Store())],
+                      value=BinOp(
+                        left=Name(id='alpha', ctx=Load()),
+                        op=Mult(),
+                        right=Call(
+                          func=Name(id='_exp', ctx=Load()),
+                          args=[
+                            Name(id='v', ctx=Load())],
+                          keywords=[]))),
+                    Assign(
+                      targets=[
+                        Name(id='z', ctx=Store())],
+                      value=BinOp(
+                        left=BinOp(
+                          left=Name(id='u1', ctx=Load()),
+                          op=Mult(),
+                          right=Name(id='u1', ctx=Load())),
+                        op=Mult(),
+                        right=Name(id='u2', ctx=Load()))),
+                    Assign(
+                      targets=[
+                        Name(id='r', ctx=Store())],
+                      value=BinOp(
+                        left=BinOp(
+                          left=Name(id='bbb', ctx=Load()),
+                          op=Add(),
+                          right=BinOp(
+                            left=Name(id='ccc', ctx=Load()),
+                            op=Mult(),
+                            right=Name(id='v', ctx=Load()))),
+                        op=Sub(),
+                        right=Name(id='x', ctx=Load()))),
+                    If(
+                      test=BoolOp(
+                        op=Or(),
+                        values=[
+                          Compare(
+                            left=BinOp(
+                              left=BinOp(
+                                left=Name(id='r', ctx=Load()),
+                                op=Add(),
+                                right=Name(id='SG_MAGICCONST', ctx=Load())),
+                              op=Sub(),
+                              right=BinOp(
+                                left=Constant(value=4.5),
+                                op=Mult(),
+                                right=Name(id='z', ctx=Load()))),
+                            ops=[
+                              GtE()],
+                            comparators=[
+                              Constant(value=0.0)]),
+                          Compare(
+                            left=Name(id='r', ctx=Load()),
+                            ops=[
+                              GtE()],
+                            comparators=[
+                              Call(
+                                func=Name(id='_log', ctx=Load()),
+                                args=[
+                                  Name(id='z', ctx=Load())],
+                                keywords=[])])]),
+                      body=[
+                        Return(
+                          value=BinOp(
+                            left=Name(id='x', ctx=Load()),
+                            op=Mult(),
+                            right=Name(id='beta', ctx=Load())))],
+                      orelse=[])],
+                  orelse=[])],
+              orelse=[
+                If(
+                  test=Compare(
+                    left=Name(id='alpha', ctx=Load()),
+                    ops=[
+                      Eq()],
+                    comparators=[
+                      Constant(value=1.0)]),
+                  body=[
+                    Return(
+                      value=BinOp(
+                        left=UnaryOp(
+                          op=USub(),
+                          operand=Call(
+                            func=Name(id='_log', ctx=Load()),
+                            args=[
+                              BinOp(
+                                left=Constant(value=1.0),
+                                op=Sub(),
+                                right=Call(
+                                  func=Name(id='random', ctx=Load()),
+                                  args=[],
+                                  keywords=[]))],
+                            keywords=[])),
+                        op=Mult(),
+                        right=Name(id='beta', ctx=Load())))],
+                  orelse=[
+                    While(
+                      test=Constant(value=True),
+                      body=[
+                        Assign(
+                          targets=[
+                            Name(id='u', ctx=Store())],
+                          value=Call(
+                            func=Name(id='random', ctx=Load()),
+                            args=[],
+                            keywords=[])),
+                        Assign(
+                          targets=[
+                            Name(id='b', ctx=Store())],
+                          value=BinOp(
+                            left=BinOp(
+                              left=Name(id='_e', ctx=Load()),
+                              op=Add(),
+                              right=Name(id='alpha', ctx=Load())),
+                            op=Div(),
+                            right=Name(id='_e', ctx=Load()))),
+                        Assign(
+                          targets=[
+                            Name(id='p', ctx=Store())],
+                          value=BinOp(
+                            left=Name(id='b', ctx=Load()),
+                            op=Mult(),
+                            right=Name(id='u', ctx=Load()))),
+                        If(
+                          test=Compare(
+                            left=Name(id='p', ctx=Load()),
+                            ops=[
+                              LtE()],
+                            comparators=[
+                              Constant(value=1.0)]),
+                          body=[
+                            Assign(
+                              targets=[
+                                Name(id='x', ctx=Store())],
+                              value=BinOp(
+                                left=Name(id='p', ctx=Load()),
+                                op=Pow(),
+                                right=BinOp(
+                                  left=Constant(value=1.0),
+                                  op=Div(),
+                                  right=Name(id='alpha', ctx=Load()))))],
+                          orelse=[
+                            Assign(
+                              targets=[
+                                Name(id='x', ctx=Store())],
+                              value=UnaryOp(
+                                op=USub(),
+                                operand=Call(
+                                  func=Name(id='_log', ctx=Load()),
+                                  args=[
+                                    BinOp(
+                                      left=BinOp(
+                                        left=Name(id='b', ctx=Load()),
+                                        op=Sub(),
+                                        right=Name(id='p', ctx=Load())),
+                                      op=Div(),
+                                      right=Name(id='alpha', ctx=Load()))],
+                                  keywords=[])))]),
+                        Assign(
+                          targets=[
+                            Name(id='u1', ctx=Store())],
+                          value=Call(
+                            func=Name(id='random', ctx=Load()),
+                            args=[],
+                            keywords=[])),
+                        If(
+                          test=Compare(
+                            left=Name(id='p', ctx=Load()),
+                            ops=[
+                              Gt()],
+                            comparators=[
+                              Constant(value=1.0)]),
+                          body=[
+                            If(
+                              test=Compare(
+                                left=Name(id='u1', ctx=Load()),
+                                ops=[
+                                  LtE()],
+                                comparators=[
+                                  BinOp(
+                                    left=Name(id='x', ctx=Load()),
+                                    op=Pow(),
+                                    right=BinOp(
+                                      left=Name(id='alpha', ctx=Load()),
+                                      op=Sub(),
+                                      right=Constant(value=1.0)))]),
+                              body=[
+                                Break()],
+                              orelse=[])],
+                          orelse=[
+                            If(
+                              test=Compare(
+                                left=Name(id='u1', ctx=Load()),
+                                ops=[
+                                  LtE()],
+                                comparators=[
+                                  Call(
+                                    func=Name(id='_exp', ctx=Load()),
+                                    args=[
+                                      UnaryOp(
+                                        op=USub(),
+                                        operand=Name(id='x', ctx=Load()))],
+                                    keywords=[])]),
+                              body=[
+                                Break()],
+                              orelse=[])])],
+                      orelse=[]),
+                    Return(
+                      value=BinOp(
+                        left=Name(id='x', ctx=Load()),
+                        op=Mult(),
+                        right=Name(id='beta', ctx=Load())))])])],
+          decorator_list=[]),
+        FunctionDef(
+          name='betavariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='alpha'),
+              arg(arg='beta')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Beta distribution.\n\n        Conditions on the parameters are alpha > 0 and beta > 0.\n        Returned values range between 0 and 1.\n\n        ')),
+            Assign(
+              targets=[
+                Name(id='y', ctx=Store())],
+              value=Call(
+                func=Attribute(
+                  value=Name(id='self', ctx=Load()),
+                  attr='gammavariate',
+                  ctx=Load()),
+                args=[
+                  Name(id='alpha', ctx=Load()),
+                  Constant(value=1.0)],
+                keywords=[])),
+            If(
+              test=Name(id='y', ctx=Load()),
+              body=[
+                Return(
+                  value=BinOp(
+                    left=Name(id='y', ctx=Load()),
+                    op=Div(),
+                    right=BinOp(
+                      left=Name(id='y', ctx=Load()),
+                      op=Add(),
+                      right=Call(
+                        func=Attribute(
+                          value=Name(id='self', ctx=Load()),
+                          attr='gammavariate',
+                          ctx=Load()),
+                        args=[
+                          Name(id='beta', ctx=Load()),
+                          Constant(value=1.0)],
+                        keywords=[]))))],
+              orelse=[]),
+            Return(
+              value=Constant(value=0.0))],
+          decorator_list=[]),
+        FunctionDef(
+          name='paretovariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='alpha')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Pareto distribution.  alpha is the shape parameter.')),
+            Assign(
+              targets=[
+                Name(id='u', ctx=Store())],
+              value=BinOp(
+                left=Constant(value=1.0),
+                op=Sub(),
+                right=Call(
+                  func=Attribute(
+                    value=Name(id='self', ctx=Load()),
+                    attr='random',
+                    ctx=Load()),
+                  args=[],
+                  keywords=[]))),
+            Return(
+              value=BinOp(
+                left=Name(id='u', ctx=Load()),
+                op=Pow(),
+                right=BinOp(
+                  left=UnaryOp(
+                    op=USub(),
+                    operand=Constant(value=1.0)),
+                  op=Div(),
+                  right=Name(id='alpha', ctx=Load()))))],
+          decorator_list=[]),
+        FunctionDef(
+          name='weibullvariate',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='alpha'),
+              arg(arg='beta')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Weibull distribution.\n\n        alpha is the scale parameter and beta is the shape parameter.\n\n        ')),
+            Assign(
+              targets=[
+                Name(id='u', ctx=Store())],
+              value=BinOp(
+                left=Constant(value=1.0),
+                op=Sub(),
+                right=Call(
+                  func=Attribute(
+                    value=Name(id='self', ctx=Load()),
+                    attr='random',
+                    ctx=Load()),
+                  args=[],
+                  keywords=[]))),
+            Return(
+              value=BinOp(
+                left=Name(id='alpha', ctx=Load()),
+                op=Mult(),
+                right=BinOp(
+                  left=UnaryOp(
+                    op=USub(),
+                    operand=Call(
+                      func=Name(id='_log', ctx=Load()),
+                      args=[
+                        Name(id='u', ctx=Load())],
+                      keywords=[])),
+                  op=Pow(),
+                  right=BinOp(
+                    left=Constant(value=1.0),
+                    op=Div(),
+                    right=Name(id='beta', ctx=Load())))))],
+          decorator_list=[])],
+      decorator_list=[]),
+    ClassDef(
+      name='SystemRandom',
+      bases=[
+        Name(id='Random', ctx=Load())],
+      keywords=[],
+      body=[
+        Expr(
+          value=Constant(value='Alternate random number generator using sources provided\n    by the operating system (such as /dev/urandom on Unix or\n    CryptGenRandom on Windows).\n\n     Not available on all systems (see os.urandom() for details).\n\n    ')),
+        FunctionDef(
+          name='random',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Get the next random number in the range 0.0 <= X < 1.0.')),
+            Return(
+              value=BinOp(
+                left=BinOp(
+                  left=Call(
+                    func=Attribute(
+                      value=Name(id='int', ctx=Load()),
+                      attr='from_bytes',
+                      ctx=Load()),
+                    args=[
+                      Call(
+                        func=Name(id='_urandom', ctx=Load()),
+                        args=[
+                          Constant(value=7)],
+                        keywords=[])],
+                    keywords=[]),
+                  op=RShift(),
+                  right=Constant(value=3)),
+                op=Mult(),
+                right=Name(id='RECIP_BPF', ctx=Load())))],
+          decorator_list=[]),
+        FunctionDef(
+          name='getrandbits',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='k')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='getrandbits(k) -> x.  Generates an int with k random bits.')),
+            If(
+              test=Compare(
+                left=Name(id='k', ctx=Load()),
+                ops=[
+                  Lt()],
+                comparators=[
+                  Constant(value=0)]),
+              body=[
+                Raise(
+                  exc=Call(
+                    func=Name(id='ValueError', ctx=Load()),
+                    args=[
+                      Constant(value='number of bits must be non-negative')],
+                    keywords=[]))],
+              orelse=[]),
+            Assign(
+              targets=[
+                Name(id='numbytes', ctx=Store())],
+              value=BinOp(
+                left=BinOp(
+                  left=Name(id='k', ctx=Load()),
+                  op=Add(),
+                  right=Constant(value=7)),
+                op=FloorDiv(),
+                right=Constant(value=8))),
+            Assign(
+              targets=[
+                Name(id='x', ctx=Store())],
+              value=Call(
+                func=Attribute(
+                  value=Name(id='int', ctx=Load()),
+                  attr='from_bytes',
+                  ctx=Load()),
+                args=[
+                  Call(
+                    func=Name(id='_urandom', ctx=Load()),
+                    args=[
+                      Name(id='numbytes', ctx=Load())],
+                    keywords=[])],
+                keywords=[])),
+            Return(
+              value=BinOp(
+                left=Name(id='x', ctx=Load()),
+                op=RShift(),
+                right=BinOp(
+                  left=BinOp(
+                    left=Name(id='numbytes', ctx=Load()),
+                    op=Mult(),
+                    right=Constant(value=8)),
+                  op=Sub(),
+                  right=Name(id='k', ctx=Load()))))],
+          decorator_list=[]),
+        FunctionDef(
+          name='randbytes',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self'),
+              arg(arg='n')],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Generate n random bytes.')),
+            Return(
+              value=Call(
+                func=Name(id='_urandom', ctx=Load()),
+                args=[
+                  Name(id='n', ctx=Load())],
+                keywords=[]))],
+          decorator_list=[]),
+        FunctionDef(
+          name='seed',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self')],
+            vararg=arg(arg='args'),
+            kwonlyargs=[],
+            kw_defaults=[],
+            kwarg=arg(arg='kwds'),
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Stub method.  Not used for a system random number generator.')),
+            Return(
+              value=Constant(value=None))],
+          decorator_list=[]),
+        FunctionDef(
+          name='_notimplemented',
+          args=arguments(
+            posonlyargs=[],
+            args=[
+              arg(arg='self')],
+            vararg=arg(arg='args'),
+            kwonlyargs=[],
+            kw_defaults=[],
+            kwarg=arg(arg='kwds'),
+            defaults=[]),
+          body=[
+            Expr(
+              value=Constant(value='Method should not be called for a system random number generator.')),
+            Raise(
+              exc=Call(
+                func=Name(id='NotImplementedError', ctx=Load()),
+                args=[
+                  Constant(value='System entropy source does not have state.')],
+                keywords=[]))],
+          decorator_list=[]),
+        Assign(
+          targets=[
+            Name(id='getstate', ctx=Store()),
+            Name(id='setstate', ctx=Store())],
+          value=Name(id='_notimplemented', ctx=Load()))],
+      decorator_list=[]),
+    Assign(
+      targets=[
+        Name(id='_inst', ctx=Store())],
+      value=Call(
+        func=Name(id='Random', ctx=Load()),
+        args=[],
+        keywords=[])),
+    Assign(
+      targets=[
+        Name(id='seed', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='seed',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='random', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='random',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='uniform', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='uniform',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='triangular', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='triangular',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='randint', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='randint',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='choice', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='choice',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='randrange', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='randrange',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='sample', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='sample',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='shuffle', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='shuffle',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='choices', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='choices',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='normalvariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='normalvariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='lognormvariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='lognormvariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='expovariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='expovariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='vonmisesvariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='vonmisesvariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='gammavariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='gammavariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='gauss', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='gauss',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='betavariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='betavariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='paretovariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='paretovariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='weibullvariate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='weibullvariate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='getstate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='getstate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='setstate', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='setstate',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='getrandbits', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='getrandbits',
+        ctx=Load())),
+    Assign(
+      targets=[
+        Name(id='randbytes', ctx=Store())],
+      value=Attribute(
+        value=Name(id='_inst', ctx=Load()),
+        attr='randbytes',
+        ctx=Load())),
+    FunctionDef(
+      name='_test_generator',
+      args=arguments(
+        posonlyargs=[],
+        args=[
+          arg(arg='n'),
+          arg(arg='func'),
+          arg(arg='args')],
+        kwonlyargs=[],
+        kw_defaults=[],
+        defaults=[]),
+      body=[
+        ImportFrom(
+          module='statistics',
+          names=[
+            alias(name='stdev'),
+            alias(name='fmean', asname='mean')],
+          level=0),
+        ImportFrom(
+          module='time',
+          names=[
+            alias(name='perf_counter')],
+          level=0),
+        Assign(
+          targets=[
+            Name(id='t0', ctx=Store())],
+          value=Call(
+            func=Name(id='perf_counter', ctx=Load()),
+            args=[],
+            keywords=[])),
+        Assign(
+          targets=[
+            Name(id='data', ctx=Store())],
+          value=ListComp(
+            elt=Call(
+              func=Name(id='func', ctx=Load()),
+              args=[
+                Starred(
+                  value=Name(id='args', ctx=Load()),
+                  ctx=Load())],
+              keywords=[]),
+            generators=[
+              comprehension(
+                target=Name(id='i', ctx=Store()),
+                iter=Call(
+                  func=Name(id='_repeat', ctx=Load()),
+                  args=[
+                    Constant(value=None),
+                    Name(id='n', ctx=Load())],
+                  keywords=[]),
+                ifs=[],
+                is_async=0)])),
+        Assign(
+          targets=[
+            Name(id='t1', ctx=Store())],
+          value=Call(
+            func=Name(id='perf_counter', ctx=Load()),
+            args=[],
+            keywords=[])),
+        Assign(
+          targets=[
+            Name(id='xbar', ctx=Store())],
+          value=Call(
+            func=Name(id='mean', ctx=Load()),
+            args=[
+              Name(id='data', ctx=Load())],
+            keywords=[])),
+        Assign(
+          targets=[
+            Name(id='sigma', ctx=Store())],
+          value=Call(
+            func=Name(id='stdev', ctx=Load()),
+            args=[
+              Name(id='data', ctx=Load()),
+              Name(id='xbar', ctx=Load())],
+            keywords=[])),
+        Assign(
+          targets=[
+            Name(id='low', ctx=Store())],
+          value=Call(
+            func=Name(id='min', ctx=Load()),
+            args=[
+              Name(id='data', ctx=Load())],
+            keywords=[])),
+        Assign(
+          targets=[
+            Name(id='high', ctx=Store())],
+          value=Call(
+            func=Name(id='max', ctx=Load()),
+            args=[
+              Name(id='data', ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='print', ctx=Load()),
+            args=[
+              JoinedStr(
+                values=[
+                  FormattedValue(
+                    value=BinOp(
+                      left=Name(id='t1', ctx=Load()),
+                      op=Sub(),
+                      right=Name(id='t0', ctx=Load())),
+                    conversion=-1,
+                    format_spec=JoinedStr(
+                      values=[
+                        Constant(value='.3f')])),
+                  Constant(value=' sec, '),
+                  FormattedValue(
+                    value=Name(id='n', ctx=Load()),
+                    conversion=-1),
+                  Constant(value=' times '),
+                  FormattedValue(
+                    value=Attribute(
+                      value=Name(id='func', ctx=Load()),
+                      attr='__name__',
+                      ctx=Load()),
+                    conversion=-1)])],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='print', ctx=Load()),
+            args=[
+              BinOp(
+                left=Constant(value='avg %g, stddev %g, min %g, max %g\n'),
+                op=Mod(),
+                right=Tuple(
+                  elts=[
+                    Name(id='xbar', ctx=Load()),
+                    Name(id='sigma', ctx=Load()),
+                    Name(id='low', ctx=Load()),
+                    Name(id='high', ctx=Load())],
+                  ctx=Load()))],
+            keywords=[]))],
+      decorator_list=[]),
+    FunctionDef(
+      name='_test',
+      args=arguments(
+        posonlyargs=[],
+        args=[
+          arg(arg='N')],
+        kwonlyargs=[],
+        kw_defaults=[],
+        defaults=[
+          Constant(value=2000)]),
+      body=[
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='random', ctx=Load()),
+              Tuple(elts=[], ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='normalvariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='lognormvariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='vonmisesvariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.01),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.1),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.1),
+                  Constant(value=2.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.5),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.9),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=1.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=2.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=20.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gammavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=200.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='gauss', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.0),
+                  Constant(value=1.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='betavariate', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=3.0),
+                  Constant(value=3.0)],
+                ctx=Load())],
+            keywords=[])),
+        Expr(
+          value=Call(
+            func=Name(id='_test_generator', ctx=Load()),
+            args=[
+              Name(id='N', ctx=Load()),
+              Name(id='triangular', ctx=Load()),
+              Tuple(
+                elts=[
+                  Constant(value=0.0),
+                  Constant(value=1.0),
+                  BinOp(
+                    left=Constant(value=1.0),
+                    op=Div(),
+                    right=Constant(value=3.0))],
+                ctx=Load())],
+            keywords=[]))],
+      decorator_list=[]),
+    If(
+      test=Call(
+        func=Name(id='hasattr', ctx=Load()),
+        args=[
+          Name(id='_os', ctx=Load()),
+          Constant(value='fork')],
+        keywords=[]),
+      body=[
+        Expr(
+          value=Call(
+            func=Attribute(
+              value=Name(id='_os', ctx=Load()),
+              attr='register_at_fork',
+              ctx=Load()),
+            args=[],
+            keywords=[
+              keyword(
+                arg='after_in_child',
+                value=Attribute(
+                  value=Name(id='_inst', ctx=Load()),
+                  attr='seed',
+                  ctx=Load()))]))],
+      orelse=[]),
+    If(
+      test=Compare(
+        left=Name(id='__name__', ctx=Load()),
+        ops=[
+          Eq()],
+        comparators=[
+          Constant(value='__main__')]),
+      body=[
+        Expr(
+          value=Call(
+            func=Name(id='_test', ctx=Load()),
+            args=[],
+            keywords=[]))],
+      orelse=[])],
+  type_ignores=[])

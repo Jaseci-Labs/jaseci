@@ -34,7 +34,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def convert(self, node: py_ast.AST) -> ast.AstNode:
         """Get python node type."""
-        print(f"working on {type(node).__name__}")
+        print(f"working on {type(node).__name__} ---------------------")
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             return getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
@@ -500,8 +500,46 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_break(self, node: py_ast.Break) -> None:
         """Process python node."""
 
-    def proc_call(self, node: py_ast.Call) -> None:
-        """Process python node."""
+    def proc_call(self, node: py_ast.Call) -> ast.FuncCall:
+        """Process python node.
+
+        class Call(expr):
+        if sys.version_info >= (3, 10):
+            __match_args__ = ("func", "args", "keywords")
+        func: expr
+        args: list[expr]
+        keywords: list[keyword]
+        """
+        func = self.convert(node.func)
+        args = [self.convert(arg) for arg in node.args]
+        valid_args = [
+            arguements for arguements in args if isinstance(arguements, ast.AtomExpr)
+        ]
+        if len(valid_args) == len(args):
+            valid_args = ast.SubNodeList[ast.AtomExpr](items=valid_args, kid=args)
+        else:
+            self.error("Length mismatch in for args")
+
+        keywords = [self.convert(keyword) for keyword in node.keywords]
+        valid_keywords = [
+            keyword for keyword in keywords if isinstance(keyword, ast.AtomExpr)
+        ]
+        if len(valid_keywords) == len(keywords):
+            valid_keywords = ast.SubNodeList[ast.KWPair](
+                items=valid_keywords, kid=keywords
+            )
+        else:
+            self.error("Length mismatch in for keywords")
+
+        if isinstance(func, ast.Expr):
+            print("func is ok")
+            return ast.FuncCall(
+                target=func,
+                params=[valid_args, valid_keywords],
+                kid=[func, args, keywords],
+            )
+        else:
+            raise self.ice()
 
     def proc_compare(self, node: py_ast.Compare) -> None:
         """Process python node."""
@@ -618,7 +656,29 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_match_value(self, node: py_ast.MatchValue) -> None:
         """Process python node."""
 
-    def proc_name(self, node: py_ast.Name) -> None:
+    def proc_name(self, node: py_ast.Name) -> ast.Name:
+        """Process python node.
+
+        class Name(expr):
+        if sys.version_info >= (3, 10):
+            __match_args__ = ("id", "ctx")
+        id: _Identifier
+        ctx: expr_context
+        """
+        id = self.convert(node.id)
+        return ast.Name(
+            file_path=self.mod_path,
+            name=Tok.NAME,
+            value=id,
+            line=node.lineno,
+            col_start=node.col_offset,
+            col_end=node.col_offset + len(node.id),
+            pos_start=0,
+            pos_end=0,
+            kid=node.id,
+        )
+
+    def proc_load(self, node: py_ast.Name) -> ast.Name:
         """Process python node."""
 
     def proc_named_expr(self, node: py_ast.NamedExpr) -> None:
@@ -676,7 +736,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Process python node."""
 
     def proc_keyword(self, node: py_ast.keyword) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class keyword(AST):
+        if sys.version_info >= (3, 10):
+            __match_args__ = ("arg", "value")
+        arg: _Identifier | None
+        value: expr
+        """
 
     def proc_match_case(self, node: py_ast.match_case) -> None:
         """Process python node."""
