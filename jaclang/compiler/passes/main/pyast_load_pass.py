@@ -510,26 +510,26 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         args: list[expr]
         keywords: list[keyword]
         """
+        print("coming here")
         func = self.convert(node.func)
         args = [self.convert(arg) for arg in node.args]
         valid_args = [
             arguements for arguements in args if isinstance(arguements, ast.AtomExpr)
         ]
-        if len(valid_args) == len(args):
-            valid_args = ast.SubNodeList[ast.AtomExpr](items=valid_args, kid=args)
-        else:
-            self.error("Length mismatch in for args")
+
+        # if len(valid_args) == len(args):
+        #     valid_args = ast.SubNodeList[ast.AtomExpr](items=valid_args, kid=[args])
+        # else:
+        #     self.error("Length mismatch in for args")
 
         keywords = [self.convert(keyword) for keyword in node.keywords]
         valid_keywords = [
             keyword for keyword in keywords if isinstance(keyword, ast.AtomExpr)
         ]
-        if len(valid_keywords) == len(keywords):
-            valid_keywords = ast.SubNodeList[ast.KWPair](
-                items=valid_keywords, kid=keywords
-            )
-        else:
-            self.error("Length mismatch in for keywords")
+        # if len(valid_keywords) == len(keywords):
+        #     valid_keywords = ast.SubNodeList[ast.KWPair](items=valid_keywords, kid=[keywords])
+        # else:
+        #     self.error("Length mismatch in for keywords")
 
         if isinstance(func, ast.Expr):
             print("func is ok")
@@ -665,17 +665,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         id: _Identifier
         ctx: expr_context
         """
-        id = self.convert(node.id)
+        # id = self.convert(node.id)
         return ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=id,
+            value=node.id,
             line=node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.id),
             pos_start=0,
             pos_end=0,
-            kid=node.id,
+            kid=[],
         )
 
     def proc_load(self, node: py_ast.Name) -> ast.Name:
