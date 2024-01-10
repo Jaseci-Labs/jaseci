@@ -1,23 +1,6 @@
 from re import search
 from copy import deepcopy
 
-from jaseci.jsorc.jsorc import JsOrc
-
-
-def notify_client(target: str, pages: list, urls: dict, processing: dict, content=None):
-    if target:
-        socket = JsOrc.svc("socket")
-        if socket.is_running():
-            data = {
-                "processing": processing,
-                "pending": [p["goto"]["url"] for p in pages],
-                "scanned": urls["scanned"],
-            }
-            if content:
-                data["response"] = content
-
-            socket.notify("client", target, {"type": "scraper", "data": data})
-
 
 def add_url(page, urls: dict, scraped: bool = False, error: str = None):
     url = page.url

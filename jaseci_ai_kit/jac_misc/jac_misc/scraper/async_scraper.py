@@ -1,10 +1,14 @@
 import asyncio
+import websocket
 
+from os import getenv
 from re import search
+from orjson import dumps
+from logging import exception
 from playwright.async_api import async_playwright, Page
+from websocket import create_connection
 
 from jac_misc.scraper.utils import (
-    notify_client,
     add_url,
     add_crawl,
     get_script,
@@ -12,11 +16,65 @@ from jac_misc.scraper.utils import (
 )
 
 
+class Client:
+    def __init__(self) -> None:
+        self.enabled = getenv("SCRAPER_SOCKET_ENABLED") == "true"
+
+        self.socket = None
+        if self.enabled:
+            self.create_connection()
+
+    def create_connection(self) -> websocket:
+        self.close()
+        self.socket = create_connection(
+            getenv("SCRAPER_SOCKET_URL", "ws://jaseci-socket/ws"),
+            header={"auth": getenv("SCRAPER_SOCKET_AUTH", "12345678")},
+        )
+
+    def close(self):
+        if self.socket:
+            try:
+                self.socket.close()
+            except Exception:
+                pass
+
+    def notify_client(
+        self, target: str, pages: list, urls: dict, processing: dict, content=None
+    ):
+        if self.enabled and self.socket and target:
+            data = {
+                "processing": processing,
+                "pending": [p["goto"]["url"] for p in pages],
+                "scanned": urls["scanned"],
+            }
+            if content:
+                data["response"] = content
+
+            try:
+                self.socket.send(
+                    dumps(
+                        {
+                            "type": "notify_client",
+                            "data": {
+                                "target": target,
+                                "data": {"type": "scraper", "data": data},
+                            },
+                        }
+                    )
+                )
+            except Exception:
+                exception("Error sending notification!")
+                self.create_connection()
+                self.notify_client(target, pages, urls, processing, content)
+
+
 async def scrape(
     pages: list, pre_configs: list = [], detailed: bool = False, target: str = None
 ):
     content = ""
     urls = {"scanned": [], "scanned_urls": set(), "scraped": set(), "crawled": set()}
+
+    ws = Client()
 
     async with async_playwright() as aspw:
         browser = await aspw.chromium.launch()
@@ -29,7 +87,7 @@ async def scrape(
                 pg_goto = pg.get("goto") or {}
                 url = pg_goto.get("url") or "N/A"
 
-                notify_client(target, pages, urls, {"url": url, "status": "started"})
+                ws.notify_client(target, pages, urls, {"url": url, "status": "started"})
 
                 await goto(page, pg_goto, urls)
 
@@ -37,7 +95,9 @@ async def scrape(
 
                 await crawler(page, pg.get("crawler") or {}, urls, pages, pre_configs)
 
-                notify_client(target, pages, urls, {"url": url, "status": "completed"})
+                ws.notify_client(
+                    target, pages, urls, {"url": url, "status": "completed"}
+                )
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
@@ -52,7 +112,8 @@ async def scrape(
             "scraped": list(urls["scraped"]),
         }
 
-    notify_client(target, pages, urls, None, content)
+    ws.notify_client(target, pages, urls, None, content)
+    ws.close()
 
     return content
 

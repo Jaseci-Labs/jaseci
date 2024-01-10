@@ -1,13 +1,28 @@
 from re import search
 from playwright.sync_api import sync_playwright, Page
 
+from jaseci.jsorc.jsorc import JsOrc
 from jac_misc.scraper.utils import (
-    notify_client,
     add_url,
     add_crawl,
     get_script,
     get_hostname,
 )
+
+
+def notify_client(target: str, pages: list, urls: dict, processing: dict, content=None):
+    if target:
+        socket = JsOrc.svc("socket")
+        if socket.is_running():
+            data = {
+                "processing": processing,
+                "pending": [p["goto"]["url"] for p in pages],
+                "scanned": urls["scanned"],
+            }
+            if content:
+                data["response"] = content
+
+            socket.notify("client", target, {"type": "scraper", "data": data})
 
 
 def scrape(
