@@ -50,7 +50,7 @@ with entry {
     visit -->;
 }
 :node:level:can:run_game {
-    print("Walker Entry ->", <self>.level_id);
+    # print("Walker Entry ->", <self>.level_id);
     
     if <self>.played == False {
   
@@ -60,25 +60,25 @@ with entry {
         
         if <here>.g.won == True{
             <here>.g.game_won();
-            print('Attach');
             <self>.played = True;
             <here>.g.won = False;
             <here>.fwd_dir =True;
             new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
-            visit(level(game_level = <self>.game_level+1, level_id = new_ID));
+            <self> ++> level(game_level = <self>.game_level+1, level_id = new_ID);
+            visit -->;
         } else {
             <here>.g.game_over();
             <self>.played = True;
             <here>.g.won = False;
-            <here>.fwd_dir =False;
+            <here>.fwd_dir = False;
             visit <--;
         }
     } elif <here>.fwd_dir == False{
-        print('lost');
         new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
         print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played), '| Created Level ID :', new_ID);
         <here>.fwd_dir = True;
-        visit(level(game_level = <self>.game_level+1, level_id = new_ID));
+        <self> ++> level(game_level = <self>.game_level+1, level_id = new_ID);
+        visit -->;
     }
 }
 :node:level:can:exit_game {
@@ -89,7 +89,7 @@ with entry {
     }
 }
 :node:start_screen:can:intro_screen {
-    print("Walker Entry -> Intro Screen");
+    # print("Walker Entry -> Intro Screen");
     if <self>.game_started == False {
         <self>.game_started = True;
         <here>.g.intro_screen();
