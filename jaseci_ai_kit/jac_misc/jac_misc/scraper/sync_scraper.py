@@ -18,9 +18,10 @@ def notify_client(target: str, pages: list, urls: dict, processing: dict, conten
                 "processing": processing,
                 "pending": [p["goto"]["url"] for p in pages],
                 "scanned": urls["scanned"],
+                "scraped": urls["scraped"],
             }
             if content:
-                data["response"] = content
+                data["content"] = content
 
             socket.notify("client", target, {"type": "scraper", "data": data})
 
@@ -29,7 +30,7 @@ def scrape(
     pages: list, pre_configs: list = [], detailed: bool = False, target: str = None
 ):
     content = ""
-    urls = {"scanned": [], "scanned_urls": set(), "scraped": set(), "crawled": set()}
+    urls = {"scanned": [], "scanned_urls": set(), "scraped": [], "crawled": set()}
 
     with sync_playwright() as spw:
         browser = spw.chromium.launch()
@@ -41,6 +42,7 @@ def scrape(
 
                 pg_goto = pg.get("goto") or {}
                 url = pg_goto.get("url") or "N/A"
+                page.source = url
 
                 notify_client(target, pages, urls, {"url": url, "status": "started"})
 
@@ -54,19 +56,20 @@ def scrape(
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
+                notify_client(target, pages, urls, {"url": url, "status": "failed"})
+
         browser.close()
 
     content = " ".join(content.split())
 
-    if detailed:
-        content = {
-            "content": content,
-            "scanned": urls["scanned"],
-            "scraped": list(urls["scraped"]),
-        }
-
     notify_client(target, pages, urls, None, content)
 
+    if detailed:
+        return {
+            "content": content,
+            "scanned": urls["scanned"],
+            "scraped": urls["scraped"],
+        }
     return content
 
 

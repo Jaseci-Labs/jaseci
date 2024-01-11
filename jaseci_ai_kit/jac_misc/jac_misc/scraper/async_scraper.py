@@ -1,10 +1,12 @@
 import asyncio
 import websocket
 
+from uuid import uuid4
 from os import getenv
 from re import search
 from orjson import dumps
-from logging import exception
+from json import loads
+from logging import exception, error
 from playwright.async_api import async_playwright, Page
 from websocket import create_connection
 
@@ -19,6 +21,9 @@ from jac_misc.scraper.utils import (
 class Client:
     def __init__(self) -> None:
         self.enabled = getenv("SCRAPER_SOCKET_ENABLED") == "true"
+        self.url = getenv("SCRAPER_SOCKET_URL", "ws://jaseci-socket/ws")
+        self.timeout = int(getenv("SCRAPER_SOCKET_TIMEOUT") or "2")
+        self.header = {"auth": getenv("SCRAPER_SOCKET_AUTH", "12345678")}
 
         self.socket = None
         if self.enabled:
@@ -26,10 +31,7 @@ class Client:
 
     def create_connection(self) -> websocket:
         self.close()
-        self.socket = create_connection(
-            getenv("SCRAPER_SOCKET_URL", "ws://jaseci-socket/ws"),
-            header={"auth": getenv("SCRAPER_SOCKET_AUTH", "12345678")},
-        )
+        self.socket = create_connection(self.url, self.timeout, header=self.header)
 
     def close(self):
         if self.socket:
@@ -46,22 +48,30 @@ class Client:
                 "processing": processing,
                 "pending": [p["goto"]["url"] for p in pages],
                 "scanned": urls["scanned"],
+                "scraped": urls["scraped"],
             }
             if content:
-                data["response"] = content
+                data["content"] = content
 
             try:
+                callback = uuid4()
                 self.socket.send(
                     dumps(
                         {
                             "type": "notify_client",
                             "data": {
                                 "target": target,
+                                "callback": callback,
                                 "data": {"type": "scraper", "data": data},
                             },
                         }
                     )
                 )
+                notif: dict = loads(self.socket.recv())
+                if "callback" != notif.get("type") or str(callback) != notif.get(
+                    "data"
+                ):
+                    raise Exception("Callback notification not valid!")
             except Exception:
                 exception("Error sending notification!")
                 self.create_connection()
@@ -72,7 +82,7 @@ async def scrape(
     pages: list, pre_configs: list = [], detailed: bool = False, target: str = None
 ):
     content = ""
-    urls = {"scanned": [], "scanned_urls": set(), "scraped": set(), "crawled": set()}
+    urls = {"scanned": [], "scanned_urls": set(), "scraped": [], "crawled": set()}
 
     ws = Client()
 
@@ -86,6 +96,7 @@ async def scrape(
 
                 pg_goto = pg.get("goto") or {}
                 url = pg_goto.get("url") or "N/A"
+                page.source = url
 
                 ws.notify_client(target, pages, urls, {"url": url, "status": "started"})
 
@@ -101,22 +112,21 @@ async def scrape(
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
-                ws.create_connection()
                 ws.notify_client(target, pages, urls, {"url": url, "status": "failed"})
 
         await browser.close()
 
     content = " ".join(content.split())
 
-    if detailed:
-        content = {
-            "content": content,
-            "scanned": urls["scanned"],
-            "scraped": list(urls["scraped"]),
-        }
-
     ws.notify_client(target, pages, urls, None, content)
     ws.close()
+
+    if detailed:
+        return {
+            "content": content,
+            "scanned": urls["scanned"],
+            "scraped": urls["scraped"],
+        }
 
     return content
 
