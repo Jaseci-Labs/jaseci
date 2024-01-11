@@ -146,17 +146,19 @@ var request = $.ajax({
     {% endif %}
 {% endif %}
 
-{% if provider == "google" %}
-socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/f8e9b218aff5e16b0b06f458dde7c15af9e77a3feb8b6d7ebbfa3e1da7ae7d63`)
-{% else %}
-socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/anonymous`)
-{% endif %}
+socket = new WebSocket(`ws://localhost:8002/ws`);
 socket.onmessage = (event) => {
     console.log(event);
 }
-
-function notify_server() {
-    socket.send(JSON.stringify({"message": "test"}))
+socket.onopen = (event) => {
+    socket.send(
+        JSON.stringify(
+            {
+                "type": "client_connect",
+                "data": {"token": "50cb54b71dfe6165f3eb174c452f26e4d825131d3529b89af41fd0c626c59a76"}
+            }
+        )
+    )
 }
 
 </script>

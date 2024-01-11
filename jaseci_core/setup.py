@@ -43,6 +43,9 @@ setup(
         "apache-libcloud==3.8.0",
         "azure-storage-blob==12.17.0",
         "python-magic==0.4.27",
+        "websocket-client[optional]==1.7.0",
+        "orjson==3.9.10",
+        "rel==0.4.9.1",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],

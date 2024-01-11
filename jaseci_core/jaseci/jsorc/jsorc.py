@@ -79,7 +79,7 @@ class JsOrc:
 
         cls._config = config
         cls._backoff_interval = max(5, config.get("backoff_interval", 10))
-        cls._regeneration_queues = config.get("pre_loaded_services", [])
+        cls._regeneration_queues += config.get("pre_loaded_services", [])
 
     @classmethod
     def run(cls):
@@ -342,6 +342,7 @@ class JsOrc:
         manifest_type: ManifestType = ManifestType.DEDICATED,
         priority: int = 0,
         proxy: bool = False,
+        pre_loaded: bool = False,
     ):
         """
         Save the class in services options
@@ -354,16 +355,20 @@ class JsOrc:
         """
 
         def decorator(service: T) -> T:
+            service_name = name or service.__name__
+            if pre_loaded:
+                cls._regeneration_queues.append(service_name)
             cls.push(
-                name=name or service.__name__,
+                name=service_name,
                 target=cls._services,
                 entry={
                     "type": service,
-                    "config": (config or f"{name}_CONFIG").upper(),
+                    "config": (config or f"{service_name}_CONFIG").upper(),
                     "manifest": manifest,
                     "manifest_type": manifest_type,
                     "priority": priority,
                     "proxy": proxy,
+                    "pre_loaded": pre_loaded,
                     "date_added": int(datetime.utcnow().timestamp() * 1000),
                 },
             )
