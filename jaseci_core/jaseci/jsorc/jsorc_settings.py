@@ -209,3 +209,18 @@ class JsOrcSettings:
     }
 
     DB_REGEN_MANIFEST = load_default_yaml("database")
+
+    ###############################################################################################################
+    # -------------------------------------------------- SOCKET ------------------------------------------------- #
+    ###############################################################################################################
+
+    SOCKET_CONFIG = {
+        "enabled": False,
+        "quiet": False,
+        "automated": False,
+        "url": os.getenv("SOCKET_URL", "ws://jaseci-socket/ws"),
+        "ping_url": os.getenv("SOCKET_PING_URL", "http://jaseci-socket/healthz"),
+        "auth": os.getenv("SOCKET_AUTH", "12345678"),
+    }
+
+    SOCKET_MANIFEST = load_default_yaml("socket")

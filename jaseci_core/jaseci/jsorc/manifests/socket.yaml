@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci-socket
+  namespace: socket
+spec:
+  selector:
+    app: jaseci-socket
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci-socket
+  namespace: socket
+spec:
+  selector:
+    matchLabels:
+      app: jaseci-socket
+  template:
+    metadata:
+      labels:
+        app: jaseci-socket
+    spec:
+      containers:
+      - name: jaseci-socket
+        image: python:3.10-slim
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        command: [bash, -c, "source script/socket_up"]
+        ports:
+        - containerPort: 80
+        env:
+        - name: SOCKET_AUTH
+          valueFrom:
+            secretKeyRef:
+              name: jaseci-socket-auth
+              key: auth
+        volumeMounts:
+        - name: prod-script
+          mountPath: /script
+      volumes:
+        - name: prod-script
+          configMap:
+            name: jaseci-socket-up
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jaseci-socket-auth
+  namespace: socket
+type: Opaque
+data:
+  auth: MjQzMjYyMjQzMTMyMjQ2ODJlNmI1NzZmNTc2MjcxNGQ0Mzc0NTYzMzUxNmM1NTRlNTU3MzY0NTI2NTc2NDE0MjY5Mzc1MzQ3MzA0Mzc4NGI1NzRiMzU1YTczMzAzMzc1NzE1OTMyMzgzNDc5NmMzNzU3NDI1YTcx
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaseci-socket-up
+  namespace: socket
+data:
+  socket_up: |-
+    apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
+    git clone https://github.com/Jaseci-Labs/jaseci.git
+    cd /jaseci/jaseci_socket; source install.sh;
+    jssocket -p 80

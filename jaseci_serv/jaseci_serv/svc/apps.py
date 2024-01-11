@@ -9,6 +9,7 @@ class CoreApiConfig(AppConfig):
 
     def ready(self):
         from .task_svc import TaskService  # noqa
+        from .socket_svc import SocketService  # noqa
 
         if os.environ.get("RUN_MAIN"):
             JsOrc.run()
