@@ -53,7 +53,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
+        print("inside proc module-----------1")
+        for i in node.body:
+            print(i)
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
+        print("inside proc module-----------2 ")
         valid = [
             i
             for i in elements
@@ -70,6 +74,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=elements,
         )
         ret.gen.py_ast = node
+        print("return: ", ret)
         return self.nu(ret)
 
     def proc_function_def(
@@ -512,31 +517,49 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         print("coming here")
         func = self.convert(node.func)
+        print("coming here2 func:", func)
         args = [self.convert(arg) for arg in node.args]
+        print("coming here3  args:", args)
         valid_args = [
-            arguements for arguements in args if isinstance(arguements, ast.AtomExpr)
+            arguements for arguements in args if isinstance(arguements, ast.Expr)
         ]
 
-        # if len(valid_args) == len(args):
-        #     valid_args = ast.SubNodeList[ast.AtomExpr](items=valid_args, kid=[args])
-        # else:
-        #     self.error("Length mismatch in for args")
+        if len(valid_args) == len(args):
+            valid_args1 = ast.SubNodeList[ast.Expr](items=valid_args, kid=args)
+        else:
+            self.error("Length mismatch in for args")
 
         keywords = [self.convert(keyword) for keyword in node.keywords]
+        print("coming here4  keywords:", node.keywords, ",", keywords)
         valid_keywords = [
-            keyword for keyword in keywords if isinstance(keyword, ast.AtomExpr)
+            keyword for keyword in keywords if isinstance(keyword, ast.KWPair)
         ]
-        # if len(valid_keywords) == len(keywords):
-        #     valid_keywords = ast.SubNodeList[ast.KWPair](items=valid_keywords, kid=[keywords])
-        # else:
-        #     self.error("Length mismatch in for keywords")
+        if len(valid_keywords) == len(keywords):
+            if valid_keywords:
+                print("inside the valid keywords")
+                valid_keywords1 = ast.SubNodeList[ast.KWPair](
+                    items=valid_keywords, kid=keywords
+                )
+            else:
+                print("No valid keywords")
+                valid_keywords1 = ast.SubNodeList[ast.KWPair](items=[], kid=[])
+            print(valid_keywords1)
+        else:
+            self.error("Length mismatch in for keywords")
 
+        kids = [func, valid_args1, valid_keywords1]
+
+        params = ast.SubNodeList[ast.Expr | ast.KWPair](
+            items=valid_args + valid_keywords,
+            kid=[valid_args1, valid_keywords1],
+        )
+        print("coming here5")
         if isinstance(func, ast.Expr):
             print("func is ok")
             return ast.FuncCall(
                 target=func,
-                params=[valid_args, valid_keywords],
-                kid=[func, args, keywords],
+                params=params,
+                kid=kids,
             )
         else:
             raise self.ice()
@@ -666,7 +689,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ctx: expr_context
         """
         # id = self.convert(node.id)
-        return ast.Name(
+        # ctx = self.convert(node.ctx)
+        # print("no issue with ctx")
+        # id = self.convert(node.id)
+        # print("no issue with id")
+        # kid = [ctx]
+        # print(node.ctx, ",", ctx, ",",kid)
+        param = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
             value=node.id,
@@ -677,9 +706,25 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
             kid=[],
         )
+        print("param is : ", param)
+        return param
 
-    def proc_load(self, node: py_ast.Name) -> ast.Name:
+    def proc_load(self, node: py_ast.Name) -> None:
         """Process python node."""
+        # print(node.ctx, "...,")
+        # param = ast.Name(
+        #     file_path=self.mod_path,
+        #     name=Tok.NAME,
+        #     value=node.id,
+        #     line=node.lineno,
+        #     col_start=node.col_offset,
+        #     col_end=node.col_offset + len(node.id),
+        #     pos_start=0,
+        #     pos_end=0,
+        #     kid=[],
+        # )
+        # print("param is : ", param)
+        # return param
 
     def proc_named_expr(self, node: py_ast.NamedExpr) -> None:
         """Process python node."""
