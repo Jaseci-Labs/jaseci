@@ -14,7 +14,7 @@ setup(
     install_requires=[
         "click>=8.1.0,<8.2.0",
         "click-shell>=2.1,<2.2",
-        "numpy>=1.23.0,<1.24.0",
+        "numpy>=1.26.0,<1.27.0",
         "antlr4-python3-runtime>=4.9.3,<4.10.0",
         "fastapi[all]>=0.75.0,<1.0.0",
         "requests",
@@ -33,7 +33,7 @@ setup(
         "pytest-xdist",
         "pytest-cov",
         "validators==0.21.2",
-        "psycopg2-binary==2.9.5",
+        "psycopg2-binary",
         "pygls==1.0.2",
         "mock",
         "beautifulsoup4>=4.12.2, <4.13.0",
@@ -43,6 +43,8 @@ setup(
         "apache-libcloud==3.8.0",
         "azure-storage-blob==12.17.0",
         "python-magic==0.4.27",
+        "async_timeout>=4.0.0,<4.1.0",
+        "cffi",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],

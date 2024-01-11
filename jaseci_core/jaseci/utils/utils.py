@@ -305,14 +305,14 @@ class TestCaseHelper:
             f"Time: {ColCodes.TY}{time()-self.stime:.3f} "
             + f'- {ColCodes.EC}{self.id().split(".")[-1]}: '
         )
-        get_outcome = self.defaultTestResult()
-        self._feedErrorsToResult(get_outcome, self._outcome.errors)
-        if len(get_outcome.errors) or len(get_outcome.failures):
-            result += f"{ColCodes.TR}[failed]{ColCodes.EC}"
-        elif len(self._outcome.skipped):
-            result += f"{ColCodes.TY}[skipped]{ColCodes.EC}"
-        else:
-            result += f"{ColCodes.TG}[passed]{ColCodes.EC}"
+        # get_outcome = self.defaultTestResult()
+        # self._feedErrorsToResult(get_outcome, self._outcome.errors)
+        # if len(get_outcome.errors) or len(get_outcome.failures):
+        #     result += f"{ColCodes.TR}[failed]{ColCodes.EC}"
+        # elif len(self._outcome.skipped):
+        #     result += f"{ColCodes.TY}[skipped]{ColCodes.EC}"
+        # else:
+        #     result += f"{ColCodes.TG}[passed]{ColCodes.EC}"
 
         print(result)
         self.logger_on()
