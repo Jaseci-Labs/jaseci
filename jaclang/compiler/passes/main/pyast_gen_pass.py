@@ -2131,11 +2131,13 @@ class PyastGenPass(Pass):
                                                         value=self.sync(
                                                             ast3.Name(
                                                                 id="i", ctx=ast3.Load()
-                                                            )
+                                                            ),
+                                                            jac_node=x,
                                                         ),
                                                         attr=x.gen.py_ast.left.id,
                                                         ctx=ast3.Load(),
-                                                    )
+                                                    ),
+                                                    jac_node=x,
                                                 ),
                                                 ops=[
                                                     x.gen.py_ast.ops[0]
@@ -2143,7 +2145,8 @@ class PyastGenPass(Pass):
                                                 comparators=[
                                                     x.gen.py_ast.comparators[0]
                                                 ],
-                                            )
+                                            ),
+                                            jac_node=x,
                                         )
                                         for x in node.compares.items
                                     ],
