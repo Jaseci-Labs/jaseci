@@ -2123,7 +2123,30 @@ class PyastGenPass(Pass):
                                         ast3.Name(id="i", ctx=ast3.Store())
                                     ),
                                     iter=self.sync(ast3.Name(id="x", ctx=ast3.Load())),
-                                    ifs=[x.gen.py_ast for x in node.compares.items],
+                                    ifs=[
+                                        self.sync(
+                                            ast3.Compare(
+                                                left=self.sync(
+                                                    ast3.Attribute(
+                                                        value=self.sync(
+                                                            ast3.Name(
+                                                                id="i", ctx=ast3.Load()
+                                                            )
+                                                        ),
+                                                        attr=x.gen.py_ast.left.id,
+                                                        ctx=ast3.Load(),
+                                                    )
+                                                ),
+                                                ops=[
+                                                    x.gen.py_ast.ops[0]
+                                                ],  # Assuming BinaryExpr has only one operator
+                                                comparators=[
+                                                    x.gen.py_ast.comparators[0]
+                                                ],
+                                            )
+                                        )
+                                        for x in node.compares.items
+                                    ],
                                     is_async=0,
                                 )
                             )
