@@ -76,6 +76,7 @@ class JacFormatPass(Pass):
         body: Sequence[ElementStmt],
         is_imported: bool,
         """
+        prev_token = None
         for i in node.kid:
             if isinstance(i, ast.String):
                 self.emit_ln(node, f" {i.gen.jac}")
@@ -84,7 +85,8 @@ class JacFormatPass(Pass):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
                 else:
-                    self.emit_ln(node, "")
+                    if prev_token is not None:
+                        self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Token):
                 self.emit(node, i.value.strip("") + " ")
@@ -103,6 +105,7 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                 self.emit_ln(node, "")
             last_element = i
+        prev_token = i
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -113,6 +116,7 @@ class JacFormatPass(Pass):
         doc: Optional[String] = None,
         """
         start = True
+        prev_token = None
         for i in node.kid:
             if isinstance(i, ast.String):
                 self.emit_ln(node, i.gen.jac)
@@ -120,6 +124,9 @@ class JacFormatPass(Pass):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
                 else:
+                    if isinstance(prev_token, ast.Semi):
+                        self.emit_ln(node, "")
+                        self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Semi):
                 self.emit(node, f"{i.gen.jac} ")
@@ -129,6 +136,7 @@ class JacFormatPass(Pass):
                     start = False
                 else:
                     self.emit(node, f" {i.gen.jac}")
+            prev_token = i
         if isinstance(
             node.kid[-1], (ast.Semi, ast.CommentToken)
         ) and not node.gen.jac.endswith("\n"):
