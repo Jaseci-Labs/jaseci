@@ -515,54 +515,75 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         args: list[expr]
         keywords: list[keyword]
         """
-        print("coming here")
         func = self.convert(node.func)
-        print("coming here2 func:", func)
+        params_in: list[ast.Expr | ast.KWPair] = []
         args = [self.convert(arg) for arg in node.args]
-        print("coming here3  args:", args)
-        valid_args = [
-            arguements for arguements in args if isinstance(arguements, ast.Expr)
-        ]
-
-        if len(valid_args) == len(args):
-            valid_args1 = ast.SubNodeList[ast.Expr](items=valid_args, kid=args)
-        else:
-            self.error("Length mismatch in for args")
-
         keywords = [self.convert(keyword) for keyword in node.keywords]
-        print("coming here4  keywords:", node.keywords, ",", keywords)
-        valid_keywords = [
-            keyword for keyword in keywords if isinstance(keyword, ast.KWPair)
-        ]
-        if len(valid_keywords) == len(keywords):
-            if valid_keywords:
-                print("inside the valid keywords")
-                valid_keywords1 = ast.SubNodeList[ast.KWPair](
-                    items=valid_keywords, kid=keywords
-                )
-            else:
-                print("No valid keywords")
-                valid_keywords1 = ast.SubNodeList[ast.KWPair](items=[], kid=[])
-            print(valid_keywords1)
-        else:
-            self.error("Length mismatch in for keywords")
-
-        kids = [func, valid_args1, valid_keywords1]
-
-        params = ast.SubNodeList[ast.Expr | ast.KWPair](
-            items=valid_args + valid_keywords,
-            kid=[valid_args1, valid_keywords1],
-        )
+        for i in args:
+            if isinstance(i, ast.Expr):
+                params_in.append(i)
+        for i in keywords:
+            if isinstance(i, ast.KWPair):
+                params_in.append(i)
+        params_in2: ast.SubNodeList = ast.SubNodeList(items=params_in, kid=params_in)
         print("coming here5")
         if isinstance(func, ast.Expr):
             print("func is ok")
             return ast.FuncCall(
                 target=func,
-                params=params,
-                kid=kids,
+                params=params_in2,
+                kid=params_in,
             )
         else:
             raise self.ice()
+        # print("coming here")
+        # func = self.convert(node.func)
+        # print("coming here2 func:", func)
+        # args = [self.convert(arg) for arg in node.args]
+        # print("coming here3  args:", args)
+        # valid_args = [
+        #     arguements for arguements in args if isinstance(arguements, ast.Expr)
+        # ]
+
+        # if len(valid_args) == len(args):
+        #     valid_args1 = ast.SubNodeList[ast.Expr](items=valid_args, kid=args)
+        # else:
+        #     self.error("Length mismatch in for args")
+
+        # keywords = [self.convert(keyword) for keyword in node.keywords]
+        # print("coming here4  keywords:", node.keywords, ",", keywords)
+        # valid_keywords = [
+        #     keyword for keyword in keywords if isinstance(keyword, ast.KWPair)
+        # ]
+        # if len(valid_keywords) == len(keywords):
+        #     if valid_keywords:
+        #         print("inside the valid keywords")
+        #         valid_keywords1 = ast.SubNodeList[ast.KWPair](
+        #             items=valid_keywords, kid=keywords
+        #         )
+        #     else:
+        #         print("No valid keywords")
+        #         valid_keywords1 = ast.SubNodeList[ast.KWPair](items=[], kid=[])
+        #     print(valid_keywords1)
+        # else:
+        #     self.error("Length mismatch in for keywords")
+
+        # kids = [func, valid_args1, valid_keywords1]
+
+        # params = ast.SubNodeList[ast.Expr | ast.KWPair](
+        #     items=valid_args + valid_keywords,
+        #     kid=[valid_args1, valid_keywords1],
+        # )
+        # print("coming here5")
+        # if isinstance(func, ast.Expr):
+        #     print("func is ok")
+        #     return ast.FuncCall(
+        #         target=func,
+        #         params=params,
+        #         kid=kids,
+        #     )
+        # else:
+        #     raise self.ice()
 
     def proc_compare(self, node: py_ast.Compare) -> None:
         """Process python node."""
@@ -688,13 +709,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         id: _Identifier
         ctx: expr_context
         """
-        # id = self.convert(node.id)
-        # ctx = self.convert(node.ctx)
-        # print("no issue with ctx")
-        # id = self.convert(node.id)
-        # print("no issue with id")
-        # kid = [ctx]
-        # print(node.ctx, ",", ctx, ",",kid)
         param = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
