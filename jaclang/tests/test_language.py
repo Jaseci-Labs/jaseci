@@ -138,3 +138,27 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("TestObj", stdout_value)
+
+    def test_gen_dot_bubble(self) -> None:
+        """Test the dot gen of nodes and edges of bubblesort."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("bubble_sort", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn(
+            '[label="inner_node(main=5, sub=2)"];',
+            stdout_value,
+        )
+
+    def test_assign_compr(self) -> None:
+        """Test assign_compr."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("assign_compr", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            "[MyObj(apple=5, banana=7), MyObj(apple=5, banana=7)]\n",
+            stdout_value,
+        )
