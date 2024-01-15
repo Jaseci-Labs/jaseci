@@ -1,4 +1,10 @@
+can square(x: int) -> int {
+    return (x ** 2);
+}
+
+
 with entry {
-"hello" |> print;
-"hello"|> len |> print;
+    number = int(input("Give a Number: "));
+    result = number |> square ;
+    print(result);
 }

@@ -1,17 +1,33 @@
+#Example 1
+
 with entry{
-    for number in range(1, 5){
-        square = number ** 2;
-        print(f"The square of {number} is: {square}");
+    start_range = 1;
+    end_range = 5;
+
+    for i in range(start_range, end_range + 1){
+        for number = 1 to number<=10 by number+=1{
+            product = i * number;
+            print(f"{i} x {number} = {product}");
         }
-}
-
-with entry{
-
-    for i=1 to i<10 by i+=2 {
-         print(i * 5);
+        print("\n", end="");
     }
-    else{
-        print("Loop completed.");}
+
 }
+#Example 2
+with entry{
+    n=5;
+    for i=1 to i <= n by i+=1{
+        for j=1 to j<=n-i by j+=1{
+            print("  ", end="");
+        }
+        for k=1 to k<=(2*i)-1 by k+=1{
+            print("* ", end="");
+        }
+    print();
+    }
+}
+
+
+
 
 
