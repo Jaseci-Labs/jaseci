@@ -68,6 +68,13 @@ def customer_retrieve(customer_id: str, **kwargs):
 
 
 @jaseci_action()
+def customer_search(query: str, **kwargs):
+    """search customer"""
+
+    return stripe().Customer.search(query=query, **kwargs)
+
+
+@jaseci_action()
 def customer_delete(customer_id: str, **kwargs):
     """delete customer"""
 
