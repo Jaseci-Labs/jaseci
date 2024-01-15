@@ -1,5 +1,5 @@
 can foo(x:int,y:int,z:int){
-    return(x/y , y//z);
+    return(x*y , y*z);
 }
 
 with entry{
