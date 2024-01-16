@@ -4,7 +4,7 @@ can square(x: int) -> int {
 
 
 with entry {
-    number = int(input("Give a Number: "));
+    number = 5;
     result = number |> square ;
     print(result);
 }

@@ -1,5 +1,5 @@
 obj Point {
-    has x: flaot, y: float;
+    has x: float, y: float;
 }
 with entry{
     data=Point(x=9,y=0);

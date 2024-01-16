@@ -1,13 +1,13 @@
 x = "a"
 y = 25
 
-tokens = f"Hello {x} {y} {{This is an escaped curly brace}}"
-print(tokens)
+# tokens = f"Hello {x} {y} {{This is an escaped curly brace}}"
+# print(tokens)
 
 person = {"name": "Jane", "age": 25}
 print(
     f"Hello, {person['name']}! You're {person['age']} years old."
-)  # This is a comment
+)  
 
 # Whitespace comment still did not write yet
 # This is comment in multiline

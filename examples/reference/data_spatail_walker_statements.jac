@@ -4,7 +4,7 @@ walker walker_1{
 node node_a{
     has val:int;
     can print_something with walker_1 entry;
-    #can do_something with walker_2 entry;
+    can do_something with walker_2 entry;
 }
 walker walker_2{
      can skip_root with `<root> entry {

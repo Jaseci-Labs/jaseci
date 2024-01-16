@@ -1,17 +1,3 @@
-#example 1
-can foo(){
-    for i in range(3){
-        yield i;
-        }
-}
-
-with entry{
-    for i in foo(){
-        print("Yielded:", i);
-        }
-}
-
-#Example 2
 can fibonacci(n:int){
     (a, b ) = (0, 1) ;
     count = 0 ;
@@ -23,7 +9,7 @@ can fibonacci(n:int){
     }
 }
 with entry{
-    number = int(input("Enter a Number: "));
+    number = 15;
     for num in fibonacci(number){
         print(num);
     }
