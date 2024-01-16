@@ -169,7 +169,7 @@ async def getters(page: Page, specss: list[dict], urls: dict):
                             clone = d.cloneNode(true);
                             {exel_str}
                             return clone.textContent;
-                        }}).join("\n");
+                        }}).join("\\n");
                 """
             elif method == "custom":
                 expression = f'{{{specs.get("expression")}}}'
