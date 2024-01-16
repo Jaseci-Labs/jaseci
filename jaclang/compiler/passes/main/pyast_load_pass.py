@@ -65,6 +65,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ]
         if len(valid) != len(elements):
             self.error("Invalid module body")
+        print("before ret")
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
@@ -526,9 +527,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if isinstance(i, ast.KWPair):
                 params_in.append(i)
         params_in2: ast.SubNodeList = ast.SubNodeList(items=params_in, kid=params_in)
-        print("coming here5")
         if isinstance(func, ast.Expr):
-            print("func is ok")
             return ast.FuncCall(
                 target=func,
                 params=params_in2,
@@ -598,6 +597,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             s: Any
             n: int | float | complex
         """
+        print("node value:", node.value)
         if isinstance(node.value, str):
             return ast.String(
                 file_path=self.mod_path,
@@ -720,7 +720,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
             kid=[],
         )
-        print("param is : ", param)
         return param
 
     def proc_load(self, node: py_ast.Name) -> None:
@@ -786,23 +785,50 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Process python node."""
 
     def proc_arg(self, node: py_ast.arg) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class arg(AST):
+        if sys.version_info >= (3, 10):
+            __match_args__ = ("arg", "annotation", "type_comment")
+        arg: _Identifier
+        annotation: expr | None
+        """
 
     def proc_arguments(self, node: py_ast.arguments) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class arguments(AST):
+        if sys.version_info >= (3, 10):
+            __match_args__ = ("posonlyargs", "args", "vararg", "kwonlyargs", "kw_defaults", "kwarg", "defaults")
+        if sys.version_info >= (3, 8):
+            posonlyargs: list[arg]
+        args: list[arg]
+        vararg: arg | None
+        kwonlyargs: list[arg]
+        kw_defaults: list[expr | None]
+        kwarg: arg | None
+        defaults: list[expr]
+        """
+        # args = [self.convert(arg) for arg in node.args]
+        # vararg = node.vararg
+        # kwonlyargs = [self.convert(arg) for arg in node.args]
 
     def proc_comprehension(self, node: py_ast.comprehension) -> None:
         """Process python node."""
 
-    def proc_keyword(self, node: py_ast.keyword) -> None:
+    def proc_keyword(self, node: py_ast.keyword) -> ast.KWPair:
         """Process python node.
 
         class keyword(AST):
         if sys.version_info >= (3, 10):
             __match_args__ = ("arg", "value")
-        arg: _Identifier | None
+        arg: _Identifier
         value: expr
         """
+        if isinstance(node.value, ast.Expr):
+            return ast.KWPair(key=node.arg, value=node.value, kid=[])
+        else:
+            raise self.ice()
 
     def proc_match_case(self, node: py_ast.match_case) -> None:
         """Process python node."""
