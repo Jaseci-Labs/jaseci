@@ -4,7 +4,6 @@ walker walker_1{
 node node_a{
     has val:int;
     can print_something with walker_1 entry;
-    can do_something with walker_2 entry;
 }
 walker walker_2{
      can skip_root with `<root> entry {
@@ -22,6 +21,10 @@ walker walker_2{
 }
 :walker:walker_2:can:do_something{
     print(f"walker_2 reached to {<here>}");
+    if <here>.val == 4{
+        # walker_2 will terminate visiting nodes.
+        disengage;  
+    }
     visit -->;
 }
 :node:node_a:can:print_something -> str{

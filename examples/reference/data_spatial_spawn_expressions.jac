@@ -16,8 +16,8 @@ node node_a{
 }
 
 :node:node_a:can:add{
-    <self>.x= "Give a number :" |> input ;
-    <self>.y= "Give a number :" |> input ;
+    <self>.x= 550 ;
+    <self>.y= 450 ;
     print(int(<self>.x) + int(<self>.y));
 
 }
