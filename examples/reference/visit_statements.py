@@ -2,9 +2,7 @@ from __future__ import annotations
 from jaclang.plugin.feature import JacFeature as jac
 
 
-@jac.make_architype(
-    "walker", on_entry=[jac.DSFunc("func2", jac.RootType)], on_exit=[]
-)
+@jac.make_architype("walker", on_entry=[jac.DSFunc("func2", jac.RootType)], on_exit=[])
 class walker_1:
     def func2(self, walker_here: jac.RootType) -> None:
         end = walker_here
@@ -32,9 +30,7 @@ class node_1:
             print("finished visitng all nodes  ....\n")
 
 
-@jac.make_architype(
-    "walker", on_entry=[jac.DSFunc("func_3", jac.RootType)], on_exit=[]
-)
+@jac.make_architype("walker", on_entry=[jac.DSFunc("func_3", jac.RootType)], on_exit=[])
 class walker_2:
     def func_3(self, walker_here: jac.RootType) -> None:
         print("visiting specific node by w3\n")

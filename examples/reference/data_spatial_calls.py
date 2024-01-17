@@ -2,9 +2,7 @@ from __future__ import annotations
 from jaclang.plugin.feature import JacFeature as jac
 
 
-@jac.make_architype(
-    "walker", on_entry=[jac.DSFunc("func2", jac.RootType)], on_exit=[]
-)
+@jac.make_architype("walker", on_entry=[jac.DSFunc("func2", jac.RootType)], on_exit=[])
 class walker_1:
     def func2(self, walker_here: jac.RootType) -> None:
         end = walker_here

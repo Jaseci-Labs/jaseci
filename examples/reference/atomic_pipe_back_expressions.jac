@@ -4,5 +4,5 @@ with entry {
     b = [4,8,9,13,20];
     c = len<:a + len<:b ; #len(a) + len(b)
     print(c);
-    
+
 }

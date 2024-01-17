@@ -5,9 +5,7 @@ y = 25
 # print(tokens)
 
 person = {"name": "Jane", "age": 25}
-print(
-    f"Hello, {person['name']}! You're {person['age']} years old."
-)  
+print(f"Hello, {person['name']}! You're {person['age']} years old.")
 
 # Whitespace comment still did not write yet
 # This is comment in multiline

@@ -9,7 +9,7 @@ l_1 = [2, 3, 4, 5]
 
 def entry():
     x = X
-    
+
     a = "abcde...."
     b = True
     c = bin(12)
@@ -17,6 +17,7 @@ def entry():
     # e = 0x4E
     print(l_1, a, b, c, d)
     print(x.y)
+
 
 # Run the entry block
 entry()

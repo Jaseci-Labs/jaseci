@@ -31,9 +31,12 @@ my_list = [1, 2, 3, 4, 5]
 result = 3 in my_list
 print(result)  # Output: True
 
-is_star_player = True;  # Player is a star player
-has_high_score = False; # Player has a high score in the game
-is_team_captain = True; # Player is the team captain
+is_star_player = True
+# Player is a star player
+has_high_score = False
+# Player has a high score in the game
+is_team_captain = True
+# Player is the team captain
 
 # Logical OR: Star Player or High Score
 access_allowed_or = is_star_player or has_high_score

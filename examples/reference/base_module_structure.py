@@ -6,8 +6,9 @@ it is assumed to be a module docstring.
 """
 
 """A docstring for add function"""
+
+
 def add(a: int, b: int) -> int:
-    
     return a + b
 
 

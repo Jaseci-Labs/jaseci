@@ -6,7 +6,7 @@ with entry{
     # print(tokens);
 
     person = {"name": "Jane", "age": 25};
-    print(f"Hello, {person['name']}! You're {person['age']} years old.");       
+    print(f"Hello, {person['name']}! You're {person['age']} years old.");
 
     print("This is the first line.\n This is the second line.");
     print("This willnot print.\r This will be printed");

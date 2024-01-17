@@ -23,7 +23,7 @@ walker walker_2{
     print(f"walker_2 reached to {<here>}");
     if <here>.val == 4{
         # walker_2 will terminate visiting nodes.
-        disengage;  
+        disengage;
     }
     visit -->;
 }

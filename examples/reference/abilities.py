@@ -46,7 +46,6 @@ interact_with_animal(Milo)
 interact_with_animal(Leo)
 
 
-
 # Declaration & Definition in same block
 def greet(name):
     print(f"Hey, {name} Welcome to Jaseci!")
