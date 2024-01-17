@@ -46,7 +46,7 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: named_ref type_tag (EQ expression)?
+typed_has_clause: semstring named_ref type_tag (EQ expression)?
 type_tag: COLON expression
 
 // Enumerations
@@ -68,9 +68,9 @@ ability: decorators? ability_def
         | decorators? KW_ASYNC ability_decl
         | decorators? ability_decl
 
-ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_STATIC? KW_CAN semstring access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_STATIC? KW_CAN semstring access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
 func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
 func_decl_params: (param_var COMMA)* param_var
@@ -428,10 +428,10 @@ arch_ref: object_ref
         | type_ref
 
 type_ref: TYPE_OP (named_ref | builtin_type)
-node_ref: NODE_OP named_ref
-edge_ref: EDGE_OP named_ref
-walker_ref: WALKER_OP named_ref
-object_ref: OBJECT_OP named_ref
+node_ref: NODE_OP semstring named_ref
+edge_ref: EDGE_OP semstring named_ref
+walker_ref: WALKER_OP semstring named_ref
+object_ref: OBJECT_OP semstring named_ref
 enum_ref: ENUM_OP named_ref
 ability_ref: ABILITY_OP named_ref
 
