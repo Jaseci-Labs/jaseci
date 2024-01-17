@@ -75,7 +75,7 @@ event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
 func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
-return_type_tag: RETURN_HINT expression
+return_type_tag: RETURN_HINT semstring? expression
 
 // Global variables
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
