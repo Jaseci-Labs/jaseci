@@ -431,7 +431,7 @@ type_ref: TYPE_OP (named_ref | builtin_type)
 node_ref: NODE_OP semstring? named_ref
 edge_ref: EDGE_OP semstring? named_ref
 walker_ref: WALKER_OP semstring? named_ref
-object_ref: OBJECT_OP semstring?? named_ref
+object_ref: OBJECT_OP semstring? named_ref
 enum_ref: ENUM_OP named_ref
 ability_ref: ABILITY_OP named_ref
 
