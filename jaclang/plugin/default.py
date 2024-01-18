@@ -169,6 +169,10 @@ class JacFeatureDefaults:
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
     ) -> list[T]:
         """Jac's assign comprehension feature."""
+        for obj in target:
+            attrs, values = attr_val
+            for attr, value in zip(attrs, values):
+                setattr(obj, attr, value)
         return target
 
     @staticmethod
