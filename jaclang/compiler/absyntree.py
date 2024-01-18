@@ -140,6 +140,13 @@ class AstDocNode(AstNode):
         """Initialize ast."""
         self.doc: Optional[String] = doc
 
+class AstSemStrNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, semstr: Optional[String]) -> None:
+        """Initialize ast."""
+        self.semstr: Optional[String] = semstr
+
 
 class AstAsyncNode(AstNode):
     """Nodes that have access."""
@@ -209,7 +216,7 @@ class NameSpec(AtomExpr, EnumBlockStmt):
     """NameSpec node type for Jac Ast."""
 
 
-class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode):
+class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
     """ArchSpec node type for Jac Ast."""
 
     def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
@@ -231,10 +238,13 @@ class SubTag(AstNode, Generic[T]):
         self,
         tag: T,
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize tag node."""
         self.tag = tag
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
+
 
 
 class SubNodeList(AstNode, Generic[T]):
@@ -447,6 +457,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
+        semstr: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
@@ -471,6 +482,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
 
 
@@ -512,6 +524,7 @@ class Enum(ArchSpec, AstAccessNode):
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
+        semstr: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
@@ -527,6 +540,7 @@ class Enum(ArchSpec, AstAccessNode):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        AstSemStrNode.__init__(self, semstr==semstr)
         ArchSpec.__init__(self, decorators=decorators)
 
 
@@ -564,6 +578,7 @@ class Ability(
     AstAsyncNode,
     ArchBlockStmt,
     CodeBlockStmt,
+    AstSemStrNode,
 ):
     """Ability node type for Jac Ast."""
 
@@ -575,6 +590,7 @@ class Ability(
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
+        semstr: Optional[String],
         signature: Optional[FuncSignature | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
         kid: Sequence[AstNode],
@@ -598,6 +614,7 @@ class Ability(
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        AstSemStrNode.__init__(self, semstr=semstr)
         AstAsyncNode.__init__(self, is_async=is_async)
 
     @property
@@ -789,7 +806,7 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         AstDocNode.__init__(self, doc=doc)
 
 
-class HasVar(AstSymbolNode, AstTypedVarNode):
+class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
     """HasVar node type for Jac Ast."""
 
     def __init__(
@@ -798,6 +815,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode):
         type_tag: SubTag[Expr],
         value: Optional[Expr],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize has var node."""
         self.name = name
@@ -810,6 +828,8 @@ class HasVar(AstSymbolNode, AstTypedVarNode):
             sym_type=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
+        AstSemStrNode.__init__(self, semstr=semstr)
+
 
 
 class TypedCtxBlock(CodeBlockStmt):

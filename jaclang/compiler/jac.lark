@@ -28,7 +28,7 @@ sub_name: COLON NAME
 
 // Architypes
 architype: decorators? (enum | architype_def | architype_decl)
-architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
+architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
 decorators: (DECOR_OP atomic_chain)+
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
@@ -46,14 +46,14 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: semstring? named_ref type_tag (EQ expression)?
+typed_has_clause: STRING? named_ref type_tag (EQ expression)?
 type_tag: COLON expression
 
 // Enumerations
 enum: enum_def
      | enum_decl
 
-enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
+enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
 
 // Enumeration Bodies
@@ -68,14 +68,14 @@ ability: decorators? ability_def
         | decorators? KW_ASYNC ability_decl
         | decorators? ability_decl
 
-ability_decl: KW_STATIC? KW_CAN semstring? access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_STATIC? KW_CAN  access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_STATIC? KW_CAN semstring? access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
 func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
-return_type_tag: RETURN_HINT semstring? expression
+return_type_tag: RETURN_HINT STRING? expression
 
 // Global variables
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
@@ -428,10 +428,10 @@ arch_ref: object_ref
         | type_ref
 
 type_ref: TYPE_OP (named_ref | builtin_type)
-node_ref: NODE_OP semstring? named_ref
-edge_ref: EDGE_OP semstring? named_ref
-walker_ref: WALKER_OP semstring? named_ref
-object_ref: OBJECT_OP semstring? named_ref
+node_ref: NODE_OP named_ref
+edge_ref: EDGE_OP named_ref
+walker_ref: WALKER_OP named_ref
+object_ref: OBJECT_OP named_ref
 enum_ref: ENUM_OP named_ref
 ability_ref: ABILITY_OP named_ref
 
