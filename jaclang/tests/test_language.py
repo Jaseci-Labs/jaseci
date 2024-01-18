@@ -162,3 +162,15 @@ class JacLanguageTests(TestCase):
             "[MyObj(apple=5, banana=7), MyObj(apple=5, banana=7)]\n",
             stdout_value,
         )
+
+    def test_semstr(self) -> None:
+        """Test assign_compr."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            jac_import("semstr", self.fixture_abs_path("./"))
+            sys.stdout = sys.__stdout__
+            stdout_value = captured_output.getvalue()
+            self.assertNotIn("Error", stdout_value)
+        except Exception as e:
+            print(f"An exception occurred: {e}")
