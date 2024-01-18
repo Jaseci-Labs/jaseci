@@ -45,7 +45,9 @@ class ImportPass(Pass):
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
                 elif i.lang.tag.value == "py":
-                    self.import_py_module(node=i, mod_path=node.loc.mod_path)
+                    mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
+                    i.sub_module = mod
+                    i.add_kids_right([mod], pos_update=False)
                 self.enter_import(i)
             SubNodeTabPass(prior=self, input_ir=node)
         node.mod_deps = self.import_table

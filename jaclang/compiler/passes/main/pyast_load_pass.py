@@ -57,7 +57,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         for i in node.body:
             print(i)
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
-        print("inside proc module-----------2 ")
+        print("inside proc module-----------2:", elements)
         valid = [
             i
             for i in elements
@@ -65,7 +65,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ]
         if len(valid) != len(elements):
             self.error("Invalid module body")
-        print("before ret")
+        print("inside proc module-----------3:", valid)
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
@@ -105,11 +105,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
             kid=[],
         )
+
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
-        if len(valid) != len(body):
-            self.error("Length mismatch in function body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=body)
+        # valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt ))]
+        # if len(valid) != len(body):
+        #     print("body:",body, "valid:", valid)
+        #     self.error("Length mismatch in function body")
+        valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=body, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
@@ -535,54 +537,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
         else:
             raise self.ice()
-        # print("coming here")
-        # func = self.convert(node.func)
-        # print("coming here2 func:", func)
-        # args = [self.convert(arg) for arg in node.args]
-        # print("coming here3  args:", args)
-        # valid_args = [
-        #     arguements for arguements in args if isinstance(arguements, ast.Expr)
-        # ]
-
-        # if len(valid_args) == len(args):
-        #     valid_args1 = ast.SubNodeList[ast.Expr](items=valid_args, kid=args)
-        # else:
-        #     self.error("Length mismatch in for args")
-
-        # keywords = [self.convert(keyword) for keyword in node.keywords]
-        # print("coming here4  keywords:", node.keywords, ",", keywords)
-        # valid_keywords = [
-        #     keyword for keyword in keywords if isinstance(keyword, ast.KWPair)
-        # ]
-        # if len(valid_keywords) == len(keywords):
-        #     if valid_keywords:
-        #         print("inside the valid keywords")
-        #         valid_keywords1 = ast.SubNodeList[ast.KWPair](
-        #             items=valid_keywords, kid=keywords
-        #         )
-        #     else:
-        #         print("No valid keywords")
-        #         valid_keywords1 = ast.SubNodeList[ast.KWPair](items=[], kid=[])
-        #     print(valid_keywords1)
-        # else:
-        #     self.error("Length mismatch in for keywords")
-
-        # kids = [func, valid_args1, valid_keywords1]
-
-        # params = ast.SubNodeList[ast.Expr | ast.KWPair](
-        #     items=valid_args + valid_keywords,
-        #     kid=[valid_args1, valid_keywords1],
-        # )
-        # print("coming here5")
-        # if isinstance(func, ast.Expr):
-        #     print("func is ok")
-        #     return ast.FuncCall(
-        #         target=func,
-        #         params=params,
-        #         kid=kids,
-        #     )
-        # else:
-        #     raise self.ice()
 
     def proc_compare(self, node: py_ast.Compare) -> None:
         """Process python node."""
@@ -597,7 +551,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             s: Any
             n: int | float | complex
         """
-        print("node value:", node.value)
+        # if(node.value == None):
+        #     print("node value:", node.value, node.lineno)
         if isinstance(node.value, str):
             return ast.String(
                 file_path=self.mod_path,
@@ -606,6 +561,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 line=node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(node.value),
+                pos_start=0,
+                pos_end=0,
+                kid=[],
+            )
+        elif node.value is None:
+            return ast.Null(
+                file_path=self.mod_path,
+                name=Tok.STRING,
+                value=node.value,
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset,
                 pos_start=0,
                 pos_end=0,
                 kid=[],

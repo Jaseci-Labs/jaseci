@@ -26,6 +26,8 @@ class PyastBuildPassTests(TestCase):
         for name, value in inspect.getmembers(PyastBuildPass):
             if name.startswith("proc_") and inspect.isfunction(value):
                 pass_func_names.append(name.replace("proc_", ""))
+                print(pass_func_names)
+        print("hello")
         for name in pass_func_names:
             self.assertIn(name, node_names)  # type: ignore
         for name in node_names:
