@@ -64,8 +64,8 @@ class JacReferenceTests(TestCase):
                 code_content = file.read()
             output_py = execute_and_capture_output(code_content)
 
-            print(f"\nJAC Output:\n{output_jac}")
-            print(f"\nPython Output:\n{output_py}")
+            # print(f"\nJAC Output:\n{output_jac}")
+            # print(f"\nPython Output:\n{output_py}")
 
             self.assertGreater(len(output_py), 0)
             self.assertEqual(output_py, output_jac)
