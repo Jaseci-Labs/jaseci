@@ -47,12 +47,6 @@ obj Game {
 
 }
 
-obj level_map {
-    has map:list = [];
-
-    # can <init>(map: list[str]);
-}
-
 #=Object=Abilities ===================================================
 
 :obj:Game:can:createTilemap{
@@ -236,9 +230,3 @@ obj level_map {
 
 
 }
-
-:obj:level_map:can:<init>(map:list[str]) {
-    <self>.map =  map;
-}
-
-
