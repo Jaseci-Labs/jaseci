@@ -661,7 +661,7 @@ class JacParser(Pass):
                             and isinstance(kid[1], (ast.Ability))
                         ):
                             kid[1].is_static = True
-                            kid[0].items.remove(dec)
+                            kid[0].items.remove(dec)  # noqa: B038
                             break
                     if len(kid[0].items):
                         kid[1].decorators = kid[0]

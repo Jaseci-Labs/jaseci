@@ -1,7 +1,12 @@
-def foo():
-    for i in range(3):
-        yield i
+def fibonacci(n: int) -> None:
+    a, b = (0, 1)
+    count = 0
+    while count < n:
+        yield a
+        a, b = (b, a + b)
+        count += 1
 
 
-for i in foo():
-    print("Yielded:", i)
+number = 15
+for num in fibonacci(number):
+    print(num)

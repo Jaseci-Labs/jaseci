@@ -13,7 +13,7 @@ can foo(n_1 : float) {
     return n_1**2;
 }
 
-with entry  :__main__{
+with entry{
     "Hello World! " |> print;
     print(foo(7));
     print(circle(7).area());
