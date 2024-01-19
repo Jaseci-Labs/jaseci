@@ -182,3 +182,18 @@ def run_scripts(page: Page, scripts: list[dict], urls: dict):
         print(f"[script]: running method {method}\n{str(script)}")
         getattr(page, method)(**script)
         add_url(page, urls)
+
+
+def scrape_preview(page: dict):
+    with sync_playwright() as spw:
+        browser = spw.chromium.launch()
+        b_page = browser.new_page()
+        pg_goto = page.get("goto") or {}
+        post_scripts = pg_goto.pop("post_scripts") or []
+
+        b_page.goto(**pg_goto)
+        for script in post_scripts:
+            method = script.pop("method", "evalutate") or "evaluate"
+            getattr(b_page, method)(**script)
+
+        return b_page.evaluate(f"() => document.documentElement.outerHTML")
