@@ -3,6 +3,7 @@
 # This game is built using the pygame module which is imported here
 import:py pygame;
 import:py sys;
+import:py from collections, defaultdict;
 
 # Importing Jac codebase
 include:jac sprites;
@@ -44,6 +45,12 @@ obj Game {
     can game_won;
     can game_over;
 
+}
+
+obj level_map {
+    has map:list = [];
+
+    # can <init>(map: list[str]);
 }
 
 #=Object=Abilities ===================================================
@@ -228,6 +235,10 @@ obj Game {
     }
 
 
+}
+
+:obj:level_map:can:<init>(map:list[str]) {
+    <self>.map =  map;
 }
 
 

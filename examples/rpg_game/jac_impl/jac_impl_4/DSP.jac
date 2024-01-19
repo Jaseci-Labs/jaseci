@@ -30,6 +30,7 @@ node start_screen {
 '''Level node which (should) have unique (ai generated) attributes'''
 node level{
     has game_level:int = 1,
+        level_map:level_map = level_map(tilemap),
         level_id:str = '1_1000',
         played:bool = False;
 
