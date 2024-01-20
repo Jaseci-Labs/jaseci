@@ -143,7 +143,7 @@ class JacLanguageTests(TestCase):
         """Test the dot gen of nodes and edges of bubblesort."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("bubble_sort", self.fixture_abs_path("./"))
+        jac_import("gendot_bubble_sort", self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
@@ -167,10 +167,8 @@ class JacLanguageTests(TestCase):
         """Test assign_compr."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        try:
-            jac_import("semstr", self.fixture_abs_path("./"))
-            sys.stdout = sys.__stdout__
-            stdout_value = captured_output.getvalue()
-            self.assertNotIn("Error", stdout_value)
-        except Exception as e:
-            print(f"An exception occurred: {e}")
+        jac_import("semstr", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn("Error", stdout_value)
+        

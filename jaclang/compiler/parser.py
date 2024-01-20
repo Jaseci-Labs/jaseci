@@ -415,8 +415,8 @@ class JacParser(Pass):
             """
             arch_type = kid[0]
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = kid[2] if access and isinstance(kid[3], ast.AstSemStrNode) else kid[1] if access and isinstance(kid[3], ast.AstSemStrNode) else None
-            name = kid[3] if access and semstr else kid[2] if access or semstr else kid[1]
+            semstr = kid[2] if (access and isinstance(kid[2], ast.String)) else kid[1] if  isinstance(kid[1], ast.String) else None
+            name = kid[3] if (access and semstr) else kid[2] if (access or semstr) else kid[1]
             inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
             if isinstance(arch_type, ast.Token) and isinstance(name, ast.Name):
@@ -569,8 +569,8 @@ class JacParser(Pass):
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = kid[2] if access and isinstance(kid[2], ast.AstSemStrNode) else kid[1] if isinstance(kid[1], ast.AstSemStrNode) else None
-            name = kid[3] if access and semstr else kid[2] if access or semstr else kid[1]
+            semstr = kid[2] if (access and isinstance(kid[2], ast.String)) else kid[1] if isinstance(kid[1], ast.String) else None
+            name = kid[3] if (access and semstr) else kid[2] if (access or semstr) else kid[1]
             inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
             if isinstance(name, ast.Name):
@@ -685,7 +685,7 @@ class JacParser(Pass):
             )
             chomp = chomp[2:] if is_static else chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            semstr = chomp [1] if access and isinstance(chomp[1], ast.AstSemStrNode) else chomp[0] if access or isinstance(chomp[1], ast.AstSemStrNode) else None
+            semstr = chomp [1] if access and isinstance(chomp[1], ast.String) else chomp[0] if access or isinstance(chomp[0], ast.String) else None
             chomp = chomp[2:] if access and semstr else chomp[1:] if access or semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
@@ -746,7 +746,7 @@ class JacParser(Pass):
             chomp = chomp[1:] if is_static else chomp
             chomp = chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            semstr = chomp[1] if access and isinstance(chomp[1], ast.AstSemStrNode) else chomp[0] if access or isinstance(chomp[1], ast.AstSemStrNode) else None
+            semstr = chomp[1] if access and isinstance(chomp[1], ast.string) else chomp[0] if access or isinstance(chomp[1], ast.string) else None
             chomp = chomp[2:] if access and semstr else chomp[1:] if access or semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
@@ -954,7 +954,7 @@ class JacParser(Pass):
 
             typed_has_clause: STRING? named_ref type_tag (EQ expression)?
             """
-            semstr = kid[0] if isinstance(kid[0], ast.AstSemStrNode) else None
+            semstr = kid[0] if isinstance(kid[0], ast.String) else None
             name = kid[1] if semstr else kid[0]
             type_tag = kid[2] if semstr else kid[1]
             value = kid[-1] if isinstance(kid[-1], ast.Expr) else None
@@ -991,7 +991,7 @@ class JacParser(Pass):
                                 
             return_type_tag: RETURN_HINT STRING? expression
             """
-            semstr = kid[1] if isinstance(kid[1], ast.AstSemStrNode) else None
+            semstr = kid[1] if isinstance(kid[1], ast.String) else None
             tag = kid[2] if semstr else kid[1]
 
             if isinstance(kid[1], ast.Expr):

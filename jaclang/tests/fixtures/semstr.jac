@@ -1,18 +1,11 @@
-walker 'users personal journal '
-journal {  
+enum 'enum' emotion {
+        Happy,
+        Sad,
+        Calm,
+        Angry
 }
 
-enum 'user mood'
-mood {
-        HAPPY,
-        SAD,
-        EXCITED,
-        CALM
-
-}
-can 'update user mood' updateMood;
-
-node 'peronality of a user'
+node 'personality'
 personality{
     has 
         'how nice the user is '
@@ -22,5 +15,13 @@ personality{
         'current mood of the user'
         currentMood: mood;
 
-
 }
+
+walker  'users personal journal '
+journal {
+    has 
+         'Daily Entry'
+          count: int;
+}
+
+can 'update user mood' updateMood{}

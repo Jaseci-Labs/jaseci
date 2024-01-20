@@ -540,7 +540,7 @@ class Enum(ArchSpec, AstAccessNode):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
-        AstSemStrNode.__init__(self, semstr==semstr)
+        AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
 
 
@@ -590,10 +590,10 @@ class Ability(
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
-        semstr: Optional[String],
         signature: Optional[FuncSignature | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
         kid: Sequence[AstNode],
+        semstr: Optional[String]=None,
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
@@ -606,6 +606,7 @@ class Ability(
         self.signature = signature
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
@@ -614,7 +615,6 @@ class Ability(
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
-        AstSemStrNode.__init__(self, semstr=semstr)
         AstAsyncNode.__init__(self, is_async=is_async)
 
     @property
