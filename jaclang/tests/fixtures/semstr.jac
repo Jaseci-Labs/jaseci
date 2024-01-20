@@ -24,4 +24,4 @@ journal {
           count: int;
 }
 
-can 'update user mood' updateMood{}
+can 'update user mood' updateMood ->'mood selection'str {}
