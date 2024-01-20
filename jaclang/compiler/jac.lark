@@ -220,7 +220,7 @@ report_stmt: KW_REPORT expression
 // Control statements
 ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
 
-// Data spatail Walker statements
+// Data spatial Walker statements
 walker_stmt: visit_stmt
        | revisit_stmt
        | disengage_stmt

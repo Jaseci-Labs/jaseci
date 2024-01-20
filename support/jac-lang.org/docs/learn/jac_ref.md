@@ -212,11 +212,11 @@
 ```
 --8<-- "examples/reference/control_statements.md"
 
-## Data spatail Walker statements
+## Data spatial Walker statements
 ```yaml linenums="224"
 --8<-- "jaclang/compiler/jac.lark:224:227"
 ```
---8<-- "examples/reference/data_spatail_walker_statements.md"
+--8<-- "examples/reference/data_spatial_walker_statements.md"
 
 ## Visit statements
 ```yaml linenums="230"
