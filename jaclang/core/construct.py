@@ -74,13 +74,16 @@ class NodeAnchor(ObjectAnchor):
 
         for pair in list(set(connections)):
             dot_content += (
-                f"{unique_node_id_dict.get(pair[0])[1]} -> {unique_node_id_dict.get(pair[1])[1]} [label=\"{pair[2]}\"];\n"
+                f"{unique_node_id_dict.get(pair[0])[1]} -> {unique_node_id_dict.get(pair[1])[1]}"
+                f' [label="{pair[2]}"];\n'
             )
         if dot_file:
             with open(dot_file, "w") as f:
                 f.write(dot_content + "}")
         else:
             print(dot_content + "}")
+
+
 @dataclass(eq=False)
 class EdgeAnchor(ObjectAnchor):
     """Edge Anchor."""

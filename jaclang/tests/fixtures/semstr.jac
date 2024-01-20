@@ -7,7 +7,7 @@ enum 'enum' emotion {
 
 node 'personality'
 personality{
-    has 
+    has
         'how nice the user is '
         niceness:int,
         'what kind of things they like'
@@ -19,7 +19,7 @@ personality{
 
 walker  'users personal journal '
 journal {
-    has 
+    has
          'Daily Entry'
           count: int;
 }

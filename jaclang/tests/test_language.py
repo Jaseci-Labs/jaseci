@@ -164,11 +164,10 @@ class JacLanguageTests(TestCase):
         )
 
     def test_semstr(self) -> None:
-        """Test assign_compr."""
+        """Test semstring."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("semstr", self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
-        

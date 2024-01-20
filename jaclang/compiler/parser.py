@@ -415,8 +415,20 @@ class JacParser(Pass):
             """
             arch_type = kid[0]
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = kid[2] if (access and isinstance(kid[2], ast.String)) else kid[1] if  isinstance(kid[1], ast.String) else None
-            name = kid[3] if (access and semstr) else kid[2] if (access or semstr) else kid[1]
+            semstr = (
+                kid[2]
+                if (access and isinstance(kid[2], ast.String))
+                else kid[1]
+                if isinstance(kid[1], ast.String)
+                else None
+            )
+            name = (
+                kid[3]
+                if (access and semstr)
+                else kid[2]
+                if (access or semstr)
+                else kid[1]
+            )
             inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
             if isinstance(arch_type, ast.Token) and isinstance(name, ast.Name):
@@ -433,7 +445,7 @@ class JacParser(Pass):
                 )
             else:
                 raise self.ice()
-            
+
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
             """Grammar rule.
 
@@ -565,12 +577,24 @@ class JacParser(Pass):
 
         def enum_decl(self, kid: list[ast.AstNode]) -> ast.Enum:
             """Grammar rule.
-                            
+
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = kid[2] if (access and isinstance(kid[2], ast.String)) else kid[1] if isinstance(kid[1], ast.String) else None
-            name = kid[3] if (access and semstr) else kid[2] if (access or semstr) else kid[1]
+            semstr = (
+                kid[2]
+                if (access and isinstance(kid[2], ast.String))
+                else kid[1]
+                if isinstance(kid[1], ast.String)
+                else None
+            )
+            name = (
+                kid[3]
+                if (access and semstr)
+                else kid[2]
+                if (access or semstr)
+                else kid[1]
+            )
             inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
             if isinstance(name, ast.Name):
@@ -685,8 +709,20 @@ class JacParser(Pass):
             )
             chomp = chomp[2:] if is_static else chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            semstr = chomp [1] if access and isinstance(chomp[1], ast.String) else chomp[0] if access or isinstance(chomp[0], ast.String) else None
-            chomp = chomp[2:] if access and semstr else chomp[1:] if access or semstr else chomp
+            semstr = (
+                chomp[1]
+                if access and isinstance(chomp[1], ast.String)
+                else chomp[0]
+                if access or isinstance(chomp[0], ast.String)
+                else None
+            )
+            chomp = (
+                chomp[2:]
+                if access and semstr
+                else chomp[1:]
+                if access or semstr
+                else chomp
+            )
             name = chomp[0]
             chomp = chomp[1:]
             is_func = isinstance(chomp[0], ast.FuncSignature)
@@ -736,7 +772,7 @@ class JacParser(Pass):
 
         def abstract_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
             """Grammar rule.
-                                 
+
             abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
             """
             chomp = [*kid]
@@ -746,8 +782,20 @@ class JacParser(Pass):
             chomp = chomp[1:] if is_static else chomp
             chomp = chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            semstr = chomp[1] if access and isinstance(chomp[1], ast.string) else chomp[0] if access or isinstance(chomp[1], ast.string) else None
-            chomp = chomp[2:] if access and semstr else chomp[1:] if access or semstr else chomp
+            semstr = (
+                chomp[1]
+                if access and isinstance(chomp[1], ast.string)
+                else chomp[0]
+                if access or isinstance(chomp[1], ast.string)
+                else None
+            )
+            chomp = (
+                chomp[2:]
+                if access and semstr
+                else chomp[1:]
+                if access or semstr
+                else chomp
+            )
             name = chomp[0]
             chomp = chomp[1:]
             is_func = isinstance(chomp[0], ast.FuncSignature)
@@ -988,7 +1036,7 @@ class JacParser(Pass):
 
         def return_type_tag(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Expr]:
             """Grammar rule.
-                                
+
             return_type_tag: RETURN_HINT STRING? expression
             """
             semstr = kid[1] if isinstance(kid[1], ast.String) else None
@@ -1004,7 +1052,6 @@ class JacParser(Pass):
                 )
             else:
                 raise self.ice()
-
 
         def builtin_type(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.

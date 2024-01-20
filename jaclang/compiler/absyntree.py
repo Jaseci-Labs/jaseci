@@ -140,6 +140,7 @@ class AstDocNode(AstNode):
         """Initialize ast."""
         self.doc: Optional[String] = doc
 
+
 class AstSemStrNode(AstNode):
     """Nodes that have access."""
 
@@ -244,7 +245,6 @@ class SubTag(AstNode, Generic[T]):
         self.tag = tag
         AstNode.__init__(self, kid=kid)
         AstSemStrNode.__init__(self, semstr=semstr)
-
 
 
 class SubNodeList(AstNode, Generic[T]):
@@ -593,7 +593,7 @@ class Ability(
         signature: Optional[FuncSignature | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
         kid: Sequence[AstNode],
-        semstr: Optional[String]=None,
+        semstr: Optional[String] = None,
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
@@ -829,7 +829,6 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
         AstSemStrNode.__init__(self, semstr=semstr)
-
 
 
 class TypedCtxBlock(CodeBlockStmt):
