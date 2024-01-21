@@ -1437,28 +1437,6 @@ class PyastGenPass(Pass):
                     keywords=[],
                 )
             )
-        elif (
-            node.op.name
-            in [  # TODO: the whole comparitors thing requries grammar change maybe
-                Tok.EE,
-                Tok.GT,
-                Tok.GTE,
-                Tok.KW_IN,
-                Tok.KW_IS,
-                Tok.KW_ISN,
-                Tok.LT,
-                Tok.LTE,
-                Tok.NE,
-                Tok.KW_NIN,
-            ]
-        ):
-            node.gen.py_ast = self.sync(
-                ast3.Compare(
-                    left=node.left.gen.py_ast,
-                    comparators=[node.right.gen.py_ast],
-                    ops=[node.op.gen.py_ast],
-                )
-            )
         elif node.op.name in [Tok.KW_AND, Tok.KW_OR]:
             node.gen.py_ast = self.sync(
                 ast3.BoolOp(
@@ -1555,6 +1533,21 @@ class PyastGenPass(Pass):
                 f"Binary operator {node.op.value} not supported in bootstrap Jac"
             )
         return None
+
+    def exit_compare_expr(self, node: ast.CompareExpr) -> None:
+        """Sub objects.
+
+        left: ExprType,
+        right: ExprType,
+        op: Token,
+        """
+        node.gen.py_ast = self.sync(
+            ast3.Compare(
+                left=node.left.gen.py_ast,
+                comparators=[i.gen.py_ast for i in node.rights],
+                ops=[i.gen.py_ast for i in node.ops],
+            )
+        )
 
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
@@ -2139,12 +2132,8 @@ class PyastGenPass(Pass):
                                                     ),
                                                     jac_node=x,
                                                 ),
-                                                ops=[
-                                                    x.gen.py_ast.ops[0]
-                                                ],  # Assuming BinaryExpr has only one operator
-                                                comparators=[
-                                                    x.gen.py_ast.comparators[0]
-                                                ],
+                                                ops=x.gen.py_ast.ops,
+                                                comparators=x.gen.py_ast.comparators,
                                             ),
                                             jac_node=x,
                                         )

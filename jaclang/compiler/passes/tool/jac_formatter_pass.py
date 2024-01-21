@@ -789,6 +789,21 @@ class JacFormatPass(Pass):
         ) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, node.kid[-1].value)
 
+    def exit_compare_expr(self, node: ast.CompareExpr) -> None:
+        """Sub objects.
+
+        left: Expr,
+        rights: list[Expr],
+        ops: list[Token],
+        """
+        self.emit(node, f"{node.left.gen.jac} ")
+        for i in range(len(node.rights)):
+            self.emit(node, f"{node.ops[i].value} {node.rights[i].gen.jac} ")
+        if isinstance(
+            node.kid[-1], (ast.Semi, ast.CommentToken)
+        ) and not node.gen.jac.endswith("\n"):
+            self.emit_ln(node, node.kid[-1].value)
+
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
 

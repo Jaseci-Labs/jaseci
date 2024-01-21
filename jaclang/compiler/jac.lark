@@ -277,11 +277,13 @@ elvis_check: (elvis_check ELVIS_OP)? bitwise_or
 bitwise_or: (bitwise_or BW_OR)? bitwise_xor
 bitwise_xor: (bitwise_xor BW_XOR)? bitwise_and
 bitwise_and: (bitwise_and BW_AND)? shift
-shift: (shift (RSHIFT | LSHIFT))? logical
+shift: (shift (RSHIFT | LSHIFT))? logical_or
 
 // Logical and compare expressions
-logical: (logical (KW_OR | KW_AND))? compare | NOT logical
-compare: (compare cmp_op)? arithmetic
+logical_or: (logical_or KW_OR)? logical_and
+logical_and: (logical_and KW_AND)? logical_not
+logical_not: NOT logical_not | compare
+compare: (arithmetic cmp_op)* arithmetic
 
 cmp_op: KW_ISN
       | KW_IS
