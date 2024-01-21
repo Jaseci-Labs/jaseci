@@ -1801,19 +1801,28 @@ class JacParser(Pass):
         def shift(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            shift: logical RSHIFT shift
-                 | logical LSHIFT shift
-                 | logical
+            shift: (shift (RSHIFT | LSHIFT))? logical_or
             """
             return self.binary_expr_unwind(kid)
 
-        def logical(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def logical_or(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            logical: NOT logical
-                   | compare KW_OR logical
-                   | compare KW_AND logical
-                   | compare
+            logical_or: (logical_or KW_OR)? logical_and
+            """
+            return self.binary_expr_unwind(kid)
+
+        def logical_and(self, kid: list[ast.AstNode]) -> ast.Expr:
+            """Grammar rule.
+
+            logical_and: (logical_and KW_AND)? logical_not
+            """
+            return self.binary_expr_unwind(kid)
+
+        def logical_not(self, kid: list[ast.AstNode]) -> ast.Expr:
+            """Grammar rule.
+
+            logical_or: (logical_or KW_OR)? logical_and
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
@@ -1826,13 +1835,15 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr_unwind(kid)
+            if isinstance(kid[0], ast.Expr):
+                return self.nu(kid[0])
+            else:
+                raise self.ice()
 
         def compare(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            compare: arithmetic cmp_op compare
-                   | arithmetic
+            compare: (arithmetic cmp_op)* arithmetic
             """
             return self.binary_expr_unwind(kid)
 
