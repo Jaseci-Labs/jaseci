@@ -74,7 +74,7 @@ abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | ev
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
 func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
 func_decl_params: (param_var COMMA)* param_var
-param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
+param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
 return_type_tag: RETURN_HINT STRING? expression
 
 // Global variables

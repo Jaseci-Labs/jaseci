@@ -770,6 +770,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
         type_tag: SubTag[Expr],
         value: Optional[Expr],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize param var node."""
         self.name = name
@@ -783,7 +784,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
             sym_type=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
-
+        AstSemStrNode.__init__(self, semstr=semstr)
 
 class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
     """HasStmt node type for Jac Ast."""

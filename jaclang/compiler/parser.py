@@ -883,19 +883,21 @@ class JacParser(Pass):
         def param_var(self, kid: list[ast.AstNode]) -> ast.ParamVar:
             """Grammar rule.
 
-            param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
+            param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
             """
             star = (
                 kid[0]
                 if isinstance(kid[0], ast.Token) and kid[0].name != Tok.NAME
                 else None
             )
-            name = kid[1] if star else kid[0]
+            semstr = kid[1] if star and isinstance(kid[1], ast.String) else kid[0] if isinstance(kid[0], ast.String) else None
+            name = kid[2] if star and semstr else kid[1] if star or semstr else kid[0]
             type_tag = kid[2] if star else kid[1]
             value = kid[-1] if isinstance(kid[-1], ast.Expr) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
                 return self.nu(
                     ast.ParamVar(
+                        semstr=semstr,
                         name=name,
                         type_tag=type_tag,
                         value=value,
