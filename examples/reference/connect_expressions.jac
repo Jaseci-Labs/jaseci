@@ -17,7 +17,7 @@ node node_b{
 }
 
 :walker:walker_1:can:create{
-    end = <here>;   
+    end = <here>;
     for i = 0 to i<5 by i+=1{
         end ++> end := node_a(val=i+1);
     }
@@ -30,7 +30,7 @@ node node_b{
 
 :node:node_a:can:print_some{
     print(f"this is {<self>}");
-    
+
     visit-->;
 }
 
