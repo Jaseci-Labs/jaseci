@@ -1242,9 +1242,23 @@ class BinaryExpr(Expr):
         self.left = left
         self.right = right
         self.op = op
-        # below is used for paren matching with PIPE_FWD ops
-        self.pipe_chain_count = 0
-        self.a_pipe_chain_count = 0
+        AstNode.__init__(self, kid=kid)
+
+
+class CompareExpr(Expr):
+    """ExprBinary node type for Jac Ast."""
+
+    def __init__(
+        self,
+        left: Expr,
+        rights: list[Expr],
+        ops: list[Token],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize binary expression node."""
+        self.left = left
+        self.rights = rights
+        self.ops = ops
         AstNode.__init__(self, kid=kid)
 
 
@@ -1736,7 +1750,7 @@ class FilterCompr(AtomExpr):
 
     def __init__(
         self,
-        compares: SubNodeList[BinaryExpr],
+        compares: SubNodeList[CompareExpr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
