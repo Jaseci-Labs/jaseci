@@ -10,7 +10,7 @@ edge MyEdge {
 walker Walk {
     #has count: int = 0;
     can create with `<root> entry;
-    #can do_something with `<root> entry;
+    can do_something with `<root> entry;
 }
 
 :walker:Walk:can:create{
@@ -20,11 +20,13 @@ walker Walk {
         }
     visit -->;
 }
-# :walker:Walk:can:do_something{
-#     for i in -:MyEdge:val<=5 :->{
-#             print(i.val);
-#         }
-# }
+:walker:Walk:can:do_something{
+    for i in -:MyEdge:val<=5 :->{
+            print(i.val);
+        }
+    print("Hello");
+    visit -->;
+}
 
 
 with entry {
