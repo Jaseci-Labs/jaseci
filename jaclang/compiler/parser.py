@@ -1845,7 +1845,44 @@ class JacParser(Pass):
 
             compare: (arithmetic cmp_op)* arithmetic
             """
-            return self.binary_expr_unwind(kid)
+            if len(kid) > 1:
+                ops = [i for i in kid[1::2] if isinstance(i, ast.Token)]
+                left = kid[0]
+                rights = [i for i in kid[1:][1::2] if isinstance(i, ast.Expr)]
+                if isinstance(left, ast.Expr) and len(ops) == len(rights):
+                    return self.nu(
+                        ast.CompareExpr(
+                            left=left,
+                            ops=ops,
+                            rights=rights,
+                            kid=kid,
+                        )
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.Expr):
+                return self.nu(kid[0])
+            else:
+                raise self.ice()
+
+        def cmp_op(self, kid: list[ast.AstNode]) -> ast.Token:
+            """Grammar rule.
+
+            cmp_op: KW_ISN
+                  | KW_IS
+                  | KW_NIN
+                  | KW_IN
+                  | NE
+                  | GTE
+                  | LTE
+                  | GT
+                  | LT
+                  | EE
+            """
+            if isinstance(kid[0], ast.Token):
+                return self.nu(kid[0])
+            else:
+                raise self.ice()
 
         def arithmetic(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2024,25 +2061,6 @@ class JacParser(Pass):
                      | SUB_EQ
                      | ADD_EQ
                      | WALRUS_EQ
-            """
-            if isinstance(kid[0], ast.Token):
-                return self.nu(kid[0])
-            else:
-                raise self.ice()
-
-        def cmp_op(self, kid: list[ast.AstNode]) -> ast.Token:
-            """Grammar rule.
-
-            cmp_op: KW_ISN
-                  | KW_IS
-                  | KW_NIN
-                  | KW_IN
-                  | NE
-                  | GTE
-                  | LTE
-                  | GT
-                  | LT
-                  | EE
             """
             if isinstance(kid[0], ast.Token):
                 return self.nu(kid[0])
@@ -3112,7 +3130,7 @@ class JacParser(Pass):
 
         def filter_compare_list(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.BinaryExpr]:
+        ) -> ast.SubNodeList[ast.CompareExpr]:
             """Grammar rule.
 
             filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
@@ -3128,21 +3146,21 @@ class JacParser(Pass):
             else:
                 expr = kid[0]
                 new_kid = [expr]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.BinaryExpr)]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.CompareExpr)]
             return self.nu(
-                ast.SubNodeList[ast.BinaryExpr](
+                ast.SubNodeList[ast.CompareExpr](
                     items=valid_kid,
                     kid=new_kid,
                 )
             )
 
-        def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.BinaryExpr:
+        def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.CompareExpr:
             """Grammar rule.
 
             filter_compare_item: name_ref cmp_op expression
             """
-            ret = self.binary_expr_unwind(kid)
-            if isinstance(ret, ast.BinaryExpr):
+            ret = self.compare(kid)
+            if isinstance(ret, ast.CompareExpr):
                 return self.nu(ret)
             else:
                 raise self.ice()

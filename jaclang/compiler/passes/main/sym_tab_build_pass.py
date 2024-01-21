@@ -960,6 +960,15 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_compare_expr(self, node: ast.CompareExpr) -> None:
+        """Sub objects.
+
+        left: Expr,
+        rights: list[Expr],
+        ops: list[Token],
+        """
+        self.sync_node_to_scope(node)
+
     def enter_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
 
