@@ -892,7 +892,7 @@ class JacParser(Pass):
             )
             semstr = kid[1] if star and isinstance(kid[1], ast.String) else kid[0] if isinstance(kid[0], ast.String) else None
             name = kid[2] if star and semstr else kid[1] if star or semstr else kid[0]
-            type_tag = kid[2] if star else kid[1]
+            type_tag = kid[3] if star and semstr else kid[2] if star or semstr else kid[1]
             value = kid[-1] if isinstance(kid[-1], ast.Expr) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
                 return self.nu(
