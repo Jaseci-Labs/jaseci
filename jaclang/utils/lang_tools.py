@@ -89,6 +89,7 @@ class AstTool:
                 "TokenSymbol",
                 "Literal",
                 "AstDocNode",
+                "AstSemStrNode",
                 "PythonModuleAst",
                 "AstAsyncNode",
                 "AstElseBodyNode",
@@ -299,7 +300,7 @@ class AstTool:
         else:
             return "Not a .jac file."
 
-    def automate_ref(self) -> None:
+    def automate_ref(self) -> str:
         """Automate the reference guide generation."""
         # Jac lark path
         file_path = os.path.join(
@@ -319,9 +320,6 @@ class AstTool:
         for heading, lines in result.items():
             heading = heading.strip()
             heading_snakecase = heading_to_snake(heading)
-            if heading == "Names and references":
-                continue
-            # print(f"{heading}: {lines}")
             content = (
                 f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
                 f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n--8<-- '
@@ -344,3 +342,4 @@ class AstTool:
             with open(md_file_path, "w") as md_file:
                 # Write the content to the destination file
                 md_file.write(content)
+        return "References generated."
