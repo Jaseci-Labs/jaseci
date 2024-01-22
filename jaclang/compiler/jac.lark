@@ -443,6 +443,7 @@ special_ref: INIT_OP
             | SELF_OP
             | HERE_OP
 
+// Builtin types
 builtin_type: TYP_TYPE
             | TYP_ANY
             | TYP_BOOL
@@ -455,6 +456,7 @@ builtin_type: TYP_TYPE
             | TYP_BYTES
             | TYP_STRING
 
+// Lexer Tokens
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
