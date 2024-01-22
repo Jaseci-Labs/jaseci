@@ -68,14 +68,13 @@ ability: decorators? ability_def
         | decorators? KW_ASYNC ability_decl
         | decorators? ability_decl
 
-ability_decl: KW_STATIC? KW_CAN  access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
-func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
+func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
-return_type_tag: RETURN_HINT STRING? expression
 
 // Global variables
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
@@ -262,7 +261,7 @@ aug_op: RSHIFT_EQ
 expression: pipe (KW_IF expression KW_ELSE expression)? | lambda_expr
 
 // Lambda expressions
-lambda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
+lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
 
 // Pipe expressions
 pipe: (pipe PIPE_FWD)? pipe_back

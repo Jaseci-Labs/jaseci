@@ -244,6 +244,7 @@ class SubTag(AstNode, Generic[T]):
         self.tag = tag
         AstNode.__init__(self, kid=kid)
 
+
 class SubNodeList(AstNode, Generic[T]):
     """SubNodeList node type for Jac Ast."""
 
@@ -677,7 +678,7 @@ class FuncSignature(AstSemStrNode):
     def __init__(
         self,
         params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubTag[Expr]],
+        return_type: Optional[Expr],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
     ) -> None:
@@ -711,7 +712,7 @@ class EventSignature(AstSemStrNode):
         self,
         event: Token,
         arch_tag_info: Optional[Expr],
-        return_type: Optional[SubTag[Expr]],
+        return_type: Optional[Expr],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
     ) -> None:
@@ -761,7 +762,7 @@ class ArchRefChain(AstNode):
         )
 
 
-class ParamVar(AstSymbolNode, AstTypedVarNode,AstSemStrNode):
+class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
     """ParamVar node type for Jac Ast."""
 
     def __init__(
@@ -786,6 +787,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode,AstSemStrNode):
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
         AstSemStrNode.__init__(self, semstr=semstr)
+
 
 class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
     """HasStmt node type for Jac Ast."""
