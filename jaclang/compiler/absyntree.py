@@ -239,13 +239,10 @@ class SubTag(AstNode, Generic[T]):
         self,
         tag: T,
         kid: Sequence[AstNode],
-        semstr: Optional[String] = None,
     ) -> None:
         """Initialize tag node."""
         self.tag = tag
         AstNode.__init__(self, kid=kid)
-        AstSemStrNode.__init__(self, semstr=semstr)
-
 
 class SubNodeList(AstNode, Generic[T]):
     """SubNodeList node type for Jac Ast."""
@@ -674,7 +671,7 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
         )
 
 
-class FuncSignature(AstNode):
+class FuncSignature(AstSemStrNode):
     """FuncSignature node type for Jac Ast."""
 
     def __init__(
@@ -682,11 +679,13 @@ class FuncSignature(AstNode):
         params: Optional[SubNodeList[ParamVar]],
         return_type: Optional[SubTag[Expr]],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize method signature node."""
         self.params = params
         self.return_type = return_type
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
 
     @property
     def is_method(self) -> bool:
@@ -705,7 +704,7 @@ class FuncSignature(AstNode):
         )
 
 
-class EventSignature(AstNode):
+class EventSignature(AstSemStrNode):
     """EventSignature node type for Jac Ast."""
 
     def __init__(
@@ -714,12 +713,14 @@ class EventSignature(AstNode):
         arch_tag_info: Optional[Expr],
         return_type: Optional[SubTag[Expr]],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize event signature node."""
         self.event = event
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
 
     @property
     def is_method(self) -> bool:
@@ -760,7 +761,7 @@ class ArchRefChain(AstNode):
         )
 
 
-class ParamVar(AstSymbolNode, AstTypedVarNode):
+class ParamVar(AstSymbolNode, AstTypedVarNode,AstSemStrNode):
     """ParamVar node type for Jac Ast."""
 
     def __init__(

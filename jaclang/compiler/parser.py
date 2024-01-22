@@ -828,12 +828,14 @@ class JacParser(Pass):
             """
             type_specs = kid[1] if isinstance(kid[1], ast.Expr) else None
             return_spec = kid[-1] if isinstance(kid[-1], ast.SubTag) else None
+            semstr = return_spec.kid[1] if return_spec else None
             event = kid[2] if type_specs else kid[1]
             if isinstance(event, ast.Token) and (
                 isinstance(return_spec, ast.SubTag) or return_spec is None
             ):
                 return self.nu(
                     ast.EventSignature(
+                        semstr=semstr,
                         event=event,
                         arch_tag_info=type_specs,
                         return_type=return_spec,
@@ -854,11 +856,13 @@ class JacParser(Pass):
             return_spec = (
                 kid[-1] if len(kid) and isinstance(kid[-1], ast.SubTag) else None
             )
+            semstr= return_spec.kid[1] if return_spec else None
             if (isinstance(params, ast.SubNodeList) or params is None) and (
                 isinstance(return_spec, ast.SubTag) or return_spec is None
             ):
                 return self.nu(
                     ast.FuncSignature(
+                        semstr=semstr,
                         params=params,
                         return_type=return_spec,
                         kid=kid if len(kid) else [ast.EmptyToken()],
@@ -887,12 +891,18 @@ class JacParser(Pass):
             """
             star = (
                 kid[0]
-                if isinstance(kid[0], ast.Token) and kid[0].name != Tok.NAME
+                if isinstance(kid[0], ast.Token) and kid[0].name != Tok.NAME 
+                and not isinstance(kid[0], ast.String) 
                 else None
             )
-            semstr = kid[1] if star and isinstance(kid[1], ast.String) else kid[0] if isinstance(kid[0], ast.String) else None
-            name = kid[2] if star and semstr else kid[1] if star or semstr else kid[0]
-            type_tag = kid[3] if star and semstr else kid[2] if star or semstr else kid[1]
+            semstr =(
+                 kid[1]
+                 if (star and isinstance(kid[1], ast.String)) 
+                 else kid[0] if isinstance(kid[0], ast.String)
+                 else None
+                 )
+            name = kid[2] if (star and semstr) else kid[1] if (star or semstr) else kid[0]
+            type_tag = kid[3] if (star and semstr) else kid[2] if (star or semstr) else kid[1]
             value = kid[-1] if isinstance(kid[-1], ast.Expr) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
                 return self.nu(
@@ -1042,12 +1052,11 @@ class JacParser(Pass):
             return_type_tag: RETURN_HINT STRING? expression
             """
             semstr = kid[1] if isinstance(kid[1], ast.String) else None
-            tag = kid[2] if semstr else kid[1]
-
-            if isinstance(kid[1], ast.Expr):
+            tag = kid[2] if semstr else kid[1] 
+            # chomp = [item for item in kid if item is not semstr]
+            if isinstance(tag, ast.Expr):
                 return self.nu(
                     ast.SubTag[ast.Expr](
-                        semstr=semstr,
                         tag=tag,
                         kid=kid,
                     )
