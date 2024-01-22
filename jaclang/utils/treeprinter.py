@@ -1,6 +1,7 @@
 """Tree Printing Helpers for Jac."""
 from __future__ import annotations
 
+import ast as ast3
 import html
 from typing import Optional, TYPE_CHECKING
 
@@ -76,7 +77,7 @@ def dotgen_ast_tree(
 
 
 def print_ast_tree(
-    root: AstNode,
+    root: AstNode | ast3.AST,
     marker: str = "+-- ",
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
@@ -90,6 +91,18 @@ def print_ast_tree(
             return f"{node.__class__.__name__} - {node.value}"
         elif isinstance(node, AstSymbolNode):
             return f"{node.__class__.__name__} - {node.sym_name}"
+        else:
+            return f"{node.__class__.__name__}"
+
+    def __node_repr_in_py_tree(node: ast3.AST) -> str:
+        if isinstance(node, ast3.Constant):
+            return f"{node.__class__.__name__} - {node.value}"
+        elif isinstance(node, ast3.FunctionDef):
+            return f"{node.__class__.__name__} - {node.name}"
+        elif isinstance(node, ast3.Call):
+            return f"{node.__class__.__name__} - {node.func.id}"
+        elif isinstance(node, ast3.Name):
+            return f"{node.__class__.__name__} - {node.id}"
         else:
             return f"{node.__class__.__name__}"
 
@@ -110,13 +123,20 @@ def print_ast_tree(
     markers = "".join(map(mapper, level_markers[:-1]))
     markers += marker if level > 0 else ""
 
-    tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
-
-    for i, child in enumerate(root.kid):
-        is_last = i == len(root.kid) - 1
-        tree_str += print_ast_tree(
-            child, marker, [*level_markers, not is_last], output_file, max_depth
-        )
+    if isinstance(root, ast.AstNode):
+        tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
+        for i, child in enumerate(root.kid):
+            is_last = i == len(root.kid) - 1
+            tree_str += print_ast_tree(
+                child, marker, [*level_markers, not is_last], output_file, max_depth
+            )
+    elif isinstance(root, ast3.AST):
+        tree_str = f"{markers}{__node_repr_in_py_tree(root)}\n"
+        for i, child in enumerate(ast3.iter_child_nodes(root)):
+            is_last = i == len(list(ast3.iter_child_nodes(root))) - 1
+            tree_str += print_ast_tree(
+                child, marker, [*level_markers, not is_last], output_file, max_depth
+            )
 
     # Write to file only at the top level call
     if output_file and level == 0:
