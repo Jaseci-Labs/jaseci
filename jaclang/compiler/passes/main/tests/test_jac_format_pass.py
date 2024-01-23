@@ -41,9 +41,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        with_format = format_pass
         code_gen_format = jac_file_to_pass(
-            self.fixture_abs_path(filename), schedule=with_format
+            self.fixture_abs_path(filename), schedule=format_pass
         )
         code_gen_jac = jac_str_to_pass(
             jac_str=code_gen_format.ir.gen.jac,

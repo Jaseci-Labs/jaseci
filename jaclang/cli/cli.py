@@ -7,10 +7,35 @@ from typing import Optional
 from jaclang import jac_import as __jac_import__
 from jaclang.cli.cmdreg import CommandRegistry, CommandShell
 from jaclang.compiler.constant import Constants
+from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.lang_tools import AstTool
 
 
 cmd_registry = CommandRegistry()
+
+
+@cmd_registry.register
+def format(filename: str, outfile: Optional[str] = None) -> None:
+    """Run the specified .jac file.
+
+    :param filename: The path to the .jac file.
+    :param main: If True, use '__main__' as the module name, else use the actual module name.
+    """
+    if filename.endswith(".jac"):
+        if os.path.exists(filename):
+            code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
+            if code_gen_format.errors_had:
+                print("Errors occurred while formatting the file.")
+            else:
+                if outfile:
+                    with open(outfile, "w") as f:
+                        f.write(code_gen_format.ir.gen.jac)
+                else:
+                    with open(filename, "w") as f:
+                        f.write(code_gen_format.ir.gen.jac)
+    else:
+        print("Not a .jac file.")
 
 
 @cmd_registry.register
