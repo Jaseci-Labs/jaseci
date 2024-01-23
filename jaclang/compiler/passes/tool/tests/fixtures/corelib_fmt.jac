@@ -12,16 +12,13 @@ obj Memory {
         save_queue: list[Element] = [];
 
     #* Main Accessors *#
-    can get_obj(caller_id: UUID, item_id: UUID, override: bool=False)->Element;
-
-    can has_obj(item_id: UUID)->bool;
-
+    can get_obj(caller_id: UUID, item_id: UUID, override: bool=False) -> Element;
+    can has_obj(item_id: UUID) -> bool;
     can save_obj(caller_id: UUID, item: Element);
-
     can del_obj(caller_id: UUID, item: Element);
-    #* Utility Functions *#
-    can get_object_distribution ->dict;
 
+    #* Utility Functions *#
+    can get_object_distribution -> dict;
     can get_mem_size ->float;
 }
 
@@ -30,8 +27,7 @@ obj ExecutionContext {
         memory: Memory = Memory();
 
     can reset;
-
-    can get_root()->Architype;
+    can get_root() -> Architype;
 }
 
 "Global Execution Context, should be monkey patched by the user."
@@ -49,23 +45,14 @@ obj ElementAnchor {
         mem: Memory = exec_ctx.memory;
 
     can make_public_ro;
-
     can make_public_rw;
-
     can make_private;
-
-    can is_public_ro ->bool;
-
-    can is_public_rw ->bool;
-
-    can is_private ->bool;
-
-    can is_readable(caller_id: UUID)->bool;
-
-    can is_writable(caller_id: UUID)->bool;
-
+    can is_public_ro -> bool;
+    can is_public_rw -> bool;
+    can is_private -> bool;
+    can is_readable(caller_id: UUID) -> bool;
+    can is_writable(caller_id: UUID) -> bool;
     can give_access(caller_id: UUID, read_write: bool=False);
-
     can revoke_access(caller_id: UUID);
 }
 
@@ -74,17 +61,14 @@ obj ObjectAnchor :ElementAnchor, ArchitypeProtocol: {
         ds_exit_funcs: list[DSFunc];
 
     static can on_entry(cls: type, triggers: list[type]);
-
     static can on_exit(cls: type, triggers: list[type]);
 }
 
 obj NodeAnchor :ObjectAnchor: {
     has edges: dict[EdgeDir, list[Edge]] = {EdgeDir.IN:[], EdgeDir.OUT:[] };
 
-    can connect_node(nd: Node, edg: Edge)->Node;
-
-    can edges_to_nodes(dir: EdgeDir)->list[Node];
-
+    can connect_node(nd: Node, edg: Edge) -> Node;
+    can edges_to_nodes(dir: EdgeDir) -> list[Node];
     can __call__(walk: Walker);
 }
 
@@ -93,10 +77,8 @@ obj EdgeAnchor :ObjectAnchor: {
         target: Node = None,
         dir: EdgeDir = None;
 
-    can apply_dir(dir: EdgeDir)->Edge;
-
-    can attach(src: Node, trg: Node)->Edge;
-
+    can apply_dir(dir: EdgeDir) -> Edge;
+    can attach(src: Node, trg: Node) -> Edge;
     can __call__(walk: Walker);
 }
 
@@ -107,11 +89,8 @@ obj WalkerAnchor :ObjectAnchor: {
         disengaged: bool = False;
 
     can visit_node(nds: list[Node] | list[Edge] | Node | Edge);
-
     can ignore_node(nds: list[Node] | list[Edge] | Node | Edge);
-
     can disengage_now;
-
     can __call__(nd: Node);
 }
 
@@ -142,23 +121,23 @@ obj Master {
 
 obj JacPlugin {
     @hookimpl
-    static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str])->bool;
+    static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
 
     @hookimpl
-    static can get_root()->Architype;
+    static can get_root() -> Architype;
 
     @hookimpl
-    static can build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]])->Architype;
+    static can build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
 
     @hookimpl
-    static can connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]])->Architype;
+    static can connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
 
     @hookimpl
-    static can visit_node(walker_obj: Any, expr: Any)->bool;
+    static can visit_node(walker_obj: Any, expr: Any) -> bool;
 }
 
 :obj:Memory:can:get_obj
-(caller_id: UUID, item_id: UUID, override: bool=False)->Element {
+(caller_id: UUID, item_id: UUID, override: bool=False) -> Element {
     ret = item_id |> <self>.index.get;
     if override
         or (ret is not None  and caller_id |> ret.__is_readable)  {
@@ -167,7 +146,7 @@ obj JacPlugin {
 }
 
 :obj:Memory:can:has_obj
-(item_id: UUID)->bool {
+(item_id: UUID) -> bool {
     return item_id in <self>.index ;
 }
 
@@ -195,7 +174,7 @@ obj JacPlugin {
     }
 }
 
-:obj:Memory:can:get_object_distribution->dict {
+:obj:Memory:can:get_object_distribution -> dict {
     dist = {};
     for i in |> <self>.index.keys  {
         t = <self>.index[i] |> type;
@@ -316,11 +295,11 @@ obj JacPlugin {
 :obj:NodeAnchor:can:edges_to_nodes
 (dir: EdgeDir)->list[Node] {
     ret_nodes = [];
-    if dir in [EdgeDir.OUT, EdgeDir.ANY]   {
-        for i in <self>.edges[EdgeDir.OUT]  {
+    if dir in [EdgeDir.OUT, EdgeDir.ANY] {
+        for i in <self>.edges[EdgeDir.OUT] {
             ret_nodes.append(i.target);
         }
-    } elif dir in [EdgeDir.IN, EdgeDir.ANY]   {
+    } elif dir in [EdgeDir.IN, EdgeDir.ANY] {
         for i in <self>.edges[EdgeDir.IN]  {
             ret_nodes.append(i.source);
         }
@@ -412,6 +391,14 @@ obj JacPlugin {
             }
         }
         for i in <self>.ds_entry_funcs  {
+            if isinstance(nd.ob, i.trigger) {
+                i.func(<self>.ob, nd);
+            }
+            if <self>.disengaged {
+                return;
+            }
+        }
+        for i in <self>.ds_exit_funcs {
             if isinstance(nd.ob, i.trigger)  {
                 i.func(<self>.ob, nd);
             }
@@ -419,19 +406,11 @@ obj JacPlugin {
                 return;
             }
         }
-        for i in <self>.ds_exit_funcs  {
-            if isinstance(nd.ob, i.trigger)  {
-                i.func(<self>.ob, nd);
-            }
-            if <self>.disengaged  {
-                return;
-            }
-        }
-        for i in nd.ds_exit_funcs  {
-            if isinstance(<self>.ob, i.trigger)  {
+        for i in nd.ds_exit_funcs {
+            if isinstance(<self>.ob, i.trigger) {
                 i.func(nd.ob, <self>);
             }
-            if <self>.disengaged  {
+            if <self>.disengaged {
                 return;
             }
         }
