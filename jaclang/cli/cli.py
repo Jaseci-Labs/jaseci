@@ -16,7 +16,7 @@ cmd_registry = CommandRegistry()
 
 
 @cmd_registry.register
-def format(filename: str, outfile: Optional[str] = None) -> None:
+def format(filename: str, outfile: str = "") -> None:
     """Run the specified .jac file.
 
     :param filename: The path to the .jac file.
