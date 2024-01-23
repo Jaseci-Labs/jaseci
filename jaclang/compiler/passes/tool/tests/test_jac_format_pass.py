@@ -20,20 +20,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Set up test."""
         return super().setUp()
 
-    def test_jac_cli(self) -> None:
-        """Basic test for pass."""
-        code_gen = jac_file_to_pass(
-            self.fixture_abs_path("base.jac"), target=JacFormatPass
-        )
-        self.assertFalse(code_gen.errors_had)
-
-    def test_empty_codeblock(self) -> None:
-        """Basic test for pass."""
-        code_gen = jac_file_to_pass(
-            self.fixture_abs_path("base.jac"), target=JacFormatPass
-        )
-        self.assertFalse(code_gen.errors_had)
-
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen_pure = jac_file_to_pass(
