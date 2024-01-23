@@ -141,6 +141,14 @@ class AstDocNode(AstNode):
         self.doc: Optional[String] = doc
 
 
+class AstSemStrNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, semstr: Optional[String]) -> None:
+        """Initialize ast."""
+        self.semstr: Optional[String] = semstr
+
+
 class AstAsyncNode(AstNode):
     """Nodes that have access."""
 
@@ -209,7 +217,7 @@ class NameSpec(AtomExpr, EnumBlockStmt):
     """NameSpec node type for Jac Ast."""
 
 
-class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode):
+class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
     """ArchSpec node type for Jac Ast."""
 
     def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
@@ -447,6 +455,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
+        semstr: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
@@ -471,6 +480,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
 
 
@@ -512,6 +522,7 @@ class Enum(ArchSpec, AstAccessNode):
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
+        semstr: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
@@ -527,6 +538,7 @@ class Enum(ArchSpec, AstAccessNode):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
 
 
@@ -564,6 +576,7 @@ class Ability(
     AstAsyncNode,
     ArchBlockStmt,
     CodeBlockStmt,
+    AstSemStrNode,
 ):
     """Ability node type for Jac Ast."""
 
@@ -578,6 +591,7 @@ class Ability(
         signature: Optional[FuncSignature | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
@@ -590,6 +604,7 @@ class Ability(
         self.signature = signature
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
@@ -657,19 +672,21 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
         )
 
 
-class FuncSignature(AstNode):
+class FuncSignature(AstSemStrNode):
     """FuncSignature node type for Jac Ast."""
 
     def __init__(
         self,
         params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubTag[Expr]],
+        return_type: Optional[Expr],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize method signature node."""
         self.params = params
         self.return_type = return_type
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
 
     @property
     def is_method(self) -> bool:
@@ -688,21 +705,23 @@ class FuncSignature(AstNode):
         )
 
 
-class EventSignature(AstNode):
+class EventSignature(AstSemStrNode):
     """EventSignature node type for Jac Ast."""
 
     def __init__(
         self,
         event: Token,
         arch_tag_info: Optional[Expr],
-        return_type: Optional[SubTag[Expr]],
+        return_type: Optional[Expr],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize event signature node."""
         self.event = event
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
 
     @property
     def is_method(self) -> bool:
@@ -743,7 +762,7 @@ class ArchRefChain(AstNode):
         )
 
 
-class ParamVar(AstSymbolNode, AstTypedVarNode):
+class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
     """ParamVar node type for Jac Ast."""
 
     def __init__(
@@ -753,6 +772,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
         type_tag: SubTag[Expr],
         value: Optional[Expr],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize param var node."""
         self.name = name
@@ -766,6 +786,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
             sym_type=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
+        AstSemStrNode.__init__(self, semstr=semstr)
 
 
 class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
@@ -789,7 +810,7 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         AstDocNode.__init__(self, doc=doc)
 
 
-class HasVar(AstSymbolNode, AstTypedVarNode):
+class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
     """HasVar node type for Jac Ast."""
 
     def __init__(
@@ -798,6 +819,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode):
         type_tag: SubTag[Expr],
         value: Optional[Expr],
         kid: Sequence[AstNode],
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize has var node."""
         self.name = name
@@ -810,6 +832,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode):
             sym_type=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
+        AstSemStrNode.__init__(self, semstr=semstr)
 
 
 class TypedCtxBlock(CodeBlockStmt):
@@ -1223,9 +1246,23 @@ class BinaryExpr(Expr):
         self.left = left
         self.right = right
         self.op = op
-        # below is used for paren matching with PIPE_FWD ops
-        self.pipe_chain_count = 0
-        self.a_pipe_chain_count = 0
+        AstNode.__init__(self, kid=kid)
+
+
+class CompareExpr(Expr):
+    """ExprBinary node type for Jac Ast."""
+
+    def __init__(
+        self,
+        left: Expr,
+        rights: list[Expr],
+        ops: list[Token],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize binary expression node."""
+        self.left = left
+        self.rights = rights
+        self.ops = ops
         AstNode.__init__(self, kid=kid)
 
 
@@ -1717,7 +1754,7 @@ class FilterCompr(AtomExpr):
 
     def __init__(
         self,
-        compares: SubNodeList[BinaryExpr],
+        compares: SubNodeList[CompareExpr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""

@@ -28,7 +28,7 @@ sub_name: COLON NAME
 
 // Architypes
 architype: decorators? (enum | architype_def | architype_decl)
-architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
+architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
 decorators: (DECOR_OP atomic_chain)+
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
@@ -46,14 +46,14 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: named_ref type_tag (EQ expression)?
+typed_has_clause: STRING? named_ref type_tag (EQ expression)?
 type_tag: COLON expression
 
 // Enumerations
 enum: enum_def
      | enum_decl
 
-enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
+enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
 
 // Enumeration Bodies
@@ -68,14 +68,13 @@ ability: decorators? ability_def
         | decorators? KW_ASYNC ability_decl
         | decorators? ability_decl
 
-ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
-func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
+abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
+func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
 func_decl_params: (param_var COMMA)* param_var
-param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
-return_type_tag: RETURN_HINT expression
+param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
 
 // Global variables
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
@@ -220,7 +219,7 @@ report_stmt: KW_REPORT expression
 // Control statements
 ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
 
-// Data spatail Walker statements
+// Data spatial Walker statements
 walker_stmt: visit_stmt
        | revisit_stmt
        | disengage_stmt
@@ -262,7 +261,7 @@ aug_op: RSHIFT_EQ
 expression: pipe (KW_IF expression KW_ELSE expression)? | lambda_expr
 
 // Lambda expressions
-lambda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
+lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
 
 // Pipe expressions
 pipe: (pipe PIPE_FWD)? pipe_back
@@ -277,11 +276,13 @@ elvis_check: (elvis_check ELVIS_OP)? bitwise_or
 bitwise_or: (bitwise_or BW_OR)? bitwise_xor
 bitwise_xor: (bitwise_xor BW_XOR)? bitwise_and
 bitwise_and: (bitwise_and BW_AND)? shift
-shift: (shift (RSHIFT | LSHIFT))? logical
+shift: (shift (RSHIFT | LSHIFT))? logical_or
 
 // Logical and compare expressions
-logical: (logical (KW_OR | KW_AND))? compare | NOT logical
-compare: (compare cmp_op)? arithmetic
+logical_or: (logical_or KW_OR)? logical_and
+logical_and: (logical_and KW_AND)? logical_not
+logical_not: NOT logical_not | compare
+compare: (arithmetic cmp_op)* arithmetic
 
 cmp_op: KW_ISN
       | KW_IS
@@ -442,6 +443,7 @@ special_ref: INIT_OP
             | SELF_OP
             | HERE_OP
 
+// Builtin types
 builtin_type: TYP_TYPE
             | TYP_ANY
             | TYP_BOOL
@@ -454,6 +456,7 @@ builtin_type: TYP_TYPE
             | TYP_BYTES
             | TYP_STRING
 
+// Lexer Tokens
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/

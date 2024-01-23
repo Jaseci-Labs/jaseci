@@ -66,15 +66,16 @@ class NodeAnchor(ObjectAnchor):
         unique_node_id_dict = {}
 
         collect_node_connections(self, visited_nodes, connections)
-        dot_content = "digraph {\n"
+        dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
         for idx, i in enumerate([nodes_.obj for nodes_ in visited_nodes]):
             unique_node_id_dict[i] = (i.__class__.__name__, str(idx))
-            dot_content += f'{idx} [label="{i}"];' + "\n"
+            dot_content += f'{idx} [label="{i}"];\n'
+        dot_content += 'edge [color="gray", style="solid"];\n'
 
         for pair in list(set(connections)):
             dot_content += (
-                f"{unique_node_id_dict.get(pair[0])[1]} -> {unique_node_id_dict.get(pair[1])[1]} ;"
-                + "\n"
+                f"{unique_node_id_dict.get(pair[0])[1]} -> {unique_node_id_dict.get(pair[1])[1]}"
+                f' [label="{pair[2]}"];\n'
             )
         if dot_file:
             with open(dot_file, "w") as f:
