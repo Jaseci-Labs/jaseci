@@ -9,21 +9,27 @@ from jac_misc.scraper.utils import (
     get_hostname,
 )
 
+MAX_LENGTH = 1000000  # 1,048,576 (48, 576 as buffer)
 
-def notify_client(target: str, pages: list, urls: dict, processing: dict, content=None):
+
+def custom_notify_client(target: str, data: dict):
     if target:
         socket = JsOrc.svc("socket")
         if socket.is_running():
-            data = {
-                "processing": processing,
-                "pending": [p["goto"]["url"] for p in pages],
-                "scanned": urls["scanned"],
-                "scraped": urls["scraped"],
-            }
-            if content:
-                data["content"] = content
+            socket.notify("client", target, data)
 
-            socket.notify("client", target, {"type": "scraper", "data": data})
+
+def notify_client(target: str, pages: list, urls: dict, processing: dict, content=None):
+    data = {
+        "processing": processing,
+        "pending": [p["goto"]["url"] for p in pages],
+        "scanned": urls["scanned"],
+        "scraped": urls["scraped"],
+    }
+    if content:
+        data["content"] = content
+
+    custom_notify_client(target, {"type": "scraper", "data": data})
 
 
 def scrape(
@@ -184,16 +190,56 @@ def run_scripts(page: Page, scripts: list[dict], urls: dict):
         add_url(page, urls)
 
 
-def scrape_preview(page: dict):
+def scrape_preview(page: dict, target: str):
     with sync_playwright() as spw:
         browser = spw.chromium.launch()
         b_page = browser.new_page()
         pg_goto = page.get("goto") or {}
         post_scripts = pg_goto.pop("post_scripts") or []
 
+        custom_notify_client(
+            target,
+            {"type": "scraper-preview", "data": {"status": "started", "data": pg_goto}},
+        )
+
         b_page.goto(**pg_goto)
         for script in post_scripts:
+            custom_notify_client(
+                target,
+                {
+                    "type": "scraper-preview",
+                    "data": {"status": "processing", "data": script},
+                },
+            )
+
             method = script.pop("method", "evalutate") or "evaluate"
             getattr(b_page, method)(**script)
 
-        return b_page.evaluate(f"() => document.documentElement.outerHTML")
+        content = b_page.evaluate(f"() => document.documentElement.outerHTML")
+
+        size = len(content)
+        seq = 0
+        max_seq = size - 1
+        for chunks in (
+            content[0 + i : MAX_LENGTH + i] for i in range(0, size, MAX_LENGTH)
+        ):
+            custom_notify_client(
+                target,
+                {
+                    "type": "scraper-preview",
+                    "data": {
+                        "status": "finalizing",
+                        "chunk": seq,
+                        "max": max_seq,
+                        "data": chunks,
+                    },
+                },
+            )
+            seq += 1
+
+        custom_notify_client(
+            target,
+            {"type": "scraper-preview", "data": {"status": "done"}},
+        )
+
+        return content

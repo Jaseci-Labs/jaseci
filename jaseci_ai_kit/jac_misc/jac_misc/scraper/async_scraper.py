@@ -17,6 +17,8 @@ from jac_misc.scraper.utils import (
     get_hostname,
 )
 
+MAX_LENGTH = 1000000  # 1,048,576 (48, 576 as buffer)
+
 
 class Client:
     def __init__(self) -> None:
@@ -43,16 +45,19 @@ class Client:
     def notify_client(
         self, target: str, pages: list, urls: dict, processing: dict, content=None
     ):
-        if self.enabled and self.socket and target:
-            data = {
-                "processing": processing,
-                "pending": [p["goto"]["url"] for p in pages],
-                "scanned": urls["scanned"],
-                "scraped": urls["scraped"],
-            }
-            if content:
-                data["content"] = content
+        data = {
+            "processing": processing,
+            "pending": [p["goto"]["url"] for p in pages],
+            "scanned": urls["scanned"],
+            "scraped": urls["scraped"],
+        }
+        if content:
+            data["content"] = content
 
+        self.custom_notify_client(target, {"type": "scraper", "data": data})
+
+    def custom_notify_client(self, target: str, data: dict, trial: int = 0):
+        if self.enabled and self.socket and target and trial < 5:
             try:
                 callback = uuid4()
                 self.socket.send(
@@ -62,7 +67,7 @@ class Client:
                             "data": {
                                 "target": target,
                                 "callback": callback,
-                                "data": {"type": "scraper", "data": data},
+                                "data": data,
                             },
                         }
                     )
@@ -75,7 +80,7 @@ class Client:
             except Exception:
                 exception("Error sending notification!")
                 self.create_connection()
-                self.notify_client(target, pages, urls, processing, content)
+                self.custom_notify_client(target, data, trial + 1)
 
 
 async def scrape(
@@ -244,16 +249,58 @@ async def run_scripts(page: Page, scripts: list[dict], urls: dict):
         add_url(page, urls)
 
 
-async def scrape_preview(page: dict):
+async def scrape_preview(page: dict, target: str = None):
+    ws = Client()
+
     async with async_playwright() as aspw:
         browser = await aspw.chromium.launch()
         b_page = await browser.new_page()
         pg_goto = page.get("goto") or {}
         post_scripts = pg_goto.pop("post_scripts") or []
 
+        ws.custom_notify_client(
+            target,
+            {"type": "scraper-preview", "data": {"status": "started", "data": pg_goto}},
+        )
+
         await b_page.goto(**pg_goto)
         for script in post_scripts:
+            ws.custom_notify_client(
+                target,
+                {
+                    "type": "scraper-preview",
+                    "data": {"status": "processing", "data": script},
+                },
+            )
+
             method = script.pop("method", "evalutate") or "evaluate"
             await getattr(b_page, method)(**script)
 
-        return await b_page.evaluate(f"() => document.documentElement.outerHTML")
+        content = await b_page.evaluate(f"() => document.documentElement.outerHTML")
+
+        size = len(content)
+        seq = 0
+        max_seq = size - 1
+        for chunks in (
+            content[0 + i : MAX_LENGTH + i] for i in range(0, size, MAX_LENGTH)
+        ):
+            ws.custom_notify_client(
+                target,
+                {
+                    "type": "scraper-preview",
+                    "data": {
+                        "status": "finalizing",
+                        "chunk": seq,
+                        "max": max_seq,
+                        "data": chunks,
+                    },
+                },
+            )
+            seq += 1
+
+        ws.custom_notify_client(
+            target,
+            {"type": "scraper-preview", "data": {"status": "done"}},
+        )
+
+        return content

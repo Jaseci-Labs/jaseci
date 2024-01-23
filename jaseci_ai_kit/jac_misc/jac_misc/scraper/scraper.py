@@ -25,6 +25,8 @@ if any(["uvicorn" in arg for arg in argv]):
 
     class ScraperPreviewRequest(BaseModel):
         page: dict
+        target: str = None
+        is_async: bool = False
 
     app = FastAPI()
 
@@ -39,12 +41,14 @@ if any(["uvicorn" in arg for arg in argv]):
                 async_scrape(sr.pages, sr.pre_configs, sr.detailed, sr.target)
             )
             return {"task": task.get_name()}
-        else:
-            return await async_scrape(sr.pages, sr.pre_configs, sr.detailed, sr.target)
+        return await async_scrape(sr.pages, sr.pre_configs, sr.detailed, sr.target)
 
     @app.post("/scrape_preview/")
     async def scrape_preview(spr: ScraperPreviewRequest):
-        return await async_scrape_preview(spr.page)
+        if spr.is_async:
+            task = asyncio.create_task(async_scrape_preview(spr.page, spr.target))
+            return {"task": task.get_name()}
+        return await async_scrape_preview(spr.page, spr.target)
 
     @app.get("/jaseci_actions_spec/")
     def action_list():
@@ -67,5 +71,5 @@ else:
         return sync_scrape(pages, pre_configs, detailed, target)
 
     @jaseci_action(act_group=["wbs"])
-    def scrape_preview(page: dict):
-        return sync_scrape_preview(page)
+    def scrape_preview(page: dict, target: str = None):
+        return sync_scrape_preview(page, target)
