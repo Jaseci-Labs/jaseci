@@ -252,8 +252,18 @@ class AstTool:
                 code = file.read()
             parsed_ast = py_ast.parse(code)
             return print_ast_tree(parsed_ast)
+        elif file_name.endswith(".jac"):
+            [base, mod] = os.path.split(file_name)
+            base = base if base else "./"
+            pyast = jac_file_to_pass(file_name).ir.gen.py_ast
+            print(pyast)
+            return (
+                print_ast_tree(pyast)
+                if isinstance(pyast, py_ast.AST)
+                else "Compile failed."
+            )
         else:
-            return "Not a .py file."
+            return "Not a .jac or .py file."
 
     def symtab_print(self, args: List[str]) -> str:
         """Generate a dot file for AST."""
