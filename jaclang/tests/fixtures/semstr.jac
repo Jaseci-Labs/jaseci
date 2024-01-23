@@ -1,4 +1,4 @@
-# enum 'enum' emotion { 
+# enum 'enum' emotion {
 #         Happy,
 #         Sad,
 #         Calm,
@@ -25,5 +25,5 @@
 # }
 
 can add() -> 'no of'int {}
-# can 'update user mood' 
+# can 'update user mood'
 # updateMood(* 'jll'mood: str,'fd'gfgf:str) ->'mood selection'str {}
