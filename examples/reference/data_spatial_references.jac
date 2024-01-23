@@ -16,7 +16,7 @@ walker Walk {
 :walker:Walk:can:create{
     for i=0 to i<5 by i+=1 {
         <root> +:MyEdge:val=random.randint(1,10):+> MyNode(value=i+1);
-        <here> ++>  MyNode(value=i+1);
+        #<here> ++>  MyNode(value=i+1);
         }
     visit -->;
 }
@@ -31,7 +31,7 @@ walker Walk {
 
 with entry {
    <root> spawn Walk();
-   #<root>._jac_.gen_dot();
+   <root>._jac_.gen_dot();
 
 }
 
