@@ -49,7 +49,7 @@ edge MyEdge {
 }
 
 
-:node:node_a:can:print_some{   
+:node:node_a:can:print_some{
     print(f"this is {<self>}");
     visit--> ;
 }
