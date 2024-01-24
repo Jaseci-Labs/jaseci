@@ -97,14 +97,34 @@ def print_ast_tree(
     def __node_repr_in_py_tree(node: ast3.AST) -> str:
         if isinstance(node, ast3.Constant):
             return f"{node.__class__.__name__} - {node.value}"
-        elif isinstance(node, ast3.FunctionDef):
-            return f"{node.__class__.__name__} - {node.name}"
-        elif isinstance(node, ast3.Call):
-            return f"{node.__class__.__name__} - {node.func.id}"
         elif isinstance(node, ast3.Name):
             return f"{node.__class__.__name__} - {node.id}"
+        elif isinstance(node, ast3.FunctionDef | ast3.ClassDef):
+            return f"{node.__class__.__name__} - {node.name}"
+        elif isinstance(node, ast3.Import):
+            return f"{node.__class__.__name__} - {', '.join(alias.name for alias in node.names)}"
+        elif isinstance(node, ast3.ImportFrom):
+            return f"{node.__class__.__name__} - {node.module} : {', '.join(alias.name for alias in node.names)}"
+        elif isinstance(node, ast3.alias):
+            return f"{node.__class__.__name__} - {node.name}"
+        elif isinstance(node, ast3.Attribute):
+            return f"{node.__class__.__name__} - {node.attr}"
+        elif isinstance(node, ast3.Call):
+            if isinstance(node.func, ast3.Name):
+                return f"{node.__class__.__name__} - {node.func.id}"
+            elif isinstance(node.func, ast3.Attribute):
+                return f"{node.__class__.__name__} - {node.func.attr}"
         else:
             return f"{node.__class__.__name__}"
+
+    def get_location_info(node: ast3.AST) -> str:
+        if hasattr(node, "lineno"):
+            start_pos = f"{node.lineno}:{node.col_offset + 1}"
+            end_pos = f"{node.end_lineno}:{node.end_col_offset + 1}"
+            prefix = f"{start_pos} - {end_pos}"
+            prefix = prefix.ljust(20)
+            return prefix
+        return " " * 20
 
     if root is None or (
         max_depth is not None and len(level_markers or []) >= max_depth
@@ -131,7 +151,9 @@ def print_ast_tree(
                 child, marker, [*level_markers, not is_last], output_file, max_depth
             )
     elif isinstance(root, ast3.AST):
-        tree_str = f"{markers}{__node_repr_in_py_tree(root)}\n"
+        tree_str = (
+            f"{get_location_info(root)}\t{markers}{__node_repr_in_py_tree(root)}\n"
+        )
         for i, child in enumerate(ast3.iter_child_nodes(root)):
             is_last = i == len(list(ast3.iter_child_nodes(root))) - 1
             tree_str += print_ast_tree(
