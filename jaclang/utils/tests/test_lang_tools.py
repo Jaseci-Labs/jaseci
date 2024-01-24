@@ -53,6 +53,26 @@ class JacFormatPassTests(TestCase):
             passed += 1
         self.assertGreater(passed, 10)
 
+    def test_print_py(self) -> None:
+        """Testing for print_py AstTool."""
+        jac_py_directory = os.path.join(
+            os.path.dirname(jaclang.__file__), "../examples/reference/"
+        )
+        jac_py_files = [
+            f for f in os.listdir(jac_py_directory) if f.endswith((".jac", ".py"))
+        ]
+        for file in jac_py_files:
+            msg = "error in " + file
+            out = AstTool().print_py([jac_py_directory + file])
+            if file.endswith(".jac"):
+                self.assertIn("+-- ", out, msg)
+                self.assertIsNotNone(out, msg=msg)
+            elif file.endswith(".py"):
+                if out == (" " * 20 + "\tModule\n"):
+                    continue
+                self.assertIn("+-- ", out, msg)
+                self.assertIsNotNone(out, msg=msg)
+
     def test_automated(self) -> None:
         """Testing for py, jac, md files for each content in Jac Grammer."""
         lark_path = os.path.join(os.path.dirname(jaclang.__file__), "compiler/jac.lark")
