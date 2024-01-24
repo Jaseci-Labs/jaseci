@@ -234,13 +234,16 @@ class JacFormatPass(Pass):
                     continue
             elif isinstance(stmt, ast.Semi):
                 self.emit(node, f"{stmt.gen.jac} ")
-            elif (
-                isinstance(prev_token, (ast.HasVar, ast.ArchHas))
-                and not isinstance(stmt, (ast.HasVar, ast.ArchHas))
-            ) or (
-                isinstance(prev_token, ast.Ability) and isinstance(stmt, ast.Ability)
+            elif isinstance(prev_token, (ast.HasVar, ast.ArchHas)) and not isinstance(
+                stmt, (ast.HasVar, ast.ArchHas)
             ):
                 if not isinstance(prev_token.kid[-1], ast.CommentToken):
+                    self.emit_ln(node, "")
+                self.emit(node, f"{stmt.gen.jac}")
+            elif isinstance(prev_token, ast.Ability) and isinstance(stmt, ast.Ability):
+                if not isinstance(prev_token.kid[-1], ast.CommentToken) and (
+                    prev_token.body and stmt.body
+                ):
                     self.emit_ln(node, "")
                 self.emit(node, f"{stmt.gen.jac}")
             else:
@@ -556,13 +559,15 @@ class JacFormatPass(Pass):
                         self.emit(node, f" {j.gen.jac}")
             elif isinstance(i, ast.SubNodeList):
                 for j in i.kid:
-                    # print(j, j.gen)
                     if j.gen.jac == ",":
                         self.emit(node, f"{j.gen.jac.strip()} ")
                     else:
                         self.emit(node, f"{j.gen.jac.strip()}")
             else:
-                self.emit(node, i.gen.jac)
+                if i.gen.jac == "->":
+                    self.emit(node, f" {i.gen.jac} ")
+                else:
+                    self.emit(node, i.gen.jac)
             prev_token = i
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
