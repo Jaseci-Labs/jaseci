@@ -15,6 +15,7 @@ walker walker_2{
 node node_b{
     has value:int;
     can do with walker_2 entry;
+    can print_one with walker_1 entry;
 }
 
 edge MyEdge {
@@ -37,9 +38,7 @@ edge MyEdge {
     for i=0 to i<3 by i+=1 {
         end +:MyEdge:val=random.randint(1,5):+> node_b(value=i+5);
     }
-    visit-->else {
-       print("finish walking");
-    }
+    visit-->;
 }
 :walker:walker_2:can:travel{
     print("Hi, this is walker_2");
@@ -58,6 +57,9 @@ edge MyEdge {
     print("Hey there!");
     visit-->;
     }
+:node:node_b:can:print_one{
+    print(f"This is {<self>}, Welcome walker_1!! ");
+}
 
 with entry{
     <root> spawn walker_1();
