@@ -460,7 +460,7 @@ builtin_type: TYP_TYPE
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-STRING: /"[^"\r\n]*"|'[^'\r\n]*'/
+STRING: /[rb]?("[^"\r\n]*"|'[^'\r\n]*')/
 BOOL.1: /True|False/
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/

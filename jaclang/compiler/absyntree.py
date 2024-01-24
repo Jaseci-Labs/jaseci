@@ -2168,6 +2168,14 @@ class String(Literal):
             self.value.startswith('"') and self.value.endswith('"')
         ):
             ret_str = self.value[1:-1]
+        elif (self.value.startswith("r'") and self.value.endswith("'")) or (
+            self.value.startswith('r"') and self.value.endswith('"')
+        ):
+            return self.value[2:-1]
+        elif (self.value.startswith("b'") and self.value.endswith("'")) or (
+            self.value.startswith('b"') and self.value.endswith('"')
+        ):
+            return eval(self.value)
         else:
             ret_str = self.value
         ret_str = ret_str.encode().decode("unicode_escape")
