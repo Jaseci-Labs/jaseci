@@ -9,7 +9,7 @@ can myFunc() {
 with entry{
 
         x = myFunc();
-        
+
         for z in x {
             print(z);
         }
