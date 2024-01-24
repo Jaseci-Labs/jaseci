@@ -2160,17 +2160,21 @@ class String(Literal):
     def lit_value(self) -> str:
         """Return literal value in its python type."""
         prefix_len = (
-            3 if self.value.startswith("'''") or self.value.startswith('"""') else 1
+            3 if self.value.startswith(("'''", '"""')) else 1
         )
-
-        if self.value.startswith(("r", "b", "br")):
+        if (
+            (self.value.startswith(("r", "b")) and self.value[1:].startswith(("'", '"'))) or
+            (self.value.startswith(("br","rb")) and self.value[2:].startswith(("'", '"')))
+        ):
             return eval(self.value)
         elif self.value.startswith(("'", '"')):
             ret_str = self.value[prefix_len:-prefix_len]
         else:
             ret_str = self.value
-        ret_str = ret_str.encode().decode("unicode_escape")
+        # ret_str = ret_str.encode().decode("unicode_escape")
+        ret_str = ret_str
         return ret_str
+
 
 class Bool(Literal):
     """Bool node type for Jac Ast."""
