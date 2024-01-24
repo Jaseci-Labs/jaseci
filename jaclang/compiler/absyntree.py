@@ -2150,7 +2150,7 @@ class Int(Literal):
     def lit_value(self) -> int:
         """Return literal value in its python type."""
         return int(self.value)
-    
+
 class String(Literal):
     """String node type for Jac Ast."""
 
@@ -2159,9 +2159,11 @@ class String(Literal):
     @property
     def lit_value(self) -> str:
         """Return literal value in its python type."""
-        prefix_len = 3 if self.value.startswith("'''") or self.value.startswith('"""') else 1
+        prefix_len = (
+            3 if self.value.startswith("'''") or self.value.startswith('"""') else 1
+        )
 
-        if self.value.startswith(("r", "br")):
+        if self.value.startswith(("r", "b", "br")):
             return eval(self.value)
         elif self.value.startswith(("'", '"')):
             ret_str = self.value[prefix_len:-prefix_len]
