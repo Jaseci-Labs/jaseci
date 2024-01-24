@@ -2150,8 +2150,7 @@ class Int(Literal):
     def lit_value(self) -> int:
         """Return literal value in its python type."""
         return int(self.value)
-
-
+    
 class String(Literal):
     """String node type for Jac Ast."""
 
@@ -2160,27 +2159,16 @@ class String(Literal):
     @property
     def lit_value(self) -> str:
         """Return literal value in its python type."""
-        if (self.value.startswith("'''") and self.value.endswith("'''")) or (
-            self.value.startswith('"""') and self.value.endswith('"""')
-        ):
-            ret_str = self.value[3:-3]
-        elif (self.value.startswith("'") and self.value.endswith("'")) or (
-            self.value.startswith('"') and self.value.endswith('"')
-        ):
-            ret_str = self.value[1:-1]
-        elif (self.value.startswith("r'") and self.value.endswith("'")) or (
-            self.value.startswith('r"') and self.value.endswith('"')
-        ):
-            return self.value[2:-1]
-        elif (self.value.startswith("b'") and self.value.endswith("'")) or (
-            self.value.startswith('b"') and self.value.endswith('"')
-        ):
+        prefix_len = 3 if self.value.startswith("'''") or self.value.startswith('"""') else 1
+
+        if self.value.startswith(("r", "br")):
             return eval(self.value)
+        elif self.value.startswith(("'", '"')):
+            ret_str = self.value[prefix_len:-prefix_len]
         else:
             ret_str = self.value
         ret_str = ret_str.encode().decode("unicode_escape")
         return ret_str
-
 
 class Bool(Literal):
     """Bool node type for Jac Ast."""
