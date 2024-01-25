@@ -28,12 +28,11 @@ walker Walk {
     can step with Item entry {
         <here>.value = <self>.count;
         <self>.count+=1;
-        visit-->else  {
+        visit --> else {
             print(f"Final Value: {<here>.value - 1}");
             "Done walking." |> print;
             disengage;
         }
-
         f"Value: {<here>.value - 1}" |> print;
     }
 }

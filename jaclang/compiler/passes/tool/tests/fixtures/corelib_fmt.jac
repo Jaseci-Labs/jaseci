@@ -122,16 +122,12 @@ obj Master {
 obj JacPlugin {
     @hookimpl
     static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
-
     @hookimpl
     static can get_root() -> Architype;
-
     @hookimpl
     static can build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
-
     @hookimpl
     static can connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
-
     @hookimpl
     static can visit_node(walker_obj: Any, expr: Any) -> bool;
 }
@@ -140,14 +136,14 @@ obj JacPlugin {
 (caller_id: UUID, item_id: UUID, override: bool=False) -> Element {
     ret = item_id |> <self>.index.get;
     if override
-        or (ret is not None  and caller_id |> ret.__is_readable) {
+        or (ret is not None and caller_id |> ret.__is_readable) {
         return ret;
     }
 }
 
 :obj:Memory:can:has_obj
 (item_id: UUID) -> bool {
-    return item_id in <self>.index ;
+    return item_id in <self>.index;
 }
 
 :obj:Memory:can:save_obj
@@ -187,7 +183,7 @@ obj JacPlugin {
     return dist;
 }
 
-:obj:Memory:can:get_mem_size->float {
+:obj:Memory:can:get_mem_size -> float {
     return (<self>.index |> sys.getsizeof) / 1024.0;
 }
 
@@ -221,20 +217,20 @@ obj JacPlugin {
     <self>.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:obj:ElementAnchor:can:is_public_ro->bool {
+:obj:ElementAnchor:can:is_public_ro -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:obj:ElementAnchor:can:is_public_rw->bool {
+:obj:ElementAnchor:can:is_public_rw -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:obj:ElementAnchor:can:is_private->bool {
+:obj:ElementAnchor:can:is_private -> bool {
     return <self>.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
 :obj:ElementAnchor:can:is_readable
-(caller_id: UUID)->bool {
+(caller_id: UUID) -> bool {
     return (caller_id == <self>.owner_id
         or |> <self>.is_public_read
         or caller_id in <self>.ro_access
@@ -242,7 +238,7 @@ obj JacPlugin {
 }
 
 :obj:ElementAnchor:can:is_writable
-(caller_id: UUID)->bool {
+(caller_id: UUID) -> bool {
     return (caller_id == <self>.owner_id
         or |> <self>.is_public_write
         or caller_id in <self>.rw_access);
@@ -265,9 +261,9 @@ obj JacPlugin {
 
 :obj:ObjectAnchor:can:on_entry
 (cls: type, triggers: list) {
-    can decorator(func: callable)->callable {
+    can decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append({'types':triggers, 'func':func });
-        can wrapper(*args: list, **kwargs: dict)->callable {
+        can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
         return wrapper;
@@ -277,9 +273,9 @@ obj JacPlugin {
 
 :obj:ObjectAnchor:can:on_exit
 (cls: type, triggers: list) {
-    can decorator(func: callable)->callable {
+    can decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append({'types':triggers, 'func':func });
-        can wrapper(*args: list, **kwargs: dict)->callable {
+        can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
         return wrapper;
@@ -288,20 +284,20 @@ obj JacPlugin {
 }
 
 :obj:NodeAnchor:can:connect_node
-(nd: NodeInterface, edg: EdgeInterface)->Node {
+(nd: NodeInterface, edg: EdgeInterface) -> Node {
     edg.attach(<self>, nd);
     return <self>;
 }
 
 :obj:NodeAnchor:can:edges_to_nodes
-(dir: EdgeDir)->list[Node] {
+(dir: EdgeDir) -> list[Node] {
     ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
         for i in <self>.edges[EdgeDir.OUT] {
             ret_nodes.append(i.target);
         }
     } elif dir in [EdgeDir.IN, EdgeDir.ANY] {
-        for i in <self>.edges[EdgeDir.IN]  {
+        for i in <self>.edges[EdgeDir.IN] {
             ret_nodes.append(i.source);
         }
     }
@@ -309,13 +305,13 @@ obj JacPlugin {
 }
 
 :obj:EdgeAnchor:can:apply_dir
-(dir: EdgeDir)->Edge {
+(dir: EdgeDir) -> Edge {
     <self>.dir = dir;
     return <self>;
 }
 
 :obj:EdgeAnchor:can:attach
-(src: NodeInterface, trg: NodeInterface)->Edge {
+(src: NodeInterface, trg: NodeInterface) -> Edge {
     if <self>.dir == EdgeDir.IN {
         <self>.source = trg;
         <self>.target = src;
@@ -333,8 +329,8 @@ obj JacPlugin {
 :obj:WalkerAnchor:can:visit_node
 (nds: list[Node] | list[Edge] | Node | Edge) {
     if isinstance(nds, list) {
-        for i in nds  {
-            if (i not in <self>.ignores ) {
+        for i in nds {
+            if (i not in <self>.ignores) {
                 i :> <self>.next.append;
             }
         }
@@ -346,8 +342,8 @@ obj JacPlugin {
 
 :obj:WalkerAnchor:can:ignore_node
 (nds: list[Node] | list[Edge] | Node | Edge) {
-    if isinstance(nds, list)  {
-        for i in nds  {
+    if isinstance(nds, list) {
+        for i in nds {
             i :> <self>.ignores.append;
         }
     } else {
@@ -383,7 +379,7 @@ obj JacPlugin {
     while len(<self>.next) {
         nd = <self>.next.pop(0);
         print(nd.__class__.__name__, <self>.ds_entry_funcs);
-        for i in nd.ds_entry_funcs  {
+        for i in nd.ds_entry_funcs {
             if isinstance(<self>.ob, i.trigger) {
                 i.func(nd.ob, <self>);
             }
@@ -403,7 +399,7 @@ obj JacPlugin {
             if isinstance(nd.ob, i.trigger) {
                 i.func(<self>.ob, nd);
             }
-            if <self>.disengaged  {
+            if <self>.disengaged {
                 return;
             }
         }
@@ -421,7 +417,7 @@ obj JacPlugin {
 }
 
 :obj:JacPlugin:can:bind_architype
-(arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc])->bool {
+(arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
             arch._jac_ = ObjectAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
@@ -437,15 +433,15 @@ obj JacPlugin {
     return True;
 }
 
-:obj:JacPlugin:can:get_root()->None {
+:obj:JacPlugin:can:get_root() -> None {
     return exec_ctx.get_root();
 }
 
 :obj:JacPlugin:can:build_edge
-(edge_spec: tuple[int, Optional[type], Optional[tuple]])->Architype {
+(edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
     if (not edge_spec[1]) {
         edg_type = GenericEdge;
-    } else  {
+    } else {
         edg_type = edge_spec[1];
     }
     edg = edg_type(*(edge_spec[2])) if edge_spec[2] else edg_type();
@@ -454,13 +450,12 @@ obj JacPlugin {
 }
 
 :obj:JacPlugin:can:connect
-(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]])->Architype {
+(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
     edg = JacPlugin.build_edge(edge_spec);
     left.connect_node(right._jac_, edg._jac_);
 }
 
 :obj:JacPlugin:can:visit_node
-(walker_obj: Any, expr: Any)->bool {
+(walker_obj: Any, expr: Any) -> bool {
     return walker_obj._jac_.visit_node(expr);
 }
-
