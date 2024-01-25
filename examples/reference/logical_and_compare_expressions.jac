@@ -13,5 +13,5 @@ with entry{
         print( 3 in a);
 
         print(True or False);
-        print(False and False); 
+        print(False and False);
 }
