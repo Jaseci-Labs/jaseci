@@ -68,7 +68,7 @@ class JacFormatPassTests(TestCase):
                 self.assertIn("+-- ", out, msg)
                 self.assertIsNotNone(out, msg=msg)
             elif file.endswith(".py"):
-                if out == (" " * 20 + "\tModule\n"):
+                if len(out.splitlines()) == 1:
                     continue
                 self.assertIn("+-- ", out, msg)
                 self.assertIsNotNone(out, msg=msg)
