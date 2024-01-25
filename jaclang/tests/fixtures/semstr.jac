@@ -1,9 +1,11 @@
+
 enum 'enum' emotion {
         Happy,
         Sad,
         Calm,
         Angry
 }
+
 
 node 'personality'
 personality{
@@ -25,5 +27,7 @@ journal {
 }
 
 can add() -> 'no of'int {}
+
 can 'update user mood'
 updateMood(* 'jll' mood: str,'semstrinngfd'   gfgf:str) ->'mood selection'str {}
+
