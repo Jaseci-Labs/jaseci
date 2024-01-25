@@ -4,7 +4,6 @@ can foo(value : int){
     }
 }
 
-#have to use KW_FROM
 with entry{
     try{
         foo(-1);

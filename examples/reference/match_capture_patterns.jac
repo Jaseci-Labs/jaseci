@@ -1,13 +1,10 @@
 with entry{
-    data=" snoopy";
+    day=" sunday";
 
-    match data{
-        case "Ironman":
-          print("You are Marvel fan");
-        case "Batman":
-          print("You are DC fan");
+    match day{
+        case "monday":
+          print("confirmed");
         case _:
-          print("You are not a Marvel or DC fan");
-
+          print("other");
     }
 }

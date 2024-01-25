@@ -1,8 +1,7 @@
 a = 8
 match a:
     case 7:
-        print("Nope")
-    case 8:
-        print("Yep")
+        print("Doable")
     case _:
-        print("Not possible")
+        print("Undoable")
+
