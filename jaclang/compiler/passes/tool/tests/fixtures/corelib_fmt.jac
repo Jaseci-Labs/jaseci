@@ -19,7 +19,7 @@ obj Memory {
 
     #* Utility Functions *#
     can get_object_distribution -> dict;
-    can get_mem_size ->float;
+    can get_mem_size -> float;
 }
 
 obj ExecutionContext {
@@ -140,7 +140,7 @@ obj JacPlugin {
 (caller_id: UUID, item_id: UUID, override: bool=False) -> Element {
     ret = item_id |> <self>.index.get;
     if override
-        or (ret is not None  and caller_id |> ret.__is_readable)  {
+        or (ret is not None  and caller_id |> ret.__is_readable) {
         return ret;
     }
 }
@@ -152,23 +152,23 @@ obj JacPlugin {
 
 :obj:Memory:can:save_obj
 (caller_id: UUID, item: Element) {
-    if caller_id |> item.is_writable  {
+    if caller_id |> item.is_writable {
         <self>.index[item.id] = item;
-        if item._persist  {
+        if item._persist {
             item |> <self>.save_obj_list.add;
         }
     }
     <self>.mem[item.id] = item;
-    if item._persist  {
+    if item._persist {
         item |> <self>.save_obj_list.add;
     }
 }
 
 :obj:Memory:can:del_obj
 (caller_id: UUID, item: Element) {
-    if caller_id |> item.is_writable  {
+    if caller_id |> item.is_writable {
         <self>.index.pop(item.id);
-        if item._persist  {
+        if item._persist {
             item |> <self>.save_obj_list.remove;
         }
     }
@@ -176,11 +176,11 @@ obj JacPlugin {
 
 :obj:Memory:can:get_object_distribution -> dict {
     dist = {};
-    for i in |> <self>.index.keys  {
+    for i in |> <self>.index.keys {
         t = <self>.index[i] |> type;
-        if t in dist   {
+        if t in dist {
             dist[t]+=1;
-        } else  {
+        } else {
             dist[t] = 1;
         }
     }
@@ -192,7 +192,7 @@ obj JacPlugin {
 }
 
 :obj:ExecutionContext:c:get_root() {
-    if <self>.master :> type == UUID   {
+    if <self>.master :> type == UUID {
         <self>.master = Master();
     }
     return <self>.master.root_node;
@@ -203,7 +203,8 @@ obj JacPlugin {
 }
 
 """Implementation for Jac's Element Abstractions"""
-:enum:AccessMode {    READ_ONLY,
+:enum:AccessMode {
+    READ_ONLY,
     READ_WRITE,
     PRIVATE
 }
@@ -221,15 +222,15 @@ obj JacPlugin {
 }
 
 :obj:ElementAnchor:can:is_public_ro->bool {
-    return <self>.__jinfo.access_mode == AccessMode.READ_ONLY ;
+    return <self>.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
 :obj:ElementAnchor:can:is_public_rw->bool {
-    return <self>.__jinfo.access_mode == AccessMode.READ_WRITE ;
+    return <self>.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
 :obj:ElementAnchor:can:is_private->bool {
-    return <self>.__jinfo.access_mode == AccessMode.PRIVATE ;
+    return <self>.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
 :obj:ElementAnchor:can:is_readable
@@ -249,9 +250,9 @@ obj JacPlugin {
 
 :obj:ElementAnchor:can:give_access
 (caller_id: UUID, read_write: bool=False) {
-    if read_write  {
+    if read_write {
         caller_id |> <self>.rw_access.add;
-    } else  {
+    } else {
         caller_id |> add.>ro_access.><self>;
     }
 }
@@ -315,12 +316,12 @@ obj JacPlugin {
 
 :obj:EdgeAnchor:can:attach
 (src: NodeInterface, trg: NodeInterface)->Edge {
-    if <self>.dir == EdgeDir.IN   {
+    if <self>.dir == EdgeDir.IN {
         <self>.source = trg;
         <self>.target = src;
         <self> :> src.edges[EdgeDir.IN].append;
         <self> :> trg.edges[EdgeDir.OUT].append;
-    } else  {
+    } else {
         <self>.source = src;
         <self>.target = trg;
         <self> :> src.edges[EdgeDir.OUT].append;
@@ -331,13 +332,13 @@ obj JacPlugin {
 
 :obj:WalkerAnchor:can:visit_node
 (nds: list[Node] | list[Edge] | Node | Edge) {
-    if isinstance(nds, list)  {
+    if isinstance(nds, list) {
         for i in nds  {
-            if (i not in <self>.ignores )  {
+            if (i not in <self>.ignores ) {
                 i :> <self>.next.append;
             }
         }
-    } elif nds not in <self>.ignores   {
+    } elif nds not in <self>.ignores {
         nds :> <self>.next.append;
     }
     return len(nds) if isinstance(nds, list) else 1;
@@ -349,7 +350,7 @@ obj JacPlugin {
         for i in nds  {
             i :> <self>.ignores.append;
         }
-    } else  {
+    } else {
         nds :> <self>.ignores.append;
     }
 }
@@ -361,7 +362,7 @@ obj JacPlugin {
 
 :obj:NodeAnchor:can:__call__
 (walk: object) {
-    if not isinstance(walk._jac_, WalkerAnchor)  {
+    if not isinstance(walk._jac_, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
     }
     walk(<self>);
@@ -369,7 +370,7 @@ obj JacPlugin {
 
 :obj:EdgeAnchor:can:__call__
 (walk: EdgeInterface) {
-    if not isinstance(walk._jac_, WalkerAnchor)  {
+    if not isinstance(walk._jac_, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
     }
     walk(<self>._jac_.target);
@@ -379,18 +380,18 @@ obj JacPlugin {
 (nd: NodeInterface) {
     <self>.path = [];
     <self>.next = [nd];
-    while len(<self>.next)  {
+    while len(<self>.next) {
         nd = <self>.next.pop(0);
         print(nd.__class__.__name__, <self>.ds_entry_funcs);
         for i in nd.ds_entry_funcs  {
-            if isinstance(<self>.ob, i.trigger)  {
+            if isinstance(<self>.ob, i.trigger) {
                 i.func(nd.ob, <self>);
             }
-            if <self>.disengaged  {
+            if <self>.disengaged {
                 return;
             }
         }
-        for i in <self>.ds_entry_funcs  {
+        for i in <self>.ds_entry_funcs {
             if isinstance(nd.ob, i.trigger) {
                 i.func(<self>.ob, nd);
             }
@@ -399,7 +400,7 @@ obj JacPlugin {
             }
         }
         for i in <self>.ds_exit_funcs {
-            if isinstance(nd.ob, i.trigger)  {
+            if isinstance(nd.ob, i.trigger) {
                 i.func(<self>.ob, nd);
             }
             if <self>.disengaged  {
@@ -442,7 +443,7 @@ obj JacPlugin {
 
 :obj:JacPlugin:can:build_edge
 (edge_spec: tuple[int, Optional[type], Optional[tuple]])->Architype {
-    if (not edge_spec[1])  {
+    if (not edge_spec[1]) {
         edg_type = GenericEdge;
     } else  {
         edg_type = edge_spec[1];
