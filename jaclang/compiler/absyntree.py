@@ -2160,14 +2160,16 @@ class String(Literal):
     @property
     def lit_value(self) -> str:
         """Return literal value in its python type."""
-        if (self.value.startswith("'''") and self.value.endswith("'''")) or (
-            self.value.startswith('"""') and self.value.endswith('"""')
+        prefix_len = 3 if self.value.startswith(("'''", '"""')) else 1
+        if any(
+            self.value.startswith(prefix)
+            and self.value[len(prefix) :].startswith(("'", '"'))
+            for prefix in ["r", "b", "br", "rb"]
         ):
-            ret_str = self.value[3:-3]
-        elif (self.value.startswith("'") and self.value.endswith("'")) or (
-            self.value.startswith('"') and self.value.endswith('"')
-        ):
-            ret_str = self.value[1:-1]
+            return eval(self.value)
+
+        elif self.value.startswith(("'", '"')):
+            ret_str = self.value[prefix_len:-prefix_len]
         else:
             ret_str = self.value
         ret_str = ret_str.encode().decode("unicode_escape")

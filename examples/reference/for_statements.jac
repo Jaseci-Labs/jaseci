@@ -1,13 +1,9 @@
 with entry{
-    start_range = 1;
-    end_range = 5;
 
-    for i in range(start_range, end_range + 1){
-        for number = 1 to number<=10 by number+=1{
-            product = i * number;
-            print(f"{i} x {number} = {product}");
+    for i in range(1, 4 ){
+        for j = 1 to j<3 by j+=1{
+            print(i,j);
         }
-        print("\n", end="");
     }
 
 }
