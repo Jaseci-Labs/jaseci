@@ -99,7 +99,7 @@ def print_ast_tree(
             return f"{node.__class__.__name__} - {node.value}"
         elif isinstance(node, ast3.Name):
             return f"{node.__class__.__name__} - {node.id}"
-        elif isinstance(node, ast3.FunctionDef | ast3.ClassDef):
+        elif isinstance(node, ast3.FunctionDef | ast3.ClassDef | ast3.AsyncFunctionDef):
             return f"{node.__class__.__name__} - {node.name}"
         elif isinstance(node, ast3.Import):
             return f"{node.__class__.__name__} - {', '.join(alias.name for alias in node.names)}"
@@ -114,6 +114,8 @@ def print_ast_tree(
                 return f"{node.__class__.__name__} - {node.func.id}"
             elif isinstance(node.func, ast3.Attribute):
                 return f"{node.__class__.__name__} - {node.func.attr}"
+            else:
+                return f"{node.__class__.__name__}"
         else:
             return f"{node.__class__.__name__}"
 
@@ -122,9 +124,8 @@ def print_ast_tree(
             start_pos = f"{node.lineno}:{node.col_offset + 1}"
             end_pos = f"{node.end_lineno}:{node.end_col_offset + 1}"
             prefix = f"{start_pos} - {end_pos}"
-            prefix = prefix.ljust(20)
             return prefix
-        return " " * 20
+        return "-:- - -:-"
 
     if root is None or (
         max_depth is not None and len(level_markers or []) >= max_depth
@@ -154,10 +155,10 @@ def print_ast_tree(
         tree_str = (
             f"{get_location_info(root)}\t{markers}{__node_repr_in_py_tree(root)}\n"
         )
-        for i, child in enumerate(ast3.iter_child_nodes(root)):
-            is_last = i == len(list(ast3.iter_child_nodes(root))) - 1
+        for i_a, child_a in enumerate(ast3.iter_child_nodes(root)):
+            is_last = i_a == len(list(ast3.iter_child_nodes(root))) - 1
             tree_str += print_ast_tree(
-                child, marker, [*level_markers, not is_last], output_file, max_depth
+                child_a, marker, [*level_markers, not is_last], output_file, max_depth
             )
 
     # Write to file only at the top level call
