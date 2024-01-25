@@ -171,3 +171,13 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
+
+    def test_raw_bytestr(self) -> None:
+        """Test raw string and byte string."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("raw_byte_string", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count(r"\\\\"), 2)
+        self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)

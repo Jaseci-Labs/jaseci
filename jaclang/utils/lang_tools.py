@@ -16,6 +16,7 @@ from jaclang.compiler.passes.tool.schedules import (
 )
 from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
+from jaclang.utils.treeprinter import print_ast_tree
 
 
 class AstKidInfo:
@@ -245,17 +246,24 @@ class AstTool:
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
 
-        if file_name.endswith(".jac"):
+        if file_name.endswith(".py"):
+            [base, mod] = os.path.split(file_name)
+            base = base if base else "./"
+            with open(file_name, "r") as file:
+                code = file.read()
+            parsed_ast = py_ast.parse(code)
+            return print_ast_tree(parsed_ast)
+        elif file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
             pyast = jac_file_to_pass(file_name).ir.gen.py_ast
             return (
-                py_ast.dump(pyast, indent=2)
+                print_ast_tree(pyast)
                 if isinstance(pyast, py_ast.AST)
                 else "Compile failed."
             )
         else:
-            return "Not a .jac file."
+            return "Not a .jac or .py file."
 
     def symtab_print(self, args: List[str]) -> str:
         """Generate a dot file for AST."""

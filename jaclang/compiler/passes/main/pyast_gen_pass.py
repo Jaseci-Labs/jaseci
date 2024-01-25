@@ -1646,16 +1646,15 @@ class PyastGenPass(Pass):
 
         combined_multi: list[str | ast3.AST] = []
         for item in get_pieces(node.strings):
-            if (
-                combined_multi
-                and isinstance(item, str)
-                and isinstance(combined_multi[-1], str)
+            if combined_multi and (
+                (isinstance(item, str) and isinstance(combined_multi[-1], str))
+                or (isinstance(item, bytes) and isinstance(combined_multi[-1], bytes))
             ):
                 combined_multi[-1] += item
             else:
                 combined_multi.append(item)
         for i in range(len(combined_multi)):
-            if isinstance(combined_multi[i], str):
+            if isinstance(combined_multi[i], (str, bytes)):
                 combined_multi[i] = self.sync(ast3.Constant(value=combined_multi[i]))
         if len(combined_multi) > 1 or not isinstance(combined_multi[0], ast3.Constant):
             node.gen.py_ast = self.sync(

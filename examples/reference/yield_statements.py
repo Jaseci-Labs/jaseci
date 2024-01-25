@@ -1,12 +1,10 @@
-def fibonacci(n: int) -> None:
-    a, b = (0, 1)
-    count = 0
-    while count < n:
-        yield a
-        a, b = (b, a + b)
-        count += 1
+def myFunc() -> None:
+    yield "Hello"
+    yield 91
+    yield "Good Bye"
 
 
-number = 15
-for num in fibonacci(number):
-    print(num)
+x = myFunc()
+
+for z in x:
+    print(z)

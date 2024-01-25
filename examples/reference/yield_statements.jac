@@ -1,16 +1,16 @@
-can fibonacci(n:int){
-    (a, b ) = (0, 1) ;
-    count = 0 ;
+can myFunc() {
 
-    while count < n{
-        yield a ;
-        (a, b) = (b, a + b) ;
-        count += 1 ;
-    }
+  yield "Hello";
+  yield 91;
+  yield "Good Bye";
+
 }
+
 with entry{
-    number = 15;
-    for num in fibonacci(number){
-        print(num);
-    }
+
+        x = myFunc();
+
+        for z in x {
+            print(z);
+        }
 }
