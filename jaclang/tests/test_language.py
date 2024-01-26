@@ -181,3 +181,15 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count(r"\\\\"), 2)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
+
+    def test_deep_imports(self) -> None:
+        """Parse micro jac file."""
+        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("deep_import", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        print(stdout_value)
+        self.assertEqual(stdout_value.split("\n")[0].count("here"), 10)
+        self.assertEqual(stdout_value.split("\n")[1].count("here"), 5)
