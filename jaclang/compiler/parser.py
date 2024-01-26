@@ -3614,6 +3614,8 @@ class JacParser(Pass):
                 Tok.DOC_STRING,
             ]:
                 ret_type = ast.String
+                if token.type == Tok.FSTR_BESC:
+                    token.value = token.value[1:]
             elif token.type == Tok.BOOL:
                 ret_type = ast.Bool
             elif token.type == Tok.PYNLINE and isinstance(token.value, str):
