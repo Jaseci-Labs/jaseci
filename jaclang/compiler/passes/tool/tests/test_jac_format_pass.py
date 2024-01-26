@@ -67,8 +67,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
         # Testing the core_lib
         self.compare_files(
-            "core_lib.jac",
-            "jaclang/compiler/passes/tool/tests/fixtures/core_lib_fmt.jac",
+            "corelib.jac",
+            "jaclang/compiler/passes/tool/tests/fixtures/corelib_fmt.jac",
         )
 
     def micro_suite_test(self, filename: str) -> None:

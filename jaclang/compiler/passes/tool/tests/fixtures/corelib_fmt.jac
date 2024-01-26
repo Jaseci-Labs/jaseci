@@ -10,13 +10,11 @@ enum AccessMode;
 obj Memory {
     has index: dict[UUID, Element] = {},
         save_queue: list[Element] = [];
-
     #* Main Accessors *#
     can get_obj(caller_id: UUID, item_id: UUID, override: bool=False) -> Element;
     can has_obj(item_id: UUID) -> bool;
     can save_obj(caller_id: UUID, item: Element);
     can del_obj(caller_id: UUID, item: Element);
-
     #* Utility Functions *#
     can get_object_distribution -> dict;
     can get_mem_size -> float;

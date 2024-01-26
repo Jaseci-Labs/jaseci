@@ -95,7 +95,8 @@ class JacFormatPass(Pass):
                     self.emit(node, j.gen.jac)
             prev_token = i
         last_element = None
-        for i in node.body:
+        for counter, i in enumerate(node.body):
+            counter += 1
             if isinstance(i, ast.Import):
                 self.emit_ln(node, i.gen.jac)
             else:
@@ -104,7 +105,8 @@ class JacFormatPass(Pass):
                 self.emit_ln(node, i.gen.jac)
                 if not node.gen.jac.endswith("\n"):
                     self.emit_ln(node, "")
-                self.emit_ln(node, "")
+                if counter <= len(node.body) - 1:
+                    self.emit_ln(node, "")
             last_element = i
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
@@ -628,10 +630,7 @@ class JacFormatPass(Pass):
                     self.emit(node, f" {i.gen.jac}")
                     self.emit_ln(node, "")
                 elif not node.gen.jac.endswith("\n"):
-                    self.indent_level -= 2
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, "")
-                    self.indent_level += 2
+                    self.emit(node, "\n")
                     self.emit_ln(node, i.gen.jac)
                 else:
                     self.emit_ln(node, i.gen.jac)
