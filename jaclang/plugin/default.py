@@ -195,4 +195,14 @@ class JacFeatureDefaults:
             edge._jac_.dir = edge_dir
         else:
             raise TypeError("Invalid edge object")
+        if conn_assign and isinstance(conn_assign, tuple) and len(conn_assign) == 2:
+            field, value = conn_assign[0][0], conn_assign[1][0]
+            if hasattr(edge, field):
+                setattr(edge, field, value)
+            else:
+                # Return an error if the attribute does not exist
+                return ValueError(f"Invalid attribute: {field}")
+
+        print(conn_assign)
+
         return edge
