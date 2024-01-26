@@ -1,8 +1,8 @@
-"""Test of jac importing python."""
-import:py pyfunc;
-import:py from pyfunc, my_print;
+# """Test of jac importing python."""
+import:py circle;
+import:py from circle, calculate_area;
 
 with entry {
-    my_print(pyfunc);
+    print(f"are {calculate_area(2.0)}");
 }
 
