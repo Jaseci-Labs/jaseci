@@ -113,21 +113,6 @@ class PyastGenPass(Pass):
         )
         self.already_added.append("jac_feature")
 
-    def needs_test(self) -> None:
-        """Check if test is needed."""
-        if "test" in self.already_added:
-            return
-        test_code = (
-            "import unittest as __jac_unittest__\n"
-            "__jac_tc__ = __jac_unittest__.TestCase()\n"
-            "__jac_suite__ = __jac_unittest__.TestSuite()\n"
-            "class __jac_check:\n"
-            "    def __getattr__(self, name):\n"
-            "        return getattr(__jac_tc__, 'assert'+name)"
-        )
-        self.preamble += ast3.parse(test_code).body
-        self.already_added.append("test")
-
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
@@ -279,7 +264,6 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
         """
-        self.needs_test()
         test_name = node.name.sym_name
         func = self.sync(
             ast3.FunctionDef(
@@ -287,7 +271,7 @@ class PyastGenPass(Pass):
                 args=self.sync(
                     ast3.arguments(
                         posonlyargs=[],
-                        args=[],
+                        args=[self.sync(ast3.arg(arg="check", annotation=None))],
                         kwonlyargs=[],
                         vararg=None,
                         kwargs=None,
@@ -296,22 +280,23 @@ class PyastGenPass(Pass):
                     )
                 ),
                 body=self.resolve_stmt_block(node.body, doc=node.doc),
-                decorator_list=[],
+                decorator_list=[
+                    self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                            ),
+                            attr="create_test",
+                            ctx=ast3.Load(),
+                        )
+                    )
+                ],
                 returns=self.sync(ast3.Constant(value=None)),
                 type_comment=None,
                 type_params=[],
             ),
         )
-        func.body.insert(
-            0,
-            self.sync(ast3.parse("check = __jac_check()").body[0]),
-        )
-        check = self.sync(
-            ast3.parse(
-                f"__jac_suite__.addTest(__jac_unittest__.FunctionTestCase({test_name}))"
-            ).body[0]
-        )
-        node.gen.py_ast = [func, check]
+        node.gen.py_ast = [func]
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.

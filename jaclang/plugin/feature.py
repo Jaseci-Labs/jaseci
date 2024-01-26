@@ -41,6 +41,11 @@ class JacFeature:
         )
 
     @staticmethod
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a test."""
+        return JacFeature.pm.hook.create_test(test_fun=test_fun)
+
+    @staticmethod
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)

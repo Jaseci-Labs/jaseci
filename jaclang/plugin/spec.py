@@ -58,6 +58,12 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         raise NotImplementedError

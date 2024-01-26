@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, Union
 
 
 from jaclang.plugin.spec import (
@@ -68,6 +68,27 @@ class JacFeatureDefaults:
             return cls
 
         return decorator
+
+    @staticmethod
+    @hookimpl
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+
+        def test_deco() -> None:
+            import unittest as ut
+
+            tc = ut.TestCase()
+            ts = ut.TestSuite()
+
+            class JacCheck:
+                def __getattr__(self, name: str) -> Union[bool, Any]:
+                    return getattr(tc, "assert" + name)
+
+            check = JacCheck()
+            test_fun(check)
+            ts.addTest(ut.FunctionTestCase(test_fun.__name__))
+
+        return test_deco
 
     @staticmethod
     @hookimpl
