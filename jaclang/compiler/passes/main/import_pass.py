@@ -14,6 +14,7 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
+from jaclang.utils.helpers import import_target_to_relative_path
 
 
 class ImportPass(Pass):
@@ -37,7 +38,7 @@ class ImportPass(Pass):
                     mod = (
                         self.import_module(
                             node=i,
-                            mod_path=path.join(node.loc.mod_path, i.path.path_str),
+                            mod_path=node.loc.mod_path,
                         )
                         if i.lang.tag.value == "jac"
                         else self.import_py_module(node=i, mod_path=node.loc.mod_path)
@@ -75,12 +76,9 @@ class ImportPass(Pass):
         from jaclang.compiler.transpiler import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
-        print("HER#E", mod_path)
-
         self.cur_node = node  # impacts error reporting
-        base_dir = path.dirname(mod_path)
-        target = path.normpath(
-            path.join(base_dir, *(node.path.path_str.split("."))) + ".jac"
+        target = import_target_to_relative_path(
+            node.path.path_str, path.dirname(node.loc.mod_path)
         )
 
         if target in self.import_table:
