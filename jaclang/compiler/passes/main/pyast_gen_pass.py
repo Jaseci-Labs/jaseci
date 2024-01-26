@@ -372,18 +372,11 @@ class PyastGenPass(Pass):
         sub_module: Optional[Module],
         """
         py_nodes: list[ast3.AST] = []
-        level = 0
         if node.doc:
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc)
             )
-        py_compat_path_str = node.path.path_str
-        if node.path.path_str.startswith(".."):
-            level = 2
-            py_compat_path_str = node.path.path_str[2:]
-        elif node.path.path_str.startswith("."):
-            level = 1
-            py_compat_path_str = node.path.path_str[1:]
+        py_compat_path_str = node.path.path_str.lstrip(".")
         if node.lang.tag.value == Con.JAC_LANG_IMP:
             self.needs_jac_import()
             py_nodes.append(
@@ -427,7 +420,7 @@ class PyastGenPass(Pass):
                     py_node=ast3.ImportFrom(
                         module=py_compat_path_str,
                         names=[self.sync(ast3.alias(name="*"), node)],
-                        level=level,
+                        level=0,
                     ),
                     jac_node=node,
                 )
@@ -444,7 +437,7 @@ class PyastGenPass(Pass):
                     ast3.ImportFrom(
                         module=py_compat_path_str,
                         names=node.items.gen.py_ast,
-                        level=level,
+                        level=0,
                     )
                 )
             )

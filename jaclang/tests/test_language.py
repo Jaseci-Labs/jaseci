@@ -190,6 +190,4 @@ class JacLanguageTests(TestCase):
         jac_import("deep_import", self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
-        self.assertEqual(stdout_value.split("\n")[0].count("here"), 10)
-        self.assertEqual(stdout_value.split("\n")[1].count("here"), 5)
+        self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
