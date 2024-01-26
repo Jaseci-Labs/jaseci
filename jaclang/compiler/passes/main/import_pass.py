@@ -35,7 +35,10 @@ class ImportPass(Pass):
                 if i.lang.tag.value == "jac" and not i.sub_module:
                     self.run_again = True
                     mod = (
-                        self.import_module(node=i, mod_path=node.loc.mod_path)
+                        self.import_module(
+                            node=i,
+                            mod_path=path.join(node.loc.mod_path, i.path.path_str),
+                        )
                         if i.lang.tag.value == "jac"
                         else self.import_py_module(node=i, mod_path=node.loc.mod_path)
                     )
@@ -71,6 +74,8 @@ class ImportPass(Pass):
         """Import a module."""
         from jaclang.compiler.transpiler import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
+
+        print("HER#E", mod_path)
 
         self.cur_node = node  # impacts error reporting
         base_dir = path.dirname(mod_path)
