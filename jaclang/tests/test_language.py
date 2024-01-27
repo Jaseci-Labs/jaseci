@@ -191,3 +191,14 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+
+    def test_has_lambda_goodness(self) -> None:
+        """Test has lambda_goodness."""
+        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("has_goodness", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "mylist:  [1, 2, 3]")
+        self.assertEqual(stdout_value.split("\n")[1], "mydict:  {'a': 2, 'b': 4}")
