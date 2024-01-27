@@ -200,5 +200,5 @@ class JacLanguageTests(TestCase):
         jac_import("has_goodness", self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
-        self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+        self.assertEqual(stdout_value.split("\n")[0], "mylist:  [1, 2, 3]")
+        self.assertEqual(stdout_value.split("\n")[1], "mydict:  {'a': 2, 'b': 4}")
