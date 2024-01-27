@@ -30,7 +30,7 @@ edge MyEdge {
         #connect three nodes of node_b from node_a(val=3)
         if i == 2{
             for j=0 to j<3 by j+=1 {
-                end +:MyEdge:val=random.randint(1,5), val2=random.randint(1,5):+> node_b(value=j+10);
+                end +:MyEdge:val=random.randint(1,15), val2=random.randint(1,5):+> node_b(value=j+10);
             }
             print([(i.val, i.val2) for i in list(end._jac_.edges.values())[1]]);
         }
@@ -38,7 +38,7 @@ edge MyEdge {
 
     #connect 3 nodes of node_b from the last node_a created
     for i=0 to i<3 by i+=1 {
-        end +:MyEdge:val=random.randint(1,5):+> node_b(value=i+5);
+        end +:MyEdge:val=random.randint(1,20):+> node_b(value=i+5);
     }
 
     visit-->;

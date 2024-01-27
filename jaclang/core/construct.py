@@ -41,18 +41,33 @@ class NodeAnchor(ObjectAnchor):
         return self.obj
 
     def edges_to_nodes(
-        self, dir: EdgeDir, filter_type: Optional[type]
+        self, dir: EdgeDir, filter_type: Optional[type],filter_func: Optional[Callable]
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
+        print("here", filter_func)
+        filter_func = filter_func if filter_func else lambda x: x
         ret_nodes: list[NodeArchitype] = []
-        if dir in [EdgeDir.OUT]:
-            for i in self.edges[EdgeDir.OUT]:
-                if i._jac_.target and (not filter_type or isinstance(i, filter_type)):
-                    ret_nodes.append(i._jac_.target)
+        if dir in [EdgeDir.OUT]: 
+
+            print(self. edges[EdgeDir.OUT])
+            print(filter_func(self. edges[EdgeDir.OUT]))
+            for i in filter_func(
+                [
+                    x
+                    for x in self. edges[EdgeDir.OUT] 
+                    if x._jac_.target
+                    and (not filter_type or isinstance(x, filter_type))
+                ]
+            ):
+                ret_nodes. append (i._jac_.target)
         elif dir in [EdgeDir.IN]:
-            for i in self.edges[EdgeDir.IN]:
+            edge = []
+            for i in self.edges[EdgeDir. IN]:
                 if i._jac_.source and (not filter_type or isinstance(i, filter_type)):
-                    ret_nodes.append(i._jac_.source)
+                    edge.append (i)
+            new_edge = filter_func(edge)
+            for i in new_edge:
+                ret_nodes.append(i._jac_.source)
         return ret_nodes
 
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
