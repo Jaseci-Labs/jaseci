@@ -129,12 +129,11 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
-        filter_func: Optional[Callable] = None
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
-        print("b",filter_func)
         if isinstance(node_obj, NodeArchitype):
-                return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
+            return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
         else:
             raise TypeError("Invalid node object")
 

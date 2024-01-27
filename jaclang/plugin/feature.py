@@ -86,12 +86,11 @@ class JacFeature:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
-        filter_func: Optional[Callable] = None
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
-        print("a", filter_func)
         return JacFeature.pm.hook.edge_ref(
-            node_obj=node_obj, dir=dir, filter_type=filter_type,filter_func=filter_func
+            node_obj=node_obj, dir=dir, filter_type=filter_type, filter_func=filter_func
         )
 
     @staticmethod
