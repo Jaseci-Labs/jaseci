@@ -358,7 +358,10 @@ atom_literal: builtin_type
             | INT
 
 multistring: (fstring | STRING)+
+
 fstring: FSTR_START fstr_parts FSTR_END
+       | FSTR_SQ_START fstr_parts FSTR_SQ_END
+
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
 // Collection values
@@ -460,7 +463,7 @@ builtin_type: TYP_TYPE
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-STRING: /"[^"\r\n]*"|'[^'\r\n]*'/
+STRING: /(r?b?|b?r?)"[^"\r\n]*"|'[^'\r\n]*'/
 BOOL.1: /True|False/
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/
@@ -630,6 +633,8 @@ RSQUARE: /\]/
 // f-string tokens
 FSTR_START.1: "f\""
 FSTR_END: "\""
+FSTR_SQ_START.1: "f'"
+FSTR_SQ_END: "'"
 FSTR_PIECE.-1: /[^\{\}\"]+/
 FSTR_BESC.1: /{{|}}/
 

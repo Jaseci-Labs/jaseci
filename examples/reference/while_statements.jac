@@ -1,11 +1,7 @@
 with entry{
-    count = 5;
-
-    while count > 0{
-        print(f"Countdown: {count}");
-        count -= 1;
+        i = 1;
+        while i < 6{
+            print(i);
+            i += 1;
         }
-
-    print("Blastoff!");
-
 }
