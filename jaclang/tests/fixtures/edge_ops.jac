@@ -6,7 +6,6 @@ walker Creator {
 
 node node_a{
     has val:int;
-    can print_some with Creator entry;
 }
 
 walker Travelor{
@@ -14,8 +13,6 @@ walker Travelor{
 }
 node node_b{
     has value:int;
-    can do with Travelor entry;
-    can print_one with Creator entry;
 }
 
 edge MyEdge {
@@ -48,16 +45,6 @@ edge MyEdge {
             print(i.value);
         }
     visit-->;
-}
-
-
-:node:node_a:can:print_some{
-    visit--> ;
-}
-:node:node_b:can:do{
-    visit-->;
-    }
-:node:node_b:can:print_one{
 }
 
 with entry{

@@ -2043,7 +2043,9 @@ class PyastGenPass(Pass):
                     node.filter_type.gen.py_ast
                     if node.filter_type
                     else self.sync(ast3.Constant(value=None)),
-                    node.filter_cond.gen.py_ast if node.filter_cond else self.sync(ast3.Constant(value=None))
+                    node.filter_cond.gen.py_ast
+                    if node.filter_cond
+                    else self.sync(ast3.Constant(value=None)),
                 ],
                 keywords=[],
             )

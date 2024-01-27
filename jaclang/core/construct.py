@@ -47,14 +47,12 @@ class NodeAnchor(ObjectAnchor):
         filter_func = filter_func if filter_func else lambda x: x
         ret_nodes: list[NodeArchitype] = []
         if dir in [EdgeDir.OUT]:
-            for i in filter_func(
-                [
-                    x
-                    for x in self.edges[EdgeDir.OUT]
-                    if x._jac_.target
-                    and (not filter_type or isinstance(x, filter_type))
-                ]
-            ):
+            edge = []
+            for x in self.edges[EdgeDir.OUT]:
+                if x._jac_.target and (not filter_type or isinstance(x, filter_type)):
+                    edge.append(x)
+            new_edge = filter_func(edge)
+            for i in new_edge:
                 ret_nodes.append(i._jac_.target)
         elif dir in [EdgeDir.IN]:
             edge = []

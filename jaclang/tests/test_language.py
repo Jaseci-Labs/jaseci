@@ -211,4 +211,6 @@ class JacLanguageTests(TestCase):
         jac_import("edge_ops", self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.split("\n")[0], "[(2, 5), (1, 3), (1, 4)]")
+        self.assertEqual(stdout_value.split("\n")[0], "[(3, 5), (14, 1), (5, 1)]")
+        self.assertEqual(stdout_value.split("\n")[1], "10")
+        self.assertEqual(stdout_value.split("\n")[2], "12")
