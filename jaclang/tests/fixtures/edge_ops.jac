@@ -19,7 +19,8 @@ node node_b{
 }
 
 edge MyEdge {
-  has val:int =5;
+  has val:int =5,
+      val2:int = 10;
 }
 
 :walker:Creator:can:create{
@@ -29,16 +30,17 @@ edge MyEdge {
         #connect three nodes of node_b from node_a(val=3)
         if i == 2{
             for j=0 to j<3 by j+=1 {
-                end +:MyEdge:val=random.randint(1,5):+> node_b(value=j+10);
+                end +:MyEdge:val=random.randint(1,5), val2=random.randint(1,5):+> node_b(value=j+10);
             }
-
+            print([(i.val, i.val2) for i in list(end._jac_.edges.values())[1]]);
         }
     }
+
     #connect 3 nodes of node_b from the last node_a created
     for i=0 to i<3 by i+=1 {
         end +:MyEdge:val=random.randint(1,5):+> node_b(value=i+5);
     }
-    print([i.val for i in list(end._jac_.edges.values())[1]]);
+
     visit-->;
 }
 :walker:Travelor:can:travel{

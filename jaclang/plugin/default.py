@@ -192,7 +192,7 @@ class JacFeatureDefaults:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
@@ -201,13 +201,13 @@ class JacFeatureDefaults:
             edge._jac_.dir = edge_dir
         else:
             raise TypeError("Invalid edge object")
-        if conn_assign and isinstance(conn_assign, tuple) and len(conn_assign) == 2:
-            field, value = conn_assign[0][0], conn_assign[1][0]
-            if hasattr(edge, field):
-                setattr(edge, field, value)
-            else:
-                # Return an error if the attribute does not exist
-                return ValueError(f"Invalid attribute: {field}")
+        if conn_assign:
+            for fld, val in zip(conn_assign[0], conn_assign[1]):
+                if hasattr(edge, fld):
+                    setattr(edge, fld, val)
+                else:
+                    # Return an error if the attribute does not exist
+                    return ValueError(f"Invalid attribute: {field}")
 
         # print(conn_assign)
 
