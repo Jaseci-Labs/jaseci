@@ -25,11 +25,6 @@ journal {
 }
 
 can add() -> 'no of'int {}
-<<<<<<< HEAD
-# can 'update user mood'
-# updateMood(* 'jll'mood: str,'fd'gfgf:str) ->'mood selection'str {}
-=======
 
 can 'update user mood'
 updateMood(* 'jll' mood: str,'semstrinngfd'   gfgf:str) ->'mood selection'str {}
->>>>>>> main
