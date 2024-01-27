@@ -1,4 +1,5 @@
 """Utility functions and classes for Jac compilation toolchain."""
+import os
 import re
 import textwrap
 
@@ -91,3 +92,24 @@ def extract_headings(file_path: str) -> dict[str, tuple[int, int]]:
     if current_heading is not None:
         headings[current_heading] = (start_line, len(lines))
     return headings
+
+
+def import_target_to_relative_path(
+    import_target: str, base_path: str | None = None, file_extension: str = ".jac"
+) -> str:
+    """Convert an import target string into a relative file path."""
+    if base_path is None:
+        base_path = os.getcwd()
+    parts = import_target.split(".")
+    traversal_levels = 0
+    for part in parts:
+        if part == "":
+            traversal_levels += 1
+        else:
+            break  # Stop at the first non-empty part
+    traversal_levels = traversal_levels - 1 if traversal_levels > 0 else 0
+    actual_parts = parts[traversal_levels:]
+    for _ in range(traversal_levels):
+        base_path = os.path.dirname(base_path)
+    relative_path = os.path.join(base_path, *actual_parts) + file_extension
+    return relative_path

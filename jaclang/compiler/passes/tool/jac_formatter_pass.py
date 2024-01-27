@@ -2136,6 +2136,12 @@ class JacFormatPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        if (
+            node.value in ["{", "}"]
+            and isinstance(node.parent, ast.SubNodeList)
+            and isinstance(node.parent.parent, ast.FString)
+        ):
+            self.emit(node, node.value)
         self.emit(node, node.value)
 
     def enter_bool(self, node: ast.Bool) -> None:
