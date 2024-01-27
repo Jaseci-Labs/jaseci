@@ -356,6 +356,13 @@ class Errors(mye.Errors):
             end_column=end_column,
         )
         if (line, column, end_line, end_column) in mypy_to_jac_node_map:
+            if (
+                "https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports"
+                in message
+            ):
+                return
+            if 'Skipping analyzing "jaclang' in message:
+                return
             self.cur_pass.warning(
                 msg=message,
                 node_override=mypy_to_jac_node_map[

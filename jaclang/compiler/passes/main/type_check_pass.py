@@ -67,7 +67,7 @@ class JacTypeCheckPass(Pass):
         )
 
         mypy_graph = {}
-
+        new_modules = []
         for module in self.__modules:
             tree = myab.ASTConverter(
                 options=options,
@@ -86,6 +86,7 @@ class JacTypeCheckPass(Pass):
                 ast_override=tree,
             )
             mypy_graph[module.name] = st
+            new_modules.append(st)
 
         graph = myab.load_graph(
             [
@@ -96,6 +97,7 @@ class JacTypeCheckPass(Pass):
             ],
             manager,
             old_graph=mypy_graph,
+            new_modules=new_modules,  # To parse the dependancies of modules
         )
         myab.process_graph(graph, manager)
         myab.semantic_analysis_for_scc(graph, [self.__modules[0].name], errors)
