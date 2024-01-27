@@ -44,8 +44,8 @@ edge MyEdge {
     visit-->;
 }
 :walker:Travelor:can:travel{
-    for i in -:MyEdge:val<=5 :->{
-            print(i.val);
+    for i in -:MyEdge:val<=5:-> {
+            print(i.value);
         }
     visit-->;
 }

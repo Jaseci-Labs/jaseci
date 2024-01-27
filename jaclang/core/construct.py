@@ -47,15 +47,11 @@ class NodeAnchor(ObjectAnchor):
         ret_nodes: list[NodeArchitype] = []
         if dir in [EdgeDir.OUT]:
             for i in self.edges[EdgeDir.OUT]:
-                if i._jac_.target and (
-                    not filter_type or isinstance(i._jac_.target, filter_type)
-                ):
+                if i._jac_.target and (not filter_type or isinstance(i, filter_type)):
                     ret_nodes.append(i._jac_.target)
         elif dir in [EdgeDir.IN]:
             for i in self.edges[EdgeDir.IN]:
-                if i._jac_.source and (
-                    not filter_type or isinstance(i._jac_.source, filter_type)
-                ):
+                if i._jac_.source and (not filter_type or isinstance(i, filter_type)):
                     ret_nodes.append(i._jac_.source)
         return ret_nodes
 
@@ -80,8 +76,7 @@ class NodeAnchor(ObjectAnchor):
         if dot_file:
             with open(dot_file, "w") as f:
                 f.write(dot_content + "}")
-        else:
-            print(dot_content + "}")
+        return dot_content + "}"
 
 
 @dataclass(eq=False)
