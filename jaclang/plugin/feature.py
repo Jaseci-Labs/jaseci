@@ -46,6 +46,11 @@ class JacFeature:
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
+    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
+        return JacFeature.pm.hook.has_container_default(container=container)
+
+    @staticmethod
     def spawn_call(op1: Architype, op2: Architype) -> Architype:
         """Jac's spawn operator feature."""
         return JacFeature.pm.hook.spawn_call(op1=op1, op2=op2)
