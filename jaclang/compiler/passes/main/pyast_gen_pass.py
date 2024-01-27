@@ -867,16 +867,18 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name: Name,
-        type_tag: SubTag[ExprType],
-        value: Optional[ExprType],
+        type_tag: SubTag[Expr],
+        value: Optional[Expr],
+        semstr: Optional[String] = None,
         """
         annotation = node.type_tag.gen.py_ast if node.type_tag else None
-        if (
+        is_class_var = (
             node.parent
             and node.parent.parent
             and isinstance(node.parent.parent, ast.ArchHas)
             and node.parent.parent.is_static
-        ):
+        )
+        if is_class_var:
             self.needs_typing()
             annotation = self.sync(
                 ast3.Subscript(
@@ -896,7 +898,34 @@ class PyastGenPass(Pass):
             ast3.AnnAssign(
                 target=node.name.gen.py_ast,
                 annotation=annotation,
-                value=node.value.gen.py_ast if node.value else None,
+                value=self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="has_container_default",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="container",
+                                    value=node.value.gen.py_ast,
+                                )
+                            )
+                        ],
+                    )
+                )
+                if node.value
+                and not is_class_var
+                and isinstance(node.value.gen.py_ast, (ast3.List, ast3.Dict))
+                else node.value.gen.py_ast
+                if node.value
+                else None,
                 simple=int(isinstance(node.name, ast.Name)),
             )
         )
