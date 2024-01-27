@@ -209,6 +209,6 @@ class JacFeatureDefaults:
                 # Return an error if the attribute does not exist
                 return ValueError(f"Invalid attribute: {field}")
 
-        print(conn_assign)
+        # print(conn_assign)
 
         return edge

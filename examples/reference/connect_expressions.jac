@@ -1,28 +1,28 @@
 import:py random;
 
-walker walker_1 {
+walker Creator {
     can create with `<root> entry;
 }
 
 node node_a{
     has val:int;
-    can print_some with walker_1 entry;
+    can print_some with Creator entry;
 }
 
-walker walker_2{
+walker Travelor{
     can travel with `<root>|node_a entry;
 }
 node node_b{
     has value:int;
-    can do with walker_2 entry;
-    can print_one with walker_1 entry;
+    can do with Travelor entry;
+    can print_one with Creator entry;
 }
 
 edge MyEdge {
   has val:int =5;
 }
 
-:walker:walker_1:can:create{
+:walker:Creator:can:create{
     end = <here>;
     for i = 0 to i<5 by i+=1{
         end ++> end := node_a(val=i+1);
@@ -37,11 +37,11 @@ edge MyEdge {
     #connect 3 nodes of node_b from the last node_a created
     for i=0 to i<3 by i+=1 {
         end +:MyEdge:val=random.randint(1,5):+> node_b(value=i+5);
+        print(end._jac_.edges);
     }
     visit-->;
 }
-:walker:walker_2:can:travel{
-    print("Hi, this is walker_2");
+:walker:Travelor:can:travel{
     for i in -:MyEdge:val<=5 :->{
             print(i.val);
         }
@@ -50,19 +50,16 @@ edge MyEdge {
 
 
 :node:node_a:can:print_some{
-    print(f"this is {<self>}");
     visit--> ;
 }
 :node:node_b:can:do{
-    print("Hey there!");
     visit-->;
     }
 :node:node_b:can:print_one{
-    print(f"This is {<self>}, Welcome walker_1!! ");
 }
 
 with entry{
-    <root> spawn walker_1();
-    <root> spawn walker_2();
+    <root> spawn Creator();
+    <root> spawn Travelor();
     #<root>._jac_.gen_dot();
 }
