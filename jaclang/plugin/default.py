@@ -206,9 +206,5 @@ class JacFeatureDefaults:
                 if hasattr(edge, fld):
                     setattr(edge, fld, val)
                 else:
-                    # Return an error if the attribute does not exist
-                    return ValueError(f"Invalid attribute: {field}")
-
-        # print(conn_assign)
-
+                    raise ValueError(f"Invalid attribute: {field}")
         return edge
