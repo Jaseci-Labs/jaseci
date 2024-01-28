@@ -1,4 +1,4 @@
-#version1 
+#version1
 walker creator{
      can create with `<root> entry;
 }
@@ -20,7 +20,7 @@ node item{
                  };
  }
 :walker:creator:can:create{
-    end = <here>; 
+    end = <here>;
     for i=0 to i<5 by i+=1 {
         end ++>  end := item(val=i+1);
     }
@@ -34,7 +34,7 @@ with entry{
          <root> spawn creator();
          <r> spawn Travellor();
 }
- 
+
 # #version2
 # #1
 # walker creator{
@@ -45,7 +45,7 @@ with entry{
 #      can func_1 with creator entry;
 # }
 # :walker:creator:can:create{
-#     end = <here>; 
+#     end = <here>;
 #     for i=0 to i<5 by i+=1 {
 #         end ++>  end := item(val=i+1);
 #     }
@@ -68,13 +68,13 @@ with entry{
 # }
 # :node:item:can:func_1{
 #         print("visiting ",<s>);
-        
+
 #         visit-->else{
 #                    print("finished visitng all nodes  ....\n");
 #                  };
 #  }
 # :walker:creator:can:create{
-#     end = <here>; 
+#     end = <here>;
 #     for i=0 to i<5 by i+=1 {
 #         end ++>  end := item(val=i+1);
 #     }

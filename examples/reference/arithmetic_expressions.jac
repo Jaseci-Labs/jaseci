@@ -1,4 +1,4 @@
-with entry{  
+with entry{
      p = print;
 
     p("Multiply:", 7 * 2);
