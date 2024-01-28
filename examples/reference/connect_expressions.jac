@@ -1,14 +1,11 @@
 import:py random;
 
-walker Creator {
-    can create with `<root> entry;
-}
-
 node node_a{
     has value:int;
 }
 
-walker Travelor{
+walker Creator {
+    can create with `<root> entry;
     can travel with `<root>|node_a entry;
 }
 
@@ -18,22 +15,16 @@ edge MyEdge {
 
 :walker:Creator:can:create{
     end = <here>;
-    for i = 0 to i<5 by i+=1{
-        end ++> end := node_a(value=i+1);
-        #connect three nodes of node_b from node_a(val=3)
-        if i == 2{
-            for j=0 to j<3 by j+=1 {
-                end +:MyEdge:val=random.randint(1,5):+> node_a(value=j+10);
-            }
+    for i = 0 to i<8 by i+=1{
+        if i % 2 == 0{
+            end ++> end := node_a(value=i+1);
+        }
+        else{
+            end +:MyEdge:val=random.randint(1,8):+> node_a(value=i+10);
         }
     }
-    #connect 3 nodes of node_b from the last node_a created
-    for i=0 to i<3 by i+=1 {
-        end +:MyEdge:val=random.randint(1,15):+> node_a(value=i+5);
-    }
-    visit-->;
 }
-:walker:Travelor:can:travel{
+:walker:Creator:can:travel{
     #print the node values that is connected with MyEdge edges of val less than 5
     for i in -:MyEdge:val<=5 :->{
             print(i.value);
@@ -42,7 +33,7 @@ edge MyEdge {
 }
 
 with entry{
+    random.seed(3);
     <root> spawn Creator();
-    <root> spawn Travelor();
-    #<root>._jac_.gen_dot();
+    #print(<root>._jac_.gen_dot());
 }
