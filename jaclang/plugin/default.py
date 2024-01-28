@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import Any, Callable, Optional, Type
 
-from jaclang import jac_import as __jac_import__
+from jaclang import jac_import
 from jaclang.plugin.spec import (
     ArchBound,
     Architype,
@@ -95,7 +95,7 @@ class JacFeatureDefaults:
             base, mod_name = os.path.split(filename)
             base = base if base else "./"
             mod_name = mod_name[:-4]
-            __jac_import__(target=mod_name, base_path=base)
+            jac_import(target=mod_name, base_path=base)
             JacTestCheck.run_test()
         else:
             print("Not a .jac file.")

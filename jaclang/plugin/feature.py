@@ -47,10 +47,7 @@ class JacFeature:
 
     @staticmethod
     def run_test(filename: str) -> None:
-        """Run the test suite in the specified .jac file.
-
-        :param filename: The path to the .jac file.
-        """
+        """Run the test suite in the specified .jac file."""
         return JacFeature.pm.hook.run_test(filename=filename)
 
     @staticmethod

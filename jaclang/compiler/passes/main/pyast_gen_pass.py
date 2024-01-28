@@ -296,7 +296,7 @@ class PyastGenPass(Pass):
                 type_params=[],
             ),
         )
-        node.gen.py_ast = [func]
+        node.gen.py_ast = func
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
