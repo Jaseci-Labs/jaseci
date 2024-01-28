@@ -53,6 +53,26 @@ class JacFormatPassTests(TestCase):
             passed += 1
         self.assertGreater(passed, 10)
 
+    def test_print_py(self) -> None:
+        """Testing for print_py AstTool."""
+        jac_py_directory = os.path.join(
+            os.path.dirname(jaclang.__file__), "../examples/reference/"
+        )
+        jac_py_files = [
+            f for f in os.listdir(jac_py_directory) if f.endswith((".jac", ".py"))
+        ]
+        for file in jac_py_files:
+            msg = "error in " + file
+            out = AstTool().print_py([jac_py_directory + file])
+            if file.endswith(".jac"):
+                self.assertIn("+-- ", out, msg)
+                self.assertIsNotNone(out, msg=msg)
+            elif file.endswith(".py"):
+                if len(out.splitlines()) == 1:
+                    continue
+                self.assertIn("+-- ", out, msg)
+                self.assertIsNotNone(out, msg=msg)
+
     def test_automated(self) -> None:
         """Testing for py, jac, md files for each content in Jac Grammer."""
         lark_path = os.path.join(os.path.dirname(jaclang.__file__), "compiler/jac.lark")
@@ -62,6 +82,7 @@ class JacFormatPassTests(TestCase):
             os.path.dirname(jaclang.__file__), "../examples/reference"
         )
         file_extensions = [".py", ".jac", ".md"]
+        created_files = []
         for heading_name in snake_case_headings:
             for extension in file_extensions:
                 file_name = heading_name + extension
@@ -69,3 +90,15 @@ class JacFormatPassTests(TestCase):
                 self.assertTrue(
                     os.path.exists(file_path), f"File '{file_path}' does not exist."
                 )
+                created_files.append(file_path)
+        all_reference_files = [
+            os.path.join(refr_path, file)
+            for file in os.listdir(refr_path)
+            if os.path.isfile(os.path.join(refr_path, file))
+        ]
+        other_reference_files = [
+            os.path.basename(file)
+            for file in all_reference_files
+            if file not in created_files
+        ]
+        self.assertEqual(len(other_reference_files), 0)

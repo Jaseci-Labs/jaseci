@@ -1,2 +1,2 @@
-with open("tst.txt", "r") as file:
+with open(__file__.replace(".py", ".jac"), "r") as file:
     print(file.read())

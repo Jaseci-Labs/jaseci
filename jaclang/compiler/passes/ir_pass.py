@@ -6,14 +6,14 @@ from jaclang.compiler.passes.transform import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
 
-class Pass(Transform):
+class Pass(Transform[ast.T]):
     """Abstract class for IR passes."""
 
-    def __init__(self, input_ir: ast.AstNode, prior: Optional[Transform]) -> None:
+    def __init__(self, input_ir: ast.T, prior: Optional[Transform]) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        self.ir = input_ir
+        self.ir: ast.AstNode = input_ir
         Transform.__init__(self, input_ir, prior)
 
     def before_pass(self) -> None:
@@ -78,7 +78,7 @@ class Pass(Transform):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: ast.AstNode) -> ast.AstNode:
+    def transform(self, ir: ast.T) -> ast.AstNode:
         """Run pass."""
         # Only performs passes on proper ASTs
         if not isinstance(ir, ast.AstNode):
@@ -87,8 +87,6 @@ class Pass(Transform):
         if not isinstance(ir, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
         self.traverse(ir)
-        # Checks if self.ir is created during traversal
-        self.ir: ast.AstNode = self.ir if hasattr(self, "ir") else ir
         self.after_pass()
         return self.ir
 

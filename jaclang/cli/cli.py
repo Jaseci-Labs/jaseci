@@ -7,10 +7,35 @@ from typing import Optional
 from jaclang import jac_import as __jac_import__
 from jaclang.cli.cmdreg import CommandRegistry, CommandShell
 from jaclang.compiler.constant import Constants
+from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.lang_tools import AstTool
 
 
 cmd_registry = CommandRegistry()
+
+
+@cmd_registry.register
+def format(filename: str, outfile: str = "") -> None:
+    """Run the specified .jac file.
+
+    :param filename: The path to the .jac file.
+    :param main: If True, use '__main__' as the module name, else use the actual module name.
+    """
+    if filename.endswith(".jac"):
+        if os.path.exists(filename):
+            code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
+            if code_gen_format.errors_had:
+                print("Errors occurred while formatting the file.")
+            else:
+                if outfile:
+                    with open(outfile, "w") as f:
+                        f.write(code_gen_format.ir.gen.jac)
+                else:
+                    with open(filename, "w") as f:
+                        f.write(code_gen_format.ir.gen.jac)
+    else:
+        print("Not a .jac file.")
 
 
 @cmd_registry.register
@@ -40,10 +65,10 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
     :param args: Arguments to pass to the entrypoint function.
     """
     if filename.endswith(".jac"):
-        base, mod = os.path.split(filename)
+        base, mod_name = os.path.split(filename)
         base = base if base else "./"
-        mod = mod[:-4]
-        mod = __jac_import__(target=mod, base_path=base)
+        mod_name = mod_name[:-4]
+        mod = __jac_import__(target=mod_name, base_path=base)
         if not mod:
             print("Errors occurred while importing the module.")
             return
@@ -60,11 +85,14 @@ def test(filename: str) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        base, mod = os.path.split(filename)
+        base, mod_name = os.path.split(filename)
         base = base if base else "./"
-        mod = mod[:-4]
-        mod = __jac_import__(target=mod, base_path=base)
-        unittest.TextTestRunner().run(mod.__jac_suite__)
+        mod_name = mod_name[:-4]
+        mod = __jac_import__(target=mod_name, base_path=base)
+        if hasattr(mod, "__jac_suite__"):
+            unittest.TextTestRunner().run(getattr(mod, "__jac_suite__"))  # noqa: B009
+        else:
+            print("No tests found.")
     else:
         print("Not a .jac file.")
 
@@ -116,9 +144,9 @@ def start_cli() -> None:
     args = parser.parse_args()
     command = cmd_registry.get(args.command)
     if command:
-        args = vars(args)
-        args.pop("command")
-        ret = command.call(**args)
+        args_dict = vars(args)
+        args_dict.pop("command")
+        ret = command.call(**args_dict)
         if ret:
             print(ret)
     else:

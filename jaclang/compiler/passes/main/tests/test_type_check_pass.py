@@ -22,8 +22,12 @@ class MypyTypeCheckPassTests(TestCase):
         )
 
         errs = "\n".join([i.msg for i in type_checked.warnings_had])
+        files = "\n".join([i.loc.mod_path for i in type_checked.warnings_had])
+
         for i in [
+            "func2.jac",
+            "func.jac",
             '(got "int", expected "str")',
             '(got "str", expected "int")',
         ]:
-            self.assertIn(i, errs)
+            self.assertIn(i, errs + files)

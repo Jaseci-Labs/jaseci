@@ -1,6 +1,7 @@
-def foo(x: int, v: int, u: int) -> int:
-    return f"The result is: {x|v * u }"
+def foo(x: int, y: int, z: int) -> None:
+    return (x * y, y * z)
 
 
-# Function call with a mix of positional and named parameters
-print(foo(8, v=9 if 5 / 2 == 1 else 5, u=7))
+a = 5
+output = foo(x=4, y=4 if a % 3 == 2 else 3, z=9)
+print(output)

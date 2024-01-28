@@ -1,11 +1,16 @@
-can foo(){
-    for i in range(3){
-        yield i;
-        }
+can myFunc() {
+
+  yield "Hello";
+  yield 91;
+  yield "Good Bye";
+
 }
 
 with entry{
-    for i in foo(){
-        print("Yielded:", i);
+
+        x = myFunc();
+
+        for z in x {
+            print(z);
         }
 }

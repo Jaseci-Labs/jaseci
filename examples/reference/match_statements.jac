@@ -2,10 +2,8 @@ with entry {
     a=8;
     match a {
         case 7:
-            print("Nope");
-        case 8:
-            print("Yep");
+            print("doable");
         case _:
-            print("Not possible");
+            print("Undoable");
     }
 }

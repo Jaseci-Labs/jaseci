@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import cmd
 import inspect
-import typing as _jac_typ
+from typing import Callable, Optional
 
 
 class Command:
@@ -16,10 +16,10 @@ class Command:
     - sig: The signature of the function.
     """
 
-    func: callable
+    func: Callable
     sig: inspect.Signature
 
-    def __init__(self, func: callable) -> None:
+    def __init__(self, func: Callable) -> None:
         """
         Initialize a Command instance.
 
@@ -29,7 +29,7 @@ class Command:
         self.func = func
         self.sig = inspect.signature(func)
 
-    def call(self, *args: list, **kwargs: dict) -> None:
+    def call(self, *args: list, **kwargs: dict) -> str:
         """
         Call the associated function with the specified arguments and keyword arguments.
 
@@ -56,7 +56,7 @@ class CommandRegistry:
     """
 
     registry: dict[str, Command]
-    sub_parsers: argparse._SubParsersActionp
+    sub_parsers: argparse._SubParsersAction
     parser: argparse.ArgumentParser
 
     def __init__(self) -> None:
@@ -65,16 +65,8 @@ class CommandRegistry:
         self.parser = argparse.ArgumentParser(prog="CLI")
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
 
-    def register(self, func: callable) -> None:
-        """
-        Register a command in the registry.
-
-        Parameters:
-        - func: The callable function representing the command.
-
-        Returns:
-        - None
-        """
+    def register(self, func: Callable) -> Callable:
+        """Register a command in the registry."""
         name = func.__name__
         cmd = Command(func)
         self.registry[name] = cmd
@@ -118,26 +110,9 @@ class CommandRegistry:
                 )
         return func
 
-    def get(self, name: str) -> Command:
-        """
-        Get the Command instance for a given command name.
-
-        Parameters:
-        - name: The name of the command.
-
-        Returns:
-        - Command: The Command instance for the specified command name.
-        """
+    def get(self, name: str) -> Optional[Command]:
+        """Get the Command instance for a given command name."""
         return self.registry.get(name)
-
-    def items(self) -> dict[str, Command]:
-        """
-        Get all registered commands as a dictionary.
-
-        Returns:
-        - dict[str, Command]: A dictionary mapping command names to Command instances.
-        """
-        return self.registry.items()
 
 
 class CommandShell(cmd.Cmd):
@@ -154,8 +129,8 @@ class CommandShell(cmd.Cmd):
     - default(line: str) -> None: Default method for processing commands.
     """
 
-    intro: _jac_typ.ClassVar[str] = "Welcome to the Jac CLI!"
-    prompt: _jac_typ.ClassVar[str] = "jac> "
+    intro = "Welcome to the Jac CLI!"
+    prompt = "jac> "
     cmd_reg: CommandRegistry
 
     def __init__(self, cmd_reg: CommandRegistry) -> None:

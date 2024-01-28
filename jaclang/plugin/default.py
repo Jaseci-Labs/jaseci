@@ -1,7 +1,7 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any, Callable, Optional, Type
 
@@ -74,6 +74,12 @@ class JacFeatureDefaults:
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return ret if (ret := op1) is not None else op2
+
+    @staticmethod
+    @hookimpl
+    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
+        return field(default_factory=lambda: container)
 
     @staticmethod
     @hookimpl
@@ -169,6 +175,10 @@ class JacFeatureDefaults:
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
     ) -> list[T]:
         """Jac's assign comprehension feature."""
+        for obj in target:
+            attrs, values = attr_val
+            for attr, value in zip(attrs, values):
+                setattr(obj, attr, value)
         return target
 
     @staticmethod

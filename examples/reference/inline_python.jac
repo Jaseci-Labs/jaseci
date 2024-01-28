@@ -1,9 +1,10 @@
-with entry{
-
-#code_block
-
+with entry {
+    print("hello ");
 }
 
 ::py::
-#python-code
+def foo():
+    print("world")
+
+foo()
 ::py::

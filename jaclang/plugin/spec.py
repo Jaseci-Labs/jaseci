@@ -64,6 +64,12 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def spawn_call(op1: Architype, op2: Architype) -> Architype:
         """Jac's spawn operator feature."""
         raise NotImplementedError

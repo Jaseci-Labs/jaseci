@@ -46,8 +46,6 @@ def jac_import(
         and path.exists(py_file_path)
         and path.getmtime(py_file_path) > path.getmtime(full_target)
     ):
-        # with open(py_file_path, "r") as f:
-        #     code_string = f.read()
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
@@ -57,8 +55,6 @@ def jac_import(
                     print(e)
                     logging.error(e)
             return None
-        # with open(py_file_path, "r") as f:
-        #     code_string = f.read()
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
 
@@ -78,6 +74,12 @@ def jac_import(
         sys.modules[f"{package_path}.{module_name}"] = module
     sys.modules[module_name] = module
 
+    path_added = False
+    if caller_dir not in sys.path:
+        sys.path.append(caller_dir)
+        path_added = True
     exec(codeobj, module.__dict__)
+    if path_added:
+        sys.path.remove(caller_dir)
 
     return module

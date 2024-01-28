@@ -16,6 +16,7 @@ from jaclang.compiler.passes.tool.schedules import (
 )
 from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
+from jaclang.utils.treeprinter import print_ast_tree
 
 
 class AstKidInfo:
@@ -89,6 +90,7 @@ class AstTool:
                 "TokenSymbol",
                 "Literal",
                 "AstDocNode",
+                "AstSemStrNode",
                 "PythonModuleAst",
                 "AstAsyncNode",
                 "AstElseBodyNode",
@@ -234,6 +236,35 @@ class AstTool:
         else:
             return "Not a .jac file."
 
+    def print_py(self, args: List[str]) -> str:
+        """Generate a dot file for AST."""
+        if len(args) == 0:
+            return "Usage: print <file_path>"
+
+        file_name: str = args[0]
+
+        if not os.path.isfile(file_name):
+            return f"Error: {file_name} not found"
+
+        if file_name.endswith(".py"):
+            [base, mod] = os.path.split(file_name)
+            base = base if base else "./"
+            with open(file_name, "r") as file:
+                code = file.read()
+            parsed_ast = py_ast.parse(code)
+            return print_ast_tree(parsed_ast)
+        elif file_name.endswith(".jac"):
+            [base, mod] = os.path.split(file_name)
+            base = base if base else "./"
+            pyast = jac_file_to_pass(file_name).ir.gen.py_ast
+            return (
+                print_ast_tree(pyast)
+                if isinstance(pyast, py_ast.AST)
+                else "Compile failed."
+            )
+        else:
+            return "Not a .jac or .py file."
+
     def symtab_print(self, args: List[str]) -> str:
         """Generate a dot file for AST."""
         if len(args) == 0:
@@ -277,7 +308,7 @@ class AstTool:
         else:
             return "Not a .jac file."
 
-    def automate_ref(self) -> None:
+    def automate_ref(self) -> str:
         """Automate the reference guide generation."""
         # Jac lark path
         file_path = os.path.join(
@@ -297,9 +328,6 @@ class AstTool:
         for heading, lines in result.items():
             heading = heading.strip()
             heading_snakecase = heading_to_snake(heading)
-            if heading == "Names and references":
-                continue
-            # print(f"{heading}: {lines}")
             content = (
                 f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
                 f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n--8<-- '
@@ -322,3 +350,4 @@ class AstTool:
             with open(md_file_path, "w") as md_file:
                 # Write the content to the destination file
                 md_file.write(content)
+        return "References generated."
