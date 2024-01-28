@@ -11,6 +11,7 @@ from jaclang.core.construct import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeAnchor,
     NodeArchitype,
     ObjectAnchor,
@@ -23,6 +24,7 @@ from jaclang.core.construct import (
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
+    "JacTestCheck",
     "NodeAnchor",
     "ObjectAnchor",
     "WalkerAnchor",
@@ -54,6 +56,21 @@ class JacFeatureSpec:
         arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a new architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
         raise NotImplementedError
 
     @staticmethod

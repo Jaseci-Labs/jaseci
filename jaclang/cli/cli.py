@@ -1,7 +1,6 @@
 """Command line interface tool for the Jac language."""
 import os
 import shutil
-import unittest
 from typing import Optional
 
 from jaclang import jac_import as __jac_import__
@@ -9,6 +8,7 @@ from jaclang.cli.cmdreg import CommandRegistry, CommandShell
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.compiler.transpiler import jac_file_to_pass
+from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.lang_tools import AstTool
 
 
@@ -84,17 +84,7 @@ def test(filename: str) -> None:
 
     :param filename: The path to the .jac file.
     """
-    if filename.endswith(".jac"):
-        base, mod_name = os.path.split(filename)
-        base = base if base else "./"
-        mod_name = mod_name[:-4]
-        mod = __jac_import__(target=mod_name, base_path=base)
-        if hasattr(mod, "__jac_suite__"):
-            unittest.TextTestRunner().run(getattr(mod, "__jac_suite__"))  # noqa: B009
-        else:
-            print("No tests found.")
-    else:
-        print("Not a .jac file.")
+    Jac.run_test(filename)
 
 
 @cmd_registry.register

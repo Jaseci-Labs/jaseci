@@ -1,11 +1,12 @@
 """Jac Language Features."""
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any, Callable, Optional, Type
 
-
+from jaclang import jac_import
 from jaclang.plugin.spec import (
     ArchBound,
     Architype,
@@ -14,6 +15,7 @@ from jaclang.plugin.spec import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeArchitype,
     T,
     WalkerArchitype,
@@ -68,6 +70,36 @@ class JacFeatureDefaults:
             return cls
 
         return decorator
+
+    @staticmethod
+    @hookimpl
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+
+        def test_deco() -> None:
+            test_fun(JacTestCheck())
+
+        test_deco.__name__ = test_fun.__name__
+        JacTestCheck.add_test(test_deco)
+
+        return test_deco
+
+    @staticmethod
+    @hookimpl
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
+        if filename.endswith(".jac"):
+            base, mod_name = os.path.split(filename)
+            base = base if base else "./"
+            mod_name = mod_name[:-4]
+            JacTestCheck.reset()
+            jac_import(target=mod_name, base_path=base)
+            JacTestCheck.run_test()
+        else:
+            print("Not a .jac file.")
 
     @staticmethod
     @hookimpl
