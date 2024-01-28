@@ -29,7 +29,7 @@ walker Walk {
         <here>.value = <self>.count;
         <self>.count+=1;
         visit-->else {
-            print(f"Final Value: {<here>.value - 1}");
+            print(f'Final Value: {<here>.value - 1}');
             "Done walking." |> print;
             disengage;
         }

@@ -358,7 +358,10 @@ atom_literal: builtin_type
             | INT
 
 multistring: (fstring | STRING)+
-fstring: (FSTR_START fstr_parts FSTR_END | FSTR_SQ_START fstr_parts FSTR_SQ_END)
+
+fstring: FSTR_START fstr_parts FSTR_END
+       | FSTR_SQ_START fstr_parts FSTR_SQ_END
+
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
 // Collection values
@@ -630,8 +633,8 @@ RSQUARE: /\]/
 // f-string tokens
 FSTR_START.1: "f\""
 FSTR_END: "\""
-FSTR_SQ_START.1: "f\'"
-FSTR_SQ_END: "\'"
+FSTR_SQ_START.1: "f'"
+FSTR_SQ_END: "'"
 FSTR_PIECE.-1: /[^\{\}\"]+/
 FSTR_BESC.1: /{{|}}/
 

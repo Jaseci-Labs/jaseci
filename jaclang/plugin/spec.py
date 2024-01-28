@@ -81,6 +81,12 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def spawn_call(op1: Architype, op2: Architype) -> Architype:
         """Jac's spawn operator feature."""
         raise NotImplementedError
@@ -121,6 +127,7 @@ class JacFeatureSpec:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
@@ -163,7 +170,7 @@ class JacFeatureSpec:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         raise NotImplementedError

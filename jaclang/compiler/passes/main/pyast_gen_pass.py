@@ -357,18 +357,11 @@ class PyastGenPass(Pass):
         sub_module: Optional[Module],
         """
         py_nodes: list[ast3.AST] = []
-        level = 0
         if node.doc:
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc)
             )
-        py_compat_path_str = node.path.path_str
-        if node.path.path_str.startswith(".."):
-            level = 2
-            py_compat_path_str = node.path.path_str[2:]
-        elif node.path.path_str.startswith("."):
-            level = 1
-            py_compat_path_str = node.path.path_str[1:]
+        py_compat_path_str = node.path.path_str.lstrip(".")
         if node.lang.tag.value == Con.JAC_LANG_IMP:
             self.needs_jac_import()
             py_nodes.append(
@@ -412,7 +405,7 @@ class PyastGenPass(Pass):
                     py_node=ast3.ImportFrom(
                         module=py_compat_path_str,
                         names=[self.sync(ast3.alias(name="*"), node)],
-                        level=level,
+                        level=0,
                     ),
                     jac_node=node,
                 )
@@ -429,7 +422,7 @@ class PyastGenPass(Pass):
                     ast3.ImportFrom(
                         module=py_compat_path_str,
                         names=node.items.gen.py_ast,
-                        level=level,
+                        level=0,
                     )
                 )
             )
@@ -859,16 +852,18 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name: Name,
-        type_tag: SubTag[ExprType],
-        value: Optional[ExprType],
+        type_tag: SubTag[Expr],
+        value: Optional[Expr],
+        semstr: Optional[String] = None,
         """
         annotation = node.type_tag.gen.py_ast if node.type_tag else None
-        if (
+        is_class_var = (
             node.parent
             and node.parent.parent
             and isinstance(node.parent.parent, ast.ArchHas)
             and node.parent.parent.is_static
-        ):
+        )
+        if is_class_var:
             self.needs_typing()
             annotation = self.sync(
                 ast3.Subscript(
@@ -888,7 +883,34 @@ class PyastGenPass(Pass):
             ast3.AnnAssign(
                 target=node.name.gen.py_ast,
                 annotation=annotation,
-                value=node.value.gen.py_ast if node.value else None,
+                value=self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="has_container_default",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="container",
+                                    value=node.value.gen.py_ast,
+                                )
+                            )
+                        ],
+                    )
+                )
+                if node.value
+                and not is_class_var
+                and isinstance(node.value.gen.py_ast, (ast3.List, ast3.Dict))
+                else node.value.gen.py_ast
+                if node.value
+                else None,
                 simple=int(isinstance(node.name, ast.Name)),
             )
         )
@@ -2006,18 +2028,13 @@ class PyastGenPass(Pass):
                     node.filter_type.gen.py_ast
                     if node.filter_type
                     else self.sync(ast3.Constant(value=None)),
+                    node.filter_cond.gen.py_ast
+                    if node.filter_cond
+                    else self.sync(ast3.Constant(value=None)),
                 ],
                 keywords=[],
             )
         )
-        if node.filter_cond:
-            ret = self.sync(
-                ast3.Call(
-                    func=node.filter_cond.gen.py_ast,
-                    args=[ret],
-                    keywords=[],
-                )
-            )
         return ret
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
