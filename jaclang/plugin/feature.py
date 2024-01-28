@@ -46,6 +46,14 @@ class JacFeature:
         return JacFeature.pm.hook.create_test(test_fun=test_fun)
 
     @staticmethod
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
+        return JacFeature.pm.hook.run_test(filename=filename)
+
+    @staticmethod
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)

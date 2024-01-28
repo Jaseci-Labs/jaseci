@@ -1,10 +1,12 @@
 """Jac Language Features."""
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from functools import wraps
 from typing import Any, Callable, Optional, Type, Union
-
+import unittest as ut
+from jaclang import jac_import as __jac_import__
 
 from jaclang.plugin.spec import (
     ArchBound,
@@ -24,6 +26,8 @@ from jaclang.plugin.spec import (
 import pluggy
 
 hookimpl = pluggy.HookimplMarker("jac")
+tc = ut.TestCase()
+ts = ut.TestSuite()
 
 
 class JacFeatureDefaults:
@@ -75,10 +79,7 @@ class JacFeatureDefaults:
         """Create a new test."""
 
         def test_deco() -> None:
-            import unittest as ut
-
-            tc = ut.TestCase()
-            ts = ut.TestSuite()
+            print("Inside test_deco")
 
             class JacCheck:
                 def __getattr__(self, name: str) -> Union[bool, Any]:
@@ -89,6 +90,26 @@ class JacFeatureDefaults:
             ts.addTest(ut.FunctionTestCase(test_fun.__name__))
 
         return test_deco
+
+    @staticmethod
+    @hookimpl
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
+        if filename.endswith(".jac"):
+            base, mod_name = os.path.split(filename)
+            base = base if base else "./"
+            mod_name = mod_name[:-4]
+            mod = __jac_import__(target=mod_name, base_path=base)
+            # print(mod.attr)
+            if hasattr(mod, "ts"):
+                ut.TextTestRunner().run(ts)  # noqa: B009
+            else:
+                print("No tests found.")
+        else:
+            print("Not a .jac file.")
 
     @staticmethod
     @hookimpl

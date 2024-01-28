@@ -64,6 +64,15 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         raise NotImplementedError
