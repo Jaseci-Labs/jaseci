@@ -40,29 +40,45 @@ class NodeAnchor(ObjectAnchor):
         edg._jac_.attach(self.obj, nd)
         return self.obj
 
+    # def edges_to_nodes(
+    #     self, dir: EdgeDir, filter_type: Optional[type], filter_func: Optional[Callable]
+    # ) -> list[NodeArchitype]:
+    #     """Get set of nodes connected to this node."""
+    #     filter_func = filter_func if filter_func else lambda x: x
+    #     ret_nodes: list[NodeArchitype] = []
+    #     if dir in [EdgeDir.OUT]:
+    #         edge_list = []
+    #         for x in self.edges[EdgeDir.OUT]:
+    #             if x._jac_.target and (not filter_type or isinstance(x, filter_type)):
+    #                 edge_list.append(x)
+    #         new_edge = filter_func(edge_list)
+    #         for i in new_edge:
+    #             ret_nodes.append(i._jac_.target)
+    #     elif dir in [EdgeDir.IN]:
+    #         edge_list = []
+    #         for i in self.edges[EdgeDir.IN]:
+    #             if i._jac_.source and (not filter_type or isinstance(i, filter_type)):
+    #                 edge_list.append(i)
+    #         new_edge = filter_func(edge_list)
+    #         for i in new_edge:
+    #             ret_nodes.append(i._jac_.source)
+    #     return ret_nodes
+
     def edges_to_nodes(
         self, dir: EdgeDir, filter_type: Optional[type], filter_func: Optional[Callable]
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
-        filter_func = filter_func if filter_func else lambda x: x
-        ret_nodes: list[NodeArchitype] = []
-        if dir in [EdgeDir.OUT]:
-            edge = []
-            for x in self.edges[EdgeDir.OUT]:
-                if x._jac_.target and (not filter_type or isinstance(x, filter_type)):
-                    edge.append(x)
-            new_edge = filter_func(edge)
-            for i in new_edge:
-                ret_nodes.append(i._jac_.target)
-        elif dir in [EdgeDir.IN]:
-            edge = []
-            for i in self.edges[EdgeDir.IN]:
-                if i._jac_.source and (not filter_type or isinstance(i, filter_type)):
-                    edge.append(i)
-            new_edge = filter_func(edge)
-            for i in new_edge:
-                ret_nodes.append(i._jac_.source)
-        return ret_nodes
+        filter_func = filter_func or (lambda x: x)
+        edge_list = [
+            e
+            for e in self.edges[dir]
+            if getattr(e._jac_, "target" if dir == EdgeDir.OUT else "source", None)
+            and (not filter_type or isinstance(e, filter_type))
+        ]
+        return [
+            getattr(e._jac_, "target" if dir == EdgeDir.OUT else "source")
+            for e in filter_func(edge_list)
+        ]
 
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
