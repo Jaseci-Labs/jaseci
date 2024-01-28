@@ -22,9 +22,7 @@ node node_1{
     }
     visit -->;
 }
-node node2{
-    has val2:int;
-}
+
 with entry{
          <root> spawn walker_1();
 }
