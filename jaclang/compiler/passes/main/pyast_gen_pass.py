@@ -2043,18 +2043,13 @@ class PyastGenPass(Pass):
                     node.filter_type.gen.py_ast
                     if node.filter_type
                     else self.sync(ast3.Constant(value=None)),
+                    node.filter_cond.gen.py_ast
+                    if node.filter_cond
+                    else self.sync(ast3.Constant(value=None)),
                 ],
                 keywords=[],
             )
         )
-        if node.filter_cond:
-            ret = self.sync(
-                ast3.Call(
-                    func=node.filter_cond.gen.py_ast,
-                    args=[ret],
-                    keywords=[],
-                )
-            )
         return ret
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:

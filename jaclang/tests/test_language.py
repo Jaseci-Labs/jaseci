@@ -202,3 +202,15 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "mylist:  [1, 2, 3]")
         self.assertEqual(stdout_value.split("\n")[1], "mydict:  {'a': 2, 'b': 4}")
+
+    def test_conn_assign_on_edges(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edge_ops", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "[(3, 5), (14, 1), (5, 1)]")
+        self.assertEqual(stdout_value.split("\n")[1], "10")
+        self.assertEqual(stdout_value.split("\n")[2], "12")

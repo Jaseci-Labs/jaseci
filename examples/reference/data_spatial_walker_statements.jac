@@ -28,11 +28,11 @@ walker walker_2{
     visit -->;
 }
 :node:node_a:can:print_something -> str{
-    f"walker_1 entered to {<self>}"|>print;
+    print(f"walker_1 entered to {<self>}");
     visit -->;
 }
 
 with entry{
-    :> walker_1 spawn <root>;  #walker_1 statrt walking from root node
+    walker_1() spawn <root>;  #walker_1 statrt walking from root node
     <root> spawn walker_2();   #after walker_1 finish walking walker_2 start walking to nodes
 }

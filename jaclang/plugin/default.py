@@ -129,10 +129,11 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
-            return node_obj._jac_.edges_to_nodes(dir, filter_type)
+            return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
         else:
             raise TypeError("Invalid node object")
 
@@ -192,7 +193,7 @@ class JacFeatureDefaults:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
@@ -201,4 +202,10 @@ class JacFeatureDefaults:
             edge._jac_.dir = edge_dir
         else:
             raise TypeError("Invalid edge object")
+        if conn_assign:
+            for fld, val in zip(conn_assign[0], conn_assign[1]):
+                if hasattr(edge, fld):
+                    setattr(edge, fld, val)
+                else:
+                    raise ValueError(f"Invalid attribute: {fld}")
         return edge

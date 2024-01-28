@@ -110,6 +110,7 @@ class JacFeatureSpec:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
@@ -152,7 +153,7 @@ class JacFeatureSpec:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         raise NotImplementedError
