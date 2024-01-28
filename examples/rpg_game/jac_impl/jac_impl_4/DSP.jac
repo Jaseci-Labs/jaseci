@@ -31,7 +31,8 @@ node start_screen {
 node level{
     has game_level:int = 1,
         level_id:str = '1_1000',
-        played:bool = False;
+        played:bool = False,
+        levelmap:list[str] = Map();
 
     can run_game with game entry;
     can exit_game with game exit;
@@ -53,7 +54,7 @@ with entry {
     # print("Walker Entry ->", <self>.level_id);
 
     if <self>.played == False {
-
+        <here>.g.GameMap.map = <self>.levelmap.map;
         <here>.g.new();
         print(":-: Playing Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
         <here>.g.main();

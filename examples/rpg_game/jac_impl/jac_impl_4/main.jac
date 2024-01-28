@@ -27,7 +27,9 @@ obj Game {
         enemy_spritesheet:pygame.surface.Surface = Spritesheet('../img/enemy.png'),
         attack_spritesheet:pygame.surface.Surface = Spritesheet('../img/attack.png'),
         intro_background:pygame.surface.Surface = pygame.image.load('../img/introbackground.png'),
-        go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png');
+        go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png'),
+
+        GameMap:Map = Map();
 
     can <init>(){
         pygame.init();
@@ -47,16 +49,10 @@ obj Game {
 
 }
 
-obj map {
-    has levelmap: list[str] = tilemap;
-
-    can <init>(map:list[str]);
-}
-
 #=Object=Abilities ===================================================
 
 :obj:Game:can:createTilemap{
-        for (i, row) in enumerate(tilemap){
+        for (i, row) in enumerate(<self>.GameMap.map){
             for (j, column) in enumerate(row){
                 Ground(<self>,j,i);
                 if column == "B"{
@@ -235,8 +231,4 @@ obj map {
     }
 
 
-}
-
-:obj:map:can:<init>(map:list[str]) {
-    <self>.levelmap = map;
 }
