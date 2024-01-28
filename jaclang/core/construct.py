@@ -307,6 +307,12 @@ class JacTestCheck:
     test_suite = unittest.TestSuite()
 
     @staticmethod
+    def reset() -> None:
+        """Clear the test suite."""
+        JacTestCheck.test_case = unittest.TestCase()
+        JacTestCheck.test_suite = unittest.TestSuite()
+
+    @staticmethod
     def run_test() -> None:
         """Run the test suite."""
         unittest.TextTestRunner().run(JacTestCheck.test_suite)
