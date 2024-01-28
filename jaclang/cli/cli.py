@@ -8,8 +8,8 @@ from jaclang.cli.cmdreg import CommandRegistry, CommandShell
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.compiler.transpiler import jac_file_to_pass
-from jaclang.utils.lang_tools import AstTool
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.utils.lang_tools import AstTool
 
 
 cmd_registry = CommandRegistry()
@@ -84,9 +84,7 @@ def test(filename: str) -> None:
 
     :param filename: The path to the .jac file.
     """
-    print("----inside test in cli")
     Jac.run_test(filename)
-    print("----run test ran in cli---------")
 
 
 @cmd_registry.register

@@ -4,10 +4,9 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Optional, Type, Union
-import unittest as ut
-from jaclang import jac_import as __jac_import__
+from typing import Any, Callable, Optional, Type
 
+from jaclang import jac_import as __jac_import__
 from jaclang.plugin.spec import (
     ArchBound,
     Architype,
@@ -16,6 +15,7 @@ from jaclang.plugin.spec import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeArchitype,
     T,
     WalkerArchitype,
@@ -26,8 +26,6 @@ from jaclang.plugin.spec import (
 import pluggy
 
 hookimpl = pluggy.HookimplMarker("jac")
-tc = ut.TestCase()
-ts = ut.TestSuite()
 
 
 class JacFeatureDefaults:
@@ -79,15 +77,10 @@ class JacFeatureDefaults:
         """Create a new test."""
 
         def test_deco() -> None:
-            print("Inside test_deco")
+            test_fun(JacTestCheck())
 
-            class JacCheck:
-                def __getattr__(self, name: str) -> Union[bool, Any]:
-                    return getattr(tc, "assert" + name)
-
-            check = JacCheck()
-            test_fun(check)
-            ts.addTest(ut.FunctionTestCase(test_fun.__name__))
+        test_deco.__name__ = test_fun.__name__
+        JacTestCheck.add_test(test_deco)
 
         return test_deco
 
@@ -102,12 +95,8 @@ class JacFeatureDefaults:
             base, mod_name = os.path.split(filename)
             base = base if base else "./"
             mod_name = mod_name[:-4]
-            mod = __jac_import__(target=mod_name, base_path=base)
-            # print(mod.attr)
-            if hasattr(mod, "ts"):
-                ut.TextTestRunner().run(ts)  # noqa: B009
-            else:
-                print("No tests found.")
+            __jac_import__(target=mod_name, base_path=base)
+            JacTestCheck.run_test()
         else:
             print("Not a .jac file.")
 

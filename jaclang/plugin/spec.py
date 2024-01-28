@@ -11,6 +11,7 @@ from jaclang.core.construct import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeAnchor,
     NodeArchitype,
     ObjectAnchor,
@@ -23,6 +24,7 @@ from jaclang.core.construct import (
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
+    "JacTestCheck",
     "NodeAnchor",
     "ObjectAnchor",
     "WalkerAnchor",

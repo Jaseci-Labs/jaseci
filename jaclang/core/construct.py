@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import types
+import unittest
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 
 from jaclang.compiler.constant import EdgeDir
@@ -277,6 +278,27 @@ class DSFunc:
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
         self.func = getattr(cls, self.name)
+
+
+class JacTestCheck:
+    """Jac Testing and Checking."""
+
+    test_case = unittest.TestCase()
+    test_suite = unittest.TestSuite()
+
+    @staticmethod
+    def run_test() -> None:
+        """Run the test suite."""
+        unittest.TextTestRunner().run(JacTestCheck.test_suite)
+
+    @staticmethod
+    def add_test(test_fun: Callable) -> None:
+        """Create a new test."""
+        JacTestCheck.test_suite.addTest(unittest.FunctionTestCase(test_fun))
+
+    def __getattr__(self, name: str) -> Union[bool, Any]:
+        """Make convenient check.Equal(...) etc."""
+        return getattr(JacTestCheck.test_case, "assert" + name)
 
 
 root = Root()
