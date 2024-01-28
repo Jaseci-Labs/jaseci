@@ -47,6 +47,12 @@ obj Game {
 
 }
 
+obj map {
+    has levelmap: list[str] = tilemap;
+
+    can <init>(map:list[str]);
+}
+
 #=Object=Abilities ===================================================
 
 :obj:Game:can:createTilemap{
@@ -164,7 +170,7 @@ obj Game {
 }
 
     # Introduction Screen
- :obj:Game:can:intro_screen {
+:obj:Game:can:intro_screen {
     intro = True;
 
     title = <self>.font.render('Spud-nik : SOLO', True, BLUE);
@@ -229,4 +235,8 @@ obj Game {
     }
 
 
+}
+
+:obj:map:can:<init>(map:list[str]) {
+    <self>.levelmap = map;
 }
