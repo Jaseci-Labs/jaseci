@@ -262,7 +262,7 @@ expression: walrus_assign (KW_IF expression KW_ELSE expression)?
           | lambda_expr
 
 // Walrus assignments
-walrus_assign: (walrus_assign WALRUS_EQ)? pipe
+walrus_assign: (any_ref WALRUS_EQ)? pipe
 
 // Lambda expressions
 lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
