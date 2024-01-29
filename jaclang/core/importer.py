@@ -11,7 +11,7 @@ from jaclang.compiler.transpiler import transpile_jac
 from jaclang.utils.log import logging
 
 
-def jac_import(
+def jac_importer(
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,

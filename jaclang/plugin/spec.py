@@ -58,6 +58,8 @@ class JacFeatureSpec:
         """Create a new architype."""
         raise NotImplementedError
 
+    @staticmethod
+    @hookspec(firstresult=True)
     def jac_import(
         target: str,
         base_path: Optional[str] = None,
@@ -65,7 +67,7 @@ class JacFeatureSpec:
         override_name: Optional[str] = None,
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
-        raise NotImplemented
+        raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
