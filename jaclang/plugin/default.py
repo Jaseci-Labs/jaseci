@@ -187,7 +187,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def run_test(filename: str) -> None:
+    def run_test(self,filename: str) -> None:
         """Run the test suite in the specified .jac file.
 
         :param filename: The path to the .jac file.
@@ -197,7 +197,7 @@ class JacFeatureDefaults:
             base = base if base else "./"
             mod_name = mod_name[:-4]
             JacTestCheck.reset()
-            jac_import(target=mod_name, base_path=base)
+            self.jac_import(target=mod_name, base_path=base)
             JacTestCheck.run_test()
         else:
             print("Not a .jac file.")
