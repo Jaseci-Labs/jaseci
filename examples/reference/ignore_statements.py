@@ -1,4 +1,3 @@
-"""Testing ignore."""
 from __future__ import annotations
 from jaclang.plugin.feature import JacFeature as jac
 
@@ -7,45 +6,23 @@ from jaclang.plugin.feature import JacFeature as jac
     "walker", on_entry=[jac.DSFunc("start_game", jac.RootType)], on_exit=[]
 )
 class GuessGame:
-    def start_game(self, walker_here: jac.RootType) -> None:
+    def start_game(self, _jac_here_: jac.RootType) -> None:
         i = 0
         while i < 10:
-            jac.connect(
-                walker_here, turn(), jac.build_edge(jac.EdgeDir.OUT, None, None)
-            )
+            jac.connect(_jac_here_, turn(), jac.build_edge(jac.EdgeDir.OUT, None, None))
             i += 1
-        if jac.visit_node(self, jac.edge_ref(walker_here, jac.EdgeDir.OUT, None)):
+        i = 0
+        while i < 5:
+            jac.ignore(self, jac.edge_ref(_jac_here_, jac.EdgeDir.OUT, None, None)[i])
+            i += 1
+        if jac.visit_node(self, jac.edge_ref(_jac_here_, jac.EdgeDir.OUT, None, None)):
             pass
 
 
-@jac.make_architype(
-    "walker", on_entry=[jac.DSFunc("start_game", jac.RootType)], on_exit=[]
-)
-class GuessGame2:
-    def start_game(self, walker_here: jac.RootType) -> None:
-        i = 0
-        while i < 10:
-            jac.connect(
-                walker_here, turn(), jac.build_edge(jac.EdgeDir.OUT, None, None)
-            )
-            i += 1
-        i = 0
-        while i < 15:
-            jac.ignore(self, jac.edge_ref(walker_here, jac.EdgeDir.OUT, None)[i])
-            i += 1
-        if jac.visit_node(self, jac.edge_ref(walker_here, jac.EdgeDir.OUT, None)):
-            pass
-
-
-@jac.make_architype(
-    "node", on_entry=[jac.DSFunc("check", GuessGame | GuessGame2)], on_exit=[]
-)
+@jac.make_architype("node", on_entry=[jac.DSFunc("check", GuessGame)], on_exit=[])
 class turn:
-    def check(self, node_here: GuessGame | GuessGame2) -> None:
+    def check(self, _jac_here_: GuessGame) -> None:
         print("here", end=", ")
 
 
 jac.spawn_call(jac.get_root(), GuessGame())
-print("")
-jac.spawn_call(jac.get_root(), GuessGame2())
-print("")

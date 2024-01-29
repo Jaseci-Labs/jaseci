@@ -1,6 +1,6 @@
 if 5 > 4:
     print("True")
-elif "a" == "a":
+elif "a" != "a":
     print("'a' is 'a' ")
 else:
     print("False")

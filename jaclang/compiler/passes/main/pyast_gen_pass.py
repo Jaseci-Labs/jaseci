@@ -890,7 +890,7 @@ class PyastGenPass(Pass):
                                 value=self.sync(
                                     ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
-                                attr="has_container_default",
+                                attr="has_instance_default",
                                 ctx=ast3.Load(),
                             )
                         ),
@@ -898,16 +898,29 @@ class PyastGenPass(Pass):
                         keywords=[
                             self.sync(
                                 ast3.keyword(
-                                    arg="container",
-                                    value=node.value.gen.py_ast,
+                                    arg="gen_func",
+                                    value=self.sync(
+                                        ast3.Lambda(
+                                            args=self.sync(
+                                                ast3.arguments(
+                                                    posonlyargs=[],
+                                                    args=[],
+                                                    kwonlyargs=[],
+                                                    vararg=None,
+                                                    kwargs=None,
+                                                    kw_defaults=[],
+                                                    defaults=[],
+                                                )
+                                            ),
+                                            body=node.value.gen.py_ast,
+                                        )
+                                    ),
                                 )
                             )
                         ],
                     )
                 )
-                if node.value
-                and not is_class_var
-                and isinstance(node.value.gen.py_ast, (ast3.List, ast3.Dict))
+                if node.value and not is_class_var
                 else node.value.gen.py_ast
                 if node.value
                 else None,
