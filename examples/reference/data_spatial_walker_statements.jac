@@ -20,7 +20,7 @@ walker walker_2 {
 :walker:walker_1:can:create {
     end = <here>;
     for i=0 to i<5 by i+=1  {
-        end ++> end := node_a(val=i + 1);
+        end ++> (end := node_a(val=i + 1));
     }
     visit -->;
 }
