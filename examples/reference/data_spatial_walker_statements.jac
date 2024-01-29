@@ -19,14 +19,7 @@ walker walker_2{
     }
     visit -->;
 }
-:walker:walker_2:can:do_something{
-    print(f"walker_2 reached to {<here>}");
-    if <here>.val == 4{
-        # walker_2 will terminate visiting nodes.
-        disengage;
-    }
-    visit -->;
-}
+
 :node:node_a:can:print_something -> str{
     print(f"walker_1 entered to {<self>}");
     visit -->;

@@ -4,7 +4,7 @@ class Point:
         self.y = y
 
 
-def match_example(data: dict):
+def match_example(data: any):
     match data:
         # MatchValue
         case 42:
@@ -31,7 +31,7 @@ def match_example(data: dict):
             print(f"Matched a mapping with key1 and key2. Rest: {rest}")
 
         # MatchClass
-        case Point(int(a), y=0):
+        case Point(x=int(a), y=0):
             print(f"Point with x={a} and y=0")
 
         # MatchAs
@@ -44,3 +44,5 @@ def match_example(data: dict):
 
         case _:
             print("No match found.")
+
+match_example( Point(x=9, y=0))

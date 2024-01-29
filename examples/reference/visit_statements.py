@@ -1,47 +1,36 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as jac
+from jaclang.plugin.feature import JacFeature as _Jac
 
+@_Jac.make_architype('walker', on_entry=[_Jac.DSFunc('create', _Jac.RootType)], on_exit=[])
+class creator:
 
-@jac.make_architype("walker", on_entry=[jac.DSFunc("func2", jac.RootType)], on_exit=[])
-class walker_1:
-    def func2(self, walker_here: jac.RootType) -> None:
-        end = walker_here
+    def create(self, _jac_here_: _Jac.RootType) -> None:
+        end = _jac_here_
         i = 0
         while i < 5:
-            jac.connect(
-                end,
-                (end := node_1(val=i + 1)),
-                jac.build_edge(jac.EdgeDir.OUT, None, None),
-            )
+            _Jac.connect(end, (end := item(val=i + 1)), _Jac.build_edge(_Jac.EdgeDir.OUT, None, None))
             i += 1
-        if jac.visit_node(self, jac.edge_ref(walker_here, jac.EdgeDir.OUT, None)):
+        if _Jac.visit_node(self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None, None)):
             pass
 
+@_Jac.make_architype('walker', on_entry=[_Jac.DSFunc('func_3', _Jac.RootType)], on_exit=[])
+class Travellor:
 
-@jac.make_architype("node", on_entry=[jac.DSFunc("func_1", walker_1)], on_exit=[])
-class node_1:
+    def func_3(self, _jac_here_: _Jac.RootType) -> None:
+        if _Jac.visit_node(self, item(val=2)):
+            pass
+
+@_Jac.make_architype('node', on_entry=[_Jac.DSFunc('func_1', creator | Travellor)], on_exit=[])
+class item:
     val: int
 
-    def func_1(self, node_here: walker_1) -> None:
-        print("visiting ", self)
-        if jac.visit_node(node_here, jac.edge_ref(self, jac.EdgeDir.OUT, None)):
+    def func_1(self, _jac_here_: creator | Travellor) -> None:
+        print('visiting ', self)
+        if self.val == 2 and str(_jac_here_) == 'Travellor()':
+            print('visiting again a specific node by w2\n')
+        if _Jac.visit_node(_jac_here_, _Jac.edge_ref(self, _Jac.EdgeDir.OUT, None, None)):
             pass
         else:
-            print("finished visitng all nodes  ....\n")
-
-
-@jac.make_architype("walker", on_entry=[jac.DSFunc("func_3", jac.RootType)], on_exit=[])
-class walker_2:
-    def func_3(self, walker_here: jac.RootType) -> None:
-        print("visiting specific node by w3\n")
-        if jac.visit_node(self, node_1(val=2)):
-            pass
-
-
-@jac.make_architype("node", on_entry=[], on_exit=[])
-class node2:
-    val2: int
-
-
-jac.spawn_call(jac.get_root(), walker_1())
-jac.spawn_call(jac.get_root(), walker_2())
+            print('finished visitng all nodes  ....\n')
+_Jac.spawn_call(_Jac.get_root(), creator())
+_Jac.spawn_call(_Jac.get_root(), Travellor())

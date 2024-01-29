@@ -13,6 +13,7 @@ obj TestObj {
 }
 
 with entry{
+    random.seed(42);
     apple = [];
     for i=0 to i<10 by i+=1{
         apple.append(TestObj());
