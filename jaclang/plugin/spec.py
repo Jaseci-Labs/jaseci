@@ -1,7 +1,7 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-
+import types
 from typing import Any, Callable, Optional, Type, TypeVar
 
 from jaclang.core.construct import (
@@ -57,6 +57,15 @@ class JacFeatureSpec:
     ) -> Callable[[type], type]:
         """Create a new architype."""
         raise NotImplementedError
+
+    def jac_import(
+        target: str,
+        base_path: Optional[str] = None,
+        cachable: bool = True,
+        override_name: Optional[str] = None,
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        raise NotImplemented
 
     @staticmethod
     @hookspec(firstresult=True)

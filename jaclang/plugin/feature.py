@@ -1,6 +1,6 @@
 """Jac Language Features."""
 from __future__ import annotations
-
+import types
 from typing import Any, Callable, Optional, Type
 
 from jaclang.plugin.default import JacFeatureDefaults
@@ -40,6 +40,17 @@ class JacFeature:
             arch_type=arch_type, on_entry=on_entry, on_exit=on_exit
         )
 
+    @staticmethod
+    def jac_import(
+        target: str,
+        base_path: Optional[str] = None,
+        cachable: bool = True,
+        override_name: Optional[str] = None,
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        return JacFeature.pm.hook.jac_import(target=target,base_path=base_path,
+                                             cachable=cachable,override_name=override_name)
+    
     @staticmethod
     def create_test(test_fun: Callable) -> Callable:
         """Create a test."""
