@@ -533,12 +533,192 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_await(self, node: py_ast.Await) -> None:
         """Process python node."""
 
+    def proc_add(self, node: py_ast.Add) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.ADD_EQ,
+            value="+",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_bit_and(self, node: py_ast.BitAnd) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.BW_AND_EQ,
+            value="&",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_bit_or(self, node: py_ast.BitOr) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.BW_OR_EQ,
+            value="|",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_bit_xor(self, node: py_ast.BitXor) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.BW_XOR_EQ,
+            value="^",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_floor_div(self, node: py_ast.FloorDiv) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.DIV,
+            value="/",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_lshift(self, node: py_ast.LShift) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.STAR_MUL,
+            value="*",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_mod(self, node: py_ast.Mod) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.STAR_MUL,
+            value="*",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
     def proc_mult(self, node: py_ast.Mult) -> ast.Token:
         """Process python node."""
         ret = ast.Token(
             file_path=self.mod_path,
             name=Tok.STAR_MUL,
             value="*",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_mat_mult(self, node: py_ast.MatMult) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.STAR_MUL,
+            value="*",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_pow(self, node: py_ast.Pow) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.STAR_MUL,
+            value="*",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_rshift(self, node: py_ast.RShift) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.STAR_MUL,
+            value="*",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_sub(self, node: py_ast.Sub) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.STAR_MUL,
+            value="*",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ret
+
+    def proc_eq(self, node: py_ast.Eq) -> ast.Token:
+        """Process python node."""
+        ret = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.EQ,
+            value="=",
             line=0,
             col_start=0,
             col_end=0,
@@ -661,7 +841,25 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ops: list[cmpop]
         comparators: list[expr]
         """
-        print("compare need to be implemented..................!")
+        # print("compare need to be implemented..................!")
+        # left = self.convert(node.left)
+        # comparators = [self.convert(comparator) for comparator in node.comparators]
+        # valid_comparators = [comparator for comparator in comparators if isinstance(comparator, ast.Expr)]
+        # print("comparators: ", len(comparators), len(valid_comparators))
+        # ops = [self.convert(op) for op in node.ops]
+        # print("operators: ", ops)
+        # valid_ops = [op for op in ops if isinstance(op, ast.Token)]
+        # print(len(ops), len(valid_ops))
+
+        # if (isinstance(left, ast.Expr) and len(ops) == len(valid_ops) and len(comparators) == len(valid_comparators)):
+        #     return ast.Bool(
+        #         left=left,
+        #         op=op,
+        #         right=right,
+        #         kid=[left, op, right],
+        #     )
+        # else:
+        #     raise self.ice()
 
     def proc_constant(self, node: py_ast.Constant) -> ast.Literal:
         """Process python node.
