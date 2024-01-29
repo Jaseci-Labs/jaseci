@@ -1722,9 +1722,9 @@ class JacParser(Pass):
         def expression(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            expression: pipe KW_IF expression KW_ELSE expression
-                    | pipe
-                    | lamda_expr
+            expression: walrus_assign
+                    | pipe (KW_IF expression KW_ELSE expression)?
+                    | lambda_expr
             """
             if len(kid) > 1:
                 if (
@@ -1746,6 +1746,13 @@ class JacParser(Pass):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
+
+        def walrus_assign(self, kid: list[ast.AstNode]) -> ast.Expr:
+            """Grammar rule.
+
+            walrus_assign: (walrus_assign WALRUS_EQ)? pipe
+            """
+            return self.binary_expr_unwind(kid)
 
         def binary_expr_unwind(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Binary expression helper."""
@@ -2062,14 +2069,6 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr_unwind(kid)
-
-        def walrus_assign(self, kid: list[ast.AstNode]) -> ast.Expr:
-            """Grammar rule.
-
-            walrus_assign: pipe_call walrus_op walrus_assign
-                         | pipe_call
-            """
             return self.binary_expr_unwind(kid)
 
         def pipe_call(self, kid: list[ast.AstNode]) -> ast.Expr:
