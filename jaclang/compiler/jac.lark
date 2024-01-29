@@ -361,9 +361,10 @@ atom_literal: builtin_type
 multistring: (fstring | STRING)+
 
 fstring: FSTR_START fstr_parts FSTR_END
-       | FSTR_SQ_START fstr_parts FSTR_SQ_END
+       | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
 
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
 // Collection values
 atom_collection: dict_compr
@@ -637,6 +638,7 @@ FSTR_END: "\""
 FSTR_SQ_START.1: "f'"
 FSTR_SQ_END: "'"
 FSTR_PIECE.-1: /[^\{\}\"]+/
+FSTR_SQ_PIECE.-1: /[^\{\}\']+/
 FSTR_BESC.1: /{{|}}/
 
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/

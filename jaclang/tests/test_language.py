@@ -85,7 +85,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             stdout_value,
-            "{'new_val': 3, 'where': 'from_foo'}\nTrue\n",
+            "<link href='{'new_val': 3, 'where': 'from_foo'} rel='stylesheet'\nTrue\n",
         )
 
     def test_ignore(self) -> None:

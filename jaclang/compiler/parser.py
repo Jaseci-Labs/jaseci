@@ -2401,6 +2401,27 @@ class JacParser(Pass):
                 )
             )
 
+        def fstr_sq_parts(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.String | ast.ExprStmt]:
+            """Grammar rule.
+
+            fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+            """
+            valid_parts: list[ast.String | ast.ExprStmt] = [
+                i
+                if isinstance(i, ast.String)
+                else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                for i in kid
+                if isinstance(i, ast.Expr)
+            ]
+            return self.nu(
+                ast.SubNodeList[ast.String | ast.ExprStmt](
+                    items=valid_parts,
+                    kid=valid_parts,
+                )
+            )
+
         def list_val(self, kid: list[ast.AstNode]) -> ast.ListVal:
             """Grammar rule.
 
@@ -3610,6 +3631,7 @@ class JacParser(Pass):
                 Tok.STRING,
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
+                Tok.FSTR_SQ_PIECE,
                 Tok.DOC_STRING,
             ]:
                 ret_type = ast.String
