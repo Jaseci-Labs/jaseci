@@ -1,11 +1,12 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+import os
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any, Callable, Optional, Type
 
-
+from jaclang import jac_import
 from jaclang.plugin.spec import (
     ArchBound,
     Architype,
@@ -14,6 +15,7 @@ from jaclang.plugin.spec import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeArchitype,
     T,
     WalkerArchitype,
@@ -71,9 +73,45 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+
+        def test_deco() -> None:
+            test_fun(JacTestCheck())
+
+        test_deco.__name__ = test_fun.__name__
+        JacTestCheck.add_test(test_deco)
+
+        return test_deco
+
+    @staticmethod
+    @hookimpl
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
+        if filename.endswith(".jac"):
+            base, mod_name = os.path.split(filename)
+            base = base if base else "./"
+            mod_name = mod_name[:-4]
+            JacTestCheck.reset()
+            jac_import(target=mod_name, base_path=base)
+            JacTestCheck.run_test()
+        else:
+            print("Not a .jac file.")
+
+    @staticmethod
+    @hookimpl
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return ret if (ret := op1) is not None else op2
+
+    @staticmethod
+    @hookimpl
+    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
+        return field(default_factory=lambda: container)
 
     @staticmethod
     @hookimpl
@@ -123,10 +161,11 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
-            return node_obj._jac_.edges_to_nodes(dir, filter_type)
+            return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
         else:
             raise TypeError("Invalid node object")
 
@@ -186,7 +225,7 @@ class JacFeatureDefaults:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
@@ -195,4 +234,10 @@ class JacFeatureDefaults:
             edge._jac_.dir = edge_dir
         else:
             raise TypeError("Invalid edge object")
+        if conn_assign:
+            for fld, val in zip(conn_assign[0], conn_assign[1]):
+                if hasattr(edge, fld):
+                    setattr(edge, fld, val)
+                else:
+                    raise ValueError(f"Invalid attribute: {fld}")
         return edge

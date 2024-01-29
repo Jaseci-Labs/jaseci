@@ -1,17 +1,15 @@
 with entry{
-    for number in range(1, 5){
-        square = number ** 2;
-        print(f"The square of {number} is: {square}");
+
+    for i in range(1, 4 ){
+        for j = 1 to j<3 by j+=1{
+            print(i,j);
         }
-}
-
-with entry{
-
-    for i=1 to i<10 by i+=2 {
-         print(i * 5);
     }
-    else{
-        print("Loop completed.");}
+
 }
+
+
+
+
 
 

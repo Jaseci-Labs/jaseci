@@ -41,9 +41,24 @@ class JacFeature:
         )
 
     @staticmethod
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a test."""
+        return JacFeature.pm.hook.create_test(test_fun=test_fun)
+
+    @staticmethod
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file."""
+        return JacFeature.pm.hook.run_test(filename=filename)
+
+    @staticmethod
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)
+
+    @staticmethod
+    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
+        return JacFeature.pm.hook.has_container_default(container=container)
 
     @staticmethod
     def spawn_call(op1: Architype, op2: Architype) -> Architype:
@@ -81,10 +96,11 @@ class JacFeature:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         return JacFeature.pm.hook.edge_ref(
-            node_obj=node_obj, dir=dir, filter_type=filter_type
+            node_obj=node_obj, dir=dir, filter_type=filter_type, filter_func=filter_func
         )
 
     @staticmethod
@@ -120,7 +136,7 @@ class JacFeature:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         return JacFeature.pm.hook.build_edge(

@@ -40,355 +40,373 @@
 
 ## Abilities
 ```yaml linenums="67"
---8<-- "jaclang/compiler/jac.lark:67:78"
+--8<-- "jaclang/compiler/jac.lark:67:77"
 ```
 --8<-- "examples/reference/abilities.md"
 
 ## Global variables
-```yaml linenums="81"
---8<-- "jaclang/compiler/jac.lark:81:82"
+```yaml linenums="80"
+--8<-- "jaclang/compiler/jac.lark:80:81"
 ```
 --8<-- "examples/reference/global_variables.md"
 
 ## Free code
-```yaml linenums="85"
---8<-- "jaclang/compiler/jac.lark:85:85"
+```yaml linenums="84"
+--8<-- "jaclang/compiler/jac.lark:84:84"
 ```
 --8<-- "examples/reference/free_code.md"
 
 ## Inline python
-```yaml linenums="88"
---8<-- "jaclang/compiler/jac.lark:88:88"
+```yaml linenums="87"
+--8<-- "jaclang/compiler/jac.lark:87:87"
 ```
 --8<-- "examples/reference/inline_python.md"
 
 ## Tests
-```yaml linenums="91"
---8<-- "jaclang/compiler/jac.lark:91:91"
+```yaml linenums="90"
+--8<-- "jaclang/compiler/jac.lark:90:90"
 ```
 --8<-- "examples/reference/tests.md"
 
 ## Implementations
-```yaml linenums="94"
---8<-- "jaclang/compiler/jac.lark:94:97"
+```yaml linenums="93"
+--8<-- "jaclang/compiler/jac.lark:93:96"
 ```
 --8<-- "examples/reference/implementations.md"
 
 ## Codeblocks and Statements
-```yaml linenums="100"
---8<-- "jaclang/compiler/jac.lark:100:127"
+```yaml linenums="99"
+--8<-- "jaclang/compiler/jac.lark:99:126"
 ```
 --8<-- "examples/reference/codeblocks_and_statements.md"
 
 ## If statements
-```yaml linenums="130"
---8<-- "jaclang/compiler/jac.lark:130:132"
+```yaml linenums="129"
+--8<-- "jaclang/compiler/jac.lark:129:131"
 ```
 --8<-- "examples/reference/if_statements.md"
 
 ## While statements
-```yaml linenums="135"
---8<-- "jaclang/compiler/jac.lark:135:135"
+```yaml linenums="134"
+--8<-- "jaclang/compiler/jac.lark:134:134"
 ```
 --8<-- "examples/reference/while_statements.md"
 
 ## For statements
-```yaml linenums="138"
---8<-- "jaclang/compiler/jac.lark:138:139"
+```yaml linenums="137"
+--8<-- "jaclang/compiler/jac.lark:137:138"
 ```
 --8<-- "examples/reference/for_statements.md"
 
 ## Try statements
-```yaml linenums="142"
---8<-- "jaclang/compiler/jac.lark:142:145"
+```yaml linenums="141"
+--8<-- "jaclang/compiler/jac.lark:141:144"
 ```
 --8<-- "examples/reference/try_statements.md"
 
 ## Match statements
-```yaml linenums="148"
---8<-- "jaclang/compiler/jac.lark:148:149"
+```yaml linenums="147"
+--8<-- "jaclang/compiler/jac.lark:147:148"
 ```
 --8<-- "examples/reference/match_statements.md"
 
 ## Match patterns
-```yaml linenums="152"
---8<-- "jaclang/compiler/jac.lark:152:162"
+```yaml linenums="151"
+--8<-- "jaclang/compiler/jac.lark:151:161"
 ```
 --8<-- "examples/reference/match_patterns.md"
 
 ## Match litteral patterns
-```yaml linenums="165"
---8<-- "jaclang/compiler/jac.lark:165:165"
+```yaml linenums="164"
+--8<-- "jaclang/compiler/jac.lark:164:164"
 ```
 --8<-- "examples/reference/match_litteral_patterns.md"
 
 ## Match singleton patterns
-```yaml linenums="168"
---8<-- "jaclang/compiler/jac.lark:168:168"
+```yaml linenums="167"
+--8<-- "jaclang/compiler/jac.lark:167:167"
 ```
 --8<-- "examples/reference/match_singleton_patterns.md"
 
 ## Match capture patterns
-```yaml linenums="171"
---8<-- "jaclang/compiler/jac.lark:171:171"
+```yaml linenums="170"
+--8<-- "jaclang/compiler/jac.lark:170:170"
 ```
 --8<-- "examples/reference/match_capture_patterns.md"
 
 ## Match sequence patterns
-```yaml linenums="174"
---8<-- "jaclang/compiler/jac.lark:174:175"
+```yaml linenums="173"
+--8<-- "jaclang/compiler/jac.lark:173:174"
 ```
 --8<-- "examples/reference/match_sequence_patterns.md"
 
 ## Match mapping patterns
-```yaml linenums="178"
---8<-- "jaclang/compiler/jac.lark:178:180"
+```yaml linenums="177"
+--8<-- "jaclang/compiler/jac.lark:177:179"
 ```
 --8<-- "examples/reference/match_mapping_patterns.md"
 
 ## Match class patterns
-```yaml linenums="183"
---8<-- "jaclang/compiler/jac.lark:183:187"
+```yaml linenums="182"
+--8<-- "jaclang/compiler/jac.lark:182:186"
 ```
 --8<-- "examples/reference/match_class_patterns.md"
 
 ## Context managers
-```yaml linenums="190"
---8<-- "jaclang/compiler/jac.lark:190:192"
+```yaml linenums="189"
+--8<-- "jaclang/compiler/jac.lark:189:191"
 ```
 --8<-- "examples/reference/context_managers.md"
 
 ## Global and nonlocal statements
-```yaml linenums="195"
---8<-- "jaclang/compiler/jac.lark:195:197"
+```yaml linenums="194"
+--8<-- "jaclang/compiler/jac.lark:194:196"
 ```
 --8<-- "examples/reference/global_and_nonlocal_statements.md"
 
 ## Data spatial typed context blocks
-```yaml linenums="200"
---8<-- "jaclang/compiler/jac.lark:200:200"
+```yaml linenums="199"
+--8<-- "jaclang/compiler/jac.lark:199:199"
 ```
 --8<-- "examples/reference/data_spatial_typed_context_blocks.md"
 
 ## Return statements
-```yaml linenums="203"
---8<-- "jaclang/compiler/jac.lark:203:203"
+```yaml linenums="202"
+--8<-- "jaclang/compiler/jac.lark:202:202"
 ```
 --8<-- "examples/reference/return_statements.md"
 
 ## Yield statements
-```yaml linenums="206"
---8<-- "jaclang/compiler/jac.lark:206:206"
+```yaml linenums="205"
+--8<-- "jaclang/compiler/jac.lark:205:205"
 ```
 --8<-- "examples/reference/yield_statements.md"
 
 ## Raise statements
-```yaml linenums="209"
---8<-- "jaclang/compiler/jac.lark:209:209"
+```yaml linenums="208"
+--8<-- "jaclang/compiler/jac.lark:208:208"
 ```
 --8<-- "examples/reference/raise_statements.md"
 
 ## Assert statements
-```yaml linenums="212"
---8<-- "jaclang/compiler/jac.lark:212:212"
+```yaml linenums="211"
+--8<-- "jaclang/compiler/jac.lark:211:211"
 ```
 --8<-- "examples/reference/assert_statements.md"
 
 ## Delete statements
-```yaml linenums="215"
---8<-- "jaclang/compiler/jac.lark:215:215"
+```yaml linenums="214"
+--8<-- "jaclang/compiler/jac.lark:214:214"
 ```
 --8<-- "examples/reference/delete_statements.md"
 
 ## Report statements
-```yaml linenums="218"
---8<-- "jaclang/compiler/jac.lark:218:218"
+```yaml linenums="217"
+--8<-- "jaclang/compiler/jac.lark:217:217"
 ```
 --8<-- "examples/reference/report_statements.md"
 
 ## Control statements
-```yaml linenums="221"
---8<-- "jaclang/compiler/jac.lark:221:221"
+```yaml linenums="220"
+--8<-- "jaclang/compiler/jac.lark:220:220"
 ```
 --8<-- "examples/reference/control_statements.md"
 
-## Data spatail Walker statements
-```yaml linenums="224"
---8<-- "jaclang/compiler/jac.lark:224:227"
+## Data spatial Walker statements
+```yaml linenums="223"
+--8<-- "jaclang/compiler/jac.lark:223:226"
 ```
---8<-- "examples/reference/data_spatail_walker_statements.md"
+--8<-- "examples/reference/data_spatial_walker_statements.md"
 
 ## Visit statements
-```yaml linenums="230"
---8<-- "jaclang/compiler/jac.lark:230:230"
+```yaml linenums="229"
+--8<-- "jaclang/compiler/jac.lark:229:229"
 ```
 --8<-- "examples/reference/visit_statements.md"
 
 ## Revisit statements
-```yaml linenums="233"
---8<-- "jaclang/compiler/jac.lark:233:233"
+```yaml linenums="232"
+--8<-- "jaclang/compiler/jac.lark:232:232"
 ```
 --8<-- "examples/reference/revisit_statements.md"
 
 ## Disengage statements
-```yaml linenums="236"
---8<-- "jaclang/compiler/jac.lark:236:236"
+```yaml linenums="235"
+--8<-- "jaclang/compiler/jac.lark:235:235"
 ```
 --8<-- "examples/reference/disengage_statements.md"
 
 ## Ignore statements
-```yaml linenums="239"
---8<-- "jaclang/compiler/jac.lark:239:239"
+```yaml linenums="238"
+--8<-- "jaclang/compiler/jac.lark:238:238"
 ```
 --8<-- "examples/reference/ignore_statements.md"
 
 ## Assignments
-```yaml linenums="242"
---8<-- "jaclang/compiler/jac.lark:242:259"
+```yaml linenums="241"
+--8<-- "jaclang/compiler/jac.lark:241:258"
 ```
 --8<-- "examples/reference/assignments.md"
 
 ## Expressions
-```yaml linenums="262"
---8<-- "jaclang/compiler/jac.lark:262:262"
+```yaml linenums="261"
+--8<-- "jaclang/compiler/jac.lark:261:261"
 ```
 --8<-- "examples/reference/expressions.md"
 
 ## Lambda expressions
-```yaml linenums="265"
---8<-- "jaclang/compiler/jac.lark:265:265"
+```yaml linenums="264"
+--8<-- "jaclang/compiler/jac.lark:264:264"
 ```
 --8<-- "examples/reference/lambda_expressions.md"
 
 ## Pipe expressions
-```yaml linenums="268"
---8<-- "jaclang/compiler/jac.lark:268:268"
+```yaml linenums="267"
+--8<-- "jaclang/compiler/jac.lark:267:267"
 ```
 --8<-- "examples/reference/pipe_expressions.md"
 
 ## Pipe back expressions
-```yaml linenums="271"
---8<-- "jaclang/compiler/jac.lark:271:271"
+```yaml linenums="270"
+--8<-- "jaclang/compiler/jac.lark:270:270"
 ```
 --8<-- "examples/reference/pipe_back_expressions.md"
 
 ## Elvis expressions
-```yaml linenums="274"
---8<-- "jaclang/compiler/jac.lark:274:274"
+```yaml linenums="273"
+--8<-- "jaclang/compiler/jac.lark:273:273"
 ```
 --8<-- "examples/reference/elvis_expressions.md"
 
 ## Bitwise expressions
-```yaml linenums="277"
---8<-- "jaclang/compiler/jac.lark:277:280"
+```yaml linenums="276"
+--8<-- "jaclang/compiler/jac.lark:276:279"
 ```
 --8<-- "examples/reference/bitwise_expressions.md"
 
 ## Logical and compare expressions
-```yaml linenums="283"
---8<-- "jaclang/compiler/jac.lark:283:295"
+```yaml linenums="282"
+--8<-- "jaclang/compiler/jac.lark:282:296"
 ```
 --8<-- "examples/reference/logical_and_compare_expressions.md"
 
 ## Arithmetic expressions
-```yaml linenums="298"
---8<-- "jaclang/compiler/jac.lark:298:301"
+```yaml linenums="299"
+--8<-- "jaclang/compiler/jac.lark:299:302"
 ```
 --8<-- "examples/reference/arithmetic_expressions.md"
 
 ## Connect expressions
-```yaml linenums="304"
---8<-- "jaclang/compiler/jac.lark:304:304"
+```yaml linenums="305"
+--8<-- "jaclang/compiler/jac.lark:305:305"
 ```
 --8<-- "examples/reference/connect_expressions.md"
 
 ## Atomic expressions
-```yaml linenums="307"
---8<-- "jaclang/compiler/jac.lark:307:307"
+```yaml linenums="308"
+--8<-- "jaclang/compiler/jac.lark:308:308"
 ```
 --8<-- "examples/reference/atomic_expressions.md"
 
 ## Atomic pipe back expressions
-```yaml linenums="310"
---8<-- "jaclang/compiler/jac.lark:310:310"
+```yaml linenums="311"
+--8<-- "jaclang/compiler/jac.lark:311:311"
 ```
 --8<-- "examples/reference/atomic_pipe_back_expressions.md"
 
 ## Data spatial spawn expressions
-```yaml linenums="313"
---8<-- "jaclang/compiler/jac.lark:313:313"
+```yaml linenums="314"
+--8<-- "jaclang/compiler/jac.lark:314:314"
 ```
 --8<-- "examples/reference/data_spatial_spawn_expressions.md"
 
 ## Unpack expressions
-```yaml linenums="316"
---8<-- "jaclang/compiler/jac.lark:316:316"
+```yaml linenums="317"
+--8<-- "jaclang/compiler/jac.lark:317:317"
 ```
 --8<-- "examples/reference/unpack_expressions.md"
 
 ## References (unused)
-```yaml linenums="319"
---8<-- "jaclang/compiler/jac.lark:319:319"
+```yaml linenums="320"
+--8<-- "jaclang/compiler/jac.lark:320:320"
 ```
 --8<-- "examples/reference/references_(unused).md"
 
 ## Walrus assignments
-```yaml linenums="322"
---8<-- "jaclang/compiler/jac.lark:322:322"
+```yaml linenums="323"
+--8<-- "jaclang/compiler/jac.lark:323:323"
 ```
 --8<-- "examples/reference/walrus_assignments.md"
 
 ## Data spatial calls
-```yaml linenums="325"
---8<-- "jaclang/compiler/jac.lark:325:325"
+```yaml linenums="326"
+--8<-- "jaclang/compiler/jac.lark:326:326"
 ```
 --8<-- "examples/reference/data_spatial_calls.md"
 
 ## Subscripted and dotted expressions
-```yaml linenums="328"
---8<-- "jaclang/compiler/jac.lark:328:333"
+```yaml linenums="329"
+--8<-- "jaclang/compiler/jac.lark:329:334"
 ```
 --8<-- "examples/reference/subscripted_and_dotted_expressions.md"
 
 ## Function calls
-```yaml linenums="336"
---8<-- "jaclang/compiler/jac.lark:336:340"
+```yaml linenums="337"
+--8<-- "jaclang/compiler/jac.lark:337:341"
 ```
 --8<-- "examples/reference/function_calls.md"
 
 ## Atom
-```yaml linenums="343"
---8<-- "jaclang/compiler/jac.lark:343:361"
+```yaml linenums="344"
+--8<-- "jaclang/compiler/jac.lark:344:362"
 ```
 --8<-- "examples/reference/atom.md"
 
-## Collections
-```yaml linenums="364"
---8<-- "jaclang/compiler/jac.lark:364:385"
+## Collection values
+```yaml linenums="365"
+--8<-- "jaclang/compiler/jac.lark:365:386"
 ```
---8<-- "examples/reference/collections.md"
+--8<-- "examples/reference/collection_values.md"
 
 ## Tuples and Jac Tuples
-```yaml linenums="388"
---8<-- "jaclang/compiler/jac.lark:388:395"
+```yaml linenums="389"
+--8<-- "jaclang/compiler/jac.lark:389:396"
 ```
 --8<-- "examples/reference/tuples_and_jac_tuples.md"
 
 ## Data Spatial References
-```yaml linenums="398"
---8<-- "jaclang/compiler/jac.lark:398:408"
+```yaml linenums="399"
+--8<-- "jaclang/compiler/jac.lark:399:409"
 ```
 --8<-- "examples/reference/data_spatial_references.md"
 
 ## Special Comprehensions
-```yaml linenums="411"
---8<-- "jaclang/compiler/jac.lark:411:416"
+```yaml linenums="412"
+--8<-- "jaclang/compiler/jac.lark:412:415"
 ```
 --8<-- "examples/reference/special_comprehensions.md"
 
+## Names and references
+```yaml linenums="418"
+--8<-- "jaclang/compiler/jac.lark:418:444"
+```
+--8<-- "examples/reference/names_and_references.md"
+
+## Builtin types
+```yaml linenums="447"
+--8<-- "jaclang/compiler/jac.lark:447:457"
+```
+--8<-- "examples/reference/builtin_types.md"
+
+## Lexer Tokens
+```yaml linenums="460"
+--8<-- "jaclang/compiler/jac.lark:460:628"
+```
+--8<-- "examples/reference/lexer_tokens.md"
+
 ## f-string tokens
-```yaml linenums="630"
---8<-- "jaclang/compiler/jac.lark:630:638"
+```yaml linenums="631"
+--8<-- "jaclang/compiler/jac.lark:631:639"
 ```
 --8<-- "examples/reference/f_string_tokens.md"
 

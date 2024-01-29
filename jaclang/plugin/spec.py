@@ -11,6 +11,7 @@ from jaclang.core.construct import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeAnchor,
     NodeArchitype,
     ObjectAnchor,
@@ -23,6 +24,7 @@ from jaclang.core.construct import (
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
+    "JacTestCheck",
     "NodeAnchor",
     "ObjectAnchor",
     "WalkerAnchor",
@@ -58,8 +60,29 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
         raise NotImplementedError
 
     @staticmethod
@@ -104,6 +127,7 @@ class JacFeatureSpec:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
@@ -146,7 +170,7 @@ class JacFeatureSpec:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         raise NotImplementedError

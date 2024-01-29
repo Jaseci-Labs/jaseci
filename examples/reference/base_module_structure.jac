@@ -15,6 +15,6 @@ can subtract(a: int, b: int) -> int {
     return a - b;
 }
 
-with entry:__main__ {
+with entry {
     print(add(1, subtract(3, 1)));
 }

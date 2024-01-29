@@ -57,5 +57,5 @@ with entry{
     <r> spawn walker1();
     <r> spawn walker2();
     <r> spawn walker3();
-    <r>._jac_.gen_dot();
+    print(<r>._jac_.gen_dot());
 }

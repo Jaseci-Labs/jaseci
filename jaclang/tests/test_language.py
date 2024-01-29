@@ -143,7 +143,7 @@ class JacLanguageTests(TestCase):
         """Test the dot gen of nodes and edges of bubblesort."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("bubble_sort", self.fixture_abs_path("./"))
+        jac_import("gendot_bubble_sort", self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
@@ -162,3 +162,55 @@ class JacLanguageTests(TestCase):
             "[MyObj(apple=5, banana=7), MyObj(apple=5, banana=7)]\n",
             stdout_value,
         )
+
+    def test_semstr(self) -> None:
+        """Test semstring."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("semstr", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn("Error", stdout_value)
+
+    def test_raw_bytestr(self) -> None:
+        """Test raw string and byte string."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("raw_byte_string", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count(r"\\\\"), 2)
+        self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
+
+    def test_deep_imports(self) -> None:
+        """Parse micro jac file."""
+        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("deep_import", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+
+    def test_has_lambda_goodness(self) -> None:
+        """Test has lambda_goodness."""
+        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("has_goodness", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "mylist:  [1, 2, 3]")
+        self.assertEqual(stdout_value.split("\n")[1], "mydict:  {'a': 2, 'b': 4}")
+
+    def test_conn_assign_on_edges(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edge_ops", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "[(3, 5), (14, 1), (5, 1)]")
+        self.assertEqual(stdout_value.split("\n")[1], "10")
+        self.assertEqual(stdout_value.split("\n")[2], "12")

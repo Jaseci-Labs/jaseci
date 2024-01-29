@@ -1,14 +1,8 @@
 with entry{
-    d=[2,3,4,5,6,7,8];
-
-    can count_odds(data : list) -> int {
-         odds=[o for o in data if o%2 ==1];
-         return len(odds);
+    numbers = [1, 2, 3, 4, 5];
+    for i in numbers{
+        if (j := i + i//2) > 3{
+            print(j);
+        }
     }
-
-    if (n := count_odds(d))>1{
-        print(f"{n} odds");
-    }
-
-
 }

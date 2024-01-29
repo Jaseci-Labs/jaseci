@@ -1,51 +1,51 @@
 """Testing ignore."""
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as _Jac
+from jaclang.plugin.feature import JacFeature as jac
 
 
-@_Jac.make_architype(
-    "walker", on_entry=[_Jac.DSFunc("start_game", _Jac.RootType)], on_exit=[]
+@jac.make_architype(
+    "walker", on_entry=[jac.DSFunc("start_game", jac.RootType)], on_exit=[]
 )
 class GuessGame:
-    def start_game(self, _jac_here_: _Jac.RootType) -> None:
+    def start_game(self, walker_here: jac.RootType) -> None:
         i = 0
         while i < 10:
-            _Jac.connect(
-                _jac_here_, turn(), _Jac.build_edge(_Jac.EdgeDir.OUT, None, None)
+            jac.connect(
+                walker_here, turn(), jac.build_edge(jac.EdgeDir.OUT, None, None)
             )
             i += 1
-        if _Jac.visit_node(self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None)):
+        if jac.visit_node(self, jac.edge_ref(walker_here, jac.EdgeDir.OUT, None)):
             pass
 
 
-@_Jac.make_architype(
-    "walker", on_entry=[_Jac.DSFunc("start_game", _Jac.RootType)], on_exit=[]
+@jac.make_architype(
+    "walker", on_entry=[jac.DSFunc("start_game", jac.RootType)], on_exit=[]
 )
 class GuessGame2:
-    def start_game(self, _jac_here_: _Jac.RootType) -> None:
+    def start_game(self, walker_here: jac.RootType) -> None:
         i = 0
         while i < 10:
-            _Jac.connect(
-                _jac_here_, turn(), _Jac.build_edge(_Jac.EdgeDir.OUT, None, None)
+            jac.connect(
+                walker_here, turn(), jac.build_edge(jac.EdgeDir.OUT, None, None)
             )
             i += 1
         i = 0
         while i < 15:
-            _Jac.ignore(self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None)[i])
+            jac.ignore(self, jac.edge_ref(walker_here, jac.EdgeDir.OUT, None)[i])
             i += 1
-        if _Jac.visit_node(self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None)):
+        if jac.visit_node(self, jac.edge_ref(walker_here, jac.EdgeDir.OUT, None)):
             pass
 
 
-@_Jac.make_architype(
-    "node", on_entry=[_Jac.DSFunc("check", GuessGame | GuessGame2)], on_exit=[]
+@jac.make_architype(
+    "node", on_entry=[jac.DSFunc("check", GuessGame | GuessGame2)], on_exit=[]
 )
 class turn:
-    def check(self, _jac_here_: GuessGame | GuessGame2) -> None:
+    def check(self, node_here: GuessGame | GuessGame2) -> None:
         print("here", end=", ")
 
 
-_Jac.spawn_call(_Jac.get_root(), GuessGame())
+jac.spawn_call(jac.get_root(), GuessGame())
 print("")
-_Jac.spawn_call(_Jac.get_root(), GuessGame2())
+jac.spawn_call(jac.get_root(), GuessGame2())
 print("")
