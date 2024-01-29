@@ -64,7 +64,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
         """Jac's has container default feature."""
         raise NotImplementedError
 
