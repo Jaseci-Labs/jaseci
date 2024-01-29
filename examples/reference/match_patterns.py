@@ -45,4 +45,5 @@ def match_example(data: any):
         case _:
             print("No match found.")
 
-match_example( Point(x=9, y=0))
+
+match_example(Point(x=9, y=0))

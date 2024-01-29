@@ -5,7 +5,7 @@ with entry{
              for k = 1 to k<3 by k+=1{
                  print(i,j,k);
              }
-        }  
+        }
     }
 
 }
