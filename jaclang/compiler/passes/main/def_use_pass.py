@@ -17,14 +17,6 @@ class DefUsePass(SymTabPass):
 
     def after_pass(self) -> None:
         """After pass."""
-        # for i in self.unlinked:
-        #     if not i.sym_name.startswith("[") and type(i.parent) in [
-        #         ast.AtomTrailer,
-        #     ]:
-        #         self.warning(
-        #             f"{i.sym_name} used before being defined.",
-        #             node_override=i,
-        #         )
 
     def enter_architype(self, node: ast.Architype) -> None:
         """Sub objects.
