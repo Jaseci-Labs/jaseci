@@ -463,9 +463,9 @@ builtin_type: TYP_TYPE
 
 // Lexer Tokens
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
-DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
+DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-STRING: /(r?b?|b?r?)"[^"\r\n]*"|'[^'\r\n]*'/
+STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
 BOOL.1: /True|False/
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/
