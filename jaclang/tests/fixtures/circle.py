@@ -65,19 +65,24 @@
 
 #     # Uncomment the next line if you want to run the unit tests
 #     # run_tests()
+# elif RAD == 1:
+#     print("hello")
+# else:
+#     print("not main")
+#     print("dv")
 
 
-# # Unit Tests!
-# # class TestShapesFunctions(unittest.TestCase):
-# #     def test_calculate_area(self) -> None:
-# #         expected_area = 78.53981633974483
-# #         self.assertAlmostEqual(calculate_area(RAD), expected_area)
+# Unit Tests!
+# class TestShapesFunctions(unittest.TestCase):
+#     def test_calculate_area(self) -> None:
+#         expected_area = 78.53981633974483
+#         self.assertAlmostEqual(calculate_area(RAD), expected_area)
 
-# #     def test_circle_area(self) -> None:
-# #         c = Circle(RAD)
-# #         expected_area = 78.53981633974483
-# #         self.assertAlmostEqual(c.area(), expected_area)
+#     def test_circle_area(self) -> None:
+#         c = Circle(RAD)
+#         expected_area = 78.53981633974483
+#         self.assertAlmostEqual(c.area(), expected_area)
 
-# #     def test_circle_type(self) -> None:
-# #         c = Circle(RAD)
-# #         self.assertEqual(c.shape_type, ShapeType.CIRCLE)
+#     def test_circle_type(self) -> None:
+#         c = Circle(RAD)
+#         self.assertEqual(c.shape_type, ShapeType.CIRCLE)
