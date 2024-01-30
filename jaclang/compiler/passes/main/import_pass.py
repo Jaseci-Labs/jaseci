@@ -64,6 +64,7 @@ class ImportPass(Pass):
             if mod:
                 node.impl_mod = mod
                 node.add_kids_right([mod], pos_update=False)
+                mod.parent = node
         if node.loc.mod_path.endswith(".jac") and path.exists(
             f"{node.loc.mod_path[:-4]}.test.jac"
         ):
@@ -71,6 +72,7 @@ class ImportPass(Pass):
             if mod:
                 node.test_mod = mod
                 node.add_kids_right([mod], pos_update=False)
+                mod.parent = node
 
     def enter_import(self, node: ast.Import) -> None:
         """Sub objects.
