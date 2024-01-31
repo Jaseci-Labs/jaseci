@@ -486,11 +486,11 @@ class PyastGenPass(Pass):
                                 value=self.sync(
                                     ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
-                                attr="make_architype",
+                                attr=f"make_{node.arch_type.value}",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[self.sync(ast3.Constant(value=node.arch_type.value))],
+                        args=[],
                         keywords=[
                             self.sync(
                                 ast3.keyword(
