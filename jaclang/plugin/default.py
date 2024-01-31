@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import os
+import types
 from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any, Callable, Optional, Type
 
-from jaclang import jac_import
 from jaclang.plugin.spec import (
     ArchBound,
     Architype,
@@ -19,11 +19,13 @@ from jaclang.plugin.spec import (
     NodeArchitype,
     T,
     WalkerArchitype,
+    jac_importer,
     root,
 )
 
 
 import pluggy
+
 
 hookimpl = pluggy.HookimplMarker("jac")
 
@@ -149,6 +151,23 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def jac_import(
+        target: str,
+        base_path: str,
+        cachable: bool,
+        override_name: Optional[str],
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        result = jac_importer(
+            target=target,
+            base_path=base_path,
+            cachable=cachable,
+            override_name=override_name,
+        )
+        return result
+
+    @staticmethod
+    @hookimpl
     def create_test(test_fun: Callable) -> Callable:
         """Create a new test."""
 
@@ -167,6 +186,8 @@ class JacFeatureDefaults:
 
         :param filename: The path to the .jac file.
         """
+        from jaclang import jac_import
+
         if filename.endswith(".jac"):
             base, mod_name = os.path.split(filename)
             base = base if base else "./"

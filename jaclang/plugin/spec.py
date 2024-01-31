@@ -1,8 +1,9 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-
+import types
 from typing import Any, Callable, Optional, Type, TypeVar
+
 
 from jaclang.core.construct import (
     Architype,
@@ -20,6 +21,7 @@ from jaclang.core.construct import (
     WalkerArchitype,
     root,
 )
+from jaclang.core.importer import jac_importer
 
 __all__ = [
     "EdgeAnchor",
@@ -36,6 +38,7 @@ __all__ = [
     "EdgeDir",
     "root",
     "Root",
+    "jac_importer",
 ]
 
 import pluggy
@@ -80,6 +83,17 @@ class JacFeatureSpec:
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a walker architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def jac_import(
+        target: str,
+        base_path: str,
+        cachable: bool,
+        override_name: Optional[str],
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
         raise NotImplementedError
 
     @staticmethod
