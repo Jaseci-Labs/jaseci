@@ -43,7 +43,7 @@ class JacFeatureDefaults:
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
                 i.resolve(cls)
-                arch_cls = Architype
+            arch_cls = Architype
             if not issubclass(cls, arch_cls):
                 cls = type(cls.__name__, (cls, arch_cls), {})
             cls._jac_entry_funcs_ = on_entry
@@ -72,7 +72,7 @@ class JacFeatureDefaults:
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
                 i.resolve(cls)
-                arch_cls = NodeArchitype
+            arch_cls = NodeArchitype
             if not issubclass(cls, arch_cls):
                 cls = type(cls.__name__, (cls, arch_cls), {})
             cls._jac_entry_funcs_ = on_entry
@@ -130,7 +130,7 @@ class JacFeatureDefaults:
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
                 i.resolve(cls)
-                arch_cls = WalkerArchitype
+            arch_cls = WalkerArchitype
             if not issubclass(cls, arch_cls):
                 cls = type(cls.__name__, (cls, arch_cls), {})
             cls._jac_entry_funcs_ = on_entry
