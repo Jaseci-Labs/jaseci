@@ -4,6 +4,7 @@ from __future__ import annotations
 import types
 from typing import Any, Callable, Optional, Type, TypeVar
 
+
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -20,6 +21,7 @@ from jaclang.core.construct import (
     WalkerArchitype,
     root,
 )
+from jaclang.core.importer import jac_importer
 
 __all__ = [
     "EdgeAnchor",
@@ -36,6 +38,7 @@ __all__ = [
     "EdgeDir",
     "root",
     "Root",
+    "jac_importer",
 ]
 
 import pluggy
