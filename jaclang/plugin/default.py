@@ -154,8 +154,8 @@ class JacFeatureDefaults:
     def jac_import(
         target: str,
         base_path: str,
-        cachable: bool = True,
-        override_name: Optional[str] = None,
+        cachable: bool,
+        override_name: Optional[str],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         result = jac_importer(
