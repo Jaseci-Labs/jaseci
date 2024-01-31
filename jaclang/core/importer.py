@@ -28,9 +28,6 @@ def jac_importer(
         return sys.modules[module_name]
 
     caller_dir = path.dirname(base_path) if not path.isdir(base_path) else base_path
-    # else:
-    #     frame = inspect.stack()[1]
-    #     caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
     caller_dir = path.dirname(caller_dir) if target.startswith("..") else caller_dir
     caller_dir = path.join(caller_dir, dir_path)
 
