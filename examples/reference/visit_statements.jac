@@ -1,31 +1,20 @@
-walker Creator {
-    can create with `<root> entry;
-    can stop with `<root> entry;
+walker Visitor {
+    can travel with `<root> entry {
+        visit --> else {
+            visit<root>;
+        }
     }
+}
 
-node item{
-    can print_something with Creator entry{
+node item {
+    can speak with Visitor entry {
         print("Hey There!!!");
-
     }
 }
 
-:walker:Creator:can:create{
-    for i=0 to i < 5 by i+=1{
-        <here> ++> item();
-
+:walker:Visitor:can:travel with entry {
+    for i=0 to i<5 by i+=1  {
+        <root> ++> item();
     }
-    visit-->else{
-        visit <root>;
-    }
+    <root> spawn Visitor();
 }
-
-:walker:Creator:can:stop{
-    print("walking stopped");
-    disengage;
-    }
-
-with entry{
-    <root> spawn Creator();
-}
-
