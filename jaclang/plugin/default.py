@@ -33,8 +33,8 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def make_architype(
-        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    def make_obj(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a new architype."""
 
@@ -43,18 +43,94 @@ class JacFeatureDefaults:
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
                 i.resolve(cls)
+                arch_cls = Architype
+            if not issubclass(cls, arch_cls):
+                cls = type(cls.__name__, (cls, arch_cls), {})
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            inner_init = cls.__init__
 
-            match arch_type:
-                case "obj":
-                    arch_cls = Architype
-                case "node":
-                    arch_cls = NodeArchitype
-                case "edge":
-                    arch_cls = EdgeArchitype
-                case "walker":
-                    arch_cls = WalkerArchitype
-                case _:
-                    raise TypeError("Invalid archetype type")
+            @wraps(inner_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                inner_init(self, *args, **kwargs)
+                arch_cls.__init__(self)
+
+            cls.__init__ = new_init
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_node(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a obj architype."""
+
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+            """Decorate class."""
+            cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
+                arch_cls = NodeArchitype
+            if not issubclass(cls, arch_cls):
+                cls = type(cls.__name__, (cls, arch_cls), {})
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            inner_init = cls.__init__
+
+            @wraps(inner_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                inner_init(self, *args, **kwargs)
+                arch_cls.__init__(self)
+
+            cls.__init__ = new_init
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+            """Decorate class."""
+            cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
+            arch_cls = EdgeArchitype
+            if not issubclass(cls, arch_cls):
+                cls = type(cls.__name__, (cls, arch_cls), {})
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            inner_init = cls.__init__
+
+            @wraps(inner_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                inner_init(self, *args, **kwargs)
+                arch_cls.__init__(self)
+
+            cls.__init__ = new_init
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_walker(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a walker architype."""
+
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+            """Decorate class."""
+            cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
+                arch_cls = WalkerArchitype
             if not issubclass(cls, arch_cls):
                 cls = type(cls.__name__, (cls, arch_cls), {})
             cls._jac_entry_funcs_ = on_entry
