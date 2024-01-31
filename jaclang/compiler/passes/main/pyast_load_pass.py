@@ -442,10 +442,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_body = [
             stmt for stmt in body if isinstance(stmt, (ast.CodeBlockStmt, ast.Expr))
         ]
-        print("Body,Valid Body:    ", len(body), ",", len(valid_body))
         if len(valid_body) != len(body):
             self.error("Length mismatch in async for body")
-        body2 = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
+        body2 = ast.SubNodeList[ast.Expr](items=valid_body, kid=body)
 
         orelse = [self.convert(stmt) for stmt in node.orelse]
         valid_orelse = [
@@ -453,26 +452,21 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             for stmt in orelse
             if isinstance(stmt, (ast.Expr, ast.IfStmt, ast.ElseIf, ast.ElseStmt))
         ]
-        for i in valid_orelse:
-            print("valid orelse: ", i)
-
-        if valid_orelse:
-            orelse2 = ast.SubNodeList[ast.Expr](items=valid_orelse, kid=valid_orelse)
-        else:
-            orelse2 = None
-        print("orelse length:   ", len(orelse), len(valid_orelse))
+        orelse2 = (
+            ast.SubNodeList[ast.Expr](items=valid_orelse, kid=orelse)
+            if valid_orelse
+            else None
+        )
 
         if isinstance(test, ast.Expr):
             ret = ast.IfStmt(
                 condition=test,
-                body=body2,
-                else_body=orelse2,
-                kid=[test, body2, orelse2] if orelse2 else [test, body2],
+                body=valid_body,
+                else_body=valid_orelse,
+                kid=[test, body2, orelse2] if orelse2 is not None else [test, body2],
             )
         else:
             self.ice()
-        print("return success ")
-        # print(ret.condition, ret.body, ret.else_body)
         return ret
 
     def proc_with(self, node: py_ast.With) -> ast.CodeBlockStmt:
@@ -831,28 +825,29 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
             kid=[],
         )
+        parens = [l_paren, r_paren]
         func = self.convert(node.func)
-        params_in: list[ast.Expr | ast.KWPair] = []
+        params_in: list[ast.Expr | ast.KWPair] = [func]
         args = [self.convert(arg) for arg in node.args]
         keywords = [self.convert(keyword) for keyword in node.keywords]
-        for i in args:
-            if isinstance(i, ast.Expr):
-                params_in.append(i)
         for i in keywords:
             if isinstance(i, ast.KWPair):
                 params_in.append(i)
-        parens = [l_paren, r_paren]
+        for i in args:
+            if isinstance(i, ast.Expr):
+                params_in.append(i)
         if params_in:
             params_in2: ast.SubNodeList = ast.SubNodeList(
                 items=params_in, kid=params_in
             )
         else:
             params_in2: ast.SubNodeList = ast.SubNodeList(items=params_in, kid=parens)
+
         if isinstance(func, ast.Expr):
             return ast.FuncCall(
                 target=func,
                 params=params_in2,
-                kid=params_in if params_in else parens,
+                kid=params_in,
             )
         else:
             raise self.ice()
@@ -872,9 +867,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_comparators = [
             comparator for comparator in comparators if isinstance(comparator, ast.Expr)
         ]
+        comparators2 = ast.SubNodeList[ast.Expr](
+            items=valid_comparators, kid=comparators
+        )
         ops = [self.convert(op) for op in node.ops]
         valid_ops = [op for op in ops if isinstance(op, ast.Token)]
-        kids = [left]
+        ops2 = ast.SubNodeList[ast.Token](items=valid_ops, kid=ops)
+
+        kids = [left, ops2, comparators2]
         if (
             isinstance(left, ast.Expr)
             and len(ops) == len(valid_ops)
@@ -972,7 +972,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
         else:
             self.ice()
-
         return ret
 
         # value = self.convert(node.value)
