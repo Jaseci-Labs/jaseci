@@ -14,9 +14,9 @@ can foo(n_1 : float) {
 }
 
 with entry{
-    "Hello World! " |> print;
+    print("Hello World! ") ;
     print(foo(7));
-    print(circle(7).area());
+    print(int(circle(10).area()));
     #code block
 }
 
