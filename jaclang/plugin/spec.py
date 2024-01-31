@@ -89,7 +89,7 @@ class JacFeatureSpec:
     @hookspec(firstresult=True)
     def jac_import(
         target: str,
-        base_path: Optional[str] = None,
+        base_path: str,
         cachable: bool = True,
         override_name: Optional[str] = None,
     ) -> Optional[types.ModuleType]:
