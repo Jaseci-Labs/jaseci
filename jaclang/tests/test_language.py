@@ -85,7 +85,19 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             stdout_value,
-            "{'new_val': 3, 'where': 'from_foo'}\nTrue\n",
+            "<link href='{'new_val': 3, 'where': 'from_foo'} rel='stylesheet'\nTrue\n",
+        )
+
+    def test_chandra_bugs2(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("chandra_bugs2", self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "{'apple': None, 'pineapple': None}\n",
         )
 
     def test_ignore(self) -> None:

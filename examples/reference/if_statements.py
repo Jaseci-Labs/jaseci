@@ -1,7 +1,7 @@
-x = 3
+x = 15
 if 0 <= x <= 5:
-    print("ok")
+    print("Not Bad")
 elif 6 <= x <= 10:
-    print("ook")
+    print("Average")
 else:
-    print("not ok")
+    print("Good Enough")

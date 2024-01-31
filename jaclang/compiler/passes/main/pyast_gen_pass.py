@@ -486,11 +486,11 @@ class PyastGenPass(Pass):
                                 value=self.sync(
                                     ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
-                                attr="make_architype",
+                                attr=f"make_{node.arch_type.value}",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[self.sync(ast3.Constant(value=node.arch_type.value))],
+                        args=[],
                         keywords=[
                             self.sync(
                                 ast3.keyword(
@@ -1389,7 +1389,7 @@ class PyastGenPass(Pass):
         if node.type_tag:
             node.gen.py_ast = self.sync(
                 ast3.AnnAssign(
-                    target=node.target.gen.py_ast,
+                    target=node.target.items[0].gen.py_ast,
                     annotation=node.type_tag.gen.py_ast,
                     value=node.value.gen.py_ast if node.value else None,
                     simple=int(isinstance(node.target.gen.py_ast, ast3.Name)),

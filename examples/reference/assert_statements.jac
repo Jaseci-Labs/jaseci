@@ -1,6 +1,5 @@
 can foo(value : int){
     assert value > 0, "Value must be positive";
-
 }
 
 with entry{

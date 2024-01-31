@@ -220,6 +220,7 @@ class Tokens(str, Enum):
     FSTR_SQ_START = "FSTR_SQ_START"
     FSTR_SQ_END = "FSTR_SQ_END"
     FSTR_PIECE = "FSTR_PIECE"
+    FSTR_SQ_PIECE = "FSTR_SQ_PIECE"
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"

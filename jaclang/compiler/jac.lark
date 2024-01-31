@@ -361,9 +361,10 @@ atom_literal: builtin_type
 multistring: (fstring | STRING)+
 
 fstring: FSTR_START fstr_parts FSTR_END
-       | FSTR_SQ_START fstr_parts FSTR_SQ_END
+       | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
 
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
 // Collection values
 atom_collection: dict_compr
@@ -462,9 +463,9 @@ builtin_type: TYP_TYPE
 
 // Lexer Tokens
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
-DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
+DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-STRING: /(r?b?|b?r?)"[^"\r\n]*"|'[^'\r\n]*'/
+STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
 BOOL.1: /True|False/
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/
@@ -637,6 +638,7 @@ FSTR_END: "\""
 FSTR_SQ_START.1: "f'"
 FSTR_SQ_END: "'"
 FSTR_PIECE.-1: /[^\{\}\"]+/
+FSTR_SQ_PIECE.-1: /[^\{\}\']+/
 FSTR_BESC.1: /{{|}}/
 
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/

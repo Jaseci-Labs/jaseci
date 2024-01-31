@@ -33,13 +33,32 @@ class JacFeature:
     EdgeDir: Type[EdgeDir] = EdgeDir
 
     @staticmethod
-    def make_architype(
-        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    def make_obj(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
-        """Create a new architype."""
-        return JacFeature.pm.hook.make_architype(
-            arch_type=arch_type, on_entry=on_entry, on_exit=on_exit
-        )
+        """Create a obj architype."""
+        return JacFeature.pm.hook.make_obj(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_node(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a node architype."""
+        return JacFeature.pm.hook.make_node(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        return JacFeature.pm.hook.make_edge(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_walker(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a walker architype."""
+        return JacFeature.pm.hook.make_walker(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
     def jac_import(

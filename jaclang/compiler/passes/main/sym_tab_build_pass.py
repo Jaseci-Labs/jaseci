@@ -254,6 +254,17 @@ class SymTabBuildPass(SymTabPass):
         is_imported: bool,
         """
         self.pop_scope()
+        if (
+            isinstance(node.parent, ast.Module)
+            and node
+            in [
+                node.parent.impl_mod,
+                node.parent.test_mod,
+            ]
+            and node.sym_tab
+        ):
+            for v in node.sym_tab.tab.values():
+                self.def_insert(v.decl, table_override=self.cur_scope())
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
