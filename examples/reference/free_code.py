@@ -15,4 +15,4 @@ def foo(n_1: float):
 
 print("Hello World!")
 print(foo(7))
-print(Circle(7).area())
+print(int(Circle(10).area()))
