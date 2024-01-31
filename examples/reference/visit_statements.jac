@@ -12,7 +12,7 @@ node item {
     }
 }
 
-:walker:Visitor:can:travel with entry {
+with entry {
     for i=0 to i<5 by i+=1  {
         <root> ++> item();
     }
