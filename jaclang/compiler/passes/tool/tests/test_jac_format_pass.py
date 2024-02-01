@@ -87,7 +87,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        if "circle_clean_tests.jac" in filename:
+        if "circle_clean_tests.jac" in filename or "circle_pure.test.jac" in filename:
             tokens = code_gen_format.ir.gen.jac.split()
             num_test = 0
             for i in range(len(tokens)):

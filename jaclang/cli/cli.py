@@ -1,7 +1,6 @@
 """Command line interface tool for the Jac language."""
 import os
 import shutil
-import unittest
 from typing import Optional
 
 from jaclang import jac_import as __jac_import__
@@ -10,6 +9,7 @@ from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.compiler.transpiler import jac_file_to_pass
+from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.lang_tools import AstTool
 
 cmd_registry = CommandRegistry()
@@ -104,17 +104,7 @@ def test(filename: str) -> None:
 
     :param filename: The path to the .jac file.
     """
-    if filename.endswith(".jac"):
-        base, mod_name = os.path.split(filename)
-        base = base if base else "./"
-        mod_name = mod_name[:-4]
-        mod = __jac_import__(target=mod_name, base_path=base)
-        if hasattr(mod, "__jac_suite__"):
-            unittest.TextTestRunner().run(getattr(mod, "__jac_suite__"))  # noqa: B009
-        else:
-            print("No tests found.")
-    else:
-        print("Not a .jac file.")
+    Jac.run_test(filename)
 
 
 @cmd_registry.register
@@ -143,10 +133,9 @@ def clean() -> None:
     from the current directory recursively.
     """
     current_dir = os.getcwd()
-    py_cache = "__pycache__"
     for root, dirs, _files in os.walk(current_dir, topdown=True):
         for folder_name in dirs[:]:
-            if folder_name == Constants.JAC_GEN_DIR or folder_name == py_cache:
+            if folder_name == Constants.JAC_GEN_DIR:
                 folder_to_remove = os.path.join(root, folder_name)
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")

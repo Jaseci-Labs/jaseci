@@ -1,10 +1,11 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+import os
+import types
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any, Callable, Optional, Type
-
 
 from jaclang.plugin.spec import (
     ArchBound,
@@ -14,14 +15,17 @@ from jaclang.plugin.spec import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeArchitype,
     T,
     WalkerArchitype,
+    jac_importer,
     root,
 )
 
 
 import pluggy
+
 
 hookimpl = pluggy.HookimplMarker("jac")
 
@@ -31,8 +35,8 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def make_architype(
-        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    def make_obj(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a new architype."""
 
@@ -41,18 +45,7 @@ class JacFeatureDefaults:
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
                 i.resolve(cls)
-
-            match arch_type:
-                case "obj":
-                    arch_cls = Architype
-                case "node":
-                    arch_cls = NodeArchitype
-                case "edge":
-                    arch_cls = EdgeArchitype
-                case "walker":
-                    arch_cls = WalkerArchitype
-                case _:
-                    raise TypeError("Invalid archetype type")
+            arch_cls = Architype
             if not issubclass(cls, arch_cls):
                 cls = type(cls.__name__, (cls, arch_cls), {})
             cls._jac_entry_funcs_ = on_entry
@@ -71,9 +64,151 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def make_node(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a obj architype."""
+
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+            """Decorate class."""
+            cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
+            arch_cls = NodeArchitype
+            if not issubclass(cls, arch_cls):
+                cls = type(cls.__name__, (cls, arch_cls), {})
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            inner_init = cls.__init__
+
+            @wraps(inner_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                inner_init(self, *args, **kwargs)
+                arch_cls.__init__(self)
+
+            cls.__init__ = new_init
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+            """Decorate class."""
+            cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
+            arch_cls = EdgeArchitype
+            if not issubclass(cls, arch_cls):
+                cls = type(cls.__name__, (cls, arch_cls), {})
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            inner_init = cls.__init__
+
+            @wraps(inner_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                inner_init(self, *args, **kwargs)
+                arch_cls.__init__(self)
+
+            cls.__init__ = new_init
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_walker(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a walker architype."""
+
+        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+            """Decorate class."""
+            cls = dataclass(eq=False)(cls)
+            for i in on_entry + on_exit:
+                i.resolve(cls)
+            arch_cls = WalkerArchitype
+            if not issubclass(cls, arch_cls):
+                cls = type(cls.__name__, (cls, arch_cls), {})
+            cls._jac_entry_funcs_ = on_entry
+            cls._jac_exit_funcs_ = on_exit
+            inner_init = cls.__init__
+
+            @wraps(inner_init)
+            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+                inner_init(self, *args, **kwargs)
+                arch_cls.__init__(self)
+
+            cls.__init__ = new_init
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def jac_import(
+        target: str,
+        base_path: str,
+        cachable: bool,
+        override_name: Optional[str],
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        result = jac_importer(
+            target=target,
+            base_path=base_path,
+            cachable=cachable,
+            override_name=override_name,
+        )
+        return result
+
+    @staticmethod
+    @hookimpl
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+
+        def test_deco() -> None:
+            test_fun(JacTestCheck())
+
+        test_deco.__name__ = test_fun.__name__
+        JacTestCheck.add_test(test_deco)
+
+        return test_deco
+
+    @staticmethod
+    @hookimpl
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
+        from jaclang import jac_import
+
+        if filename.endswith(".jac"):
+            base, mod_name = os.path.split(filename)
+            base = base if base else "./"
+            mod_name = mod_name[:-4]
+            JacTestCheck.reset()
+            jac_import(target=mod_name, base_path=base)
+            JacTestCheck.run_test()
+        else:
+            print("Not a .jac file.")
+
+    @staticmethod
+    @hookimpl
     def elvis(op1: Optional[T], op2: T) -> T:
         """Jac's elvis operator feature."""
         return ret if (ret := op1) is not None else op2
+
+    @staticmethod
+    @hookimpl
+    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
+        """Jac's has container default feature."""
+        return field(default_factory=lambda: gen_func())
 
     @staticmethod
     @hookimpl
@@ -123,10 +258,11 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
-            return node_obj._jac_.edges_to_nodes(dir, filter_type)
+            return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
         else:
             raise TypeError("Invalid node object")
 
@@ -186,7 +322,7 @@ class JacFeatureDefaults:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
@@ -195,4 +331,10 @@ class JacFeatureDefaults:
             edge._jac_.dir = edge_dir
         else:
             raise TypeError("Invalid edge object")
+        if conn_assign:
+            for fld, val in zip(conn_assign[0], conn_assign[1]):
+                if hasattr(edge, fld):
+                    setattr(edge, fld, val)
+                else:
+                    raise ValueError(f"Invalid attribute: {fld}")
         return edge

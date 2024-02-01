@@ -5,7 +5,6 @@ enum 'enum' emotion {
         Angry
 }
 
-
 node 'personality'
 personality{
     has

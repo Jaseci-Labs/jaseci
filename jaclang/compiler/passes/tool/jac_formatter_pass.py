@@ -1267,17 +1267,22 @@ class JacFormatPass(Pass):
 
         parts: list["Token | ExprType"],
         """
-        self.emit(node, 'f"')
+        self.emit(
+            node, node.kid[0].value if isinstance(node.kid[0], ast.Token) else 'f"'
+        )
         if node.parts:
             for part in node.parts.items:
                 if isinstance(part, ast.String) and part.name in [
                     Tok.FSTR_PIECE,
+                    Tok.FSTR_SQ_PIECE,
                     Tok.FSTR_BESC,
                 ]:
                     self.emit(node, f"{part.gen.jac}")
                 else:
                     self.emit(node, "{" + part.gen.jac + "}")
-        self.emit(node, '"')
+        self.emit(
+            node, node.kid[-1].value if isinstance(node.kid[-1], ast.Token) else '"'
+        )
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -1759,8 +1764,8 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Name):
-                # if not i.value.startswith("test"):
-                self.emit(node, f" {i.value} ")
+                if not i.value.startswith("test_t"):
+                    self.emit(node, f" {i.value} ")
             else:
                 if start:
                     self.emit(node, i.gen.jac)
@@ -2136,6 +2141,12 @@ class JacFormatPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        if (
+            node.value in ["{", "}"]
+            and isinstance(node.parent, ast.SubNodeList)
+            and isinstance(node.parent.parent, ast.FString)
+        ):
+            self.emit(node, node.value)
         self.emit(node, node.value)
 
     def enter_bool(self, node: ast.Bool) -> None:
