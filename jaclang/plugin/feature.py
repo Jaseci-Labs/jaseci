@@ -4,17 +4,17 @@ from __future__ import annotations
 import types
 from typing import Any, Callable, Optional, Type
 
-from jaclang.plugin.default import JacFeatureDefaults
-from jaclang.plugin.spec import (
+from jaclang.compiler.constant import EdgeDir
+from jaclang.plugin.default import (
     Architype,
     EdgeArchitype,
-    EdgeDir,
-    JacFeatureSpec,
+    JacFeatureDefaults,
     NodeArchitype,
     Root,
     T,
     WalkerArchitype,
 )
+from jaclang.plugin.spec import JacFeatureSpec
 
 
 import pluggy

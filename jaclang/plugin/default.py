@@ -5,26 +5,49 @@ import os
 import types
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, TypeVar
 
-from jaclang.plugin.spec import (
-    ArchBound,
+from jaclang.compiler.constant import EdgeDir
+from jaclang.core.construct import (
     Architype,
     DSFunc,
     EdgeAnchor,
     EdgeArchitype,
-    EdgeDir,
     GenericEdge,
     JacTestCheck,
+    NodeAnchor,
     NodeArchitype,
-    T,
+    ObjectAnchor,
+    Root,
+    WalkerAnchor,
     WalkerArchitype,
-    jac_importer,
     root,
 )
-
+from jaclang.core.importer import jac_importer
 
 import pluggy
+
+T = TypeVar("T")
+ArchBound = TypeVar("ArchBound", bound=Architype)
+
+__all__ = [
+    "EdgeAnchor",
+    "GenericEdge",
+    "JacTestCheck",
+    "NodeAnchor",
+    "ObjectAnchor",
+    "WalkerAnchor",
+    "NodeArchitype",
+    "EdgeArchitype",
+    "WalkerArchitype",
+    "Architype",
+    "DSFunc",
+    "root",
+    "Root",
+    "jac_importer",
+    "T",
+    "ArchBound",
+]
 
 
 hookimpl = pluggy.HookimplMarker("jac")
