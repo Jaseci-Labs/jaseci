@@ -1,6 +1,7 @@
 """Jac Language Features."""
 from __future__ import annotations
 
+import types
 from typing import Any, Callable, Optional, Type
 
 from jaclang.plugin.default import JacFeatureDefaults
@@ -32,13 +33,57 @@ class JacFeature:
     EdgeDir: Type[EdgeDir] = EdgeDir
 
     @staticmethod
-    def make_architype(
-        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    def make_obj(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
-        """Create a new architype."""
-        return JacFeature.pm.hook.make_architype(
-            arch_type=arch_type, on_entry=on_entry, on_exit=on_exit
+        """Create a obj architype."""
+        return JacFeature.pm.hook.make_obj(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_node(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a node architype."""
+        return JacFeature.pm.hook.make_node(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        return JacFeature.pm.hook.make_edge(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_walker(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a walker architype."""
+        return JacFeature.pm.hook.make_walker(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def jac_import(
+        target: str,
+        base_path: str,
+        cachable: bool = True,
+        override_name: Optional[str] = None,
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        return JacFeature.pm.hook.jac_import(
+            target=target,
+            base_path=base_path,
+            cachable=cachable,
+            override_name=override_name,
         )
+
+    @staticmethod
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a test."""
+        return JacFeature.pm.hook.create_test(test_fun=test_fun)
+
+    @staticmethod
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file."""
+        return JacFeature.pm.hook.run_test(filename=filename)
 
     @staticmethod
     def elvis(op1: Optional[T], op2: T) -> T:
@@ -46,9 +91,9 @@ class JacFeature:
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
-    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
         """Jac's has container default feature."""
-        return JacFeature.pm.hook.has_container_default(container=container)
+        return JacFeature.pm.hook.has_instance_default(gen_func=gen_func)
 
     @staticmethod
     def spawn_call(op1: Architype, op2: Architype) -> Architype:
@@ -86,10 +131,11 @@ class JacFeature:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         return JacFeature.pm.hook.edge_ref(
-            node_obj=node_obj, dir=dir, filter_type=filter_type
+            node_obj=node_obj, dir=dir, filter_type=filter_type, filter_func=filter_func
         )
 
     @staticmethod
@@ -125,7 +171,7 @@ class JacFeature:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         return JacFeature.pm.hook.build_edge(

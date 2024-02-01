@@ -258,7 +258,11 @@ aug_op: RSHIFT_EQ
        | STAR_POW_EQ
 
 // Expressions
-expression: pipe (KW_IF expression KW_ELSE expression)? | lambda_expr
+expression: walrus_assign (KW_IF expression KW_ELSE expression)?
+          | lambda_expr
+
+// Walrus assignments
+walrus_assign: (any_ref WALRUS_EQ)? pipe
 
 // Lambda expressions
 lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
@@ -317,10 +321,7 @@ ds_spawn: (ds_spawn KW_SPAWN)? unpack
 unpack: (STAR_MUL | STAR_POW) unpack | ref
 
 // References (unused)
-ref: BW_AND? walrus_assign
-
-// Walrus assignments
-walrus_assign: (walrus_assign WALRUS_EQ)? pipe_call
+ref: BW_AND? pipe_call
 
 // Data spatial calls
 pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
@@ -360,9 +361,10 @@ atom_literal: builtin_type
 multistring: (fstring | STRING)+
 
 fstring: FSTR_START fstr_parts FSTR_END
-       | FSTR_SQ_START fstr_parts FSTR_SQ_END
+       | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
 
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
 // Collection values
 atom_collection: dict_compr
@@ -378,7 +380,7 @@ list_compr: LSQUARE expression inner_compr+ RSQUARE
 gen_compr: LPAREN expression inner_compr+ RPAREN
 set_compr: LBRACE expression inner_compr+ RBRACE
 dict_compr: LBRACE kv_pair inner_compr+ RBRACE
-inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN walrus_assign (KW_IF expression)?
+inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN pipe_call (KW_IF expression)?
 
 dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
 list_val: LSQUARE expr_list? RSQUARE
@@ -461,9 +463,9 @@ builtin_type: TYP_TYPE
 
 // Lexer Tokens
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
-DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
+DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-STRING: /(r?b?|b?r?)"[^"\r\n]*"|'[^'\r\n]*'/
+STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
 BOOL.1: /True|False/
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/
@@ -636,6 +638,7 @@ FSTR_END: "\""
 FSTR_SQ_START.1: "f'"
 FSTR_SQ_END: "'"
 FSTR_PIECE.-1: /[^\{\}\"]+/
+FSTR_SQ_PIECE.-1: /[^\{\}\']+/
 FSTR_BESC.1: /{{|}}/
 
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/

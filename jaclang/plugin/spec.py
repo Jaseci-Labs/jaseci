@@ -1,8 +1,9 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-
+import types
 from typing import Any, Callable, Optional, Type, TypeVar
+
 
 from jaclang.core.construct import (
     Architype,
@@ -11,6 +12,7 @@ from jaclang.core.construct import (
     EdgeArchitype,
     EdgeDir,
     GenericEdge,
+    JacTestCheck,
     NodeAnchor,
     NodeArchitype,
     ObjectAnchor,
@@ -19,10 +21,12 @@ from jaclang.core.construct import (
     WalkerArchitype,
     root,
 )
+from jaclang.core.importer import jac_importer
 
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
+    "JacTestCheck",
     "NodeAnchor",
     "ObjectAnchor",
     "WalkerAnchor",
@@ -34,6 +38,7 @@ __all__ = [
     "EdgeDir",
     "root",
     "Root",
+    "jac_importer",
 ]
 
 import pluggy
@@ -50,10 +55,60 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def make_architype(
-        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    def make_obj(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
-        """Create a new architype."""
+        """Create a obj architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_node(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a node architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_walker(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a walker architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def jac_import(
+        target: str,
+        base_path: str,
+        cachable: bool,
+        override_name: Optional[str],
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def run_test(filename: str) -> None:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
         raise NotImplementedError
 
     @staticmethod
@@ -64,7 +119,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
         """Jac's has container default feature."""
         raise NotImplementedError
 
@@ -110,6 +165,7 @@ class JacFeatureSpec:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
@@ -152,7 +208,7 @@ class JacFeatureSpec:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         raise NotImplementedError

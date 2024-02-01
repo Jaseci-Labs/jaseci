@@ -2,7 +2,7 @@ obj Point {
     has x: flaot, y: float;
 }
 
-can match_example(data: dict) {
+can match_example(data :any) {
 
     match data {
         # MatchValue
@@ -42,4 +42,9 @@ can match_example(data: dict) {
         case _:
             print("No match found.");
     }
+}
+
+with entry{
+    match_example(Point(x=9,y=0));
+
 }
