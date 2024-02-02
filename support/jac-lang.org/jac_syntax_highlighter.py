@@ -422,7 +422,7 @@ class JacLexer(RegexLexer):
                         "setattr",
                         "slice",
                         "sorted",
-                        "staticmethod",
+                        "static",
                         "str",
                         "sum",
                         "super",
