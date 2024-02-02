@@ -1,13 +1,12 @@
 from jaclang.plugin.feature import JacFeature as jac
 
 
-@jac.make_architype("node", on_entry=[], on_exit=[])
+@jac.make_node(on_entry=[], on_exit=[])
 class node_a:
     value: int
 
 
-@jac.make_architype(
-    "walker",
+@jac.make_walker(
     on_entry=[
         jac.DSFunc("create", jac.RootType),
         jac.DSFunc("travel", jac.RootType | node_a),
@@ -47,7 +46,7 @@ class Creator:
             pass
 
 
-@jac.make_architype("edge", on_entry=[], on_exit=[])
+@jac.make_edge(on_entry=[], on_exit=[])
 class MyEdge:
     val: int = jac.has_instance_default(gen_func=lambda: 5)
 

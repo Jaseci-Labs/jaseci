@@ -1,4 +1,3 @@
-from __future__ import annotations
 from jaclang import jac_import as __jac_import__
 import os
 from math import sqrt as square_root

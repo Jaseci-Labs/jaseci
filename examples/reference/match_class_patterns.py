@@ -1,7 +1,7 @@
-from jaclang.plugin.feature import JacFeature as _Jac
+from jaclang.plugin.feature import JacFeature as jac
 
 
-@_Jac.make_architype("obj", on_entry=[], on_exit=[])
+@jac.make_obj(on_entry=[], on_exit=[])
 class Point:
     x: float
     y: float
