@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import os
 
 import jaclang.vendor.mypy.build as myb
 import jaclang.vendor.mypy.errors as mye
@@ -12,7 +13,10 @@ from jaclang.vendor.mypy.build import BuildSource
 from jaclang.vendor.mypy.build import BuildSourceSet
 from jaclang.vendor.mypy.build import FileSystemCache
 from jaclang.vendor.mypy.build import compute_search_paths
-from jaclang.vendor.mypy.build import load_graph
+from jaclang.vendor.mypy.build import Graph
+from jaclang.vendor.mypy.build import ModuleNotFound
+from jaclang.vendor.mypy.build import PRI_INDIRECT
+from jaclang.vendor.mypy.build import find_module_simple
 from jaclang.vendor.mypy.build import load_plugins
 from jaclang.vendor.mypy.build import process_graph
 from jaclang.vendor.mypy.options import Options
@@ -362,6 +366,180 @@ class Errors(mye.Errors):
                     (line, column, end_line, end_column)
                 ],
             )
+
+
+def load_graph(
+    sources: list[BuildSource],
+    manager: BuildManager,
+    old_graph: Graph | None = None,
+    new_modules: list[State] | None = None,
+) -> Graph:
+    """Given some source files, load the full dependency graph.
+
+    If an old_graph is passed in, it is used as the starting point and
+    modified during graph loading.
+
+    If a new_modules is passed in, any modules that are loaded are
+    added to the list. This is an argument and not a return value
+    so that the caller can access it even if load_graph fails.
+
+    As this may need to parse files, this can raise CompileError in case
+    there are syntax errors.
+    """
+
+    graph: Graph = old_graph if old_graph is not None else {}
+
+    # The deque is used to implement breadth-first traversal.
+    # TODO: Consider whether to go depth-first instead.  This may
+    # affect the order in which we process files within import cycles.
+    new = new_modules if new_modules is not None else []
+    entry_points: set[str] = set()
+    # Seed the graph with the initial root sources.
+    for bs in sources:
+        try:
+            st = State(
+                id=bs.module,
+                path=bs.path,
+                source=bs.text,
+                manager=manager,
+                root_source=not bs.followed,
+            )
+        except ModuleNotFound:
+            continue
+        if st.id in graph:
+            manager.errors.set_file(st.xpath, st.id, manager.options)
+            manager.errors.report(
+                -1,
+                -1,
+                f'Duplicate module named "{st.id}" (also at "{graph[st.id].xpath}")',
+                blocker=True,
+            )
+            manager.errors.report(
+                -1,
+                -1,
+                "See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules "
+                "for more info",
+                severity="note",
+            )
+            manager.errors.report(
+                -1,
+                -1,
+                "Common resolutions include: a) using `--exclude` to avoid checking one of them, "
+                "b) adding `__init__.py` somewhere, c) using `--explicit-package-bases` or "
+                "adjusting MYPYPATH",
+                severity="note",
+            )
+
+            manager.errors.raise_error()
+        graph[st.id] = st
+        new.append(st)
+        entry_points.add(bs.module)
+
+    # Note: Running this each time could be slow in the daemon. If it's a problem, we
+    # can do more work to maintain this incrementally.
+    seen_files = {st.abspath: st for st in graph.values() if st.path}
+
+    # Collect dependencies.  We go breadth-first.
+    # More nodes might get added to new as we go, but that's fine.
+    for st in new:
+        assert st.ancestors is not None
+        # Strip out indirect dependencies.  These will be dealt with
+        # when they show up as direct dependencies, and there's a
+        # scenario where they hurt:
+        # - Suppose A imports B and B imports C.
+        # - Suppose on the next round:
+        #   - C is deleted;
+        #   - B is updated to remove the dependency on C;
+        #   - A is unchanged.
+        # - In this case A's cached *direct* dependencies are still valid
+        #   (since direct dependencies reflect the imports found in the source)
+        #   but A's cached *indirect* dependency on C is wrong.
+        dependencies = [
+            dep
+            for dep in st.dependencies
+            if st.priorities.get(dep) != PRI_INDIRECT and "jaclang.vendor" not in dep
+        ]
+        print(st.path, dependencies)
+        if not manager.use_fine_grained_cache():
+            # TODO: Ideally we could skip here modules that appeared in st.suppressed
+            # because they are not in build with `follow-imports=skip`.
+            # This way we could avoid overhead of cloning options in `State.__init__()`
+            # below to get the option value. This is quite minor performance loss however.
+            added = [dep for dep in st.suppressed if find_module_simple(dep, manager)]
+        else:
+            # During initial loading we don't care about newly added modules,
+            # they will be taken care of during fine grained update. See also
+            # comment about this in `State.__init__()`.
+            added = []
+        for dep in st.ancestors + dependencies + st.suppressed:
+            ignored = dep in st.suppressed_set and dep not in entry_points
+            if ignored and dep not in added:
+                manager.missing_modules.add(dep)
+            elif dep not in graph:
+                try:
+                    if dep in st.ancestors:
+                        # TODO: Why not 'if dep not in st.dependencies' ?
+                        # Ancestors don't have import context.
+                        newst = State(
+                            id=dep,
+                            path=None,
+                            source=None,
+                            manager=manager,
+                            ancestor_for=st,
+                        )
+                    else:
+                        newst = State(
+                            id=dep,
+                            path=None,
+                            source=None,
+                            manager=manager,
+                            caller_state=st,
+                            caller_line=st.dep_line_map.get(dep, 1),
+                        )
+                except ModuleNotFound:
+                    if dep in st.dependencies_set:
+                        st.suppress_dependency(dep)
+                else:
+                    if newst.path:
+                        newst_path = os.path.abspath(newst.path)
+
+                        if newst_path in seen_files:
+                            manager.errors.report(
+                                -1,
+                                0,
+                                "Source file found twice under different module names: "
+                                '"{}" and "{}"'.format(
+                                    seen_files[newst_path].id, newst.id
+                                ),
+                                blocker=True,
+                            )
+                            manager.errors.report(
+                                -1,
+                                0,
+                                "See https://mypy.readthedocs.io/en/stable/running"
+                                + "_mypy.html#mapping-file-paths-to-modules "
+                                "for more info",
+                                severity="note",
+                            )
+                            manager.errors.report(
+                                -1,
+                                0,
+                                "Common resolutions include: a) adding `__init__.py` somewhere, "
+                                "b) using `--explicit-package-bases` or adjusting MYPYPATH",
+                                severity="note",
+                            )
+                            manager.errors.raise_error()
+
+                        seen_files[newst_path] = newst
+
+                    assert newst.id not in graph, newst.id
+                    graph[newst.id] = newst
+                    new.append(newst)
+            if dep in graph and dep in st.suppressed_set:
+                # Previously suppressed file is now visible
+                st.add_dependency(dep)
+    manager.plugin.set_modules(manager.modules)
+    return graph
 
 
 __all__ = [
