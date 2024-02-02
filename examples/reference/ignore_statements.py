@@ -1,28 +1,27 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as jac
+from jaclang.plugin.feature import JacFeature as _Jac
 
 
-@jac.make_architype(
-    "walker", on_entry=[jac.DSFunc("start_game", jac.RootType)], on_exit=[]
-)
-class GuessGame:
-    def start_game(self, _jac_here_: jac.RootType) -> None:
-        i = 0
-        while i < 10:
-            jac.connect(_jac_here_, turn(), jac.build_edge(jac.EdgeDir.OUT, None, None))
-            i += 1
-        i = 0
-        while i < 5:
-            jac.ignore(self, jac.edge_ref(_jac_here_, jac.EdgeDir.OUT, None, None)[i])
-            i += 1
-        if jac.visit_node(self, jac.edge_ref(_jac_here_, jac.EdgeDir.OUT, None, None)):
+@_Jac.make_walker(on_entry=[_Jac.DSFunc("travel", _Jac.RootType)], on_exit=[])
+class Visitor:
+    def travel(self, _jac_here_: _Jac.RootType) -> None:
+        _Jac.ignore(self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None, None)[0])
+        if _Jac.visit_node(
+            self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None, None)
+        ):
+            pass
+        elif _Jac.visit_node(self, _Jac.get_root()):
             pass
 
 
-@jac.make_architype("node", on_entry=[jac.DSFunc("check", GuessGame)], on_exit=[])
-class turn:
-    def check(self, _jac_here_: GuessGame) -> None:
-        print("here", end=", ")
+@_Jac.make_node(on_entry=[_Jac.DSFunc("speak", Visitor)], on_exit=[])
+class item:
+    def speak(self, _jac_here_: Visitor) -> None:
+        print("Hey There!!!")
 
 
-jac.spawn_call(jac.get_root(), GuessGame())
+i = 0
+while i < 5:
+    _Jac.connect(_Jac.get_root(), item(), _Jac.build_edge(_Jac.EdgeDir.OUT, None, None))
+    i += 1
+_Jac.spawn_call(_Jac.get_root(), Visitor())

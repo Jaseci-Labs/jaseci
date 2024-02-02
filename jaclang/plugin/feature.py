@@ -1,19 +1,20 @@
 """Jac Language Features."""
 from __future__ import annotations
 
+import types
 from typing import Any, Callable, Optional, Type
 
-from jaclang.plugin.default import JacFeatureDefaults
-from jaclang.plugin.spec import (
+from jaclang.compiler.constant import EdgeDir
+from jaclang.plugin.default import (
     Architype,
     EdgeArchitype,
-    EdgeDir,
-    JacFeatureSpec,
+    JacFeatureDefaults,
     NodeArchitype,
     Root,
     T,
     WalkerArchitype,
 )
+from jaclang.plugin.spec import JacFeatureSpec
 
 
 import pluggy
@@ -32,12 +33,46 @@ class JacFeature:
     EdgeDir: Type[EdgeDir] = EdgeDir
 
     @staticmethod
-    def make_architype(
-        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+    def make_obj(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
-        """Create a new architype."""
-        return JacFeature.pm.hook.make_architype(
-            arch_type=arch_type, on_entry=on_entry, on_exit=on_exit
+        """Create a obj architype."""
+        return JacFeature.pm.hook.make_obj(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_node(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a node architype."""
+        return JacFeature.pm.hook.make_node(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        return JacFeature.pm.hook.make_edge(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_walker(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a walker architype."""
+        return JacFeature.pm.hook.make_walker(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def jac_import(
+        target: str,
+        base_path: str,
+        cachable: bool = True,
+        override_name: Optional[str] = None,
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        return JacFeature.pm.hook.jac_import(
+            target=target,
+            base_path=base_path,
+            cachable=cachable,
+            override_name=override_name,
         )
 
     @staticmethod

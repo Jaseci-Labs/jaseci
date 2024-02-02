@@ -4,20 +4,18 @@ from __future__ import annotations
 from setuptools import find_packages, setup  # type: ignore
 
 
-VERSION = "0.4.7"
+VERSION = "0.0.1"
 
 setup(
-    name="jaclang",
+    name="jaclang-walkerapi",
     version=VERSION,
-    packages=find_packages(include=["jaclang", "jaclang.*"]),
+    packages=find_packages(include=["jaclang_walkerapi", "jaclang_walkerapi.*"]),
     install_requires=[],
     package_data={
         "": ["*.ini"],
     },
     entry_points={
-        "console_scripts": [
-            "jac = jaclang.cli.cli:start_cli",
-        ],
+        "jac": ["walkerapi = jaclang_walkerapi.walkerapi:JacFeature"],
     },
     author="Jason Mars",
     author_email="jason@jaseci.org",

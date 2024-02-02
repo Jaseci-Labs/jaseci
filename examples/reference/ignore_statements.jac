@@ -1,22 +1,21 @@
-walker GuessGame {
-    can start_game with `<root> entry;
-}
-node turn {
-    can check with GuessGame entry;
+walker Visitor {
+    can travel with `<root> entry {
+        ignore -->[0];
+        visit --> else {
+            visit<root>;
+        }
+    }
 }
 
-:walker:GuessGame:can:start_game {
-    for i=0 to i<10 by i+=1 {
-        <here> ++> turn();
+node item {
+    can speak with Visitor entry {
+        print("Hey There!!!");
     }
-    for i=0 to i<5 by i+=1 {
-        ignore -->[i];
-    }
-    visit -->;
 }
-:node:turn:can:check {
-    print("here", end=", ");
-}
+
 with entry {
-    <root> spawn GuessGame();
+    for i=0 to i<5 by i+=1  {
+        <root> ++> item();
+    }
+    <root> spawn Visitor();
 }

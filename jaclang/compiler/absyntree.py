@@ -271,12 +271,16 @@ class Module(AstDocNode):
         body: Sequence[ElementStmt | String | EmptyToken],
         is_imported: bool,
         kid: Sequence[AstNode],
+        impl_mod: Optional[Module] = None,
+        test_mod: Optional[Module] = None,
     ) -> None:
         """Initialize whole program node."""
         self.name = name
         self.source = source
         self.body = body
         self.is_imported = is_imported
+        self.impl_mod = impl_mod
+        self.test_mod = test_mod
         self.mod_deps: dict[str, Module] = {}
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)

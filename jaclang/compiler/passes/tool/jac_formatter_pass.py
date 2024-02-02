@@ -1764,8 +1764,8 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Name):
-                # if not i.value.startswith("test"):
-                self.emit(node, f" {i.value} ")
+                if not i.value.startswith("test_t"):
+                    self.emit(node, f" {i.value} ")
             else:
                 if start:
                     self.emit(node, i.gen.jac)

@@ -1,37 +1,28 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as jac
+from jaclang.plugin.feature import JacFeature as _Jac
 
 
-@jac.make_architype("walker", on_entry=[jac.DSFunc("func2", jac.RootType)], on_exit=[])
-class walker_1:
-    def func2(self, _jac_here_: jac.RootType) -> None:
-        end = _jac_here_
-        i = 0
-        while i < 5:
-            jac.connect(
-                end,
-                (end := node_1(val=i + 1)),
-                jac.build_edge(jac.EdgeDir.OUT, None, None),
-            )
-            i += 1
-        if jac.visit_node(self, jac.edge_ref(_jac_here_, jac.EdgeDir.OUT, None, None)):
+@_Jac.make_walker(on_entry=[_Jac.DSFunc("travel", _Jac.RootType)], on_exit=[])
+class Visitor:
+    def travel(self, _jac_here_: _Jac.RootType) -> None:
+        if _Jac.visit_node(
+            self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None, None)
+        ):
+            pass
+        elif _Jac.visit_node(self, _Jac.get_root()):
             pass
 
 
-@jac.make_architype("node", on_entry=[jac.DSFunc("func_1", walker_1)], on_exit=[])
-class node_1:
-    val: int
-
-    def func_1(self, _jac_here_: walker_1) -> None:
-        print("visiting ", self)
-        if self.val == 3:
-            print("Disengaging traversal in node with value 3.")
-            jac.disengage(_jac_here_)
-            return
-        if jac.visit_node(_jac_here_, jac.edge_ref(self, jac.EdgeDir.OUT, None, None)):
-            pass
-        else:
-            print("finished visitng all nodes  ....\n")
+@_Jac.make_node(on_entry=[_Jac.DSFunc("speak", Visitor)], on_exit=[])
+class item:
+    def speak(self, _jac_here_: Visitor) -> None:
+        print("Hey There!!!")
+        _Jac.disengage(_jac_here_)
+        return
 
 
-jac.spawn_call(jac.get_root(), walker_1())
+i = 0
+while i < 5:
+    _Jac.connect(_Jac.get_root(), item(), _Jac.build_edge(_Jac.EdgeDir.OUT, None, None))
+    i += 1
+_Jac.spawn_call(_Jac.get_root(), Visitor())
