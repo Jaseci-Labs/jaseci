@@ -85,6 +85,7 @@ class JacTypeCheckPass(Pass):
                 root_source=False,
                 ast_override=tree,
             )
+            st.dependencies = list(filter(lambda x: x != "jaclang", st.dependencies))
             mypy_graph[module.name] = st
             new_modules.append(st)
 
