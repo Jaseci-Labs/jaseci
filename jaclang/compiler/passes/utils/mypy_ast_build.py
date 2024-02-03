@@ -1,4 +1,5 @@
 """Overrides to mypy build manager for direct AST pass through."""
+
 from __future__ import annotations
 
 import ast
@@ -12,10 +13,10 @@ from jaclang.compiler.passes import Pass
 from jaclang.vendor.mypy.build import BuildSource
 from jaclang.vendor.mypy.build import BuildSourceSet
 from jaclang.vendor.mypy.build import FileSystemCache
-from jaclang.vendor.mypy.build import compute_search_paths
 from jaclang.vendor.mypy.build import Graph
 from jaclang.vendor.mypy.build import ModuleNotFound
 from jaclang.vendor.mypy.build import PRI_INDIRECT
+from jaclang.vendor.mypy.build import compute_search_paths
 from jaclang.vendor.mypy.build import find_module_simple
 from jaclang.vendor.mypy.build import load_plugins
 from jaclang.vendor.mypy.build import process_graph
@@ -386,7 +387,6 @@ def load_graph(
     As this may need to parse files, this can raise CompileError in case
     there are syntax errors.
     """
-
     graph: Graph = old_graph if old_graph is not None else {}
 
     # The deque is used to implement breadth-first traversal.
@@ -459,7 +459,6 @@ def load_graph(
             for dep in st.dependencies
             if st.priorities.get(dep) != PRI_INDIRECT and "jaclang.vendor" not in dep
         ]
-        print(st.path, dependencies)
         if not manager.use_fine_grained_cache():
             # TODO: Ideally we could skip here modules that appeared in st.suppressed
             # because they are not in build with `follow-imports=skip`.
@@ -534,7 +533,7 @@ def load_graph(
 
                     assert newst.id not in graph, newst.id
                     graph[newst.id] = newst
-                    new.append(newst)
+                    new.append(newst)  # noqa: B038
             if dep in graph and dep in st.suppressed_set:
                 # Previously suppressed file is now visible
                 st.add_dependency(dep)

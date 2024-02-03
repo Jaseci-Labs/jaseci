@@ -1,4 +1,5 @@
 """Command line interface tool for the Jac language."""
+
 import os
 import shutil
 from typing import Optional
@@ -69,9 +70,9 @@ def type_check(filename: str) -> None:
         )
 
         errs = len(out.errors_had)
-        warrnings = len(out.warnings_had)
+        warnings = len(out.warnings_had)
 
-        print(f"Errors: {errs}, Warrnings: {warrnings}")
+        print(f"Errors: {errs}, Warnings: {warnings}")
     else:
         print("Not a .jac file.")
 
