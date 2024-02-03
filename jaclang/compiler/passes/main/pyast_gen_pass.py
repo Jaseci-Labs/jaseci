@@ -1773,7 +1773,7 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = self.sync(
             ast3.Dict(
-                keys=[x.key.gen.py_ast for x in node.kv_pairs],
+                keys=[(x.key.gen.py_ast if x.key else None) for x in node.kv_pairs],
                 values=[x.value.gen.py_ast for x in node.kv_pairs],
             )
         )
@@ -1794,7 +1794,7 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = self.sync(
             ast3.keyword(
-                arg=node.key.sym_name,
+                arg=node.key.sym_name if node.key else None,
                 value=node.value.gen.py_ast,
             )
         )

@@ -2030,9 +2030,7 @@ class JacParser(Pass):
         def unpack(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            unpack: ref
-                | STAR_MUL unpack
-                | STAR_POW unpack
+            unpack: STAR_MUL? ref
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
@@ -2538,13 +2536,25 @@ class JacParser(Pass):
         def kw_expr(self, kid: list[ast.AstNode]) -> ast.KWPair:
             """Grammar rule.
 
-            kw_expr: any_ref EQ expression
+            kw_expr: any_ref EQ expression | STAR_POW expression
             """
-            if isinstance(kid[0], ast.NameSpec) and isinstance(kid[2], ast.Expr):
+            if (
+                len(kid) == 3
+                and isinstance(kid[0], ast.NameSpec)
+                and isinstance(kid[2], ast.Expr)
+            ):
                 return self.nu(
                     ast.KWPair(
                         key=kid[0],
                         value=kid[2],
+                        kid=kid,
+                    )
+                )
+            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
+                return self.nu(
+                    ast.KWPair(
+                        key=None,
+                        value=kid[1],
                         kid=kid,
                     )
                 )
@@ -2624,13 +2634,25 @@ class JacParser(Pass):
         def kv_pair(self, kid: list[ast.AstNode]) -> ast.KVPair:
             """Grammar rule.
 
-            kv_pair: expression COLON expression
+            kv_pair: expression COLON expression | STAR_POW expression
             """
-            if isinstance(kid[0], ast.Expr) and isinstance(kid[2], ast.Expr):
+            if (
+                len(kid) == 3
+                and isinstance(kid[0], ast.Expr)
+                and isinstance(kid[2], ast.Expr)
+            ):
                 return self.nu(
                     ast.KVPair(
                         key=kid[0],
                         value=kid[2],
+                        kid=kid,
+                    )
+                )
+            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
+                return self.nu(
+                    ast.KVPair(
+                        key=None,
+                        value=kid[1],
                         kid=kid,
                     )
                 )

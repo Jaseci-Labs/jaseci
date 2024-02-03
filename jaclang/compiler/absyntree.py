@@ -1460,7 +1460,7 @@ class KVPair(AstNode):
 
     def __init__(
         self,
-        key: Expr,
+        key: Optional[Expr],  # is **key if blank
         value: Expr,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1475,7 +1475,7 @@ class KWPair(AstNode):
 
     def __init__(
         self,
-        key: NameSpec,
+        key: Optional[NameSpec],  # is **value if blank
         value: Expr,
         kid: Sequence[AstNode],
     ) -> None:

@@ -1326,7 +1326,7 @@ class JacFormatPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        if node.op.value in ["-", "~", "+", "*", "**"]:
+        if node.op.value in ["-", "~", "+", "*"]:
             self.emit(node, f"{node.op.value}{node.operand.gen.jac}")
         elif node.op.value == "(":
             self.emit(node, f"({node.operand.gen.jac})")
@@ -1507,7 +1507,10 @@ class JacFormatPass(Pass):
         key: ExprType,
         value: ExprType,
         """
-        self.emit(node, f"{node.key.gen.jac}={node.value.gen.jac}")
+        if node.key:
+            self.emit(node, f"{node.key.gen.jac}={node.value.gen.jac}")
+        else:
+            self.emit(node, f"**{node.value.gen.jac}")
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
