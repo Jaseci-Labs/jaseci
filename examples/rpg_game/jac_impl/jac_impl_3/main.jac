@@ -21,10 +21,10 @@ obj Game {
         score:int = 0,
         deaths:int = 0,
 
-        character_spritesheet:pygame.surface.Surface = Spritesheet('../img/character.png'),
-        terrain_spritesheet:pygame.surface.Surface = Spritesheet('../img/terrain.png'),
-        enemy_spritesheet:pygame.surface.Surface = Spritesheet('../img/enemy.png'),
-        attack_spritesheet:pygame.surface.Surface = Spritesheet('../img/attack.png'),
+        character_spritesheet:Spritesheet = Spritesheet('../img/character.png'),
+        terrain_spritesheet:Spritesheet = Spritesheet('../img/terrain.png'),
+        enemy_spritesheet:Spritesheet = Spritesheet('../img/enemy.png'),
+        attack_spritesheet:Spritesheet = Spritesheet('../img/attack.png'),
         intro_background:pygame.surface.Surface = pygame.image.load('../img/introbackground.png'),
         go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png');
 
@@ -168,7 +168,7 @@ with entry {
         }
         mouse_pos = pygame.mouse.get_pos();
         mouse_pressed = pygame.mouse.get_pressed();
-
+        print(type(mouse_pressed));
         if restart_button.is_pressed(mouse_pos, mouse_pressed) {
             <self>.won = False;
             <self>.new();
@@ -191,7 +191,7 @@ with entry {
     title = <self>.font.render('Spud-nik : SOLO', True, BLUE);
     title_rect = title.get_rect(x=WIN_WIDTH/2-100,y=100);
 
-    play_button = Button(WIN_WIDTH/2-50, 200, 100, 100, WHITE, BLACK, 'Play', 32);
+    play_button = Button(int(WIN_WIDTH/2-50), 200, 100, 100, WHITE, BLACK, 'Play', 32);
 
     while intro {
         for event in pygame.event.get(){
