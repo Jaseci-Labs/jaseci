@@ -1460,8 +1460,8 @@ class KVPair(AstNode):
 
     def __init__(
         self,
-        key: Expr,
-        value: Optional[Expr],  # is **key if blank
+        key: Optional[Expr],  # is **key if blank
+        value: Expr,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize key value pair expression node."""

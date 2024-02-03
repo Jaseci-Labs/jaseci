@@ -2651,8 +2651,8 @@ class JacParser(Pass):
             elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
                 return self.nu(
                     ast.KVPair(
-                        key=kid[1],
-                        value=None,
+                        key=None,
+                        value=kid[1],
                         kid=kid,
                     )
                 )

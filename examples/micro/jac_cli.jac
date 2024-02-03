@@ -77,7 +77,7 @@ with entry {
             } else {
                 kwargs = {'default': param.default};
             }
-            parser.add_argument(f"--{func.__name__}.{name}", *(*kwargs));
+            parser.add_argument(f"--{func.__name__}.{name}", **kwargs);
         }
     }
 
