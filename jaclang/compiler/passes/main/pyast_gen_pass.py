@@ -1624,7 +1624,11 @@ class PyastGenPass(Pass):
                     keywords=[],
                 )
             )
-        elif node.op.name in [Tok.STAR_MUL, Tok.STAR_POW]:
+        elif node.op.name in [Tok.STAR_MUL]:
+            node.gen.py_ast = self.sync(
+                ast3.Starred(value=node.operand.gen.py_ast, ctx=ast3.Load())
+            )
+        elif node.op.name in [Tok.STAR_POW]:
             node.gen.py_ast = node.operand.gen.py_ast
         else:
             self.ice(f"Unknown Unary operator {node.op.value}")
@@ -1941,13 +1945,7 @@ class PyastGenPass(Pass):
         keywords = []
         if params and len(params.items) > 0:
             for x in params.items:
-                if isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_MUL:
-                    args.append(
-                        self.sync(
-                            ast3.Starred(value=x.operand.gen.py_ast, ctx=ast3.Load()), x
-                        )
-                    )
-                elif isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_POW:
+                if isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_POW:
                     keywords.append(
                         self.sync(ast3.keyword(value=x.operand.gen.py_ast), x)
                     )
