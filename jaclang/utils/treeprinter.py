@@ -1,4 +1,5 @@
 """Tree Printing Helpers for Jac."""
+
 from __future__ import annotations
 
 import ast as ast3

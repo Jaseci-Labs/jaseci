@@ -49,6 +49,7 @@ class struct_time(structseq[Any | int], _TimeTuple):
             "tm_yday",
             "tm_isdst",
         )
+
     @property
     def tm_year(self) -> int: ...
     @property

@@ -125,8 +125,7 @@ class CleanupNonlocalControl(NonlocalControl):
         self.outer = outer
 
     @abstractmethod
-    def gen_cleanup(self, builder: IRBuilder, line: int) -> None:
-        ...
+    def gen_cleanup(self, builder: IRBuilder, line: int) -> None: ...
 
     def gen_break(self, builder: IRBuilder, line: int) -> None:
         self.gen_cleanup(builder, line)

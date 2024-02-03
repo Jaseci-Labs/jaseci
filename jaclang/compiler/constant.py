@@ -1,4 +1,5 @@
 """Constants across the project."""
+
 from enum import Enum
 
 

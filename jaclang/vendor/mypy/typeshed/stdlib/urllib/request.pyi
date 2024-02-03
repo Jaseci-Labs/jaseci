@@ -101,7 +101,9 @@ class Request:
     unredirected_hdrs: dict[str, str]
     unverifiable: bool
     method: str | None
-    timeout: float | None  # Undocumented, only set after __init__() by OpenerDirector.open()
+    timeout: (
+        float | None
+    )  # Undocumented, only set after __init__() by OpenerDirector.open()
     def __init__(
         self,
         url: str,

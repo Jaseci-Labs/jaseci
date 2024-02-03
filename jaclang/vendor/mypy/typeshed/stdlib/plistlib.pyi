@@ -87,15 +87,17 @@ else:
     ) -> Any: ...
 
 def dump(
-    value: Mapping[str, Any]
-    | list[Any]
-    | tuple[Any, ...]
-    | str
-    | bool
-    | float
-    | bytes
-    | bytearray
-    | datetime,
+    value: (
+        Mapping[str, Any]
+        | list[Any]
+        | tuple[Any, ...]
+        | str
+        | bool
+        | float
+        | bytes
+        | bytearray
+        | datetime
+    ),
     fp: IO[bytes],
     *,
     fmt: PlistFormat = ...,
@@ -103,15 +105,17 @@ def dump(
     skipkeys: bool = False,
 ) -> None: ...
 def dumps(
-    value: Mapping[str, Any]
-    | list[Any]
-    | tuple[Any, ...]
-    | str
-    | bool
-    | float
-    | bytes
-    | bytearray
-    | datetime,
+    value: (
+        Mapping[str, Any]
+        | list[Any]
+        | tuple[Any, ...]
+        | str
+        | bool
+        | float
+        | bytes
+        | bytearray
+        | datetime
+    ),
     *,
     fmt: PlistFormat = ...,
     skipkeys: bool = False,

@@ -105,10 +105,9 @@ class Mailbox(Generic[_MessageT]):
     def popitem(self) -> tuple[str, _MessageT]: ...
     def update(
         self,
-        arg: _HasIteritems
-        | _HasItems
-        | Iterable[tuple[str, _MessageData]]
-        | None = None,
+        arg: (
+            _HasIteritems | _HasItems | Iterable[tuple[str, _MessageData]] | None
+        ) = None,
     ) -> None: ...
     @abstractmethod
     def flush(self) -> None: ...

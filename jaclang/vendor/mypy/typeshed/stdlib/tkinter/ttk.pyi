@@ -985,18 +985,13 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         master: tkinter.Misc | None = None,
         *,
         class_: str = ...,
-        columns: str
-        | list[str]
-        | list[int]
-        | list[str | int]
-        | tuple[str | int, ...] = ...,
+        columns: (
+            str | list[str] | list[int] | list[str | int] | tuple[str | int, ...]
+        ) = ...,
         cursor: tkinter._Cursor = ...,
-        displaycolumns: str
-        | int
-        | list[str]
-        | tuple[str, ...]
-        | list[int]
-        | tuple[int, ...] = ...,
+        displaycolumns: (
+            str | int | list[str] | tuple[str, ...] | list[int] | tuple[int, ...]
+        ) = ...,
         height: int = ...,
         name: str = ...,
         padding: _Padding = ...,
@@ -1005,9 +1000,11 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         #
         # 'tree headings' is same as ['tree', 'headings'], and I wouldn't be
         # surprised if someone is using it.
-        show: Literal["tree", "headings", "tree headings", ""]
-        | list[str]
-        | tuple[str, ...] = ...,
+        show: (
+            Literal["tree", "headings", "tree headings", ""]
+            | list[str]
+            | tuple[str, ...]
+        ) = ...,
         style: str = ...,
         takefocus: tkinter._TakeFocusValue = ...,
         xscrollcommand: tkinter._XYScrollCommand = ...,
@@ -1018,24 +1015,21 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        columns: str
-        | list[str]
-        | list[int]
-        | list[str | int]
-        | tuple[str | int, ...] = ...,
+        columns: (
+            str | list[str] | list[int] | list[str | int] | tuple[str | int, ...]
+        ) = ...,
         cursor: tkinter._Cursor = ...,
-        displaycolumns: str
-        | int
-        | list[str]
-        | tuple[str, ...]
-        | list[int]
-        | tuple[int, ...] = ...,
+        displaycolumns: (
+            str | int | list[str] | tuple[str, ...] | list[int] | tuple[int, ...]
+        ) = ...,
         height: int = ...,
         padding: _Padding = ...,
         selectmode: Literal["extended", "browse", "none"] = ...,
-        show: Literal["tree", "headings", "tree headings", ""]
-        | list[str]
-        | tuple[str, ...] = ...,
+        show: (
+            Literal["tree", "headings", "tree headings", ""]
+            | list[str]
+            | tuple[str, ...]
+        ) = ...,
         style: str = ...,
         takefocus: tkinter._TakeFocusValue = ...,
         xscrollcommand: tkinter._XYScrollCommand = ...,

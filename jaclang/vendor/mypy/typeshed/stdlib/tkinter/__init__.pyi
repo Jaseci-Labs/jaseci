@@ -418,9 +418,11 @@ class Misc:
         self,
         pattern,
         value,
-        priority: int
-        | Literal["widgetDefault", "startupFile", "userDefault", "interactive"]
-        | None = None,
+        priority: (
+            int
+            | Literal["widgetDefault", "startupFile", "userDefault", "interactive"]
+            | None
+        ) = None,
     ) -> None: ...
     def option_clear(self) -> None: ...
     def option_get(self, name, className): ...
@@ -988,7 +990,9 @@ class Pack:
 class _PlaceInfo(_InMiscNonTotal):  # empty dict if widget hasn't been placed
     anchor: _Anchor
     bordermode: Literal["inside", "outside", "ignore"]
-    width: str  # can be int()ed (even after e.g. widget.place(height='2.3c') or similar)
+    width: (
+        str  # can be int()ed (even after e.g. widget.place(height='2.3c') or similar)
+    )
     height: str  # can be int()ed
     x: str  # can be int()ed
     y: str  # can be int()ed
@@ -1272,8 +1276,9 @@ class Canvas(Widget, XView, YView):
         relief: _Relief = ...,
         # Setting scrollregion to None doesn't reset it back to empty,
         # but setting it to () does.
-        scrollregion: tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits]
-        | tuple[()] = ...,
+        scrollregion: (
+            tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits] | tuple[()]
+        ) = ...,
         selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
         selectforeground: str = ...,
@@ -1310,8 +1315,9 @@ class Canvas(Widget, XView, YView):
         insertwidth: _ScreenUnits = ...,
         offset=...,  # undocumented
         relief: _Relief = ...,
-        scrollregion: tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits]
-        | tuple[()] = ...,
+        scrollregion: (
+            tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits] | tuple[()]
+        ) = ...,
         selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
         selectforeground: str = ...,

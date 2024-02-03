@@ -148,13 +148,11 @@ def fail_missing(mod: str, reason: ModuleNotFoundReason) -> None:
 
 
 @overload
-def remove_misplaced_type_comments(source: bytes) -> bytes:
-    ...
+def remove_misplaced_type_comments(source: bytes) -> bytes: ...
 
 
 @overload
-def remove_misplaced_type_comments(source: str) -> str:
-    ...
+def remove_misplaced_type_comments(source: str) -> str: ...
 
 
 def remove_misplaced_type_comments(source: str | bytes) -> str | bytes:
@@ -515,9 +513,9 @@ class ImportTracker:
 
         for name in sorted(
             self.required_names,
-            key=lambda n: (self.reverse_alias[n], n)
-            if n in self.reverse_alias
-            else (n, ""),
+            key=lambda n: (
+                (self.reverse_alias[n], n) if n in self.reverse_alias else (n, "")
+            ),
         ):
             # If we haven't seen this name in an import statement, ignore it
             if name not in self.module_for:

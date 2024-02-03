@@ -16,6 +16,7 @@ if sys.platform != "win32":
                 "pw_dir",
                 "pw_shell",
             )
+
         @property
         def pw_name(self) -> str: ...
         @property

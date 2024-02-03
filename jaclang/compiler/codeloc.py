@@ -1,4 +1,5 @@
 """Code location info for AST nodes."""
+
 from __future__ import annotations
 
 import ast as ast3

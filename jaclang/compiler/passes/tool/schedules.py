@@ -1,4 +1,5 @@
 """Pass schedules."""
+
 from typing import Type
 
 from jaclang.compiler.passes.ir_pass import Pass

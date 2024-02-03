@@ -1,4 +1,5 @@
 """Test Jac cli module."""
+
 import io
 import subprocess
 import sys

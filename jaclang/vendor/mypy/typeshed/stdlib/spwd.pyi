@@ -20,6 +20,7 @@ if sys.platform != "win32":
                 "sp_expire",
                 "sp_flag",
             )
+
         @property
         def sp_namp(self) -> str: ...
         @property

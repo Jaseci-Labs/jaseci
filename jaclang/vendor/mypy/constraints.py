@@ -1209,9 +1209,11 @@ class ConstraintBuilderVisitor(TypeVisitor[List[Constraint]]):
                         arg_types=cactual.arg_types[prefix_len:],
                         arg_kinds=cactual.arg_kinds[prefix_len:],
                         arg_names=cactual.arg_names[prefix_len:],
-                        variables=cactual.variables
-                        if not type_state.infer_polymorphic
-                        else [],
+                        variables=(
+                            cactual.variables
+                            if not type_state.infer_polymorphic
+                            else []
+                        ),
                         imprecise_arg_kinds=cactual.imprecise_arg_kinds,
                     )
                 else:

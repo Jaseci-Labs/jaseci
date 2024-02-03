@@ -515,7 +515,9 @@ class AttributeContext(NamedTuple):
 # A context for a class hook that modifies the class definition.
 class ClassDefContext(NamedTuple):
     cls: ClassDef  # The class definition
-    reason: Expression  # The expression being applied (decorator, metaclass, base class)
+    reason: (
+        Expression  # The expression being applied (decorator, metaclass, base class)
+    )
     api: SemanticAnalyzerPluginInterface
 
 

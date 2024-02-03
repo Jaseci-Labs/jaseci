@@ -419,7 +419,9 @@ class ImportBase(Statement):
 
     __slots__ = ("is_unreachable", "is_top_level", "is_mypy_only", "assignments")
 
-    is_unreachable: bool  # Set by semanal.SemanticAnalyzerPass1 if inside `if False` etc.
+    is_unreachable: (
+        bool  # Set by semanal.SemanticAnalyzerPass1 if inside `if False` etc.
+    )
     is_top_level: bool  # Ditto if outside any class or def
     is_mypy_only: bool  # Ditto if inside `if TYPE_CHECKING` or `if MYPY`
 
@@ -3348,30 +3350,30 @@ class TypeInfo(SymbolNode):
             "bases": [b.serialize() for b in self.bases],
             "mro": [c.fullname for c in self.mro],
             "_promote": [p.serialize() for p in self._promote],
-            "alt_promote": None
-            if self.alt_promote is None
-            else self.alt_promote.serialize(),
+            "alt_promote": (
+                None if self.alt_promote is None else self.alt_promote.serialize()
+            ),
             "declared_metaclass": (
                 None
                 if self.declared_metaclass is None
                 else self.declared_metaclass.serialize()
             ),
-            "metaclass_type": None
-            if self.metaclass_type is None
-            else self.metaclass_type.serialize(),
-            "tuple_type": None
-            if self.tuple_type is None
-            else self.tuple_type.serialize(),
-            "typeddict_type": None
-            if self.typeddict_type is None
-            else self.typeddict_type.serialize(),
+            "metaclass_type": (
+                None if self.metaclass_type is None else self.metaclass_type.serialize()
+            ),
+            "tuple_type": (
+                None if self.tuple_type is None else self.tuple_type.serialize()
+            ),
+            "typeddict_type": (
+                None if self.typeddict_type is None else self.typeddict_type.serialize()
+            ),
             "flags": get_flags(self, TypeInfo.FLAGS),
             "metadata": self.metadata,
             "slots": list(sorted(self.slots)) if self.slots is not None else None,
             "deletable_attributes": self.deletable_attributes,
-            "self_type": self.self_type.serialize()
-            if self.self_type is not None
-            else None,
+            "self_type": (
+                self.self_type.serialize() if self.self_type is not None else None
+            ),
             "dataclass_transform_spec": (
                 self.dataclass_transform_spec.serialize()
                 if self.dataclass_transform_spec is not None

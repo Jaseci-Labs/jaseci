@@ -1,4 +1,5 @@
 """Transpilation functions."""
+
 from typing import Optional, Type
 
 import jaclang.compiler.absyntree as ast

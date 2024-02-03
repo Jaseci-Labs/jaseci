@@ -569,9 +569,9 @@ class SingledispatchVisitor(TraverserVisitor):
         super().__init__()
 
         # Map of main singledispatch function to list of registered implementations
-        self.singledispatch_impls: defaultdict[
-            FuncDef, list[RegisterImplInfo]
-        ] = defaultdict(list)
+        self.singledispatch_impls: defaultdict[FuncDef, list[RegisterImplInfo]] = (
+            defaultdict(list)
+        )
 
         # Map of decorated function to the indices of any decorators to remove
         self.decorators_to_remove: dict[FuncDef, list[int]] = {}

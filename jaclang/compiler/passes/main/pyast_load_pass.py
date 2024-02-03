@@ -1,4 +1,5 @@
 """Lark parser for Jac Lang."""
+
 from __future__ import annotations
 
 import ast as py_ast

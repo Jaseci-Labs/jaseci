@@ -1603,9 +1603,11 @@ def safe_inspect_signature(runtime: Any) -> inspect.Signature | None:
                 sig = inspect._signature_fromstr(inspect.Signature, runtime, sig)  # type: ignore[attr-defined]
                 assert isinstance(sig, inspect.Signature)
                 new_params = [
-                    parameter.replace(default=UNREPRESENTABLE)
-                    if parameter.default is ...
-                    else parameter
+                    (
+                        parameter.replace(default=UNREPRESENTABLE)
+                        if parameter.default is ...
+                        else parameter
+                    )
                     for parameter in sig.parameters.values()
                 ]
                 return sig.replace(parameters=new_params)
@@ -1872,9 +1874,9 @@ def get_importable_stdlib_modules() -> set[str]:
         all_stdlib_modules = sys.stdlib_module_names
     else:
         all_stdlib_modules = set(sys.builtin_module_names)
-        modules_by_finder: defaultdict[
-            importlib.machinery.FileFinder, set[str]
-        ] = defaultdict(set)
+        modules_by_finder: defaultdict[importlib.machinery.FileFinder, set[str]] = (
+            defaultdict(set)
+        )
         for m in pkgutil.iter_modules():
             if isinstance(m.module_finder, importlib.machinery.FileFinder):
                 modules_by_finder[m.module_finder].add(m.name)

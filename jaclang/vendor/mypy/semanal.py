@@ -6645,9 +6645,7 @@ class SemanticAnalyzer(
         line = (
             debug_context.line
             if debug_context
-            else self.statement.line
-            if self.statement
-            else -1
+            else self.statement.line if self.statement else -1
         )
         self.deferral_debug_context.append((self.cur_mod_id, line))
 

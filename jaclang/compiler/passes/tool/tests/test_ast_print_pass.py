@@ -1,4 +1,5 @@
 """Test pass module."""
+
 import os
 
 from jaclang.compiler.passes.tool import AstDotGraphPass, AstPrinterPass

@@ -31,18 +31,18 @@ try:
 except ImportError:
     LXML_INSTALLED = False
 
-type_of_any_name_map: Final[
-    collections.OrderedDict[int, str]
-] = collections.OrderedDict(
-    [
-        (TypeOfAny.unannotated, "Unannotated"),
-        (TypeOfAny.explicit, "Explicit"),
-        (TypeOfAny.from_unimported_type, "Unimported"),
-        (TypeOfAny.from_omitted_generics, "Omitted Generics"),
-        (TypeOfAny.from_error, "Error"),
-        (TypeOfAny.special_form, "Special Form"),
-        (TypeOfAny.implementation_artifact, "Implementation Artifact"),
-    ]
+type_of_any_name_map: Final[collections.OrderedDict[int, str]] = (
+    collections.OrderedDict(
+        [
+            (TypeOfAny.unannotated, "Unannotated"),
+            (TypeOfAny.explicit, "Explicit"),
+            (TypeOfAny.from_unimported_type, "Unimported"),
+            (TypeOfAny.from_omitted_generics, "Omitted Generics"),
+            (TypeOfAny.from_error, "Error"),
+            (TypeOfAny.special_form, "Special Form"),
+            (TypeOfAny.implementation_artifact, "Implementation Artifact"),
+        ]
+    )
 )
 
 ReporterClasses: _TypeAlias = Dict[

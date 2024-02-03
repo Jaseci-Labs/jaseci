@@ -1,4 +1,5 @@
 """Test Jac language generally."""
+
 import io
 import sys
 

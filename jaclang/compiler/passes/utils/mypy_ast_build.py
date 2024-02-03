@@ -1,4 +1,5 @@
 """Overrides to mypy build manager for direct AST pass through."""
+
 from __future__ import annotations
 
 import ast

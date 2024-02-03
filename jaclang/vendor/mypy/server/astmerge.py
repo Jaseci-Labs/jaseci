@@ -175,9 +175,9 @@ def replacement_map_from_symbol_table(
                     )
                     replacements.update(type_repl)
                     if node.node.special_alias and new_node.node.special_alias:
-                        replacements[
-                            new_node.node.special_alias
-                        ] = node.node.special_alias
+                        replacements[new_node.node.special_alias] = (
+                            node.node.special_alias
+                        )
     return replacements
 
 

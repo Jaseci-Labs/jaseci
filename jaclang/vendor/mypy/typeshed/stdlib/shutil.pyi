@@ -97,9 +97,11 @@ if sys.version_info >= (3, 8):
         src: StrPath,
         dst: StrPath,
         symlinks: bool = False,
-        ignore: None
-        | Callable[[str, list[str]], Iterable[str]]
-        | Callable[[StrPath, list[str]], Iterable[str]] = None,
+        ignore: (
+            None
+            | Callable[[str, list[str]], Iterable[str]]
+            | Callable[[StrPath, list[str]], Iterable[str]]
+        ) = None,
         copy_function: Callable[[str, str], object] = ...,
         ignore_dangling_symlinks: bool = False,
         dirs_exist_ok: bool = False,
@@ -110,9 +112,11 @@ else:
         src: StrPath,
         dst: StrPath,
         symlinks: bool = False,
-        ignore: None
-        | Callable[[str, list[str]], Iterable[str]]
-        | Callable[[StrPath, list[str]], Iterable[str]] = None,
+        ignore: (
+            None
+            | Callable[[str, list[str]], Iterable[str]]
+            | Callable[[StrPath, list[str]], Iterable[str]]
+        ) = None,
         copy_function: Callable[[str, str], object] = ...,
         ignore_dangling_symlinks: bool = False,
     ) -> _PathReturn: ...

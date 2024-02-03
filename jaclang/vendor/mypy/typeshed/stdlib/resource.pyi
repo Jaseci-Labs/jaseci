@@ -24,6 +24,7 @@ if sys.platform != "win32":
         RLIMIT_RTTIME: int
         RLIMIT_SIGPENDING: int
         RUSAGE_THREAD: int
+
     @final
     class struct_rusage(
         structseq[float],
@@ -65,6 +66,7 @@ if sys.platform != "win32":
                 "ru_nvcsw",
                 "ru_nivcsw",
             )
+
         @property
         def ru_utime(self) -> float: ...
         @property

@@ -79,7 +79,7 @@ class JacLexer(RegexLexer):
             (r'[^\\\'"%{\n]+', ttype),
             (r'[\'"\\]', ttype),
             # unhandled string formatting sign
-            (r"%|(\{{1,2})", ttype)
+            (r"%|(\{{1,2})", ttype),
             # newlines are an error (use "nl" state)
         ]
 

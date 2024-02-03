@@ -47,6 +47,7 @@ if sys.version_info >= (3, 8):
     ):
         if sys.version_info >= (3, 10):
             __match_args__: Final = ("exc_type", "exc_value", "exc_traceback", "thread")
+
         @property
         def exc_type(self) -> type[BaseException]: ...
         @property
@@ -55,6 +56,7 @@ if sys.version_info >= (3, 8):
         def exc_traceback(self) -> TracebackType | None: ...
         @property
         def thread(self) -> Thread | None: ...
+
     _excepthook: Callable[[_ExceptHookArgs], Any]
 
 if sys.version_info >= (3, 12):

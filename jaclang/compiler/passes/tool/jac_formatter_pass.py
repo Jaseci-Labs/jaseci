@@ -2,6 +2,7 @@
 
 This is a pass for formatting Jac code.
 """
+
 import re
 
 import jaclang.compiler.absyntree as ast
@@ -883,9 +884,11 @@ class JacFormatPass(Pass):
         for i in node.kid:
             if isinstance(i, ast.SubTag):
                 for j in i.kid:
-                    self.emit(node, j.gen.jac) if not j.gen.jac.startswith(
-                        ":"
-                    ) else self.emit(node, f"{j.gen.jac} ")
+                    (
+                        self.emit(node, j.gen.jac)
+                        if not j.gen.jac.startswith(":")
+                        else self.emit(node, f"{j.gen.jac} ")
+                    )
             else:
                 self.emit(node, f" {i.gen.jac}")
         if isinstance(node.kid[-1], ast.CommentToken) and not node.gen.jac.endswith(

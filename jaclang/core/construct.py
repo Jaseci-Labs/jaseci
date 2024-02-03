@@ -1,4 +1,5 @@
 """Core constructs for Jac Language."""
+
 from __future__ import annotations
 
 import types

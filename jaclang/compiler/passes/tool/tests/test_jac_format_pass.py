@@ -1,4 +1,5 @@
 """Test ast build pass module."""
+
 import ast as ast3
 from difflib import unified_diff
 

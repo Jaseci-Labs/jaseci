@@ -967,9 +967,11 @@ class ASTConverter:
                             n.col_offset,
                         )
                     arg_types = [
-                        a.type_annotation
-                        if a.type_annotation is not None
-                        else AnyType(TypeOfAny.unannotated)
+                        (
+                            a.type_annotation
+                            if a.type_annotation is not None
+                            else AnyType(TypeOfAny.unannotated)
+                        )
                         for a in args
                     ]
                 else:
@@ -1056,9 +1058,11 @@ class ASTConverter:
                     ],
                     arg_kinds,
                     arg_names,
-                    return_type
-                    if return_type is not None
-                    else AnyType(TypeOfAny.unannotated),
+                    (
+                        return_type
+                        if return_type is not None
+                        else AnyType(TypeOfAny.unannotated)
+                    ),
                     _dummy_fallback,
                 )
 
@@ -1905,12 +1909,10 @@ class TypeConverter:
         )
 
     @overload
-    def visit(self, node: ast3.expr) -> ProperType:
-        ...
+    def visit(self, node: ast3.expr) -> ProperType: ...
 
     @overload
-    def visit(self, node: AST | None) -> ProperType | None:
-        ...
+    def visit(self, node: AST | None) -> ProperType | None: ...
 
     def visit(self, node: AST | None) -> ProperType | None:
         """Modified visit -- keep track of the stack of nodes"""

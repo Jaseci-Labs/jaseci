@@ -2,6 +2,7 @@
 
 These are various pass schedules for the Jac compiler and static analysis.
 """
+
 from __future__ import annotations
 
 

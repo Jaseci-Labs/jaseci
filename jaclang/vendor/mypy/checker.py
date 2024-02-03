@@ -538,12 +538,16 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
                     # print("XXX in pass %d, class %s, function %s" %
                     #       (self.pass_num, type_name, node.fullname or node.name))
                     done.add(node)
-                    with self.tscope.class_scope(
-                        active_typeinfo
-                    ) if active_typeinfo else nullcontext():
-                        with self.scope.push_class(
-                            active_typeinfo
-                        ) if active_typeinfo else nullcontext():
+                    with (
+                        self.tscope.class_scope(active_typeinfo)
+                        if active_typeinfo
+                        else nullcontext()
+                    ):
+                        with (
+                            self.scope.push_class(active_typeinfo)
+                            if active_typeinfo
+                            else nullcontext()
+                        ):
                             self.check_partial(node)
             return True
 
@@ -4099,9 +4103,11 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             if star_lv:
                 list_expr = ListExpr(
                     [
-                        self.temp_node(rv_type, context)
-                        if not isinstance(rv_type, UnpackType)
-                        else StarExpr(self.temp_node(rv_type.type, context))
+                        (
+                            self.temp_node(rv_type, context)
+                            if not isinstance(rv_type, UnpackType)
+                            else StarExpr(self.temp_node(rv_type.type, context))
+                        )
                         for rv_type in star_rv_types
                     ]
                 )
@@ -7088,8 +7094,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         notes: list[str] | None = None,
         code: ErrorCode | None = None,
         outer_context: Context | None = None,
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     @overload
     def check_subtype(
@@ -7103,8 +7108,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         *,
         notes: list[str] | None = None,
         outer_context: Context | None = None,
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     def check_subtype(
         self,
@@ -7614,8 +7618,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         type_ranges: list[TypeRange] | None,
         ctx: Context,
         default: None = None,
-    ) -> tuple[Type | None, Type | None]:
-        ...
+    ) -> tuple[Type | None, Type | None]: ...
 
     @overload
     def conditional_types_with_intersection(
@@ -7624,8 +7627,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         type_ranges: list[TypeRange] | None,
         ctx: Context,
         default: Type,
-    ) -> tuple[Type, Type]:
-        ...
+    ) -> tuple[Type, Type]: ...
 
     def conditional_types_with_intersection(
         self,
@@ -7891,15 +7893,13 @@ def conditional_types(
     current_type: Type,
     proposed_type_ranges: list[TypeRange] | None,
     default: None = None,
-) -> tuple[Type | None, Type | None]:
-    ...
+) -> tuple[Type | None, Type | None]: ...
 
 
 @overload
 def conditional_types(
     current_type: Type, proposed_type_ranges: list[TypeRange] | None, default: Type
-) -> tuple[Type, Type]:
-    ...
+) -> tuple[Type, Type]: ...
 
 
 def conditional_types(

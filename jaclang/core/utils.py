@@ -1,4 +1,5 @@
 """Helper for construct."""
+
 from typing import TYPE_CHECKING
 
 from jaclang.compiler.constant import EdgeDir

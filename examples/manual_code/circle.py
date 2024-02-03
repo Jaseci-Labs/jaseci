@@ -2,6 +2,7 @@
 This module demonstrates a simple circle class and a function to calculate the area of a circle.
 (Module docstrings are optional but good practice in python)
 """
+
 from abc import ABC, abstractmethod
 from enum import Enum
 import math

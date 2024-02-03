@@ -1,4 +1,5 @@
 """Common code for command line interface tool for the Jac language."""
+
 from __future__ import annotations
 
 import argparse
@@ -81,18 +82,22 @@ class CommandRegistry:
                     first = False
                     cmd_parser.add_argument(
                         f"{param_name}",
-                        type=eval(param.annotation)
-                        if isinstance(param.annotation, str)
-                        else param.annotation,
+                        type=(
+                            eval(param.annotation)
+                            if isinstance(param.annotation, str)
+                            else param.annotation
+                        ),
                     )
                 else:
                     cmd_parser.add_argument(
                         f"-{param_name[:1]}",
                         f"--{param_name}",
                         required=True,
-                        type=eval(param.annotation)
-                        if isinstance(param.annotation, str)
-                        else param.annotation,
+                        type=(
+                            eval(param.annotation)
+                            if isinstance(param.annotation, str)
+                            else param.annotation
+                        ),
                     )
             elif first:
                 first = False
@@ -104,9 +109,11 @@ class CommandRegistry:
                     f"-{param_name[:1]}",
                     f"--{param_name}",
                     default=param.default,
-                    type=eval(param.annotation)
-                    if isinstance(param.annotation, str)
-                    else param.annotation,
+                    type=(
+                        eval(param.annotation)
+                        if isinstance(param.annotation, str)
+                        else param.annotation
+                    ),
                 )
         return func
 

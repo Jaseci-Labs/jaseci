@@ -1,4 +1,5 @@
 """Command line interface tool for the Jac language."""
+
 import os
 import shutil
 from typing import Optional

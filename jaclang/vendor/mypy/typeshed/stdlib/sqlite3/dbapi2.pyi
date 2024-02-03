@@ -398,10 +398,9 @@ class Connection:
     def rollback(self) -> None: ...
     def set_authorizer(
         self,
-        authorizer_callback: Callable[
-            [int, str | None, str | None, str | None, str | None], int
-        ]
-        | None,
+        authorizer_callback: (
+            Callable[[int, str | None, str | None, str | None, str | None], int] | None
+        ),
     ) -> None: ...
     def set_progress_handler(
         self, progress_handler: Callable[[], int | None] | None, n: int
@@ -523,6 +522,7 @@ else:
     @final
     class Statement:
         def __init__(self, *args: Incomplete, **kwargs: Incomplete) -> None: ...
+
     _Statement: TypeAlias = Statement
 
 class Warning(Exception): ...

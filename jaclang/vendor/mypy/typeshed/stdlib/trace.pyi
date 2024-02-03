@@ -17,8 +17,9 @@ class CoverageResults:
         counts: dict[tuple[str, int], int] | None = None,
         calledfuncs: dict[_FileModuleFunction, int] | None = None,
         infile: StrPath | None = None,
-        callers: dict[tuple[_FileModuleFunction, _FileModuleFunction], int]
-        | None = None,
+        callers: (
+            dict[tuple[_FileModuleFunction, _FileModuleFunction], int] | None
+        ) = None,
         outfile: StrPath | None = None,
     ) -> None: ...  # undocumented
     def update(self, other: CoverageResults) -> None: ...
