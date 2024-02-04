@@ -1,16 +1,18 @@
 """Helper for construct."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from jaclang.compiler.constant import EdgeDir
 
 
 if TYPE_CHECKING:
-    from jaclang.core.construct import NodeArchitype
+    from jaclang.core.construct import NodeAnchor
 
 
 def collect_node_connections(
-    current_node: "NodeArchitype",
+    current_node: NodeAnchor,
     visited_nodes: set,
     connections: set,
 ) -> None:

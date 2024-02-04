@@ -16,7 +16,7 @@ from jaclang.core.utils import collect_node_connections
 class ElementAnchor:
     """Element Anchor."""
 
-    obj: Optional[Architype]
+    obj: Architype
 
 
 @dataclass(eq=False)
@@ -60,8 +60,8 @@ class NodeAnchor(ObjectAnchor):
 
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        visited_nodes = set()
-        connections = set()
+        visited_nodes: set[NodeAnchor] = set()
+        connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
         unique_node_id_dict = {}
 
         collect_node_connections(self, visited_nodes, connections)
@@ -73,7 +73,7 @@ class NodeAnchor(ObjectAnchor):
 
         for pair in list(set(connections)):
             dot_content += (
-                f"{unique_node_id_dict.get(pair[0])[1]} -> {unique_node_id_dict.get(pair[1])[1]}"
+                f"{unique_node_id_dict[pair[0]][1]} -> {unique_node_id_dict[pair[1]][1]}"
                 f' [label="{pair[2]}"];\n'
             )
         if dot_file:
