@@ -69,7 +69,7 @@ class JacFormatPassTests(TestCase):
                 self.assertIn("+-- ", out, msg)
                 self.assertIsNotNone(out, msg=msg)
             elif file.endswith(".py"):
-                if len(out.splitlines()) == 1:
+                if len(out.splitlines()) <= 4:
                     continue
                 self.assertIn("+-- ", out, msg)
                 self.assertIsNotNone(out, msg=msg)

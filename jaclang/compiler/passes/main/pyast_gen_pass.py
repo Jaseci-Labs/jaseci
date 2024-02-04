@@ -2519,10 +2519,11 @@ class PyastGenPass(Pass):
         for i in node.values:
             if (
                 isinstance(i, ast.MatchKVPair)
-                and isinstance(i.key.gen.py_ast[0], ast3.expr)
+                and isinstance(i.key, ast.MatchValue)
+                and isinstance(i.key.value.gen.py_ast[0], ast3.expr)
                 and isinstance(i.value.gen.py_ast[0], ast3.pattern)
             ):
-                mapping.keys.append(i.key.gen.py_ast[0])
+                mapping.keys.append(i.key.value.gen.py_ast[0])
                 mapping.patterns.append(i.value.gen.py_ast[0])
             elif isinstance(i, ast.MatchStar):
                 mapping.rest = i.name.sym_name
