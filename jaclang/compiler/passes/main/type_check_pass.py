@@ -67,7 +67,7 @@ class JacTypeCheckPass(Pass):
             stderr=sys.stderr,
         )
 
-        mypy_graph = {}
+        mypy_graph: myab.Graph = {}
         new_modules = []
         for module in self.__modules:
             tree = myab.ASTConverter(

@@ -38,7 +38,7 @@ class BuildManager(myb.BuildManager):
         source: str,
         ignore_errors: bool,
         options: myb.Options,
-        ast_override: ast.AST | None = None,
+        ast_override: myb.MypyFile | None = None,
     ) -> myb.MypyFile:
         """Parse the source of a file with the given name.
 
@@ -89,7 +89,7 @@ class State(myb.State):
         # process it. With this flag, any changes to external state as well
         # as error reporting should be avoided.
         temporary: bool = False,
-        ast_override: ast.AST | None = None,
+        ast_override: myb.MypyFile | None = None,
     ) -> None:
         """Override to mypy state for AST pass through."""
         if not temporary:
@@ -193,7 +193,7 @@ class State(myb.State):
             self.compute_dependencies()
 
     def parse_file(
-        self, *, temporary: bool = False, ast_override: ast.AST | None = None
+        self, *, temporary: bool = False, ast_override: myb.MypyFile | None = None
     ) -> None:
         """Parse file and run first pass of semantic analysis.
 
