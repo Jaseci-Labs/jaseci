@@ -76,7 +76,7 @@ class JacTypeCheckPass(Pass):
                 errors=errors,
                 ignore_errors=False,
                 strip_function_bodies=False,
-            ).visit(module.gen.py_ast)
+            ).visit(module.gen.py_ast[0])
 
             st = myab.State(
                 id=module.name,

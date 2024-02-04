@@ -256,7 +256,7 @@ class AstTool:
         elif file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            pyast = jac_file_to_pass(file_name).ir.gen.py_ast
+            pyast = jac_file_to_pass(file_name).ir.gen.py_ast[0]
             return (
                 print_ast_tree(pyast)
                 if isinstance(pyast, py_ast.AST)
