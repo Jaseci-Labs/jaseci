@@ -978,9 +978,12 @@ class ConstraintBuilderVisitor(TypeVisitor[List[Constraint]]):
                             res.append(Constraint(template_arg, SUBTYPE_OF, suffix))
                             res.append(Constraint(template_arg, SUPERTYPE_OF, suffix))
                     elif isinstance(tvar, TypeVarTupleType):
-                        # Handle variadic type variables covariantly for consistency.
+                        # Consider variadic type variables to be invariant.
                         res.extend(
-                            infer_constraints(template_arg, mapped_arg, self.direction)
+                            infer_constraints(template_arg, mapped_arg, SUBTYPE_OF)
+                        )
+                        res.extend(
+                            infer_constraints(template_arg, mapped_arg, SUPERTYPE_OF)
                         )
                 return res
             if (

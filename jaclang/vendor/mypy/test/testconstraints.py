@@ -36,17 +36,24 @@ class ConstraintsSuite(Suite):
 
     def test_basic_type_var_tuple(self) -> None:
         fx = self.fx
-        assert infer_constraints(
-            Instance(fx.gvi, [UnpackType(fx.ts)]),
-            Instance(fx.gvi, [fx.a, fx.b]),
-            SUPERTYPE_OF,
-        ) == [
+        assert set(
+            infer_constraints(
+                Instance(fx.gvi, [UnpackType(fx.ts)]),
+                Instance(fx.gvi, [fx.a, fx.b]),
+                SUPERTYPE_OF,
+            )
+        ) == {
             Constraint(
                 type_var=fx.ts,
                 op=SUPERTYPE_OF,
                 target=TupleType([fx.a, fx.b], fx.std_tuple),
-            )
-        ]
+            ),
+            Constraint(
+                type_var=fx.ts,
+                op=SUBTYPE_OF,
+                target=TupleType([fx.a, fx.b], fx.std_tuple),
+            ),
+        }
 
     def test_type_var_tuple_with_prefix_and_suffix(self) -> None:
         fx = self.fx
@@ -63,6 +70,11 @@ class ConstraintsSuite(Suite):
                 op=SUPERTYPE_OF,
                 target=TupleType([fx.b, fx.c], fx.std_tuple),
             ),
+            Constraint(
+                type_var=fx.ts,
+                op=SUBTYPE_OF,
+                target=TupleType([fx.b, fx.c], fx.std_tuple),
+            ),
             Constraint(type_var=fx.s, op=SUPERTYPE_OF, target=fx.d),
         }
 
@@ -76,7 +88,9 @@ class ConstraintsSuite(Suite):
             )
         ) == {
             Constraint(type_var=fx.t, op=SUPERTYPE_OF, target=fx.a),
+            Constraint(type_var=fx.t, op=SUBTYPE_OF, target=fx.a),
             Constraint(type_var=fx.t, op=SUPERTYPE_OF, target=fx.b),
+            Constraint(type_var=fx.t, op=SUBTYPE_OF, target=fx.b),
         }
 
     def test_unpack_homogenous_tuple_with_prefix_and_suffix(self) -> None:
@@ -92,7 +106,9 @@ class ConstraintsSuite(Suite):
         ) == {
             Constraint(type_var=fx.t, op=SUPERTYPE_OF, target=fx.a),
             Constraint(type_var=fx.s, op=SUPERTYPE_OF, target=fx.b),
+            Constraint(type_var=fx.s, op=SUBTYPE_OF, target=fx.b),
             Constraint(type_var=fx.s, op=SUPERTYPE_OF, target=fx.c),
+            Constraint(type_var=fx.s, op=SUBTYPE_OF, target=fx.c),
             Constraint(type_var=fx.u, op=SUPERTYPE_OF, target=fx.d),
         }
 
@@ -107,7 +123,9 @@ class ConstraintsSuite(Suite):
         ) == {
             Constraint(type_var=fx.u, op=SUPERTYPE_OF, target=fx.a),
             Constraint(type_var=fx.t, op=SUPERTYPE_OF, target=fx.b),
+            Constraint(type_var=fx.t, op=SUBTYPE_OF, target=fx.b),
             Constraint(type_var=fx.s, op=SUPERTYPE_OF, target=fx.c),
+            Constraint(type_var=fx.s, op=SUBTYPE_OF, target=fx.c),
             Constraint(type_var=fx.u, op=SUPERTYPE_OF, target=fx.d),
         }
 

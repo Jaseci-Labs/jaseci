@@ -3,11 +3,9 @@ import sys
 import types
 from _typeshed import ReadableBuffer
 from collections.abc import Callable, Iterable, MutableSequence, Sequence
-from typing import Any
-from typing_extensions import Literal, deprecated
-
-if sys.version_info >= (3, 8):
-    from importlib.metadata import DistributionFinder, PathDistribution
+from importlib.metadata import DistributionFinder, PathDistribution
+from typing import Any, Literal
+from typing_extensions import deprecated
 
 class ModuleSpec:
     def __init__(
@@ -134,7 +132,7 @@ class PathFinder:
         def find_distributions(
             context: DistributionFinder.Context = ...,
         ) -> Iterable[PathDistribution]: ...
-    elif sys.version_info >= (3, 8):
+    else:
         @classmethod
         def find_distributions(
             cls, context: DistributionFinder.Context = ...

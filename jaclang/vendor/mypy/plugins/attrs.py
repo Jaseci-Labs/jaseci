@@ -123,6 +123,7 @@ class Attribute:
     def __init__(
         self,
         name: str,
+        alias: str | None,
         info: TypeInfo,
         has_default: bool,
         init: bool,
@@ -132,6 +133,7 @@ class Attribute:
         init_type: Type | None,
     ) -> None:
         self.name = name
+        self.alias = alias
         self.info = info
         self.has_default = has_default
         self.init = init
@@ -192,14 +194,14 @@ class Attribute:
             arg_kind = ARG_OPT if self.has_default else ARG_POS
 
         # Attrs removes leading underscores when creating the __init__ arguments.
-        return Argument(
-            Var(self.name.lstrip("_"), init_type), init_type, None, arg_kind
-        )
+        name = self.alias or self.name.lstrip("_")
+        return Argument(Var(name, init_type), init_type, None, arg_kind)
 
     def serialize(self) -> JsonDict:
         """Serialize this object so it can be saved and restored."""
         return {
             "name": self.name,
+            "alias": self.alias,
             "has_default": self.has_default,
             "init": self.init,
             "kw_only": self.kw_only,
@@ -232,6 +234,7 @@ class Attribute:
 
         return Attribute(
             data["name"],
+            data["alias"],
             info,
             data["has_default"],
             data["init"],
@@ -334,6 +337,8 @@ def attr_class_maker_callback(
     it will add an __init__ or all the compare methods.
     For frozen=True it will turn the attrs into properties.
 
+    Hashability will be set according to https://www.attrs.org/en/stable/hashing.html.
+
     See https://www.attrs.org/en/stable/how-does-it-work.html for information on how attrs works.
 
     If this returns False, some required metadata was not ready yet and we need another
@@ -345,6 +350,9 @@ def attr_class_maker_callback(
     frozen = _get_frozen(ctx, frozen_default)
     order = _determine_eq_order(ctx)
     slots = _get_decorator_bool_argument(ctx, "slots", slots_default)
+    hashable = _get_decorator_bool_argument(
+        ctx, "hash", False
+    ) or _get_decorator_bool_argument(ctx, "unsafe_hash", False)
 
     auto_attribs = _get_decorator_optional_bool_argument(
         ctx, "auto_attribs", auto_attribs_default
@@ -387,10 +395,13 @@ def attr_class_maker_callback(
     adder = MethodAdder(ctx)
     # If  __init__ is not being generated, attrs still generates it as __attrs_init__ instead.
     _add_init(ctx, attributes, adder, "__init__" if init else ATTRS_INIT_NAME)
+
     if order:
         _add_order(ctx, adder)
     if frozen:
         _make_frozen(ctx, attributes)
+    elif not hashable:
+        _remove_hashability(ctx)
 
     return True
 
@@ -536,6 +547,7 @@ def _attributes_from_assignment(
     or if auto_attribs is enabled also like this:
         x: type
         x: type = default_value
+        x: type = attr.ib(...)
     """
     for lvalue in stmt.lvalues:
         lvalues, rvalues = _parse_assignments(lvalue, stmt)
@@ -606,7 +618,9 @@ def _attribute_from_auto_attrib(
     has_rhs = not isinstance(rvalue, TempNode)
     sym = ctx.cls.info.names.get(name)
     init_type = sym.type if sym else None
-    return Attribute(name, ctx.cls.info, has_rhs, True, kw_only, None, stmt, init_type)
+    return Attribute(
+        name, None, ctx.cls.info, has_rhs, True, kw_only, None, stmt, init_type
+    )
 
 
 def _attribute_from_attrib_maker(
@@ -672,9 +686,21 @@ def _attribute_from_attrib_maker(
         converter = convert
     converter_info = _parse_converter(ctx, converter)
 
+    # Custom alias might be defined:
+    alias = None
+    alias_expr = _get_argument(rvalue, "alias")
+    if alias_expr:
+        alias = ctx.api.parse_str_literal(alias_expr)
+        if alias is None:
+            ctx.api.fail(
+                '"alias" argument to attrs field must be a string literal',
+                rvalue,
+                code=LITERAL_REQ,
+            )
     name = unmangle(lhs.name)
     return Attribute(
         name,
+        alias,
         ctx.cls.info,
         attr_has_default,
         init,
@@ -989,6 +1015,18 @@ def _add_match_args(
         add_attribute_to_class(
             api=ctx.api, cls=ctx.cls, name="__match_args__", typ=match_args
         )
+
+
+def _remove_hashability(ctx: mypy.plugin.ClassDefContext) -> None:
+    """Remove hashability from a class."""
+    add_attribute_to_class(
+        ctx.api,
+        ctx.cls,
+        "__hash__",
+        NoneType(),
+        is_classvar=True,
+        overwrite_existing=True,
+    )
 
 
 class MethodAdder:

@@ -29,6 +29,4 @@ def iscoroutinefunction(
 def iscoroutinefunction(
     func: object,
 ) -> TypeGuard[Callable[..., Coroutine[Any, Any, Any]]]: ...
-
-# Can actually be a generator-style coroutine on Python 3.7
 def iscoroutine(obj: object) -> TypeGuard[Coroutine[Any, Any, Any]]: ...
