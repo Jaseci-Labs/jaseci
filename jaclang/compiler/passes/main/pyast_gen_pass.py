@@ -1566,7 +1566,7 @@ class PyastGenPass(Pass):
                 )
             ]
         elif node.op.name in [Tok.WALRUS_EQ]:
-            node.left.gen.py_ast.ctx = ast3.Store()  # TODO: Short term fix
+            node.left.gen.py_ast[0].ctx = ast3.Store()  # TODO: Short term fix
             node.gen.py_ast = [
                 self.sync(
                     ast3.NamedExpr(
@@ -1586,11 +1586,9 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
-            node.gen.py_ast = [self.translate_jac_bin_op(node)]
+            node.gen.py_ast = self.translate_jac_bin_op(node)
 
-    def translate_jac_bin_op(
-        self, node: ast.BinaryExpr
-    ) -> Optional[ast3.AST] | list[ast3.AST]:
+    def translate_jac_bin_op(self, node: ast.BinaryExpr) -> list[ast3.AST]:
         """Translate jac binary op."""
         if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
             raise self.ice()
@@ -1611,21 +1609,23 @@ class PyastGenPass(Pass):
             return func_node.gen.py_ast
         elif node.op.name in [Tok.KW_SPAWN]:
             self.needs_jac_feature()
-            return self.sync(
-                ast3.Call(
-                    func=self.sync(
-                        ast3.Attribute(
-                            value=self.sync(
-                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                            ),
-                            attr="spawn_call",
-                            ctx=ast3.Load(),
-                        )
-                    ),
-                    args=[node.left.gen.py_ast, node.right.gen.py_ast],
-                    keywords=[],
+            return [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="spawn_call",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[node.left.gen.py_ast, node.right.gen.py_ast],
+                        keywords=[],
+                    )
                 )
-            )
+            ]
         elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
             func_node = ast.FuncCall(
                 target=node.left,
@@ -1642,26 +1642,28 @@ class PyastGenPass(Pass):
             self.error("Invalid pipe target.")
         elif node.op.name == Tok.ELVIS_OP:
             self.needs_jac_feature()
-            return self.sync(
-                ast3.Call(
-                    func=self.sync(
-                        ast3.Attribute(
-                            value=self.sync(
-                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                            ),
-                            attr="elvis",
-                            ctx=ast3.Load(),
-                        )
-                    ),
-                    args=[node.left.gen.py_ast, node.right.gen.py_ast],
-                    keywords=[],
+            return [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="elvis",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[node.left.gen.py_ast, node.right.gen.py_ast],
+                        keywords=[],
+                    )
                 )
-            )
+            ]
         else:
             self.error(
                 f"Binary operator {node.op.value} not supported in bootstrap Jac"
             )
-        return None
+        return []
 
     def exit_compare_expr(self, node: ast.CompareExpr) -> None:
         """Sub objects.
@@ -1788,7 +1790,7 @@ class PyastGenPass(Pass):
                 elif isinstance(i, ast.FString):
                     pieces.extend(get_pieces(i.parts.items)) if i.parts else None
                 elif isinstance(i, ast.ExprStmt):
-                    pieces.append(i.gen.py_ast)
+                    pieces.append(i.gen.py_ast[0])
                 else:
                     raise self.ice("Multi string made of something weird.")
             return pieces
@@ -1806,22 +1808,28 @@ class PyastGenPass(Pass):
             if isinstance(combined_multi[i], (str, bytes)):
                 combined_multi[i] = self.sync(ast3.Constant(value=combined_multi[i]))
         if len(combined_multi) > 1 or not isinstance(combined_multi[0], ast3.Constant):
-            node.gen.py_ast = self.sync(
-                ast3.JoinedStr(
-                    values=combined_multi,
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.JoinedStr(
+                        values=combined_multi,
+                    )
                 )
-            )
+            ]
         else:
-            node.gen.py_ast = combined_multi[0]
+            node.gen.py_ast = [combined_multi[0]]
 
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.
 
         parts: Optional[SubNodeList[String | ExprType]],
         """
-        node.gen.py_ast = (
-            node.parts.gen.py_ast if node.parts else self.sync(ast3.Constant(value=""))
-        )
+        node.gen.py_ast = [
+            (
+                node.parts.gen.py_ast
+                if node.parts
+                else self.sync(ast3.Constant(value=""))
+            )
+        ]
 
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
@@ -1835,48 +1843,56 @@ class PyastGenPass(Pass):
 
         values: Optional[SubNodeList[ExprType]],
         """
-        node.gen.py_ast = self.sync(
-            ast3.List(
-                elts=node.values.gen.py_ast if node.values else [],
-                ctx=node.py_ctx_func(),
+        node.gen.py_ast = [
+            self.sync(
+                ast3.List(
+                    elts=node.values.gen.py_ast if node.values else [],
+                    ctx=node.py_ctx_func(),
+                )
             )
-        )
+        ]
 
     def exit_set_val(self, node: ast.SetVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
-        node.gen.py_ast = self.sync(
-            ast3.Set(
-                elts=node.values.gen.py_ast if node.values else [],
-                ctx=node.py_ctx_func(),
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Set(
+                    elts=node.values.gen.py_ast if node.values else [],
+                    ctx=node.py_ctx_func(),
+                )
             )
-        )
+        ]
 
     def exit_tuple_val(self, node: ast.TupleVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType | Assignment]],
         """
-        node.gen.py_ast = self.sync(
-            ast3.Tuple(
-                elts=node.values.gen.py_ast if node.values else [],
-                ctx=node.py_ctx_func(),
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Tuple(
+                    elts=node.values.gen.py_ast if node.values else [],
+                    ctx=node.py_ctx_func(),
+                )
             )
-        )
+        ]
 
     def exit_dict_val(self, node: ast.DictVal) -> None:
         """Sub objects.
 
         kv_pairs: Sequence[KVPair],
         """
-        node.gen.py_ast = self.sync(
-            ast3.Dict(
-                keys=[(x.key.gen.py_ast if x.key else None) for x in node.kv_pairs],
-                values=[x.value.gen.py_ast for x in node.kv_pairs],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Dict(
+                    keys=[(x.key.gen.py_ast if x.key else None) for x in node.kv_pairs],
+                    values=[x.value.gen.py_ast for x in node.kv_pairs],
+                )
             )
-        )
+        ]
 
     def exit_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.
@@ -1892,12 +1908,14 @@ class PyastGenPass(Pass):
         key: NameType,
         value: ExprType,
         """
-        node.gen.py_ast = self.sync(
-            ast3.keyword(
-                arg=node.key.sym_name if node.key else None,
-                value=node.value.gen.py_ast,
+        node.gen.py_ast = [
+            self.sync(
+                ast3.keyword(
+                    arg=node.key.sym_name if node.key else None,
+                    value=node.value.gen.py_ast,
+                )
             )
-        )
+        ]
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -1907,14 +1925,16 @@ class PyastGenPass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        node.gen.py_ast = self.sync(
-            ast3.comprehension(
-                target=node.target.gen.py_ast,
-                iter=node.collection.gen.py_ast,
-                ifs=[node.conditional.gen.py_ast] if node.conditional else [],
-                is_async=0,
+        node.gen.py_ast = [
+            self.sync(
+                ast3.comprehension(
+                    target=node.target.gen.py_ast,
+                    iter=node.collection.gen.py_ast,
+                    ifs=[node.conditional.gen.py_ast] if node.conditional else [],
+                    is_async=0,
+                )
             )
-        )
+        ]
 
     def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
@@ -1922,12 +1942,14 @@ class PyastGenPass(Pass):
         out_expr: ExprType,
         compr: InnerCompr,
         """
-        node.gen.py_ast = self.sync(
-            ast3.ListComp(
-                elt=node.out_expr.gen.py_ast,
-                generators=[i.gen.py_ast for i in node.compr],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.ListComp(
+                    elt=node.out_expr.gen.py_ast,
+                    generators=[i.gen.py_ast for i in node.compr],
+                )
             )
-        )
+        ]
 
     def exit_gen_compr(self, node: ast.GenCompr) -> None:
         """Sub objects.
@@ -1935,12 +1957,14 @@ class PyastGenPass(Pass):
         out_expr: ExprType,
         compr: InnerCompr,
         """
-        node.gen.py_ast = self.sync(
-            ast3.GeneratorExp(
-                elt=node.out_expr.gen.py_ast,
-                generators=[i.gen.py_ast for i in node.compr],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.GeneratorExp(
+                    elt=node.out_expr.gen.py_ast,
+                    generators=[i.gen.py_ast for i in node.compr],
+                )
             )
-        )
+        ]
 
     def exit_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
@@ -1948,12 +1972,14 @@ class PyastGenPass(Pass):
         out_expr: ExprType,
         compr: InnerCompr,
         """
-        node.gen.py_ast = self.sync(
-            ast3.SetComp(
-                elt=node.out_expr.gen.py_ast,
-                generators=[i.gen.py_ast for i in node.compr],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.SetComp(
+                    elt=node.out_expr.gen.py_ast,
+                    generators=[i.gen.py_ast for i in node.compr],
+                )
             )
-        )
+        ]
 
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
@@ -1963,13 +1989,15 @@ class PyastGenPass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        node.gen.py_ast = self.sync(
-            ast3.DictComp(
-                key=node.kv_pair.key.gen.py_ast,
-                value=node.kv_pair.value.gen.py_ast,
-                generators=[i.gen.py_ast for i in node.compr],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.DictComp(
+                    key=node.kv_pair.key.gen.py_ast,
+                    value=node.kv_pair.value.gen.py_ast,
+                    generators=[i.gen.py_ast for i in node.compr],
+                )
             )
-        )
+        ]
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
@@ -1980,68 +2008,78 @@ class PyastGenPass(Pass):
         is_attr: bool,
         """
         if node.is_attr:
-            node.gen.py_ast = self.sync(
-                ast3.Attribute(
-                    value=node.target.gen.py_ast,
-                    attr=node.right.sym_name,
-                    ctx=node.right.py_ctx_func(),
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Attribute(
+                        value=node.target.gen.py_ast,
+                        attr=node.right.sym_name,
+                        ctx=node.right.py_ctx_func(),
+                    )
                 )
-            )
+            ]
         elif isinstance(node.right, ast.FilterCompr):
-            node.gen.py_ast = self.sync(
-                ast3.Call(
-                    func=node.right.gen.py_ast,
-                    args=[node.target.gen.py_ast],
-                    keywords=[],
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=node.right.gen.py_ast,
+                        args=[node.target.gen.py_ast],
+                        keywords=[],
+                    )
                 )
-            )
+            ]
         elif isinstance(node.right, ast.AssignCompr):
-            node.gen.py_ast = self.sync(
-                ast3.Call(
-                    func=self.sync(
-                        ast3.Attribute(
-                            value=self.sync(
-                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                            ),
-                            attr="assign_compr",
-                            ctx=ast3.Load(),
-                        )
-                    ),
-                    args=[node.target.gen.py_ast, node.right.gen.py_ast],
-                    keywords=[],
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="assign_compr",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[node.target.gen.py_ast, node.right.gen.py_ast],
+                        keywords=[],
+                    )
                 )
-            )
+            ]
         elif isinstance(node.right, ast.EdgeOpRef):
-            node.gen.py_ast = self.translate_edge_op_ref(
-                node.target.gen.py_ast, node.right
-            )
+            node.gen.py_ast = [
+                self.translate_edge_op_ref(node.target.gen.py_ast, node.right)
+            ]
         else:
-            node.gen.py_ast = self.sync(
-                ast3.Subscript(
-                    value=node.target.gen.py_ast,
-                    slice=node.right.gen.py_ast,
-                    ctx=node.right.py_ctx_func(),
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Subscript(
+                        value=node.target.gen.py_ast,
+                        slice=node.right.gen.py_ast,
+                        ctx=node.right.py_ctx_func(),
+                    )
                 )
-            )
+            ]
             node.right.gen.py_ast.ctx = ast3.Load()  # type: ignore
         if node.is_null_ok:
-            node.gen.py_ast.value = self.sync(
+            node.gen.py_ast[0].value = self.sync(
                 ast3.Name(id="__jac_tmp", ctx=ast3.Load())
             )
-            node.gen.py_ast = self.sync(
-                ast3.IfExp(
-                    test=self.sync(
-                        ast3.NamedExpr(
-                            target=self.sync(
-                                ast3.Name(id="__jac_tmp", ctx=ast3.Store())
-                            ),
-                            value=node.target.gen.py_ast,
-                        )
-                    ),
-                    body=node.gen.py_ast,
-                    orelse=self.sync(ast3.Constant(value=None)),
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.IfExp(
+                        test=self.sync(
+                            ast3.NamedExpr(
+                                target=self.sync(
+                                    ast3.Name(id="__jac_tmp", ctx=ast3.Store())
+                                ),
+                                value=node.target.gen.py_ast,
+                            )
+                        ),
+                        body=node.gen.py_ast,
+                        orelse=self.sync(ast3.Constant(value=None)),
+                    )
                 )
-            )
+            ]
 
     def exit_atom_unit(self, node: ast.AtomUnit) -> None:
         """Sub objects.
@@ -2057,7 +2095,7 @@ class PyastGenPass(Pass):
         target: AtomType,
         params: Optional[SubNodeList[ExprType | KVPair]],
         """
-        node.gen.py_ast = self.sync(self.gen_func_call(node.target, node.params))
+        node.gen.py_ast = [self.sync(self.gen_func_call(node.target, node.params))]
 
     def gen_func_call(
         self,
@@ -2091,15 +2129,17 @@ class PyastGenPass(Pass):
         is_range: bool,
         """
         if node.is_range:
-            node.gen.py_ast = self.sync(
-                ast3.Slice(
-                    lower=node.start.gen.py_ast if node.start else None,
-                    upper=node.stop.gen.py_ast if node.stop else None,
-                    step=node.step.gen.py_ast if node.step else None,
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Slice(
+                        lower=node.start.gen.py_ast if node.start else None,
+                        upper=node.stop.gen.py_ast if node.stop else None,
+                        step=node.step.gen.py_ast if node.step else None,
+                    )
                 )
-            )
+            ]
         else:
-            node.gen.py_ast = node.start.gen.py_ast if node.start else None
+            node.gen.py_ast = node.start.gen.py_ast if node.start else []
 
     def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
@@ -2113,7 +2153,7 @@ class PyastGenPass(Pass):
             var_ast = var_ast_expr.value
         except Exception:
             raise self.ice("Invalid special var ref for pyast generation")
-        node.gen.py_ast = self.sync(var_ast, deep=True)
+        node.gen.py_ast = [self.sync(var_ast, deep=True)]
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
@@ -2127,7 +2167,7 @@ class PyastGenPass(Pass):
             if node.from_walker
             else ast3.Name(id="self", ctx=ast3.Load())
         )
-        node.gen.py_ast = self.translate_edge_op_ref(loc, node)
+        node.gen.py_ast = [self.translate_edge_op_ref(loc, node)]
 
     def translate_edge_op_ref(self, loc: ast3.AST, node: ast.EdgeOpRef) -> ast3.AST:
         """Generate ast for edge op ref call."""
@@ -2191,107 +2231,115 @@ class PyastGenPass(Pass):
         conn_assign: Optional[AssignCompr],
         edge_dir: EdgeDir,
         """
-        node.gen.py_ast = self.sync(
-            ast3.Call(
-                func=self.sync(
-                    ast3.Attribute(
-                        value=self.sync(
-                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                        ),
-                        attr="build_edge",
-                        ctx=ast3.Load(),
-                    )
-                ),
-                args=[
-                    self.sync(
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Call(
+                    func=self.sync(
                         ast3.Attribute(
                             value=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Name(
-                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
-                                        )
-                                    ),
-                                    attr="EdgeDir",
-                                    ctx=ast3.Load(),
-                                )
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                             ),
-                            attr=node.edge_dir.name,
+                            attr="build_edge",
                             ctx=ast3.Load(),
                         )
                     ),
-                    (
-                        node.conn_type.gen.py_ast
-                        if node.conn_type
-                        else self.sync(ast3.Constant(value=None))
-                    ),
-                    (
-                        node.conn_assign.gen.py_ast
-                        if node.conn_assign
-                        else self.sync(ast3.Constant(value=None))
-                    ),
-                ],
-                keywords=[],
+                    args=[
+                        self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Attribute(
+                                        value=self.sync(
+                                            ast3.Name(
+                                                id=Con.JAC_FEATURE.value,
+                                                ctx=ast3.Load(),
+                                            )
+                                        ),
+                                        attr="EdgeDir",
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                                attr=node.edge_dir.name,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        (
+                            node.conn_type.gen.py_ast
+                            if node.conn_type
+                            else self.sync(ast3.Constant(value=None))
+                        ),
+                        (
+                            node.conn_assign.gen.py_ast
+                            if node.conn_assign
+                            else self.sync(ast3.Constant(value=None))
+                        ),
+                    ],
+                    keywords=[],
+                )
             )
-        )
+        ]
 
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
         compares: SubNodeList[BinaryExpr],
         """
-        node.gen.py_ast = self.sync(
-            ast3.Lambda(
-                args=self.sync(
-                    ast3.arguments(
-                        posonlyargs=[],
-                        args=[self.sync(ast3.arg(arg="x"))],
-                        kwonlyargs=[],
-                        kw_defaults=[],
-                        defaults=[],
-                    )
-                ),
-                body=self.sync(
-                    ast3.ListComp(
-                        elt=self.sync(ast3.Name(id="i", ctx=ast3.Load())),
-                        generators=[
-                            self.sync(
-                                ast3.comprehension(
-                                    target=self.sync(
-                                        ast3.Name(id="i", ctx=ast3.Store())
-                                    ),
-                                    iter=self.sync(ast3.Name(id="x", ctx=ast3.Load())),
-                                    ifs=[
-                                        self.sync(
-                                            ast3.Compare(
-                                                left=self.sync(
-                                                    ast3.Attribute(
-                                                        value=self.sync(
-                                                            ast3.Name(
-                                                                id="i", ctx=ast3.Load()
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Lambda(
+                    args=self.sync(
+                        ast3.arguments(
+                            posonlyargs=[],
+                            args=[self.sync(ast3.arg(arg="x"))],
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            defaults=[],
+                        )
+                    ),
+                    body=self.sync(
+                        ast3.ListComp(
+                            elt=self.sync(ast3.Name(id="i", ctx=ast3.Load())),
+                            generators=[
+                                self.sync(
+                                    ast3.comprehension(
+                                        target=self.sync(
+                                            ast3.Name(id="i", ctx=ast3.Store())
+                                        ),
+                                        iter=self.sync(
+                                            ast3.Name(id="x", ctx=ast3.Load())
+                                        ),
+                                        ifs=[
+                                            self.sync(
+                                                ast3.Compare(
+                                                    left=self.sync(
+                                                        ast3.Attribute(
+                                                            value=self.sync(
+                                                                ast3.Name(
+                                                                    id="i",
+                                                                    ctx=ast3.Load(),
+                                                                ),
+                                                                jac_node=x,
                                                             ),
-                                                            jac_node=x,
+                                                            attr=x.gen.py_ast.left.id,
+                                                            ctx=ast3.Load(),
                                                         ),
-                                                        attr=x.gen.py_ast.left.id,
-                                                        ctx=ast3.Load(),
+                                                        jac_node=x,
                                                     ),
-                                                    jac_node=x,
+                                                    ops=x.gen.py_ast.ops,
+                                                    comparators=x.gen.py_ast.comparators,
                                                 ),
-                                                ops=x.gen.py_ast.ops,
-                                                comparators=x.gen.py_ast.comparators,
-                                            ),
-                                            jac_node=x,
-                                        )
-                                        for x in node.compares.items
-                                    ],
-                                    is_async=0,
+                                                jac_node=x,
+                                            )
+                                            for x in node.compares.items
+                                        ],
+                                        is_async=0,
+                                    )
                                 )
-                            )
-                        ],
-                    )
-                ),
+                            ],
+                        )
+                    ),
+                )
             )
-        )
+        ]
 
     def exit_assign_compr(self, node: ast.AssignCompr) -> None:
         """Sub objects.
@@ -2305,7 +2353,7 @@ class PyastGenPass(Pass):
             values.append(i.value.gen.py_ast)
         keys = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Load()))
         values = self.sync(ast3.Tuple(elts=values, ctx=ast3.Load()))
-        node.gen.py_ast = self.sync(ast3.Tuple(elts=[keys, values], ctx=ast3.Load()))
+        node.gen.py_ast = [self.sync(ast3.Tuple(elts=[keys, values], ctx=ast3.Load()))]
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
@@ -2313,12 +2361,14 @@ class PyastGenPass(Pass):
         target: SubNodeList[ExprType],
         cases: list[MatchCase],
         """
-        node.gen.py_ast = self.sync(
-            ast3.Match(
-                subject=node.target.gen.py_ast,
-                cases=[x.gen.py_ast for x in node.cases],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Match(
+                    subject=node.target.gen.py_ast,
+                    cases=[x.gen.py_ast for x in node.cases],
+                )
             )
-        )
+        ]
 
     def exit_match_case(self, node: ast.MatchCase) -> None:
         """Sub objects.
@@ -2327,24 +2377,28 @@ class PyastGenPass(Pass):
         guard: Optional[ExprType],
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = self.sync(
-            ast3.match_case(
-                pattern=node.pattern.gen.py_ast,
-                guard=node.guard.gen.py_ast if node.guard else None,
-                body=self.resolve_stmt_block(node.body),
+        node.gen.py_ast = [
+            self.sync(
+                ast3.match_case(
+                    pattern=node.pattern.gen.py_ast,
+                    guard=node.guard.gen.py_ast if node.guard else None,
+                    body=self.resolve_stmt_block(node.body),
+                )
             )
-        )
+        ]
 
     def exit_match_or(self, node: ast.MatchOr) -> None:
         """Sub objects.
 
         patterns: list[MatchPattern],
         """
-        node.gen.py_ast = self.sync(
-            ast3.MatchOr(
-                patterns=[x.gen.py_ast for x in node.patterns],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.MatchOr(
+                    patterns=[x.gen.py_ast for x in node.patterns],
+                )
             )
-        )
+        ]
 
     def exit_match_as(self, node: ast.MatchAs) -> None:
         """Sub objects.
@@ -2352,41 +2406,45 @@ class PyastGenPass(Pass):
         name: NameType,
         pattern: MatchPattern,
         """
-        node.gen.py_ast = self.sync(
-            ast3.MatchAs(
-                name=node.name.sym_name,
-                pattern=node.pattern.gen.py_ast if node.pattern else None,
+        node.gen.py_ast = [
+            self.sync(
+                ast3.MatchAs(
+                    name=node.name.sym_name,
+                    pattern=node.pattern.gen.py_ast if node.pattern else None,
+                )
             )
-        )
+        ]
 
     def exit_match_wild(self, node: ast.MatchWild) -> None:
         """Sub objects."""
-        node.gen.py_ast = self.sync(ast3.MatchAs())
+        node.gen.py_ast = [self.sync(ast3.MatchAs())]
 
     def exit_match_value(self, node: ast.MatchValue) -> None:
         """Sub objects.
 
         value: ExprType,
         """
-        node.gen.py_ast = self.sync(ast3.MatchValue(value=node.value.gen.py_ast))
+        node.gen.py_ast = [self.sync(ast3.MatchValue(value=node.value.gen.py_ast))]
 
     def exit_match_singleton(self, node: ast.MatchSingleton) -> None:
         """Sub objects.
 
         value: Bool | Null,
         """
-        node.gen.py_ast = self.sync(ast3.MatchSingleton(value=node.value.lit_value))
+        node.gen.py_ast = [self.sync(ast3.MatchSingleton(value=node.value.lit_value))]
 
     def exit_match_sequence(self, node: ast.MatchSequence) -> None:
         """Sub objects.
 
         values: list[MatchPattern],
         """
-        node.gen.py_ast = self.sync(
-            ast3.MatchSequence(
-                patterns=[x.gen.py_ast for x in node.values],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.MatchSequence(
+                    patterns=[x.gen.py_ast for x in node.values],
+                )
             )
-        )
+        ]
 
     def exit_match_mapping(self, node: ast.MatchMapping) -> None:
         """Sub objects.
@@ -2396,11 +2454,11 @@ class PyastGenPass(Pass):
         mapping = self.sync(ast3.MatchMapping(keys=[], patterns=[], rest=None))
         for i in node.values:
             if isinstance(i, ast.MatchKVPair):
-                mapping.keys.append(i.key.value.gen.py_ast)
-                mapping.patterns.append(i.value.gen.py_ast)
+                mapping.keys.append(i.key.value.gen.py_ast[0])
+                mapping.patterns.append(i.value.gen.py_ast[0])
             elif isinstance(i, ast.MatchStar):
                 mapping.rest = i.name.sym_name
-        node.gen.py_ast = mapping
+        node.gen.py_ast = [mapping]
 
     def exit_match_k_v_pair(self, node: ast.MatchKVPair) -> None:
         """Sub objects.
@@ -2408,11 +2466,13 @@ class PyastGenPass(Pass):
         key: MatchPattern | NameType,
         value: MatchPattern,
         """
-        node.gen.py_ast = self.sync(
-            ast3.MatchMapping(
-                patterns=[node.key.gen.py_ast, node.value.gen.py_ast],
+        node.gen.py_ast = [
+            self.sync(
+                ast3.MatchMapping(
+                    patterns=[node.key.gen.py_ast, node.value.gen.py_ast],
+                )
             )
-        )
+        ]
 
     def exit_match_star(self, node: ast.MatchStar) -> None:
         """Sub objects.
@@ -2420,7 +2480,7 @@ class PyastGenPass(Pass):
         name: NameType,
         is_list: bool,
         """
-        node.gen.py_ast = self.sync(ast3.MatchStar(name=node.name.sym_name))
+        node.gen.py_ast = [self.sync(ast3.MatchStar(name=node.name.sym_name))]
 
     def exit_match_arch(self, node: ast.MatchArch) -> None:
         """Sub objects.
@@ -2429,26 +2489,28 @@ class PyastGenPass(Pass):
         arg_patterns: Optional[SubNodeList[MatchPattern]],
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         """
-        node.gen.py_ast = self.sync(
-            ast3.MatchClass(
-                cls=node.name.gen.py_ast,
-                patterns=(
-                    [x.gen.py_ast for x in node.arg_patterns.items]
-                    if node.arg_patterns
-                    else []
-                ),
-                kwd_attrs=(
-                    [x.key.sym_name for x in node.kw_patterns.items]
-                    if node.kw_patterns
-                    else []
-                ),
-                kwd_patterns=(
-                    [x.value.gen.py_ast for x in node.kw_patterns.items]
-                    if node.kw_patterns
-                    else []
-                ),
+        node.gen.py_ast = [
+            self.sync(
+                ast3.MatchClass(
+                    cls=node.name.gen.py_ast,
+                    patterns=(
+                        [x.gen.py_ast for x in node.arg_patterns.items]
+                        if node.arg_patterns
+                        else []
+                    ),
+                    kwd_attrs=(
+                        [x.key.sym_name for x in node.kw_patterns.items]
+                        if node.kw_patterns
+                        else []
+                    ),
+                    kwd_patterns=(
+                        [x.value.gen.py_ast for x in node.kw_patterns.items]
+                        if node.kw_patterns
+                        else []
+                    ),
+                )
             )
-        )
+        ]
 
     def exit_token(self, node: ast.Token) -> None:
         """Sub objects.
@@ -2462,61 +2524,61 @@ class PyastGenPass(Pass):
         pos_end: int,
         """
         if node.name == Tok.KW_AND:
-            node.gen.py_ast = self.sync(ast3.And())
+            node.gen.py_ast = [self.sync(ast3.And())]
         elif node.name == Tok.KW_OR:
-            node.gen.py_ast = self.sync(ast3.Or())
+            node.gen.py_ast = [self.sync(ast3.Or())]
         elif node.name in [Tok.PLUS, Tok.ADD_EQ]:
-            node.gen.py_ast = self.sync(ast3.Add())
+            node.gen.py_ast = [self.sync(ast3.Add())]
         elif node.name in [Tok.BW_AND, Tok.BW_AND_EQ]:
-            node.gen.py_ast = self.sync(ast3.BitAnd())
+            node.gen.py_ast = [self.sync(ast3.BitAnd())]
         elif node.name in [Tok.BW_OR, Tok.BW_OR_EQ]:
-            node.gen.py_ast = self.sync(ast3.BitOr())
+            node.gen.py_ast = [self.sync(ast3.BitOr())]
         elif node.name in [Tok.BW_XOR, Tok.BW_XOR_EQ]:
-            node.gen.py_ast = self.sync(ast3.BitXor())
+            node.gen.py_ast = [self.sync(ast3.BitXor())]
         elif node.name in [Tok.DIV, Tok.DIV_EQ]:
-            node.gen.py_ast = self.sync(ast3.Div())
+            node.gen.py_ast = [self.sync(ast3.Div())]
         elif node.name in [Tok.FLOOR_DIV, Tok.FLOOR_DIV_EQ]:
-            node.gen.py_ast = self.sync(ast3.FloorDiv())
+            node.gen.py_ast = [self.sync(ast3.FloorDiv())]
         elif node.name in [Tok.LSHIFT, Tok.LSHIFT_EQ]:
-            node.gen.py_ast = self.sync(ast3.LShift())
+            node.gen.py_ast = [self.sync(ast3.LShift())]
         elif node.name in [Tok.MOD, Tok.MOD_EQ]:
-            node.gen.py_ast = self.sync(ast3.Mod())
+            node.gen.py_ast = [self.sync(ast3.Mod())]
         elif node.name in [Tok.STAR_MUL, Tok.MUL_EQ]:
-            node.gen.py_ast = self.sync(ast3.Mult())
+            node.gen.py_ast = [self.sync(ast3.Mult())]
         elif node.name in [Tok.DECOR_OP, Tok.MATMUL_EQ]:
-            node.gen.py_ast = self.sync(ast3.MatMult())
+            node.gen.py_ast = [self.sync(ast3.MatMult())]
         elif node.name in [Tok.STAR_POW, Tok.STAR_POW_EQ]:
-            node.gen.py_ast = self.sync(ast3.Pow())
+            node.gen.py_ast = [self.sync(ast3.Pow())]
         elif node.name in [Tok.RSHIFT, Tok.RSHIFT_EQ]:
-            node.gen.py_ast = self.sync(ast3.RShift())
+            node.gen.py_ast = [self.sync(ast3.RShift())]
         elif node.name in [Tok.MINUS, Tok.SUB_EQ]:
-            node.gen.py_ast = self.sync(ast3.Sub())
+            node.gen.py_ast = [self.sync(ast3.Sub())]
         elif node.name in [Tok.BW_NOT, Tok.BW_NOT_EQ]:
-            node.gen.py_ast = self.sync(ast3.Invert())
+            node.gen.py_ast = [self.sync(ast3.Invert())]
         elif node.name in [Tok.NOT]:
-            node.gen.py_ast = self.sync(ast3.Not())
+            node.gen.py_ast = [self.sync(ast3.Not())]
         elif node.name in [Tok.EQ]:
-            node.gen.py_ast = self.sync(ast3.NotEq())
+            node.gen.py_ast = [self.sync(ast3.NotEq())]
         elif node.name == Tok.EE:
-            node.gen.py_ast = self.sync(ast3.Eq())
+            node.gen.py_ast = [self.sync(ast3.Eq())]
         elif node.name == Tok.GT:
-            node.gen.py_ast = self.sync(ast3.Gt())
+            node.gen.py_ast = [self.sync(ast3.Gt())]
         elif node.name == Tok.GTE:
-            node.gen.py_ast = self.sync(ast3.GtE())
+            node.gen.py_ast = [self.sync(ast3.GtE())]
         elif node.name == Tok.KW_IN:
-            node.gen.py_ast = self.sync(ast3.In())
+            node.gen.py_ast = [self.sync(ast3.In())]
         elif node.name == Tok.KW_IS:
-            node.gen.py_ast = self.sync(ast3.Is())
+            node.gen.py_ast = [self.sync(ast3.Is())]
         elif node.name == Tok.KW_ISN:
-            node.gen.py_ast = self.sync(ast3.IsNot())
+            node.gen.py_ast = [self.sync(ast3.IsNot())]
         elif node.name == Tok.LT:
-            node.gen.py_ast = self.sync(ast3.Lt())
+            node.gen.py_ast = [self.sync(ast3.Lt())]
         elif node.name == Tok.LTE:
-            node.gen.py_ast = self.sync(ast3.LtE())
+            node.gen.py_ast = [self.sync(ast3.LtE())]
         elif node.name == Tok.NE:
-            node.gen.py_ast = self.sync(ast3.NotEq())
+            node.gen.py_ast = [self.sync(ast3.NotEq())]
         elif node.name == Tok.KW_NIN:
-            node.gen.py_ast = self.sync(ast3.NotIn())
+            node.gen.py_ast = [self.sync(ast3.NotIn())]
 
     def exit_name(self, node: ast.Name) -> None:
         """Sub objects.
@@ -2529,23 +2591,27 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
+        node.gen.py_ast = [
+            self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
+        ]
         if node.is_enum_singleton:
-            node.gen.py_ast.ctx = ast3.Store()
-            node.gen.py_ast = self.sync(
-                ast3.Assign(
-                    targets=[node.gen.py_ast],
-                    value=self.sync(
-                        ast3.Call(
-                            func=self.sync(
-                                ast3.Name(id="__jac_auto__", ctx=ast3.Load())
-                            ),
-                            args=[],
-                            keywords=[],
-                        )
-                    ),
+            node.gen.py_ast[0].ctx = ast3.Store()
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Assign(
+                        targets=[node.gen.py_ast],
+                        value=self.sync(
+                            ast3.Call(
+                                func=self.sync(
+                                    ast3.Name(id="__jac_auto__", ctx=ast3.Load())
+                                ),
+                                args=[],
+                                keywords=[],
+                            )
+                        ),
+                    )
                 )
-            )
+            ]
 
     def exit_float(self, node: ast.Float) -> None:
         """Sub objects.
@@ -2558,7 +2624,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Constant(value=float(node.value)))
+        node.gen.py_ast = [self.sync(ast3.Constant(value=float(node.value)))]
 
     def exit_int(self, node: ast.Int) -> None:
         """Sub objects.
@@ -2571,7 +2637,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Constant(value=int(node.value)))
+        node.gen.py_ast = [self.sync(ast3.Constant(value=int(node.value)))]
 
     def exit_string(self, node: ast.String) -> None:
         """Sub objects.
@@ -2584,7 +2650,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Constant(value=node.lit_value))
+        node.gen.py_ast = [self.sync(ast3.Constant(value=node.lit_value))]
 
     def exit_bool(self, node: ast.Bool) -> None:
         """Sub objects.
@@ -2597,7 +2663,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Constant(value=node.value == "True"))
+        node.gen.py_ast = [self.sync(ast3.Constant(value=node.value == "True"))]
 
     def exit_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.
@@ -2610,7 +2676,9 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
+        node.gen.py_ast = [
+            self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
+        ]
 
     def exit_null(self, node: ast.Null) -> None:
         """Sub objects.
@@ -2623,7 +2691,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Constant(value=None))
+        node.gen.py_ast = [self.sync(ast3.Constant(value=None))]
 
     def exit_semi(self, node: ast.Semi) -> None:
         """Sub objects.
