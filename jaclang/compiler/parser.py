@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, TypeAlias
+from typing import Callable, TypeAlias, cast
 
 
 import jaclang.compiler.absyntree as ast
@@ -2189,7 +2189,8 @@ class JacParser(Pass):
                 elif len(kid[0].values.items) == 1:
                     expr = kid[0].values.items[0]  # TODO: Loses braces
                 else:
-                    expr = ast.TupleVal(values=kid[0].values, kid=kid[0].kid)
+                    vals = cast("ast.SubNodeList[ast.Expr|ast.KWPair]", kid[0].values)
+                    expr = ast.TupleVal(values=vals, kid=kid[0].kid)
                 if expr is None:
                     raise self.ice()
                 return self.nu(

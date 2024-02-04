@@ -23,15 +23,17 @@ def collect_node_connections(
         in_edges = current_node.edges.get(EdgeDir.IN, [])
 
         for edge_ in out_edges:
-            target__ = edge_._jac_.target
-            connections.add(
-                (current_node.obj, target__._jac_.obj, edge_.__class__.__name__)
-            )
-            collect_node_connections(target__._jac_, visited_nodes, connections)
+            target = edge_._jac_.target
+            if target:
+                connections.add(
+                    (current_node.obj, target._jac_.obj, edge_.__class__.__name__)
+                )
+                collect_node_connections(target._jac_, visited_nodes, connections)
 
         for edge_ in in_edges:
-            source__ = edge_._jac_.source
-            connections.add(
-                (source__._jac_.obj, current_node.obj, edge_.__class__.__name__)
-            )
-            collect_node_connections(source__._jac_, visited_nodes, connections)
+            source = edge_._jac_.source
+            if source:
+                connections.add(
+                    (source._jac_.obj, current_node.obj, edge_.__class__.__name__)
+                )
+                collect_node_connections(source._jac_, visited_nodes, connections)
