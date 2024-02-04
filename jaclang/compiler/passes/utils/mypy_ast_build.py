@@ -5,23 +5,24 @@ from __future__ import annotations
 import ast
 import os
 
-import jaclang.vendor.mypy.build as myb
-import jaclang.vendor.mypy.errors as mye
-import jaclang.vendor.mypy.fastparse as myfp
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
-from jaclang.vendor.mypy.build import BuildSource
-from jaclang.vendor.mypy.build import BuildSourceSet
-from jaclang.vendor.mypy.build import FileSystemCache
-from jaclang.vendor.mypy.build import Graph
-from jaclang.vendor.mypy.build import ModuleNotFound
-from jaclang.vendor.mypy.build import PRI_INDIRECT
-from jaclang.vendor.mypy.build import compute_search_paths
-from jaclang.vendor.mypy.build import find_module_simple
-from jaclang.vendor.mypy.build import load_plugins
-from jaclang.vendor.mypy.build import process_graph
-from jaclang.vendor.mypy.options import Options
-from jaclang.vendor.mypy.semanal_main import semantic_analysis_for_scc
+
+import mypy.build as myb
+import mypy.errors as mye
+import mypy.fastparse as myfp
+from mypy.build import BuildSource
+from mypy.build import BuildSourceSet
+from mypy.build import FileSystemCache
+from mypy.build import Graph
+from mypy.build import ModuleNotFound
+from mypy.build import PRI_INDIRECT
+from mypy.build import compute_search_paths
+from mypy.build import find_module_simple
+from mypy.build import load_plugins
+from mypy.build import process_graph
+from mypy.options import Options
+from mypy.semanal_main import semantic_analysis_for_scc
 
 
 mypy_to_jac_node_map: dict[tuple[int, int | None, int | None, int | None], AstNode] = {}
