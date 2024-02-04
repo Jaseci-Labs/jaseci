@@ -17,6 +17,8 @@ from jaclang.core.construct import (
 )
 from jaclang.core.importer import jac_importer as jac_importer
 from typing import Any, Callable, Optional, Type, TypeVar
+import pluggy
+
 
 __all__ = [
     "EdgeAnchor",
@@ -39,6 +41,7 @@ __all__ = [
 
 T = TypeVar("T")
 ArchBound = TypeVar("ArchBound", bound=Architype)
+hookimpl = pluggy.HookimplMarker("jac")
 
 class JacFeatureDefaults:
     @staticmethod
