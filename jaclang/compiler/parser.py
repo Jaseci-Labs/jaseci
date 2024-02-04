@@ -764,16 +764,9 @@ class JacParser(Pass):
             chomp = chomp[1:] if is_static else chomp
             chomp = chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            semstr = (
-                chomp[1]
-                if access and isinstance(chomp[1], ast.String)
-                else chomp[0] if access or isinstance(chomp[1], ast.String) else None
-            )
-            chomp = (
-                chomp[2:]
-                if access and semstr
-                else chomp[1:] if access or semstr else chomp
-            )
+            chomp = chomp[1:] if access else chomp
+            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
+            chomp = chomp[1:] if semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
             is_func = isinstance(chomp[0], ast.FuncSignature)

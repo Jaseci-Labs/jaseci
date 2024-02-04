@@ -123,7 +123,7 @@ def print_ast_tree(
     def get_location_info(node: ast3.AST) -> str:
         if hasattr(node, "lineno"):
             start_pos = f"{node.lineno}:{node.col_offset + 1}"
-            end_pos = f"{node.end_lineno}:{node.end_col_offset + 1}"
+            end_pos = f"{node.end_lineno}:{node.end_col_offset + 1 if node.end_col_offset else node.col_offset}"
             prefix = f"{start_pos} - {end_pos}"
             return prefix
         return "-:- - -:-"
