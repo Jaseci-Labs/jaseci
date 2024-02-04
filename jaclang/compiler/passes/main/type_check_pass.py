@@ -43,8 +43,8 @@ class JacTypeCheckPass(Pass):
 
     def api(self) -> None:
         """Call mypy APIs to implement type checking in Jac."""
-        # Creating mypy api obbjects
-        options = myab.Options()
+        # Creating mypy api objects
+        options = myab.myb.Options()
         errors = myab.Errors(self, options)
         fs_cache = myab.FileSystemCache()
         search_paths = myab.compute_search_paths([], options, str(self.__path))
