@@ -1,9 +1,9 @@
 """Overrides to mypy build manager for direct AST pass through."""
-
 from __future__ import annotations
 
 import ast
 import os
+import pathlib
 
 import jaclang.vendor.mypy.build as myb
 import jaclang.vendor.mypy.errors as mye
@@ -13,15 +13,20 @@ from jaclang.compiler.passes import Pass
 from jaclang.vendor.mypy.build import BuildSource
 from jaclang.vendor.mypy.build import BuildSourceSet
 from jaclang.vendor.mypy.build import FileSystemCache
+from jaclang.vendor.mypy.build import compute_search_paths
 from jaclang.vendor.mypy.build import Graph
 from jaclang.vendor.mypy.build import ModuleNotFound
 from jaclang.vendor.mypy.build import PRI_INDIRECT
-from jaclang.vendor.mypy.build import compute_search_paths
 from jaclang.vendor.mypy.build import find_module_simple
 from jaclang.vendor.mypy.build import load_plugins
 from jaclang.vendor.mypy.build import process_graph
 from jaclang.vendor.mypy.options import Options
 from jaclang.vendor.mypy.semanal_main import semantic_analysis_for_scc
+
+
+os.environ["MYPYPATH"] = str(
+    pathlib.Path(os.path.dirname(__file__)).parent.parent.parent.parent / "stubs"
+)
 
 
 mypy_to_jac_node_map: dict[tuple[int, int | None, int | None, int | None], AstNode] = {}
@@ -387,6 +392,7 @@ def load_graph(
     As this may need to parse files, this can raise CompileError in case
     there are syntax errors.
     """
+
     graph: Graph = old_graph if old_graph is not None else {}
 
     # The deque is used to implement breadth-first traversal.
@@ -533,7 +539,7 @@ def load_graph(
 
                     assert newst.id not in graph, newst.id
                     graph[newst.id] = newst
-                    new.append(newst)  # noqa: B038
+                    new.append(newst)
             if dep in graph and dep in st.suppressed_set:
                 # Previously suppressed file is now visible
                 st.add_dependency(dep)
