@@ -1592,7 +1592,9 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif node.op.name in [Tok.WALRUS_EQ]:
+        elif node.op.name in [Tok.WALRUS_EQ] and isinstance(
+            node.left.gen.py_ast[0], ast3.Name
+        ):
             node.left.gen.py_ast[0].ctx = ast3.Store()  # TODO: Short term fix
             node.gen.py_ast = [
                 self.sync(
@@ -1824,11 +1826,18 @@ class PyastGenPass(Pass):
                     raise self.ice("Multi string made of something weird.")
             return pieces
 
-        combined_multi: list[str | ast3.AST] = []
+        combined_multi: list[str | bytes | ast3.AST] = []
         for item in get_pieces(node.strings):
-            if combined_multi and (
-                (isinstance(item, str) and isinstance(combined_multi[-1], str))
-                or (isinstance(item, bytes) and isinstance(combined_multi[-1], bytes))
+            if (
+                combined_multi  # noqa: SIM114
+                and isinstance(item, str)
+                and isinstance(combined_multi[-1], str)
+            ):
+                combined_multi[-1] += item
+            elif (
+                combined_multi
+                and isinstance(item, bytes)
+                and isinstance(combined_multi[-1], bytes)
             ):
                 combined_multi[-1] += item
             else:
