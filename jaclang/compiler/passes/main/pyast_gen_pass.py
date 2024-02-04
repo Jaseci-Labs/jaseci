@@ -1720,7 +1720,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Lambda(
-                    args=node.signature.gen.py_ast,
+                    args=node.signature.gen.py_ast[0],
                     body=node.body.gen.py_ast[0],
                 )
             )
@@ -2030,7 +2030,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.DictComp(
-                    key=node.kv_pair.key.gen.py_ast[0],
+                    key=node.kv_pair.key.gen.py_ast[0] if node.kv_pair.key else None,
                     value=node.kv_pair.value.gen.py_ast[0],
                     generators=[i.gen.py_ast[0] for i in node.compr],
                 )
@@ -2050,8 +2050,16 @@ class PyastGenPass(Pass):
                 self.sync(
                     ast3.Attribute(
                         value=node.target.gen.py_ast[0],
-                        attr=node.right.sym_name,
-                        ctx=node.right.py_ctx_func(),
+                        attr=(
+                            node.right.sym_name
+                            if isinstance(node.right, ast.AstSymbolNode)
+                            else ""
+                        ),
+                        ctx=(
+                            node.right.py_ctx_func()
+                            if isinstance(node.right, ast.AstSymbolNode)
+                            else ast3.Load()
+                        ),
                     )
                 )
             ]
@@ -2085,7 +2093,7 @@ class PyastGenPass(Pass):
             ]
         elif isinstance(node.right, ast.EdgeOpRef):
             node.gen.py_ast = [
-                self.translate_edge_op_ref(node.target.gen.py_ast, node.right)
+                self.translate_edge_op_ref(node.target.gen.py_ast[0], node.right)
             ]
         else:
             node.gen.py_ast = [
@@ -2093,15 +2101,20 @@ class PyastGenPass(Pass):
                     ast3.Subscript(
                         value=node.target.gen.py_ast[0],
                         slice=node.right.gen.py_ast[0],
-                        ctx=node.right.py_ctx_func(),
+                        ctx=(
+                            node.right.py_ctx_func()
+                            if isinstance(node.right, ast.AstSymbolNode)
+                            else ast3.Load()
+                        ),
                     )
                 )
             ]
             node.right.gen.py_ast[0].ctx = ast3.Load()  # type: ignore
         if node.is_null_ok:
-            node.gen.py_ast[0].value = self.sync(
-                ast3.Name(id="__jac_tmp", ctx=ast3.Load())
-            )
+            if isinstance(node.gen.py_ast[0], ast3.Attribute):
+                node.gen.py_ast[0].value = self.sync(
+                    ast3.Name(id="__jac_tmp", ctx=ast3.Load())
+                )
             node.gen.py_ast = [
                 self.sync(
                     ast3.IfExp(
@@ -2130,15 +2143,15 @@ class PyastGenPass(Pass):
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 
-        target: AtomType,
-        params: Optional[SubNodeList[ExprType | KVPair]],
+        target: Expr,
+        params: Optional[SubNodeList[Expr | KWPair]],
         """
         node.gen.py_ast = [self.sync(self.gen_func_call(node.target, node.params))]
 
     def gen_func_call(
         self,
-        target: ast.AtomExpr,
-        params: Optional[ast.SubNodeList[ast.Expr | ast.Assignment]],
+        target: ast.Expr,
+        params: Optional[ast.SubNodeList[ast.Expr | ast.KWPair]],
     ) -> ast3.Call:
         """Generate a function call."""
         func = target.gen.py_ast[0]
@@ -2152,7 +2165,9 @@ class PyastGenPass(Pass):
                     )
                 elif isinstance(x, ast.Expr):
                     args.append(x.gen.py_ast[0])
-                elif isinstance(x, ast.KWPair):
+                elif isinstance(x, ast.KWPair) and isinstance(
+                    x.gen.py_ast[0], ast3.keyword
+                ):
                     keywords.append(x.gen.py_ast[0])
                 else:
                     self.ice("Invalid Parameter")
