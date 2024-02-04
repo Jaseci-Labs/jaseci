@@ -223,7 +223,7 @@ class Architype:
 
     def __init__(self) -> None:
         """Create default architype."""
-        self._jac_ = ObjectAnchor(obj=self)
+        self._jac_: ObjectAnchor = ObjectAnchor(obj=self)
 
 
 class NodeArchitype(Architype):
@@ -231,7 +231,7 @@ class NodeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create node architype."""
-        self._jac_ = NodeAnchor(obj=self)
+        self._jac_: NodeAnchor = NodeAnchor(obj=self)
 
 
 class EdgeArchitype(Architype):
@@ -239,7 +239,7 @@ class EdgeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create edge architype."""
-        self._jac_ = EdgeAnchor(obj=self)
+        self._jac_: EdgeAnchor = EdgeAnchor(obj=self)
 
 
 class WalkerArchitype(Architype):
@@ -247,7 +247,7 @@ class WalkerArchitype(Architype):
 
     def __init__(self) -> None:
         """Create walker architype."""
-        self._jac_ = WalkerAnchor(obj=self)
+        self._jac_: WalkerAnchor = WalkerAnchor(obj=self)
 
 
 class Root(NodeArchitype):

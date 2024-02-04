@@ -213,7 +213,12 @@ class JacFeatureDefaults:
     @hookimpl
     def spawn_call(op1: Architype, op2: Architype) -> bool:
         """Jac's spawn operator feature."""
-        op1._jac_.spawn_call(op2)
+        if isinstance(op1, WalkerArchitype):
+            op1._jac_.spawn_call(op2)
+        elif isinstance(op2, WalkerArchitype):
+            op2._jac_.spawn_call(op1)
+        else:
+            raise TypeError("Invalid walker object")
         return True
 
     @staticmethod
@@ -228,10 +233,7 @@ class JacFeatureDefaults:
         expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Jac's ignore stmt feature."""
-        if isinstance(walker, WalkerArchitype):
-            return walker._jac_.ignore_node(expr)
-        else:
-            raise TypeError("Invalid walker object")
+        return walker._jac_.ignore_node(expr)
 
     @staticmethod
     @hookimpl
