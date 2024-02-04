@@ -44,6 +44,6 @@ class MypyTypeCheckPassTests(TestCase):
         files = "\n".join([i.loc.mod_path for i in type_checked.warnings_had])
 
         for i in [
-            'Argument 2 to "is_pressed" of "Button" has incompatible type "tuple[bool, bool, bool]"; expected "str"',
+            'Argument 2 to "is_pressed" of "Button" has incompatible type "int"; expected "str"',
         ]:
             self.assertIn(i, errs + files)
