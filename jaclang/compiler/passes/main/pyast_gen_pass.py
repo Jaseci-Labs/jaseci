@@ -2363,6 +2363,10 @@ class PyastGenPass(Pass):
                                                 jac_node=x,
                                             )
                                             for x in node.compares.items
+                                            if isinstance(x.gen.py_ast[0], ast3.Compare)
+                                            and isinstance(
+                                                x.gen.py_ast[0].left, ast3.Name
+                                            )
                                         ],
                                         is_async=0,
                                     )
@@ -2382,11 +2386,14 @@ class PyastGenPass(Pass):
         keys = []
         values = []
         for i in node.assigns.items:
-            keys.append(self.sync(ast3.Constant(i.key.sym_name)))
-            values.append(i.value.gen.py_ast[0])
-        keys = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Load()))
-        values = self.sync(ast3.Tuple(elts=values, ctx=ast3.Load()))
-        node.gen.py_ast = [self.sync(ast3.Tuple(elts=[keys, values], ctx=ast3.Load()))]
+            if i.key:  # TODO: add support for **kwargs in assign_compr
+                keys.append(self.sync(ast3.Constant(i.key.sym_name)))
+                values.append(i.value.gen.py_ast[0])
+        key_tup = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Load()))
+        val_tup = self.sync(ast3.Tuple(elts=values, ctx=ast3.Load()))
+        node.gen.py_ast = [
+            self.sync(ast3.Tuple(elts=[key_tup, val_tup], ctx=ast3.Load()))
+        ]
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
@@ -2486,8 +2493,12 @@ class PyastGenPass(Pass):
         """
         mapping = self.sync(ast3.MatchMapping(keys=[], patterns=[], rest=None))
         for i in node.values:
-            if isinstance(i, ast.MatchKVPair):
-                mapping.keys.append(i.key.value.gen.py_ast[0])
+            if (
+                isinstance(i, ast.MatchKVPair)
+                and isinstance(i.key.gen.py_ast[0], ast3.expr)
+                and isinstance(i.value.gen.py_ast[0], ast3.pattern)
+            ):
+                mapping.keys.append(i.key.gen.py_ast[0])
                 mapping.patterns.append(i.value.gen.py_ast[0])
             elif isinstance(i, ast.MatchStar):
                 mapping.rest = i.name.sym_name
@@ -2532,7 +2543,11 @@ class PyastGenPass(Pass):
                         else []
                     ),
                     kwd_attrs=(
-                        [x.key.sym_name for x in node.kw_patterns.items]
+                        [
+                            x.key.sym_name
+                            for x in node.kw_patterns.items
+                            if isinstance(x.key, ast.NameSpec)
+                        ]
                         if node.kw_patterns
                         else []
                     ),
@@ -2627,7 +2642,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
         ]
-        if node.is_enum_singleton:
+        if node.is_enum_singleton and isinstance(node.gen.py_ast[0], ast3.Name):
             node.gen.py_ast[0].ctx = ast3.Store()
             node.gen.py_ast = [
                 self.sync(
