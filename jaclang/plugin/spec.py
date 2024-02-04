@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from jaclang.plugin.default import (
     Architype,
@@ -11,7 +11,6 @@ from jaclang.plugin.default import (
     EdgeArchitype,
     EdgeDir,
     NodeArchitype,
-    T,
     WalkerArchitype,
 )
 
@@ -19,9 +18,22 @@ import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
 
+T = TypeVar("T")
+
 
 class JacFeatureSpec:
     """Jac Feature."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_architype(
+        cls: type,
+        arch_base: Type[Architype],
+        on_entry: list[DSFunc],
+        on_exit: list[DSFunc],
+    ) -> Type[Architype]:
+        """Create a obj architype."""
+        raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
@@ -74,7 +86,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def run_test(filename: str) -> None:
+    def run_test(filename: str) -> bool:
         """Run the test suite in the specified .jac file.
 
         :param filename: The path to the .jac file.
@@ -95,7 +107,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def spawn_call(op1: Architype, op2: Architype) -> Architype:
+    def spawn_call(op1: Architype, op2: Architype) -> bool:
         """Jac's spawn operator feature."""
         raise NotImplementedError
 
