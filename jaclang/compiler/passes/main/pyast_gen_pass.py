@@ -300,6 +300,7 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
         """
+        self.needs_jac_feature()
         test_name = node.name.sym_name
         func = self.sync(
             ast3.FunctionDef(
