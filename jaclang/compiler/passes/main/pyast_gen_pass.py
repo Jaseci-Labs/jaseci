@@ -14,33 +14,27 @@ from jaclang.compiler.passes import Pass
 T = TypeVar("T", bound=ast3.AST)
 
 
-def ast_node_to_module(node):  # Delete me later
-    """
-    Convert any AST node to a compilable module node.
-
-    :param node: The AST node to convert. Can be any AST node.
-    :return: An AST module node ready to be compiled.
-    """
-    if isinstance(node, ast3.Module):
-        # If the node is already a module, return it as is.
-        return node
-    elif isinstance(node, ast3.Expr):
-        # If the node is an expression, wrap it in a module.
-        return ast3.Module(body=[node], type_ignores=[])
-    elif isinstance(node, ast3.stmt):
-        # If the node is a single statement, wrap it in a module.
-        return ast3.Module(body=[node], type_ignores=[])
-    elif isinstance(node, list) and all(isinstance(n, ast3.stmt) for n in node):
-        # If the node is a list of statements, wrap them in a module.
-        return ast3.Module(body=node, type_ignores=[])
-    else:
-        # For any other type of node, wrap it in an ast3.Expr and then in a module.
-        expr_node = ast3.Expr(value=node)
-        return ast3.Module(body=[], type_ignores=[])
-
-
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
+
+    @staticmethod
+    def node_compilable_test(node: ast3.AST) -> None:
+        """Convert any AST node to a compilable module node."""
+        if isinstance(node, ast3.Module):
+            pass
+        elif isinstance(node, (ast3.Expr, ast3.stmt)):
+            node = ast3.Module(body=[node], type_ignores=[])
+        elif isinstance(node, list) and all(isinstance(n, ast3.stmt) for n in node):
+            node = ast3.Module(body=node, type_ignores=[])
+        else:
+            node = ast3.Module(body=[], type_ignores=[])
+        try:
+            compile(node, "<ast>", "exec")
+        except TypeError as e:
+            print(ast3.dump(node, indent=2))
+            raise e
+        except Exception:
+            pass
 
     def before_pass(self) -> None:
         """Initialize pass."""
@@ -60,16 +54,10 @@ class PyastGenPass(Pass):
     def exit_node(self, node: ast.AstNode) -> None:
         """Exit node."""
         super().exit_node(node)
-        for i in node.gen.py_ast:  # Delete me later
-            try:
-                compile(ast_node_to_module(i), "<ast>", "exec")
-            except TypeError as e:
-                print(node.pp(), ast3.dump(i, indent=2))
-                raise e
-            except Exception as e:
-                pass
+        # for i in node.gen.py_ast:  # Internal validation
+        #     self.node_compilable_test(i)
 
-        # USE THIS TO SYNC
+        # TODO: USE THIS TO SYNC
         #     if isinstance(i, ast3.AST):
         #         i.jac_link = node
 
@@ -1166,9 +1154,9 @@ class PyastGenPass(Pass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        target: ExprType,
+        target: Expr,
         is_async: bool,
-        collection: ExprType,
+        collection: Expr,
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
@@ -1809,9 +1797,9 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.IfExp(
-                    test=node.condition.gen.py_ast,
-                    body=node.value.gen.py_ast,
-                    orelse=node.else_value.gen.py_ast,
+                    test=node.condition.gen.py_ast[0],
+                    body=node.value.gen.py_ast[0],
+                    orelse=node.else_value.gen.py_ast[0],
                 )
             )
         ]
@@ -1864,13 +1852,11 @@ class PyastGenPass(Pass):
 
         parts: Optional[SubNodeList[String | ExprType]],
         """
-        node.gen.py_ast = [
-            (
-                node.parts.gen.py_ast
-                if node.parts
-                else self.sync(ast3.Constant(value=""))
-            )
-        ]
+        node.gen.py_ast = (
+            node.parts.gen.py_ast
+            if node.parts
+            else [self.sync(ast3.Constant(value=""))]
+        )
 
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
@@ -1929,8 +1915,10 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Dict(
-                    keys=[(x.key.gen.py_ast if x.key else None) for x in node.kv_pairs],
-                    values=[x.value.gen.py_ast for x in node.kv_pairs],
+                    keys=[
+                        (x.key.gen.py_ast[0] if x.key else None) for x in node.kv_pairs
+                    ],
+                    values=[x.value.gen.py_ast[0] for x in node.kv_pairs],
                 )
             )
         ]
@@ -1986,8 +1974,8 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.ListComp(
-                    elt=node.out_expr.gen.py_ast,
-                    generators=[i.gen.py_ast for i in node.compr],
+                    elt=node.out_expr.gen.py_ast[0],
+                    generators=[i.gen.py_ast[0] for i in node.compr],
                 )
             )
         ]
@@ -2001,8 +1989,8 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.GeneratorExp(
-                    elt=node.out_expr.gen.py_ast,
-                    generators=[i.gen.py_ast for i in node.compr],
+                    elt=node.out_expr.gen.py_ast[0],
+                    generators=[i.gen.py_ast[0] for i in node.compr],
                 )
             )
         ]
@@ -2016,8 +2004,8 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.SetComp(
-                    elt=node.out_expr.gen.py_ast,
-                    generators=[i.gen.py_ast for i in node.compr],
+                    elt=node.out_expr.gen.py_ast[0],
+                    generators=[i.gen.py_ast[0] for i in node.compr],
                 )
             )
         ]
@@ -2033,7 +2021,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.DictComp(
-                    key=node.kv_pair.key.gen.py_ast,
+                    key=node.kv_pair.key.gen.py_ast[0],
                     value=node.kv_pair.value.gen.py_ast[0],
                     generators=[i.gen.py_ast[0] for i in node.compr],
                 )
@@ -2095,12 +2083,12 @@ class PyastGenPass(Pass):
                 self.sync(
                     ast3.Subscript(
                         value=node.target.gen.py_ast[0],
-                        slice=node.right.gen.py_ast,
+                        slice=node.right.gen.py_ast[0],
                         ctx=node.right.py_ctx_func(),
                     )
                 )
             ]
-            node.right.gen.py_ast.ctx = ast3.Load()  # type: ignore
+            node.right.gen.py_ast[0].ctx = ast3.Load()  # type: ignore
         if node.is_null_ok:
             node.gen.py_ast[0].value = self.sync(
                 ast3.Name(id="__jac_tmp", ctx=ast3.Load())
@@ -2116,7 +2104,7 @@ class PyastGenPass(Pass):
                                 value=node.target.gen.py_ast[0],
                             )
                         ),
-                        body=node.gen.py_ast,
+                        body=node.gen.py_ast[0],
                         orelse=self.sync(ast3.Constant(value=None)),
                     )
                 )
@@ -2360,13 +2348,17 @@ class PyastGenPass(Pass):
                                                                 ),
                                                                 jac_node=x,
                                                             ),
-                                                            attr=x.gen.py_ast.left.id,
+                                                            attr=x.gen.py_ast[
+                                                                0
+                                                            ].left.id,
                                                             ctx=ast3.Load(),
                                                         ),
                                                         jac_node=x,
                                                     ),
-                                                    ops=x.gen.py_ast.ops,
-                                                    comparators=x.gen.py_ast.comparators,
+                                                    ops=x.gen.py_ast[0].ops,
+                                                    comparators=x.gen.py_ast[
+                                                        0
+                                                    ].comparators,
                                                 ),
                                                 jac_node=x,
                                             )
@@ -2391,7 +2383,7 @@ class PyastGenPass(Pass):
         values = []
         for i in node.assigns.items:
             keys.append(self.sync(ast3.Constant(i.key.sym_name)))
-            values.append(i.value.gen.py_ast)
+            values.append(i.value.gen.py_ast[0])
         keys = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Load()))
         values = self.sync(ast3.Tuple(elts=values, ctx=ast3.Load()))
         node.gen.py_ast = [self.sync(ast3.Tuple(elts=[keys, values], ctx=ast3.Load()))]
@@ -2399,14 +2391,14 @@ class PyastGenPass(Pass):
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
 
-        target: SubNodeList[ExprType],
+        target: Expr,
         cases: list[MatchCase],
         """
         node.gen.py_ast = [
             self.sync(
                 ast3.Match(
-                    subject=node.target.gen.py_ast,
-                    cases=[x.gen.py_ast for x in node.cases],
+                    subject=node.target.gen.py_ast[0],
+                    cases=[x.gen.py_ast[0] for x in node.cases],
                 )
             )
         ]
@@ -2421,8 +2413,8 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.match_case(
-                    pattern=node.pattern.gen.py_ast,
-                    guard=node.guard.gen.py_ast if node.guard else None,
+                    pattern=node.pattern.gen.py_ast[0],
+                    guard=node.guard.gen.py_ast[0] if node.guard else None,
                     body=self.resolve_stmt_block(node.body),
                 )
             )
@@ -2436,7 +2428,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.MatchOr(
-                    patterns=[x.gen.py_ast for x in node.patterns],
+                    patterns=[x.gen.py_ast[0] for x in node.patterns],
                 )
             )
         ]
@@ -2451,7 +2443,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.MatchAs(
                     name=node.name.sym_name,
-                    pattern=node.pattern.gen.py_ast if node.pattern else None,
+                    pattern=node.pattern.gen.py_ast[0] if node.pattern else None,
                 )
             )
         ]
@@ -2482,7 +2474,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.MatchSequence(
-                    patterns=[x.gen.py_ast for x in node.values],
+                    patterns=[x.gen.py_ast[0] for x in node.values],
                 )
             )
         ]
@@ -2510,7 +2502,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.MatchMapping(
-                    patterns=[node.key.gen.py_ast, node.value.gen.py_ast],
+                    patterns=[node.key.gen.py_ast[0], node.value.gen.py_ast[0]],
                 )
             )
         ]
@@ -2533,9 +2525,9 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.MatchClass(
-                    cls=node.name.gen.py_ast,
+                    cls=node.name.gen.py_ast[0],
                     patterns=(
-                        [x.gen.py_ast for x in node.arg_patterns.items]
+                        [x.gen.py_ast[0] for x in node.arg_patterns.items]
                         if node.arg_patterns
                         else []
                     ),
@@ -2545,7 +2537,7 @@ class PyastGenPass(Pass):
                         else []
                     ),
                     kwd_patterns=(
-                        [x.value.gen.py_ast for x in node.kw_patterns.items]
+                        [x.value.gen.py_ast[0] for x in node.kw_patterns.items]
                         if node.kw_patterns
                         else []
                     ),
@@ -2640,7 +2632,7 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Assign(
-                        targets=[node.gen.py_ast],
+                        targets=node.gen.py_ast,
                         value=self.sync(
                             ast3.Call(
                                 func=self.sync(
