@@ -59,7 +59,7 @@ class JacReferenceTests(TestCase):
         try:
             jacast = jac_file_to_pass(filename).ir
             code_content = compile(
-                source=jacast.gen.py_ast,
+                source=jacast.gen.py_ast[0],
                 filename=jacast.loc.mod_path,
                 mode="exec",
             )
