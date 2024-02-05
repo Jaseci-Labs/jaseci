@@ -27,7 +27,7 @@ class FuseCommentsPass(Pass):
         """Insert comment tokens into all_tokens."""
         comment_stream = iter(self.comments)  # Iterator for comments
         code_stream = iter(self.all_tokens)  # Iterator for code tokens
-        new_stream = []  # New stream to hold ordered tokens
+        new_stream: list[ast.AstNode] = []  # New stream to hold ordered tokens
 
         try:
             next_comment = next(comment_stream)  # Get the first comment

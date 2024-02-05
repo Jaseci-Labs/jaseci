@@ -218,8 +218,12 @@ class JacFormatPass(Pass):
                     ):
                         self.emit(node, f"{stmt.value}")
                     else:
-                        next_kid = node.kid[i + 1]
-                        if i < (len(node.kid) - 1) and (
+                        next_kid = (
+                            node.kid[i + 1]
+                            if i < (len(node.kid) - 1)
+                            else ast.EmptyToken()
+                        )
+                        if (
                             isinstance(next_kid, ast.CommentToken)
                             and next_kid.is_inline
                         ):
