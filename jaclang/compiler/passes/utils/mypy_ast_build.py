@@ -6,6 +6,7 @@ import ast
 import os
 import pathlib
 
+import jaclang
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
 
@@ -27,7 +28,7 @@ from mypy.semanal_main import semantic_analysis_for_scc
 
 
 os.environ["MYPYPATH"] = str(
-    pathlib.Path(os.path.dirname(__file__)).parent.parent.parent.parent / "stubs"
+    pathlib.Path(os.path.dirname(jaclang.__file__)).parent / "stubs"
 )
 
 

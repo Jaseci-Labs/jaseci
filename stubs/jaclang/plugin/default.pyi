@@ -19,7 +19,6 @@ from jaclang.core.importer import jac_importer as jac_importer
 from typing import Any, Callable, Optional, Type, TypeVar
 import pluggy
 
-
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
