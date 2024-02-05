@@ -157,7 +157,7 @@ def assert_module_equivalence(
         expected_normalized,
         actual_normalized,
         (
-            "Actual modules ({}) do not match expected modules ({}) " 'for "[{} ...]"'
+            'Actual modules ({}) do not match expected modules ({}) for "[{} ...]"'
         ).format(", ".join(actual_normalized), ", ".join(expected_normalized), name),
     )
 
@@ -170,7 +170,7 @@ def assert_target_equivalence(
         expected,
         actual,
         (
-            "Actual targets ({}) do not match expected targets ({}) " 'for "[{} ...]"'
+            'Actual targets ({}) do not match expected targets ({}) for "[{} ...]"'
         ).format(", ".join(actual), ", ".join(expected), name),
     )
 

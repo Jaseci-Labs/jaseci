@@ -108,8 +108,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 len(code_gen_pure.ir.source.comments),
                 len(code_gen_jac.ir.source.comments),
             )
-            before = ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2)
-            after = ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2)
+            before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
+            after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
             self.assertEqual(
                 len("\n".join(unified_diff(before.splitlines(), after.splitlines()))),
                 0,

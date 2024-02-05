@@ -656,7 +656,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         if not defn.items:
             # In this case we have already complained about none of these being
             # valid overloads.
-            return None
+            return
         if len(defn.items) == 1:
             self.fail(message_registry.MULTIPLE_OVERLOADS_REQUIRED, defn)
 
@@ -702,7 +702,6 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
                 defn, found_method_base_classes, defn.impl
             )
             self.check_inplace_operator_method(defn)
-        return None
 
     def extract_callable_type(
         self, inner_type: Type | None, ctx: Context
@@ -737,7 +736,9 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         # At this point we should have set the impl already, and all remaining
         # items are decorators
 
-        if self.msg.errors.file in self.msg.errors.ignored_files:
+        if self.msg.errors.file in self.msg.errors.ignored_files or (
+            self.is_typeshed_stub and self.options.test_env
+        ):
             # This is a little hacky, however, the quadratic check here is really expensive, this
             # method has no side effects, so we should skip it if we aren't going to report
             # anything. In some other places we swallow errors in stubs, but this error is very
@@ -1961,7 +1962,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             return
         typ = get_proper_type(typ)
         if not isinstance(typ, TupleType) or not all(
-            [is_string_literal(item) for item in typ.items]
+            is_string_literal(item) for item in typ.items
         ):
             self.msg.note(
                 "__match_args__ must be a tuple containing string literals for checking "
@@ -5435,7 +5436,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
 
     def visit_continue_stmt(self, s: ContinueStmt) -> None:
         self.binder.handle_continue()
-        return None
+        return
 
     def visit_match_stmt(self, s: MatchStmt) -> None:
         with self.binder.frame_context(can_skip=False, fall_through=0):
@@ -5660,6 +5661,15 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             format_type_distinctly(*base_classes, options=self.options, bare=True),
             "and",
         )
+
+        new_errors = []
+        for base in base_classes:
+            if base.type.is_final:
+                new_errors.append((pretty_names_list, f'"{base.type.name}" is final'))
+        if new_errors:
+            errors.extend(new_errors)
+            return None
+
         try:
             info, full_name = _make_fake_typeinfo_and_full_name(
                 base_classes, curr_module
@@ -5676,10 +5686,14 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
                     self.check_multiple_inheritance(info)
             info.is_intersection = True
         except MroError:
-            errors.append((pretty_names_list, "inconsistent method resolution order"))
+            errors.append(
+                (pretty_names_list, "would have inconsistent method resolution order")
+            )
             return None
         if local_errors.has_new_errors():
-            errors.append((pretty_names_list, "incompatible method signatures"))
+            errors.append(
+                (pretty_names_list, "would have incompatible method signatures")
+            )
             return None
 
         curr_module.names[full_name] = SymbolTableNode(GDEF, info)
@@ -7661,9 +7675,10 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         possible_target_types = []
         for tr in type_ranges:
             item = get_proper_type(tr.item)
-            if not isinstance(item, Instance) or tr.is_upper_bound:
-                return yes_type, no_type
-            possible_target_types.append(item)
+            if isinstance(item, (Instance, NoneType)):
+                possible_target_types.append(item)
+        if not possible_target_types:
+            return yes_type, no_type
 
         out = []
         errors: list[tuple[str, str]] = []
@@ -7671,6 +7686,11 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             if not isinstance(v, Instance):
                 return yes_type, no_type
             for t in possible_target_types:
+                if isinstance(t, NoneType):
+                    errors.append(
+                        (f'"{v.type.name}" and "NoneType"', '"NoneType" is final')
+                    )
+                    continue
                 intersection = self.intersect_instances((v, t), errors)
                 if intersection is None:
                     continue
@@ -7714,7 +7734,11 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             elif isinstance(typ, TypeType):
                 # Type[A] means "any type that is a subtype of A" rather than "precisely type A"
                 # we indicate this by setting is_upper_bound flag
-                types.append(TypeRange(typ.item, is_upper_bound=True))
+                is_upper_bound = True
+                if isinstance(typ.item, NoneType):
+                    # except for Type[None], because "'NoneType' is not an acceptable base type"
+                    is_upper_bound = False
+                types.append(TypeRange(typ.item, is_upper_bound=is_upper_bound))
             elif isinstance(typ, Instance) and typ.type.fullname == "builtins.type":
                 object_type = Instance(typ.type.mro[-1], [])
                 types.append(TypeRange(object_type, is_upper_bound=True))
@@ -8200,7 +8224,7 @@ def convert_to_typetype(type_map: TypeMap) -> TypeMap:
         if isinstance(t, TypeVarType):
             t = t.upper_bound
         # TODO: should we only allow unions of instances as per PEP 484?
-        if not isinstance(get_proper_type(t), (UnionType, Instance)):
+        if not isinstance(get_proper_type(t), (UnionType, Instance, NoneType)):
             # unknown type; error was likely reported earlier
             return {}
         converted_type_map[expr] = TypeType.make_normalized(typ)

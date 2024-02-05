@@ -56,7 +56,7 @@ JsonDict: _TypeAlias = Dict[str, Any]
 # 1. types.LiteralType's serialize and deserialize methods: this method
 #    needs to make sure it can convert the below types into JSON and back.
 #
-# 2. types.LiteralType's 'alue_repr` method: this method is ultimately used
+# 2. types.LiteralType's 'value_repr` method: this method is ultimately used
 #    by TypeStrVisitor's visit_literal_type to generate a reasonable
 #    repr-able output.
 #
@@ -455,7 +455,7 @@ class TypeGuardedType(Type):
 
     __slots__ = ("type_guard",)
 
-    def __init__(self, type_guard: Type):
+    def __init__(self, type_guard: Type) -> None:
         super().__init__(line=type_guard.line, column=type_guard.column)
         self.type_guard = type_guard
 
@@ -3225,7 +3225,7 @@ def get_proper_types(
 # to make it easier to gradually get modules working with mypyc.
 # Import them here, after the types are defined.
 # This is intended as a re-export also.
-from mypy.type_visitor import (  # noqa: F811
+from mypy.type_visitor import (
     ALL_STRATEGY as ALL_STRATEGY,
     ANY_STRATEGY as ANY_STRATEGY,
     BoolTypeQuery as BoolTypeQuery,

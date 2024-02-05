@@ -156,7 +156,7 @@ def load_type_map(
 ) -> None:
     """Populate a Mapper with deserialized IR from a list of modules."""
     for module in modules:
-        for name, node in module.names.items():
+        for node in module.names.values():
             if isinstance(node.node, TypeInfo) and is_from_module(node.node, module):
                 ir = deser_ctx.classes[node.node.fullname]
                 mapper.type_to_ir[node.node] = ir
@@ -170,7 +170,7 @@ def load_type_map(
 
 def get_module_func_defs(module: MypyFile) -> Iterable[FuncDef]:
     """Collect all of the (non-method) functions declared in a module."""
-    for name, node in module.names.items():
+    for node in module.names.values():
         # We need to filter out functions that are imported or
         # aliases.  The best way to do this seems to be by
         # checking that the fullname matches.
@@ -513,7 +513,7 @@ def prepare_non_ext_class_def(
     ir = mapper.type_to_ir[cdef.info]
     info = cdef.info
 
-    for name, node in info.names.items():
+    for node in info.names.values():
         if isinstance(node.node, (FuncDef, Decorator)):
             prepare_method_def(ir, module_name, cdef, mapper, node.node)
         elif isinstance(node.node, OverloadedFuncDef):

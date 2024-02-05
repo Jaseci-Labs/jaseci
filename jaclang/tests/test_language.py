@@ -128,7 +128,7 @@ class JacLanguageTests(TestCase):
         prog = jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        exec(compile(prog.ir.gen.py_ast, "test.py", "exec"))
+        exec(compile(prog.ir.gen.py_ast[0], "test.py", "exec"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")

@@ -1,27 +1,29 @@
 """Overrides to mypy build manager for direct AST pass through."""
+
 from __future__ import annotations
 
 import ast
 import os
 import pathlib
 
-import jaclang.vendor.mypy.build as myb
-import jaclang.vendor.mypy.errors as mye
-import jaclang.vendor.mypy.fastparse as myfp
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
-from jaclang.vendor.mypy.build import BuildSource
-from jaclang.vendor.mypy.build import BuildSourceSet
-from jaclang.vendor.mypy.build import FileSystemCache
-from jaclang.vendor.mypy.build import compute_search_paths
-from jaclang.vendor.mypy.build import Graph
-from jaclang.vendor.mypy.build import ModuleNotFound
-from jaclang.vendor.mypy.build import PRI_INDIRECT
-from jaclang.vendor.mypy.build import find_module_simple
-from jaclang.vendor.mypy.build import load_plugins
-from jaclang.vendor.mypy.build import process_graph
-from jaclang.vendor.mypy.options import Options
-from jaclang.vendor.mypy.semanal_main import semantic_analysis_for_scc
+
+import mypy.build as myb
+import mypy.errors as mye
+import mypy.fastparse as myfp
+from mypy.build import BuildSource
+from mypy.build import BuildSourceSet
+from mypy.build import FileSystemCache
+from mypy.build import Graph
+from mypy.build import ModuleNotFound
+from mypy.build import PRI_INDIRECT
+from mypy.build import compute_search_paths
+from mypy.build import find_module_simple
+from mypy.build import load_plugins
+from mypy.build import process_graph
+from mypy.options import Options
+from mypy.semanal_main import semantic_analysis_for_scc
 
 
 os.environ["MYPYPATH"] = str(
@@ -42,7 +44,7 @@ class BuildManager(myb.BuildManager):
         source: str,
         ignore_errors: bool,
         options: myb.Options,
-        ast_override: ast.AST | None = None,
+        ast_override: myb.MypyFile | None = None,
     ) -> myb.MypyFile:
         """Parse the source of a file with the given name.
 
@@ -93,7 +95,7 @@ class State(myb.State):
         # process it. With this flag, any changes to external state as well
         # as error reporting should be avoided.
         temporary: bool = False,
-        ast_override: ast.AST | None = None,
+        ast_override: myb.MypyFile | None = None,
     ) -> None:
         """Override to mypy state for AST pass through."""
         if not temporary:
@@ -197,7 +199,7 @@ class State(myb.State):
             self.compute_dependencies()
 
     def parse_file(
-        self, *, temporary: bool = False, ast_override: ast.AST | None = None
+        self, *, temporary: bool = False, ast_override: myb.MypyFile | None = None
     ) -> None:
         """Parse file and run first pass of semantic analysis.
 
@@ -392,7 +394,6 @@ def load_graph(
     As this may need to parse files, this can raise CompileError in case
     there are syntax errors.
     """
-
     graph: Graph = old_graph if old_graph is not None else {}
 
     # The deque is used to implement breadth-first traversal.
@@ -539,7 +540,7 @@ def load_graph(
 
                     assert newst.id not in graph, newst.id
                     graph[newst.id] = newst
-                    new.append(newst)
+                    new.append(newst)  # noqa: B038
             if dep in graph and dep in st.suppressed_set:
                 # Previously suppressed file is now visible
                 st.add_dependency(dep)

@@ -2,11 +2,13 @@ import sys
 import types
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
-from typing import Any
-from typing_extensions import Literal, Self, deprecated
+from typing import Literal
+from typing_extensions import Self, TypeVarTuple, Unpack, deprecated
 
 from .events import AbstractEventLoop, BaseDefaultEventLoopPolicy
 from .selector_events import BaseSelectorEventLoop
+
+_Ts = TypeVarTuple("_Ts")
 
 # This is also technically not available on Win,
 # but other parts of typeshed need this definition.
@@ -16,7 +18,10 @@ if sys.version_info >= (3, 12):
     class AbstractChildWatcher:
         @abstractmethod
         def add_child_handler(
-            self, pid: int, callback: Callable[..., object], *args: Any
+            self,
+            pid: int,
+            callback: Callable[[Unpack[_Ts]], object],
+            *args: Unpack[_Ts]
         ) -> None: ...
         @abstractmethod
         def remove_child_handler(self, pid: int) -> bool: ...
@@ -33,15 +38,17 @@ if sys.version_info >= (3, 12):
             exc: BaseException | None,
             tb: types.TracebackType | None,
         ) -> None: ...
-        if sys.version_info >= (3, 8):
-            @abstractmethod
-            def is_active(self) -> bool: ...
+        @abstractmethod
+        def is_active(self) -> bool: ...
 
 else:
     class AbstractChildWatcher:
         @abstractmethod
         def add_child_handler(
-            self, pid: int, callback: Callable[..., object], *args: Any
+            self,
+            pid: int,
+            callback: Callable[[Unpack[_Ts]], object],
+            *args: Unpack[_Ts]
         ) -> None: ...
         @abstractmethod
         def remove_child_handler(self, pid: int) -> bool: ...
@@ -58,9 +65,8 @@ else:
             exc: BaseException | None,
             tb: types.TracebackType | None,
         ) -> None: ...
-        if sys.version_info >= (3, 8):
-            @abstractmethod
-            def is_active(self) -> bool: ...
+        @abstractmethod
+        def is_active(self) -> bool: ...
 
 if sys.platform != "win32":
     if sys.version_info >= (3, 9):
@@ -74,7 +80,7 @@ if sys.platform != "win32":
             "ThreadedChildWatcher",
             "DefaultEventLoopPolicy",
         )
-    elif sys.version_info >= (3, 8):
+    else:
         __all__ = (
             "SelectorEventLoop",
             "AbstractChildWatcher",
@@ -84,22 +90,12 @@ if sys.platform != "win32":
             "ThreadedChildWatcher",
             "DefaultEventLoopPolicy",
         )
-    else:
-        __all__ = (
-            "SelectorEventLoop",
-            "AbstractChildWatcher",
-            "SafeChildWatcher",
-            "FastChildWatcher",
-            "DefaultEventLoopPolicy",
-        )
 
     # Doesn't actually have ABCMeta metaclass at runtime, but mypy complains if we don't have it in the stub.
     # See discussion in #7412
     class BaseChildWatcher(AbstractChildWatcher, metaclass=ABCMeta):
         def close(self) -> None: ...
-        if sys.version_info >= (3, 8):
-            def is_active(self) -> bool: ...
-
+        def is_active(self) -> bool: ...
         def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
 
     if sys.version_info >= (3, 12):
@@ -113,7 +109,10 @@ if sys.platform != "win32":
                 c: types.TracebackType | None,
             ) -> None: ...
             def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
+                self,
+                pid: int,
+                callback: Callable[[Unpack[_Ts]], object],
+                *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
@@ -127,7 +126,10 @@ if sys.platform != "win32":
                 c: types.TracebackType | None,
             ) -> None: ...
             def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
+                self,
+                pid: int,
+                callback: Callable[[Unpack[_Ts]], object],
+                *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
@@ -141,7 +143,10 @@ if sys.platform != "win32":
                 c: types.TracebackType | None,
             ) -> None: ...
             def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
+                self,
+                pid: int,
+                callback: Callable[[Unpack[_Ts]], object],
+                *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
@@ -154,7 +159,10 @@ if sys.platform != "win32":
                 c: types.TracebackType | None,
             ) -> None: ...
             def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
+                self,
+                pid: int,
+                callback: Callable[[Unpack[_Ts]], object],
+                *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
@@ -191,12 +199,15 @@ if sys.platform != "win32":
                 exc_tb: types.TracebackType | None,
             ) -> None: ...
             def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
+                self,
+                pid: int,
+                callback: Callable[[Unpack[_Ts]], object],
+                *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
             def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
 
-    elif sys.version_info >= (3, 8):
+    else:
         class MultiLoopChildWatcher(AbstractChildWatcher):
             def is_active(self) -> bool: ...
             def close(self) -> None: ...
@@ -208,28 +219,33 @@ if sys.platform != "win32":
                 exc_tb: types.TracebackType | None,
             ) -> None: ...
             def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
+                self,
+                pid: int,
+                callback: Callable[[Unpack[_Ts]], object],
+                *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
             def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
 
-    if sys.version_info >= (3, 8):
-        class ThreadedChildWatcher(AbstractChildWatcher):
-            def is_active(self) -> Literal[True]: ...
-            def close(self) -> None: ...
-            def __enter__(self) -> Self: ...
-            def __exit__(
-                self,
-                exc_type: type[BaseException] | None,
-                exc_val: BaseException | None,
-                exc_tb: types.TracebackType | None,
-            ) -> None: ...
-            def __del__(self) -> None: ...
-            def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
-            ) -> None: ...
-            def remove_child_handler(self, pid: int) -> bool: ...
-            def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
+    class ThreadedChildWatcher(AbstractChildWatcher):
+        def is_active(self) -> Literal[True]: ...
+        def close(self) -> None: ...
+        def __enter__(self) -> Self: ...
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: types.TracebackType | None,
+        ) -> None: ...
+        def __del__(self) -> None: ...
+        def add_child_handler(
+            self,
+            pid: int,
+            callback: Callable[[Unpack[_Ts]], object],
+            *args: Unpack[_Ts]
+        ) -> None: ...
+        def remove_child_handler(self, pid: int) -> bool: ...
+        def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
 
     if sys.version_info >= (3, 9):
         class PidfdChildWatcher(AbstractChildWatcher):
@@ -244,6 +260,9 @@ if sys.platform != "win32":
             def close(self) -> None: ...
             def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
             def add_child_handler(
-                self, pid: int, callback: Callable[..., object], *args: Any
+                self,
+                pid: int,
+                callback: Callable[[Unpack[_Ts]], object],
+                *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...

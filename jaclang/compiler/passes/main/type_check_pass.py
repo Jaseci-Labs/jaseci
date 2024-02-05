@@ -43,8 +43,8 @@ class JacTypeCheckPass(Pass):
 
     def api(self) -> None:
         """Call mypy APIs to implement type checking in Jac."""
-        # Creating mypy api obbjects
-        options = myab.Options()
+        # Creating mypy api objects
+        options = myab.myb.Options()
         errors = myab.Errors(self, options)
         fs_cache = myab.FileSystemCache()
         search_paths = myab.compute_search_paths([], options, str(self.__path))
@@ -67,16 +67,16 @@ class JacTypeCheckPass(Pass):
             stderr=sys.stderr,
         )
 
-        mypy_graph = {}
+        mypy_graph: myab.Graph = {}
         new_modules = []
         for module in self.__modules:
             tree = myab.ASTConverter(
                 options=options,
                 is_stub=False,
                 errors=errors,
-                ignore_errors=False,
                 strip_function_bodies=False,
-            ).visit(module.gen.py_ast)
+                path=module.loc.mod_path,
+            ).visit(module.gen.py_ast[0])
 
             st = myab.State(
                 id=module.name,

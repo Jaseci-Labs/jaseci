@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, TypeAlias
+from typing import Callable, TypeAlias, cast
 
 
 import jaclang.compiler.absyntree as ast
@@ -764,16 +764,9 @@ class JacParser(Pass):
             chomp = chomp[1:] if is_static else chomp
             chomp = chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            semstr = (
-                chomp[1]
-                if access and isinstance(chomp[1], ast.String)
-                else chomp[0] if access or isinstance(chomp[1], ast.String) else None
-            )
-            chomp = (
-                chomp[2:]
-                if access and semstr
-                else chomp[1:] if access or semstr else chomp
-            )
+            chomp = chomp[1:] if access else chomp
+            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
+            chomp = chomp[1:] if semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
             is_func = isinstance(chomp[0], ast.FuncSignature)
@@ -2196,7 +2189,8 @@ class JacParser(Pass):
                 elif len(kid[0].values.items) == 1:
                     expr = kid[0].values.items[0]  # TODO: Loses braces
                 else:
-                    expr = ast.TupleVal(values=kid[0].values, kid=kid[0].kid)
+                    vals = cast("ast.SubNodeList[ast.Expr|ast.KWPair]", kid[0].values)
+                    expr = ast.TupleVal(values=vals, kid=kid[0].kid)
                 if expr is None:
                     raise self.ice()
                 return self.nu(
