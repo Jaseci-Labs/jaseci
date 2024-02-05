@@ -21,3 +21,6 @@ repos:
     hooks:
       - id: mypy
         exclude: 'venv|__jac_gen__|tests|support|vendor|examples/plugin|examples/reference'
+        args:
+          - --follow-imports=silent
+          - --ignore-missing-imports
