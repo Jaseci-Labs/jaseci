@@ -4,11 +4,11 @@ import ast as ast3
 from difflib import unified_diff
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.compiler.transpiler import jac_file_to_pass, jac_str_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 

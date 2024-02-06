@@ -6,7 +6,7 @@ import sys
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.compiler.transpiler import jac_str_to_pass
+from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.core import construct
 from jaclang.utils.test import TestCase
 

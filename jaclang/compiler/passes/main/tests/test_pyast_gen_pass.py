@@ -6,8 +6,8 @@ import sys
 import types
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import PyastGenPass, SubNodeTabPass
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 

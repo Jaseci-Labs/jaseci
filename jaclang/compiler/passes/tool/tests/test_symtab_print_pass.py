@@ -2,12 +2,12 @@
 
 import os
 
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.tool.schedules import (
     SymbolTableDotGraphPass,
     SymbolTablePrinterPass,
     sym_tab_print,
 )
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
 

@@ -6,8 +6,8 @@ import types
 from os import path
 from typing import Optional
 
+from jaclang.compiler.compile import transpile_jac
 from jaclang.compiler.constant import Constants as Con
-from jaclang.compiler.transpiler import transpile_jac
 from jaclang.utils.log import logging
 
 

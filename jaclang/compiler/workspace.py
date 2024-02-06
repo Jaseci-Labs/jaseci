@@ -6,10 +6,10 @@ import os
 from typing import Sequence
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.passes.main import DefUsePass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
-from jaclang.compiler.transpiler import jac_str_to_pass
 
 
 def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> Sequence[SymbolTable]:
