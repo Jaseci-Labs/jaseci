@@ -15,7 +15,6 @@ The Game base class
 obj Game {
     has screen: pygame.surface.Surface = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT)),
         clock: pygame.time.Clock = pygame.time.Clock(),
-        font: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32),
         running: bool = True,
         won: bool = False,
         score: int = 0,
@@ -29,6 +28,7 @@ obj Game {
 
     can <post_init> {
         pygame.init();
+        <self>.font: pygame.font.Font=pygame.font.Font(GENERAL_FONT, 32);
     }
     # Generate the map according to the tilemap variable in map.jac
     can createTilemap;
@@ -146,7 +146,6 @@ with entry {
 
 :obj:Game:can:game_over() {
     <self>.score-=2;
-    print(<self>.score);
     text = <self>.font.render('GaMe OvEr', True, RED);
     text_rect = text.get_rect(center=(WIN_WIDTH / 2, WIN_HEIGHT / 2));
     restart_button = Button(10, WIN_HEIGHT - 135, 120, 125, WHITE, BLACK, 'Restart', 32);
@@ -161,7 +160,6 @@ with entry {
         }
         mouse_pos = pygame.mouse.get_pos();
         mouse_pressed = pygame.mouse.get_pressed();
-        print(type(mouse_pressed));
         if restart_button.is_pressed(mouse_pos, mouse_pressed) {
             <self>.won = False;
             <self>.new();
@@ -204,7 +202,6 @@ with entry {
 
 :obj:Game:can:game_won {
     <self>.score+=5;
-    print(<self>.score);
     text = <self>.font.render('YOU WON!', True, BLUE);
     text_rect = text.get_rect(center=(WIN_WIDTH / 2, WIN_HEIGHT / 2));
     restart_button = Button(10, WIN_HEIGHT - 135, 120, 125, WHITE, BLACK, 'Restart', 32);
