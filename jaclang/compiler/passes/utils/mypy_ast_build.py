@@ -323,7 +323,10 @@ class ASTConverter(myfp.ASTConverter):
                 (ret.line, ret.column, ret.end_line, ret.end_column)
             ] = node.jac_link
         else:
-            raise Exception("AST node not linked to Jac node")
+            raise Exception(
+                f"AST node not linked to Jac node:\n{type(node)}-"
+                f"{ast.dump(node, indent=2)}{node.lineno}-{node.col_offset}"
+            )
         return ret
 
 
