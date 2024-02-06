@@ -71,10 +71,12 @@ def run(filename: str, main: bool = True) -> None:
 def build(filename: str, main: bool = True) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = jac_file_to_pass(file_path=filename)
+        out = jac_file_to_pass(file_path=filename, schedule=py_code_gen_typed)
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
+        for i in out.ir.flatten():
+            i.gen.mypy_ast = []
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out.ir, f)
     else:
