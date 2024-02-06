@@ -317,7 +317,7 @@ class ASTConverter(myfp.ASTConverter):
             visitor = getattr(self, method)
             self.visitor_cache[typeobj] = visitor
         ret = visitor(node)
-        # Mypy sometimes inserts its only nodes, such as a Return around lambdas.
+        # Mypy sometimes inserts its own nodes, such as a Return around lambdas.
         if hasattr(node, "jac_link"):
             node.jac_link.gen.mypy_ast.append(ret)
             mypy_to_jac_node_map[
