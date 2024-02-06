@@ -2,8 +2,8 @@
 
 from typing import List
 
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
 

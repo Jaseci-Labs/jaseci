@@ -1,15 +1,16 @@
 """Command line interface tool for the Jac language."""
 
 import os
+import pickle
 import shutil
 from typing import Optional
 
-from jaclang import jac_import as __jac_import__
+from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandRegistry, CommandShell
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.lang_tools import AstTool
 
@@ -46,13 +47,36 @@ def run(filename: str, main: bool = True) -> None:
     :param filename: The path to the .jac file.
     :param main: If True, use '__main__' as the module name, else use the actual module name.
     """
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
     if filename.endswith(".jac"):
-        base, mod = os.path.split(filename)
-        base = base if base else "./"
-        mod = mod[:-4]
-        __jac_import__(
+        jac_import(
             target=mod, base_path=base, override_name="__main__" if main else None
         )
+    elif filename.endswith(".jir"):
+        with open(filename, "rb") as f:
+            ir = pickle.load(f)
+            jac_import(
+                target=mod,
+                base_path=base,
+                override_name="__main__" if main else None,
+                mod_bundle=ir,
+            )
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def build(filename: str, main: bool = True) -> None:
+    """Build the specified .jac file."""
+    if filename.endswith(".jac"):
+        out = jac_file_to_pass(file_path=filename)
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
+        print(f"Errors: {errs}, Warnings: {warnings}")
+        with open(filename[:-4] + ".jir", "wb") as f:
+            pickle.dump(out.ir, f)
     else:
         print("Not a .jac file.")
 
@@ -89,7 +113,7 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
         base, mod_name = os.path.split(filename)
         base = base if base else "./"
         mod_name = mod_name[:-4]
-        mod = __jac_import__(target=mod_name, base_path=base)
+        mod = jac_import(target=mod_name, base_path=base)
         if not mod:
             print("Errors occurred while importing the module.")
             return

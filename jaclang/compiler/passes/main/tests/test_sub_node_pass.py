@@ -1,7 +1,7 @@
 """Test sub node pass module."""
 
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import SubNodeTabPass
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
 

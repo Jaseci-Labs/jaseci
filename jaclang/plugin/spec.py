@@ -5,6 +5,7 @@ from __future__ import annotations
 import types
 from typing import Any, Callable, Optional, Type, TypeVar
 
+from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import (
     Architype,
     DSFunc,
@@ -74,6 +75,7 @@ class JacFeatureSpec:
         base_path: str,
         cachable: bool,
         override_name: Optional[str],
+        mod_bundle: Optional[Module],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         raise NotImplementedError

@@ -436,6 +436,17 @@ class PyastGenPass(Pass):
                                             ),
                                         )
                                     ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="mod_bundle",
+                                            value=self.sync(
+                                                ast3.Name(
+                                                    id="__jac_mod_bundle__",
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                        )
+                                    ),
                                 ],
                             )
                         )

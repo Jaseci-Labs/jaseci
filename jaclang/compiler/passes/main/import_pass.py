@@ -102,7 +102,7 @@ class ImportPass(Pass):
 
     def import_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        from jaclang.compiler.transpiler import jac_file_to_pass
+        from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
         if not path.exists(target):

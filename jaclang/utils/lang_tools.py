@@ -7,6 +7,7 @@ import sys
 from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import DeclDefMatchPass
 from jaclang.compiler.passes.tool.schedules import (
     SymbolTableDotGraphPass,
@@ -14,7 +15,6 @@ from jaclang.compiler.passes.tool.schedules import (
     sym_tab_dot_gen,
     sym_tab_print,
 )
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
 from jaclang.utils.treeprinter import print_ast_tree
 
