@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 from typing import Any, Callable, Optional, Type
 
-
+from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
     Architype,
     EdgeArchitype,
@@ -77,6 +77,7 @@ class JacFeature:
         base_path: str,
         cachable: bool = True,
         override_name: Optional[str] = None,
+        mod_bundle: Optional[Module] = None,
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         return JacFeature.pm.hook.jac_import(
@@ -84,6 +85,7 @@ class JacFeature:
             base_path=base_path,
             cachable=cachable,
             override_name=override_name,
+            mod_bundle=mod_bundle,
         )
 
     @staticmethod
