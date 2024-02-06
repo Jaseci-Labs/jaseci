@@ -168,6 +168,21 @@ class PyastGenPass(Pass):
                 i.jac_link = jac_node  # type: ignore
         return py_node
 
+    def pyinline_sync(
+        self,
+        py_nodes: list[ast3.AST],
+    ) -> list[ast3.AST]:
+        """Sync ast locations."""
+        for node in py_nodes:
+            for i in ast3.walk(node):
+                if isinstance(i, ast3.AST):
+                    if hasattr(i, "lineno") and i.lineno is not None:
+                        i.lineno += self.cur_node.loc.first_line
+                    if hasattr(i, "end_lineno") and i.end_lineno is not None:
+                        i.end_lineno += self.cur_node.loc.first_line
+                    i.jac_link = self.cur_node  # type: ignore
+        return py_nodes
+
     def resolve_stmt_block(
         self,
         node: (
@@ -382,11 +397,14 @@ class PyastGenPass(Pass):
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             if isinstance(doc, ast3.AST):
-                node.gen.py_ast = [doc, *ast3.parse(node.code.value).body]
+                node.gen.py_ast = self.pyinline_sync(
+                    [doc, *ast3.parse(node.code.value).body]
+                )
+
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = [*ast3.parse(node.code.value).body]
+            node.gen.py_ast = self.pyinline_sync([*ast3.parse(node.code.value).body])
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.

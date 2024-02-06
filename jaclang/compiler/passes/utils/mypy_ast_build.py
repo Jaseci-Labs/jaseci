@@ -317,13 +317,14 @@ class ASTConverter(myfp.ASTConverter):
             visitor = getattr(self, method)
             self.visitor_cache[typeobj] = visitor
         ret = visitor(node)
+        # Mypy sometimes inserts its own nodes, such as a Return around lambdas.
         if hasattr(node, "jac_link"):
             node.jac_link.gen.mypy_ast.append(ret)
             mypy_to_jac_node_map[
                 (ret.line, ret.column, ret.end_line, ret.end_column)
             ] = node.jac_link
-        else:
-            raise Exception("AST node not linked to Jac node")
+        # else:
+        #     raise Exception("AST node not linked to Jac node")
         return ret
 
 

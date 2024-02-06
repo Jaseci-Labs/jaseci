@@ -100,6 +100,13 @@ class AstNode:
         """Print ast."""
         return dotgen_ast_tree(self)
 
+    def flatten(self) -> list[AstNode]:
+        """Flatten ast."""
+        ret = [self]
+        for k in self.kid:
+            ret += k.flatten()
+        return ret
+
 
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
