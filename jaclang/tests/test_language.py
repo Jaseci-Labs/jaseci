@@ -100,7 +100,9 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             stdout_value,
-            "{'apple': None, 'pineapple': None}\n",
+            "{'apple': None, 'pineapple': None}\n"
+            "This is a long \n"
+            "        line of code.\n",
         )
 
     def test_ignore(self) -> None:

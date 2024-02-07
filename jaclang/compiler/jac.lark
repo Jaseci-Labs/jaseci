@@ -358,7 +358,7 @@ atom_literal: builtin_type
             | HEX
             | INT
 
-multistring: (fstring | STRING)+
+multistring: (fstring | STRING | DOC_STRING)+
 
 fstring: FSTR_START fstr_parts FSTR_END
        | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
