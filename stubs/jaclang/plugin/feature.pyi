@@ -16,7 +16,6 @@ from typing import Any, Callable, Optional, Type, TypeAlias
 class JacFeature:
     pm: Incomplete
     import abc
-    import typing
     from jaclang.plugin.spec import DSFunc
     from jaclang.compiler.constant import EdgeDir
 
