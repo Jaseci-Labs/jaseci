@@ -313,7 +313,7 @@ class JacParser(Pass):
             lang = kid[1]
             paths = [i for i in kid if isinstance(i, ast.ModulePath)]
             is_absorb = True
-            if isinstance(lang, ast.SubTag) and isinstance(paths, ast.ModulePath):
+            if isinstance(lang, ast.SubTag):
                 return self.nu(
                     ast.Import(
                         lang=lang,
