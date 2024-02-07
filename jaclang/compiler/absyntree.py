@@ -505,6 +505,16 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
 
+    @property
+    def is_abstract(self) -> bool:
+        """Check if has an abstract method."""
+        body = (
+            self.body.items
+            if isinstance(self.body, SubNodeList)
+            else self.body.body.items if isinstance(self.body, ArchDef) else []
+        )
+        return any(isinstance(i, Ability) and i.is_abstract for i in body)
+
 
 class ArchDef(ArchSpec, AstImplOnlyNode):
     """ArchDef node type for Jac Ast."""

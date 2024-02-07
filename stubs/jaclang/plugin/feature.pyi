@@ -11,12 +11,14 @@ from jaclang.plugin.default import (
     WalkerArchitype as WalkerArchitype,
 )
 from jaclang.plugin.spec import DSFunc as DSFunc, JacFeatureSpec as JacFeatureSpec
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, TypeAlias
 
 class JacFeature:
     pm: Incomplete
-    RootType: Type[Root]
-    EdgeDir: Type[EdgeDir]
+    DSFunc: TypeAlias = DSFunc
+    EdgeDir: TypeAlias = EdgeDir
+    RootType: TypeAlias = Root
+    import abc
     @staticmethod
     def make_obj(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
