@@ -24,7 +24,6 @@ class JacFeature:
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)
     import abc
-    import typing
     from jaclang.plugin.spec import DSFunc
     from jaclang.compiler.constant import EdgeDir
 

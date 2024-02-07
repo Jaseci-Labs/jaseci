@@ -61,10 +61,6 @@ class PyastGenPass(Pass):
         #     if isinstance(i, ast3.AST):
         #         i.jac_link = node
 
-    def ds_feature_warn(self) -> None:
-        """Warn about feature."""
-        self.warning("Data spatial features not supported in bootstrap Jac.")
-
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
         if "jimport" in self.already_added:
@@ -84,6 +80,25 @@ class PyastGenPass(Pass):
             )
         )
         self.already_added.append("jimport")
+
+    def needs_typing(self) -> None:
+        """Check if enum is needed."""
+        if "typing" in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.Import(
+                    names=[
+                        self.sync(
+                            ast3.alias(name="typing", asname="_jac_typ"),
+                            jac_node=self.ir,
+                        ),
+                    ]
+                ),
+                jac_node=self.ir,
+            )
+        )
+        self.already_added.append("typing")
 
     def needs_enum(self) -> None:
         """Check if enum is needed."""
@@ -905,20 +920,11 @@ class PyastGenPass(Pass):
                     )
                 ]
             else:
+                self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load()))
                 node.gen.py_ast = [
                     self.sync(
                         ast3.Attribute(
-                            value=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Name(
-                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
-                                        )
-                                    ),
-                                    attr="typing",
-                                    ctx=ast3.Load(),
-                                )
-                            ),
+                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
                             attr=node.name_ref.sym_name,
                             ctx=ast3.Load(),
                         )
@@ -1003,21 +1009,12 @@ class PyastGenPass(Pass):
             and node.parent.parent.is_static
         )
         if is_class_var:
+            self.needs_typing()
             annotation = self.sync(
                 ast3.Subscript(
                     value=self.sync(
                         ast3.Attribute(
-                            value=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Name(
-                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
-                                        )
-                                    ),
-                                    attr="typing",
-                                    ctx=ast3.Load(),
-                                )
-                            ),
+                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
                             attr="ClassVar",
                             ctx=ast3.Load(),
                         )
@@ -1489,7 +1486,7 @@ class PyastGenPass(Pass):
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
-        self.ds_feature_warn()
+        self.warning("Revisit not used in Jac", node)
         node.gen.py_ast = [
             self.sync(ast3.Expr(value=self.sync(ast3.Constant(value=None))))
         ]
