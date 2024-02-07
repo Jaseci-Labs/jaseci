@@ -102,7 +102,7 @@ class JacFeature:
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
-    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         return JacFeature.pm.hook.has_instance_default(gen_func=gen_func)
 

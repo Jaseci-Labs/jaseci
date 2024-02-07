@@ -208,7 +208,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         return field(default_factory=lambda: gen_func())
 

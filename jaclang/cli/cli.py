@@ -68,7 +68,7 @@ def run(filename: str, main: bool = True) -> None:
 
 
 @cmd_registry.register
-def build(filename: str, main: bool = True) -> None:
+def build(filename: str) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
         out = jac_file_to_pass(file_path=filename, schedule=py_code_gen_typed)
@@ -84,7 +84,7 @@ def build(filename: str, main: bool = True) -> None:
 
 
 @cmd_registry.register
-def type_check(filename: str) -> None:
+def check(filename: str) -> None:
     """Run type checker for a specified .jac file.
 
     :param filename: The path to the .jac file.
