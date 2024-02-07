@@ -101,7 +101,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual(
             stdout_value,
             "{'apple': None, 'pineapple': None}\n"
-            "This is a long \n"
+            "This is a long\n"
             "        line of code.\n",
         )
 
