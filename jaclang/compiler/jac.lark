@@ -65,8 +65,7 @@ enum_stmt: NAME EQ expression
 
 // Abilities
 ability: decorators? ability_def
-        | decorators? KW_ASYNC ability_decl
-        | decorators? ability_decl
+        | decorators? KW_ASYNC? ability_decl
 
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block

@@ -660,30 +660,37 @@ class JacParser(Pass):
             """Grammar rule.
 
             ability: decorators? ability_def
-                    | decorators? KW_ASYNC ability_decl
-                    | decorators? ability_decl
+                    | decorators? KW_ASYNC? ability_decl
             """
-            if isinstance(kid[0], ast.SubNodeList):
-                if isinstance(kid[1], (ast.Ability, ast.AbilityDef)):
-                    for dec in kid[0].items:
-                        if (
-                            isinstance(dec, ast.NameSpec)
-                            and dec.sym_name == "staticmethod"
-                            and isinstance(kid[1], (ast.Ability))
-                        ):
-                            kid[1].is_static = True
-                            kid[0].items.remove(dec)  # noqa: B038
-                            break
-                    if len(kid[0].items):
-                        kid[1].decorators = kid[0]
-                        kid[1].add_kids_left([kid[0]])
-                    return self.nu(kid[1])
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], (ast.Ability, ast.AbilityDef)):
-                return self.nu(kid[0])
-            else:
+            chomp = [*kid]
+            decorators = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
+            chomp = chomp[1:] if decorators else chomp
+            is_async = (
+                chomp[0]
+                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
+                else None
+            )
+            ability = chomp[1] if is_async else chomp[0]
+            if not isinstance(ability, (ast.Ability, ast.AbilityDef)):
                 raise self.ice()
+            if is_async and isinstance(ability, ast.Ability):
+                ability.is_async = True
+                ability.add_kids_left([is_async])
+            if isinstance(decorators, ast.SubNodeList):
+                for dec in decorators.items:
+                    if (
+                        isinstance(dec, ast.NameSpec)
+                        and dec.sym_name == "staticmethod"
+                        and isinstance(ability, (ast.Ability))
+                    ):
+                        ability.is_static = True
+                        decorators.items.remove(dec)  # noqa: B038
+                        break
+                if len(decorators.items):
+                    ability.decorators = decorators
+                    ability.add_kids_left([decorators])
+                return self.nu(ability)
+            return self.nu(ability)
 
         def ability_decl(self, kid: list[ast.AstNode]) -> ast.Ability:
             """Grammar rule.
