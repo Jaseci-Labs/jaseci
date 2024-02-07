@@ -40,6 +40,8 @@ class NodeAnchor(ObjectAnchor):
     def connect_node(self, nd: NodeArchitype, edg: EdgeArchitype) -> NodeArchitype:
         """Connect a node with given edge."""
         edg._jac_.attach(self.obj, nd)
+        print("##########")
+        print(self.obj, "------->", nd)
         return self.obj
 
     def edges_to_nodes(
