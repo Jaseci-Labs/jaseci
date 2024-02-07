@@ -786,6 +786,17 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        if node.is_override:
+            self.needs_typing()
+            decorator_list.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                        attr="override",
+                        ctx=ast3.Load(),
+                    )
+                )
+            )
         if node.is_static:
             decorator_list.insert(
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
@@ -920,7 +931,7 @@ class PyastGenPass(Pass):
                     )
                 ]
             else:
-                self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load()))
+                self.needs_typing()
                 node.gen.py_ast = [
                     self.sync(
                         ast3.Attribute(

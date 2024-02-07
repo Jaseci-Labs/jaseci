@@ -163,6 +163,7 @@ class Tokens(str, Enum):
     COMMA = "COMMA"
     KW_CAN = "KW_CAN"
     KW_STATIC = "KW_STATIC"
+    KW_OVERRIDE = "KW_OVERRIDE"
     KW_MATCH = "KW_MATCH"
     KW_CASE = "KW_CASE"
     PLUS = "PLUS"

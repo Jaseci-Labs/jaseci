@@ -423,6 +423,7 @@ class JacLexer(RegexLexer):
                         "slice",
                         "sorted",
                         "static",
+                        "override",
                         "str",
                         "sum",
                         "super",

@@ -688,9 +688,14 @@ class JacParser(Pass):
         def ability_decl(self, kid: list[ast.AstNode]) -> ast.Ability:
             """Grammar rule.
 
-            ability_decl: KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
+            ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
+                any_ref (func_decl | event_clause) (code_block | SEMI)
             """
             chomp = [*kid]
+            is_override = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            )
+            chomp = chomp[1:] if is_override else chomp
             is_static = (
                 isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
             )
@@ -713,6 +718,7 @@ class JacParser(Pass):
                         name_ref=name,
                         is_func=is_func,
                         is_async=False,
+                        is_override=is_override,
                         is_static=is_static,
                         is_abstract=False,
                         access=access,
@@ -749,9 +755,14 @@ class JacParser(Pass):
         def abstract_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
             """Grammar rule.
 
-            abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+            abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
+                any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
             """
             chomp = [*kid]
+            is_override = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            )
+            chomp = chomp[1:] if is_override else chomp
             is_static = (
                 isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
             )
@@ -774,6 +785,7 @@ class JacParser(Pass):
                         name_ref=name,
                         is_func=is_func,
                         is_async=False,
+                        is_override=is_override,
                         is_static=is_static,
                         is_abstract=True,
                         access=access,

@@ -68,9 +68,9 @@ ability: decorators? ability_def
         | decorators? KW_ASYNC ability_decl
         | decorators? ability_decl
 
-ability_decl: KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
 func_decl_params: (param_var COMMA)* param_var
@@ -538,6 +538,7 @@ KW_HAS: "has"
 KW_GLOBAL: "glob"
 KW_CAN: "can"
 KW_STATIC: "static"
+KW_OVERRIDE: "override"
 KW_MATCH: "match"
 KW_CASE: "case"
 
