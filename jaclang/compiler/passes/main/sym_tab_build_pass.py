@@ -380,25 +380,39 @@ class SymTabBuildPass(SymTabPass):
             for i in node.items.items:
                 self.def_insert(i, single_use="import item")
         elif node.is_absorb and node.lang.tag.value == "jac":
-            if not node.sub_module or not node.sub_module.sym_tab:
+            if not node.paths[0].sub_module or not node.paths[0].sub_module.sym_tab:
                 self.error(
-                    f"Module {node.path.path_str} not found to include *, or ICE occurred!"
+                    f"Module {node.paths[0].path_str} not found to include *, or ICE occurred!"
                 )
             else:
-                for v in node.sub_module.sym_tab.tab.values():
+                for v in node.paths[0].sub_module.sym_tab.tab.values():
                     self.def_insert(v.decl, table_override=self.cur_scope())
         else:
-            self.def_insert(
-                node.path,
-                single_use="import",
-            )
+            for path in node.paths:
+                self.def_insert(path, single_use="import")
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
 
-        path: list[Token],
+        path: Sequence[Token],
+        alias: Optional[Name],
+        sub_module: Optional[Module] = None,
         """
         self.sync_node_to_scope(node)
+
+    def exit_module_path(self, node: ast.ModulePath) -> None:
+        """Sub objects.
+
+        path: Sequence[Token],
+        alias: Optional[Name],
+        sub_module: Optional[Module] = None,
+        """
+        if node.alias:
+            self.def_insert(node.alias, single_use="import")
+        elif isinstance(node.path[0], ast.Name):
+            self.def_insert(node.path[0], single_use="import")
+        else:
+            pass  # Need to support pythonic import symbols with dots in it
 
     def enter_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.

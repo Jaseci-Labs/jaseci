@@ -18,7 +18,7 @@ element: import_stmt
 
 // Import/Include Statements
 import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
-           | KW_IMPORT sub_name import_path SEMI
+           | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
