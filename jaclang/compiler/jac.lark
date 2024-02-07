@@ -318,7 +318,7 @@ atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
 ds_spawn: (ds_spawn KW_SPAWN)? unpack
 
 // Unpack expressions
-unpack: (STAR_MUL | STAR_POW) unpack | ref
+unpack: STAR_MUL? ref
 
 // References (unused)
 ref: BW_AND? pipe_call
@@ -387,7 +387,7 @@ list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
 
-kv_pair: expression COLON expression
+kv_pair: expression COLON expression | STAR_POW expression
 expr_list: (expr_list COMMA)? expression
 
 // Tuples and Jac Tuples
@@ -398,7 +398,7 @@ tuple_list: expression COMMA expr_list COMMA kw_expr_list
           | kw_expr_list
 
 kw_expr_list: (kw_expr_list COMMA)? kw_expr
-kw_expr: any_ref EQ expression
+kw_expr: any_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
 edge_op_ref: edge_any

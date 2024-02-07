@@ -1,4 +1,5 @@
 """Abstract class for IR Passes for Jac."""
+
 from typing import Optional, Type
 
 import jaclang.compiler.absyntree as ast

@@ -1,8 +1,8 @@
 from _typeshed import ReadableBuffer, SupportsRead
 from collections.abc import Callable
 from pyexpat import errors as errors, model as model
-from typing import Any
-from typing_extensions import TypeAlias, final
+from typing import Any, final
+from typing_extensions import TypeAlias
 
 EXPAT_VERSION: str  # undocumented
 version_info: tuple[int, int, int]  # undocumented
@@ -54,18 +54,22 @@ class XMLParserType:
     EndDoctypeDeclHandler: Callable[[], Any] | None
     ElementDeclHandler: Callable[[str, _Model], Any] | None
     AttlistDeclHandler: Callable[[str, str, str, str | None, bool], Any] | None
-    StartElementHandler: Callable[[str, dict[str, str]], Any] | Callable[
-        [str, list[str]], Any
-    ] | Callable[[str, dict[str, str], list[str]], Any] | None
+    StartElementHandler: (
+        Callable[[str, dict[str, str]], Any]
+        | Callable[[str, list[str]], Any]
+        | Callable[[str, dict[str, str], list[str]], Any]
+        | None
+    )
     EndElementHandler: Callable[[str], Any] | None
     ProcessingInstructionHandler: Callable[[str, str], Any] | None
     CharacterDataHandler: Callable[[str], Any] | None
-    UnparsedEntityDeclHandler: Callable[
-        [str, str | None, str, str | None, str], Any
-    ] | None
-    EntityDeclHandler: Callable[
-        [str, bool, str | None, str | None, str, str | None, str | None], Any
-    ] | None
+    UnparsedEntityDeclHandler: (
+        Callable[[str, str | None, str, str | None, str], Any] | None
+    )
+    EntityDeclHandler: (
+        Callable[[str, bool, str | None, str | None, str, str | None, str | None], Any]
+        | None
+    )
     NotationDeclHandler: Callable[[str, str | None, str, str | None], Any] | None
     StartNamespaceDeclHandler: Callable[[str, str], Any] | None
     EndNamespaceDeclHandler: Callable[[str], Any] | None
@@ -75,9 +79,9 @@ class XMLParserType:
     DefaultHandler: Callable[[str], Any] | None
     DefaultHandlerExpand: Callable[[str], Any] | None
     NotStandaloneHandler: Callable[[], int] | None
-    ExternalEntityRefHandler: Callable[
-        [str, str | None, str | None, str | None], int
-    ] | None
+    ExternalEntityRefHandler: (
+        Callable[[str, str | None, str | None, str | None], int] | None
+    )
     SkippedEntityHandler: Callable[[str, bool], Any] | None
 
 def ErrorString(__code: int) -> str: ...

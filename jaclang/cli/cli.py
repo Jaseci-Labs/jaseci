@@ -1,4 +1,5 @@
 """Command line interface tool for the Jac language."""
+
 import os
 import shutil
 from typing import Optional
@@ -6,11 +7,11 @@ from typing import Optional
 from jaclang import jac_import as __jac_import__
 from jaclang.cli.cmdreg import CommandRegistry, CommandShell
 from jaclang.compiler.constant import Constants
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.lang_tools import AstTool
-
 
 cmd_registry = CommandRegistry()
 
@@ -52,6 +53,26 @@ def run(filename: str, main: bool = True) -> None:
         __jac_import__(
             target=mod, base_path=base, override_name="__main__" if main else None
         )
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def type_check(filename: str) -> None:
+    """Run type checker for a specified .jac file.
+
+    :param filename: The path to the .jac file.
+    """
+    if filename.endswith(".jac"):
+        out = jac_file_to_pass(
+            file_path=filename,
+            schedule=py_code_gen_typed,
+        )
+
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
+
+        print(f"Errors: {errs}, Warnings: {warnings}")
     else:
         print("Not a .jac file.")
 

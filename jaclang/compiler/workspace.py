@@ -1,4 +1,5 @@
 """Living Workspace of Jac project."""
+
 from __future__ import annotations
 
 import os

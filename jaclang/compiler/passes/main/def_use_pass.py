@@ -5,6 +5,7 @@ symbol table. This includes assignments, parameters, arch ref chains,
 and more. This pass also links the symbols in the AST to their corresponding
 sybmols in the symbol table (including uses).
 """
+
 import ast as ast3
 
 import jaclang.compiler.absyntree as ast

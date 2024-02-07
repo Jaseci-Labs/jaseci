@@ -3,6 +3,7 @@
 This is used to call mypy type checking into Jac files by integrating
 mypy apis into Jac and use jac py ast in it.
 """
+
 import os
 import pathlib
 import sys
@@ -42,8 +43,8 @@ class JacTypeCheckPass(Pass):
 
     def api(self) -> None:
         """Call mypy APIs to implement type checking in Jac."""
-        # Creating mypy api obbjects
-        options = myab.Options()
+        # Creating mypy api objects
+        options = myab.myb.Options()
         errors = myab.Errors(self, options)
         fs_cache = myab.FileSystemCache()
         search_paths = myab.compute_search_paths([], options, str(self.__path))
@@ -66,16 +67,16 @@ class JacTypeCheckPass(Pass):
             stderr=sys.stderr,
         )
 
-        mypy_graph = {}
-
+        mypy_graph: myab.Graph = {}
+        new_modules = []
         for module in self.__modules:
             tree = myab.ASTConverter(
                 options=options,
                 is_stub=False,
                 errors=errors,
-                ignore_errors=False,
                 strip_function_bodies=False,
-            ).visit(module.gen.py_ast)
+                path=module.loc.mod_path,
+            ).visit(module.gen.py_ast[0])
 
             st = myab.State(
                 id=module.name,
@@ -86,6 +87,7 @@ class JacTypeCheckPass(Pass):
                 ast_override=tree,
             )
             mypy_graph[module.name] = st
+            new_modules.append(st)
 
         graph = myab.load_graph(
             [
@@ -96,6 +98,7 @@ class JacTypeCheckPass(Pass):
             ],
             manager,
             old_graph=mypy_graph,
+            new_modules=new_modules,  # To parse the dependancies of modules
         )
         myab.process_graph(graph, manager)
         myab.semantic_analysis_for_scc(graph, [self.__modules[0].name], errors)

@@ -75,9 +75,9 @@ def split_blocks_at_uninits(
                     and not isinstance(op, LoadAddress)
                 ):
                     new_block, error_block = BasicBlock(), BasicBlock()
-                    new_block.error_handler = (
-                        error_block.error_handler
-                    ) = cur_block.error_handler
+                    new_block.error_handler = error_block.error_handler = (
+                        cur_block.error_handler
+                    )
                     new_blocks += [error_block, new_block]
 
                     if src not in init_registers_set:

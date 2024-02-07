@@ -1,4 +1,5 @@
 """Tests for Jac parser."""
+
 import inspect
 import io
 import sys

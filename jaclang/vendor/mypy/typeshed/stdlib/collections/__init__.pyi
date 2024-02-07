@@ -6,8 +6,8 @@ from _typeshed import (
     SupportsRichComparison,
     SupportsRichComparisonT,
 )
-from typing import Any, Generic, NoReturn, TypeVar, overload
-from typing_extensions import Self, SupportsIndex, final
+from typing import Any, Generic, NoReturn, SupportsIndex, TypeVar, final, overload
+from typing_extensions import Self
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
@@ -209,28 +209,16 @@ class UserString(Sequence[UserString]):
     def __mul__(self, n: int) -> Self: ...
     def __rmul__(self, n: int) -> Self: ...
     def __mod__(self, args: Any) -> Self: ...
-    if sys.version_info >= (3, 8):
-        def __rmod__(self, template: object) -> Self: ...
-    else:
-        def __rmod__(self, format: Any) -> Self: ...
-
+    def __rmod__(self, template: object) -> Self: ...
     def capitalize(self) -> Self: ...
     def casefold(self) -> Self: ...
     def center(self, width: int, *args: Any) -> Self: ...
     def count(
         self, sub: str | UserString, start: int = 0, end: int = sys.maxsize
     ) -> int: ...
-    if sys.version_info >= (3, 8):
-        def encode(
-            self: UserString,
-            encoding: str | None = "utf-8",
-            errors: str | None = "strict",
-        ) -> bytes: ...
-    else:
-        def encode(
-            self, encoding: str | None = None, errors: str | None = None
-        ) -> Self: ...
-
+    def encode(
+        self: UserString, encoding: str | None = "utf-8", errors: str | None = "strict"
+    ) -> bytes: ...
     def endswith(
         self,
         suffix: str | tuple[str, ...],

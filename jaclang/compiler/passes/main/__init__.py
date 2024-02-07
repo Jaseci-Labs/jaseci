@@ -1,4 +1,5 @@
 """Collection of passes for Jac IR."""
+
 from .sub_node_tab_pass import SubNodeTabPass
 from .import_pass import ImportPass  # noqa: I100
 from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100

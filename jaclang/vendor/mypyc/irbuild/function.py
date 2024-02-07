@@ -655,9 +655,11 @@ def get_args(builder: IRBuilder, rt_args: Sequence[RuntimeArg], line: int) -> Ar
         for var, type in fake_vars
     ]
     arg_names = [
-        arg.name
-        if arg.kind.is_named() or (arg.kind.is_optional() and not arg.pos_only)
-        else None
+        (
+            arg.name
+            if arg.kind.is_named() or (arg.kind.is_optional() and not arg.pos_only)
+            else None
+        )
         for arg in rt_args
     ]
     arg_kinds = [arg.kind for arg in rt_args]

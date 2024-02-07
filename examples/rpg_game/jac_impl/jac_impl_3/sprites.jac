@@ -10,13 +10,16 @@ import:py math;
 include:jac config;
 include:jac map;
 
+import:py from typing, Tuple;
+
+
 """
 Object for impoting sprite character images.
 """
 obj Spritesheet {
 
     can <init>(file: str);
-    can get_sprite(x: int, y: int, width: int, height: int);
+    can get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
 }
 
 """
@@ -30,9 +33,9 @@ obj Player:pygame.sprite.Sprite:{
         x_change:int = 0,
         y_change:int = 0,
         facing:str = 'down',
-        animation_loop:int = 1;
+        animation_loop:float = 1;
 
-    can <init>(game: None, x: int, y: int);
+    can <init>(game: Game, x: int, y: int);
     can update;
     can movement;
     can collide_enemy;
@@ -51,10 +54,10 @@ obj Enemy:pygame.sprite.Sprite:{
         height:int = TILESIZE,
         x_change:int = 0,
         y_change:int = 0,
-        animation_loop:int = 0,
+        animation_loop:float = 0,
         movement_loop:int = 0;
 
-    can <init>(game: None, x: int, y: int);
+    can <init>(game: Game, x: int, y: int);
     can update;
     can movement;
     can animate;
@@ -71,7 +74,7 @@ obj Block:pygame.sprite.Sprite:{
         width:int = TILESIZE,
         height:int = TILESIZE;
 
-    can <init>(game: None, x: int, y: int);
+    can <init>(game: Game, x: int, y: int);
 
 }
 
@@ -84,7 +87,7 @@ obj Ground:pygame.sprite.Sprite:{
         width:int = TILESIZE,
         height:int = TILESIZE;
 
-    can <init>(game: None, x: int, y: int);
+    can <init>(game: Game, x: int, y: int);
 
 }
 
@@ -96,9 +99,9 @@ obj Attack:pygame.sprite.Sprite:{
     has _layer:int = ATTACK_LAYER,
         width:int = TILESIZE,
         height:int = TILESIZE,
-        animation_loop:int = 0;
+        animation_loop:float = 0;
 
-    can <init>(game: None, x:int, y:int);
+    can <init>(game: Game, x:int, y:int);
     can update;
     can collide;
     can animate;
@@ -112,7 +115,7 @@ Object class for buttons used in the game (Start, Restart)
 obj Button{
 
     can <init>(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int);
-    can is_pressed(pos: tuple, pressed:list);
+    can is_pressed(pos: tuple, pressed:tuple) -> bool;
 
 }
 
@@ -130,8 +133,8 @@ obj Button{
 :obj:Player:can:<init>(game: None, x: int, y: int){
         <self>.game = game;
         <self>._layer = PLAYER_LAYER;
-        <self>.groups = <self>.game.all_sprites;
-        pygame.sprite.Sprite.<init>(<self>,<self>.groups);
+        <self>._groups = <self>.game.all_sprites;
+        pygame.sprite.Sprite.<init>(<self>,<self>._groups);
 
         <self>.x = x * TILESIZE;
         <self>.y = y * TILESIZE;
@@ -293,8 +296,8 @@ obj Button{
 
 :obj:Enemy:can:<init>(game: None, x: int, y:int){
     <self>.game = game;
-    <self>.groups = (<self>.game.all_sprites, <self>.game.enemies);
-    pygame.sprite.Sprite.__init__(<self>, <self>.groups);
+    <self>._groups = (<self>.game.all_sprites, <self>.game.enemies);
+    pygame.sprite.Sprite.__init__(<self>, <self>._groups);
 
     <self>.x = x * TILESIZE;
     <self>.y = y * TILESIZE;
@@ -417,8 +420,8 @@ obj Button{
 
 :obj:Block:can:<init>(game: None, x: int, y: int){
     <self>.game = game;
-    <self>.groups = (<self>.game.all_sprites, <self>.game.blocks);
-    pygame.sprite.Sprite.<init>(<self>,<self>.groups);
+    <self>._groups = (<self>.game.all_sprites, <self>.game.blocks);
+    pygame.sprite.Sprite.<init>(<self>,<self>._groups);
 
     <self>.x = x * TILESIZE;
     <self>.y = y * TILESIZE;
@@ -432,8 +435,8 @@ obj Button{
 
 :obj:Ground:can:<init>(game: None, x: int, y: int){
     <self>.game = game;
-    <self>.groups = <self>.game.all_sprites;
-    pygame.sprite.Sprite.<init>(<self>, <self>.groups);
+    <self>._groups = <self>.game.all_sprites;
+    pygame.sprite.Sprite.<init>(<self>, <self>._groups);
 
     <self>.x = x * TILESIZE;
     <self>.y = y * TILESIZE;
@@ -448,8 +451,8 @@ obj Button{
 :obj:Attack:can:<init>(game: None, x:int, y:int){
     <self>.game = game;
 
-    <self>.groups = (<self>.game.all_sprites, <self>.game.attacks);
-    pygame.sprite.Sprite.<init>(<self>, <self>.groups);
+    <self>._groups = (<self>.game.all_sprites, <self>.game.attacks);
+    pygame.sprite.Sprite.<init>(<self>, <self>._groups);
 
     <self>.x = x;
     <self>.y = y;
@@ -551,7 +554,7 @@ obj Button{
 }
 
     # Determine if thebutton is pressed.
-:obj:Button:can:is_pressed(pos: tuple, pressed:list){
+:obj:Button:can:is_pressed(pos: tuple, pressed:tuple){
     if <self>.rect.collidepoint(pos){
         if pressed[0]{
             return True;

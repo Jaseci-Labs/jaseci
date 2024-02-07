@@ -2,8 +2,7 @@ import socket
 import sys
 from _typeshed import Incomplete, ReadableBuffer, WriteableBuffer
 from collections.abc import Callable
-from typing import IO, Any, ClassVar, NoReturn
-from typing_extensions import Literal
+from typing import IO, Any, ClassVar, Literal, NoReturn
 
 from . import events, futures, proactor_events, selector_events, streams, windows_utils
 
@@ -75,8 +74,10 @@ if sys.platform == "win32":
         def connect(
             self,
             conn: socket.socket,
-            address: tuple[Incomplete, Incomplete]
-            | tuple[Incomplete, Incomplete, Incomplete, Incomplete],
+            address: (
+                tuple[Incomplete, Incomplete]
+                | tuple[Incomplete, Incomplete, Incomplete, Incomplete]
+            ),
         ) -> futures.Future[Any]: ...
         def sendfile(
             self, sock: socket.socket, file: IO[bytes], offset: int, count: int
@@ -91,6 +92,7 @@ if sys.platform == "win32":
             def recvfrom_into(
                 self, conn: socket.socket, buf: WriteableBuffer, flags: int = 0
             ) -> futures.Future[tuple[int, socket._RetAddress]]: ...
+
     SelectorEventLoop = _WindowsSelectorEventLoop
 
     class WindowsSelectorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
@@ -102,4 +104,5 @@ if sys.platform == "win32":
         _loop_factory: ClassVar[type[ProactorEventLoop]]
         def get_child_watcher(self) -> NoReturn: ...
         def set_child_watcher(self, watcher: Any) -> NoReturn: ...
+
     DefaultEventLoopPolicy = WindowsSelectorEventLoopPolicy

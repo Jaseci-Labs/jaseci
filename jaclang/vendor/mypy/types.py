@@ -56,7 +56,7 @@ JsonDict: _TypeAlias = Dict[str, Any]
 # 1. types.LiteralType's serialize and deserialize methods: this method
 #    needs to make sure it can convert the below types into JSON and back.
 #
-# 2. types.LiteralType's 'alue_repr` method: this method is ultimately used
+# 2. types.LiteralType's 'value_repr` method: this method is ultimately used
 #    by TypeStrVisitor's visit_literal_type to generate a reasonable
 #    repr-able output.
 #
@@ -455,7 +455,7 @@ class TypeGuardedType(Type):
 
     __slots__ = ("type_guard",)
 
-    def __init__(self, type_guard: Type):
+    def __init__(self, type_guard: Type) -> None:
         super().__init__(line=type_guard.line, column=type_guard.column)
         self.type_guard = type_guard
 
@@ -1200,9 +1200,9 @@ class AnyType(ProperType):
         return {
             ".class": "AnyType",
             "type_of_any": self.type_of_any,
-            "source_any": self.source_any.serialize()
-            if self.source_any is not None
-            else None,
+            "source_any": (
+                self.source_any.serialize() if self.source_any is not None else None
+            ),
             "missing_import_name": self.missing_import_name,
         }
 
@@ -1541,9 +1541,11 @@ class Instance(ProperType):
             args if args is not _dummy else self.args,
             self.line,
             self.column,
-            last_known_value=last_known_value
-            if last_known_value is not _dummy
-            else self.last_known_value,
+            last_known_value=(
+                last_known_value
+                if last_known_value is not _dummy
+                else self.last_known_value
+            ),
         )
         # We intentionally don't copy the extra_attrs here, so they will be erased.
         new.can_be_true = self.can_be_true
@@ -1970,13 +1972,13 @@ class CallableType(FunctionLike):
             ),
             implicit=implicit if implicit is not _dummy else self.implicit,
             special_sig=special_sig if special_sig is not _dummy else self.special_sig,
-            from_type_type=from_type_type
-            if from_type_type is not _dummy
-            else self.from_type_type,
+            from_type_type=(
+                from_type_type if from_type_type is not _dummy else self.from_type_type
+            ),
             bound_args=bound_args if bound_args is not _dummy else self.bound_args,
-            def_extras=def_extras
-            if def_extras is not _dummy
-            else dict(self.def_extras),
+            def_extras=(
+                def_extras if def_extras is not _dummy else dict(self.def_extras)
+            ),
             type_guard=type_guard if type_guard is not _dummy else self.type_guard,
             from_concatenate=(
                 from_concatenate
@@ -1988,9 +1990,9 @@ class CallableType(FunctionLike):
                 if imprecise_arg_kinds is not _dummy
                 else self.imprecise_arg_kinds
             ),
-            unpack_kwargs=unpack_kwargs
-            if unpack_kwargs is not _dummy
-            else self.unpack_kwargs,
+            unpack_kwargs=(
+                unpack_kwargs if unpack_kwargs is not _dummy else self.unpack_kwargs
+            ),
         )
         # Optimization: Only NewTypes are supported as subtypes since
         # the class is effectively final, so we can use a cast safely.
@@ -2168,9 +2170,11 @@ class CallableType(FunctionLike):
         last_type = get_proper_type(self.arg_types[-1])
         assert isinstance(last_type, TypedDictType)
         extra_kinds = [
-            ArgKind.ARG_NAMED
-            if name in last_type.required_keys
-            else ArgKind.ARG_NAMED_OPT
+            (
+                ArgKind.ARG_NAMED
+                if name in last_type.required_keys
+                else ArgKind.ARG_NAMED_OPT
+            )
             for name in last_type.items
         ]
         new_arg_kinds = self.arg_kinds[:-1] + extra_kinds
@@ -2304,9 +2308,9 @@ class CallableType(FunctionLike):
                 (None if t is None else t.serialize()) for t in self.bound_args
             ],
             "def_extras": dict(self.def_extras),
-            "type_guard": self.type_guard.serialize()
-            if self.type_guard is not None
-            else None,
+            "type_guard": (
+                self.type_guard.serialize() if self.type_guard is not None else None
+            ),
             "from_concatenate": self.from_concatenate,
             "imprecise_arg_kinds": self.imprecise_arg_kinds,
             "unpack_kwargs": self.unpack_kwargs,
@@ -2943,13 +2947,11 @@ class UnionType(ProperType):
     @staticmethod
     def make_union(
         items: Sequence[ProperType], line: int = -1, column: int = -1
-    ) -> ProperType:
-        ...
+    ) -> ProperType: ...
 
     @overload
     @staticmethod
-    def make_union(items: Sequence[Type], line: int = -1, column: int = -1) -> Type:
-        ...
+    def make_union(items: Sequence[Type], line: int = -1, column: int = -1) -> Type: ...
 
     @staticmethod
     def make_union(items: Sequence[Type], line: int = -1, column: int = -1) -> Type:
@@ -3167,13 +3169,11 @@ class PlaceholderType(ProperType):
 
 
 @overload
-def get_proper_type(typ: None) -> None:
-    ...
+def get_proper_type(typ: None) -> None: ...
 
 
 @overload
-def get_proper_type(typ: Type) -> ProperType:
-    ...
+def get_proper_type(typ: Type) -> ProperType: ...
 
 
 def get_proper_type(typ: Type | None) -> ProperType | None:
@@ -3203,8 +3203,7 @@ def get_proper_types(types: list[Type] | tuple[Type, ...]) -> list[ProperType]: 
 @overload
 def get_proper_types(
     types: list[Type | None] | tuple[Type | None, ...]
-) -> list[ProperType | None]:
-    ...
+) -> list[ProperType | None]: ...
 
 
 def get_proper_types(
@@ -3226,7 +3225,7 @@ def get_proper_types(
 # to make it easier to gradually get modules working with mypyc.
 # Import them here, after the types are defined.
 # This is intended as a re-export also.
-from mypy.type_visitor import (  # noqa: F811
+from mypy.type_visitor import (
     ALL_STRATEGY as ALL_STRATEGY,
     ANY_STRATEGY as ANY_STRATEGY,
     BoolTypeQuery as BoolTypeQuery,

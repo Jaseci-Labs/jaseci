@@ -24,7 +24,9 @@ from .lexer import TerminalDef, Token
 ###{standalone
 
 _ParserArgType: "TypeAlias" = 'Literal["earley", "lalr", "cyk", "auto"]'
-_LexerArgType: "TypeAlias" = 'Union[Literal["auto", "basic", "contextual", "dynamic", "dynamic_complete"], Type[Lexer]]'
+_LexerArgType: "TypeAlias" = (
+    'Union[Literal["auto", "basic", "contextual", "dynamic", "dynamic_complete"], Type[Lexer]]'
+)
 _LexerCallback = Callable[[Token], Token]
 ParserCallbacks = Dict[str, Callable]
 

@@ -1,5 +1,6 @@
 """This module implements a LALR(1) Parser
 """
+
 # Author: Erez Shinan (2017)
 # Email : erezshin@gmail.com
 from typing import Dict, Any, Optional

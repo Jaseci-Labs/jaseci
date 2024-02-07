@@ -10,8 +10,8 @@ from collections.abc import (
     Sequence,
 )
 from re import Pattern
-from typing import Any, ClassVar, TypeVar, overload
-from typing_extensions import Literal, TypeAlias
+from typing import Any, ClassVar, Literal, TypeVar, overload
+from typing_extensions import TypeAlias
 
 if sys.version_info >= (3, 12):
     __all__ = (

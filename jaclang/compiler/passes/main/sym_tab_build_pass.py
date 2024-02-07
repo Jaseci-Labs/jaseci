@@ -3,6 +3,7 @@
 This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
+
 import ast as ast3
 import builtins
 from typing import Optional, Sequence

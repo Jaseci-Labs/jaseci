@@ -1,4 +1,5 @@
 """Abstract class for IR Passes for Jac."""
+
 from __future__ import annotations
 
 import ast as ast3
@@ -127,9 +128,11 @@ class AstAccessNode(AstNode):
         return (
             SymbolAccess.PRIVATE
             if self.access and self.access.tag.value == Tok.KW_PRIV
-            else SymbolAccess.PROTECTED
-            if self.access and self.access.tag.value == Tok.KW_PROT
-            else SymbolAccess.PUBLIC
+            else (
+                SymbolAccess.PROTECTED
+                if self.access and self.access.tag.value == Tok.KW_PROT
+                else SymbolAccess.PUBLIC
+            )
         )
 
 
@@ -472,15 +475,23 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
             self,
             sym_name=name.value,
             sym_name_node=name,
-            sym_type=SymbolType.OBJECT_ARCH
-            if arch_type.name == Tok.KW_OBJECT
-            else SymbolType.NODE_ARCH
-            if arch_type.name == Tok.KW_NODE
-            else SymbolType.EDGE_ARCH
-            if arch_type.name == Tok.KW_EDGE
-            else SymbolType.WALKER_ARCH
-            if arch_type.name == Tok.KW_WALKER
-            else SymbolType.TYPE,
+            sym_type=(
+                SymbolType.OBJECT_ARCH
+                if arch_type.name == Tok.KW_OBJECT
+                else (
+                    SymbolType.NODE_ARCH
+                    if arch_type.name == Tok.KW_NODE
+                    else (
+                        SymbolType.EDGE_ARCH
+                        if arch_type.name == Tok.KW_EDGE
+                        else (
+                            SymbolType.WALKER_ARCH
+                            if arch_type.name == Tok.KW_WALKER
+                            else SymbolType.TYPE
+                        )
+                    )
+                )
+            ),
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
@@ -1449,7 +1460,7 @@ class KVPair(AstNode):
 
     def __init__(
         self,
-        key: Expr,
+        key: Optional[Expr],  # is **key if blank
         value: Expr,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1464,7 +1475,7 @@ class KWPair(AstNode):
 
     def __init__(
         self,
-        key: NameSpec,
+        key: Optional[NameSpec],  # is **value if blank
         value: Expr,
         kid: Sequence[AstNode],
     ) -> None:

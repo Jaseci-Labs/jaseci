@@ -1,4 +1,5 @@
 """Test ast build pass module."""
+
 import ast as ast3
 import io
 import sys
@@ -39,10 +40,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
         )
 
-        # if isinstance(code_gen.ir.gen.py_ast, ast3.AST):
-        #     print(ast3.dump(code_gen.ir.gen.py_ast, indent=2))
-        #     print(ast3.unparse(code_gen.ir.gen.py_ast))
-        #     exec(compile(code_gen.ir.gen.py_ast, "<string>", "exec"))
         self.assertFalse(code_gen.errors_had)
 
     def test_circle_py_ast(self) -> None:
@@ -53,21 +50,10 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         )
         import ast as ast3
 
-        if isinstance(code_gen.ir.gen.py_ast, ast3.AST):
-            # from_jac_str = ast3.dump(code_gen.ir.gen.py_ast, indent=2)
-            # back_to_py = ast3.unparse(code_gen.ir.gen.py_ast)
-            # from_py = ast3.parse(back_to_py)
-            # from_py_str = ast3.dump(from_py, indent=2)
-            # import difflib
-
-            # print(
-            #     "\n".join(
-            #         difflib.unified_diff(
-            #             from_jac_str.splitlines(), from_py_str.splitlines(), n=0
-            #         )
-            #     )
-            # )
-            prog = compile(code_gen.ir.gen.py_ast, filename="<ast>", mode="exec")
+        if code_gen.ir.gen.py_ast and isinstance(
+            code_gen.ir.gen.py_ast[0], ast3.Module
+        ):
+            prog = compile(code_gen.ir.gen.py_ast[0], filename="<ast>", mode="exec")
             captured_output = io.StringIO()
             sys.stdout = captured_output
             module = types.ModuleType("__main__")
@@ -101,29 +87,13 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         code_gen = jac_file_to_pass(
             self.fixture_abs_path(filename), target=PyastGenPass
         )
-        from_jac_str = ast3.dump(code_gen.ir.gen.py_ast, indent=2)
-        from_jac = code_gen.ir.gen.py_ast
+        from_jac_str = ast3.dump(code_gen.ir.gen.py_ast[0], indent=2)
+        from_jac = code_gen.ir.gen.py_ast[0]
         try:
-            # back_to_py = ast3.unparse(from_jac)
             compile(from_jac, filename="<ast>", mode="exec")
         except Exception as e:
             print(from_jac_str)
             raise e
-        # from_py = ast3.parse(back_to_py)
-        # from_py_str = ast3.dump(from_py, indent=2)
-        # import difflib
-        # print(from_jac_str)
-        # print(
-        #     "\n".join(
-        #         difflib.unified_diff(
-        #             from_jac_str.splitlines(), from_py_str.splitlines(), n=6
-        #         )
-        #     )
-        # )
-        # if len(ast_to_list(from_jac)) != len(ast_to_list(from_py)):
-        #     print(
-        #         f"\n{filename} - AST node length diff: {len(ast_to_list(from_jac))} vs {len(ast_to_list(from_py))}"
-        #     )
         self.assertTrue(self.parent_scrub(code_gen.ir))
         self.assertGreater(len(from_jac_str), 10)
 

@@ -1,10 +1,11 @@
 """Lark parser for Jac Lang."""
+
 from __future__ import annotations
 
 
 import logging
 import os
-from typing import Callable, TypeAlias
+from typing import Callable, TypeAlias, cast
 
 
 import jaclang.compiler.absyntree as ast
@@ -418,16 +419,12 @@ class JacParser(Pass):
             semstr = (
                 kid[2]
                 if (access and isinstance(kid[2], ast.String))
-                else kid[1]
-                if isinstance(kid[1], ast.String)
-                else None
+                else kid[1] if isinstance(kid[1], ast.String) else None
             )
             name = (
                 kid[3]
                 if (access and semstr)
-                else kid[2]
-                if (access or semstr)
-                else kid[1]
+                else kid[2] if (access or semstr) else kid[1]
             )
             inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
@@ -584,16 +581,12 @@ class JacParser(Pass):
             semstr = (
                 kid[2]
                 if (access and isinstance(kid[2], ast.String))
-                else kid[1]
-                if isinstance(kid[1], ast.String)
-                else None
+                else kid[1] if isinstance(kid[1], ast.String) else None
             )
             name = (
                 kid[3]
                 if (access and semstr)
-                else kid[2]
-                if (access or semstr)
-                else kid[1]
+                else kid[2] if (access or semstr) else kid[1]
             )
             inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
@@ -771,20 +764,9 @@ class JacParser(Pass):
             chomp = chomp[1:] if is_static else chomp
             chomp = chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            semstr = (
-                chomp[1]
-                if access and isinstance(chomp[1], ast.String)
-                else chomp[0]
-                if access or isinstance(chomp[1], ast.String)
-                else None
-            )
-            chomp = (
-                chomp[2:]
-                if access and semstr
-                else chomp[1:]
-                if access or semstr
-                else chomp
-            )
+            chomp = chomp[1:] if access else chomp
+            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
+            chomp = chomp[1:] if semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
             is_func = isinstance(chomp[0], ast.FuncSignature)
@@ -892,9 +874,7 @@ class JacParser(Pass):
             semstr = (
                 kid[1]
                 if (star and isinstance(kid[1], ast.String))
-                else kid[0]
-                if isinstance(kid[0], ast.String)
-                else None
+                else kid[0] if isinstance(kid[0], ast.String) else None
             )
             name = (
                 kid[2] if (star and semstr) else kid[1] if (star or semstr) else kid[0]
@@ -1182,10 +1162,12 @@ class JacParser(Pass):
                     ast.IfStmt(
                         condition=kid[1],
                         body=kid[2],
-                        else_body=kid[3]
-                        if len(kid) > 3
-                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
-                        else None,
+                        else_body=(
+                            kid[3]
+                            if len(kid) > 3
+                            and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
+                            else None
+                        ),
                         kid=kid,
                     )
                 )
@@ -1202,10 +1184,12 @@ class JacParser(Pass):
                     ast.ElseIf(
                         condition=kid[1],
                         body=kid[2],
-                        else_body=kid[3]
-                        if len(kid) > 3
-                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
-                        else None,
+                        else_body=(
+                            kid[3]
+                            if len(kid) > 3
+                            and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
+                            else None
+                        ),
                         kid=kid,
                     )
                 )
@@ -1339,9 +1323,11 @@ class JacParser(Pass):
                             condition=chomp[3],
                             count_by=chomp[5],
                             body=chomp[6],
-                            else_body=chomp[-1]
-                            if isinstance(chomp[-1], ast.ElseStmt)
-                            else None,
+                            else_body=(
+                                chomp[-1]
+                                if isinstance(chomp[-1], ast.ElseStmt)
+                                else None
+                            ),
                             kid=kid,
                         )
                     )
@@ -1357,9 +1343,11 @@ class JacParser(Pass):
                             target=chomp[1],
                             collection=chomp[3],
                             body=chomp[4],
-                            else_body=chomp[-1]
-                            if isinstance(chomp[-1], ast.ElseStmt)
-                            else None,
+                            else_body=(
+                                chomp[-1]
+                                if isinstance(chomp[-1], ast.ElseStmt)
+                                else None
+                            ),
                             kid=kid,
                         )
                     )
@@ -1471,9 +1459,9 @@ class JacParser(Pass):
                 return self.nu(
                     ast.AssertStmt(
                         condition=condition,
-                        error_msg=error_msg
-                        if isinstance(error_msg, ast.Expr)
-                        else None,
+                        error_msg=(
+                            error_msg if isinstance(error_msg, ast.Expr) else None
+                        ),
                         kid=kid,
                     )
                 )
@@ -2035,9 +2023,7 @@ class JacParser(Pass):
         def unpack(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            unpack: ref
-                | STAR_MUL unpack
-                | STAR_POW unpack
+            unpack: STAR_MUL? ref
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
@@ -2203,7 +2189,8 @@ class JacParser(Pass):
                 elif len(kid[0].values.items) == 1:
                     expr = kid[0].values.items[0]  # TODO: Loses braces
                 else:
-                    expr = ast.TupleVal(values=kid[0].values, kid=kid[0].kid)
+                    vals = cast("ast.SubNodeList[ast.Expr|ast.KWPair]", kid[0].values)
+                    expr = ast.TupleVal(values=vals, kid=kid[0].kid)
                 if expr is None:
                     raise self.ice()
                 return self.nu(
@@ -2388,9 +2375,11 @@ class JacParser(Pass):
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
             """
             valid_parts: list[ast.String | ast.ExprStmt] = [
-                i
-                if isinstance(i, ast.String)
-                else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                (
+                    i
+                    if isinstance(i, ast.String)
+                    else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                )
                 for i in kid
                 if isinstance(i, ast.Expr)
             ]
@@ -2409,9 +2398,11 @@ class JacParser(Pass):
             fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
             valid_parts: list[ast.String | ast.ExprStmt] = [
-                i
-                if isinstance(i, ast.String)
-                else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                (
+                    i
+                    if isinstance(i, ast.String)
+                    else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                )
                 for i in kid
                 if isinstance(i, ast.Expr)
             ]
@@ -2539,13 +2530,25 @@ class JacParser(Pass):
         def kw_expr(self, kid: list[ast.AstNode]) -> ast.KWPair:
             """Grammar rule.
 
-            kw_expr: any_ref EQ expression
+            kw_expr: any_ref EQ expression | STAR_POW expression
             """
-            if isinstance(kid[0], ast.NameSpec) and isinstance(kid[2], ast.Expr):
+            if (
+                len(kid) == 3
+                and isinstance(kid[0], ast.NameSpec)
+                and isinstance(kid[2], ast.Expr)
+            ):
                 return self.nu(
                     ast.KWPair(
                         key=kid[0],
                         value=kid[2],
+                        kid=kid,
+                    )
+                )
+            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
+                return self.nu(
+                    ast.KWPair(
+                        key=None,
+                        value=kid[1],
                         kid=kid,
                     )
                 )
@@ -2625,13 +2628,25 @@ class JacParser(Pass):
         def kv_pair(self, kid: list[ast.AstNode]) -> ast.KVPair:
             """Grammar rule.
 
-            kv_pair: expression COLON expression
+            kv_pair: expression COLON expression | STAR_POW expression
             """
-            if isinstance(kid[0], ast.Expr) and isinstance(kid[2], ast.Expr):
+            if (
+                len(kid) == 3
+                and isinstance(kid[0], ast.Expr)
+                and isinstance(kid[2], ast.Expr)
+            ):
                 return self.nu(
                     ast.KVPair(
                         key=kid[0],
                         value=kid[2],
+                        kid=kid,
+                    )
+                )
+            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
+                return self.nu(
+                    ast.KVPair(
+                        key=None,
+                        value=kid[1],
                         kid=kid,
                     )
                 )
@@ -2723,9 +2738,11 @@ class JacParser(Pass):
                         is_async=is_async,
                         target=chomp[0],
                         collection=chomp[2],
-                        conditional=chomp[4]
-                        if len(chomp) > 4 and isinstance(chomp[4], ast.Expr)
-                        else None,
+                        conditional=(
+                            chomp[4]
+                            if len(chomp) > 4 and isinstance(chomp[4], ast.Expr)
+                            else None
+                        ),
                         kid=chomp,
                     )
                 )
@@ -3512,10 +3529,12 @@ class JacParser(Pass):
                 second
                 if isinstance(second, ast.SubNodeList)
                 and isinstance(second.items[0], ast.MatchKVPair)
-                else first
-                if isinstance(first, ast.SubNodeList)
-                and isinstance(first.items[0], ast.MatchKVPair)
-                else None
+                else (
+                    first
+                    if isinstance(first, ast.SubNodeList)
+                    and isinstance(first.items[0], ast.MatchKVPair)
+                    else None
+                )
             )
             if isinstance(name, ast.NameSpec):
                 return self.nu(

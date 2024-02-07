@@ -1,20 +1,19 @@
 """Jac Language Features."""
+
 from __future__ import annotations
 
 import types
 from typing import Any, Callable, Optional, Type
 
-from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.default import (
+
+from jaclang.core.construct import (
     Architype,
     EdgeArchitype,
-    JacFeatureDefaults,
     NodeArchitype,
     Root,
-    T,
     WalkerArchitype,
 )
-from jaclang.plugin.spec import JacFeatureSpec
+from jaclang.plugin.spec import JacFeatureSpec, T
 
 
 import pluggy
@@ -27,10 +26,22 @@ class JacFeature:
 
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)
-    pm.register(JacFeatureDefaults)
+
+    from jaclang.compiler.constant import EdgeDir
 
     RootType: Type[Root] = Root
-    EdgeDir: Type[EdgeDir] = EdgeDir
+
+    @staticmethod
+    def make_architype(
+        cls: type,
+        arch_base: Type[Architype],
+        on_entry: list[DSFunc],
+        on_exit: list[DSFunc],
+    ) -> Type[Architype]:
+        """Create a obj architype."""
+        return JacFeature.pm.hook.make_architype(
+            cls=cls, on_entry=on_entry, on_exit=on_exit, arch_base=arch_base
+        )
 
     @staticmethod
     def make_obj(
@@ -81,7 +92,7 @@ class JacFeature:
         return JacFeature.pm.hook.create_test(test_fun=test_fun)
 
     @staticmethod
-    def run_test(filename: str) -> None:
+    def run_test(filename: str) -> bool:
         """Run the test suite in the specified .jac file."""
         return JacFeature.pm.hook.run_test(filename=filename)
 
@@ -96,7 +107,7 @@ class JacFeature:
         return JacFeature.pm.hook.has_instance_default(gen_func=gen_func)
 
     @staticmethod
-    def spawn_call(op1: Architype, op2: Architype) -> Architype:
+    def spawn_call(op1: Architype, op2: Architype) -> bool:
         """Jac's spawn operator feature."""
         return JacFeature.pm.hook.spawn_call(op1=op1, op2=op2)
 

@@ -1,4 +1,5 @@
 """Core constructs for Jac Language."""
+
 from __future__ import annotations
 
 import types
@@ -15,7 +16,7 @@ from jaclang.core.utils import collect_node_connections
 class ElementAnchor:
     """Element Anchor."""
 
-    obj: Optional[Architype]
+    obj: Architype
 
 
 @dataclass(eq=False)
@@ -39,6 +40,8 @@ class NodeAnchor(ObjectAnchor):
     def connect_node(self, nd: NodeArchitype, edg: EdgeArchitype) -> NodeArchitype:
         """Connect a node with given edge."""
         edg._jac_.attach(self.obj, nd)
+        print("##########")
+        print(self.obj, "------->", nd)
         return self.obj
 
     def edges_to_nodes(
@@ -59,8 +62,8 @@ class NodeAnchor(ObjectAnchor):
 
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        visited_nodes = set()
-        connections = set()
+        visited_nodes: set[NodeAnchor] = set()
+        connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
         unique_node_id_dict = {}
 
         collect_node_connections(self, visited_nodes, connections)
@@ -72,7 +75,7 @@ class NodeAnchor(ObjectAnchor):
 
         for pair in list(set(connections)):
             dot_content += (
-                f"{unique_node_id_dict.get(pair[0])[1]} -> {unique_node_id_dict.get(pair[1])[1]}"
+                f"{unique_node_id_dict[pair[0]][1]} -> {unique_node_id_dict[pair[1]][1]}"
                 f' [label="{pair[2]}"];\n'
             )
         if dot_file:
@@ -222,7 +225,7 @@ class Architype:
 
     def __init__(self) -> None:
         """Create default architype."""
-        self._jac_ = ObjectAnchor(obj=self)
+        self._jac_: ObjectAnchor = ObjectAnchor(obj=self)
 
 
 class NodeArchitype(Architype):
@@ -230,7 +233,7 @@ class NodeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create node architype."""
-        self._jac_ = NodeAnchor(obj=self)
+        self._jac_: NodeAnchor = NodeAnchor(obj=self)
 
 
 class EdgeArchitype(Architype):
@@ -238,7 +241,7 @@ class EdgeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create edge architype."""
-        self._jac_ = EdgeAnchor(obj=self)
+        self._jac_: EdgeAnchor = EdgeAnchor(obj=self)
 
 
 class WalkerArchitype(Architype):
@@ -246,7 +249,7 @@ class WalkerArchitype(Architype):
 
     def __init__(self) -> None:
         """Create walker architype."""
-        self._jac_ = WalkerAnchor(obj=self)
+        self._jac_: WalkerAnchor = WalkerAnchor(obj=self)
 
 
 class Root(NodeArchitype):
