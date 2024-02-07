@@ -1353,7 +1353,7 @@ class JacFormatPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        if node.op.value in ["-", "~", "+", "*"]:
+        if node.op.value in ["-", "~", "+", "*", "**"]:
             self.emit(node, f"{node.op.value}{node.operand.gen.jac}")
         elif node.op.value == "(":
             self.emit(node, f"({node.operand.gen.jac})")
@@ -1599,7 +1599,7 @@ class JacFormatPass(Pass):
         from_walker: bool = False,
         """
         for i in node.kid:
-            if isinstance(i, (ast.EdgeOpRef, ast.ElseStmt)):
+            if isinstance(i, (ast.EdgeOpRef, ast.ElseStmt, ast.SpecialVarRef)):
                 self.emit(node, f" {i.gen.jac}")
             else:
                 self.emit(node, i.gen.jac)
