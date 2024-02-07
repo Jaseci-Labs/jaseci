@@ -15,10 +15,12 @@ from typing import Any, Callable, Optional, Type, TypeAlias
 
 class JacFeature:
     pm: Incomplete
-    DSFunc: TypeAlias = DSFunc
-    EdgeDir: TypeAlias = EdgeDir
-    RootType: TypeAlias = Root
     import abc
+    import typing
+    from jaclang.plugin.spec import DSFunc
+    from jaclang.compiler.constant import EdgeDir
+
+    RootType: TypeAlias = Root
     @staticmethod
     def make_obj(
         on_entry: list[DSFunc], on_exit: list[DSFunc]

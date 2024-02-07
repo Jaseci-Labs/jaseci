@@ -6,7 +6,6 @@ import types
 from typing import Any, Callable, Optional, Type, TypeAlias
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.constant import EdgeDir
 from jaclang.core.construct import (
     Architype,
     EdgeArchitype,
@@ -14,7 +13,7 @@ from jaclang.core.construct import (
     Root,
     WalkerArchitype,
 )
-from jaclang.plugin.spec import DSFunc, JacFeatureSpec, T
+from jaclang.plugin.spec import JacFeatureSpec, T
 
 import pluggy
 
@@ -24,11 +23,12 @@ class JacFeature:
 
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)
-
-    DSFunc: TypeAlias = DSFunc
-    EdgeDir: TypeAlias = EdgeDir
-    RootType: TypeAlias = Root
     import abc
+    import typing
+    from jaclang.plugin.spec import DSFunc
+    from jaclang.compiler.constant import EdgeDir
+
+    RootType: TypeAlias = Root
 
     @staticmethod
     def make_architype(
@@ -189,6 +189,3 @@ class JacFeature:
         return JacFeature.pm.hook.build_edge(
             edge_dir=edge_dir, conn_type=conn_type, conn_assign=conn_assign
         )
-
-
-__all__ = ["DSFunc", "EdgeDir"]
