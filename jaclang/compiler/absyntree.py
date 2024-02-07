@@ -397,19 +397,17 @@ class Import(ElementStmt, CodeBlockStmt):
     def __init__(
         self,
         lang: SubTag[Name],
-        path: ModulePath,
+        paths: list[ModulePath],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
-        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize import node."""
         self.lang = lang
-        self.path = path
+        self.paths = paths
         self.items = items
         self.is_absorb = is_absorb
-        self.sub_module = sub_module
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -422,10 +420,12 @@ class ModulePath(AstSymbolNode):
         path: Sequence[Token],
         alias: Optional[Name],
         kid: Sequence[AstNode],
+        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module path node."""
         self.path = path
         self.alias = alias
+        self.sub_module = sub_module
         self.path_str: str = "".join([p.value for p in path])
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(

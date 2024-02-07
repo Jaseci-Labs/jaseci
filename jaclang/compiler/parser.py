@@ -282,26 +282,20 @@ class JacParser(Pass):
             """Grammar rule.
 
             import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
-                    | KW_IMPORT sub_name import_path SEMI
+                    | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
             """
             lang = kid[1]
-            path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
+            paths = [i for i in kid if isinstance(i, ast.ModulePath)]
 
-            items = (
-                kid[-2]
-                if len(kid) > 4 and isinstance(kid[-2], ast.SubNodeList)
-                else None
-            )
+            items = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             is_absorb = False
-            if (
-                isinstance(lang, ast.SubTag)
-                and isinstance(path, ast.ModulePath)
-                and (isinstance(items, ast.SubNodeList) or items is None)
+            if isinstance(lang, ast.SubTag) and (
+                isinstance(items, ast.SubNodeList) or items is None
             ):
                 return self.nu(
                     ast.Import(
                         lang=lang,
-                        path=path,
+                        paths=paths,
                         items=items,
                         is_absorb=is_absorb,
                         kid=kid,
@@ -317,13 +311,13 @@ class JacParser(Pass):
             include_stmt: KW_INCLUDE sub_name import_path SEMI
             """
             lang = kid[1]
-            path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
+            paths = [i for i in kid if isinstance(i, ast.ModulePath)]
             is_absorb = True
-            if isinstance(lang, ast.SubTag) and isinstance(path, ast.ModulePath):
+            if isinstance(lang, ast.SubTag):
                 return self.nu(
                     ast.Import(
                         lang=lang,
-                        path=path,
+                        paths=paths,
                         items=None,
                         is_absorb=is_absorb,
                         kid=kid,
