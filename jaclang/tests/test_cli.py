@@ -1,6 +1,7 @@
 """Test Jac cli module."""
 
 import io
+import os
 import subprocess
 import sys
 
@@ -102,3 +103,16 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Errors: 0, Warnings: 1", stdout_value)
+
+    def test_build_and_run(self) -> None:
+        """Testing for print AstTool."""
+        if os.path.exists(f"{self.fixture_abs_path('needs_import.jir')}"):
+            os.remove(f"{self.fixture_abs_path('needs_import.jir')}")
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.build(f"{self.fixture_abs_path('needs_import.jac')}")
+        cli.run(f"{self.fixture_abs_path('needs_import.jir')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Errors: 0, Warnings: 0", stdout_value)
+        self.assertIn("<module 'pyfunc' from", stdout_value)
