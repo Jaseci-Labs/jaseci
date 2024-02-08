@@ -785,7 +785,11 @@ class ArchRefChain(AstNode):
         """Resolve name."""
 
         def get_tag(x: ArchRef) -> str:
-            return x.arch.value[1] if x.arch.value != "enum" else "en"
+            return (
+                "en"
+                if x.arch.value == "enum"
+                else "cls" if x.arch.value == "class" else x.arch.value[1]
+            )
 
         return ".".join([f"({get_tag(x)}){x.py_resolve_name()}" for x in self.archs])
 

@@ -427,7 +427,8 @@ named_ref: special_ref
          | KWESC_NAME
          | NAME
 
-arch_ref: object_ref
+arch_ref: class_ref
+        | object_ref
         | walker_ref
         | edge_ref
         | node_ref
@@ -437,6 +438,7 @@ type_ref: TYPE_OP (named_ref | builtin_type)
 node_ref: NODE_OP named_ref
 edge_ref: EDGE_OP named_ref
 walker_ref: WALKER_OP named_ref
+class_ref: CLASS_OP named_ref
 object_ref: OBJECT_OP named_ref
 enum_ref: ENUM_OP named_ref
 ability_ref: ABILITY_OP named_ref
@@ -569,6 +571,7 @@ NONLOCAL_OP: /:nl:|:nonlocal:/
 WALKER_OP: /:w:|:walker:/
 NODE_OP: /:n:|:node:/
 EDGE_OP: /:e:|:edge:/
+CLASS_OP: /:cls:|:class:/
 OBJECT_OP: /:o:|:obj:/
 TYPE_OP: /`|:t:|:type:/
 ENUM_OP: /:enum:/
