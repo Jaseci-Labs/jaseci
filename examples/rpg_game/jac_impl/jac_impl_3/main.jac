@@ -1,4 +1,4 @@
-"""This is a RPG game built using Jaclang"""
+"""This is an RPG game built using Jaclang"""
 
 
 # This game is built using the pygame module which is imported here
