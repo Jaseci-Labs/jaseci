@@ -105,7 +105,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(?x)\\b(enum|obj|node|edge|walker|test)\\b(?=\\s+[[:alpha:]_]\\w*|\\s*({|;|\\n))",
+					"begin": "(?x)\\b(enum|obj|class|node|edge|walker|test)\\b(?=\\s+[[:alpha:]_]\\w*|\\s*({|;|\\n))",
 					"end": "(?={)|;",
 					"beginCaptures": {
 						"1": {
@@ -140,7 +140,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:enum:|:c:|:can:)",
+					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:)",
 					"end": "(?=:|{|\\W)",
 					"beginCaptures": {
 						"1": {
@@ -587,7 +587,7 @@
 				},
 				{
 					"name": "storage.type.class.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    enum | obj | node | edge | walker | test\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    enum | obj | node | edge | walker | class | test\n  )\\b\n"
 				},
 				{
 					"name": "storage.type.has.jac",
@@ -1269,7 +1269,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(?x)\\s*(enum|obj|node|edge|walker|test)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\n))",
+					"begin": "(?x)\\s*(enum|obj|class|node|edge|walker|test)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\n))",
 					"end": "({|;)",
 					"beginCaptures": {
 						"1": {
@@ -1296,7 +1296,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:enum:|:c:|:can:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
+					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
 					"end": "((?=:| )|;)",
 					"beginCaptures": {
 						"1": {
