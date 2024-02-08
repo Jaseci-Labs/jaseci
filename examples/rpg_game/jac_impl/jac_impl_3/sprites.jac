@@ -114,7 +114,15 @@ obj Attack :pygame.sprite.Sprite: {
 Object class for buttons used in the game (Start, Restart)
 """
 obj Button {
-    can <init>(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int);
+    has x: int,
+        y: int,
+        width: int,
+        height: int,
+        fg: tuple,
+        bg: tuple,
+        content: str,
+        fontsize: int;
+    can <post_init>;
     can is_pressed(pos: tuple, pressed: tuple) -> bool;
 }
 
@@ -489,16 +497,8 @@ obj Button {
     }
 }
 
-:obj:Button:can:<init>
-(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int) {
-    <self>.font = pygame.font.Font(GENERAL_FONT, fontsize);
-    <self>.content = content;
-    <self>.x = x;
-    <self>.y = y;
-    <self>.width = width;
-    <self>.height = height;
-    <self>.fg = fg;
-    <self>.bg = bg;
+:obj:Button:can:<post_init> {
+    <self>.font = pygame.font.Font(GENERAL_FONT, <self>.fontsize);
     <self>.image = pygame.Surface((<self>.width, <self>.height));
     <self>.image.fill(<self>.bg);
     <self>.rect = <self>.image.get_rect();
