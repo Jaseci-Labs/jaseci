@@ -1,5 +1,5 @@
 from jaclang.plugin.default import hookimpl
-from jaclang.plugin.spec import ArchBound, WalkerArchitype, DSFunc
+from jaclang.plugin.spec import Architype, WalkerArchitype, DSFunc
 
 from dataclasses import dataclass
 from functools import wraps
@@ -14,7 +14,7 @@ class JacFeature:
     ) -> Callable[[type], type]:
         """Create a walker architype."""
 
-        def decorator(cls: Type[ArchBound]) -> Type[ArchBound]:
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
             cls = dataclass(eq=False)(cls)
             for i in on_entry + on_exit:
@@ -27,11 +27,13 @@ class JacFeature:
             inner_init = cls.__init__
 
             @wraps(inner_init)
-            def new_init(self: ArchBound, *args: object, **kwargs: object) -> None:
+            def new_init(
+                self: WalkerArchitype, *args: object, **kwargs: object
+            ) -> None:
                 inner_init(self, *args, **kwargs)
                 arch_cls.__init__(self)
 
-            cls.__init__ = new_init
+            cls.__init__ = new_init  # type: ignore
             print("IM IN THE PLUGIN YO!")
             return cls
 
