@@ -1,3 +1,4 @@
+# type: ignore
 """Lark parser for Jac Lang."""
 
 from __future__ import annotations

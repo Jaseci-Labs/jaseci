@@ -7,6 +7,7 @@ import sys
 from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import DeclDefMatchPass
 from jaclang.compiler.passes.tool.schedules import (
     SymbolTableDotGraphPass,
@@ -14,7 +15,6 @@ from jaclang.compiler.passes.tool.schedules import (
     sym_tab_dot_gen,
     sym_tab_print,
 )
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
 from jaclang.utils.treeprinter import print_ast_tree
 
@@ -310,7 +310,6 @@ class AstTool:
 
     def automate_ref(self) -> str:
         """Automate the reference guide generation."""
-        # Jac lark path
         file_path = os.path.join(
             os.path.split(os.path.dirname(__file__))[0], "../jaclang/compiler/jac.lark"
         )
@@ -323,31 +322,26 @@ class AstTool:
             os.path.split(os.path.dirname(__file__))[0], "../examples/reference/"
         )
         with open(created_file_path, "w") as md_file:
-            # Write the content to the destination file
             md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
         for heading, lines in result.items():
             heading = heading.strip()
             heading_snakecase = heading_to_snake(heading)
             content = (
                 f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
-                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n--8<-- '
-                f'"examples/reference/'
-                f'{heading_snakecase}.md"\n'
-            )
-            with open(created_file_path, "a") as md_file:
-                # Write the content to the destination file
-                md_file.write(f"{content}\n")
-            # Generate a Markdown file name based on the heading
-            md_file_name = f"{heading_snakecase}.md"
-            # Full path for the new Markdown file
-            md_file_path = os.path.join(destination_folder, md_file_name)
-            content = (
+                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
                 f'=== "Jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/'
                 f'{heading_snakecase}.jac"\n'
                 f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
                 f'{heading_snakecase}.py"\n    ```\n'
+                "--8<-- "
+                f'"examples/reference/'
+                f'{heading_snakecase}.md"\n'
             )
-            with open(md_file_path, "w") as md_file:
-                # Write the content to the destination file
-                md_file.write(content)
+            with open(created_file_path, "a") as md_file:
+                md_file.write(f"{content}\n")
+            md_file_name = f"{heading_snakecase}.md"
+            md_file_path = os.path.join(destination_folder, md_file_name)
+            if not os.path.exists(md_file_path):
+                with open(md_file_path, "w") as md_file:
+                    md_file.write("")
         return "References generated."

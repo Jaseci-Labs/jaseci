@@ -18,7 +18,7 @@ element: import_stmt
 
 // Import/Include Statements
 import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
-           | KW_IMPORT sub_name import_path SEMI
+           | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
@@ -65,12 +65,11 @@ enum_stmt: NAME EQ expression
 
 // Abilities
 ability: decorators? ability_def
-        | decorators? KW_ASYNC ability_decl
-        | decorators? ability_decl
+        | decorators? KW_ASYNC? ability_decl
 
-ability_decl: KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
 func_decl_params: (param_var COMMA)* param_var
@@ -358,7 +357,7 @@ atom_literal: builtin_type
             | HEX
             | INT
 
-multistring: (fstring | STRING)+
+multistring: (fstring | STRING | DOC_STRING)+
 
 fstring: FSTR_START fstr_parts FSTR_END
        | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
@@ -538,6 +537,7 @@ KW_HAS: "has"
 KW_GLOBAL: "glob"
 KW_CAN: "can"
 KW_STATIC: "static"
+KW_OVERRIDE: "override"
 KW_MATCH: "match"
 KW_CASE: "case"
 

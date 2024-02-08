@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any, Callable, Optional, Type
 
+from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir
 from jaclang.core.construct import (
     Architype,
@@ -156,6 +157,7 @@ class JacFeatureDefaults:
         base_path: str,
         cachable: bool,
         override_name: Optional[str],
+        mod_bundle: Optional[Module],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         result = jac_importer(
@@ -163,6 +165,7 @@ class JacFeatureDefaults:
             base_path=base_path,
             cachable=cachable,
             override_name=override_name,
+            mod_bundle=mod_bundle,
         )
         return result
 
@@ -205,7 +208,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         return field(default_factory=lambda: gen_func())
 

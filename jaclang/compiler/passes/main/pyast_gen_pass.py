@@ -61,10 +61,6 @@ class PyastGenPass(Pass):
         #     if isinstance(i, ast3.AST):
         #         i.jac_link = node
 
-    def ds_feature_warn(self) -> None:
-        """Warn about feature."""
-        self.warning("Data spatial features not supported in bootstrap Jac.")
-
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
         if "jimport" in self.already_added:
@@ -167,6 +163,21 @@ class PyastGenPass(Pass):
                 i.end_col_offset = jac_node.loc.col_end
                 i.jac_link = jac_node  # type: ignore
         return py_node
+
+    def pyinline_sync(
+        self,
+        py_nodes: list[ast3.AST],
+    ) -> list[ast3.AST]:
+        """Sync ast locations."""
+        for node in py_nodes:
+            for i in ast3.walk(node):
+                if isinstance(i, ast3.AST):
+                    if hasattr(i, "lineno") and i.lineno is not None:
+                        i.lineno += self.cur_node.loc.first_line
+                    if hasattr(i, "end_lineno") and i.end_lineno is not None:
+                        i.end_lineno += self.cur_node.loc.first_line
+                    i.jac_link = self.cur_node  # type: ignore
+        return py_nodes
 
     def resolve_stmt_block(
         self,
@@ -382,17 +393,20 @@ class PyastGenPass(Pass):
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             if isinstance(doc, ast3.AST):
-                node.gen.py_ast = [doc, *ast3.parse(node.code.value).body]
+                node.gen.py_ast = self.pyinline_sync(
+                    [doc, *ast3.parse(node.code.value).body]
+                )
+
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = [*ast3.parse(node.code.value).body]
+            node.gen.py_ast = self.pyinline_sync([*ast3.parse(node.code.value).body])
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
         lang: SubTag[Name],
-        path: ModulePath,
+        paths: list[ModulePath],
         alias: Optional[Name],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,
@@ -404,49 +418,65 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
-        py_compat_path_str = node.path.path_str.lstrip(".")
+        py_compat_path_str = []
+        for path in node.paths:
+            py_compat_path_str.append(path.path_str.lstrip("."))
         if node.lang.tag.value == Con.JAC_LANG_IMP:
             self.needs_jac_import()
-            py_nodes.append(
-                self.sync(
-                    ast3.Expr(
-                        value=self.sync(
-                            ast3.Call(
-                                func=self.sync(
-                                    ast3.Name(id="__jac_import__", ctx=ast3.Load())
-                                ),
-                                args=[],
-                                keywords=[
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="target",
-                                            value=self.sync(
-                                                ast3.Constant(value=node.path.path_str),
-                                                node.path,
-                                            ),
-                                        )
+            for p in range(len(py_compat_path_str)):
+                py_nodes.append(
+                    self.sync(
+                        ast3.Expr(
+                            value=self.sync(
+                                ast3.Call(
+                                    func=self.sync(
+                                        ast3.Name(id="__jac_import__", ctx=ast3.Load())
                                     ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="base_path",
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id="__file__", ctx=ast3.Load()
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                ],
+                                    args=[],
+                                    keywords=[
+                                        self.sync(
+                                            ast3.keyword(
+                                                arg="target",
+                                                value=self.sync(
+                                                    ast3.Constant(
+                                                        value=node.paths[p].path_str
+                                                    ),
+                                                    node.paths[p],
+                                                ),
+                                            )
+                                        ),
+                                        self.sync(
+                                            ast3.keyword(
+                                                arg="base_path",
+                                                value=self.sync(
+                                                    ast3.Name(
+                                                        id="__file__", ctx=ast3.Load()
+                                                    )
+                                                ),
+                                            )
+                                        ),
+                                        self.sync(
+                                            ast3.keyword(
+                                                arg="mod_bundle",
+                                                value=self.sync(
+                                                    ast3.Name(
+                                                        id="__jac_mod_bundle__",
+                                                        ctx=ast3.Load(),
+                                                    )
+                                                ),
+                                            )
+                                        ),
+                                    ],
+                                )
                             )
-                        )
-                    ),
+                        ),
+                    )
                 )
-            )
         if node.is_absorb:
             py_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module=py_compat_path_str,
+                        module=py_compat_path_str[0],
                         names=[self.sync(ast3.alias(name="*"), node)],
                         level=0,
                     ),
@@ -458,12 +488,14 @@ class PyastGenPass(Pass):
                     "Includes import * in target module into current namespace."
                 )
         if not node.items:
-            py_nodes.append(self.sync(ast3.Import(names=node.path.gen.py_ast)))
+            py_nodes.append(
+                self.sync(ast3.Import(names=[i.gen.py_ast[0] for i in node.paths]))
+            )
         else:
             py_nodes.append(
                 self.sync(
                     ast3.ImportFrom(
-                        module=py_compat_path_str,
+                        module=py_compat_path_str[0],
                         names=node.items.gen.py_ast,
                         level=0,
                     )
@@ -562,6 +594,25 @@ class PyastGenPass(Pass):
         else:
             raise self.ice()
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        if node.is_abstract:
+            self.needs_jac_feature()
+            base_classes.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="abc",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="ABC",
+                        ctx=ast3.Load(),
+                    )
+                )
+            )
         node.gen.py_ast = [
             self.sync(
                 ast3.ClassDef(
@@ -716,6 +767,36 @@ class PyastGenPass(Pass):
                 node,
             )
         decorator_list = node.decorators.gen.py_ast if node.decorators else []
+        if node.is_abstract:
+            self.needs_jac_feature()
+            decorator_list.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="abc",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="abstractmethod",
+                        ctx=ast3.Load(),
+                    )
+                )
+            )
+        if node.is_override:
+            self.needs_typing()
+            decorator_list.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                        attr="override",
+                        ctx=ast3.Load(),
+                    )
+                )
+            )
         if node.is_static:
             decorator_list.insert(
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
@@ -1416,7 +1497,7 @@ class PyastGenPass(Pass):
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
-        self.ds_feature_warn()
+        self.warning("Revisit not used in Jac", node)
         node.gen.py_ast = [
             self.sync(ast3.Expr(value=self.sync(ast3.Constant(value=None))))
         ]

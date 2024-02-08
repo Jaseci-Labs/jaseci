@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import ast
 import os
+import pathlib
 
+import jaclang
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
 
@@ -23,6 +25,11 @@ from mypy.build import load_plugins
 from mypy.build import process_graph
 from mypy.options import Options
 from mypy.semanal_main import semantic_analysis_for_scc
+
+
+os.environ["MYPYPATH"] = str(
+    pathlib.Path(os.path.dirname(jaclang.__file__)).parent / "stubs"
+)
 
 
 mypy_to_jac_node_map: dict[tuple[int, int | None, int | None, int | None], AstNode] = {}
@@ -310,13 +317,14 @@ class ASTConverter(myfp.ASTConverter):
             visitor = getattr(self, method)
             self.visitor_cache[typeobj] = visitor
         ret = visitor(node)
+        # Mypy sometimes inserts its own nodes, such as a Return around lambdas.
         if hasattr(node, "jac_link"):
             node.jac_link.gen.mypy_ast.append(ret)
             mypy_to_jac_node_map[
                 (ret.line, ret.column, ret.end_line, ret.end_column)
             ] = node.jac_link
-        else:
-            raise Exception("AST node not linked to Jac node")
+        # else:
+        #     raise Exception("AST node not linked to Jac node")
         return ret
 
 

@@ -6,8 +6,9 @@ import types
 from os import path
 from typing import Optional
 
+from jaclang.compiler.absyntree import Module
+from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
-from jaclang.compiler.transpiler import transpile_jac
 from jaclang.utils.log import logging
 
 
@@ -16,6 +17,7 @@ def jac_importer(
     base_path: str,
     cachable: bool = True,
     override_name: Optional[str] = None,
+    mod_bundle: Optional[Module] = None,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
@@ -32,32 +34,42 @@ def jac_importer(
     caller_dir = path.dirname(caller_dir) if target.startswith("..") else caller_dir
     caller_dir = path.join(caller_dir, dir_path)
 
-    gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
     full_target = path.normpath(path.join(caller_dir, file_name))
 
-    py_file_path = path.join(gen_dir, module_name + ".py")
-    pyc_file_path = path.join(gen_dir, module_name + ".jbc")
-    if (
-        cachable
-        and path.exists(py_file_path)
-        and path.getmtime(py_file_path) > path.getmtime(full_target)
-    ):
-        with open(pyc_file_path, "rb") as f:
-            codeobj = marshal.load(f)
+    if mod_bundle:
+        codeobj = (
+            mod_bundle.gen.py_bytecode
+            if full_target == mod_bundle.loc.mod_path
+            else mod_bundle.mod_deps[full_target].gen.py_bytecode
+        )
+        if isinstance(codeobj, bytes):
+            codeobj = marshal.loads(codeobj)
     else:
-        if error := transpile_jac(full_target):
-            if error:
-                for e in error:
-                    print(e)
-                    logging.error(e)
-            return None
-        with open(pyc_file_path, "rb") as f:
-            codeobj = marshal.load(f)
+        gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
+        py_file_path = path.join(gen_dir, module_name + ".py")
+        pyc_file_path = path.join(gen_dir, module_name + ".jbc")
+        if (
+            cachable
+            and path.exists(py_file_path)
+            and path.getmtime(py_file_path) > path.getmtime(full_target)
+        ):
+            with open(pyc_file_path, "rb") as f:
+                codeobj = marshal.load(f)
+        else:
+            if error := compile_jac(full_target):
+                if error:
+                    for e in error:
+                        print(e)
+                        logging.error(e)
+                return None
+            with open(pyc_file_path, "rb") as f:
+                codeobj = marshal.load(f)
 
     module_name = override_name if override_name else module_name
     module = types.ModuleType(module_name)
     module.__file__ = full_target
     module.__name__ = module_name
+    module.__dict__["__jac_mod_bundle__"] = mod_bundle
 
     if package_path:
         parts = package_path.split(".")
@@ -74,6 +86,8 @@ def jac_importer(
     if caller_dir not in sys.path:
         sys.path.append(caller_dir)
         path_added = True
+    if not codeobj:
+        raise ImportError(f"No bytecode found for {full_target}")
     exec(codeobj, module.__dict__)
     if path_added:
         sys.path.remove(caller_dir)

@@ -6,7 +6,7 @@ import sys
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.compiler.transpiler import jac_str_to_pass
+from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
@@ -100,7 +100,9 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             stdout_value,
-            "{'apple': None, 'pineapple': None}\n",
+            "{'apple': None, 'pineapple': None}\n"
+            "This is a long\n"
+            "        line of code.\n",
         )
 
     def test_ignore(self) -> None:

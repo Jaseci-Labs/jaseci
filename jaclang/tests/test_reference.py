@@ -6,7 +6,7 @@ from contextlib import redirect_stdout
 from typing import Callable, Optional
 
 import jaclang
-from jaclang.compiler.transpiler import jac_file_to_pass
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
 

@@ -11,8 +11,8 @@ from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.compiler.passes.transform import Alert
 
 
-def transpile_jac(file_path: str) -> list[Alert]:
-    """Transpiler Jac file and return python code as string."""
+def compile_jac(file_path: str) -> list[Alert]:
+    """Start Compile for Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
         schedule=pass_schedule,

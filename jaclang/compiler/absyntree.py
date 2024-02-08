@@ -100,6 +100,13 @@ class AstNode:
         """Print ast."""
         return dotgen_ast_tree(self)
 
+    def flatten(self) -> list[AstNode]:
+        """Flatten ast."""
+        ret = [self]
+        for k in self.kid:
+            ret += k.flatten()
+        return ret
+
 
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
@@ -390,19 +397,17 @@ class Import(ElementStmt, CodeBlockStmt):
     def __init__(
         self,
         lang: SubTag[Name],
-        path: ModulePath,
+        paths: list[ModulePath],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
-        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize import node."""
         self.lang = lang
-        self.path = path
+        self.paths = paths
         self.items = items
         self.is_absorb = is_absorb
-        self.sub_module = sub_module
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -415,10 +420,12 @@ class ModulePath(AstSymbolNode):
         path: Sequence[Token],
         alias: Optional[Name],
         kid: Sequence[AstNode],
+        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module path node."""
         self.path = path
         self.alias = alias
+        self.sub_module = sub_module
         self.path_str: str = "".join([p.value for p in path])
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -497,6 +504,16 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
+
+    @property
+    def is_abstract(self) -> bool:
+        """Check if has an abstract method."""
+        body = (
+            self.body.items
+            if isinstance(self.body, SubNodeList)
+            else self.body.body.items if isinstance(self.body, ArchDef) else []
+        )
+        return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
 
 class ArchDef(ArchSpec, AstImplOnlyNode):
@@ -600,6 +617,7 @@ class Ability(
         name_ref: NameSpec,
         is_func: bool,
         is_async: bool,
+        is_override: bool,
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
@@ -613,6 +631,7 @@ class Ability(
         """Initialize func arch node."""
         self.name_ref = name_ref
         self.is_func = is_func
+        self.is_override = is_override
         self.is_static = is_static
         self.is_abstract = is_abstract
         self.decorators = decorators

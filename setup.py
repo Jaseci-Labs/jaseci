@@ -5,7 +5,7 @@ from __future__ import annotations
 from setuptools import find_packages, setup  # type: ignore
 
 
-VERSION = "0.4.7"
+VERSION = "0.5.0"
 
 setup(
     name="jaclang",

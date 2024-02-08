@@ -6,7 +6,6 @@ relevant files.
 """
 
 import ast as ast3
-import marshal
 import os
 
 
@@ -45,7 +44,7 @@ class PyOutPass(Pass):
             ) > os.path.getmtime(mod_path):
                 continue
             self.gen_python(mod, out_path=out_path_py)
-            self.compile_bytecode(mod, mod_path=mod_path, out_path=out_path_pyc)
+            self.dump_bytecode(mod, mod_path=mod_path, out_path=out_path_pyc)
         self.terminate()
 
     def gen_python(self, node: ast.Module, out_path: str) -> None:
@@ -57,12 +56,11 @@ class PyOutPass(Pass):
             print(ast3.dump(node.gen.py_ast[0], indent=2))
             raise e
 
-    def compile_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
+    def dump_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""
-        if node.gen.py_ast and isinstance(node.gen.py_ast[0], ast3.Module):
-            codeobj = compile(source=node.gen.py_ast[0], filename=mod_path, mode="exec")
+        if node.gen.py_bytecode:
             with open(out_path, "wb") as f:
-                marshal.dump(codeobj, f)
+                f.write(node.gen.py_bytecode)
         else:
             self.error(
                 f"Soemthing went wrong with {node.loc.mod_path} compilation.", node

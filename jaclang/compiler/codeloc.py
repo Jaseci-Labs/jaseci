@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as ast3
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from jaclang.vendor.mypy.nodes import Node as MypyNode
 
@@ -20,6 +20,7 @@ class CodeGenTarget:
     jac: str = ""
     py_ast: list[ast3.AST] = field(default_factory=lambda: [])
     mypy_ast: list[MypyNode] = field(default_factory=lambda: [])
+    py_bytecode: Optional[bytes] = None
 
 
 class CodeLocInfo:

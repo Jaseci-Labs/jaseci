@@ -33,9 +33,9 @@ class ImportPass(Pass):
         self.run_again = True
         while self.run_again:
             self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.Import)
+            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
             for i in all_imports:
-                if i.lang.tag.value == "jac" and not i.sub_module:
+                if i.parent.lang.tag.value == "jac" and not i.sub_module:
                     self.run_again = True
                     mod = self.import_module(
                         node=i,
@@ -49,7 +49,7 @@ class ImportPass(Pass):
                     i.add_kids_right([mod], pos_update=False)
                 # elif i.lang.tag.value == "py":
                 #     self.import_py_module(node=i, mod_path=node.loc.mod_path)
-                self.enter_import(i)
+                self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
         self.annex_impl(node)
         node.mod_deps = self.import_table
@@ -75,34 +75,31 @@ class ImportPass(Pass):
                 node.add_kids_right([mod], pos_update=False)
                 mod.parent = node
 
-    def enter_import(self, node: ast.Import) -> None:
+    def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
 
-        lang: Name,
-        path: ModulePath,
+        path: Sequence[Token],
         alias: Optional[Name],
-        items: Optional[ModuleItems], # Items matched during def/decl pass
-        is_absorb: bool,
-        self.sub_module = None
+        sub_module: Optional[Module] = None,
         """
-        if node.path.alias and node.sub_module:
-            node.sub_module.name = node.path.alias.value
+        if node.alias and node.sub_module:
+            node.sub_module.name = node.alias.value
         # Items matched during def/decl pass
 
     # Utility functions
     # -----------------
 
-    def import_module(self, node: ast.Import, mod_path: str) -> ast.Module | None:
+    def import_module(self, node: ast.ModulePath, mod_path: str) -> ast.Module | None:
         """Import a module."""
         self.cur_node = node  # impacts error reporting
         target = import_target_to_relative_path(
-            node.path.path_str, path.dirname(node.loc.mod_path)
+            node.path_str, path.dirname(node.loc.mod_path)
         )
         return self.import_mod_from_file(target)
 
     def import_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        from jaclang.compiler.transpiler import jac_file_to_pass
+        from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
         if not path.exists(target):
@@ -126,7 +123,9 @@ class ImportPass(Pass):
             self.error(f"Module {target} is not a valid Jac module.")
             return None
 
-    def import_py_module(self, node: ast.Import, mod_path: str) -> Optional[ast.Module]:
+    def import_py_module(
+        self, node: ast.ModulePath, mod_path: str
+    ) -> Optional[ast.Module]:
         """Import a module."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
@@ -135,7 +134,7 @@ class ImportPass(Pass):
 
         try:
             # Dynamically import the module
-            spec = importlib.util.find_spec(node.path.path_str)
+            spec = importlib.util.find_spec(node.path_str)
             sys.path.remove(base_dir)
             if spec and spec.origin and spec.origin not in {None, "built-in", "frozen"}:
                 if spec.origin in self.import_table:
@@ -151,11 +150,11 @@ class ImportPass(Pass):
                     return mod
                 else:
                     raise self.ice(
-                        f"Failed to import python module {node.path.path_str}: {spec.origin}"
+                        f"Failed to import python module {node.path_str}: {spec.origin}"
                     )
         except Exception as e:
             self.error(
-                f"Failed to import python module {node.path.path_str}: {e}",
+                f"Failed to import python module {node.path_str}: {e}",
                 node_override=node,
             )
         return None

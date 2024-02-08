@@ -6,8 +6,8 @@ import sys
 import types
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import PyastGenPass, SubNodeTabPass
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -94,6 +94,13 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         except Exception as e:
             print(from_jac_str)
             raise e
+        for i in ast3.walk(from_jac):
+            try:
+                if not isinstance(i, (ast3.Load, ast3.Store, ast3.Del)):
+                    self.assertTrue(hasattr(i, "jac_link"))
+            except Exception as e:
+                print(filename, ast3.dump(i, indent=2))
+                raise e
         self.assertTrue(self.parent_scrub(code_gen.ir))
         self.assertGreater(len(from_jac_str), 10)
 

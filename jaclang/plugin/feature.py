@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, TypeAlias
 
-
+from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
     Architype,
     EdgeArchitype,
@@ -15,21 +15,19 @@ from jaclang.core.construct import (
 )
 from jaclang.plugin.spec import JacFeatureSpec, T
 
-
 import pluggy
 
 
 class JacFeature:
     """Jac Feature."""
 
-    from jaclang.plugin.spec import DSFunc
-
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)
-
+    import abc
+    from jaclang.plugin.spec import DSFunc
     from jaclang.compiler.constant import EdgeDir
 
-    RootType: Type[Root] = Root
+    RootType: TypeAlias = Root
 
     @staticmethod
     def make_architype(
@@ -77,6 +75,7 @@ class JacFeature:
         base_path: str,
         cachable: bool = True,
         override_name: Optional[str] = None,
+        mod_bundle: Optional[Module] = None,
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         return JacFeature.pm.hook.jac_import(
@@ -84,6 +83,7 @@ class JacFeature:
             base_path=base_path,
             cachable=cachable,
             override_name=override_name,
+            mod_bundle=mod_bundle,
         )
 
     @staticmethod
@@ -102,7 +102,7 @@ class JacFeature:
         return JacFeature.pm.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
-    def has_instance_default(gen_func: Callable) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         return JacFeature.pm.hook.has_instance_default(gen_func=gen_func)
 
