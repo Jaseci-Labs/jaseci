@@ -1,4 +1,7 @@
+"""This is the Data Spatial Implementation of the RPG Game"""
+
 # This game is built using the pygame module which is imported here
+
 import:py pygame;
 import:py sys;
 import:py random;
