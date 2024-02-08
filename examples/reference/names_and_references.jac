@@ -8,11 +8,9 @@ obj Dog:Animal:{
         <super>.<init>(species='Dogg');
         self.breed = breed;
         self.sound="";
-        #self.<post_init>;
+        self.<post_init>();
     }
-    can <post_init>(){
-
-    }
+    can <post_init>;
 }
 :obj:Dog:can:<post_init>{
    self.sound='woof woof';

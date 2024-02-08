@@ -15,9 +15,7 @@ edge connector{
         end ++> (end := node_a(val=i));
     }
     end +:connector:value=i:+> (end := node_a(val=i + 10));
-    # <root> <+:connector:value=i :+ (end := node_a(val=i + 10));
-    # # print(end);
-    # <r> <+: MyEdge:val=i :+ end;
+    <root> <+:connector:value=i :+ (end := node_a(val=i + 10));
 }
 
 with entry{
