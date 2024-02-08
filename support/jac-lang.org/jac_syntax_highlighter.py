@@ -118,6 +118,7 @@ class JacLexer(RegexLexer):
             (r"(static\s+can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
             (r"(can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
             (r"(enum)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
+            (r"(class)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(obj)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(walker)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(node)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),

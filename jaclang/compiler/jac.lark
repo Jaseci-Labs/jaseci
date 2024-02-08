@@ -40,6 +40,7 @@ arch_type: KW_WALKER
           | KW_OBJECT
           | KW_EDGE
           | KW_NODE
+          | KW_CLASS
 
 // Architype bodies
 member_block: LBRACE member_stmt* RBRACE
@@ -489,6 +490,7 @@ TYP_ANY: "any"
 TYP_TYPE: "type"
 KW_LET: "let"
 KW_ABSTRACT: "abs"
+KW_CLASS: "class"
 KW_OBJECT: "obj"
 KW_ENUM: "enum"
 KW_NODE: "node"
