@@ -1,4 +1,5 @@
 """Abstract class for IR Passes for Jac."""
+
 from __future__ import annotations
 
 import ast as ast3
@@ -99,6 +100,13 @@ class AstNode:
         """Print ast."""
         return dotgen_ast_tree(self)
 
+    def flatten(self) -> list[AstNode]:
+        """Flatten ast."""
+        ret = [self]
+        for k in self.kid:
+            ret += k.flatten()
+        return ret
+
 
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
@@ -127,9 +135,11 @@ class AstAccessNode(AstNode):
         return (
             SymbolAccess.PRIVATE
             if self.access and self.access.tag.value == Tok.KW_PRIV
-            else SymbolAccess.PROTECTED
-            if self.access and self.access.tag.value == Tok.KW_PROT
-            else SymbolAccess.PUBLIC
+            else (
+                SymbolAccess.PROTECTED
+                if self.access and self.access.tag.value == Tok.KW_PROT
+                else SymbolAccess.PUBLIC
+            )
         )
 
 
@@ -271,12 +281,16 @@ class Module(AstDocNode):
         body: Sequence[ElementStmt | String | EmptyToken],
         is_imported: bool,
         kid: Sequence[AstNode],
+        impl_mod: Optional[Module] = None,
+        test_mod: Optional[Module] = None,
     ) -> None:
         """Initialize whole program node."""
         self.name = name
         self.source = source
         self.body = body
         self.is_imported = is_imported
+        self.impl_mod = impl_mod
+        self.test_mod = test_mod
         self.mod_deps: dict[str, Module] = {}
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
@@ -383,19 +397,17 @@ class Import(ElementStmt, CodeBlockStmt):
     def __init__(
         self,
         lang: SubTag[Name],
-        path: ModulePath,
+        paths: list[ModulePath],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
-        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize import node."""
         self.lang = lang
-        self.path = path
+        self.paths = paths
         self.items = items
         self.is_absorb = is_absorb
-        self.sub_module = sub_module
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -408,10 +420,12 @@ class ModulePath(AstSymbolNode):
         path: Sequence[Token],
         alias: Optional[Name],
         kid: Sequence[AstNode],
+        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module path node."""
         self.path = path
         self.alias = alias
+        self.sub_module = sub_module
         self.path_str: str = "".join([p.value for p in path])
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -468,20 +482,38 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
             self,
             sym_name=name.value,
             sym_name_node=name,
-            sym_type=SymbolType.OBJECT_ARCH
-            if arch_type.name == Tok.KW_OBJECT
-            else SymbolType.NODE_ARCH
-            if arch_type.name == Tok.KW_NODE
-            else SymbolType.EDGE_ARCH
-            if arch_type.name == Tok.KW_EDGE
-            else SymbolType.WALKER_ARCH
-            if arch_type.name == Tok.KW_WALKER
-            else SymbolType.TYPE,
+            sym_type=(
+                SymbolType.OBJECT_ARCH
+                if arch_type.name == Tok.KW_OBJECT
+                else (
+                    SymbolType.NODE_ARCH
+                    if arch_type.name == Tok.KW_NODE
+                    else (
+                        SymbolType.EDGE_ARCH
+                        if arch_type.name == Tok.KW_EDGE
+                        else (
+                            SymbolType.WALKER_ARCH
+                            if arch_type.name == Tok.KW_WALKER
+                            else SymbolType.TYPE
+                        )
+                    )
+                )
+            ),
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
+
+    @property
+    def is_abstract(self) -> bool:
+        """Check if has an abstract method."""
+        body = (
+            self.body.items
+            if isinstance(self.body, SubNodeList)
+            else self.body.body.items if isinstance(self.body, ArchDef) else []
+        )
+        return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
 
 class ArchDef(ArchSpec, AstImplOnlyNode):
@@ -585,6 +617,7 @@ class Ability(
         name_ref: NameSpec,
         is_func: bool,
         is_async: bool,
+        is_override: bool,
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
@@ -598,6 +631,7 @@ class Ability(
         """Initialize func arch node."""
         self.name_ref = name_ref
         self.is_func = is_func
+        self.is_override = is_override
         self.is_static = is_static
         self.is_abstract = is_abstract
         self.decorators = decorators
@@ -1445,7 +1479,7 @@ class KVPair(AstNode):
 
     def __init__(
         self,
-        key: Expr,
+        key: Optional[Expr],  # is **key if blank
         value: Expr,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1460,7 +1494,7 @@ class KWPair(AstNode):
 
     def __init__(
         self,
-        key: NameSpec,
+        key: Optional[NameSpec],  # is **value if blank
         value: Expr,
         kid: Sequence[AstNode],
     ) -> None:

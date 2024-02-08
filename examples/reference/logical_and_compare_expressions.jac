@@ -1,6 +1,6 @@
 with entry{
 
-        if 5 < 4{
+        if 5 > 4{
             print("True");}
         elif "a" != "b"{
             print("'a' is 'a' ");}

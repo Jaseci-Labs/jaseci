@@ -1,4 +1,5 @@
 """Tests for Jac parser."""
+
 import inspect
 import io
 import sys
@@ -31,6 +32,14 @@ class TestFeatures(TestCase):
 
                     # Get the signature using inspect
                     signature = inspect.signature(value)
+                    new_parameters = []
+                    for (
+                        _,
+                        param,
+                    ) in signature.parameters.items():  # to strip defaults
+                        new_param = param.replace(default=inspect.Parameter.empty)
+                        new_parameters.append(new_param)
+                    signature = signature.replace(parameters=new_parameters)
                     methods.append(f"{name}{signature}")
                 except ValueError:
                     # This can happen if the method is not a Python function (e.g., built-in function)

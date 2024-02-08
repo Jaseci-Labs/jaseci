@@ -23,8 +23,8 @@ from asyncio.transports import (
 from collections.abc import Callable, Iterable, Sequence
 from contextvars import Context
 from socket import AddressFamily, SocketKind, _Address, _RetAddress, socket
-from typing import IO, Any, TypeVar, overload
-from typing_extensions import Literal, TypeAlias
+from typing import IO, Any, Literal, TypeVar, overload
+from typing_extensions import TypeAlias, TypeVarTuple, Unpack
 
 if sys.version_info >= (3, 9):
     __all__ = ("BaseEventLoop", "Server")
@@ -32,6 +32,7 @@ else:
     __all__ = ("BaseEventLoop",)
 
 _T = TypeVar("_T")
+_Ts = TypeVarTuple("_Ts")
 _ProtocolT = TypeVar("_ProtocolT", bound=BaseProtocol)
 _Context: TypeAlias = dict[str, Any]
 _ExceptionHandler: TypeAlias = Callable[[AbstractEventLoop, _Context], object]
@@ -65,13 +66,8 @@ class Server(AbstractServer):
     def is_serving(self) -> bool: ...
     async def start_serving(self) -> None: ...
     async def serve_forever(self) -> None: ...
-    if sys.version_info >= (3, 8):
-        @property
-        def sockets(self) -> tuple[socket, ...]: ...
-    else:
-        @property
-        def sockets(self) -> list[socket]: ...
-
+    @property
+    def sockets(self) -> tuple[socket, ...]: ...
     def close(self) -> None: ...
     async def wait_closed(self) -> None: ...
 
@@ -86,22 +82,22 @@ class BaseEventLoop(AbstractEventLoop):
     # Methods scheduling callbacks.  All these return Handles.
     def call_soon(
         self,
-        callback: Callable[..., object],
-        *args: Any,
+        callback: Callable[[Unpack[_Ts]], object],
+        *args: Unpack[_Ts],
         context: Context | None = None,
     ) -> Handle: ...
     def call_later(
         self,
         delay: float,
-        callback: Callable[..., object],
-        *args: Any,
+        callback: Callable[[Unpack[_Ts]], object],
+        *args: Unpack[_Ts],
         context: Context | None = None,
     ) -> TimerHandle: ...
     def call_at(
         self,
         when: float,
-        callback: Callable[..., object],
-        *args: Any,
+        callback: Callable[[Unpack[_Ts]], object],
+        *args: Unpack[_Ts],
         context: Context | None = None,
     ) -> TimerHandle: ...
     def time(self) -> float: ...
@@ -116,24 +112,22 @@ class BaseEventLoop(AbstractEventLoop):
             name: object = None,
             context: Context | None = None,
         ) -> Task[_T]: ...
-    elif sys.version_info >= (3, 8):
+    else:
         def create_task(
             self, coro: _CoroutineLike[_T], *, name: object = None
         ) -> Task[_T]: ...
-    else:
-        def create_task(self, coro: _CoroutineLike[_T]) -> Task[_T]: ...
 
     def set_task_factory(self, factory: _TaskFactory | None) -> None: ...
     def get_task_factory(self) -> _TaskFactory | None: ...
     # Methods for interacting with threads
     def call_soon_threadsafe(
         self,
-        callback: Callable[..., object],
-        *args: Any,
+        callback: Callable[[Unpack[_Ts]], object],
+        *args: Unpack[_Ts],
         context: Context | None = None,
     ) -> Handle: ...
     def run_in_executor(
-        self, executor: Any, func: Callable[..., _T], *args: Any
+        self, executor: Any, func: Callable[[Unpack[_Ts]], _T], *args: Unpack[_Ts]
     ) -> Future[_T]: ...
     def set_default_executor(self, executor: Any) -> None: ...
     # Network I/O methods returning Futures.
@@ -238,43 +232,6 @@ class BaseEventLoop(AbstractEventLoop):
             happy_eyeballs_delay: float | None = None,
             interleave: int | None = None,
         ) -> tuple[Transport, _ProtocolT]: ...
-    elif sys.version_info >= (3, 8):
-        @overload
-        async def create_connection(
-            self,
-            protocol_factory: Callable[[], _ProtocolT],
-            host: str = ...,
-            port: int = ...,
-            *,
-            ssl: _SSLContext = None,
-            family: int = 0,
-            proto: int = 0,
-            flags: int = 0,
-            sock: None = None,
-            local_addr: tuple[str, int] | None = None,
-            server_hostname: str | None = None,
-            ssl_handshake_timeout: float | None = None,
-            happy_eyeballs_delay: float | None = None,
-            interleave: int | None = None,
-        ) -> tuple[Transport, _ProtocolT]: ...
-        @overload
-        async def create_connection(
-            self,
-            protocol_factory: Callable[[], _ProtocolT],
-            host: None = None,
-            port: None = None,
-            *,
-            ssl: _SSLContext = None,
-            family: int = 0,
-            proto: int = 0,
-            flags: int = 0,
-            sock: socket,
-            local_addr: None = None,
-            server_hostname: str | None = None,
-            ssl_handshake_timeout: float | None = None,
-            happy_eyeballs_delay: float | None = None,
-            interleave: int | None = None,
-        ) -> tuple[Transport, _ProtocolT]: ...
     else:
         @overload
         async def create_connection(
@@ -291,6 +248,8 @@ class BaseEventLoop(AbstractEventLoop):
             local_addr: tuple[str, int] | None = None,
             server_hostname: str | None = None,
             ssl_handshake_timeout: float | None = None,
+            happy_eyeballs_delay: float | None = None,
+            interleave: int | None = None,
         ) -> tuple[Transport, _ProtocolT]: ...
         @overload
         async def create_connection(
@@ -307,6 +266,8 @@ class BaseEventLoop(AbstractEventLoop):
             local_addr: None = None,
             server_hostname: str | None = None,
             ssl_handshake_timeout: float | None = None,
+            happy_eyeballs_delay: float | None = None,
+            interleave: int | None = None,
         ) -> tuple[Transport, _ProtocolT]: ...
     if sys.version_info >= (3, 11):
         @overload
@@ -505,11 +466,17 @@ class BaseEventLoop(AbstractEventLoop):
         **kwargs: Any,
     ) -> tuple[SubprocessTransport, _ProtocolT]: ...
     def add_reader(
-        self, fd: FileDescriptorLike, callback: Callable[..., Any], *args: Any
+        self,
+        fd: FileDescriptorLike,
+        callback: Callable[[Unpack[_Ts]], Any],
+        *args: Unpack[_Ts],
     ) -> None: ...
     def remove_reader(self, fd: FileDescriptorLike) -> bool: ...
     def add_writer(
-        self, fd: FileDescriptorLike, callback: Callable[..., Any], *args: Any
+        self,
+        fd: FileDescriptorLike,
+        callback: Callable[[Unpack[_Ts]], Any],
+        *args: Unpack[_Ts],
     ) -> None: ...
     def remove_writer(self, fd: FileDescriptorLike) -> bool: ...
     # The sock_* methods (and probably some others) are not actually implemented on
@@ -531,7 +498,7 @@ class BaseEventLoop(AbstractEventLoop):
         ) -> int: ...
     # Signal handling.
     def add_signal_handler(
-        self, sig: int, callback: Callable[..., Any], *args: Any
+        self, sig: int, callback: Callable[[Unpack[_Ts]], Any], *args: Unpack[_Ts]
     ) -> None: ...
     def remove_signal_handler(self, sig: int) -> bool: ...
     # Error handlers.

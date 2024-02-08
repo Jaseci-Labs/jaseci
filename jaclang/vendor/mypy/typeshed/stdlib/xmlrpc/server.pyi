@@ -73,10 +73,13 @@ class SimpleXMLRPCDispatcher:  # undocumented
     def _marshaled_dispatch(
         self,
         data: str,
-        dispatch_method: Callable[
-            [str | None, tuple[_Marshallable, ...]], Fault | tuple[_Marshallable, ...]
-        ]
-        | None = None,
+        dispatch_method: (
+            Callable[
+                [str | None, tuple[_Marshallable, ...]],
+                Fault | tuple[_Marshallable, ...],
+            ]
+            | None
+        ) = None,
         path: Any | None = None,
     ) -> str: ...  # undocumented
     def system_listMethods(self) -> list[str]: ...  # undocumented

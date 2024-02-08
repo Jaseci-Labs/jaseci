@@ -1,4 +1,5 @@
 """Constants across the project."""
+
 from enum import Enum
 
 
@@ -162,6 +163,7 @@ class Tokens(str, Enum):
     COMMA = "COMMA"
     KW_CAN = "KW_CAN"
     KW_STATIC = "KW_STATIC"
+    KW_OVERRIDE = "KW_OVERRIDE"
     KW_MATCH = "KW_MATCH"
     KW_CASE = "KW_CASE"
     PLUS = "PLUS"
@@ -220,6 +222,7 @@ class Tokens(str, Enum):
     FSTR_SQ_START = "FSTR_SQ_START"
     FSTR_SQ_END = "FSTR_SQ_END"
     FSTR_PIECE = "FSTR_PIECE"
+    FSTR_SQ_PIECE = "FSTR_SQ_PIECE"
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"

@@ -1,4 +1,4 @@
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.plugin.feature import JacFeature as jac
 
 
 def print_base_classes(cls: type) -> type:
@@ -6,31 +6,33 @@ def print_base_classes(cls: type) -> type:
     return cls
 
 
+@jac.make_obj(on_entry=[], on_exit=[])
 class Animal:
     pass
 
 
+@jac.make_obj(on_entry=[], on_exit=[])
 class Domesticated:
     pass
 
 
 @print_base_classes
-@Jac.make_architype("node", on_entry=[], on_exit=[])
+@jac.make_node(on_entry=[], on_exit=[])
 class Mammal(Animal, Domesticated):
     pass
 
 
-@Jac.make_architype("walker", on_entry=[], on_exit=[])
+@jac.make_walker(on_entry=[], on_exit=[])
 class Dog(Mammal):
     pass
 
 
-@Jac.make_architype("walker", on_entry=[], on_exit=[])
+@jac.make_walker(on_entry=[], on_exit=[])
 class Labrador(Dog):
     pass
 
 
 @print_base_classes
-@Jac.make_architype("walker", on_entry=[], on_exit=[])
+@jac.make_walker(on_entry=[], on_exit=[])
 class DecoratedLabrador(Labrador):
     pass

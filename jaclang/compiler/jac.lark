@@ -18,7 +18,7 @@ element: import_stmt
 
 // Import/Include Statements
 import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
-           | KW_IMPORT sub_name import_path SEMI
+           | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
@@ -65,12 +65,11 @@ enum_stmt: NAME EQ expression
 
 // Abilities
 ability: decorators? ability_def
-        | decorators? KW_ASYNC ability_decl
-        | decorators? ability_decl
+        | decorators? KW_ASYNC? ability_decl
 
-ability_decl: KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
 func_decl_params: (param_var COMMA)* param_var
@@ -258,7 +257,11 @@ aug_op: RSHIFT_EQ
        | STAR_POW_EQ
 
 // Expressions
-expression: pipe (KW_IF expression KW_ELSE expression)? | lambda_expr
+expression: walrus_assign (KW_IF expression KW_ELSE expression)?
+          | lambda_expr
+
+// Walrus assignments
+walrus_assign: (any_ref WALRUS_EQ)? pipe
 
 // Lambda expressions
 lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
@@ -314,13 +317,10 @@ atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
 ds_spawn: (ds_spawn KW_SPAWN)? unpack
 
 // Unpack expressions
-unpack: (STAR_MUL | STAR_POW) unpack | ref
+unpack: STAR_MUL? ref
 
 // References (unused)
-ref: BW_AND? walrus_assign
-
-// Walrus assignments
-walrus_assign: (walrus_assign WALRUS_EQ)? pipe_call
+ref: BW_AND? pipe_call
 
 // Data spatial calls
 pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
@@ -357,12 +357,13 @@ atom_literal: builtin_type
             | HEX
             | INT
 
-multistring: (fstring | STRING)+
+multistring: (fstring | STRING | DOC_STRING)+
 
 fstring: FSTR_START fstr_parts FSTR_END
-       | FSTR_SQ_START fstr_parts FSTR_SQ_END
+       | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
 
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 
 // Collection values
 atom_collection: dict_compr
@@ -378,14 +379,14 @@ list_compr: LSQUARE expression inner_compr+ RSQUARE
 gen_compr: LPAREN expression inner_compr+ RPAREN
 set_compr: LBRACE expression inner_compr+ RBRACE
 dict_compr: LBRACE kv_pair inner_compr+ RBRACE
-inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN walrus_assign (KW_IF expression)?
+inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN pipe_call (KW_IF expression)?
 
 dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
 list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
 
-kv_pair: expression COLON expression
+kv_pair: expression COLON expression | STAR_POW expression
 expr_list: (expr_list COMMA)? expression
 
 // Tuples and Jac Tuples
@@ -396,7 +397,7 @@ tuple_list: expression COMMA expr_list COMMA kw_expr_list
           | kw_expr_list
 
 kw_expr_list: (kw_expr_list COMMA)? kw_expr
-kw_expr: any_ref EQ expression
+kw_expr: any_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
 edge_op_ref: edge_any
@@ -461,9 +462,9 @@ builtin_type: TYP_TYPE
 
 // Lexer Tokens
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
-DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
+DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-STRING: /(r?b?|b?r?)"[^"\r\n]*"|'[^'\r\n]*'/
+STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
 BOOL.1: /True|False/
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/
@@ -536,6 +537,7 @@ KW_HAS: "has"
 KW_GLOBAL: "glob"
 KW_CAN: "can"
 KW_STATIC: "static"
+KW_OVERRIDE: "override"
 KW_MATCH: "match"
 KW_CASE: "case"
 
@@ -636,6 +638,7 @@ FSTR_END: "\""
 FSTR_SQ_START.1: "f'"
 FSTR_SQ_END: "'"
 FSTR_PIECE.-1: /[^\{\}\"]+/
+FSTR_SQ_PIECE.-1: /[^\{\}\']+/
 FSTR_BESC.1: /{{|}}/
 
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/

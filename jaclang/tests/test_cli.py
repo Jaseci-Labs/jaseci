@@ -1,4 +1,5 @@
 """Test Jac cli module."""
+
 import io
 import subprocess
 import sys
@@ -92,3 +93,12 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn('[label="MultiString"]', stdout_value)
+
+    def test_type_check(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.check(f"{self.fixture_abs_path('game1.jac')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Errors: 0, Warnings: 1", stdout_value)

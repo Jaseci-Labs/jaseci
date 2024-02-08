@@ -1,7 +1,6 @@
 import sys
 from _typeshed import structseq
-from typing import Any
-from typing_extensions import Final, final
+from typing import Any, Final, final
 
 if sys.platform != "win32":
     @final
@@ -16,6 +15,7 @@ if sys.platform != "win32":
                 "pw_dir",
                 "pw_shell",
             )
+
         @property
         def pw_name(self) -> str: ...
         @property

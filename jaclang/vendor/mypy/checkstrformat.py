@@ -417,8 +417,7 @@ class StringFormatterChecker:
                 ):
                     # TODO: add support for some custom specs like datetime?
                     self.msg.fail(
-                        "Unrecognized format"
-                        ' specification "{}"'.format(spec.format_spec[1:]),
+                        f'Unrecognized format specification "{spec.format_spec[1:]}"',
                         call,
                         code=codes.STRING_FORMATTING,
                     )
@@ -534,8 +533,7 @@ class StringFormatterChecker:
                 expr = self.get_expr_by_name(key, call)
                 if not expr:
                     self.msg.fail(
-                        "Cannot find replacement for named"
-                        ' format specifier "{}"'.format(key),
+                        f'Cannot find replacement for named format specifier "{key}"',
                         call,
                         code=codes.STRING_FORMATTING,
                     )

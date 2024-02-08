@@ -1,13 +1,14 @@
 """Test ast build pass module."""
+
 import ast as ast3
 from difflib import unified_diff
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.compiler.transpiler import jac_file_to_pass, jac_str_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -87,7 +88,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        if "circle_clean_tests.jac" in filename:
+        if "circle_clean_tests.jac" in filename or "circle_pure.test.jac" in filename:
             tokens = code_gen_format.ir.gen.jac.split()
             num_test = 0
             for i in range(len(tokens)):
@@ -107,8 +108,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 len(code_gen_pure.ir.source.comments),
                 len(code_gen_jac.ir.source.comments),
             )
-            before = ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2)
-            after = ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2)
+            before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
+            after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
             self.assertEqual(
                 len("\n".join(unified_diff(before.splitlines(), after.splitlines()))),
                 0,

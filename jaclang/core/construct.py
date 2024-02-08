@@ -1,9 +1,11 @@
 """Core constructs for Jac Language."""
+
 from __future__ import annotations
 
 import types
+import unittest
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 
 from jaclang.compiler.constant import EdgeDir
@@ -14,7 +16,7 @@ from jaclang.core.utils import collect_node_connections
 class ElementAnchor:
     """Element Anchor."""
 
-    obj: Optional[Architype]
+    obj: Architype
 
 
 @dataclass(eq=False)
@@ -41,28 +43,25 @@ class NodeAnchor(ObjectAnchor):
         return self.obj
 
     def edges_to_nodes(
-        self, dir: EdgeDir, filter_type: Optional[type]
+        self, dir: EdgeDir, filter_type: Optional[type], filter_func: Optional[Callable]
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
-        ret_nodes: list[NodeArchitype] = []
-        if dir in [EdgeDir.OUT]:
-            for i in self.edges[EdgeDir.OUT]:
-                if i._jac_.target and (
-                    not filter_type or isinstance(i._jac_.target, filter_type)
-                ):
-                    ret_nodes.append(i._jac_.target)
-        elif dir in [EdgeDir.IN]:
-            for i in self.edges[EdgeDir.IN]:
-                if i._jac_.source and (
-                    not filter_type or isinstance(i._jac_.source, filter_type)
-                ):
-                    ret_nodes.append(i._jac_.source)
-        return ret_nodes
+        filter_func = filter_func or (lambda x: x)
+        edge_list = [
+            e
+            for e in self.edges[dir]
+            if getattr(e._jac_, "target" if dir == EdgeDir.OUT else "source", None)
+            and (not filter_type or isinstance(e, filter_type))
+        ]
+        return [
+            getattr(e._jac_, "target" if dir == EdgeDir.OUT else "source")
+            for e in filter_func(edge_list)
+        ]
 
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        visited_nodes = set()
-        connections = set()
+        visited_nodes: set[NodeAnchor] = set()
+        connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
         unique_node_id_dict = {}
 
         collect_node_connections(self, visited_nodes, connections)
@@ -74,14 +73,13 @@ class NodeAnchor(ObjectAnchor):
 
         for pair in list(set(connections)):
             dot_content += (
-                f"{unique_node_id_dict.get(pair[0])[1]} -> {unique_node_id_dict.get(pair[1])[1]}"
+                f"{unique_node_id_dict[pair[0]][1]} -> {unique_node_id_dict[pair[1]][1]}"
                 f' [label="{pair[2]}"];\n'
             )
         if dot_file:
             with open(dot_file, "w") as f:
                 f.write(dot_content + "}")
-        else:
-            print(dot_content + "}")
+        return dot_content + "}"
 
 
 @dataclass(eq=False)
@@ -225,7 +223,7 @@ class Architype:
 
     def __init__(self) -> None:
         """Create default architype."""
-        self._jac_ = ObjectAnchor(obj=self)
+        self._jac_: ObjectAnchor = ObjectAnchor(obj=self)
 
 
 class NodeArchitype(Architype):
@@ -233,7 +231,7 @@ class NodeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create node architype."""
-        self._jac_ = NodeAnchor(obj=self)
+        self._jac_: NodeAnchor = NodeAnchor(obj=self)
 
 
 class EdgeArchitype(Architype):
@@ -241,7 +239,7 @@ class EdgeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create edge architype."""
-        self._jac_ = EdgeAnchor(obj=self)
+        self._jac_: EdgeAnchor = EdgeAnchor(obj=self)
 
 
 class WalkerArchitype(Architype):
@@ -249,7 +247,7 @@ class WalkerArchitype(Architype):
 
     def __init__(self) -> None:
         """Create walker architype."""
-        self._jac_ = WalkerAnchor(obj=self)
+        self._jac_: WalkerAnchor = WalkerAnchor(obj=self)
 
 
 class Root(NodeArchitype):
@@ -277,6 +275,33 @@ class DSFunc:
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
         self.func = getattr(cls, self.name)
+
+
+class JacTestCheck:
+    """Jac Testing and Checking."""
+
+    test_case = unittest.TestCase()
+    test_suite = unittest.TestSuite()
+
+    @staticmethod
+    def reset() -> None:
+        """Clear the test suite."""
+        JacTestCheck.test_case = unittest.TestCase()
+        JacTestCheck.test_suite = unittest.TestSuite()
+
+    @staticmethod
+    def run_test() -> None:
+        """Run the test suite."""
+        unittest.TextTestRunner().run(JacTestCheck.test_suite)
+
+    @staticmethod
+    def add_test(test_fun: Callable) -> None:
+        """Create a new test."""
+        JacTestCheck.test_suite.addTest(unittest.FunctionTestCase(test_fun))
+
+    def __getattr__(self, name: str) -> Union[bool, Any]:
+        """Make convenient check.Equal(...) etc."""
+        return getattr(JacTestCheck.test_case, "assert" + name)
 
 
 root = Root()

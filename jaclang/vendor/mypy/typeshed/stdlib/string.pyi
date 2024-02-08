@@ -91,9 +91,7 @@ class Formatter:
         recursion_depth: int,
         auto_arg_index: int = 0,
     ) -> tuple[str, int]: ...
-    def parse(
-        self, format_string: StrOrLiteralStr
-    ) -> Iterable[
+    def parse(self, format_string: StrOrLiteralStr) -> Iterable[
         tuple[
             StrOrLiteralStr,
             StrOrLiteralStr | None,

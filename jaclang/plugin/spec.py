@@ -1,48 +1,25 @@
 """Jac Language Features."""
+
 from __future__ import annotations
 
-
+import types
 from typing import Any, Callable, Optional, Type, TypeVar
 
-from jaclang.core.construct import (
+from jaclang.compiler.absyntree import Module
+from jaclang.plugin.default import (
     Architype,
     DSFunc,
-    EdgeAnchor,
     EdgeArchitype,
     EdgeDir,
-    GenericEdge,
-    NodeAnchor,
     NodeArchitype,
-    ObjectAnchor,
-    Root,
-    WalkerAnchor,
     WalkerArchitype,
-    root,
 )
-
-__all__ = [
-    "EdgeAnchor",
-    "GenericEdge",
-    "NodeAnchor",
-    "ObjectAnchor",
-    "WalkerAnchor",
-    "NodeArchitype",
-    "EdgeArchitype",
-    "WalkerArchitype",
-    "Architype",
-    "DSFunc",
-    "EdgeDir",
-    "root",
-    "Root",
-]
 
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
 
-
 T = TypeVar("T")
-ArchBound = TypeVar("ArchBound", bound=Architype)
 
 
 class JacFeatureSpec:
@@ -51,9 +28,71 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def make_architype(
-        arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]
+        cls: type,
+        arch_base: Type[Architype],
+        on_entry: list[DSFunc],
+        on_exit: list[DSFunc],
+    ) -> Type[Architype]:
+        """Create a obj architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_obj(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
-        """Create a new architype."""
+        """Create a obj architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_node(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a node architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_walker(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a walker architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def jac_import(
+        target: str,
+        base_path: str,
+        cachable: bool,
+        override_name: Optional[str],
+        mod_bundle: Optional[Module],
+    ) -> Optional[types.ModuleType]:
+        """Core Import Process."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def create_test(test_fun: Callable) -> Callable:
+        """Create a new test."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def run_test(filename: str) -> bool:
+        """Run the test suite in the specified .jac file.
+
+        :param filename: The path to the .jac file.
+        """
         raise NotImplementedError
 
     @staticmethod
@@ -64,13 +103,13 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def has_container_default(container: list | dict) -> list[Any] | dict[Any, Any]:
+    def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def spawn_call(op1: Architype, op2: Architype) -> Architype:
+    def spawn_call(op1: Architype, op2: Architype) -> bool:
         """Jac's spawn operator feature."""
         raise NotImplementedError
 
@@ -110,6 +149,7 @@ class JacFeatureSpec:
         node_obj: NodeArchitype,
         dir: EdgeDir,
         filter_type: Optional[type],
+        filter_func: Optional[Callable],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
@@ -152,7 +192,7 @@ class JacFeatureSpec:
     def build_edge(
         edge_dir: EdgeDir,
         conn_type: Optional[Type[Architype]],
-        conn_assign: Optional[tuple],
+        conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Architype:
         """Jac's root getter."""
         raise NotImplementedError

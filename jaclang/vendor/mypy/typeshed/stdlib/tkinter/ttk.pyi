@@ -1,11 +1,10 @@
 import _tkinter
-import sys
 import tkinter
 from _typeshed import Incomplete
 from collections.abc import Callable
 from tkinter.font import _FontDescription
-from typing import Any, overload
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing import Any, Literal, TypedDict, overload
+from typing_extensions import TypeAlias
 
 __all__ = [
     "Button",
@@ -985,18 +984,13 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         master: tkinter.Misc | None = None,
         *,
         class_: str = ...,
-        columns: str
-        | list[str]
-        | list[int]
-        | list[str | int]
-        | tuple[str | int, ...] = ...,
+        columns: (
+            str | list[str] | list[int] | list[str | int] | tuple[str | int, ...]
+        ) = ...,
         cursor: tkinter._Cursor = ...,
-        displaycolumns: str
-        | int
-        | list[str]
-        | tuple[str, ...]
-        | list[int]
-        | tuple[int, ...] = ...,
+        displaycolumns: (
+            str | int | list[str] | tuple[str, ...] | list[int] | tuple[int, ...]
+        ) = ...,
         height: int = ...,
         name: str = ...,
         padding: _Padding = ...,
@@ -1005,9 +999,11 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         #
         # 'tree headings' is same as ['tree', 'headings'], and I wouldn't be
         # surprised if someone is using it.
-        show: Literal["tree", "headings", "tree headings", ""]
-        | list[str]
-        | tuple[str, ...] = ...,
+        show: (
+            Literal["tree", "headings", "tree headings", ""]
+            | list[str]
+            | tuple[str, ...]
+        ) = ...,
         style: str = ...,
         takefocus: tkinter._TakeFocusValue = ...,
         xscrollcommand: tkinter._XYScrollCommand = ...,
@@ -1018,24 +1014,21 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        columns: str
-        | list[str]
-        | list[int]
-        | list[str | int]
-        | tuple[str | int, ...] = ...,
+        columns: (
+            str | list[str] | list[int] | list[str | int] | tuple[str | int, ...]
+        ) = ...,
         cursor: tkinter._Cursor = ...,
-        displaycolumns: str
-        | int
-        | list[str]
-        | tuple[str, ...]
-        | list[int]
-        | tuple[int, ...] = ...,
+        displaycolumns: (
+            str | int | list[str] | tuple[str, ...] | list[int] | tuple[int, ...]
+        ) = ...,
         height: int = ...,
         padding: _Padding = ...,
         selectmode: Literal["extended", "browse", "none"] = ...,
-        show: Literal["tree", "headings", "tree headings", ""]
-        | list[str]
-        | tuple[str, ...] = ...,
+        show: (
+            Literal["tree", "headings", "tree headings", ""]
+            | list[str]
+            | tuple[str, ...]
+        ) = ...,
         style: str = ...,
         takefocus: tkinter._TakeFocusValue = ...,
         xscrollcommand: tkinter._XYScrollCommand = ...,
@@ -1176,13 +1169,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         self, item: str | int
     ) -> str: ...  # returning empty string means first item
     def see(self, item: str | int) -> None: ...
-    if sys.version_info >= (3, 8):
-        def selection(self) -> tuple[str, ...]: ...
-    else:
-        def selection(
-            self, selop: Incomplete | None = ..., items: Incomplete | None = None
-        ) -> tuple[str, ...]: ...
-
+    def selection(self) -> tuple[str, ...]: ...
     @overload
     def selection_set(
         self, __items: list[str] | tuple[str, ...] | list[int] | tuple[int, ...]
