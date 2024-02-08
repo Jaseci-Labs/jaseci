@@ -260,7 +260,7 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def edge_ref(
-        node_obj: NodeArchitype,
+        node_obj: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable],
@@ -268,6 +268,13 @@ class JacFeatureDefaults:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
             return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
+        elif isinstance(node_obj, list):
+            connected_nodes = []
+            for node in node_obj:
+                connected_nodes.extend(
+                    node._jac_.edges_to_nodes(dir, filter_type, filter_func)
+                )
+            return connected_nodes
         else:
             raise TypeError("Invalid node object")
 

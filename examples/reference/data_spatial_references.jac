@@ -1,34 +1,30 @@
-node node_a {
-    has value: int;
+node node_a{
+    has val:int;
 }
-
-walker Creator {
+walker Creator{
     can create with `<root> entry;
 }
 
-edge MyEdge {
-    has val: int = 5;
+edge connector{
+    has value:int = 10;
 }
 
 :walker:Creator:can:create {
     end = <here>;
-    for i=0 to i<4 by i+=1  {
-        if i % 2 == 0 {
-            end ++> (end := node_a(value=i));
-        } else {
-            #end +:MyEdge:val=i:+> (end := node_a(value=i + 10));
-            #end <+:MyEdge:val=i :+ (end := node_a(value=i + 10));
-            print(end);
-            <r> <+: MyEdge:val=i :+ end;
-
-        }
+    for i=0 to i<3 by i+=1  {
+        end ++> (end := node_a(val=i));
     }
+    end +:connector:value=i:+> (end := node_a(val=i + 10));
+    # <root> <+:connector:value=i :+ (end := node_a(val=i + 10));
+    # # print(end);
+    # <r> <+: MyEdge:val=i :+ end;
 }
 
-with entry {
+with entry{
     <root> spawn Creator();
-
     print(<r>._jac_.gen_dot());
 }
+
+
 
 

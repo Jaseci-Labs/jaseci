@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shelve
 import types
 import unittest
 from dataclasses import dataclass, field
@@ -9,7 +10,6 @@ from typing import Any, Callable, Optional, Union
 
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.utils import collect_node_connections
 
 
 @dataclass(eq=False)
@@ -40,8 +40,6 @@ class NodeAnchor(ObjectAnchor):
     def connect_node(self, nd: NodeArchitype, edg: EdgeArchitype) -> NodeArchitype:
         """Connect a node with given edge."""
         edg._jac_.attach(self.obj, nd)
-        print("##########")
-        print(self.obj, "------->", nd)
         return self.obj
 
     def edges_to_nodes(
@@ -62,22 +60,17 @@ class NodeAnchor(ObjectAnchor):
 
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        visited_nodes: set[NodeAnchor] = set()
-        connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
-        unique_node_id_dict = {}
+        unique_node: list[NodeArchitype] = []
+        dot_content = "digraph{\n"
+        for i, j, k in root.connections:
+            if i not in unique_node:
+                unique_node.append(i)
+                dot_content += f'{unique_node.index(i)} [label="{i}"];\n'
+            if j not in unique_node:
+                unique_node.append(j)
+                dot_content += f'{unique_node.index(j)} [label="{j}"];\n'
+            dot_content += f'{unique_node.index(i)}->{unique_node.index(j)} [label="{k.__class__.__name__}"];\n'
 
-        collect_node_connections(self, visited_nodes, connections)
-        dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
-        for idx, i in enumerate([nodes_.obj for nodes_ in visited_nodes]):
-            unique_node_id_dict[i] = (i.__class__.__name__, str(idx))
-            dot_content += f'{idx} [label="{i}"];\n'
-        dot_content += 'edge [color="gray", style="solid"];\n'
-
-        for pair in list(set(connections)):
-            dot_content += (
-                f"{unique_node_id_dict[pair[0]][1]} -> {unique_node_id_dict[pair[1]][1]}"
-                f' [label="{pair[2]}"];\n'
-            )
         if dot_file:
             with open(dot_file, "w") as f:
                 f.write(dot_content + "}")
@@ -101,11 +94,13 @@ class EdgeAnchor(ObjectAnchor):
     def attach(self, src: NodeArchitype, trg: NodeArchitype) -> EdgeAnchor:
         """Attach edge to nodes."""
         if self.dir == EdgeDir.IN:
+            root.update_reachable_nodes(trg, src, self.obj)
             self.source = trg
             self.target = src
             self.source._jac_.edges[EdgeDir.IN].append(self.obj)
             self.target._jac_.edges[EdgeDir.OUT].append(self.obj)
         else:
+            root.update_reachable_nodes(src, trg, self.obj)
             self.source = src
             self.target = trg
             self.source._jac_.edges[EdgeDir.OUT].append(self.obj)
@@ -257,6 +252,31 @@ class Root(NodeArchitype):
 
     _jac_entry_funcs_ = []
     _jac_exit_funcs_ = []
+    reachable_nodes: list[NodeArchitype] = []
+    connections: set[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = set()
+
+    def update_reachable_nodes(
+        self, node_1: NodeArchitype, node_2: NodeArchitype, edg: EdgeArchitype
+    ) -> None:
+        """Update reachable_nodes list."""
+        self.connections.add((node_1, node_2, edg))
+
+        # def update_shelf(node: NodeArchitype) -> None:
+        #     """Store node information in shelve."""
+        #     with shelve.open("ztest1") as shelf:
+        #         shelf[str(id(node))] = str(vars(node))
+
+        # if not self.reachable_nodes:
+        #     self.reachable_nodes.extend([node_1, node_2])
+        #     update_shelf(node_1)
+        #     update_shelf(node_2)
+        # else:
+        #     if node_1 not in self.reachable_nodes:
+        #         self.reachable_nodes.append(node_1)
+        #         update_shelf(node_1)
+        #     if node_2 not in self.reachable_nodes:
+        #         self.reachable_nodes.append(node_2)
+        #         update_shelf(node_2)
 
 
 class GenericEdge(EdgeArchitype):
