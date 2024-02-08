@@ -307,9 +307,6 @@
 				},
 				{
 					"include": "#py_style_comment"
-				},
-				{
-					"include": "#js_style_comment"
 				}
 			]
 		},

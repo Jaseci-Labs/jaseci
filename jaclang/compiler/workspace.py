@@ -8,6 +8,7 @@ from typing import Sequence
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.passes.main import DefUsePass
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
 
@@ -104,7 +105,7 @@ class Workspace:
         build = jac_str_to_pass(
             jac_str=source,
             file_path=file_path,
-            target=DefUsePass,
+            schedule=py_code_gen_typed,
         )
         if not isinstance(build.ir, ast.Module):
             src = ast.JacSource(source, mod_path=file_path)
@@ -147,15 +148,26 @@ class Workspace:
         """Return a list of files in the workspace."""
         return list(self.modules.keys())
 
-    def get_dependencies(self, file_path: str, deep: bool = False) -> list[ast.Import]:
+    def get_dependencies(
+        self, file_path: str, deep: bool = False
+    ) -> list[ast.ModulePath]:
         """Return a list of dependencies for a file."""
         if deep:
-            return self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
+            return [
+                i
+                for i in self.modules[file_path].ir.get_all_sub_nodes(ast.ModulePath)
+                if i.parent
+                and isinstance(i.parent, ast.Import)
+                and i.parent.lang.tag.value == "jac"
+            ]
         else:
             return [
                 i
-                for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
+                for i in self.modules[file_path].ir.get_all_sub_nodes(ast.ModulePath)
                 if i.loc.mod_path == file_path
+                and i.parent
+                and isinstance(i.parent, ast.Import)
+                and i.parent.lang.tag.value == "jac"
             ]
 
     def get_symbols(self, file_path: str) -> Sequence[Symbol]:
