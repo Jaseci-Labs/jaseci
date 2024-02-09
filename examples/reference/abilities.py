@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Calculator:
+class Calculator(ABC):
     @staticmethod
     def multiply(a: float, b: float) -> float:
         return a * b
@@ -19,9 +19,14 @@ class Substractor(Calculator):
         return x - y
 
 
-cal = Calculator()
-sub = Substractor()
+class Divider:
+    def divide(self, x: float, y: float):
+        return x / y
 
+
+sub = Substractor()
+div = Divider()
+print(div.divide(55, 11))
 print(Calculator.multiply(9, -2))
-print(cal.add(5, 20, 34, 56))
+print(sub.add(5, 20, 34, 56))
 print(sub.substract(9, -2))

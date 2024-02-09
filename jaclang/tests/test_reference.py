@@ -6,6 +6,7 @@ from contextlib import redirect_stdout
 from typing import Callable, Optional
 
 import jaclang
+import jaclang.core.construct as jcon
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
@@ -53,10 +54,18 @@ class JacReferenceTests(TestCase):
         def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
             f = io.StringIO()
             with redirect_stdout(f):
-                exec(code, {"__file__": filename})
+                exec(
+                    code,
+                    {
+                        "__file__": filename,
+                        "__name__": "__main__",
+                        "__jac_mod_bundle__": None,
+                    },
+                )
             return f.getvalue()
 
         try:
+            jcon.root.reset()
             jacast = jac_file_to_pass(filename).ir
             code_content = compile(
                 source=jacast.gen.py_ast[0],

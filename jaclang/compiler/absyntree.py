@@ -1584,7 +1584,7 @@ class AtomTrailer(Expr):
         self,
         target: Expr,
         right: AtomExpr | Expr,
-        is_attr: bool,
+        is_attr: Optional[Token | EdgeOpRef],
         is_null_ok: bool,
         kid: Sequence[AstNode],
     ) -> None:
