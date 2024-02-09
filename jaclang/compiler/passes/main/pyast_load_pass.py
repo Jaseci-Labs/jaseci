@@ -54,15 +54,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             type_ignores: list[TypeIgnore]
         """
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
-        for i in elements:
-            print("elements: ", i)
         valid = [
             i
             for i in elements
             if isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
         ]
-        for i in valid:
-            print("valid elements: ", i)
         if len(valid) != len(elements):
             self.error("Invalid module body")
         ret = ast.Module(
@@ -280,7 +276,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value: expr
         """
         value = self.convert(node.value)
-        if isinstance(value, (ast.Expr)):
+        if isinstance(value, ast.Expr):
             value_subtag = ast.SubTag[ast.Expr](tag=value, kid=[value])
         else:
             raise self.ice()
@@ -993,124 +989,30 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_if_exp(self, node: py_ast.IfExp) -> None:
         """Process python node."""
 
-    def proc_import(self, node: py_ast.Import) -> ast.Import:
-        """Process python node.
+    def proc_import(self, node: py_ast.Import) -> None:
+        """Process python node."""
 
-        class Import(stmt):
-        if sys.version_info >= (3, 10):
-            __match_args__ = ("names",)
-        names: list[alias]
-        """
-        names = [self.convert(name) for name in node.names]
-        valid_names = [name for name in names if isinstance(name, ast.ModuleItem)]
-        if len(valid_names) != len(names):
-            self.error("Length mismatch in classes body")
-        print("iside import: ", len(valid_names), len(names))
-        valid_names2 = ast.SubNodeList[ast.ModuleItem](items=valid_names, kid=names)
-
-        paths: list[ast.Token] = []
-        for name in node.names:
-            paths.append(
-                ast.Token(
-                    file_path=os.path.abspath(name.name),
-                    name=Tok.__module__,
-                    value="module",
-                    line=node.lineno,
-                    col_start=0,
-                    col_end=0,
-                    pos_start=0,
-                    pos_end=0,
-                    kid=[],
-                )
-            )
-        path = ast.ModulePath(
-            path=paths,
-            alias=None,
-            kid=[valid_names2],
-        )
-        ret = ast.Import(
-            lang="py",
-            path=path,
-            items=valid_names2,
-            is_absorb=True,
-            kid=[valid_names2],
-        )
-        return ret
-
-    def proc_import_from(self, node: py_ast.ImportFrom) -> None:
-        """Process python node.
-
-        class ImportFrom(stmt):
-        if sys.version_info >= (3, 10):
-            __match_args__ = ("module", "names", "level")
-        module: str | None
-        names: list[alias]
-        level: int
-        """
-        print("level: ", node.level)
-        module_path = os.path.abspath(node.module)
-        module = ast.Token(
-            file_path=module_path,
-            name=Tok.__module__,
-            value="module",
-            line=node.lineno,
-            col_start=0,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-            kid=[],
-        )
-        paths: list[ast.Token] = [module]
-
-        names = [self.convert(name) for name in node.names]
-        valid_names = [name for name in names if isinstance(name, ast.ModuleItem)]
-        if len(valid_names) != len(names):
-            self.error("Length mismatch in classes body")
-        print("iside import from: ", len(valid_names), len(names))
-        valid_names2 = ast.SubNodeList[ast.ModuleItem](items=valid_names, kid=names)
-
-        for name in node.names:
-            file_path = os.path.abspath(name.name)
-            print("file path: ", file_path)
-            paths.append(
-                ast.Token(
-                    file_path=file_path,
-                    name=Tok.__module__,
-                    value="module",
-                    line=node.lineno,
-                    col_start=0,
-                    col_end=0,
-                    pos_start=0,
-                    pos_end=0,
-                    kid=[],
-                )
-            )
-        for i in valid_names:
-            print("insiade valid names: ", i.name, ",", i.alias)
-        # alias = ast.Name(
-        #     file_path=module_path,
-        #     name=Tok.NAME,
-        #     value=node.id,
-        #     line=node.lineno,
-        #     col_start=node.col_offset,
-        #     col_end=node.col_offset + len(node.id),
-        #     pos_start=0,
-        #     pos_end=0,
+        # class Import(stmt):
+        # if sys.version_info >= (3, 10):
+        #     __match_args__ = ("names",)
+        # names: list[alias]
+        # """
+        # names = [self.convert(name) for name in node.names]
+        # valid_names = [name for name in names if isinstance(name, ast.ModuleItem)]
+        # # if len(valid_names) != len(names):
+        # #     self.error("Length mismatch in classes body")
+        # valid_names2 = ast.SubNodeList[ast.ModuleItem](items=valid_names, kid=names)
+        # ret = ast.Import(
+        #     lang="py",
+        #     path=ast.ModulePath,
+        #     items=valid_names2,
+        #     is_absorb=True,
         #     kid=[],
         # )
-        path = ast.ModulePath(
-            path=paths,
-            alias=None,
-            kid=[valid_names2],
-        )
-        ret = ast.Import(
-            lang="py",
-            path=path,
-            items=valid_names2,
-            is_absorb=True,
-            kid=[path, valid_names2],
-        )
-        return ret
+        # return ret
+
+    def proc_import_from(self, node: py_ast.ImportFrom) -> None:
+        """Process python node."""
 
     def proc_joined_str(self, node: py_ast.JoinedStr) -> ast.MultiString:
         """Process python node.
@@ -1268,44 +1170,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_yield_from(self, node: py_ast.YieldFrom) -> None:
         """Process python node."""
 
-    def proc_alias(self, node: py_ast.alias) -> ast.ModuleItem:
-        """Process python node.
-
-        class alias(AST):
-        if sys.version_info >= (3, 10):
-            __match_args__ = ("name", "asname")
-        name: _Identifier
-        asname: _Identifier | None
-        """
-        name = ast.Name(
-            file_path=self.mod_path,
-            name=Tok.NAME,
-            value=node.name,
-            line=node.lineno,
-            col_start=node.col_offset,
-            col_end=node.col_offset + len(node.name),
-            pos_start=0,
-            pos_end=0,
-            kid=[],
-        )
-        asname: ast.Name | None = None
-        if node.asname:
-            asname = ast.Name(
-                file_path=self.mod_path,
-                name=Tok.NAME,
-                value=node.asname,
-                line=node.lineno,
-                col_start=node.col_offset,
-                col_end=node.col_offset + len(node.asname),
-                pos_start=0,
-                pos_end=0,
-                kid=[],
-            )
-        return ast.ModuleItem(
-            name=name,
-            alias=asname,
-            kid=[name] if asname is None else [name, asname],
-        )
+    def proc_alias(self, node: py_ast.alias) -> None:
+        """Process python node."""
 
     def proc_arg(self, node: py_ast.arg) -> None:
         """Process python node.
