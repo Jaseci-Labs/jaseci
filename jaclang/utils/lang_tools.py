@@ -197,40 +197,6 @@ class AstTool:
             output += f"{cls.doc} \n\n"
         return output
 
-    def dot_gen(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: print <file_path>"
-
-        file_name: str = args[0]
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            return jac_file_to_pass(file_name, DeclDefMatchPass).ir.dotgen()
-        else:
-            return "Not a .jac file."
-
-    def print(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: print <file_path>"
-
-        file_name: str = args[0]
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            return jac_file_to_pass(file_name, DeclDefMatchPass).ir.pp()
-        else:
-            return "Not a .jac file."
-
     def print_py(self, args: List[str]) -> str:
         """Generate a dot file for AST."""
         if len(args) == 0:
@@ -260,12 +226,15 @@ class AstTool:
         else:
             return "Not a .jac or .py file."
 
-    def symtab_print(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: print <file_path>"
+    def gen_tree(self, args: List[str]) -> str:
+        """Generate a AST or SymbolTable tree for .jac file."""
+        if len(args) != 2:
+            return (
+                "Usage: gen_tree <choose one of ( sym / sym. / ast / ast.)> <file_path>"
+            )
 
-        file_name: str = args[0]
+        output: str = args[0]
+        file_name: str = args[1]
 
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
@@ -273,32 +242,25 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            sym_tab = jac_file_to_pass(file_name, DeclDefMatchPass).ir.sym_tab
-            return (
-                sym_tab.pp() if isinstance(sym_tab, SymbolTable) else "Sym_tab is None."
-            )
-        else:
-            return "Not a .jac file."
-
-    def gen_symtab_dotfile(self, args: List[str]) -> str:
-        """Generate a dot file for Symbol Table."""
-        if len(args) == 0:
-            return "Usage: gen_dotfile <file_path> [<output_path>]"
-
-        file_name: str = args[0]
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            sym_tab = jac_file_to_pass(file_name, DeclDefMatchPass).ir.sym_tab
-            return (
-                sym_tab.dotgen()
-                if isinstance(sym_tab, SymbolTable)
-                else "Sym_tab is None."
-            )
+            ir = jac_file_to_pass(file_name, DeclDefMatchPass).ir
+            if output == "sym":
+                return (
+                    ir.sym_tab.pp()
+                    if isinstance(ir.sym_tab, SymbolTable)
+                    else "Sym_tab is None."
+                )
+            elif output == "sym.":
+                return (
+                    ir.sym_tab.dotgen()
+                    if isinstance(ir.sym_tab, SymbolTable)
+                    else "Sym_tab is None."
+                )
+            elif output == "ast":
+                return ir.pp()
+            elif output == "ast.":
+                return ir.dotgen()
+            else:
+                return "Invalid key: Use one of ( sym / sym. / ast / ast.) followed by file_path."
         else:
             return "Not a .jac file."
 
