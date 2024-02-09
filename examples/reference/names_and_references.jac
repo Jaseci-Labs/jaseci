@@ -5,7 +5,7 @@ obj Animal{
 }
 obj Dog:Animal:{
     can <init>( breed: str){
-        <super>.<init>(species='Dogg');
+        <super>.<init>(species='Dog');
         self.breed = breed;
         self.sound="";
         self.<post_init>();

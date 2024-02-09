@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import shelve
+# import shelve
 import types
 import unittest
 from dataclasses import dataclass, field

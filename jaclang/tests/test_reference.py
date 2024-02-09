@@ -54,7 +54,14 @@ class JacReferenceTests(TestCase):
         def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
             f = io.StringIO()
             with redirect_stdout(f):
-                exec(code, {"__file__": filename})
+                exec(
+                    code,
+                    {
+                        "__file__": filename,
+                        "__name__": "__main__",
+                        "__jac_mod_bundle__": None,
+                    },
+                )
             return f.getvalue()
 
         try:

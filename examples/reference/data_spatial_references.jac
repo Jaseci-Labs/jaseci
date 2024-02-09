@@ -1,8 +1,10 @@
-node node_a{
-    has val:int;
-}
 walker Creator{
     can create with `<root> entry;
+}
+
+node node_a{
+    has val:int;
+    can make_something with Creator entry;
 }
 
 edge connector{
@@ -16,8 +18,16 @@ edge connector{
     }
     end +:connector:value=i:+> (end := node_a(val=i + 10));
     <root> <+:connector:value=i :+ (end := node_a(val=i + 10));
-}
+    visit-->;
 
+}
+:node:node_a:can:make_something{
+    i=0;
+    while i<5{
+    print(f"wlecome to {<s>}");
+    i+=1;
+    }
+}
 with entry{
     <root> spawn Creator();
     print(<r>._jac_.gen_dot());
