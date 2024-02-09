@@ -54,15 +54,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             type_ignores: list[TypeIgnore]
         """
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
-        for i in elements:
-            print("elements: ", i)
+        # for i in elements:
+        #     print("elements: ", i)
         valid = [
             i
             for i in elements
-            if isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
+            if isinstance(
+                i,
+                (
+                    ast.ElementStmt,
+                    ast.String,
+                    ast.EmptyToken,
+                    ast.Assignment,
+                    ast.IfStmt,
+                ),
+            )
         ]
-        for i in valid:
-            print("valid elements: ", i)
+        # for i in valid:
+        #     print("valid elements: ", i)
         if len(valid) != len(elements):
             self.error("Invalid module body")
         ret = ast.Module(
@@ -202,11 +211,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        valid_body = [i for i in body if isinstance(i, (ast.ArchBlockStmt))]
-        # for i in body:
-        #     print(i)
-        # for i in valid_body:
-        #     print(i)
+        valid_body = [
+            i
+            for i in body
+            if isinstance(i, (ast.ArchBlockStmt, ast.Assignment, ast.String))
+        ]
         if len(valid_body) != len(body):
             # print(len(body), len(valid_body))
             self.error("Length mismatch in classes body")
@@ -1014,7 +1023,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 ast.Token(
                     file_path=os.path.abspath(name.name),
                     name=Tok.__module__,
-                    value="module",
+                    value=name.name,
                     line=node.lineno,
                     col_start=0,
                     col_end=0,
@@ -1033,11 +1042,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             path=path,
             items=valid_names2,
             is_absorb=True,
-            kid=[valid_names2],
+            kid=[path],
         )
         return ret
 
-    def proc_import_from(self, node: py_ast.ImportFrom) -> None:
+    def proc_import_from(self, node: py_ast.ImportFrom) -> ast.Import:
         """Process python node.
 
         class ImportFrom(stmt):
@@ -1047,12 +1056,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         names: list[alias]
         level: int
         """
-        print("level: ", node.level)
         module_path = os.path.abspath(node.module)
         module = ast.Token(
             file_path=module_path,
             name=Tok.__module__,
-            value="module",
+            value=node.module,
             line=node.lineno,
             col_start=0,
             col_end=0,
@@ -1069,24 +1077,23 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         print("iside import from: ", len(valid_names), len(names))
         valid_names2 = ast.SubNodeList[ast.ModuleItem](items=valid_names, kid=names)
 
-        for name in node.names:
-            file_path = os.path.abspath(name.name)
-            print("file path: ", file_path)
-            paths.append(
-                ast.Token(
-                    file_path=file_path,
-                    name=Tok.__module__,
-                    value="module",
-                    line=node.lineno,
-                    col_start=0,
-                    col_end=0,
-                    pos_start=0,
-                    pos_end=0,
-                    kid=[],
-                )
-            )
-        for i in valid_names:
-            print("insiade valid names: ", i.name, ",", i.alias)
+        # for name in node.names:
+        #     file_path = os.path.abspath(name.name)
+        #     print("file path: ", file_path)
+        #     paths.append(
+        #         ast.Token(
+        #             file_path=file_path,
+        #             name=Tok.__module__,
+        #             value=name.name,
+        #             line=node.lineno,
+        #             col_start=0,
+        #             col_end=0,
+        #             pos_start=0,
+        #             pos_end=0,
+        #             kid=[],
+        #         )
+        #     )
+
         # alias = ast.Name(
         #     file_path=module_path,
         #     name=Tok.NAME,
