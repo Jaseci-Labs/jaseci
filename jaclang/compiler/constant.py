@@ -37,9 +37,9 @@ class Constants(str, Enum):
 class EdgeDir(Enum):
     """Edge direction indicator."""
 
-    IN = 1
-    OUT = 2
-    ANY = 3
+    IN = 1  # <--
+    OUT = 2  # -->
+    ANY = 3  # <-->
 
 
 class Values(int, Enum):

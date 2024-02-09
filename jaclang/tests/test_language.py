@@ -107,7 +107,7 @@ class JacLanguageTests(TestCase):
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
-        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        construct.root._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("ignore", base_path=self.fixture_abs_path("./"))
@@ -201,7 +201,7 @@ class JacLanguageTests(TestCase):
 
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
-        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        construct.root._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_import", base_path=self.fixture_abs_path("./"))
@@ -211,7 +211,7 @@ class JacLanguageTests(TestCase):
 
     def test_has_lambda_goodness(self) -> None:
         """Test has lambda_goodness."""
-        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        construct.root._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("has_goodness", base_path=self.fixture_abs_path("./"))
@@ -222,7 +222,7 @@ class JacLanguageTests(TestCase):
 
     def test_conn_assign_on_edges(self) -> None:
         """Test conn assign on edges."""
-        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        construct.root._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("edge_ops", base_path=self.fixture_abs_path("./"))

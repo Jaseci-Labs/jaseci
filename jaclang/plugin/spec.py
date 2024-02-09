@@ -190,9 +190,9 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def build_edge(
-        edge_dir: EdgeDir,
-        conn_type: Optional[Type[Architype]],
+        is_undirected: bool,
+        conn_type: Optional[Type[EdgeArchitype]],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Architype:
+    ) -> EdgeArchitype:
         """Jac's root getter."""
         raise NotImplementedError

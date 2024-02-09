@@ -12,6 +12,7 @@ edge connector{
 }
 
 :walker:Creator:can:create {
+    import:py sys;
     end = <here>;
     for i=0 to i<3 by i+=1  {
         end ++> (end := node_a(val=i));

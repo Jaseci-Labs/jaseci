@@ -6,8 +6,8 @@ from contextlib import redirect_stdout
 from typing import Callable, Optional
 
 import jaclang
+import jaclang.core.construct as jcon
 from jaclang.compiler.compile import jac_file_to_pass
-from jaclang.core.construct import EdgeDir, root
 from jaclang.utils.test import TestCase
 
 
@@ -65,7 +65,7 @@ class JacReferenceTests(TestCase):
             return f.getvalue()
 
         try:
-            root._jac_.edges = {EdgeDir.IN: [], EdgeDir.OUT: []}
+            jcon.root.reset()
             jacast = jac_file_to_pass(filename).ir
             code_content = compile(
                 source=jacast.gen.py_ast[0],

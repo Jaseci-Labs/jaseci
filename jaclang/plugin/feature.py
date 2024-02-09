@@ -180,11 +180,11 @@ class JacFeature:
 
     @staticmethod
     def build_edge(
-        edge_dir: EdgeDir,
-        conn_type: Optional[Type[Architype]],
+        is_undirected: bool,
+        conn_type: Optional[Type[EdgeArchitype]],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Architype:
+    ) -> EdgeArchitype:
         """Jac's root getter."""
         return JacFeature.pm.hook.build_edge(
-            edge_dir=edge_dir, conn_type=conn_type, conn_assign=conn_assign
+            is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
         )

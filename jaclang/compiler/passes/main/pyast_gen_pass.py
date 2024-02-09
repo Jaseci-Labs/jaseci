@@ -8,7 +8,7 @@ import ast as ast3
 from typing import Optional, Sequence, TypeVar
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import Constants as Con, Tokens as Tok
+from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
 from jaclang.compiler.passes import Pass
 
 T = TypeVar("T", bound=ast3.AST)
@@ -1635,8 +1635,16 @@ class PyastGenPass(Pass):
                             )
                         ),
                         args=[
-                            node.left.gen.py_ast[0],
-                            node.right.gen.py_ast[0],
+                            (
+                                node.right.gen.py_ast[0]
+                                if node.op.edge_dir == EdgeDir.IN
+                                else node.left.gen.py_ast[0]
+                            ),
+                            (
+                                node.left.gen.py_ast[0]
+                                if node.op.edge_dir == EdgeDir.IN
+                                else node.right.gen.py_ast[0]
+                            ),
                             node.op.gen.py_ast[0],
                         ],
                         keywords=[],
@@ -2336,18 +2344,29 @@ class PyastGenPass(Pass):
                             ctx=ast3.Load(),
                         )
                     ),
-                    (
-                        node.filter_type.gen.py_ast[0]
-                        if node.filter_type
-                        else self.sync(ast3.Constant(value=None))
+                ],
+                keywords=[
+                    self.sync(
+                        ast3.keyword(
+                            arg="filter_type",
+                            value=self.sync(
+                                node.filter_type.gen.py_ast[0]
+                                if node.filter_type
+                                else self.sync(ast3.Constant(value=None))
+                            ),
+                        )
                     ),
-                    (
-                        node.filter_cond.gen.py_ast[0]
-                        if node.filter_cond
-                        else self.sync(ast3.Constant(value=None))
+                    self.sync(
+                        ast3.keyword(
+                            arg="filter_func",
+                            value=self.sync(
+                                node.filter_cond.gen.py_ast[0]
+                                if node.filter_cond
+                                else self.sync(ast3.Constant(value=None))
+                            ),
+                        )
                     ),
                 ],
-                keywords=[],
             )
         )
         return ret
@@ -2379,24 +2398,7 @@ class PyastGenPass(Pass):
                         )
                     ),
                     args=[
-                        self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Attribute(
-                                        value=self.sync(
-                                            ast3.Name(
-                                                id=Con.JAC_FEATURE.value,
-                                                ctx=ast3.Load(),
-                                            )
-                                        ),
-                                        attr="EdgeDir",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                attr=node.edge_dir.name,
-                                ctx=ast3.Load(),
-                            )
-                        ),
+                        self.sync(ast3.Constant(value=node.edge_dir == EdgeDir.ANY)),
                         (
                             node.conn_type.gen.py_ast[0]
                             if node.conn_type
