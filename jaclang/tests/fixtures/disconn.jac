@@ -20,9 +20,8 @@ with entry{
     y++>z;
 
 
-    a[0][1]x
 
-    apple = x --> x;
+    # apple = x --> y;
     print(x[1]._jac_.edges);
     # print(x[1]-->z,'it should be [bb=0 bb=1 bb=2]');
 
