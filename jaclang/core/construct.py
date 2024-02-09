@@ -10,6 +10,7 @@ from typing import Any, Callable, Optional, Union
 
 
 from jaclang.compiler.constant import EdgeDir
+from jaclang.core.utils import collect_node_connections
 
 
 @dataclass(eq=False)
@@ -66,17 +67,22 @@ class NodeAnchor(ObjectAnchor):
 
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        unique_node: list[NodeArchitype] = []
-        dot_content = "digraph{\n"
-        for i, j, k in root.connections:
-            if i not in unique_node:
-                unique_node.append(i)
-                dot_content += f'{unique_node.index(i)} [label="{i}"];\n'
-            if j not in unique_node:
-                unique_node.append(j)
-                dot_content += f'{unique_node.index(j)} [label="{j}"];\n'
-            dot_content += f'{unique_node.index(i)}->{unique_node.index(j)} [label="{k.__class__.__name__}"];\n'
+        visited_nodes: set[NodeAnchor] = set()
+        connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
+        unique_node_id_dict = {}
 
+        collect_node_connections(self, visited_nodes, connections)
+        dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
+        for idx, i in enumerate([nodes_.obj for nodes_ in visited_nodes]):
+            unique_node_id_dict[i] = (i.__class__.__name__, str(idx))
+            dot_content += f'{idx} [label="{i}"];\n'
+        dot_content += 'edge [color="gray", style="solid"];\n'
+
+        for pair in list(set(connections)):
+            dot_content += (
+                f"{unique_node_id_dict[pair[0]][1]} -> {unique_node_id_dict[pair[1]][1]}"
+                f' [label="{pair[2]}"];\n'
+            )
         if dot_file:
             with open(dot_file, "w") as f:
                 f.write(dot_content + "}")
