@@ -263,7 +263,7 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
         filter_type: Optional[type],
-        filter_func: Optional[Callable],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):

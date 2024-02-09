@@ -89,16 +89,16 @@ class JacFeatureDefaults:
     def disengage(walker: WalkerArchitype) -> bool: ...
     @staticmethod
     def edge_ref(
-        node_obj: NodeArchitype,
+        node_obj: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
         filter_type: Optional[type],
-        filter_func: Optional[Callable],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> list[NodeArchitype]: ...
     @staticmethod
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: EdgeArchitype,
+        edge_spec: Callable[[], EdgeArchitype],
     ) -> NodeArchitype | list[NodeArchitype]: ...
     @staticmethod
     def disconnect(op1: Optional[T], op2: T, op: Any) -> T: ...
@@ -113,4 +113,4 @@ class JacFeatureDefaults:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype]],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> EdgeArchitype: ...
+    ) -> Callable[[], EdgeArchitype]: ...

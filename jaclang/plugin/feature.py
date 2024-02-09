@@ -139,10 +139,10 @@ class JacFeature:
 
     @staticmethod
     def edge_ref(
-        node_obj: NodeArchitype,
+        node_obj: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
         filter_type: Optional[type],
-        filter_func: Optional[Callable],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> list[NodeArchitype]:
         """Jac's apply_dir stmt feature."""
         return JacFeature.pm.hook.edge_ref(
@@ -153,7 +153,7 @@ class JacFeature:
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: EdgeArchitype,
+        edge_spec: Callable[[], EdgeArchitype],
     ) -> NodeArchitype | list[NodeArchitype]:
         """Jac's connect operator feature.
 
@@ -183,7 +183,7 @@ class JacFeature:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype]],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> EdgeArchitype:
+    ) -> Callable[[], EdgeArchitype]:
         """Jac's root getter."""
         return JacFeature.pm.hook.build_edge(
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign

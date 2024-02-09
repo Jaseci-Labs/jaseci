@@ -18,7 +18,7 @@ cmd_registry = CommandRegistry()
 
 
 @cmd_registry.register
-def format(filename: str, outfile: str = "") -> None:
+def format(filename: str, outfile: str = "", debug: bool = False) -> None:
     """Run the specified .jac file.
 
     :param filename: The path to the .jac file.
@@ -29,15 +29,16 @@ def format(filename: str, outfile: str = "") -> None:
             code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
             if code_gen_format.errors_had:
                 print("Errors occurred while formatting the file.")
+            elif debug:
+                print(code_gen_format.ir.gen.jac)
+            elif outfile:
+                with open(outfile, "w") as f:
+                    f.write(code_gen_format.ir.gen.jac)
             else:
-                if outfile:
-                    with open(outfile, "w") as f:
-                        f.write(code_gen_format.ir.gen.jac)
-                else:
-                    with open(filename, "w") as f:
-                        f.write(code_gen_format.ir.gen.jac)
-    else:
-        print("Not a .jac file.")
+                with open(filename, "w") as f:
+                    f.write(code_gen_format.ir.gen.jac)
+        else:
+            print("Not a .jac file.")
 
 
 @cmd_registry.register

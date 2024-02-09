@@ -5,6 +5,7 @@ in each node. Module nodes contain the entire module code.
 """
 
 import ast as ast3
+import textwrap
 from typing import Optional, Sequence, TypeVar
 
 import jaclang.compiler.absyntree as ast
@@ -400,7 +401,9 @@ class PyastGenPass(Pass):
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = self.pyinline_sync([*ast3.parse(node.code.value).body])
+            node.gen.py_ast = self.pyinline_sync(
+                [*ast3.parse(textwrap.dedent(node.code.value)).body]
+            )
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.

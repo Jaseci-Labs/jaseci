@@ -2,6 +2,6 @@
     RED = 1,
     pencil,
     ::py::
-print('text')
+    print('text')
     ::py::
 }
