@@ -2139,23 +2139,62 @@ class PyastGenPass(Pass):
         is_attr: bool,
         """
         if node.is_attr:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Attribute(
-                        value=node.target.gen.py_ast[0],
-                        attr=(
-                            node.right.sym_name
-                            if isinstance(node.right, ast.AstSymbolNode)
-                            else ""
-                        ),
-                        ctx=(
-                            node.right.py_ctx_func()
-                            if isinstance(node.right, ast.AstSymbolNode)
-                            else ast3.Load()
-                        ),
-                    )
+            if isinstance(node.is_attr, ast.EdgeOpRef):
+                left = self.translate_edge_op_ref(
+                    node.target.gen.py_ast[0], node.is_attr
                 )
-            ]
+                right = self.translate_edge_op_ref(
+                    node.right.gen.py_ast[0], node.is_attr
+                )
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.ListComp(
+                            elt=self.sync(ast3.Name(id="i", ctx=ast3.Load())),
+                            generators=[
+                                self.sync(
+                                    ast3.comprehension(
+                                        target=self.sync(
+                                            ast3.Name(id="i", ctx=ast3.Store())
+                                        ),
+                                        iter=left,
+                                        ifs=[
+                                            self.sync(
+                                                ast3.Compare(
+                                                    left=self.sync(
+                                                        ast3.Name(
+                                                            id="i", ctx=ast3.Load()
+                                                        )
+                                                    ),
+                                                    ops=[self.sync(ast3.In())],
+                                                    comparators=[right],
+                                                )
+                                            )
+                                        ],
+                                        is_async=0,
+                                    )
+                                )
+                            ],
+                        )
+                    )
+                ]
+            else:
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Attribute(
+                            value=node.target.gen.py_ast[0],
+                            attr=(
+                                node.right.sym_name
+                                if isinstance(node.right, ast.AstSymbolNode)
+                                else ""
+                            ),
+                            ctx=(
+                                node.right.py_ctx_func()
+                                if isinstance(node.right, ast.AstSymbolNode)
+                                else ast3.Load()
+                            ),
+                        )
+                    )
+                ]
         elif isinstance(node.right, ast.FilterCompr):
             node.gen.py_ast = [
                 self.sync(
