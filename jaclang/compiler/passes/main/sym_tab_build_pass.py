@@ -407,7 +407,7 @@ class SymTabBuildPass(SymTabPass):
         if node.alias:
             self.def_insert(node.alias, single_use="import")
         elif isinstance(node.path[0], ast.Name):
-            self.def_insert(node.path[0], single_use="import")
+            self.def_insert(node.path[0])
         else:
             pass  # Need to support pythonic import symbols with dots in it
 

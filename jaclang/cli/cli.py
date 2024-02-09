@@ -78,6 +78,7 @@ def build(filename: str) -> None:
         print(f"Errors: {errs}, Warnings: {warnings}")
         for i in out.ir.flatten():
             i.gen.mypy_ast = []
+            i.gen.py = ""
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out.ir, f)
     else:

@@ -232,6 +232,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual(stdout_value.split("\n")[1], "10")
         self.assertEqual(stdout_value.split("\n")[2], "12")
 
+
     def test_disconnect(self) -> None:
         """Test conn assign on edges."""
         construct.root._jac_.edges.clear()
@@ -241,3 +242,15 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("jaclang.core", stdout_value.split("\n")[0])
+        
+    def test_simple_archs(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("simple_archs", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "1 2 0")
+        self.assertEqual(stdout_value.split("\n")[1], "0")
+        

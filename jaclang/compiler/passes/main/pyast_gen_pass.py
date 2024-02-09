@@ -559,7 +559,7 @@ class PyastGenPass(Pass):
             else []
         )
         ds_on_entry, ds_on_exit = self.collect_events(node)
-        if isinstance(decorators, list):
+        if node.arch_type.name != Tok.KW_CLASS:
             decorators.append(
                 self.sync(
                     ast3.Call(
@@ -594,8 +594,6 @@ class PyastGenPass(Pass):
                     )
                 )
             )
-        else:
-            raise self.ice()
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.is_abstract:
             self.needs_jac_feature()
@@ -1016,13 +1014,29 @@ class PyastGenPass(Pass):
         semstr: Optional[String] = None,
         """
         annotation = node.type_tag.gen.py_ast[0] if node.type_tag else None
-        is_class_var = (
+        is_static_var = (
             node.parent
             and node.parent.parent
             and isinstance(node.parent.parent, ast.ArchHas)
             and node.parent.parent.is_static
         )
-        if is_class_var:
+        is_in_class = (
+            node.parent
+            and node.parent.parent
+            and node.parent.parent.parent
+            and (
+                (
+                    isinstance(node.parent.parent.parent, ast.Architype)
+                    and node.parent.parent.parent.arch_type.name == Tok.KW_CLASS
+                )
+                or (
+                    node.parent.parent.parent.parent
+                    and isinstance(node.parent.parent.parent.parent, ast.Architype)
+                    and node.parent.parent.parent.parent.arch_type.name == Tok.KW_CLASS
+                )
+            )
+        )
+        if is_static_var:
             self.needs_typing()
             annotation = self.sync(
                 ast3.Subscript(
@@ -1037,57 +1051,58 @@ class PyastGenPass(Pass):
                     ctx=ast3.Load(),
                 )
             )
-
         node.gen.py_ast = [
-            self.sync(
-                ast3.AnnAssign(
-                    target=node.name.gen.py_ast[0],
-                    annotation=annotation,
-                    value=(
-                        self.sync(
-                            ast3.Call(
-                                func=self.sync(
-                                    ast3.Attribute(
-                                        value=self.sync(
-                                            ast3.Name(
-                                                id=Con.JAC_FEATURE.value,
-                                                ctx=ast3.Load(),
-                                            )
-                                        ),
-                                        attr="has_instance_default",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                args=[],
-                                keywords=[
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="gen_func",
+            (
+                self.sync(
+                    ast3.AnnAssign(
+                        target=node.name.gen.py_ast[0],
+                        annotation=annotation,
+                        value=(
+                            self.sync(
+                                ast3.Call(
+                                    func=self.sync(
+                                        ast3.Attribute(
                                             value=self.sync(
-                                                ast3.Lambda(
-                                                    args=self.sync(
-                                                        ast3.arguments(
-                                                            posonlyargs=[],
-                                                            args=[],
-                                                            kwonlyargs=[],
-                                                            vararg=None,
-                                                            kwargs=None,
-                                                            kw_defaults=[],
-                                                            defaults=[],
-                                                        )
-                                                    ),
-                                                    body=node.value.gen.py_ast[0],
+                                                ast3.Name(
+                                                    id=Con.JAC_FEATURE.value,
+                                                    ctx=ast3.Load(),
                                                 )
                                             ),
+                                            attr="has_instance_default",
+                                            ctx=ast3.Load(),
                                         )
-                                    )
-                                ],
+                                    ),
+                                    args=[],
+                                    keywords=[
+                                        self.sync(
+                                            ast3.keyword(
+                                                arg="gen_func",
+                                                value=self.sync(
+                                                    ast3.Lambda(
+                                                        args=self.sync(
+                                                            ast3.arguments(
+                                                                posonlyargs=[],
+                                                                args=[],
+                                                                kwonlyargs=[],
+                                                                vararg=None,
+                                                                kwargs=None,
+                                                                kw_defaults=[],
+                                                                defaults=[],
+                                                            )
+                                                        ),
+                                                        body=node.value.gen.py_ast[0],
+                                                    )
+                                                ),
+                                            )
+                                        )
+                                    ],
+                                )
                             )
-                        )
-                        if node.value and not is_class_var
-                        else node.value.gen.py_ast[0] if node.value else None
-                    ),
-                    simple=int(isinstance(node.name, ast.Name)),
+                            if node.value and not (is_static_var or is_in_class)
+                            else node.value.gen.py_ast[0] if node.value else None
+                        ),
+                        simple=int(isinstance(node.name, ast.Name)),
+                    )
                 )
             )
         ]
