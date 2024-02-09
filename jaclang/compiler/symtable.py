@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
 
-from jaclang.utils.treeprinter import print_symtab_tree
+from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
 
 
 if TYPE_CHECKING:
@@ -164,6 +164,10 @@ class SymbolTable:
     def pp(self, depth: Optional[int] = None) -> str:
         """Pretty print."""
         return print_symtab_tree(root=self, depth=depth)
+
+    def dotgen(self) -> str:
+        """Generate dot graph for sym table."""
+        return dotgen_symtab_tree(self)
 
     def __repr__(self) -> str:
         """Repr."""

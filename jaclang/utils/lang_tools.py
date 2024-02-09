@@ -9,12 +9,7 @@ from typing import List, Optional, Type
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import DeclDefMatchPass
-from jaclang.compiler.passes.tool.schedules import (
-    SymbolTableDotGraphPass,
-    SymbolTablePrinterPass,
-    sym_tab_dot_gen,
-    sym_tab_print,
-)
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
 from jaclang.utils.treeprinter import print_ast_tree
 
@@ -278,9 +273,10 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            return jac_file_to_pass(
-                file_name, SymbolTablePrinterPass, sym_tab_print
-            ).ir.pp()
+            sym_tab = jac_file_to_pass(file_name, DeclDefMatchPass).ir.sym_tab
+            return (
+                sym_tab.pp() if isinstance(sym_tab, SymbolTable) else "Sym_tab is None."
+            )
         else:
             return "Not a .jac file."
 
@@ -290,7 +286,6 @@ class AstTool:
             return "Usage: gen_dotfile <file_path> [<output_path>]"
 
         file_name: str = args[0]
-        SymbolTableDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
 
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
@@ -298,13 +293,12 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, SymbolTableDotGraphPass, sym_tab_dot_gen)
-            if SymbolTableDotGraphPass.OUTPUT_FILE_PATH:
-                return (
-                    f"Dot file generated at {SymbolTableDotGraphPass.OUTPUT_FILE_PATH}"
-                )
-            else:
-                return ""
+            sym_tab = jac_file_to_pass(file_name, DeclDefMatchPass).ir.sym_tab
+            return (
+                sym_tab.dotgen()
+                if isinstance(sym_tab, SymbolTable)
+                else "Sym_tab is None."
+            )
         else:
             return "Not a .jac file."
 
