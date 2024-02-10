@@ -2201,45 +2201,56 @@ class PyastGenPass(Pass):
                 )
             ]
         elif isinstance(node.right, ast.EdgeOpRef):
-            pynode = node.target.gen.py_ast[0]
-            for item in [node.right] + node.edge_ref_chain:
-                if isinstance(item, ast.EdgeOpRef):
-                    pynode = self.translate_edge_op_ref(pynode, item)
-                elif isinstance(item, ast.AtomTrailer) and isinstance(
-                    item.target, ast.EdgeOpRef
-                ):
-                    pynode = self.translate_edge_op_ref(pynode, item.target)
-                else:
-                    right = item.gen.py_ast[0]
-                    pynode = self.sync(
-                        ast3.ListComp(
-                            elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
-                            generators=[
-                                self.sync(
-                                    ast3.comprehension(
-                                        target=self.sync(
-                                            ast3.Name(id="_jac_i", ctx=ast3.Store())
-                                        ),
-                                        iter=pynode,
-                                        ifs=[
-                                            self.sync(
-                                                ast3.Compare(
-                                                    left=self.sync(
-                                                        ast3.Name(
-                                                            id="_jac_i", ctx=ast3.Load()
-                                                        )
-                                                    ),
-                                                    ops=[self.sync(ast3.In())],
-                                                    comparators=[right],
+
+            def unroll_edge_ref_chain(
+                pynode: ast3.AST, atom_trail: ast.AtomTrailer, with_target: bool = False
+            ) -> ast3.AST:
+                chain = [atom_trail.right] + atom_trail.edge_ref_chain
+                if with_target:
+                    chain = [atom_trail.target] + chain
+                for item in chain:
+                    if isinstance(item, ast.EdgeOpRef):
+                        pynode = self.translate_edge_op_ref(pynode, item)
+                    elif isinstance(item, ast.AtomTrailer) and isinstance(
+                        item.target, ast.EdgeOpRef
+                    ):
+                        pynode = unroll_edge_ref_chain(pynode, item, with_target=True)
+                    else:
+                        right = item.gen.py_ast[0]
+                        pynode = self.sync(
+                            ast3.ListComp(
+                                elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
+                                generators=[
+                                    self.sync(
+                                        ast3.comprehension(
+                                            target=self.sync(
+                                                ast3.Name(id="_jac_i", ctx=ast3.Store())
+                                            ),
+                                            iter=pynode,
+                                            ifs=[
+                                                self.sync(
+                                                    ast3.Compare(
+                                                        left=self.sync(
+                                                            ast3.Name(
+                                                                id="_jac_i",
+                                                                ctx=ast3.Load(),
+                                                            )
+                                                        ),
+                                                        ops=[self.sync(ast3.In())],
+                                                        comparators=[right],
+                                                    )
                                                 )
-                                            )
-                                        ],
-                                        is_async=0,
+                                            ],
+                                            is_async=0,
+                                        )
                                     )
-                                )
-                            ],
+                                ],
+                            )
                         )
-                    )
+                return pynode
+
+            pynode = node.target.gen.py_ast[0]
+            pynode = unroll_edge_ref_chain(pynode, node)
             node.gen.py_ast = [pynode]
         else:
             node.gen.py_ast = [
