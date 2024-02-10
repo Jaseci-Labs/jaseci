@@ -2148,68 +2148,30 @@ class PyastGenPass(Pass):
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 
-        target: AtomType,
-        right: AtomType,
+        target: Expr,
+        right: AtomExpr | Expr,
+        is_attr: Optional[Token],
         is_null_ok: bool,
-        is_attr: bool,
+        edge_ref_chain: list[Expr],
         """
         if node.is_attr:
-            if isinstance(node.is_attr, ast.EdgeOpRef):
-                left = self.translate_edge_op_ref(
-                    node.target.gen.py_ast[0], node.is_attr
-                )
-                right = self.translate_edge_op_ref(
-                    node.right.gen.py_ast[0], node.is_attr
-                )
-                node.gen.py_ast = [
-                    self.sync(
-                        ast3.ListComp(
-                            elt=self.sync(ast3.Name(id="i", ctx=ast3.Load())),
-                            generators=[
-                                self.sync(
-                                    ast3.comprehension(
-                                        target=self.sync(
-                                            ast3.Name(id="i", ctx=ast3.Store())
-                                        ),
-                                        iter=left,
-                                        ifs=[
-                                            self.sync(
-                                                ast3.Compare(
-                                                    left=self.sync(
-                                                        ast3.Name(
-                                                            id="i", ctx=ast3.Load()
-                                                        )
-                                                    ),
-                                                    ops=[self.sync(ast3.In())],
-                                                    comparators=[right],
-                                                )
-                                            )
-                                        ],
-                                        is_async=0,
-                                    )
-                                )
-                            ],
-                        )
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Attribute(
+                        value=node.target.gen.py_ast[0],
+                        attr=(
+                            node.right.sym_name
+                            if isinstance(node.right, ast.AstSymbolNode)
+                            else ""
+                        ),
+                        ctx=(
+                            node.right.py_ctx_func()
+                            if isinstance(node.right, ast.AstSymbolNode)
+                            else ast3.Load()
+                        ),
                     )
-                ]
-            else:
-                node.gen.py_ast = [
-                    self.sync(
-                        ast3.Attribute(
-                            value=node.target.gen.py_ast[0],
-                            attr=(
-                                node.right.sym_name
-                                if isinstance(node.right, ast.AstSymbolNode)
-                                else ""
-                            ),
-                            ctx=(
-                                node.right.py_ctx_func()
-                                if isinstance(node.right, ast.AstSymbolNode)
-                                else ast3.Load()
-                            ),
-                        )
-                    )
-                ]
+                )
+            ]
         elif isinstance(node.right, ast.FilterCompr):
             node.gen.py_ast = [
                 self.sync(
@@ -2239,9 +2201,43 @@ class PyastGenPass(Pass):
                 )
             ]
         elif isinstance(node.right, ast.EdgeOpRef):
-            node.gen.py_ast = [
-                self.translate_edge_op_ref(node.target.gen.py_ast[0], node.right)
-            ]
+            pynode = self.translate_edge_op_ref(node.target.gen.py_ast[0], node.right)
+            if len(node.edge_ref_chain):
+                for item in node.edge_ref_chain:
+                    if isinstance(item, ast.EdgeOpRef):
+                        right = self.translate_edge_op_ref(pynode, item)
+                    else:
+                        right = item.gen.py_ast[0]
+                    pynode = self.sync(
+                        ast3.ListComp(
+                            elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
+                            generators=[
+                                self.sync(
+                                    ast3.comprehension(
+                                        target=self.sync(
+                                            ast3.Name(id="_jac_i", ctx=ast3.Store())
+                                        ),
+                                        iter=pynode,
+                                        ifs=[
+                                            self.sync(
+                                                ast3.Compare(
+                                                    left=self.sync(
+                                                        ast3.Name(
+                                                            id="_jac_i", ctx=ast3.Load()
+                                                        )
+                                                    ),
+                                                    ops=[self.sync(ast3.In())],
+                                                    comparators=[right],
+                                                )
+                                            )
+                                        ],
+                                        is_async=0,
+                                    )
+                                )
+                            ],
+                        )
+                    )
+            node.gen.py_ast = [pynode]
         else:
             node.gen.py_ast = [
                 self.sync(
