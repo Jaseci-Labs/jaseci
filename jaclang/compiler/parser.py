@@ -3092,8 +3092,8 @@ class JacParser(Pass):
             """Grammar rule.
 
             edge_op_ref: edge_any
-                       | edge_from
-                       | edge_to
+                    | edge_from
+                    | edge_to
             """
             if isinstance(kid[0], ast.EdgeOpRef):
                 return self.nu(kid[0])
