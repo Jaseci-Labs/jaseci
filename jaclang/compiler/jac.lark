@@ -327,7 +327,7 @@ ref: BW_AND? pipe_call
 pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // Subscripted and dotted expressions
-atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref atomic_chain? | index_slice)
+atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref_chain | index_slice)
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
             | (atomic_call | atom)
 
@@ -342,7 +342,7 @@ param_list: expr_list COMMA kw_expr_list
           | expr_list
 
 // Atom
-atom: edge_op_ref
+atom: edge_op_ref_chain
     | any_ref
     | LPAREN (expression | yield_expr) RPAREN
     | atom_collection
@@ -401,6 +401,8 @@ kw_expr_list: (kw_expr_list COMMA)? kw_expr
 kw_expr: any_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
+edge_op_ref_chain: edge_op_ref atomic_chain*
+
 edge_op_ref: edge_any
            | edge_from
            | edge_to
