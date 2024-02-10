@@ -327,7 +327,8 @@ ref: BW_AND? pipe_call
 pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // Subscripted and dotted expressions
-atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
+atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
+            | atomic_chain NULL_OK? edge_op_ref atomic_chain*
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
             | (atomic_call | atom)
 

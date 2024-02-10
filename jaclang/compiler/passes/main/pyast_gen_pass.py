@@ -2148,10 +2148,11 @@ class PyastGenPass(Pass):
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 
-        target: AtomType,
-        right: AtomType,
+        target: Expr,
+        right: AtomExpr | Expr,
+        is_attr: Optional[Token],
         is_null_ok: bool,
-        is_attr: bool,
+        edge_ref_chain: list[Expr],
         """
         if node.is_attr:
             node.gen.py_ast = [
@@ -2200,9 +2201,43 @@ class PyastGenPass(Pass):
                 )
             ]
         elif isinstance(node.right, ast.EdgeOpRef):
-            node.gen.py_ast = [
-                self.translate_edge_op_ref(node.target.gen.py_ast[0], node.right)
-            ]
+            pynode = self.translate_edge_op_ref(node.target.gen.py_ast[0], node.right)
+            if len(node.edge_ref_chain):
+                for item in node.edge_ref_chain:
+                    if isinstance(item, ast.EdgeOpRef):
+                        right = self.translate_edge_op_ref(pynode, item)
+                    else:
+                        right = item.gen.py_ast[0]
+                    pynode = self.sync(
+                        ast3.ListComp(
+                            elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
+                            generators=[
+                                self.sync(
+                                    ast3.comprehension(
+                                        target=self.sync(
+                                            ast3.Name(id="_jac_i", ctx=ast3.Store())
+                                        ),
+                                        iter=pynode,
+                                        ifs=[
+                                            self.sync(
+                                                ast3.Compare(
+                                                    left=self.sync(
+                                                        ast3.Name(
+                                                            id="_jac_i", ctx=ast3.Load()
+                                                        )
+                                                    ),
+                                                    ops=[self.sync(ast3.In())],
+                                                    comparators=[right],
+                                                )
+                                            )
+                                        ],
+                                        is_async=0,
+                                    )
+                                )
+                            ],
+                        )
+                    )
+            node.gen.py_ast = [pynode]
         else:
             node.gen.py_ast = [
                 self.sync(
