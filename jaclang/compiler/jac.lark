@@ -402,9 +402,9 @@ kw_expr_list: (kw_expr_list COMMA)? kw_expr
 kw_expr: any_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
-edge_op_ref: edge_any atomic_chain?
-           | edge_from atomic_chain?
-           | edge_to atomic_chain?
+edge_op_ref: edge_any
+           | edge_from
+           | edge_to
 
 edge_to: ARROW_R | ARROW_R_P1 expression (COLON filter_compare_list)? ARROW_R_P2
 edge_from: ARROW_L | ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_L_P2
