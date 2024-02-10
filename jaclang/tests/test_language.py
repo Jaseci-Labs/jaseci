@@ -252,3 +252,13 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "1 2 0")
         self.assertEqual(stdout_value.split("\n")[1], "0")
+
+    def test_edge_walk(self) -> None:
+        """Test walking through edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edges_walk", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value, "[node_a(val=42), node_a(val=42)]\n")
