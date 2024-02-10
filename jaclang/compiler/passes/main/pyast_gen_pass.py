@@ -2386,8 +2386,7 @@ class PyastGenPass(Pass):
                                 ast3.Attribute(
                                     value=self.sync(
                                         ast3.Name(
-                                            id=Con.JAC_FEATURE.value,
-                                            ctx=ast3.Load(),
+                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
                                         )
                                     ),
                                     attr="EdgeDir",
