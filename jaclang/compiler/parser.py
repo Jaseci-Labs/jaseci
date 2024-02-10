@@ -3119,7 +3119,6 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.OUT,
-                        chain=None,
                         kid=kid,
                     )
                 )
@@ -3145,7 +3144,6 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.IN,
-                        chain=None,
                         kid=kid,
                     )
                 )
@@ -3171,7 +3169,6 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.ANY,
-                        chain=None,
                         kid=kid,
                     )
                 )
