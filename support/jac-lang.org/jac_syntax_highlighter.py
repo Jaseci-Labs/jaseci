@@ -79,7 +79,7 @@ class JacLexer(RegexLexer):
             (r'[^\\\'"%{\n]+', ttype),
             (r'[\'"\\]', ttype),
             # unhandled string formatting sign
-            (r"%|(\{{1,2})", ttype)
+            (r"%|(\{{1,2})", ttype),
             # newlines are an error (use "nl" state)
         ]
 
@@ -115,8 +115,10 @@ class JacLexer(RegexLexer):
             (r"\\", Text),
             include("keywords"),
             include("soft-keywords"),
+            (r"(static\s+can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
             (r"(can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
             (r"(enum)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
+            (r"(class)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(obj)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(walker)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(node)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
@@ -227,7 +229,7 @@ class JacLexer(RegexLexer):
                 Operator.Word,
             ),
             (
-                r"(:g:|:global:|<h>|<here>|<s>|<self>|<i>|<init>|<sup>|<super>|<r>|<root>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:enum:|:c:|:can:)",
+                r"(:g:|:global:|<h>|<here>|<s>|<self>|<i>|<init>|<sup>|<super>|<r>|<root>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:)",
                 Operator.Word,
             ),
             (r"\?:|\?|:\+:|!=|==|<<|>>|:=|[-~+/*%=<>&^|.]", Operator),
@@ -421,7 +423,8 @@ class JacLexer(RegexLexer):
                         "setattr",
                         "slice",
                         "sorted",
-                        "staticmethod",
+                        "static",
+                        "override",
                         "str",
                         "sum",
                         "super",

@@ -286,6 +286,8 @@ Assign comprehension is a unique feature in Jac that allows for direct assignmen
 
 ### Dataclass style basis for OOP
 Jac's approach to object-oriented programming is based on a dataclass style, where classes are primarily used to store data. This makes data handling more straightforward and efficient.
+### Abstract Classes, Methods and overrides built in
+### Application Bundling
 
 ### Proper multiline Comments
 Multiline comments in Jac are more versatile and user-friendly compared to Python. This feature enhances the ability to document code extensively without resorting to string literals or consecutive single-line comments.

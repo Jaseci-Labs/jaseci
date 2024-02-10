@@ -12,8 +12,7 @@ from tkinter import (
     Toplevel,
     commondialog,
 )
-from typing import IO, ClassVar
-from typing_extensions import Literal
+from typing import IO, ClassVar, Literal
 
 if sys.version_info >= (3, 9):
     __all__ = [

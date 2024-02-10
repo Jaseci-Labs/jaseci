@@ -27,6 +27,7 @@ class TestResult:
     tb_locals: bool
     if sys.version_info >= (3, 12):
         collectedDurations: _DurationsType
+
     def __init__(
         self,
         stream: TextIO | None = None,

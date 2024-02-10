@@ -388,9 +388,11 @@ class ClassIR:
             "traits": [cir.fullname for cir in self.traits],
             "mro": [cir.fullname for cir in self.mro],
             "base_mro": [cir.fullname for cir in self.base_mro],
-            "children": [cir.fullname for cir in self.children]
-            if self.children is not None
-            else None,
+            "children": (
+                [cir.fullname for cir in self.children]
+                if self.children is not None
+                else None
+            ),
             "deletable": self.deletable,
             "attrs_with_defaults": sorted(self.attrs_with_defaults),
             "_always_initialized_attrs": sorted(self._always_initialized_attrs),
@@ -418,9 +420,11 @@ class ClassIR:
         ir.ctor = FuncDecl.deserialize(data["ctor"], ctx)
         ir.attributes = {k: deserialize_type(t, ctx) for k, t in data["attributes"]}
         ir.method_decls = {
-            k: ctx.functions[v].decl
-            if isinstance(v, str)
-            else FuncDecl.deserialize(v, ctx)
+            k: (
+                ctx.functions[v].decl
+                if isinstance(v, str)
+                else FuncDecl.deserialize(v, ctx)
+            )
             for k, v in data["method_decls"]
         }
         ir.methods = {k: ctx.functions[v] for k, v in data["methods"]}

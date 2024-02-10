@@ -1,34 +1,31 @@
-from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as _Jac
+from jaclang.plugin.feature import JacFeature as jac
 
 
-@_Jac.make_architype(
-    "walker", on_entry=[_Jac.DSFunc("func2", _Jac.RootType)], on_exit=[]
-)
-class walker_1:
-    def func2(self, _jac_here_: _Jac.RootType) -> None:
-        end = _jac_here_
+@jac.make_walker(on_entry=[jac.DSFunc("func2", jac.RootType)], on_exit=[])
+class Creator:
+    def func2(self, jac_here_: jac.RootType) -> None:
+        end = jac_here_
         i = 0
         while i < 5:
-            _Jac.connect(
+            jac.connect(
                 end,
                 (end := node_1(val=i + 1)),
-                _Jac.build_edge(_Jac.EdgeDir.OUT, None, None),
+                jac.build_edge(jac.EdgeDir.OUT, None, None),
             )
             i += 1
-        if _Jac.visit_node(self, _Jac.edge_ref(_jac_here_, _Jac.EdgeDir.OUT, None)):
+        if jac.visit_node(self, jac.edge_ref(jac_here_, jac.EdgeDir.OUT, None, None)):
             pass
 
 
-@_Jac.make_architype("node", on_entry=[_Jac.DSFunc("func_1", walker_1)], on_exit=[])
+@jac.make_node(on_entry=[jac.DSFunc("func_1", Creator)], on_exit=[])
 class node_1:
     val: int
 
-    def func_1(self, _jac_here_: walker_1) -> None:
+    def func_1(self, jac_here_: Creator) -> None:
         print("visiting ", self)
-        if _Jac.visit_node(_jac_here_, _Jac.edge_ref(self, _Jac.EdgeDir.OUT, None)):
+        if jac.visit_node(jac_here_, jac.edge_ref(self, jac.EdgeDir.OUT, None, None)):
             pass
 
 
-_Jac.spawn_call(_Jac.get_root(), walker_1())
-_Jac.spawn_call(_Jac.get_root(), walker_1())
+jac.spawn_call(jac.get_root(), Creator())
+jac.spawn_call(jac.get_root(), Creator())

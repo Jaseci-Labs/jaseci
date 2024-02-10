@@ -5,6 +5,7 @@ that are separate from their implementations (Defs). This pass creates a link
 in the ast between the Decls and Defs of Architypes and Abilities through the
 body field.
 """
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass

@@ -1,13 +1,21 @@
 import _tkinter
 import sys
-from _typeshed import Incomplete, StrOrBytesPath
+from _typeshed import Incomplete, StrEnum, StrOrBytesPath
 from collections.abc import Callable, Mapping, Sequence
-from enum import Enum
 from tkinter.constants import *
 from tkinter.font import _FontDescription
 from types import TracebackType
-from typing import Any, Generic, NamedTuple, TypeVar, overload, type_check_only
-from typing_extensions import Literal, TypeAlias, TypedDict, deprecated
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    NamedTuple,
+    TypedDict,
+    TypeVar,
+    overload,
+    type_check_only,
+)
+from typing_extensions import TypeAlias, TypeVarTuple, Unpack, deprecated
 
 if sys.version_info >= (3, 9):
     __all__ = [
@@ -215,7 +223,7 @@ if sys.version_info >= (3, 11):
         releaselevel: str
         serial: int
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     Activate: str
     ButtonPress: str
     Button = ButtonPress
@@ -362,6 +370,8 @@ getdouble: Incomplete
 
 def getboolean(s): ...
 
+_Ts = TypeVarTuple("_Ts")
+
 class _GridIndexInfo(TypedDict, total=False):
     minsize: _ScreenUnits
     pad: _ScreenUnits
@@ -398,10 +408,15 @@ class Misc:
     # .after() can be called without the "func" argument, but it is basically never what you want.
     # It behaves like time.sleep() and freezes the GUI app.
     def after(
-        self, ms: int | Literal["idle"], func: Callable[..., object], *args: Any
+        self,
+        ms: int | Literal["idle"],
+        func: Callable[[Unpack[_Ts]], object],
+        *args: Unpack[_Ts],
     ) -> str: ...
     # after_idle is essentially partialmethod(after, "idle")
-    def after_idle(self, func: Callable[..., object], *args: Any) -> str: ...
+    def after_idle(
+        self, func: Callable[[Unpack[_Ts]], object], *args: Unpack[_Ts]
+    ) -> str: ...
     def after_cancel(self, id: str) -> None: ...
     def bell(self, displayof: Literal[0] | Misc | None = 0) -> None: ...
     def clipboard_get(self, *, displayof: Misc = ..., type: str = ...) -> str: ...
@@ -418,9 +433,11 @@ class Misc:
         self,
         pattern,
         value,
-        priority: int
-        | Literal["widgetDefault", "startupFile", "userDefault", "interactive"]
-        | None = None,
+        priority: (
+            int
+            | Literal["widgetDefault", "startupFile", "userDefault", "interactive"]
+            | None
+        ) = None,
     ) -> None: ...
     def option_clear(self) -> None: ...
     def option_get(self, name, className): ...
@@ -988,7 +1005,9 @@ class Pack:
 class _PlaceInfo(_InMiscNonTotal):  # empty dict if widget hasn't been placed
     anchor: _Anchor
     bordermode: Literal["inside", "outside", "ignore"]
-    width: str  # can be int()ed (even after e.g. widget.place(height='2.3c') or similar)
+    width: (
+        str  # can be int()ed (even after e.g. widget.place(height='2.3c') or similar)
+    )
     height: str  # can be int()ed
     x: str  # can be int()ed
     y: str  # can be int()ed
@@ -1272,8 +1291,9 @@ class Canvas(Widget, XView, YView):
         relief: _Relief = ...,
         # Setting scrollregion to None doesn't reset it back to empty,
         # but setting it to () does.
-        scrollregion: tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits]
-        | tuple[()] = ...,
+        scrollregion: (
+            tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits] | tuple[()]
+        ) = ...,
         selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
         selectforeground: str = ...,
@@ -1310,8 +1330,9 @@ class Canvas(Widget, XView, YView):
         insertwidth: _ScreenUnits = ...,
         offset=...,  # undocumented
         relief: _Relief = ...,
-        scrollregion: tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits]
-        | tuple[()] = ...,
+        scrollregion: (
+            tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits] | tuple[()]
+        ) = ...,
         selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
         selectforeground: str = ...,
@@ -1446,7 +1467,7 @@ class Canvas(Widget, XView, YView):
         offset: _ScreenUnits = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1475,7 +1496,7 @@ class Canvas(Widget, XView, YView):
         offset: _ScreenUnits = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1510,7 +1531,7 @@ class Canvas(Widget, XView, YView):
         offset: _ScreenUnits = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1542,7 +1563,7 @@ class Canvas(Widget, XView, YView):
         outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
         outlinestipple: str = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1572,7 +1593,7 @@ class Canvas(Widget, XView, YView):
         outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
         outlinestipple: str = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1608,7 +1629,7 @@ class Canvas(Widget, XView, YView):
         outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
         outlinestipple: str = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1643,7 +1664,7 @@ class Canvas(Widget, XView, YView):
         outlinestipple: str = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1676,7 +1697,7 @@ class Canvas(Widget, XView, YView):
         outlinestipple: str = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1715,7 +1736,7 @@ class Canvas(Widget, XView, YView):
         outlinestipple: str = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1747,7 +1768,7 @@ class Canvas(Widget, XView, YView):
         outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
         outlinestipple: str = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1777,7 +1798,7 @@ class Canvas(Widget, XView, YView):
         outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
         outlinestipple: str = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1813,7 +1834,7 @@ class Canvas(Widget, XView, YView):
         outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
         outlinestipple: str = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
@@ -1834,7 +1855,7 @@ class Canvas(Widget, XView, YView):
         font: _FontDescription = ...,
         justify: Literal["left", "center", "right"] = ...,
         offset: _ScreenUnits = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         text: float | str = ...,
@@ -1855,7 +1876,7 @@ class Canvas(Widget, XView, YView):
         font: _FontDescription = ...,
         justify: Literal["left", "center", "right"] = ...,
         offset: _ScreenUnits = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         text: float | str = ...,
@@ -1869,7 +1890,7 @@ class Canvas(Widget, XView, YView):
         *,
         anchor: _Anchor = ...,
         height: _ScreenUnits = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
         window: Widget = ...,
@@ -1881,7 +1902,7 @@ class Canvas(Widget, XView, YView):
         *,
         anchor: _Anchor = ...,
         height: _ScreenUnits = ...,
-        state: Literal["normal", "active", "disabled"] = ...,
+        state: Literal["normal", "hidden", "disabled"] = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
         window: Widget = ...,
@@ -1904,14 +1925,12 @@ class Canvas(Widget, XView, YView):
     ) -> dict[str, tuple[str, str, str, str, str]] | None: ...
     itemconfig = itemconfigure
     def move(self, *args) -> None: ...
-    if sys.version_info >= (3, 8):
-        def moveto(
-            self,
-            tagOrId: str | int,
-            x: Literal[""] | float = "",
-            y: Literal[""] | float = "",
-        ) -> None: ...
-
+    def moveto(
+        self,
+        tagOrId: str | int,
+        x: Literal[""] | float = "",
+        y: Literal[""] | float = "",
+    ) -> None: ...
     def postscript(self, cnf={}, **kw): ...
     # tkinter does:
     #    lower = tag_lower
@@ -3618,9 +3637,8 @@ class PhotoImage(Image, _PhotoImageLike):
         format: str | None = None,
         from_coords: tuple[int, int] | None = None,
     ) -> None: ...
-    if sys.version_info >= (3, 8):
-        def transparency_get(self, x: int, y: int) -> bool: ...
-        def transparency_set(self, x: int, y: int, boolean: bool) -> None: ...
+    def transparency_get(self, x: int, y: int) -> bool: ...
+    def transparency_set(self, x: int, y: int, boolean: bool) -> None: ...
 
 class BitmapImage(Image, _BitmapImageLike):
     # This should be kept in sync with PIL.ImageTK.BitmapImage.__init__()
@@ -3779,11 +3797,10 @@ class Spinbox(Widget, XView):
     def selection_adjust(self, index): ...
     def selection_clear(self): ...
     def selection_element(self, element: Incomplete | None = None): ...
-    if sys.version_info >= (3, 8):
-        def selection_from(self, index: int) -> None: ...
-        def selection_present(self) -> None: ...
-        def selection_range(self, start: int, end: int) -> None: ...
-        def selection_to(self, index: int) -> None: ...
+    def selection_from(self, index: int) -> None: ...
+    def selection_present(self) -> None: ...
+    def selection_range(self, start: int, end: int) -> None: ...
+    def selection_to(self, index: int) -> None: ...
 
 class LabelFrame(Widget):
     def __init__(

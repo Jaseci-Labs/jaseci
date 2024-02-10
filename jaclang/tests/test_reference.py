@@ -1,11 +1,13 @@
 """Test Jac reference examples."""
+
 import io
 import os
 from contextlib import redirect_stdout
 from typing import Callable, Optional
 
 import jaclang
-from jaclang.compiler.transpiler import jac_file_to_pass
+import jaclang.core.construct as jcon
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
 
@@ -49,20 +51,36 @@ class JacReferenceTests(TestCase):
     def micro_suite_test(self, filename: str) -> None:
         """Test file."""
 
-        def execute_and_capture_output(code: str) -> str:
+        def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
             f = io.StringIO()
             with redirect_stdout(f):
-                exec(code, {})
+                exec(
+                    code,
+                    {
+                        "__file__": filename,
+                        "__name__": "__main__",
+                        "__jac_mod_bundle__": None,
+                    },
+                )
             return f.getvalue()
 
         try:
-            code_content = jac_file_to_pass(filename).ir.gen.py
-            output_jac = execute_and_capture_output(code_content)
+            jcon.root.reset()
+            jacast = jac_file_to_pass(filename).ir
+            code_content = compile(
+                source=jacast.gen.py_ast[0],
+                filename=jacast.loc.mod_path,
+                mode="exec",
+            )
+            output_jac = execute_and_capture_output(code_content, filename=filename)
 
             filename = filename.replace(".jac", ".py")
             with open(filename, "r") as file:
                 code_content = file.read()
-            output_py = execute_and_capture_output(code_content)
+            output_py = execute_and_capture_output(code_content, filename=filename)
+
+            # print(f"\nJAC Output:\n{output_jac}")
+            # print(f"\nPython Output:\n{output_py}")
 
             self.assertGreater(len(output_py), 0)
             self.assertEqual(output_py, output_jac)

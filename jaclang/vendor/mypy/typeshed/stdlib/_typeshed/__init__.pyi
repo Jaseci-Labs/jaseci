@@ -18,22 +18,18 @@ from typing import (
     Any,
     AnyStr,
     ClassVar,
+    Final,
     Generic,
+    Literal,
     Protocol,
     SupportsFloat,
+    SupportsIndex,
     SupportsInt,
     TypeVar,
+    final,
     overload,
 )
-from typing_extensions import (
-    Buffer,
-    Final,
-    Literal,
-    LiteralString,
-    SupportsIndex,
-    TypeAlias,
-    final,
-)
+from typing_extensions import Buffer, LiteralString, TypeAlias
 
 _KT = TypeVar("_KT")
 _KT_co = TypeVar("_KT_co", covariant=True)
@@ -44,8 +40,10 @@ _T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 
-# Use for "self" annotations:
-#   def __enter__(self: Self) -> Self: ...
+# Alternative to `typing_extensions.Self`, exclusively for use with `__new__`
+# in metaclasses:
+#     def __new__(cls: type[Self], ...) -> Self: ...
+# In other cases, use `typing_extensions.Self`.
 Self = TypeVar("Self")  # noqa: Y001
 
 # covariant version of typing.AnyStr, useful for protocols
@@ -365,3 +363,12 @@ ConvertibleToInt: TypeAlias = (
     str | ReadableBuffer | SupportsInt | SupportsIndex | SupportsTrunc
 )
 ConvertibleToFloat: TypeAlias = str | ReadableBuffer | SupportsFloat | SupportsIndex
+
+# A few classes updated from Foo(str, Enum) to Foo(StrEnum). This is a convenience so these
+# can be accurate on all python versions without getting too wordy
+if sys.version_info >= (3, 11):
+    from enum import StrEnum as StrEnum
+else:
+    from enum import Enum
+
+    class StrEnum(str, Enum): ...

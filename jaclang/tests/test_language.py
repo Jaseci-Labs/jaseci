@@ -1,11 +1,12 @@
 """Test Jac language generally."""
+
 import io
 import sys
 
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.compiler.transpiler import jac_str_to_pass
+from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
@@ -55,7 +56,9 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("micro.simple_walk", self.fixture_abs_path("../../../examples/"))
+        jac_import(
+            "micro.simple_walk", base_path=self.fixture_abs_path("../../../examples/")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -68,7 +71,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("guess_game", self.fixture_abs_path("./"))
+        jac_import("guess_game", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -80,20 +83,34 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("chandra_bugs", self.fixture_abs_path("./"))
+        jac_import("chandra_bugs", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             stdout_value,
-            "{'new_val': 3, 'where': 'from_foo'}\nTrue\n",
+            "<link href='{'new_val': 3, 'where': 'from_foo'} rel='stylesheet'\nTrue\n",
+        )
+
+    def test_chandra_bugs2(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("chandra_bugs2", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "{'apple': None, 'pineapple': None}\n"
+            "This is a long\n"
+            "        line of code.\n",
         )
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
-        construct.root._jac_.edges[construct.EdgeDir.OUT].clear()
+        construct.root._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("ignore", self.fixture_abs_path("./"))
+        jac_import("ignore", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0].count("here"), 10)
@@ -103,7 +120,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("hashcheck", self.fixture_abs_path("./"))
+        jac_import("hashcheck", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("check"), 2)
@@ -113,7 +130,7 @@ class JacLanguageTests(TestCase):
         prog = jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        exec(compile(prog.ir.gen.py_ast, "test.py", "exec"))
+        exec(compile(prog.ir.gen.py_ast[0], "test.py", "exec"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")
@@ -122,7 +139,7 @@ class JacLanguageTests(TestCase):
         """Test importing python."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("needs_import", self.fixture_abs_path("./"))
+        jac_import("needs_import", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("<module 'pyfunc' from", stdout_value)
@@ -133,7 +150,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
         jac_import(
             "reference.special_comprehensions",
-            self.fixture_abs_path("../../../examples/"),
+            base_path=self.fixture_abs_path("../../../examples/"),
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -143,7 +160,7 @@ class JacLanguageTests(TestCase):
         """Test the dot gen of nodes and edges of bubblesort."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("bubble_sort", self.fixture_abs_path("./"))
+        jac_import("gendot_bubble_sort", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
@@ -155,10 +172,95 @@ class JacLanguageTests(TestCase):
         """Test assign_compr."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("assign_compr", self.fixture_abs_path("./"))
+        jac_import("assign_compr", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             "[MyObj(apple=5, banana=7), MyObj(apple=5, banana=7)]\n",
             stdout_value,
         )
+
+    def test_semstr(self) -> None:
+        """Test semstring."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("semstr", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn("Error", stdout_value)
+
+    def test_raw_bytestr(self) -> None:
+        """Test raw string and byte string."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("raw_byte_string", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count(r"\\\\"), 2)
+        self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
+
+    def test_deep_imports(self) -> None:
+        """Parse micro jac file."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("deep_import", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+
+    def test_has_lambda_goodness(self) -> None:
+        """Test has lambda_goodness."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("has_goodness", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "mylist:  [1, 2, 3]")
+        self.assertEqual(stdout_value.split("\n")[1], "mydict:  {'a': 2, 'b': 4}")
+
+    def test_conn_assign_on_edges(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edge_ops", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "[(3, 5), (14, 1), (5, 1)]")
+        self.assertEqual(stdout_value.split("\n")[1], "10")
+        self.assertEqual(stdout_value.split("\n")[2], "12")
+
+    def test_disconnect(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("disconn", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("jaclang.core", stdout_value.split("\n")[0])
+
+    def test_simple_archs(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("simple_archs", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "1 2 0")
+        self.assertEqual(stdout_value.split("\n")[1], "0")
+
+    def test_edge_walk(self) -> None:
+        """Test walking through edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edges_walk", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[node_a(val=12)]\n", stdout_value)
+        self.assertIn("[node_a(val=1), node_a(val=2)]\n", stdout_value)
+        self.assertIn("[node_a(val=42), node_a(val=42)]\n", stdout_value)

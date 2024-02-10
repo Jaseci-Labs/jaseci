@@ -5,9 +5,10 @@ If there is only one docstring before the first element,
 it is assumed to be a module docstring.
 """
 
+"""A docstring for add function"""
+
 
 def add(a: int, b: int) -> int:
-    """A docstring for add function"""
     return a + b
 
 

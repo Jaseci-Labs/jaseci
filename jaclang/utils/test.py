@@ -113,6 +113,7 @@ class AstSyncTestMixin:
                 "token_symbol",
                 "literal",
                 "ast_doc_node",
+                "ast_sem_str_node",
                 "python_module_ast",
                 "ast_async_node",
                 "ast_else_body_node",

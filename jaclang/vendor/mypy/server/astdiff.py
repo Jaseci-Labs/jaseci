@@ -261,9 +261,11 @@ def snapshot_definition(
             node.is_static,
             signature,
             is_trivial_body,
-            dataclass_transform_spec.serialize()
-            if dataclass_transform_spec is not None
-            else None,
+            (
+                dataclass_transform_spec.serialize()
+                if dataclass_transform_spec is not None
+                else None
+            ),
         )
     elif isinstance(node, Var):
         return ("Var", common, snapshot_optional_type(node.type), node.is_final)
@@ -309,9 +311,11 @@ def snapshot_definition(
             tuple(snapshot_type(tdef) for tdef in node.defn.type_vars),
             [snapshot_type(base) for base in node.bases],
             [snapshot_type(p) for p in node._promote],
-            dataclass_transform_spec.serialize()
-            if dataclass_transform_spec is not None
-            else None,
+            (
+                dataclass_transform_spec.serialize()
+                if dataclass_transform_spec is not None
+                else None
+            ),
         )
         prefix = node.fullname
         symbol_table = snapshot_symbol_table(prefix, node.names)
@@ -397,9 +401,11 @@ class SnapshotTypeVisitor(TypeVisitor[SnapshotItem]):
             "Instance",
             encode_optional_str(typ.type.fullname),
             snapshot_types(typ.args),
-            ("None",)
-            if typ.last_known_value is None
-            else snapshot_type(typ.last_known_value),
+            (
+                ("None",)
+                if typ.last_known_value is None
+                else snapshot_type(typ.last_known_value)
+            ),
         )
 
     def visit_type_var(self, typ: TypeVarType) -> SnapshotItem:

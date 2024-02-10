@@ -1,7 +1,11 @@
-from enum import Enum
+from enum import Enum, auto
+from enumeration_bodies import *
 
 
 class Color(Enum):
     RED = 1
-    GREEN = 2
-    BLUE = 3
+    pencil = auto()
+    print("text")
+
+
+print(Color.RED.value)

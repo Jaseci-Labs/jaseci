@@ -39,6 +39,7 @@ obj Circle:Shape: {
     }
 
     """Overridden method to calculate the area of the circle."""
+    override
     can area -> float {
         return math.pi * self.radius * self.radius;
     }

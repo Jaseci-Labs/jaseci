@@ -1,4 +1,5 @@
 """Tests for Jac parser."""
+
 import inspect
 
 from jaclang.compiler import jac_lark as jl

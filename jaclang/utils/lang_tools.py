@@ -7,14 +7,8 @@ import sys
 from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes.main.schedules import DeclDefMatchPass
-from jaclang.compiler.passes.tool.schedules import (
-    SymbolTableDotGraphPass,
-    SymbolTablePrinterPass,
-    sym_tab_dot_gen,
-    sym_tab_print,
-)
-from jaclang.compiler.transpiler import jac_file_to_pass
+from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
 
 
@@ -89,6 +83,7 @@ class AstTool:
                 "TokenSymbol",
                 "Literal",
                 "AstDocNode",
+                "AstSemStrNode",
                 "PythonModuleAst",
                 "AstAsyncNode",
                 "AstElseBodyNode",
@@ -200,29 +195,12 @@ class AstTool:
             output += f"{cls.doc} \n\n"
         return output
 
-    def dot_gen(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: print <file_path>"
+    def ir(self, args: List[str]) -> str:
+        """Generate a AST, SymbolTable tree for .jac file, or Python AST for .py file."""
+        if len(args) != 2:
+            return "Usage: ir <choose one of (sym / sym. / ast / ast. / pyast / py)> <file_path>"
 
-        file_name: str = args[0]
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            return jac_file_to_pass(file_name, DeclDefMatchPass).ir.dotgen()
-        else:
-            return "Not a .jac file."
-
-    def print(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: print <file_path>"
-
-        file_name: str = args[0]
+        output, file_name = args
 
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
@@ -230,78 +208,53 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            return jac_file_to_pass(file_name, DeclDefMatchPass).ir.pp()
-        else:
-            return "Not a .jac file."
+            ir = jac_file_to_pass(
+                file_name
+            ).ir  # Assuming jac_file_to_pass is defined elsewhere
 
-    def print_py(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: print <file_path>"
-
-        file_name: str = args[0]
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
+            match output:
+                case "sym":
+                    return (
+                        ir.sym_tab.pp()
+                        if isinstance(ir.sym_tab, SymbolTable)
+                        else "Sym_tab is None."
+                    )
+                case "sym.":
+                    return (
+                        ir.sym_tab.dotgen()
+                        if isinstance(ir.sym_tab, SymbolTable)
+                        else "Sym_tab is None."
+                    )
+                case "ast":
+                    return ir.pp()
+                case "ast.":
+                    return ir.dotgen()
+                case "pyast":
+                    return (
+                        f"\n{py_ast.dump(ir.gen.py_ast[0], indent=2)}"
+                        if isinstance(ir.gen.py_ast[0], py_ast.AST)
+                        else "Compile failed."
+                    )
+                case "py":
+                    return (
+                        f"\n{ir.gen.py}"
+                        if isinstance(ir.gen.py[0], str)
+                        else "Compile failed."
+                    )
+                case _:
+                    return "Invalid key: Use one of (sym / sym. / ast / ast. / pyast) followed by file_path."
+        elif file_name.endswith(".py") and output == "pyast":
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            pyast = jac_file_to_pass(file_name).ir.gen.py_ast
-            return (
-                py_ast.dump(pyast, indent=2)
-                if isinstance(pyast, py_ast.AST)
-                else "Compile failed."
-            )
+            with open(file_name, "r") as file:
+                code = file.read()
+            parsed_ast = py_ast.parse(code)
+            return f"\n{py_ast.dump(parsed_ast, indent=2)}"
         else:
-            return "Not a .jac file."
+            return "Not a .jac or .py file, or invalid command for file type."
 
-    def symtab_print(self, args: List[str]) -> str:
-        """Generate a dot file for AST."""
-        if len(args) == 0:
-            return "Usage: print <file_path>"
-
-        file_name: str = args[0]
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            return jac_file_to_pass(
-                file_name, SymbolTablePrinterPass, sym_tab_print
-            ).ir.pp()
-        else:
-            return "Not a .jac file."
-
-    def gen_symtab_dotfile(self, args: List[str]) -> str:
-        """Generate a dot file for Symbol Table."""
-        if len(args) == 0:
-            return "Usage: gen_dotfile <file_path> [<output_path>]"
-
-        file_name: str = args[0]
-        SymbolTableDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith(".jac"):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            jac_file_to_pass(file_name, SymbolTableDotGraphPass, sym_tab_dot_gen)
-            if SymbolTableDotGraphPass.OUTPUT_FILE_PATH:
-                return (
-                    f"Dot file generated at {SymbolTableDotGraphPass.OUTPUT_FILE_PATH}"
-                )
-            else:
-                return ""
-        else:
-            return "Not a .jac file."
-
-    def automate_ref(self) -> None:
+    def automate_ref(self) -> str:
         """Automate the reference guide generation."""
-        # Jac lark path
         file_path = os.path.join(
             os.path.split(os.path.dirname(__file__))[0], "../jaclang/compiler/jac.lark"
         )
@@ -314,33 +267,26 @@ class AstTool:
             os.path.split(os.path.dirname(__file__))[0], "../examples/reference/"
         )
         with open(created_file_path, "w") as md_file:
-            # Write the content to the destination file
             md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
         for heading, lines in result.items():
             heading = heading.strip()
             heading_snakecase = heading_to_snake(heading)
-            if heading == "Names and references":
-                continue
-            # print(f"{heading}: {lines}")
             content = (
                 f'## {heading}\n```yaml linenums="{lines[0]}"\n--8<-- '
-                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n--8<-- '
-                f'"examples/reference/'
-                f'{heading_snakecase}.md"\n'
-            )
-            with open(created_file_path, "a") as md_file:
-                # Write the content to the destination file
-                md_file.write(f"{content}\n")
-            # Generate a Markdown file name based on the heading
-            md_file_name = f"{heading_snakecase}.md"
-            # Full path for the new Markdown file
-            md_file_path = os.path.join(destination_folder, md_file_name)
-            content = (
+                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
                 f'=== "Jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/'
                 f'{heading_snakecase}.jac"\n'
                 f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
                 f'{heading_snakecase}.py"\n    ```\n'
+                "--8<-- "
+                f'"examples/reference/'
+                f'{heading_snakecase}.md"\n'
             )
-            with open(md_file_path, "w") as md_file:
-                # Write the content to the destination file
-                md_file.write(content)
+            with open(created_file_path, "a") as md_file:
+                md_file.write(f"{content}\n")
+            md_file_name = f"{heading_snakecase}.md"
+            md_file_path = os.path.join(destination_folder, md_file_name)
+            if not os.path.exists(md_file_path):
+                with open(md_file_path, "w") as md_file:
+                    md_file.write("")
+        return "References generated."

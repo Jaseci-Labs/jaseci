@@ -1,16 +1,9 @@
-l = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-# for num in l:
-#     if num % 2 == 0:
-#         continue
-#     print(num)
-print("SKIP Keyword : ‘Jactastic’")
-for num in l:
-    if num == 5:
+for i in range(9):
+    if i > 2:
+        print("loop is stopped!!")
         break
-    print(num)
-
-for num in l:
-    if num % 2 == 0:
+    print(i)
+for i in "WIN":
+    if i == "W":
         continue
-    print(num)
+    print(i)

@@ -1,13 +1,15 @@
+from jaclang.plugin.feature import JacFeature as jac
+
+
+@jac.make_obj(on_entry=[], on_exit=[])
 class Point:
-    def __init__(self, x: float, y: float):
-        self.x = x
-        self.y = y
+    x: float
+    y: float
 
 
-print("In complete Example")
-# data = Point(x=int(8), y=0)
-# match data:
-#     # MatchClass
-#     case Point(int(a), y=0):
-#         pass
-# # print(f"Point with x={a} and y=0")
+data = Point(x=9, y=0)
+match data:
+    case Point(int(a), y=0):
+        print(f"Point with x={a} and y=0")
+    case _:
+        print("Not on the x-axis")

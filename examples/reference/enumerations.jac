@@ -1,6 +1,13 @@
-# Define an enumeration class called Color
-enum Color{
-    RED = 1,
-    GREEN = 2,
-    BLUE = 3
+include:jac enumeration_bodies;
+
+enum  Color;
+with entry{
+    print(Color.RED.value);
 }
+
+:enum:ShapeType {
+    CIRCLE = "Circle",
+    UNKNOWN = "Unknown"
+}
+
+

@@ -9,8 +9,9 @@ def parse(
     source: str | bytes,
     fnam: str,
     module: str | None,
-    errors: Errors | None,
+    errors: Errors,
     options: Options,
+    raise_on_error: bool = False,
 ) -> MypyFile:
     """Parse a source file, without doing any semantic analysis.
 
@@ -23,6 +24,9 @@ def parse(
         source = options.transform_source(source)
     import mypy.fastparse
 
-    return mypy.fastparse.parse(
+    tree = mypy.fastparse.parse(
         source, fnam=fnam, module=module, errors=errors, options=options
     )
+    if raise_on_error and errors.is_errors():
+        errors.raise_error()
+    return tree

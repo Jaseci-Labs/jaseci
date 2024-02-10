@@ -1,4 +1,5 @@
 """Constants across the project."""
+
 from enum import Enum
 
 
@@ -36,9 +37,9 @@ class Constants(str, Enum):
 class EdgeDir(Enum):
     """Edge direction indicator."""
 
-    IN = 1
-    OUT = 2
-    ANY = 3
+    IN = 1  # <--
+    OUT = 2  # -->
+    ANY = 3  # <-->
 
 
 class Values(int, Enum):
@@ -78,6 +79,7 @@ class Tokens(str, Enum):
     KW_LET = "KW_LET"
     KW_ABSTRACT = "KW_ABSTRACT"
     KW_OBJECT = "KW_OBJECT"
+    KW_CLASS = "KW_CLASS"
     KW_ENUM = "KW_ENUM"
     KW_NODE = "KW_NODE"
     KW_IGNORE = "KW_IGNORE"
@@ -162,6 +164,7 @@ class Tokens(str, Enum):
     COMMA = "COMMA"
     KW_CAN = "KW_CAN"
     KW_STATIC = "KW_STATIC"
+    KW_OVERRIDE = "KW_OVERRIDE"
     KW_MATCH = "KW_MATCH"
     KW_CASE = "KW_CASE"
     PLUS = "PLUS"
@@ -205,6 +208,7 @@ class Tokens(str, Enum):
     WALKER_OP = "WALKER_OP"
     NODE_OP = "NODE_OP"
     EDGE_OP = "EDGE_OP"
+    CLASS_OP = "CLASS_OP"
     OBJECT_OP = "OBJECT_OP"
     TYPE_OP = "TYPE_OP"
     ENUM_OP = "ENUM_OP"
@@ -217,7 +221,10 @@ class Tokens(str, Enum):
     DECOR_OP = "DECOR_OP"
     FSTR_START = "FSTR_START"
     FSTR_END = "FSTR_END"
+    FSTR_SQ_START = "FSTR_SQ_START"
+    FSTR_SQ_END = "FSTR_SQ_END"
     FSTR_PIECE = "FSTR_PIECE"
+    FSTR_SQ_PIECE = "FSTR_SQ_PIECE"
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"

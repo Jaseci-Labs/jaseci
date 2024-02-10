@@ -1,17 +1,17 @@
 with entry{
-    for number in range(1, 5){
-        square = number ** 2;
-        print(f"The square of {number} is: {square}");
+
+    for i in "ban"{
+        for j in range(1, 3 ){
+             for k = 1 to k<3 by k+=1{
+                 print(i,j,k);
+             }
         }
-}
-
-with entry{
-
-    for i=1 to i<10 by i+=2 {
-         print(i * 5);
     }
-    else{
-        print("Loop completed.");}
+
 }
+
+
+
+
 
 

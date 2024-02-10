@@ -5,8 +5,8 @@ from _typeshed import StrPath, SupportsNoArgReadline, SupportsRead
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from types import TracebackType
-from typing import IO, Any, AnyStr, Generic, Protocol, TypeVar, overload
-from typing_extensions import Literal, Self, TypeAlias
+from typing import IO, Any, AnyStr, Generic, Literal, Protocol, TypeVar, overload
+from typing_extensions import Self, TypeAlias
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
@@ -105,10 +105,9 @@ class Mailbox(Generic[_MessageT]):
     def popitem(self) -> tuple[str, _MessageT]: ...
     def update(
         self,
-        arg: _HasIteritems
-        | _HasItems
-        | Iterable[tuple[str, _MessageData]]
-        | None = None,
+        arg: (
+            _HasIteritems | _HasItems | Iterable[tuple[str, _MessageData]] | None
+        ) = None,
     ) -> None: ...
     @abstractmethod
     def flush(self) -> None: ...

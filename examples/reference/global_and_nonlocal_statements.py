@@ -1,16 +1,20 @@
-x, y, z = 5, 10, 1
+from __future__ import annotations
+
+x = "Jaclang "
 
 
-def foo():
-    y = 30
-    print(x, y)
+def foo() -> None:
+    global x
+    x = "Jaclang is "
+    y = "Awesome"
 
-    def foo2():
-        print(y)
-        y = 9
+    def foo2() -> tuple[str, str]:
+        nonlocal y
+        y = "Fantastic"
         return (x, y)
 
-    return foo2()
+    print(x, y)
+    print(foo2())
 
 
-print(foo())
+foo()

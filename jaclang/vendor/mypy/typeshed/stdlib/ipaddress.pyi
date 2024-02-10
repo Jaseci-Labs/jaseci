@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterable, Iterator
-from typing import Any, Generic, SupportsInt, TypeVar, overload
-from typing_extensions import Literal, Self, TypeAlias
+from typing import Any, Generic, Literal, SupportsInt, TypeVar, overload
+from typing_extensions import Self, TypeAlias
 
 # Undocumented length constants
 IPV4LENGTH: Literal[32]
@@ -15,17 +15,21 @@ _RawNetworkPart: TypeAlias = IPv4Network | IPv6Network | IPv4Interface | IPv6Int
 
 def ip_address(address: _RawIPAddress) -> IPv4Address | IPv6Address: ...
 def ip_network(
-    address: _RawIPAddress
-    | _RawNetworkPart
-    | tuple[_RawIPAddress]
-    | tuple[_RawIPAddress, int],
+    address: (
+        _RawIPAddress
+        | _RawNetworkPart
+        | tuple[_RawIPAddress]
+        | tuple[_RawIPAddress, int]
+    ),
     strict: bool = True,
 ) -> IPv4Network | IPv6Network: ...
 def ip_interface(
-    address: _RawIPAddress
-    | _RawNetworkPart
-    | tuple[_RawIPAddress]
-    | tuple[_RawIPAddress, int]
+    address: (
+        _RawIPAddress
+        | _RawNetworkPart
+        | tuple[_RawIPAddress]
+        | tuple[_RawIPAddress, int]
+    )
 ) -> IPv4Interface | IPv6Interface: ...
 
 class _IPAddressBase:
