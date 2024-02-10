@@ -106,7 +106,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
             kid=[],
         )
-
         body = [self.convert(i) for i in node.body]
         # valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt ))]
         # if len(valid) != len(body):
