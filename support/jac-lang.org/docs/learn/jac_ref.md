@@ -32,7 +32,7 @@
 
 ## Architypes
 ```yaml linenums="30"
---8<-- "jaclang/compiler/jac.lark:30:42"
+--8<-- "jaclang/compiler/jac.lark:30:43"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -45,8 +45,8 @@
 --8<-- "examples/reference/architypes.md"
 
 ## Architype bodies
-```yaml linenums="45"
---8<-- "jaclang/compiler/jac.lark:45:50"
+```yaml linenums="46"
+--8<-- "jaclang/compiler/jac.lark:46:51"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -59,8 +59,8 @@
 --8<-- "examples/reference/architype_bodies.md"
 
 ## Enumerations
-```yaml linenums="53"
---8<-- "jaclang/compiler/jac.lark:53:57"
+```yaml linenums="54"
+--8<-- "jaclang/compiler/jac.lark:54:58"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -73,8 +73,8 @@
 --8<-- "examples/reference/enumerations.md"
 
 ## Enumeration Bodies
-```yaml linenums="60"
---8<-- "jaclang/compiler/jac.lark:60:64"
+```yaml linenums="61"
+--8<-- "jaclang/compiler/jac.lark:61:65"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -87,8 +87,8 @@
 --8<-- "examples/reference/enumeration_bodies.md"
 
 ## Abilities
-```yaml linenums="67"
---8<-- "jaclang/compiler/jac.lark:67:77"
+```yaml linenums="68"
+--8<-- "jaclang/compiler/jac.lark:68:77"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -802,7 +802,7 @@
 
 ## Subscripted and dotted expressions
 ```yaml linenums="330"
---8<-- "jaclang/compiler/jac.lark:330:335"
+--8<-- "jaclang/compiler/jac.lark:330:336"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -815,8 +815,8 @@
 --8<-- "examples/reference/subscripted_and_dotted_expressions.md"
 
 ## Function calls
-```yaml linenums="338"
---8<-- "jaclang/compiler/jac.lark:338:342"
+```yaml linenums="339"
+--8<-- "jaclang/compiler/jac.lark:339:343"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -829,8 +829,8 @@
 --8<-- "examples/reference/function_calls.md"
 
 ## Atom
-```yaml linenums="345"
---8<-- "jaclang/compiler/jac.lark:345:367"
+```yaml linenums="346"
+--8<-- "jaclang/compiler/jac.lark:346:368"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -843,8 +843,8 @@
 --8<-- "examples/reference/atom.md"
 
 ## Collection values
-```yaml linenums="370"
---8<-- "jaclang/compiler/jac.lark:370:391"
+```yaml linenums="371"
+--8<-- "jaclang/compiler/jac.lark:371:392"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -857,8 +857,8 @@
 --8<-- "examples/reference/collection_values.md"
 
 ## Tuples and Jac Tuples
-```yaml linenums="394"
---8<-- "jaclang/compiler/jac.lark:394:401"
+```yaml linenums="395"
+--8<-- "jaclang/compiler/jac.lark:395:402"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -871,8 +871,8 @@
 --8<-- "examples/reference/tuples_and_jac_tuples.md"
 
 ## Data Spatial References
-```yaml linenums="404"
---8<-- "jaclang/compiler/jac.lark:404:414"
+```yaml linenums="405"
+--8<-- "jaclang/compiler/jac.lark:405:415"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -885,8 +885,8 @@
 --8<-- "examples/reference/data_spatial_references.md"
 
 ## Special Comprehensions
-```yaml linenums="417"
---8<-- "jaclang/compiler/jac.lark:417:420"
+```yaml linenums="418"
+--8<-- "jaclang/compiler/jac.lark:418:421"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -899,8 +899,8 @@
 --8<-- "examples/reference/special_comprehensions.md"
 
 ## Names and references
-```yaml linenums="423"
---8<-- "jaclang/compiler/jac.lark:423:449"
+```yaml linenums="424"
+--8<-- "jaclang/compiler/jac.lark:424:452"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -913,8 +913,8 @@
 --8<-- "examples/reference/names_and_references.md"
 
 ## Builtin types
-```yaml linenums="452"
---8<-- "jaclang/compiler/jac.lark:452:462"
+```yaml linenums="455"
+--8<-- "jaclang/compiler/jac.lark:455:465"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -927,8 +927,8 @@
 --8<-- "examples/reference/builtin_types.md"
 
 ## Lexer Tokens
-```yaml linenums="465"
---8<-- "jaclang/compiler/jac.lark:465:634"
+```yaml linenums="468"
+--8<-- "jaclang/compiler/jac.lark:468:639"
 ```
 === "Jac"
     ```jac linenums="1"
@@ -941,8 +941,8 @@
 --8<-- "examples/reference/lexer_tokens.md"
 
 ## f-string tokens
-```yaml linenums="637"
---8<-- "jaclang/compiler/jac.lark:637:648"
+```yaml linenums="642"
+--8<-- "jaclang/compiler/jac.lark:642:653"
 ```
 === "Jac"
     ```jac linenums="1"

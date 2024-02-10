@@ -53,7 +53,7 @@ class JacCliTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
-        cli.ast_tool("pass_template")
+        cli.tool("pass_template")
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -78,7 +78,7 @@ class JacCliTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
-        cli.ast_tool("print", [f"{self.fixture_abs_path('hello.jac')}"])
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('hello.jac')}"])
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -89,7 +89,7 @@ class JacCliTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
-        cli.ast_tool("dot_gen", [f"{self.fixture_abs_path('hello.jac')}"])
+        cli.tool("ir", ["ast.", f"{self.fixture_abs_path('hello.jac')}"])
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()

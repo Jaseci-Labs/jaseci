@@ -281,3 +281,39 @@ def get_symtab_tree_str(
         )
         for i, child in enumerate(root.kid)
     )
+
+
+def dotgen_symtab_tree(node: SymbolTable) -> str:
+    """Generate DOT graph representation of a symbol table tree."""
+    dot_lines = []
+    id_map = {}
+    last_id_used = 0
+
+    def gen_node_id(node: SymbolTree) -> int:
+        nonlocal last_id_used
+        if id(node) not in id_map:
+            id_map[id(node)] = last_id_used
+            last_id_used += 1
+        return id_map[id(node)]
+
+    def gen_node_parameters(node: SymbolTree) -> str:
+        shape = ""
+        fillcolor = ""
+        style = ""
+        label = f'"{node.name}"'
+        label = f"{label} {shape} {style} {fillcolor}".strip()
+        return f"[label={label}]"
+
+    def gen_dot_graph(node: SymbolTree) -> None:
+        nonlocal dot_lines
+        dot_lines.append(f"{gen_node_id(node)} {gen_node_parameters(node)};")
+        for kid_node in node.kid:
+            if kid_node:
+                dot_lines.append(f"{gen_node_id(node)}  -> {gen_node_id(kid_node)};")
+                gen_dot_graph(kid_node)
+
+    gen_dot_graph(_build_symbol_tree_common(node))
+
+    dot_str = "digraph graph1 {" + "\n".join(dot_lines) + "}"
+
+    return dot_str

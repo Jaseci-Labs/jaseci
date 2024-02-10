@@ -137,7 +137,7 @@ def test(filename: str) -> None:
 
 
 @cmd_registry.register
-def ast_tool(tool: str, args: Optional[list] = None) -> None:
+def tool(tool: str, args: Optional[list] = None) -> None:
     """Run the specified AST tool with optional arguments.
 
     :param tool: The name of the AST tool to run.
