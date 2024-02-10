@@ -2202,41 +2202,44 @@ class PyastGenPass(Pass):
             ]
         elif isinstance(node.right, ast.EdgeOpRef):
             pynode = self.translate_edge_op_ref(node.target.gen.py_ast[0], node.right)
-            if len(node.edge_ref_chain):
-                for item in node.edge_ref_chain:
-                    if isinstance(item, ast.EdgeOpRef):
-                        right = self.translate_edge_op_ref(pynode, item)
-                    else:
-                        right = item.gen.py_ast[0]
-                    pynode = self.sync(
-                        ast3.ListComp(
-                            elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
-                            generators=[
-                                self.sync(
-                                    ast3.comprehension(
-                                        target=self.sync(
-                                            ast3.Name(id="_jac_i", ctx=ast3.Store())
-                                        ),
-                                        iter=pynode,
-                                        ifs=[
-                                            self.sync(
-                                                ast3.Compare(
-                                                    left=self.sync(
-                                                        ast3.Name(
-                                                            id="_jac_i", ctx=ast3.Load()
-                                                        )
-                                                    ),
-                                                    ops=[self.sync(ast3.In())],
-                                                    comparators=[right],
-                                                )
+            for item in node.edge_ref_chain:
+                if isinstance(item, ast.EdgeOpRef):
+                    right = self.translate_edge_op_ref(pynode, item)
+                elif isinstance(item, ast.AtomTrailer) and isinstance(
+                    item.target, ast.EdgeOpRef
+                ):
+                    right = self.translate_edge_op_ref(pynode, item.target)
+                else:
+                    right = item.gen.py_ast[0]
+                pynode = self.sync(
+                    ast3.ListComp(
+                        elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
+                        generators=[
+                            self.sync(
+                                ast3.comprehension(
+                                    target=self.sync(
+                                        ast3.Name(id="_jac_i", ctx=ast3.Store())
+                                    ),
+                                    iter=pynode,
+                                    ifs=[
+                                        self.sync(
+                                            ast3.Compare(
+                                                left=self.sync(
+                                                    ast3.Name(
+                                                        id="_jac_i", ctx=ast3.Load()
+                                                    )
+                                                ),
+                                                ops=[self.sync(ast3.In())],
+                                                comparators=[right],
                                             )
-                                        ],
-                                        is_async=0,
-                                    )
+                                        )
+                                    ],
+                                    is_async=0,
                                 )
-                            ],
-                        )
+                            )
+                        ],
                     )
+                )
             node.gen.py_ast = [pynode]
         else:
             node.gen.py_ast = [
