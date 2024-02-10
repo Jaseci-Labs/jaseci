@@ -31,7 +31,7 @@ edge MyEdge {
 }
 
 :walker:Creator:can:travel {
-    for i in -:MyEdge:val <= 5:-> {
+    for i in (-:MyEdge:val <= 5:->) {
         print(i.value);
     }
     visit -->;

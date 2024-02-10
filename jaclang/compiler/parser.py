@@ -2128,7 +2128,7 @@ class JacParser(Pass):
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref atomic_chain? | index_slice)
+            atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
                         | (atomic_call | atom)
             """
@@ -2157,24 +2157,14 @@ class JacParser(Pass):
                 )
             elif (
                 len(chomp) > 1
-                and isinstance(chomp[0], (ast.Token, ast.EdgeOpRef))
+                and isinstance(chomp[0], ast.Token)
                 and isinstance(chomp[1], (ast.AtomExpr, ast.AtomTrailer))
                 and isinstance(target, ast.Expr)
             ):
                 return self.nu(
                     ast.AtomTrailer(
-                        target=(
-                            target
-                            if isinstance(chomp[0], (ast.Token))
-                            and chomp[0].name != Tok.DOT_BKWD
-                            else chomp[1]
-                        ),
-                        right=(
-                            chomp[1]
-                            if isinstance(chomp[0], (ast.Token))
-                            and chomp[0].name != Tok.DOT_BKWD
-                            else target
-                        ),
+                        target=(target if chomp[0].name != Tok.DOT_BKWD else chomp[1]),
+                        right=(chomp[1] if chomp[0].name != Tok.DOT_BKWD else target),
                         is_null_ok=is_null_ok,
                         is_attr=chomp[0],
                         kid=kid,
@@ -3082,11 +3072,15 @@ class JacParser(Pass):
         def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_op_ref: edge_any
-                       | edge_from
-                       | edge_to
+            edge_op_ref: edge_any atomic_chain?
+                    | edge_from atomic_chain?
+                    | edge_to atomic_chain?
             """
-            if isinstance(kid[0], ast.EdgeOpRef):
+            if len(kid) < 2 and isinstance(kid[0], ast.EdgeOpRef):
+                return self.nu(kid[0])
+            elif isinstance(kid[0], ast.EdgeOpRef) and isinstance(kid[1], ast.Expr):
+                kid[0].chain = kid[1]
+                kid[0].add_kids_right([kid[1]])
                 return self.nu(kid[0])
             else:
                 raise self.ice()
@@ -3110,6 +3104,7 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.OUT,
+                        chain=None,
                         kid=kid,
                     )
                 )
@@ -3135,6 +3130,7 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.IN,
+                        chain=None,
                         kid=kid,
                     )
                 )
@@ -3160,6 +3156,7 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.ANY,
+                        chain=None,
                         kid=kid,
                     )
                 )

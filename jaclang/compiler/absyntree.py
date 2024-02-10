@@ -1740,12 +1740,14 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
         filter_type: Optional[Expr],
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
+        chain: Optional[Expr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize edge op reference expression node."""
         self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
+        self.chain = chain
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstSymbolNode.__init__(
