@@ -3091,15 +3091,11 @@ class JacParser(Pass):
         def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_op_ref: edge_any atomic_chain?
-                    | edge_from atomic_chain?
-                    | edge_to atomic_chain?
+            edge_op_ref: edge_any
+                    | edge_from
+                    | edge_to
             """
-            if len(kid) < 2 and isinstance(kid[0], ast.EdgeOpRef):
-                return self.nu(kid[0])
-            elif isinstance(kid[0], ast.EdgeOpRef) and isinstance(kid[1], ast.Expr):
-                kid[0].chain = kid[1]
-                kid[0].add_kids_right([kid[1]])
+            if isinstance(kid[0], ast.EdgeOpRef):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
