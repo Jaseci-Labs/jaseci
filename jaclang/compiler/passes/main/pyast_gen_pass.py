@@ -2367,95 +2367,62 @@ class PyastGenPass(Pass):
 
     def translate_edge_op_ref(self, loc: ast3.AST, node: ast.EdgeOpRef) -> ast3.AST:
         """Generate ast for edge op ref call."""
-
-        def gen_ast(loc: ast3.AST, node: ast.EdgeOpRef) -> ast3.AST:
-            return self.sync(
-                ast3.Call(
-                    func=self.sync(
+        return self.sync(
+            ast3.Call(
+                func=self.sync(
+                    ast3.Attribute(
+                        value=self.sync(
+                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                        ),
+                        attr="edge_ref",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[
+                    loc,
+                    self.sync(
                         ast3.Attribute(
                             value=self.sync(
-                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value,
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    attr="EdgeDir",
+                                    ctx=ast3.Load(),
+                                )
                             ),
-                            attr="edge_ref",
+                            attr=node.edge_dir.name,
                             ctx=ast3.Load(),
                         )
                     ),
-                    args=[
-                        loc,
-                        self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Attribute(
-                                        value=self.sync(
-                                            ast3.Name(
-                                                id=Con.JAC_FEATURE.value,
-                                                ctx=ast3.Load(),
-                                            )
-                                        ),
-                                        attr="EdgeDir",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                attr=node.edge_dir.name,
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                    ],
-                    keywords=[
-                        self.sync(
-                            ast3.keyword(
-                                arg="filter_type",
-                                value=self.sync(
-                                    node.filter_type.gen.py_ast[0]
-                                    if node.filter_type
-                                    else self.sync(ast3.Constant(value=None))
-                                ),
-                            )
-                        ),
-                        self.sync(
-                            ast3.keyword(
-                                arg="filter_func",
-                                value=self.sync(
-                                    node.filter_cond.gen.py_ast[0]
-                                    if node.filter_cond
-                                    else self.sync(ast3.Constant(value=None))
-                                ),
-                            )
-                        ),
-                    ],
-                )
-            )
-
-        ret: ast3.AST = gen_ast(loc, node)
-        if node.chain:
-            left = ret
-            right = gen_ast(node.chain.gen.py_ast[0], node)
-            ret = self.sync(
-                ast3.ListComp(
-                    elt=self.sync(ast3.Name(id="i", ctx=ast3.Load())),
-                    generators=[
-                        self.sync(
-                            ast3.comprehension(
-                                target=self.sync(ast3.Name(id="i", ctx=ast3.Store())),
-                                iter=left,
-                                ifs=[
-                                    self.sync(
-                                        ast3.Compare(
-                                            left=self.sync(
-                                                ast3.Name(id="i", ctx=ast3.Load())
-                                            ),
-                                            ops=[self.sync(ast3.In())],
-                                            comparators=[right],
-                                        )
-                                    )
-                                ],
-                                is_async=0,
-                            )
+                ],
+                keywords=[
+                    self.sync(
+                        ast3.keyword(
+                            arg="filter_type",
+                            value=self.sync(
+                                node.filter_type.gen.py_ast[0]
+                                if node.filter_type
+                                else self.sync(ast3.Constant(value=None))
+                            ),
                         )
-                    ],
-                )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="filter_func",
+                            value=self.sync(
+                                node.filter_cond.gen.py_ast[0]
+                                if node.filter_cond
+                                else self.sync(ast3.Constant(value=None))
+                            ),
+                        )
+                    ),
+                ],
             )
-        return ret
+        )
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
