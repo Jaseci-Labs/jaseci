@@ -5,10 +5,11 @@ in each node. Module nodes contain the entire module code.
 """
 
 import ast as ast3
+import textwrap
 from typing import Optional, Sequence, TypeVar
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import Constants as Con, Tokens as Tok
+from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
 from jaclang.compiler.passes import Pass
 
 T = TypeVar("T", bound=ast3.AST)
@@ -400,7 +401,9 @@ class PyastGenPass(Pass):
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = self.pyinline_sync([*ast3.parse(node.code.value).body])
+            node.gen.py_ast = self.pyinline_sync(
+                [*ast3.parse(textwrap.dedent(node.code.value)).body]
+            )
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -1650,8 +1653,16 @@ class PyastGenPass(Pass):
                             )
                         ),
                         args=[
-                            node.left.gen.py_ast[0],
-                            node.right.gen.py_ast[0],
+                            (
+                                node.right.gen.py_ast[0]
+                                if node.op.edge_dir == EdgeDir.IN
+                                else node.left.gen.py_ast[0]
+                            ),
+                            (
+                                node.left.gen.py_ast[0]
+                                if node.op.edge_dir == EdgeDir.IN
+                                else node.right.gen.py_ast[0]
+                            ),
                             node.op.gen.py_ast[0],
                         ],
                         keywords=[],
@@ -2137,10 +2148,11 @@ class PyastGenPass(Pass):
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 
-        target: AtomType,
-        right: AtomType,
+        target: Expr,
+        right: AtomExpr | Expr,
+        is_attr: Optional[Token],
         is_null_ok: bool,
-        is_attr: bool,
+        edge_ref_chain: list[Expr],
         """
         if node.is_attr:
             node.gen.py_ast = [
@@ -2189,9 +2201,57 @@ class PyastGenPass(Pass):
                 )
             ]
         elif isinstance(node.right, ast.EdgeOpRef):
-            node.gen.py_ast = [
-                self.translate_edge_op_ref(node.target.gen.py_ast[0], node.right)
-            ]
+
+            def unroll_edge_ref_chain(
+                pynode: ast3.AST, atom_trail: ast.AtomTrailer, with_target: bool = False
+            ) -> ast3.AST:
+                chain = [atom_trail.right] + atom_trail.edge_ref_chain
+                if with_target:
+                    chain = [atom_trail.target] + chain
+                for item in chain:
+                    if isinstance(item, ast.EdgeOpRef):
+                        pynode = self.translate_edge_op_ref(pynode, item)
+                    elif isinstance(item, ast.AtomTrailer) and isinstance(
+                        item.target, ast.EdgeOpRef
+                    ):
+                        pynode = unroll_edge_ref_chain(pynode, item, with_target=True)
+                    else:
+                        right = item.gen.py_ast[0]
+                        pynode = self.sync(
+                            ast3.ListComp(
+                                elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
+                                generators=[
+                                    self.sync(
+                                        ast3.comprehension(
+                                            target=self.sync(
+                                                ast3.Name(id="_jac_i", ctx=ast3.Store())
+                                            ),
+                                            iter=pynode,
+                                            ifs=[
+                                                self.sync(
+                                                    ast3.Compare(
+                                                        left=self.sync(
+                                                            ast3.Name(
+                                                                id="_jac_i",
+                                                                ctx=ast3.Load(),
+                                                            )
+                                                        ),
+                                                        ops=[self.sync(ast3.In())],
+                                                        comparators=[right],
+                                                    )
+                                                )
+                                            ],
+                                            is_async=0,
+                                        )
+                                    )
+                                ],
+                            )
+                        )
+                return pynode
+
+            pynode = node.target.gen.py_ast[0]
+            pynode = unroll_edge_ref_chain(pynode, node)
+            node.gen.py_ast = [pynode]
         else:
             node.gen.py_ast = [
                 self.sync(
@@ -2321,7 +2381,7 @@ class PyastGenPass(Pass):
 
     def translate_edge_op_ref(self, loc: ast3.AST, node: ast.EdgeOpRef) -> ast3.AST:
         """Generate ast for edge op ref call."""
-        ret = self.sync(
+        return self.sync(
             ast3.Call(
                 func=self.sync(
                     ast3.Attribute(
@@ -2351,21 +2411,31 @@ class PyastGenPass(Pass):
                             ctx=ast3.Load(),
                         )
                     ),
-                    (
-                        node.filter_type.gen.py_ast[0]
-                        if node.filter_type
-                        else self.sync(ast3.Constant(value=None))
+                ],
+                keywords=[
+                    self.sync(
+                        ast3.keyword(
+                            arg="filter_type",
+                            value=self.sync(
+                                node.filter_type.gen.py_ast[0]
+                                if node.filter_type
+                                else self.sync(ast3.Constant(value=None))
+                            ),
+                        )
                     ),
-                    (
-                        node.filter_cond.gen.py_ast[0]
-                        if node.filter_cond
-                        else self.sync(ast3.Constant(value=None))
+                    self.sync(
+                        ast3.keyword(
+                            arg="filter_func",
+                            value=self.sync(
+                                node.filter_cond.gen.py_ast[0]
+                                if node.filter_cond
+                                else self.sync(ast3.Constant(value=None))
+                            ),
+                        )
                     ),
                 ],
-                keywords=[],
             )
         )
-        return ret
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
@@ -2394,24 +2464,7 @@ class PyastGenPass(Pass):
                         )
                     ),
                     args=[
-                        self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Attribute(
-                                        value=self.sync(
-                                            ast3.Name(
-                                                id=Con.JAC_FEATURE.value,
-                                                ctx=ast3.Load(),
-                                            )
-                                        ),
-                                        attr="EdgeDir",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                attr=node.edge_dir.name,
-                                ctx=ast3.Load(),
-                            )
-                        ),
+                        self.sync(ast3.Constant(value=node.edge_dir == EdgeDir.ANY)),
                         (
                             node.conn_type.gen.py_ast[0]
                             if node.conn_type

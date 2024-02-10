@@ -2128,7 +2128,8 @@ class JacParser(Pass):
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
+            atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
+                        | atomic_chain NULL_OK? edge_op_ref atomic_chain*
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
                         | (atomic_call | atom)
             """
@@ -2151,22 +2152,41 @@ class JacParser(Pass):
                         target=target,
                         right=chomp[0],
                         is_null_ok=is_null_ok,
-                        is_attr=False,
+                        is_attr=None,
+                        edge_ref_chain=[],
                         kid=kid,
                     )
                 )
             elif (
                 len(chomp) > 1
                 and isinstance(chomp[0], ast.Token)
-                and isinstance(chomp[1], ast.AtomExpr)
+                and isinstance(chomp[1], (ast.AtomExpr, ast.AtomTrailer))
                 and isinstance(target, ast.Expr)
             ):
                 return self.nu(
                     ast.AtomTrailer(
-                        target=target if chomp[0].name != Tok.DOT_BKWD else chomp[1],
-                        right=chomp[1] if chomp[0].name != Tok.DOT_BKWD else target,
+                        target=(target if chomp[0].name != Tok.DOT_BKWD else chomp[1]),
+                        right=(chomp[1] if chomp[0].name != Tok.DOT_BKWD else target),
                         is_null_ok=is_null_ok,
-                        is_attr=True,
+                        is_attr=chomp[0],
+                        edge_ref_chain=[],
+                        kid=kid,
+                    )
+                )
+            elif (
+                len(chomp) > 1
+                and isinstance(chomp[0], ast.EdgeOpRef)
+                and isinstance(chomp[1], (ast.AtomExpr, ast.AtomTrailer))
+                and isinstance(target, ast.Expr)
+            ):
+                valid_chain = [i for i in chomp[1:] if isinstance(i, (ast.Expr))]
+                return self.nu(
+                    ast.AtomTrailer(
+                        target=target,
+                        right=chomp[0],
+                        is_null_ok=is_null_ok,
+                        is_attr=None,
+                        edge_ref_chain=valid_chain,
                         kid=kid,
                     )
                 )
@@ -3072,8 +3092,8 @@ class JacParser(Pass):
             """Grammar rule.
 
             edge_op_ref: edge_any
-                       | edge_from
-                       | edge_to
+                    | edge_from
+                    | edge_to
             """
             if isinstance(kid[0], ast.EdgeOpRef):
                 return self.nu(kid[0])

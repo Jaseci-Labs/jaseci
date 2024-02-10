@@ -1276,7 +1276,6 @@ class JacFormatPass(Pass):
                 else:
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Semi):
-                self.emit(node, node.gen.jac.rstrip())
                 self.emit(node, f"{i.gen.jac} ")
             elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
                 self.emit_ln(node, i.gen.jac)

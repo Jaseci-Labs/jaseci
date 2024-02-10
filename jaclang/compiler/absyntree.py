@@ -1584,8 +1584,9 @@ class AtomTrailer(Expr):
         self,
         target: Expr,
         right: AtomExpr | Expr,
-        is_attr: bool,
+        is_attr: Optional[Token],
         is_null_ok: bool,
+        edge_ref_chain: list[Expr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
@@ -1593,6 +1594,7 @@ class AtomTrailer(Expr):
         self.right = right
         self.is_attr = is_attr
         self.is_null_ok = is_null_ok
+        self.edge_ref_chain = edge_ref_chain
         AstNode.__init__(self, kid=kid)
 
 
