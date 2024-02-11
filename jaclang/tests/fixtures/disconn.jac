@@ -18,9 +18,9 @@ with entry{
     z=[c(cc=x) for x in range(0,3)];
     x++>y;
     y++>z;
-   
-    print( x --> y-->z);
-    # print( x del--> y);   #test is not added for del 
+
+    print(x --> y-->z);
+    # print( x del--> y);   #test is not added for del
     # print(x[1]._jac_.edges);
         # print(x[1]._jac_.gen_dot());
 
