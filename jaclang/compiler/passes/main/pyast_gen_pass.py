@@ -277,18 +277,16 @@ class PyastGenPass(Pass):
         body: Sequence[ElementStmt],
         is_imported: bool,
         """
+        pre_body = [*node.impl_mod.body, *node.body] if node.impl_mod else node.body
+        pre_body = [*pre_body, *node.test_mod.body] if node.test_mod else pre_body
         body = (
             [
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc),
                 *self.preamble,
-                *[
-                    x.gen.py_ast
-                    for x in node.body
-                    # if not isinstance(x, ast.AstImplOnlyNode)
-                ],
+                *[x.gen.py_ast for x in pre_body],
             ]
             if node.doc
-            else [*self.preamble, *[x.gen.py_ast for x in node.body]]
+            else [*self.preamble, *[x.gen.py_ast for x in pre_body]]
         )
         new_body = []
         for i in body:

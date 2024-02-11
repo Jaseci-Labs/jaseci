@@ -64,7 +64,7 @@ class ImportPass(Pass):
             mod = self.import_mod_from_file(f"{node.loc.mod_path[:-4]}.impl.jac")
             if mod:
                 node.impl_mod = mod
-                node.add_kids_right([mod], pos_update=False)
+                node.add_kids_left([mod], pos_update=False)
                 mod.parent = node
         if node.loc.mod_path.endswith(".jac") and path.exists(
             f"{node.loc.mod_path[:-4]}.test.jac"
