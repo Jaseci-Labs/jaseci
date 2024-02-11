@@ -1724,12 +1724,20 @@ class PyastGenPass(Pass):
                         args=[
                             node.left.gen.py_ast[0],
                             node.right.gen.py_ast[0],
-                           self.sync(ast3.Constant(value=node.op.edge_spec.edge_dir.name)),
-                           node.op.edge_spec.filter_type.gen.py_ast[0]
-                           if node.op.edge_spec.filter_type is not None else self.sync(ast3.Constant(value=None)),
-                           node.op.edge_spec.filter_cond.gen.py_ast[0]
-                           if node.op.edge_spec.filter_cond is not None else self.sync(ast3.Constant(value=None)),
-                      ],
+                            self.sync(
+                                ast3.Constant(value=node.op.edge_spec.edge_dir.name)
+                            ),
+                            (
+                                node.op.edge_spec.filter_type.gen.py_ast[0]
+                                if node.op.edge_spec.filter_type is not None
+                                else self.sync(ast3.Constant(value=None))
+                            ),
+                            (
+                                node.op.edge_spec.filter_cond.gen.py_ast[0]
+                                if node.op.edge_spec.filter_cond is not None
+                                else self.sync(ast3.Constant(value=None))
+                            ),
+                        ],
                         keywords=[],
                     )
                 )

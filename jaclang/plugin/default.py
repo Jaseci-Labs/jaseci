@@ -322,14 +322,14 @@ class JacFeatureDefaults:
                         and (not filter_type or isinstance(e, filter_type))
                     ):
                         if (
-                            dir in ['OUT', 'ANY']
+                            dir in ["OUT", "ANY"]
                             and i._jac_.obj == e._jac_.source
                             and e._jac_.target == j._jac_.obj
                         ):
                             e._jac_.detach(i._jac_.obj, e._jac_.target)
                             disconnect_occurred = True
                         if (
-                            dir in ['IN', 'ANY']
+                            dir in ["IN", "ANY"]
                             and i._jac_.obj == e._jac_.target
                             and e._jac_.source == j._jac_.obj
                         ):
