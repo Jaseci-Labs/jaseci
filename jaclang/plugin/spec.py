@@ -196,3 +196,13 @@ class JacFeatureSpec:
     ) -> Callable[[], EdgeArchitype]:
         """Jac's root getter."""
         raise NotImplementedError
+
+
+class JacBuiltin:
+    """Jac Builtins."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
+        """Print the dot graph."""
+        raise NotImplementedError

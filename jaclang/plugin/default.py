@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import types
-from dataclasses import dataclass, field
+from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Optional, Type
 
@@ -26,6 +26,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
+from jaclang.core.jacbuiltins import dotgen
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
 
@@ -69,14 +70,13 @@ class JacFeatureDefaults:
         on_exit: list[DSFunc],
     ) -> Type[Architype]:
         """Create a new architype."""
-        cls = dataclass(eq=False)(cls)
         for i in on_entry + on_exit:
             i.resolve(cls)
         if not issubclass(cls, arch_base):
             cls = type(cls.__name__, (cls, arch_base), {})
-        cls._jac_entry_funcs_ = on_entry
-        cls._jac_exit_funcs_ = on_exit
-        inner_init = cls.__init__
+        cls._jac_entry_funcs_ = on_entry  # type: ignore
+        cls._jac_exit_funcs_ = on_exit  # type: ignore
+        inner_init = cls.__init__  # type: ignore
 
         @wraps(inner_init)
         def new_init(self: Architype, *args: object, **kwargs: object) -> None:
@@ -342,3 +342,13 @@ class JacFeatureDefaults:
             return edge
 
         return builder
+
+
+class JacBuiltin:
+    """Jac Builtins."""
+
+    @staticmethod
+    @hookimpl
+    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
+        """Print the dot graph."""
+        return dotgen(node, radius)

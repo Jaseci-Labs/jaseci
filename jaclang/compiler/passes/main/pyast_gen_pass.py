@@ -140,6 +140,26 @@ class PyastGenPass(Pass):
         )
         self.already_added.append("jac_feature")
 
+    def needs_dataclass(self) -> None:
+        """Check if enum is needed."""
+        if "dataclass" in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.ImportFrom(
+                    module="dataclasses",
+                    names=[
+                        self.sync(
+                            ast3.alias(name="dataclass", asname="__jac_dataclass__")
+                        ),
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            )
+        )
+        self.already_added.append("dataclass")
+
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
@@ -549,6 +569,7 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.needs_jac_feature()
+        self.needs_dataclass()
         body = self.resolve_stmt_block(
             node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
             doc=node.doc,
@@ -594,6 +615,24 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        decorators.append(
+            self.sync(
+                ast3.Call(
+                    func=self.sync(ast3.Name(id="__jac_dataclass__", ctx=ast3.Load())),
+                    args=[],
+                    keywords=[
+                        self.sync(
+                            ast3.keyword(
+                                arg="eq",
+                                value=self.sync(
+                                    ast3.Constant(value=False),
+                                ),
+                            )
+                        )
+                    ],
+                )
+            )
+        )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.is_abstract:
             self.needs_jac_feature()

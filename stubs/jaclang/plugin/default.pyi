@@ -114,3 +114,7 @@ class JacFeatureDefaults:
         conn_type: Optional[Type[EdgeArchitype]],
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[], EdgeArchitype]: ...
+
+class JacBuiltin:
+    @staticmethod
+    def dotgen(node: NodeArchitype, radius: int = 0) -> str: ...
