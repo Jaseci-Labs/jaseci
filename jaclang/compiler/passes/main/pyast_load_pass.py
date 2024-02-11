@@ -56,8 +56,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             type_ignores: list[TypeIgnore]
         """
         print("inside proc module-----------1")
-        for i in node.body:
-            print(i)
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
         print("inside proc module-----------2:", elements)
         valid = [
