@@ -1724,7 +1724,9 @@ class PyastGenPass(Pass):
                         args=[
                             node.left.gen.py_ast[0],
                             node.right.gen.py_ast[0],
-                            node.op.gen.py_ast[0],
+                            node.op.edge_spec.edge_dir,
+                            node.op.edge_spec.filter_type,
+                            node.op.edge_spec.filter_cond,
                         ],
                         keywords=[],
                     )
