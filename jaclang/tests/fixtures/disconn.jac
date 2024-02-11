@@ -20,9 +20,13 @@ with entry{
     y++>z;
 
 
-    # print('x--> y : ', x del --> y);
-    apple = x --> --> y;
-    print(x[1]._jac_.edges);
+   
+   
+    print( x --> y-->z);
+    print( x del--> y);
+    # print(x[1]._jac_.edges);
+        # print(x[1]._jac_.gen_dot());
+
     # print(x[1]-->z,'it should be [bb=0 bb=1 bb=2]');
 
 }
