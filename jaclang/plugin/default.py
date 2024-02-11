@@ -26,6 +26,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
+from jaclang.core.jacbuiltins import dotgen
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
 
@@ -342,3 +343,13 @@ class JacFeatureDefaults:
             return edge
 
         return builder
+
+
+class JacBuiltin:
+    """Jac Builtins."""
+
+    @staticmethod
+    @hookimpl
+    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
+        """Print the dot graph."""
+        return dotgen(node, radius)
