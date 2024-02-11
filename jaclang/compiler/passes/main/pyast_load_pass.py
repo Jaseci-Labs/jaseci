@@ -55,9 +55,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
-        print("inside proc module-----------1")
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
-        print("inside proc module-----------2:", elements)
         valid = [
             i
             for i in elements
@@ -65,7 +63,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ]
         if len(valid) != len(elements):
             self.error("Invalid module body")
-        print("inside proc module-----------3:", valid)
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
@@ -105,11 +102,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        # valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt ))]
-        # if len(valid) != len(body):
-        #     print("body:",body, "valid:", valid)
-        #     self.error("Length mismatch in function body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=body, kid=body)
+        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
+        if len(valid) != len(body):
+            self.error("Length mismatch in function body")
+        valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
@@ -686,23 +682,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         return param
-
-    def proc_load(self, node: py_ast.Name) -> None:
-        """Process python node."""
-        # print(node.ctx, "...,")
-        # param = ast.Name(
-        #     file_path=self.mod_path,
-        #     name=Tok.NAME,
-        #     value=node.id,
-        #     line=node.lineno,
-        #     col_start=node.col_offset,
-        #     col_end=node.col_offset + len(node.id),
-        #     pos_start=0,
-        #     pos_end=0,
-        #     kid=[],
-        # )
-        # print("param is : ", param)
-        # return param
 
     def proc_named_expr(self, node: py_ast.NamedExpr) -> None:
         """Process python node."""
