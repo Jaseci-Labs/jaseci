@@ -169,7 +169,7 @@ class JacFeature:
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]:
+    ) -> bool:
         """Jac's disconnect operator feature."""
         return pm.hook.disconnect(
             left=left,

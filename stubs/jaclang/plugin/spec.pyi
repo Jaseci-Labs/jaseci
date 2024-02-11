@@ -78,7 +78,7 @@ class JacFeatureSpec:
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]: ...
+    ) -> bool: ...
     @staticmethod
     def assign_compr(
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]

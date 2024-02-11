@@ -304,8 +304,9 @@ class JacFeatureDefaults:
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]:  # noqa: ANN401
+    ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
+        disconnect_occurred = False
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
         for i in left:
@@ -326,13 +327,15 @@ class JacFeatureDefaults:
                             and e._jac_.target == j._jac_.obj
                         ):
                             e._jac_.detach(i._jac_.obj, e._jac_.target)
+                            disconnect_occurred = True
                         if (
                             dir in [EdgeDir.IN, EdgeDir.ANY]
                             and i._jac_.obj == e._jac_.target
                             and e._jac_.source == j._jac_.obj
                         ):
-                            e._jac_.detach(i._jac.obj, e._jac_.source)
-        # return
+                            e._jac_.detach(i._jac_.obj, e._jac_.source)
+                            disconnect_occurred = True
+        return disconnect_occurred
 
     @staticmethod
     @hookimpl
