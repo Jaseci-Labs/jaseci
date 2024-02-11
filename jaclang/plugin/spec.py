@@ -169,8 +169,14 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def disconnect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
-        """Jac's connect operator feature."""
+    def disconnect(
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        dir: EdgeDir,
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> list[NodeArchitype]:  # noqa: ANN401
+        """Jac's disconnect operator feature."""
         raise NotImplementedError
 
     @staticmethod
