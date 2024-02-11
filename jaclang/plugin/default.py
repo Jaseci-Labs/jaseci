@@ -298,9 +298,44 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def disconnect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
-        """Jac's connect operator feature."""
-        return ret if (ret := op1) is not None else op2
+    def disconnect(
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        dir: EdgeDir,
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> bool:  # noqa: ANN401
+        """Jac's disconnect operator feature."""
+        disconnect_occurred = False
+        left = [left] if isinstance(left, NodeArchitype) else left
+        right = [right] if isinstance(right, NodeArchitype) else right
+        for i in left:
+            for j in right:
+                edge_list: list[EdgeArchitype] = [*i._jac_.edges]
+                if filter_type:
+                    edge_list = [e for e in edge_list if isinstance(e, filter_type)]
+                edge_list = filter_func(edge_list) if filter_func else edge_list
+                for e in edge_list:
+                    if (
+                        e._jac_.target
+                        and e._jac_.source
+                        and (not filter_type or isinstance(e, filter_type))
+                    ):
+                        if (
+                            dir in ["OUT", "ANY"]
+                            and i._jac_.obj == e._jac_.source
+                            and e._jac_.target == j._jac_.obj
+                        ):
+                            e._jac_.detach(i._jac_.obj, e._jac_.target)
+                            disconnect_occurred = True
+                        if (
+                            dir in ["IN", "ANY"]
+                            and i._jac_.obj == e._jac_.target
+                            and e._jac_.source == j._jac_.obj
+                        ):
+                            e._jac_.detach(i._jac_.obj, e._jac_.source)
+                            disconnect_occurred = True
+        return disconnect_occurred
 
     @staticmethod
     @hookimpl

@@ -19,8 +19,11 @@ with entry{
     x++>y;
     y++>z;
 
+    # print(x -:aaa:-> );
     print(x --> y-->z);
-    # print( x del--> y);   #test is not added for del
+    print(x-->);
+    print(x del--> y);
+    print(x -->);
     # print(x[1]._jac_.edges);
         # print(x[1]._jac_.gen_dot());
 

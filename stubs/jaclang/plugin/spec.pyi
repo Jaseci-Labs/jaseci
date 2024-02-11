@@ -72,7 +72,13 @@ class JacFeatureSpec:
         edge_spec: Callable[[], EdgeArchitype],
     ) -> NodeArchitype | list[NodeArchitype]: ...
     @staticmethod
-    def disconnect(op1: Optional[T], op2: T, op: Any) -> T: ...
+    def disconnect(
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        dir: EdgeDir,
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> bool: ...
     @staticmethod
     def assign_compr(
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]

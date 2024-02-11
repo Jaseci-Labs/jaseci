@@ -163,9 +163,21 @@ class JacFeature:
         return pm.hook.connect(left=left, right=right, edge_spec=edge_spec)
 
     @staticmethod
-    def disconnect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
-        """Jac's connect operator feature."""
-        return pm.hook.disconnect(op1=op1, op2=op2, op=op)
+    def disconnect(
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        dir: EdgeDir,
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> bool:
+        """Jac's disconnect operator feature."""
+        return pm.hook.disconnect(
+            left=left,
+            right=right,
+            dir=dir,
+            filter_type=filter_type,
+            filter_func=filter_func,
+        )
 
     @staticmethod
     def assign_compr(
