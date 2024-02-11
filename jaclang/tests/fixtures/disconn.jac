@@ -19,10 +19,11 @@ with entry{
     x++>y;
     y++>z;
 
+    print(x --> y-->z);
+    # print( x del--> y);   #test is not added for del
+    # print(x[1]._jac_.edges);
+        # print(x[1]._jac_.gen_dot());
 
-    # print('x--> y : ', x del --> y);
-    apple = x --> --> y;
-    print(x[1]._jac_.edges);
     # print(x[1]-->z,'it should be [bb=0 bb=1 bb=2]');
 
 }

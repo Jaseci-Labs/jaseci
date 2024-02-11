@@ -274,7 +274,7 @@ class JacFeatureDefaults:
                 connected_nodes.extend(
                     node._jac_.edges_to_nodes(dir, filter_type, filter_func)
                 )
-            return connected_nodes
+            return list(set(connected_nodes))
         else:
             raise TypeError("Invalid node object")
 

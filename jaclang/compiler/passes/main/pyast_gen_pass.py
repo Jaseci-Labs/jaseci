@@ -2255,37 +2255,7 @@ class PyastGenPass(Pass):
                     ):
                         pynode = unroll_edge_ref_chain(pynode, item, with_target=True)
                     else:
-                        right = item.gen.py_ast[0]
-                        pynode = self.sync(
-                            ast3.ListComp(
-                                elt=self.sync(ast3.Name(id="_jac_i", ctx=ast3.Load())),
-                                generators=[
-                                    self.sync(
-                                        ast3.comprehension(
-                                            target=self.sync(
-                                                ast3.Name(id="_jac_i", ctx=ast3.Store())
-                                            ),
-                                            iter=pynode,
-                                            ifs=[
-                                                self.sync(
-                                                    ast3.Compare(
-                                                        left=self.sync(
-                                                            ast3.Name(
-                                                                id="_jac_i",
-                                                                ctx=ast3.Load(),
-                                                            )
-                                                        ),
-                                                        ops=[self.sync(ast3.In())],
-                                                        comparators=[right],
-                                                    )
-                                                )
-                                            ],
-                                            is_async=0,
-                                        )
-                                    )
-                                ],
-                            )
-                        )
+                        pynode = item.gen.py_ast[0]
                 return pynode
 
             pynode = node.target.gen.py_ast[0]
