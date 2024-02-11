@@ -1,7 +1,10 @@
-from jaclang.plugin.feature import JacFeature as jac
+from __future__ import annotations
+from jaclang.plugin.feature import JacFeature as Jac
+from dataclasses import dataclass as dataclass
 
 
-@jac.make_obj(on_entry=[], on_exit=[])
+@Jac.make_obj(on_entry=[], on_exit=[])
+@dataclass(eq=False)
 class Point:
     x: float
     y: float

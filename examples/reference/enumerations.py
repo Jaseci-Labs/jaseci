@@ -1,5 +1,5 @@
+from __future__ import annotations
 from enum import Enum, auto
-from enumeration_bodies import *
 
 
 class Color(Enum):

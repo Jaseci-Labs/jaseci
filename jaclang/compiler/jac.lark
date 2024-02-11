@@ -56,8 +56,6 @@ enum: enum_def
 
 enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
-
-// Enumeration Bodies
 enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
 
 enum_stmt: NAME EQ expression

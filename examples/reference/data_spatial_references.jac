@@ -12,7 +12,6 @@ edge connector{
 }
 
 :walker:Creator:can:create {
-    import:py sys;
     end = <here>;
     for i=0 to i<3 by i+=1  {
         end ++> (end := node_a(val=i));
@@ -31,9 +30,4 @@ edge connector{
 }
 with entry{
     <root> spawn Creator();
-    print(<r>._jac_.gen_dot());
 }
-
-
-
-

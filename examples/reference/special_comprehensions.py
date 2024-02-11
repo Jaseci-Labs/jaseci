@@ -1,12 +1,15 @@
-from jaclang.plugin.feature import JacFeature as jac
+from __future__ import annotations
+from jaclang.plugin.feature import JacFeature as Jac
+from dataclasses import dataclass as dataclass
 import random
 
 
-@jac.make_obj(on_entry=[], on_exit=[])
+@Jac.make_obj(on_entry=[], on_exit=[])
+@dataclass(eq=False)
 class TestObj:
-    x: int = jac.has_instance_default(gen_func=lambda: random.randint(0, 15))
-    y: int = jac.has_instance_default(gen_func=lambda: random.randint(0, 15))
-    z: int = jac.has_instance_default(gen_func=lambda: random.randint(0, 15))
+    x: int = Jac.has_instance_default(gen_func=lambda: random.randint(0, 15))
+    y: int = Jac.has_instance_default(gen_func=lambda: random.randint(0, 15))
+    z: int = Jac.has_instance_default(gen_func=lambda: random.randint(0, 15))
 
 
 random.seed(42)
@@ -18,13 +21,14 @@ while i < 10:
 print((lambda x: [i for i in x if i.y <= 7])(apple))
 
 
-@jac.make_obj(on_entry=[], on_exit=[])
+@Jac.make_obj(on_entry=[], on_exit=[])
+@dataclass(eq=False)
 class MyObj:
-    apple: int = jac.has_instance_default(gen_func=lambda: 0)
-    banana: int = jac.has_instance_default(gen_func=lambda: 0)
+    apple: int = Jac.has_instance_default(gen_func=lambda: 0)
+    banana: int = Jac.has_instance_default(gen_func=lambda: 0)
 
 
 x = MyObj()
 y = MyObj()
-mvar = jac.assign_compr([x, y], (("apple", "banana"), (5, 7)))
+mvar = Jac.assign_compr([x, y], (("apple", "banana"), (5, 7)))
 print(mvar)

@@ -31,6 +31,4 @@ edge MyEdge {
 
 with entry {
     <root> spawn Creator();
-
-    # print(<r>._jac_.gen_dot());
 }
