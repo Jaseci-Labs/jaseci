@@ -2255,7 +2255,65 @@ class PyastGenPass(Pass):
                     ):
                         pynode = unroll_edge_ref_chain(pynode, item, with_target=True)
                     else:
-                        pynode = item.gen.py_ast[0]
+                        right = (
+                            item.target.gen.py_ast[0]
+                            if isinstance(item, ast.AtomTrailer)
+                            else item.gen.py_ast[0]
+                        )
+                        pynode = self.sync(
+                            ast3.Call(
+                                func=self.sync(
+                                    ast3.Name(
+                                        id="list",
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                                args=[
+                                    self.sync(
+                                        ast3.Call(
+                                            func=self.sync(
+                                                ast3.Attribute(
+                                                    value=self.sync(
+                                                        ast3.Call(
+                                                            func=self.sync(
+                                                                ast3.Name(
+                                                                    id="set",
+                                                                    ctx=ast3.Load(),
+                                                                )
+                                                            ),
+                                                            args=[pynode],
+                                                            keywords=[],
+                                                        )
+                                                    ),
+                                                    attr="intersection",
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                            args=[
+                                                self.sync(
+                                                    ast3.Call(
+                                                        func=self.sync(
+                                                            ast3.Name(
+                                                                id="set",
+                                                                ctx=ast3.Load(),
+                                                            )
+                                                        ),
+                                                        args=[right],
+                                                        keywords=[],
+                                                    )
+                                                )
+                                            ],
+                                            keywords=[],
+                                        )
+                                    )
+                                ],
+                                keywords=[],
+                            )
+                        )
+                        if isinstance(item, ast.AtomTrailer):
+                            pynode = unroll_edge_ref_chain(
+                                pynode, item, with_target=False
+                            )
                 return pynode
 
             pynode = node.target.gen.py_ast[0]
