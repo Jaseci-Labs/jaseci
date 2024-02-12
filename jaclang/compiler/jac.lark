@@ -341,7 +341,7 @@ param_list: expr_list COMMA kw_expr_list
           | expr_list
 
 // Atom
-atom: edge_op_ref
+atom: EDGE_OP? edge_op_ref
     | any_ref
     | LPAREN (expression | yield_expr) RPAREN
     | atom_collection

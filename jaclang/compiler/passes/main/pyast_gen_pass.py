@@ -2510,6 +2510,12 @@ class PyastGenPass(Pass):
                             ),
                         )
                     ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="edges_only",
+                            value=self.sync(ast3.Constant(value=node.edges_only)),
+                        )
+                    ),
                 ],
             )
         )

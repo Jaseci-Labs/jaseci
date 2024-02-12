@@ -2283,7 +2283,7 @@ class JacParser(Pass):
         def atom(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atom: edge_op_ref
+            atom: EDGE_OP? edge_op_ref
                  | any_ref
                  | LPAREN (expression | yield_expr) RPAREN
                  | atom_collection
@@ -2294,6 +2294,13 @@ class JacParser(Pass):
                     return self.nu(kid[0])
                 else:
                     raise self.ice()
+            elif len(kid) == 2:
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.EdgeOpRef):
+                    kid[1].edges_only = True
+                    kid[1].add_kids_left([kid[0]])
+                    return self.nu(kid[1])
+                else:
+                    raise self.ice()
             elif len(kid) == 3:
                 if (
                     isinstance(kid[0], ast.Token)
@@ -2301,8 +2308,6 @@ class JacParser(Pass):
                     and isinstance(kid[2], ast.Token)
                 ):
                     ret = ast.AtomUnit(value=kid[1], is_paren=True, kid=kid)
-                    # ret.add_kids_left([kid[0]])
-                    # ret.add_kids_right([kid[2]])
                     return self.nu(ret)
                 else:
                     raise self.ice()
