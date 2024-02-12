@@ -307,7 +307,7 @@ class JacFeatureDefaults:
         for i in left:
             for j in right:
                 i._jac_.connect_node(j, edge_spec())
-        return left
+        return right
 
     @staticmethod
     @hookimpl
