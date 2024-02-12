@@ -65,7 +65,7 @@ class JacFeatureSpec:
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
-    ) -> list[NodeArchitype]: ...
+    ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
     def connect(
         left: NodeArchitype | list[NodeArchitype],
