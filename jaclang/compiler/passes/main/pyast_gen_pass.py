@@ -1689,20 +1689,43 @@ class PyastGenPass(Pass):
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[
-                            (
-                                node.right.gen.py_ast[0]
-                                if node.op.edge_dir == EdgeDir.IN
-                                else node.left.gen.py_ast[0]
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="left",
+                                    value=(
+                                        node.right.gen.py_ast[0]
+                                        if node.op.edge_dir == EdgeDir.IN
+                                        else node.left.gen.py_ast[0]
+                                    ),
+                                )
                             ),
-                            (
-                                node.left.gen.py_ast[0]
-                                if node.op.edge_dir == EdgeDir.IN
-                                else node.right.gen.py_ast[0]
+                            self.sync(
+                                ast3.keyword(
+                                    arg="right",
+                                    value=(
+                                        node.left.gen.py_ast[0]
+                                        if node.op.edge_dir == EdgeDir.IN
+                                        else node.right.gen.py_ast[0]
+                                    ),
+                                )
                             ),
-                            node.op.gen.py_ast[0],
+                            self.sync(
+                                ast3.keyword(
+                                    arg="edge_spec",
+                                    value=node.op.gen.py_ast[0],
+                                )
+                            ),
+                            self.sync(
+                                ast3.keyword(
+                                    arg="edges_only",
+                                    value=self.sync(
+                                        ast3.Constant(value=node.op.edges_only)
+                                    ),
+                                )
+                            ),
                         ],
-                        keywords=[],
                     )
                 )
             ]
@@ -2546,20 +2569,37 @@ class PyastGenPass(Pass):
                             ctx=ast3.Load(),
                         )
                     ),
-                    args=[
-                        self.sync(ast3.Constant(value=node.edge_dir == EdgeDir.ANY)),
-                        (
-                            node.conn_type.gen.py_ast[0]
-                            if node.conn_type
-                            else self.sync(ast3.Constant(value=None))
+                    args=[],
+                    keywords=[
+                        self.sync(
+                            ast3.keyword(
+                                arg="is_undirected",
+                                value=self.sync(
+                                    ast3.Constant(value=node.edge_dir == EdgeDir.ANY)
+                                ),
+                            )
                         ),
-                        (
-                            node.conn_assign.gen.py_ast[0]
-                            if node.conn_assign
-                            else self.sync(ast3.Constant(value=None))
+                        self.sync(
+                            ast3.keyword(
+                                arg="conn_type",
+                                value=(
+                                    node.conn_type.gen.py_ast[0]
+                                    if node.conn_type
+                                    else self.sync(ast3.Constant(value=None))
+                                ),
+                            )
+                        ),
+                        self.sync(
+                            ast3.keyword(
+                                arg="conn_assign",
+                                value=(
+                                    node.conn_assign.gen.py_ast[0]
+                                    if node.conn_assign
+                                    else self.sync(ast3.Constant(value=None))
+                                ),
+                            )
                         ),
                     ],
-                    keywords=[],
                 )
             )
         ]

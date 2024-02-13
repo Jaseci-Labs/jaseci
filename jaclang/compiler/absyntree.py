@@ -1783,11 +1783,13 @@ class ConnectOp(AstNode):
         conn_assign: Optional[AssignCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
+        edges_only: bool = False,
     ) -> None:
         """Initialize connect op reference expression node."""
         self.conn_type = conn_type
         self.conn_assign = conn_assign
         self.edge_dir = edge_dir
+        self.edges_only = edges_only
         AstNode.__init__(self, kid=kid)
 
 

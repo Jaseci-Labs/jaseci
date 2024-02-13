@@ -297,17 +297,21 @@ class JacFeatureDefaults:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]:
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
+        edges = []
         for i in left:
             for j in right:
-                i._jac_.connect_node(j, edge_spec())
-        return right
+                conn_edge = edge_spec()
+                edges.append(conn_edge)
+                i._jac_.connect_node(j, conn_edge)
+        return right if not edges_only else edges
 
     @staticmethod
     @hookimpl

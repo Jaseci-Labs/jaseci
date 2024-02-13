@@ -160,12 +160,15 @@ class JacFeature:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]:
+        edges_only: bool = False,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
-        return pm.hook.connect(left=left, right=right, edge_spec=edge_spec)
+        return pm.hook.connect(
+            left=left, right=right, edge_spec=edge_spec, edges_only=edges_only
+        )
 
     @staticmethod
     def disconnect(

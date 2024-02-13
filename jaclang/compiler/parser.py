@@ -3183,11 +3183,14 @@ class JacParser(Pass):
         def connect_op(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
 
-            connect_op: connect_from
-                      | connect_to
+            connect_op: EDGE_OP? (connect_from | connect_to)
             """
-            if isinstance(kid[0], ast.ConnectOp):
+            if len(kid) < 2 and isinstance(kid[0], ast.ConnectOp):
                 return self.nu(kid[0])
+            elif isinstance(kid[1], ast.ConnectOp):
+                kid[1].edges_only = True
+                kid[1].add_kids_left([kid[0]])
+                return self.nu(kid[1])
             else:
                 raise self.ice()
 

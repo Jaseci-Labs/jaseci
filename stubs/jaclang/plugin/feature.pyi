@@ -80,7 +80,8 @@ class JacFeature:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]: ...
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
     def disconnect(
         left: NodeArchitype | list[NodeArchitype],
