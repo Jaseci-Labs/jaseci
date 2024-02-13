@@ -1763,7 +1763,10 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif node.op.name in [Tok.KW_AND, Tok.KW_OR]:
+        elif isinstance(node.op, ast.Token) and node.op.name in [
+            Tok.KW_AND.value,
+            Tok.KW_OR.value,
+        ]:
             node.gen.py_ast = [
                 self.sync(
                     ast3.BoolOp(
@@ -1772,8 +1775,10 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif node.op.name in [Tok.WALRUS_EQ] and isinstance(
-            node.left.gen.py_ast[0], ast3.Name
+        elif (
+            isinstance(node.op, ast.Token)
+            and node.op.name in [Tok.WALRUS_EQ]
+            and isinstance(node.left.gen.py_ast[0], ast3.Name)
         ):
             node.left.gen.py_ast[0].ctx = ast3.Store()  # TODO: Short term fix
             node.gen.py_ast = [
@@ -1801,7 +1806,7 @@ class PyastGenPass(Pass):
         """Translate jac binary op."""
         if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
             raise self.ice()
-        elif node.op.name in [
+        elif isinstance(node.op, ast.Token) and node.op.name in [
             Tok.PIPE_FWD,
             Tok.A_PIPE_FWD,
         ]:
@@ -1816,7 +1821,7 @@ class PyastGenPass(Pass):
             )
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
-        elif node.op.name in [Tok.KW_SPAWN]:
+        elif isinstance(node.op, ast.Token) and node.op.name in [Tok.KW_SPAWN]:
             self.needs_jac_feature()
             return [
                 self.sync(
@@ -1835,7 +1840,10 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
+        elif isinstance(node.op, ast.Token) and node.op.name in [
+            Tok.PIPE_BKWD,
+            Tok.A_PIPE_BKWD,
+        ]:
             func_node = ast.FuncCall(
                 target=node.left,
                 params=(
@@ -1847,9 +1855,13 @@ class PyastGenPass(Pass):
             )
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
-        elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, ast.TupleVal):
+        elif (
+            isinstance(node.op, ast.Token)
+            and node.op.name == Tok.PIPE_FWD
+            and isinstance(node.right, ast.TupleVal)
+        ):
             self.error("Invalid pipe target.")
-        elif node.op.name == Tok.ELVIS_OP:
+        elif isinstance(node.op, ast.Token) and node.op.name == Tok.ELVIS_OP:
             self.needs_jac_feature()
             return [
                 self.sync(
@@ -1870,7 +1882,7 @@ class PyastGenPass(Pass):
             ]
         else:
             self.error(
-                f"Binary operator {node.op.value} not supported in bootstrap Jac"
+                f"Binary operator {node.__class__.__name__} not supported in bootstrap Jac"
             )
         return []
 
@@ -1912,6 +1924,8 @@ class PyastGenPass(Pass):
         operand: ExprType,
         op: Token,
         """
+        if not isinstance(node.op, ast.Token):
+            raise self.ice("Unary operator not recognized.")
         if node.op.name == Tok.NOT:
             node.gen.py_ast = [
                 self.sync(
@@ -2277,7 +2291,7 @@ class PyastGenPass(Pass):
             def unroll_edge_ref_chain(
                 pynode: ast3.AST, atom_trail: ast.AtomTrailer, with_target: bool = False
             ) -> ast3.AST:
-                chain = [atom_trail.right] + atom_trail.edge_ref_chain
+                chain = [atom_trail.right]  # + atom_trail.edge_ref_chain
                 if with_target:
                     chain = [atom_trail.target] + chain
                 for item in chain:
@@ -2416,7 +2430,11 @@ class PyastGenPass(Pass):
         keywords = []
         if params and len(params.items) > 0:
             for x in params.items:
-                if isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_POW:
+                if (
+                    isinstance(x, ast.UnaryExpr)
+                    and isinstance(x.op, ast.Token)
+                    and x.op.name == Tok.STAR_POW
+                ):
                     keywords.append(
                         self.sync(ast3.keyword(value=x.operand.gen.py_ast[0]), x)
                     )
