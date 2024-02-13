@@ -239,12 +239,12 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
         jac_import("disconn", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("c(cc=0)", stdout_value)
-        self.assertIn("c(cc=1)", stdout_value)
-        self.assertIn("c(cc=2)", stdout_value)
-        self.assertIn("True", stdout_value)
-        self.assertIn("[]", stdout_value)
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("c(cc=0)", stdout_value[0])
+        self.assertIn("c(cc=1)", stdout_value[0])
+        self.assertIn("c(cc=2)", stdout_value[0])
+        self.assertIn("True", stdout_value[2])
+        self.assertIn("[]", stdout_value[3])
 
     def test_simple_archs(self) -> None:
         """Test conn assign on edges."""

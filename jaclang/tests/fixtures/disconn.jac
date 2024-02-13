@@ -21,9 +21,12 @@ with entry{
 
     # print(x -:aaa:-> );
     print(x --> y-->z);
-    print(x-->);
+    print(x -->);
     print(x del--> y);
     print(x -->);
+    print([i.__class__.__name__ for i in (x :e:++> y)]);
+    # print([i.__class__.__name__ for i in (x :e:-->)]);
+
     # print(x[1]._jac_.edges);
         # print(x[1]._jac_.gen_dot());
 
