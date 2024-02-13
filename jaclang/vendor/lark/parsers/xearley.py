@@ -54,6 +54,7 @@ class Parser(BaseParser):
         self.complete_lex = complete_lex
 
     def _parse(self, stream, columns, to_scan, start_symbol=None):
+
         def scan(i, to_scan):
             """The core Earley Scanner.
 

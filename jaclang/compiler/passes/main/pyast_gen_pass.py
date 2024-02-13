@@ -1763,6 +1763,8 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
+        elif isinstance(node.op, ast.EdgeOpRef):
+            pass
         elif isinstance(node.op, ast.Token) and node.op.name in [
             Tok.KW_AND.value,
             Tok.KW_OR.value,
