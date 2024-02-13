@@ -1760,7 +1760,10 @@ class JacParser(Pass):
             if len(kid) > 1:
                 if (
                     isinstance(kid[0], ast.Expr)
-                    and isinstance(kid[1], (ast.Token, ast.DisconnectOp, ast.ConnectOp))
+                    and isinstance(
+                        kid[1],
+                        (ast.Token, ast.DisconnectOp, ast.ConnectOp, ast.EdgeOpRef),
+                    )
                     and isinstance(kid[2], ast.Expr)
                 ):
                     return self.nu(
@@ -1776,6 +1779,7 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
             else:
+
                 raise self.ice()
 
         def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
@@ -2004,11 +2008,23 @@ class JacParser(Pass):
         def connect(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            connect: atomic_pipe
-                   | atomic_pipe connect_op connect
-                   | atomic_pipe disconnect_op connect
+            connect: (connect (connect_op | disconnect_op | edge_op_ref))? atomic_pipe
+                | connect edge_op_ref
             """
-            return self.binary_expr_unwind(kid)
+            if (
+                len(kid) == 2
+                and isinstance(kid[0], ast.Expr)
+                and isinstance(kid[1], ast.EdgeOpRef)
+            ):
+                return self.nu(
+                    ast.UnaryExpr(
+                        op=kid[1],
+                        operand=kid[0],
+                        kid=kid,
+                    )
+                )
+            else:
+                return self.binary_expr_unwind(kid)
 
         def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2129,7 +2145,6 @@ class JacParser(Pass):
             """Grammar rule.
 
             atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
-                        | atomic_chain NULL_OK? edge_op_ref atomic_chain*
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
                         | (atomic_call | atom)
             """
@@ -2153,7 +2168,6 @@ class JacParser(Pass):
                         right=chomp[0],
                         is_null_ok=is_null_ok,
                         is_attr=None,
-                        edge_ref_chain=[],
                         kid=kid,
                     )
                 )
@@ -2169,24 +2183,6 @@ class JacParser(Pass):
                         right=(chomp[1] if chomp[0].name != Tok.DOT_BKWD else target),
                         is_null_ok=is_null_ok,
                         is_attr=chomp[0],
-                        edge_ref_chain=[],
-                        kid=kid,
-                    )
-                )
-            elif (
-                len(chomp) > 1
-                and isinstance(chomp[0], ast.EdgeOpRef)
-                and isinstance(chomp[1], (ast.AtomExpr, ast.AtomTrailer))
-                and isinstance(target, ast.Expr)
-            ):
-                valid_chain = [i for i in chomp[1:] if isinstance(i, (ast.Expr))]
-                return self.nu(
-                    ast.AtomTrailer(
-                        target=target,
-                        right=chomp[0],
-                        is_null_ok=is_null_ok,
-                        is_attr=None,
-                        edge_ref_chain=valid_chain,
                         kid=kid,
                     )
                 )
@@ -3096,12 +3092,14 @@ class JacParser(Pass):
         def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_op_ref: edge_any
-                    | edge_from
-                    | edge_to
+            edge_op_ref: EDGE_OP? (edge_any | edge_from | edge_to)
             """
             if isinstance(kid[0], ast.EdgeOpRef):
                 return self.nu(kid[0])
+            elif isinstance(kid[1], ast.EdgeOpRef):
+                kid[1].edges_only = True
+                kid[1].add_kids_left([kid[0]])
+                return self.nu(kid[1])
             else:
                 raise self.ice()
 
