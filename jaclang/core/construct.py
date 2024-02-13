@@ -111,7 +111,7 @@ class EdgeAnchor(ObjectAnchor):
 
     def detach(
         self, src: NodeArchitype, trg: NodeArchitype, is_undirected: bool = False
-    ) -> EdgeAnchor:
+    ) -> None:
         """Detach edge from nodes."""
         self.is_undirected = is_undirected
         src._jac_.edges.remove(self.obj)

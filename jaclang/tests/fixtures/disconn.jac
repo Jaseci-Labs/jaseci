@@ -20,7 +20,7 @@ with entry{
     y++>z;
 
     # print(x -:aaa:-> );
-    # print(x[1]._jac_.edges);  #uncomment line 23 and 28 to confirm 
+    # print(x[1]._jac_.edges);  #uncomment line 23 and 28 to confirm
                                 # the created edges while connecting are destroyed while disconnect
     print(x --> y-->z);
     print(x-->);
