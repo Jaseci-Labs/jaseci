@@ -318,7 +318,8 @@ factor: (BW_NOT | MINUS | PLUS) factor | power
 power: (power STAR_POW)? connect
 
 // Connect expressions
-connect: (connect (connect_op | disconnect_op))? atomic_pipe
+connect: (connect (connect_op | disconnect_op | edge_op_ref))? atomic_pipe
+       | connect edge_op_ref
 
 // Atomic expressions
 atomic_pipe: (atomic_pipe (KW_SPAWN | A_PIPE_FWD))? atomic_pipe_back
@@ -340,7 +341,6 @@ pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // Subscripted and dotted expressions
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
-            | atomic_chain NULL_OK? edge_op_ref atomic_chain*
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
             | (atomic_call | atom)
 
@@ -355,7 +355,7 @@ param_list: expr_list COMMA kw_expr_list
           | expr_list
 
 // Atom
-atom: EDGE_OP? edge_op_ref
+atom: edge_op_ref
     | any_ref
     | LPAREN (expression | yield_expr) RPAREN
     | atom_collection
@@ -414,10 +414,7 @@ kw_expr_list: (kw_expr_list COMMA)? kw_expr
 kw_expr: any_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
-edge_op_ref: edge_any
-           | edge_from
-           | edge_to
-
+edge_op_ref: EDGE_OP? (edge_any | edge_from | edge_to)
 edge_to: ARROW_R | ARROW_R_P1 expression (COLON filter_compare_list)? ARROW_R_P2
 edge_from: ARROW_L | ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_L_P2
 edge_any: ARROW_BI | ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_R_P2
