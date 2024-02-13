@@ -412,8 +412,6 @@ class JacBuiltin:
                 for edge_ in current_node.edges:
                     if edge_._jac_ is not None and edge_._jac_.target is not None:
                         target = edge_._jac_.target
-                        print(type(edge_))
-                        print(type(target._jac_))
                         connections.add(((current_node), (target._jac_), edge_))
                         collect_node_connections(
                             target._jac_, visited_nodes, connections, depth + 1
