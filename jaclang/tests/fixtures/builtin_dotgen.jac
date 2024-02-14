@@ -20,5 +20,4 @@ with entry{
     print(d2.count("a(val")==19);
     print(d3.count("a(val")==10);
     print(l1<l3<l2);
-    print(type(b[1]._jac_));
 }

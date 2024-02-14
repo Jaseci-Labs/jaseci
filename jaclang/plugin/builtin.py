@@ -11,16 +11,13 @@ from jaclang.core.construct import (
     root,
 )
 
-
 import pluggy
-
 
 __all__ = [
     "NodeArchitype",
     "EdgeArchitype",
     "root",
 ]
-
 
 hookimpl = pluggy.HookimplMarker("jac")
 

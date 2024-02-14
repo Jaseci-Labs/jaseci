@@ -212,9 +212,3 @@ class JacBuiltin:
     def dotgen(node: NodeArchitype, radius: int) -> str:
         """Print the dot graph."""
         raise NotImplementedError
-
-
-# @hookspec(firstresult=True)
-# def my_function(arg1, arg2):
-#     # Your function logic here
-#     raise NotImplementedError

@@ -12,7 +12,6 @@ from jaclang.vendor import lark  # noqa: E402
 from jaclang.vendor import mypy  # noqa: E402
 from jaclang.vendor import pluggy  # noqa: E402
 
-
 jac_import = JacFeature.jac_import
 
 __all__ = [
