@@ -9,7 +9,6 @@ class Constants(str, Enum):
     JAC_LANG_IMP = "jac"
     HERE = "_jac_here_"
     JAC_FEATURE = "_Jac"
-    JAC_BUILTIN = "jgraph"
     ROOT = f"{JAC_FEATURE}.get_root()"
     EDGES_TO_NODE = "_jac_.edges_to_nodes"
     EDGE_REF = "_jac_.edge_ref"

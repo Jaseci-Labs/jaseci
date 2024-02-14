@@ -9,6 +9,7 @@ from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
     Architype,
     EdgeArchitype,
+    NodeAnchor,
     NodeArchitype,
     Root,
     WalkerArchitype,
@@ -16,14 +17,12 @@ from jaclang.core.construct import (
 from jaclang.core.construct import root
 from jaclang.plugin.spec import JacBuiltin, JacFeatureSpec, T
 
-# from jaclang.plugin.spec import JacBuiltin,JacFeatureSpec,my_function, T
 
 import pluggy
 
 pm = pluggy.PluginManager("jac")
 pm.add_hookspecs(JacFeatureSpec)
 pm.add_hookspecs(JacBuiltin)
-# pm.add_hookspecs(my_function)
 
 
 class JacFeature:
@@ -208,16 +207,11 @@ class JacFeature:
         )
 
 
-class JacBuiltin:
-    """Jac Builtins."""
-
-    @staticmethod
-    def dotgen(node: NodeArchitype = root._jac_, radius: int = 0) -> str:
-        """Print the dot graph."""
-        return pm.hook.dotgen(node=node, radius=radius)
+"""Jac specific builtins.
+#Need to write a doc string
+"""
 
 
-# def my_function(arg1, arg2):
-#     # Your function logic here
-#     print('working')
-#     return pm.hook.my_function(arg1=arg1, arg2=arg2)
+def dotgen(node: NodeAnchor = root._jac_, radius: int = 0) -> str:
+    """Print the dot graph."""
+    return pm.hook.dotgen(node=node, radius=radius)

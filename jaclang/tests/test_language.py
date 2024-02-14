@@ -156,14 +156,17 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("TestObj", stdout_value)
 
-    def test_gen_dot_builtin(self) -> None:
-        """Test the dot gen of nodes and edges as a builtin."""
+    def test_gen_dot_bubble(self) -> None:
+        """Test the dot gen of nodes and edges of bubblesort."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
+        jac_import("gendot_bubble_sort", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("True"), 4)
+        self.assertIn(
+            '[label="inner_node(main=5, sub=2)"];',
+            stdout_value,
+        )
 
     def test_assign_compr(self) -> None:
         """Test assign_compr."""
@@ -275,3 +278,13 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("1.414", stdout_value)
+
+    def test_gen_dot_builtin(self) -> None:
+        """Test the dot gen of nodes and edges as a builtin."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("True"), 4)
