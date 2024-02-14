@@ -24,7 +24,7 @@ with entry{
     print([x -->]);
     print(x del--> y);
     print([x -->]);
-    print([i.__class__.__name__ for i in (x :e:++> y)]);
+    print([i.__class__.__name__ for i in (x ++> y)]);
     print([i.__class__.__name__ for i in (:e:[x -->])]);
 
     # print(x[1]._jac_.edges);
