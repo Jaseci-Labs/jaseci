@@ -69,8 +69,8 @@ ability: decorators? ability_def
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
-func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
+func_decl: (LPAREN func_decl_params? RPAREN)? (STRING? RETURN_HINT expression)?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
 
@@ -322,7 +322,7 @@ connect: (connect (connect_op | disconnect_op | edge_op_ref))? atomic_pipe
        | connect edge_op_ref
 
 // Atomic expressions
-atomic_pipe: (atomic_pipe (KW_SPAWN | A_PIPE_FWD))? atomic_pipe_back
+atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
 
 // Atomic pipe back expressions
 atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
