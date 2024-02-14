@@ -315,11 +315,11 @@ cmp_op: KW_ISN
 arithmetic: (arithmetic (MINUS | PLUS))? term
 term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? factor
 factor: (BW_NOT | MINUS | PLUS) factor | power
-power: (power STAR_POW)? connect
+power: (power STAR_POW)? connect_unary
 
 // Connect expressions
+connect_unary: connect edge_op_ref
 connect: (connect (connect_op | disconnect_op | edge_op_ref))? atomic_pipe
-       | connect edge_op_ref
 
 // Atomic expressions
 atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
