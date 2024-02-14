@@ -3097,6 +3097,8 @@ class JacParser(Pass):
             return self.nu(
                 ast.EdgeRefTrailer(
                     chain=valid_chain,
+                    edges_only=isinstance(kid[0], ast.Token)
+                    and kid[0].name == Tok.EDGE_OP,
                     kid=kid,
                 )
             )

@@ -1738,10 +1738,12 @@ class EdgeRefTrailer(Expr):
     def __init__(
         self,
         chain: list[Expr],
+        edges_only: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize edge reference trailer expression node."""
         self.chain = chain
+        self.edges_only = edges_only
         AstNode.__init__(self, kid=kid)
 
 
