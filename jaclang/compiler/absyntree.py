@@ -1732,6 +1732,19 @@ class SpecialVarRef(NameSpec):
             raise NotImplementedError("ICE: Special var reference not implemented")
 
 
+class EdgeRefTrailer(Expr):
+    """EdgeRefTrailer node type for Jac Ast."""
+
+    def __init__(
+        self,
+        chain: list[Expr],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize edge reference trailer expression node."""
+        self.chain = chain
+        AstNode.__init__(self, kid=kid)
+
+
 class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
     """EdgeOpRef node type for Jac Ast."""
 

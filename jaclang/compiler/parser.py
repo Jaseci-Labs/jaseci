@@ -2008,8 +2008,7 @@ class JacParser(Pass):
         def connect(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            connect: (connect (connect_op | disconnect_op | edge_op_ref))? atomic_pipe
-                | connect edge_op_ref
+            connect: (connect (connect_op | disconnect_op))? atomic_pipe
             """
             if (
                 len(kid) == 2
@@ -3088,6 +3087,19 @@ class JacParser(Pass):
                 )
             else:
                 raise self.ice()
+
+        def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
+            """Grammar rule.
+
+            edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref expression?)+ RSQUARE
+            """
+            valid_chain = [i for i in kid if isinstance(i, (ast.Expr))]
+            return self.nu(
+                ast.EdgeRefTrailer(
+                    chain=valid_chain,
+                    kid=kid,
+                )
+            )
 
         def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.

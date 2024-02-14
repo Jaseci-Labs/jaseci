@@ -9,7 +9,7 @@ node node_1 {
 
 :node:node_1:can:func_1 {
     print("visiting ", <s>);
-    visit -->;
+    visit [-->];
 }
 
 :walker:Creator:can:func2 {
@@ -17,7 +17,7 @@ node node_1 {
     for i=0 to i<5 by i+=1  {
         end ++> (end := node_1(val=i + 1));
     }
-    visit -->;
+    visit [-->];
 }
 
 with entry {
