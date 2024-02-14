@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+# import subprocess
 import types
 from dataclasses import field
 from functools import wraps
@@ -437,6 +438,12 @@ class JacBuiltin:
         # if dot_file:
         #     with open(dot_file, "w") as f:
         #         f.write(dot_content + "}")
+        # with open("output.dot", "w") as f:
+        #     f.write(dot_content+'}')
+
+        # subprocess.run(["dot", "-Tpng", "output.dot", "-o", "output.png"])
+        # subprocess.run(["explorer.exe", "output.png"])
+
         return dot_content + "}"
         # return   len(dot_content)
 
