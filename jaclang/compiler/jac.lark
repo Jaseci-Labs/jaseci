@@ -319,7 +319,7 @@ power: (power STAR_POW)? connect
 
 // Connect expressions
 connect: (connect (connect_op | disconnect_op))? atomic_pipe
-       | LSQUARE expression? (edge_op_ref expression?)+ RSQUARE
+       | (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref expression?)+ RSQUARE
 
 // Atomic expressions
 atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
@@ -413,14 +413,15 @@ kw_expr_list: (kw_expr_list COMMA)? kw_expr
 kw_expr: any_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
-edge_op_ref: (edge_any | edge_from | edge_to)
+edge_op_ref:  (edge_any | edge_from | edge_to)
 edge_to: ARROW_R | ARROW_R_P1 expression (COLON filter_compare_list)? ARROW_R_P2
 edge_from: ARROW_L | ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_L_P2
 edge_any: ARROW_BI | ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_R_P2
-connect_op: EDGE_OP? (connect_from | connect_to)
+connect_op: EDGE_OP? (connect_from | connect_to | connect_any)
 disconnect_op: KW_DELETE edge_op_ref
 connect_to: CARROW_R | CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
 connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
+connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
 
 // Special Comprehensions
 filter_compr: LPAREN EQ filter_compare_list RPAREN
@@ -540,13 +541,14 @@ KW_OVERRIDE: "override"
 KW_MATCH: "match"
 KW_CASE: "case"
 
+ARROW_BI: /<-->/
 ARROW_L: /<--/
 ARROW_R: /-->/
-ARROW_BI: /<-->/
 ARROW_L_P1: /<-\:/
 ARROW_R_P2: /:->/
 ARROW_L_P2: /:-/
 ARROW_R_P1: /-\:/
+CARROW_BI: /<\+\+>/
 CARROW_L: /<\+\+/
 CARROW_R: /\+\+>/
 CARROW_L_P1: /<\+\:/

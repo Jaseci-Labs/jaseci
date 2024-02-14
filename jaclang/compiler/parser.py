@@ -18,7 +18,7 @@ from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 class JacParser(Pass):
     """Jac Parser."""
 
-    dev_mode = True
+    dev_mode = False
 
     def __init__(self, input_ir: ast.JacSource) -> None:
         """Initialize parser."""
@@ -3259,6 +3259,34 @@ class JacParser(Pass):
                         conn_type=conn_type,
                         conn_assign=conn_assign,
                         edge_dir=EdgeDir.IN,
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def connect_any(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+            """Grammar rule.
+
+            connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
+            """
+            conn_type = kid[1] if len(kid) >= 3 else None
+            conn_assign = kid[3] if len(kid) >= 5 else None
+            if (isinstance(conn_type, ast.Expr) or conn_type is None) and (
+                isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
+            ):
+                conn_assign = (
+                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    if conn_assign
+                    else None
+                )
+                if conn_assign:
+                    kid[3] = conn_assign
+                return self.nu(
+                    ast.ConnectOp(
+                        conn_type=conn_type,
+                        conn_assign=conn_assign,
+                        edge_dir=EdgeDir.ANY,
                         kid=kid,
                     )
                 )

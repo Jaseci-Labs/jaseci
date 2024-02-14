@@ -193,6 +193,7 @@ class Tokens(str, Enum):
     ARROW_R_P2 = "ARROW_R_P2"
     CARROW_L = "CARROW_L"
     CARROW_R = "CARROW_R"
+    CARROW_BI = "CARROW_BI"
     CARROW_L_P1 = "CARROW_L_P1"
     CARROW_L_P2 = "CARROW_L_P2"
     CARROW_R_P1 = "CARROW_R_P1"
