@@ -20,6 +20,11 @@ walker game{
     can start_game with `<root> entry;
 }
 
+edge play{
+
+    has level_id:str = '1_1000';
+}
+
 '''Start screen node which operate as the virtual root node'''
 node start_screen {
 
@@ -68,21 +73,24 @@ with entry {
             <here>.g.won = False;
             <here>.fwd_dir =True;
             new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
-            <self> ++> level(game_level = <self>.game_level+1, level_id = new_ID);
-            visit -->;
+            <self> +:play:level_id=new_ID:+> level(game_level = <self>.game_level+1, level_id = new_ID);
+            visit -:play:level_id==new_ID:->;
         } else {
             <here>.g.game_over();
             <self>.played = True;
             <here>.g.won = False;
             <here>.fwd_dir = False;
-            visit <--;
+            visit <-:play:-;
         }
     } elif <here>.fwd_dir == False{
         new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
         print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played), '| Created Level ID :', new_ID);
         <here>.fwd_dir = True;
-        <self> ++> level(game_level = <self>.game_level+1, level_id = new_ID);
-        visit -->;
+        <self> +:play:level_id=new_ID:+> level(game_level = <self>.game_level+1, level_id = new_ID);
+        visit -:play:level_id==new_ID:->;
+    } else {
+        print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
+        visit <--;
     }
 }
 :node:level:can:exit_game {
@@ -98,15 +106,15 @@ with entry {
         <self>.game_started = True;
         <here>.g.intro_screen();
         new_ID = str(1) + "_" + str(random.randint(1000, 9000));
-        <self> ++> level(game_level = 1, level_id = new_ID);
+        <self> +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
         <here>.fwd_dir = True;
-        visit -->;
+        visit -:play:level_id==new_ID:->;
     } else {
         new_ID = str(1) + "_" + str(random.randint(1000, 9000));
-        <self> ++> level(game_level = 1, level_id = new_ID);
+        <self> +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
         print(":-: Visiting Intro Screen | Created Level ID :", new_ID);
         <here>.fwd_dir = True;
-        visit -->;
+        visit -:play:level_id==new_ID:->;
 
     }
 }
