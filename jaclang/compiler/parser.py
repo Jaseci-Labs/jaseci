@@ -18,7 +18,7 @@ from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 class JacParser(Pass):
     """Jac Parser."""
 
-    dev_mode = False
+    dev_mode = True
 
     def __init__(self, input_ir: ast.JacSource) -> None:
         """Initialize parser."""
