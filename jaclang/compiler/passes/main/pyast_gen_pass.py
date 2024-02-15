@@ -2220,7 +2220,6 @@ class PyastGenPass(Pass):
         right: AtomExpr | Expr,
         is_attr: Optional[Token],
         is_null_ok: bool,
-        edge_ref_chain: list[Expr],
         """
         if node.is_attr:
             node.gen.py_ast = [
