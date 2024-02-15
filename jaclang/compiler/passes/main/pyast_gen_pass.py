@@ -1755,10 +1755,7 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif node.op.name in [
-            Tok.KW_AND.value,
-            Tok.KW_OR.value,
-        ]:
+        elif node.op.name in [Tok.KW_AND.value, Tok.KW_OR.value]:
             node.gen.py_ast = [
                 self.sync(
                     ast3.BoolOp(
@@ -1767,10 +1764,8 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif (
-            isinstance(node.op, ast.Token)
-            and node.op.name in [Tok.WALRUS_EQ]
-            and isinstance(node.left.gen.py_ast[0], ast3.Name)
+        elif node.op.name in [Tok.WALRUS_EQ] and isinstance(
+            node.left.gen.py_ast[0], ast3.Name
         ):
             node.left.gen.py_ast[0].ctx = ast3.Store()  # TODO: Short term fix
             node.gen.py_ast = [
@@ -1847,11 +1842,7 @@ class PyastGenPass(Pass):
             )
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
-        elif (
-            isinstance(node.op, ast.Token)
-            and node.op.name == Tok.PIPE_FWD
-            and isinstance(node.right, ast.TupleVal)
-        ):
+        elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, ast.TupleVal):
             self.error("Invalid pipe target.")
         elif node.op.name == Tok.ELVIS_OP:
             self.needs_jac_feature()
@@ -1874,7 +1865,7 @@ class PyastGenPass(Pass):
             ]
         else:
             self.error(
-                f"Binary operator {node.__class__.__name__} not supported in bootstrap Jac"
+                f"Binary operator {node.op.value} not supported in bootstrap Jac"
             )
         return []
 
@@ -1916,8 +1907,6 @@ class PyastGenPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        if not isinstance(node.op, ast.Token):
-            raise self.ice("Unary operator not recognized.")
         if node.op.name == Tok.NOT:
             node.gen.py_ast = [
                 self.sync(
@@ -2343,11 +2332,7 @@ class PyastGenPass(Pass):
         keywords = []
         if params and len(params.items) > 0:
             for x in params.items:
-                if (
-                    isinstance(x, ast.UnaryExpr)
-                    and isinstance(x.op, ast.Token)
-                    and x.op.name == Tok.STAR_POW
-                ):
+                if isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_POW:
                     keywords.append(
                         self.sync(ast3.keyword(value=x.operand.gen.py_ast[0]), x)
                     )
