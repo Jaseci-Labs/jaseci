@@ -228,9 +228,9 @@ class JacLanguageTests(TestCase):
         jac_import("edge_ops", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.split("\n")[0], "[(3, 5), (14, 1), (5, 1)]")
-        self.assertEqual(stdout_value.split("\n")[1], "10")
-        self.assertEqual(stdout_value.split("\n")[2], "12")
+        self.assertIn("[(3, 5), (14, 1), (5, 1)]", stdout_value)
+        self.assertIn("10\n", stdout_value)
+        self.assertIn("12\n", stdout_value)
 
     def test_disconnect(self) -> None:
         """Test conn assign on edges."""

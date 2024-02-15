@@ -20,7 +20,7 @@ with entry{
     y++>z;
 
     # print(x -:aaa:-> );
-    print([x --> y-->z]);
+    print([x -->y-->z]);
     print([x -->]);
     print(x del--> y);
     print([x -->]);
