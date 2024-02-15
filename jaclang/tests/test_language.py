@@ -245,6 +245,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("c(cc=2)", stdout_value[0])
         self.assertIn("True", stdout_value[2])
         self.assertIn("[]", stdout_value[3])
+        self.assertIn("['GenericEdge', 'GenericEdge', 'GenericEdge']", stdout_value[5])
 
     def test_simple_archs(self) -> None:
         """Test conn assign on edges."""

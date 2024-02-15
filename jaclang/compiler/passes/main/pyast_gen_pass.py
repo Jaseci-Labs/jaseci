@@ -2388,6 +2388,11 @@ class PyastGenPass(Pass):
         """
         pynode = node.chain[0].gen.py_ast[0]
         chomp = [*node.chain]
+        last_edge = None
+        if node.edges_only:
+            for i in node.chain:
+                if isinstance(i, ast.EdgeOpRef):
+                    last_edge = i
         while len(chomp):
             cur = chomp[0]
             chomp = chomp[1:]
@@ -2398,11 +2403,19 @@ class PyastGenPass(Pass):
                 not next_i or not isinstance(next_i, ast.EdgeOpRef)
             ):
                 pynode = self.translate_edge_op_ref(
-                    pynode, cur, targ=next_i.gen.py_ast[0] if next_i else None
+                    pynode,
+                    cur,
+                    targ=next_i.gen.py_ast[0] if next_i else None,
+                    edges_only=node.edges_only and cur == last_edge,
                 )
                 chomp = chomp[1:] if next_i else chomp
             elif isinstance(cur, ast.EdgeOpRef) and isinstance(next_i, ast.EdgeOpRef):
-                pynode = self.translate_edge_op_ref(pynode, cur, targ=None)
+                pynode = self.translate_edge_op_ref(
+                    pynode,
+                    cur,
+                    targ=None,
+                    edges_only=node.edges_only and cur == last_edge,
+                )
             else:
                 raise self.ice("Invalid edge ref trailer")
 
@@ -2423,7 +2436,11 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [loc]
 
     def translate_edge_op_ref(
-        self, loc: ast3.AST, node: ast.EdgeOpRef, targ: Optional[ast3.AST]
+        self,
+        loc: ast3.AST,
+        node: ast.EdgeOpRef,
+        targ: Optional[ast3.AST],
+        edges_only: bool,
     ) -> ast3.AST:
         """Generate ast for edge op ref call."""
         return self.sync(
@@ -2488,6 +2505,12 @@ class PyastGenPass(Pass):
                                 if node.filter_cond
                                 else self.sync(ast3.Constant(value=None))
                             ),
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="edges_only",
+                            value=self.sync(ast3.Constant(value=edges_only)),
                         )
                     ),
                 ],
