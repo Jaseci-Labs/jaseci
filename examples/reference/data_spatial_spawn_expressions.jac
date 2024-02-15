@@ -8,7 +8,7 @@ node node_a{
 }
 :walker:Adder:can:do{
     <here> ++> node_a();
-    visit -->;
+    visit [-->];
 }
 :node:node_a:can:add{
     <self>.x= 550 ;

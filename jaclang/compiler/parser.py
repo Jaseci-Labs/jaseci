@@ -808,12 +808,12 @@ class JacParser(Pass):
         def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
             """Grammar rule.
 
-            event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
+            event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
             """
             type_specs = kid[1] if isinstance(kid[1], ast.Expr) else None
             return_spec = kid[-1] if isinstance(kid[-1], ast.Expr) else None
             semstr = (
-                kid[-2] if return_spec and isinstance(kid[-2], ast.String) else None
+                kid[-3] if return_spec and isinstance(kid[-3], ast.String) else None
             )
             event = kid[2] if type_specs else kid[1]
             if isinstance(event, ast.Token) and (
@@ -834,7 +834,7 @@ class JacParser(Pass):
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
             """Grammar rule.
 
-            func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
+            func_decl: (LPAREN func_decl_params? RPAREN)? (STRING? RETURN_HINT expression)?
             """
             params = (
                 kid[1] if len(kid) > 1 and isinstance(kid[1], ast.SubNodeList) else None
@@ -843,7 +843,9 @@ class JacParser(Pass):
                 kid[-1] if len(kid) and isinstance(kid[-1], ast.Expr) else None
             )
             semstr = (
-                kid[-2] if return_spec and isinstance(kid[-2], ast.String) else None
+                kid[-3]
+                if return_spec and len(kid) > 2 and isinstance(kid[-3], ast.String)
+                else None
             )
             if (isinstance(params, ast.SubNodeList) or params is None) and (
                 isinstance(return_spec, ast.Expr) or return_spec is None
@@ -1760,7 +1762,10 @@ class JacParser(Pass):
             if len(kid) > 1:
                 if (
                     isinstance(kid[0], ast.Expr)
-                    and isinstance(kid[1], (ast.Token, ast.DisconnectOp, ast.ConnectOp))
+                    and isinstance(
+                        kid[1],
+                        (ast.Token, ast.DisconnectOp, ast.ConnectOp),
+                    )
                     and isinstance(kid[2], ast.Expr)
                 ):
                     return self.nu(
@@ -1776,6 +1781,7 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
             else:
+
                 raise self.ice()
 
         def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
@@ -2004,18 +2010,14 @@ class JacParser(Pass):
         def connect(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            connect: atomic_pipe
-                   | atomic_pipe connect_op connect
-                   | atomic_pipe disconnect_op connect
+            connect: (connect (connect_op | disconnect_op))? atomic_pipe
             """
             return self.binary_expr_unwind(kid)
 
         def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atomic_pipe: atomic_pipe_back
-                       | atomic_pipe KW_SPAWN atomic_pipe_back
-                       | atomic_pipe A_PIPE_FWD atomic_pipe_back
+            atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
             """
             return self.binary_expr_unwind(kid)
 
@@ -2129,9 +2131,8 @@ class JacParser(Pass):
             """Grammar rule.
 
             atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
-                        | atomic_chain NULL_OK? edge_op_ref atomic_chain*
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
-                        | (atomic_call | atom)
+                        | (atomic_call | atom | edge_ref_chain)
             """
             if len(kid) < 2 and isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
@@ -2153,7 +2154,6 @@ class JacParser(Pass):
                         right=chomp[0],
                         is_null_ok=is_null_ok,
                         is_attr=None,
-                        edge_ref_chain=[],
                         kid=kid,
                     )
                 )
@@ -2169,24 +2169,6 @@ class JacParser(Pass):
                         right=(chomp[1] if chomp[0].name != Tok.DOT_BKWD else target),
                         is_null_ok=is_null_ok,
                         is_attr=chomp[0],
-                        edge_ref_chain=[],
-                        kid=kid,
-                    )
-                )
-            elif (
-                len(chomp) > 1
-                and isinstance(chomp[0], ast.EdgeOpRef)
-                and isinstance(chomp[1], (ast.AtomExpr, ast.AtomTrailer))
-                and isinstance(target, ast.Expr)
-            ):
-                valid_chain = [i for i in chomp[1:] if isinstance(i, (ast.Expr))]
-                return self.nu(
-                    ast.AtomTrailer(
-                        target=target,
-                        right=chomp[0],
-                        is_null_ok=is_null_ok,
-                        is_attr=None,
-                        edge_ref_chain=valid_chain,
                         kid=kid,
                     )
                 )
@@ -2283,8 +2265,7 @@ class JacParser(Pass):
         def atom(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atom: edge_op_ref
-                 | any_ref
+            atom: any_ref
                  | LPAREN (expression | yield_expr) RPAREN
                  | atom_collection
                  | atom_literal
@@ -2301,8 +2282,6 @@ class JacParser(Pass):
                     and isinstance(kid[2], ast.Token)
                 ):
                     ret = ast.AtomUnit(value=kid[1], is_paren=True, kid=kid)
-                    # ret.add_kids_left([kid[0]])
-                    # ret.add_kids_right([kid[2]])
                     return self.nu(ret)
                 else:
                     raise self.ice()
@@ -3088,12 +3067,25 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
+            """Grammar rule.
+
+            edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref expression?)+ RSQUARE
+            """
+            valid_chain = [i for i in kid if isinstance(i, (ast.Expr))]
+            return self.nu(
+                ast.EdgeRefTrailer(
+                    chain=valid_chain,
+                    edges_only=isinstance(kid[0], ast.Token)
+                    and kid[0].name == Tok.EDGE_OP,
+                    kid=kid,
+                )
+            )
+
         def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_op_ref: edge_any
-                    | edge_from
-                    | edge_to
+            edge_op_ref: (edge_any | edge_from | edge_to)
             """
             if isinstance(kid[0], ast.EdgeOpRef):
                 return self.nu(kid[0])
@@ -3178,10 +3170,9 @@ class JacParser(Pass):
         def connect_op(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
 
-            connect_op: connect_from
-                      | connect_to
+            connect_op: EDGE_OP? (connect_from | connect_to)
             """
-            if isinstance(kid[0], ast.ConnectOp):
+            if len(kid) < 2 and isinstance(kid[0], ast.ConnectOp):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
@@ -3253,6 +3244,34 @@ class JacParser(Pass):
                         conn_type=conn_type,
                         conn_assign=conn_assign,
                         edge_dir=EdgeDir.IN,
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def connect_any(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+            """Grammar rule.
+
+            connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
+            """
+            conn_type = kid[1] if len(kid) >= 3 else None
+            conn_assign = kid[3] if len(kid) >= 5 else None
+            if (isinstance(conn_type, ast.Expr) or conn_type is None) and (
+                isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
+            ):
+                conn_assign = (
+                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    if conn_assign
+                    else None
+                )
+                if conn_assign:
+                    kid[3] = conn_assign
+                return self.nu(
+                    ast.ConnectOp(
+                        conn_type=conn_type,
+                        conn_assign=conn_assign,
+                        edge_dir=EdgeDir.ANY,
                         kid=kid,
                     )
                 )

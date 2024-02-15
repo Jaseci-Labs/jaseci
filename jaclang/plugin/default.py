@@ -264,17 +264,30 @@ class JacFeatureDefaults:
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]:
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
-            return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
+            return (
+                node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
+                if not edges_only
+                else node_obj._jac_.get_edges(dir, filter_type, filter_func)
+            )
         elif isinstance(node_obj, list):
-            connected_nodes = []
-            for node in node_obj:
-                connected_nodes.extend(
-                    node._jac_.edges_to_nodes(dir, filter_type, filter_func)
-                )
-            return list(set(connected_nodes))
+            if edges_only:
+                connected_edges: list[EdgeArchitype] = []
+                for node in node_obj:
+                    connected_edges += node._jac_.get_edges(
+                        dir, filter_type, filter_func
+                    )
+                return list(set(connected_edges))
+            else:
+                connected_nodes: list[NodeArchitype] = []
+                for node in node_obj:
+                    connected_nodes.extend(
+                        node._jac_.edges_to_nodes(dir, filter_type, filter_func)
+                    )
+                return list(set(connected_nodes))
         else:
             raise TypeError("Invalid node object")
 
@@ -284,17 +297,21 @@ class JacFeatureDefaults:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]:
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
+        edges = []
         for i in left:
             for j in right:
-                i._jac_.connect_node(j, edge_spec())
-        return left
+                conn_edge = edge_spec()
+                edges.append(conn_edge)
+                i._jac_.connect_node(j, conn_edge)
+        return right if not edges_only else edges
 
     @staticmethod
     @hookimpl

@@ -64,13 +64,15 @@ class JacFeatureSpec:
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]: ...
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]: ...
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
     def disconnect(
         left: NodeArchitype | list[NodeArchitype],

@@ -67,6 +67,7 @@ class _Decoratable:
         assert mro[0] is cls
         libmembers = {name for _cls in mro[1:] for name, _ in getmembers(_cls)}
         for name, value in getmembers(cls):
+
             # Make sure the function isn't inherited (unless it's overwritten)
             if name.startswith("_") or (
                 name in libmembers and name not in cls.__dict__
@@ -266,6 +267,7 @@ class InlineTransformer(Transformer):  # XXX Deprecated
 
 
 class TransformerChain(Generic[_Leaf_T, _Return_T]):
+
     transformers: "Tuple[Union[Transformer, TransformerChain], ...]"
 
     def __init__(self, *transformers: "Union[Transformer, TransformerChain]") -> None:

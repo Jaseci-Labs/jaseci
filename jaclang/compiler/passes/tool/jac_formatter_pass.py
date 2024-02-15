@@ -1386,6 +1386,14 @@ class JacFormatPass(Pass):
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
+    def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
+        """Sub objects.
+
+        edge_ref: EdgeRef,
+        """
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
+
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 
@@ -1598,7 +1606,7 @@ class JacFormatPass(Pass):
         from_walker: bool = False,
         """
         for i in node.kid:
-            if isinstance(i, (ast.EdgeOpRef, ast.ElseStmt, ast.SpecialVarRef)):
+            if isinstance(i, (ast.EdgeRefTrailer, ast.ElseStmt, ast.SpecialVarRef)):
                 self.emit(node, f" {i.gen.jac}")
             else:
                 self.emit(node, i.gen.jac)

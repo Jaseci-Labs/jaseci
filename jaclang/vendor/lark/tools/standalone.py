@@ -98,11 +98,11 @@ def extract_sections(lines):
     text = []
     sections = defaultdict(list)
     for line in lines:
-        clean_line = line.strip()
-        if clean_line.startswith("###"):
-            if clean_line[3] == "{":
-                section = clean_line[4:].strip()
-            elif clean_line[3] == "}":
+        cline = line.strip()
+        if cline.startswith("###"):
+            if cline[3] == "{":
+                section = cline[4:].strip()
+            elif cline[3] == "}":
                 sections[section] += text
                 section = None
                 text = []

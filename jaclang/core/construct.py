@@ -41,6 +41,28 @@ class NodeAnchor(ObjectAnchor):
         edg._jac_.attach(self.obj, nd)
         return self.obj
 
+    def get_edges(
+        self,
+        dir: EdgeDir,
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> list[EdgeArchitype]:
+        """Get edges connected to this node."""
+        edge_list: list[EdgeArchitype] = [*self.edges]
+        ret_edges: list[EdgeArchitype] = []
+        if filter_type:
+            edge_list = [e for e in edge_list if isinstance(e, filter_type)]
+        edge_list = filter_func(edge_list) if filter_func else edge_list
+        for e in edge_list:
+            if (
+                e._jac_.target
+                and e._jac_.source
+                and (dir in [EdgeDir.OUT, EdgeDir.ANY] and self.obj == e._jac_.source)
+                or (dir in [EdgeDir.IN, EdgeDir.ANY] and self.obj == e._jac_.target)
+            ):
+                ret_edges.append(e)
+        return ret_edges
+
     def edges_to_nodes(
         self,
         dir: EdgeDir,
@@ -54,11 +76,7 @@ class NodeAnchor(ObjectAnchor):
             edge_list = [e for e in edge_list if isinstance(e, filter_type)]
         edge_list = filter_func(edge_list) if filter_func else edge_list
         for e in edge_list:
-            if (
-                e._jac_.target
-                and e._jac_.source
-                and (not filter_type or isinstance(e, filter_type))
-            ):
+            if e._jac_.target and e._jac_.source:
                 if dir in [EdgeDir.OUT, EdgeDir.ANY] and self.obj == e._jac_.source:
                     node_list.append(e._jac_.target)
                 if dir in [EdgeDir.IN, EdgeDir.ANY] and self.obj == e._jac_.target:

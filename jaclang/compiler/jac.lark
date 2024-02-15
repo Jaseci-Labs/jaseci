@@ -69,8 +69,8 @@ ability: decorators? ability_def
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
-func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
+func_decl: (LPAREN func_decl_params? RPAREN)? (STRING? RETURN_HINT expression)?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
 
@@ -92,6 +92,20 @@ arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
 abil_to_arch_chain: arch_or_ability_chain? arch_ref
 arch_to_abil_chain: arch_or_ability_chain? ability_ref
 arch_to_enum_chain: arch_or_ability_chain? enum_ref
+
+arch_ref: class_ref
+        | object_ref
+        | walker_ref
+        | edge_ref
+        | node_ref
+
+node_ref: NODE_OP named_ref
+edge_ref: EDGE_OP named_ref
+walker_ref: WALKER_OP named_ref
+class_ref: CLASS_OP named_ref
+object_ref: OBJECT_OP named_ref
+enum_ref: ENUM_OP named_ref
+ability_ref: ABILITY_OP named_ref
 
 // Codeblocks and Statements
 code_block: LBRACE statement_list? RBRACE
@@ -307,7 +321,7 @@ power: (power STAR_POW)? connect
 connect: (connect (connect_op | disconnect_op))? atomic_pipe
 
 // Atomic expressions
-atomic_pipe: (atomic_pipe (KW_SPAWN | A_PIPE_FWD))? atomic_pipe_back
+atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
 
 // Atomic pipe back expressions
 atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
@@ -326,9 +340,8 @@ pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // Subscripted and dotted expressions
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
-            | atomic_chain NULL_OK? edge_op_ref atomic_chain*
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
-            | (atomic_call | atom)
+            | (atomic_call | atom | edge_ref_chain)
 
 index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
            | list_val
@@ -341,8 +354,7 @@ param_list: expr_list COMMA kw_expr_list
           | expr_list
 
 // Atom
-atom: edge_op_ref
-    | any_ref
+atom: any_ref
     | LPAREN (expression | yield_expr) RPAREN
     | atom_collection
     | atom_literal
@@ -400,17 +412,16 @@ kw_expr_list: (kw_expr_list COMMA)? kw_expr
 kw_expr: any_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
-edge_op_ref: edge_any
-           | edge_from
-           | edge_to
-
+edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref expression?)+ RSQUARE
+edge_op_ref: edge_any | edge_from | edge_to
 edge_to: ARROW_R | ARROW_R_P1 expression (COLON filter_compare_list)? ARROW_R_P2
 edge_from: ARROW_L | ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_L_P2
 edge_any: ARROW_BI | ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_R_P2
-connect_op: connect_from | connect_to
+connect_op: connect_from | connect_to | connect_any
 disconnect_op: KW_DELETE edge_op_ref
 connect_to: CARROW_R | CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
 connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
+connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
 
 // Special Comprehensions
 filter_compr: LPAREN EQ filter_compare_list RPAREN
@@ -420,27 +431,13 @@ filter_compare_item: named_ref cmp_op expression
 
 // Names and references
 any_ref: named_ref
-        | arch_ref
+       | type_ref
 
 named_ref: special_ref
          | KWESC_NAME
          | NAME
 
-arch_ref: class_ref
-        | object_ref
-        | walker_ref
-        | edge_ref
-        | node_ref
-        | type_ref
-
 type_ref: TYPE_OP (named_ref | builtin_type)
-node_ref: NODE_OP named_ref
-edge_ref: EDGE_OP named_ref
-walker_ref: WALKER_OP named_ref
-class_ref: CLASS_OP named_ref
-object_ref: OBJECT_OP named_ref
-enum_ref: ENUM_OP named_ref
-ability_ref: ABILITY_OP named_ref
 
 special_ref: INIT_OP
             | POST_INIT_OP
@@ -544,13 +541,14 @@ KW_OVERRIDE: "override"
 KW_MATCH: "match"
 KW_CASE: "case"
 
+ARROW_BI: /<-->/
 ARROW_L: /<--/
 ARROW_R: /-->/
-ARROW_BI: /<-->/
 ARROW_L_P1: /<-\:/
 ARROW_R_P2: /:->/
 ARROW_L_P2: /:-/
 ARROW_R_P1: /-\:/
+CARROW_BI: /<\+\+>/
 CARROW_L: /<\+\+/
 CARROW_R: /\+\+>/
 CARROW_L_P1: /<\+\:/

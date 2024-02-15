@@ -17,8 +17,8 @@ edge connector{
         end ++> (end := node_a(val=i));
     }
     end +:connector:value=i:+> (end := node_a(val=i + 10));
-    <root> <+:connector:value=i :+ (end := node_a(val=i + 10));
-    visit-->;
+    <root> <+:connector:value=i:+ (end := node_a(val=i + 10));
+    visit [-->];
 
 }
 :node:node_a:can:make_something{
