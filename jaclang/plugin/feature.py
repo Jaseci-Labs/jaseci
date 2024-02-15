@@ -212,6 +212,7 @@ class JacFeature:
 """
 
 
-def dotgen(node: NodeAnchor = root._jac_, radius: int = 0) -> str:
+def dotgen(node: NodeAnchor = root, depth: int = 0) -> str:
     """Print the dot graph."""
-    return pm.hook.dotgen(node=node, radius=radius)
+    return pm.hook.dotgen(node=node, depth=depth)
+
