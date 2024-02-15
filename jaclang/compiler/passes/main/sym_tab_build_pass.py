@@ -1201,6 +1201,14 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
+        """Sub objects.
+
+        chain: list[Expr],
+        edges_only: bool,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 
