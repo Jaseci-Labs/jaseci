@@ -808,12 +808,12 @@ class JacParser(Pass):
         def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
             """Grammar rule.
 
-            event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT STRING? expression)?
+            event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
             """
             type_specs = kid[1] if isinstance(kid[1], ast.Expr) else None
             return_spec = kid[-1] if isinstance(kid[-1], ast.Expr) else None
             semstr = (
-                kid[-2] if return_spec and isinstance(kid[-2], ast.String) else None
+                kid[-3] if return_spec and isinstance(kid[-3], ast.String) else None
             )
             event = kid[2] if type_specs else kid[1]
             if isinstance(event, ast.Token) and (
@@ -834,7 +834,7 @@ class JacParser(Pass):
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
             """Grammar rule.
 
-            func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT STRING? expression)?
+            func_decl: (LPAREN func_decl_params? RPAREN)? (STRING? RETURN_HINT expression)?
             """
             params = (
                 kid[1] if len(kid) > 1 and isinstance(kid[1], ast.SubNodeList) else None
@@ -843,7 +843,9 @@ class JacParser(Pass):
                 kid[-1] if len(kid) and isinstance(kid[-1], ast.Expr) else None
             )
             semstr = (
-                kid[-2] if return_spec and isinstance(kid[-2], ast.String) else None
+                kid[-3]
+                if return_spec and len(kid) > 2 and isinstance(kid[-3], ast.String)
+                else None
             )
             if (isinstance(params, ast.SubNodeList) or params is None) and (
                 isinstance(return_spec, ast.Expr) or return_spec is None
@@ -1762,7 +1764,7 @@ class JacParser(Pass):
                     isinstance(kid[0], ast.Expr)
                     and isinstance(
                         kid[1],
-                        (ast.Token, ast.DisconnectOp, ast.ConnectOp, ast.EdgeOpRef),
+                        (ast.Token, ast.DisconnectOp, ast.ConnectOp),
                     )
                     and isinstance(kid[2], ast.Expr)
                 ):
@@ -2010,20 +2012,7 @@ class JacParser(Pass):
 
             connect: (connect (connect_op | disconnect_op))? atomic_pipe
             """
-            if (
-                len(kid) == 2
-                and isinstance(kid[0], ast.Expr)
-                and isinstance(kid[1], ast.EdgeOpRef)
-            ):
-                return self.nu(
-                    ast.UnaryExpr(
-                        op=kid[1],
-                        operand=kid[0],
-                        kid=kid,
-                    )
-                )
-            else:
-                return self.binary_expr_unwind(kid)
+            return self.binary_expr_unwind(kid)
 
         def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2278,8 +2267,7 @@ class JacParser(Pass):
         def atom(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atom: EDGE_OP? edge_op_ref
-                 | any_ref
+            atom: any_ref
                  | LPAREN (expression | yield_expr) RPAREN
                  | atom_collection
                  | atom_literal
@@ -2287,13 +2275,6 @@ class JacParser(Pass):
             if len(kid) == 1:
                 if isinstance(kid[0], ast.AtomExpr):
                     return self.nu(kid[0])
-                else:
-                    raise self.ice()
-            elif len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.EdgeOpRef):
-                    kid[1].edges_only = True
-                    kid[1].add_kids_left([kid[0]])
-                    return self.nu(kid[1])
                 else:
                     raise self.ice()
             elif len(kid) == 3:
@@ -3106,14 +3087,10 @@ class JacParser(Pass):
         def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_op_ref: EDGE_OP? (edge_any | edge_from | edge_to)
+            edge_op_ref: (edge_any | edge_from | edge_to)
             """
             if isinstance(kid[0], ast.EdgeOpRef):
                 return self.nu(kid[0])
-            elif isinstance(kid[1], ast.EdgeOpRef):
-                kid[1].edges_only = True
-                kid[1].add_kids_left([kid[0]])
-                return self.nu(kid[1])
             else:
                 raise self.ice()
 
@@ -3199,10 +3176,6 @@ class JacParser(Pass):
             """
             if len(kid) < 2 and isinstance(kid[0], ast.ConnectOp):
                 return self.nu(kid[0])
-            elif isinstance(kid[1], ast.ConnectOp):
-                kid[1].edges_only = True
-                kid[1].add_kids_left([kid[0]])
-                return self.nu(kid[1])
             else:
                 raise self.ice()
 

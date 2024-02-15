@@ -1277,7 +1277,7 @@ class BinaryExpr(Expr):
         self,
         left: Expr,
         right: Expr,
-        op: Token | DisconnectOp | ConnectOp | EdgeOpRef,
+        op: Token | DisconnectOp | ConnectOp,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize binary expression node."""
@@ -1325,7 +1325,7 @@ class UnaryExpr(Expr):
     def __init__(
         self,
         operand: Expr,
-        op: Token | EdgeOpRef,
+        op: Token,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize unary expression node."""
@@ -1756,13 +1756,11 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
-        edges_only: bool = False,
     ) -> None:
         """Initialize edge op reference expression node."""
         self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
-        self.edges_only = edges_only
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstSymbolNode.__init__(
@@ -1796,13 +1794,11 @@ class ConnectOp(AstNode):
         conn_assign: Optional[AssignCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
-        edges_only: bool = False,
     ) -> None:
         """Initialize connect op reference expression node."""
         self.conn_type = conn_type
         self.conn_assign = conn_assign
         self.edge_dir = edge_dir
-        self.edges_only = edges_only
         AstNode.__init__(self, kid=kid)
 
 

@@ -1717,14 +1717,6 @@ class PyastGenPass(Pass):
                                     value=node.op.gen.py_ast[0],
                                 )
                             ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="edges_only",
-                                    value=self.sync(
-                                        ast3.Constant(value=node.op.edges_only)
-                                    ),
-                                )
-                            ),
                         ],
                     )
                 )
@@ -1763,9 +1755,7 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif isinstance(node.op, ast.EdgeOpRef):
-            pass
-        elif isinstance(node.op, ast.Token) and node.op.name in [
+        elif node.op.name in [
             Tok.KW_AND.value,
             Tok.KW_OR.value,
         ]:
@@ -1808,7 +1798,7 @@ class PyastGenPass(Pass):
         """Translate jac binary op."""
         if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
             raise self.ice()
-        elif isinstance(node.op, ast.Token) and node.op.name in [
+        elif node.op.name in [
             Tok.PIPE_FWD,
             Tok.A_PIPE_FWD,
         ]:
@@ -1823,7 +1813,7 @@ class PyastGenPass(Pass):
             )
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
-        elif isinstance(node.op, ast.Token) and node.op.name in [Tok.KW_SPAWN]:
+        elif node.op.name in [Tok.KW_SPAWN]:
             self.needs_jac_feature()
             return [
                 self.sync(
@@ -1842,7 +1832,7 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif isinstance(node.op, ast.Token) and node.op.name in [
+        elif node.op.name in [
             Tok.PIPE_BKWD,
             Tok.A_PIPE_BKWD,
         ]:
@@ -1863,7 +1853,7 @@ class PyastGenPass(Pass):
             and isinstance(node.right, ast.TupleVal)
         ):
             self.error("Invalid pipe target.")
-        elif isinstance(node.op, ast.Token) and node.op.name == Tok.ELVIS_OP:
+        elif node.op.name == Tok.ELVIS_OP:
             self.needs_jac_feature()
             return [
                 self.sync(
@@ -2025,11 +2015,12 @@ class PyastGenPass(Pass):
         combined_multi: list[str | bytes | ast3.AST] = []
         for item in get_pieces(node.strings):
             if (
-                combined_multi  # noqa: SIM114
+                combined_multi
                 and isinstance(item, str)
                 and isinstance(combined_multi[-1], str)
             ):
-                combined_multi[-1] += item
+                if isinstance(combined_multi[-1], str):
+                    combined_multi[-1] += item
             elif (
                 combined_multi
                 and isinstance(item, bytes)
@@ -2551,12 +2542,6 @@ class PyastGenPass(Pass):
                                 if node.filter_cond
                                 else self.sync(ast3.Constant(value=None))
                             ),
-                        )
-                    ),
-                    self.sync(
-                        ast3.keyword(
-                            arg="edges_only",
-                            value=self.sync(ast3.Constant(value=node.edges_only)),
                         )
                     ),
                 ],
