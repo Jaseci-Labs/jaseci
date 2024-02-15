@@ -2279,86 +2279,6 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif isinstance(node.right, ast.EdgeOpRef):
-
-            def unroll_edge_ref_chain(
-                pynode: ast3.AST, atom_trail: ast.AtomTrailer, with_target: bool = False
-            ) -> ast3.AST:
-                chain = [atom_trail.right]  # + atom_trail.edge_ref_chain
-                if with_target:
-                    chain = [atom_trail.target] + chain
-                for item in chain:
-                    if isinstance(item, ast.EdgeOpRef):
-                        pynode = self.translate_edge_op_ref(pynode, item)
-                    elif isinstance(item, ast.AtomTrailer) and isinstance(
-                        item.target, ast.EdgeOpRef
-                    ):
-                        pynode = unroll_edge_ref_chain(pynode, item, with_target=True)
-                    else:
-                        right = (
-                            item.target.gen.py_ast[0]
-                            if isinstance(item, ast.AtomTrailer)
-                            else item.gen.py_ast[0]
-                        )
-                        pynode = self.sync(
-                            ast3.Call(
-                                func=self.sync(
-                                    ast3.Name(
-                                        id="list",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                args=[
-                                    self.sync(
-                                        ast3.Call(
-                                            func=self.sync(
-                                                ast3.Attribute(
-                                                    value=self.sync(
-                                                        ast3.Call(
-                                                            func=self.sync(
-                                                                ast3.Name(
-                                                                    id="set",
-                                                                    ctx=ast3.Load(),
-                                                                )
-                                                            ),
-                                                            args=[pynode],
-                                                            keywords=[],
-                                                        )
-                                                    ),
-                                                    attr="intersection",
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                            args=[
-                                                self.sync(
-                                                    ast3.Call(
-                                                        func=self.sync(
-                                                            ast3.Name(
-                                                                id="set",
-                                                                ctx=ast3.Load(),
-                                                            )
-                                                        ),
-                                                        args=[right],
-                                                        keywords=[],
-                                                    )
-                                                )
-                                            ],
-                                            keywords=[],
-                                        )
-                                    )
-                                ],
-                                keywords=[],
-                            )
-                        )
-                        if isinstance(item, ast.AtomTrailer):
-                            pynode = unroll_edge_ref_chain(
-                                pynode, item, with_target=False
-                            )
-                return pynode
-
-            pynode = node.target.gen.py_ast[0]
-            pynode = unroll_edge_ref_chain(pynode, node)
-            node.gen.py_ast = [pynode]
         else:
             node.gen.py_ast = [
                 self.sync(
@@ -2475,6 +2395,69 @@ class PyastGenPass(Pass):
         except Exception:
             raise self.ice("Invalid special var ref for pyast generation")
         node.gen.py_ast = [self.sync(var_ast, deep=True)]
+
+    def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
+        """Sub objects.
+
+        chain: list[Expr],
+        edges_only: bool,
+        """
+        pynode = node.chain[0].gen.py_ast[0]
+        for item in node.chain[1:]:
+            if isinstance(item, ast.EdgeOpRef):
+                pynode = self.translate_edge_op_ref(pynode, item)
+            else:
+                pynode = self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Name(
+                                id="list",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[
+                            self.sync(
+                                ast3.Call(
+                                    func=self.sync(
+                                        ast3.Attribute(
+                                            value=self.sync(
+                                                ast3.Call(
+                                                    func=self.sync(
+                                                        ast3.Name(
+                                                            id="set",
+                                                            ctx=ast3.Load(),
+                                                        )
+                                                    ),
+                                                    args=[pynode],
+                                                    keywords=[],
+                                                )
+                                            ),
+                                            attr="intersection",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    args=[
+                                        self.sync(
+                                            ast3.Call(
+                                                func=self.sync(
+                                                    ast3.Name(
+                                                        id="set",
+                                                        ctx=ast3.Load(),
+                                                    )
+                                                ),
+                                                args=[item.gen.py_ast[0]],
+                                                keywords=[],
+                                            )
+                                        )
+                                    ],
+                                    keywords=[],
+                                )
+                            )
+                        ],
+                        keywords=[],
+                    )
+                )
+        node.gen.py_ast = [pynode]
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.

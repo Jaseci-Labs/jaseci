@@ -2017,9 +2017,7 @@ class JacParser(Pass):
         def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            atomic_pipe: atomic_pipe_back
-                       | atomic_pipe KW_SPAWN atomic_pipe_back
-                       | atomic_pipe A_PIPE_FWD atomic_pipe_back
+            atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
             """
             return self.binary_expr_unwind(kid)
 
@@ -2134,7 +2132,7 @@ class JacParser(Pass):
 
             atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
-                        | (atomic_call | atom)
+                        | (atomic_call | atom | edge_ref_chain)
             """
             if len(kid) < 2 and isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
