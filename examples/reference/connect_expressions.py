@@ -38,6 +38,7 @@ class Creator:
     def travel(self, here: Jac.RootType | node_a) -> None:
         for i in Jac.edge_ref(
             here,
+            None,
             Jac.EdgeDir.OUT,
             filter_type=MyEdge,
             filter_func=lambda x: [i for i in x if i.val <= 6],
@@ -45,7 +46,9 @@ class Creator:
             print(i.value)
         if Jac.visit_node(
             self,
-            Jac.edge_ref(here, Jac.EdgeDir.OUT, filter_type=None, filter_func=None),
+            Jac.edge_ref(
+                here, None, Jac.EdgeDir.OUT, filter_type=None, filter_func=None
+            ),
         ):
             pass
 

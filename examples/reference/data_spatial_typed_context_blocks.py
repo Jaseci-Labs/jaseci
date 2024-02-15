@@ -17,7 +17,9 @@ class Producer:
             i += 1
         if Jac.visit_node(
             self,
-            Jac.edge_ref(here, Jac.EdgeDir.OUT, filter_type=None, filter_func=None),
+            Jac.edge_ref(
+                here, None, Jac.EdgeDir.OUT, filter_type=None, filter_func=None
+            ),
         ):
             pass
 
@@ -31,7 +33,9 @@ class Product:
         print(f"Hi, I am {self} returning a String")
         if Jac.visit_node(
             here,
-            Jac.edge_ref(self, Jac.EdgeDir.OUT, filter_type=None, filter_func=None),
+            Jac.edge_ref(
+                self, None, Jac.EdgeDir.OUT, filter_type=None, filter_func=None
+            ),
         ):
             pass
 

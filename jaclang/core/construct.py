@@ -46,6 +46,7 @@ class NodeAnchor(ObjectAnchor):
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
         edge_list: list[EdgeArchitype] = [*self.edges]
@@ -57,8 +58,16 @@ class NodeAnchor(ObjectAnchor):
             if (
                 e._jac_.target
                 and e._jac_.source
-                and (dir in [EdgeDir.OUT, EdgeDir.ANY] and self.obj == e._jac_.source)
-                or (dir in [EdgeDir.IN, EdgeDir.ANY] and self.obj == e._jac_.target)
+                and (
+                    dir in [EdgeDir.OUT, EdgeDir.ANY]
+                    and self.obj == e._jac_.source
+                    and (not target_obj or e._jac_.target in target_obj)
+                )
+                or (
+                    dir in [EdgeDir.IN, EdgeDir.ANY]
+                    and self.obj == e._jac_.target
+                    and (not target_obj or e._jac_.source in target_obj)
+                )
             ):
                 ret_edges.append(e)
         return ret_edges
@@ -68,6 +77,7 @@ class NodeAnchor(ObjectAnchor):
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
         edge_list: list[EdgeArchitype] = [*self.edges]
@@ -77,9 +87,17 @@ class NodeAnchor(ObjectAnchor):
         edge_list = filter_func(edge_list) if filter_func else edge_list
         for e in edge_list:
             if e._jac_.target and e._jac_.source:
-                if dir in [EdgeDir.OUT, EdgeDir.ANY] and self.obj == e._jac_.source:
+                if (
+                    dir in [EdgeDir.OUT, EdgeDir.ANY]
+                    and self.obj == e._jac_.source
+                    and (not target_obj or e._jac_.target in target_obj)
+                ):
                     node_list.append(e._jac_.target)
-                if dir in [EdgeDir.IN, EdgeDir.ANY] and self.obj == e._jac_.target:
+                if (
+                    dir in [EdgeDir.IN, EdgeDir.ANY]
+                    and self.obj == e._jac_.target
+                    and (not target_obj or e._jac_.source in target_obj)
+                ):
                     node_list.append(e._jac_.source)
         return node_list
 

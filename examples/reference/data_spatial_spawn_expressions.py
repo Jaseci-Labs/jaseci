@@ -5,7 +5,9 @@ from jaclang.plugin.feature import JacFeature as jac
 class Adder:
     def do(self, jac_here_: jac.RootType) -> None:
         jac.connect(jac_here_, node_a(), jac.build_edge(jac.EdgeDir.OUT, None, None))
-        if jac.visit_node(self, jac.edge_ref(jac_here_, jac.EdgeDir.OUT, None, None)):
+        if jac.visit_node(
+            self, jac.edge_ref(jac_here_, None, jac.EdgeDir.OUT, None, None)
+        ):
             pass
 
 

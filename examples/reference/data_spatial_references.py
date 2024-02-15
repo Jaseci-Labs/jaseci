@@ -25,7 +25,9 @@ class Creator:
         )
         if Jac.visit_node(
             self,
-            Jac.edge_ref(here, Jac.EdgeDir.OUT, filter_type=None, filter_func=None),
+            Jac.edge_ref(
+                here, None, Jac.EdgeDir.OUT, filter_type=None, filter_func=None
+            ),
         ):
             pass
 

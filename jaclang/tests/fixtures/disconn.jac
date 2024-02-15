@@ -20,16 +20,10 @@ with entry{
     y++>z;
 
     # print(x -:aaa:-> );
-    print([x --> y-->z]);
+    print([x -->y-->z]);
     print([x -->]);
     print(x del--> y);
     print([x -->]);
     print([i.__class__.__name__ for i in (x ++> y)]);
-    print([i.__class__.__name__ for i in (:e:[x -->])]);
-
-    # print(x[1]._jac_.edges);
-        # print(x[1]._jac_.gen_dot());
-
-    # print(x[1]-->z,'it should be [bb=0 bb=1 bb=2]');
-
+    print([i.__class__.__name__ for i in (:e:[x[0] --> y])]);
 }
