@@ -4,6 +4,7 @@ walker Creator {
 
 node node_1 {
     has val: int;
+
     can func_1 with Creator entry;
 }
 
@@ -21,6 +22,6 @@ node node_1 {
 }
 
 with entry {
-    <r> spawn :>Creator;
-    <r> spawn |>Creator;
+    <r> spawn :> Creator;
+    <r> spawn |> Creator;
 }

@@ -1,8 +1,8 @@
-can foo(){
+can foo() {
     a = 42;
     return a;
 }
 
-with entry{
+with entry {
     print("Returned:", foo());
 }

@@ -1,5 +1,5 @@
-can combine_via_func(a: int, b:int, c:int, d:int) -> int {
-    return a+b+c+d;
+can combine_via_func(a: int, b: int, c: int, d: int) -> int {
+    return a + b + c + d;
 }
 
 with entry {
@@ -15,7 +15,7 @@ with entry {
     second_dict = {'c':3, 'd':4 };
 
     # Combining dictionaries using dictionary unpacking
-    combined_dict = {**first_dict, **second_dict};
+    combined_dict = {**first_dict, **second_dict };
 
     # Printing the combined dictionary
     print(combine_via_func(**combined_dict));

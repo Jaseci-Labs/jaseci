@@ -18,27 +18,43 @@ cmd_registry = CommandRegistry()
 
 
 @cmd_registry.register
-def format(filename: str, outfile: str = "", debug: bool = False) -> None:
-    """Run the specified .jac file.
+def format(path: str, outfile: str = "", debug: bool = False) -> None:
+    """Run the specified .jac file or format all .jac files in a given directory.
 
-    :param filename: The path to the .jac file.
-    :param main: If True, use '__main__' as the module name, else use the actual module name.
+    :param path: The path to the .jac file or directory containing .jac files.
+    :param outfile: The output file path (only applies when formatting a single file).
+    :param debug: If True, print debug information.
     """
-    if filename.endswith(".jac"):
-        if os.path.exists(filename):
-            code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
-            if code_gen_format.errors_had:
-                print("Errors occurred while formatting the file.")
-            elif debug:
-                print(code_gen_format.ir.gen.jac)
-            elif outfile:
-                with open(outfile, "w") as f:
-                    f.write(code_gen_format.ir.gen.jac)
-            else:
-                with open(filename, "w") as f:
-                    f.write(code_gen_format.ir.gen.jac)
+
+    def format_file(filename: str) -> None:
+        code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
+        if code_gen_format.errors_had:
+            print(f"Errors occurred while formatting the file {filename}.")
+        elif debug:
+            print(code_gen_format.ir.gen.jac)
+        elif outfile:
+            with open(outfile, "w") as f:
+                f.write(code_gen_format.ir.gen.jac)
         else:
-            print("Not a .jac file.")
+            with open(filename, "w") as f:
+                f.write(code_gen_format.ir.gen.jac)
+
+    if path.endswith(".jac"):
+        if os.path.exists(path):
+            format_file(path)
+        else:
+            print("File does not exist.")
+    elif os.path.isdir(path):
+        count = 0
+        for root, _, files in os.walk(path):
+            for file in files:
+                if file.endswith(".jac"):
+                    file_path = os.path.join(root, file)
+                    format_file(file_path)
+                    count += 1
+        print(f"Formatted {count} '.jac' files.")
+    else:
+        print("Not a .jac file or directory.")
 
 
 @cmd_registry.register

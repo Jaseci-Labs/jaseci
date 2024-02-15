@@ -2,7 +2,7 @@ walker Visitor {
     can travel with `<root> entry {
         ignore [-->][0];
         visit [-->] else {
-            visit<root>;
+            visit <root>;
         }
     }
 }

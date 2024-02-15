@@ -1,23 +1,24 @@
 can foo();
-obj vehicle;
-enum Size;
 
-#implementations
-:can:foo(){
-    return("Hello");
+obj vehicle;
+
+enum Size; #implementations
+
+:can:foo() {
+    return ("Hello");
 }
 
-:obj:vehicle{
-    has name:str = "Car";
+:obj:vehicle  {
+    has name: str = "Car";
 }
 
 :enum:Size {
-    Small = 1,
-    Medium = 2,
-    Large = 3
+    Small=1,
+    Medium=2,
+    Large=3
 }
 
-with entry{
+with entry {
     car = vehicle();
     print(foo());
     print(car.name);

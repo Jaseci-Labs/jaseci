@@ -1,14 +1,15 @@
-walker Creator{
+walker Creator {
     can create with `<root> entry;
 }
 
-node node_a{
-    has val:int;
+node node_a {
+    has val: int;
+
     can make_something with Creator entry;
 }
 
-edge connector{
-    has value:int = 10;
+edge connector {
+    has value: int = 10;
 }
 
 :walker:Creator:can:create {
@@ -19,15 +20,16 @@ edge connector{
     end +:connector:value=i:+> (end := node_a(val=i + 10));
     <root> <+:connector:value=i:+ (end := node_a(val=i + 10));
     visit [-->];
-
 }
-:node:node_a:can:make_something{
-    i=0;
-    while i<5{
-    print(f"wlecome to {<s>}");
-    i+=1;
+
+:node:node_a:can:make_something {
+    i = 0;
+    while i < 5 {
+        print(f"wlecome to {<s>}");
+        i+=1;
     }
 }
-with entry{
+
+with entry {
     <root> spawn Creator();
 }
