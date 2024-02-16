@@ -54,8 +54,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             type_ignores: list[TypeIgnore]
         """
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
-        # for i in elements:
-        #     print("elements: ", i)
         valid = [
             i
             for i in elements
@@ -70,8 +68,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 ),
             )
         ]
-        # for i in valid:
-        #     print("valid elements: ", i)
         if len(valid) != len(elements):
             self.error("Invalid module body")
         ret = ast.Module(
@@ -129,13 +125,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else None
         )
         res = self.convert(node.args)
-        sig: Optional[ast.FuncSignature] | ast.Expr = (
+        sig: Optional[ast.FuncSignature] = (
             res if isinstance(res, ast.FuncSignature) else None
         )
         ret_sig = self.convert(node.returns) if node.returns else None
+        print()
         if isinstance(ret_sig, ast.Expr):
             if not sig:
                 sig = ret_sig
+                # sig = ast.FuncSignature(params=[], return_type=ret_sig)
             else:
                 sig.return_type = ast.SubTag[ast.Expr](tag=ret_sig, kid=[ret_sig])
                 sig.add_kids_right([sig.return_type])
@@ -177,7 +175,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_class_def(self, node: py_ast.ClassDef) -> ast.Architype:
         """Process python node.
 
-        class ClassDef(stmt):
+        class ClassDef(stmt):name = ast.Name(
+            file_path=self.mod_path,
+            name=Tok.NAME,
+            value=node.name,
+            line=node.lineno,
+            col_start=node.col_offset,
+            col_end=node.col_offset + len(node.name),
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
             __match_args__ = ("name", "bases", "keywords", "body",
                               "decorator_list", "type_params")
             name: _Identifier
@@ -211,13 +219,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        valid_body = [
-            i
-            for i in body
-            if isinstance(i, (ast.ArchBlockStmt, ast.Assignment, ast.String))
-        ]
+        print("class is: ", node.name)
+        for i in body:
+            print(type(i))
+        valid_body = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
         if len(valid_body) != len(body):
-            # print(len(body), len(valid_body))
+            print("length: ", len(body), len(valid_body))
             self.error("Length mismatch in classes body")
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid_body, kid=body)
 
@@ -349,6 +356,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         target = self.convert(node.target)
         annotation = self.convert(node.annotation)
+        print(type(annotation))
         if isinstance(annotation, ast.Expr):
             annotation = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
         else:
@@ -1037,8 +1045,20 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             alias=None,
             kid=[valid_names2],
         )
+        lang = ast.Name(
+            file_path=self.mod_path,
+            name=Tok.NAME,
+            value="py",
+            line=node.lineno,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        lang_subtag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
-            lang="py",
+            lang=lang_subtag,
             path=path,
             items=valid_names2,
             is_absorb=True,
@@ -1110,8 +1130,20 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             alias=None,
             kid=[valid_names2],
         )
+        lang = ast.Name(
+            file_path=self.mod_path,
+            name=Tok.NAME,
+            value="py",
+            line=node.lineno,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        lang_subtag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
-            lang="py",
+            lang=lang_subtag,
             path=path,
             items=valid_names2,
             is_absorb=True,
@@ -1314,7 +1346,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[name] if asname is None else [name, asname],
         )
 
-    def proc_arg(self, node: py_ast.arg) -> None:
+    def proc_arg(self, node: py_ast.arg) -> ast.ParamVar:
         """Process python node.
 
         class arg(AST):
@@ -1323,8 +1355,46 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         arg: _Identifier
         annotation: expr | None
         """
+        # new = ast.BuiltinType()
+        name = ast.Name(
+            file_path=self.mod_path,
+            name=Tok.NAME,
+            value=node.arg,
+            line=node.lineno,
+            col_start=node.col_offset,
+            col_end=node.col_offset + len(node.arg),
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        token = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.COLON,
+            value=":",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        annotation = self.convert(node.annotation) if node.annotation else None
+        if isinstance(annotation, ast.Expr):
+            type_tag = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
+        else:
+            type_tag = None
+        ret = ast.ParamVar(
+            name=name,
+            unpack=token if annotation else None,
+            type_tag=type_tag,
+            value=node.annotation if isinstance(node.annotation, ast.Expr) else None,
+            kid=[name, annotation] if annotation else [name],
+        )
+        print("Arguement: ")
+        print(ret.pp())
+        return ret
 
-    def proc_arguments(self, node: py_ast.arguments) -> None:
+    def proc_arguments(self, node: py_ast.arguments) -> ast.FuncSignature:
         """Process python node.
 
         class arguments(AST):
@@ -1339,9 +1409,47 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         kwarg: arg | None
         defaults: list[expr]
         """
-        # args = [self.convert(arg) for arg in node.args]
-        # vararg = node.vararg
-        # kwonlyargs = [self.convert(arg) for arg in node.args]
+        posonlyargs = [self.convert(arg) for arg in node.posonlyargs]
+        args = [self.convert(arg) for arg in node.args]
+        vararg = self.convert(node.vararg) if node.vararg else None
+
+        kwonlyargs = [self.convert(arg) for arg in node.kwonlyargs]
+        kw_defaults = [self.convert(arg) for arg in node.kw_defaults if arg is not None]
+        kwarg = self.convert(node.kwarg) if node.kwarg else None
+        defaults = [self.convert(default) for default in node.defaults]
+
+        params: list[ast.AstNode] = []
+        paramvars: list[ast.ParamVar] = []
+        for i in posonlyargs:
+            params.append(i)
+        for i in args:
+            params.append(i)
+        if vararg:
+            params.append(vararg)
+        for i in kwonlyargs:
+            params.append(i)
+        for i in kw_defaults:
+            params.append(i)
+        if kwarg:
+            params.append(kwarg)
+        for i in defaults:
+            params.append(i)
+
+        for i in params:
+            if isinstance(i, ast.ParamVar):
+                paramvars.append(i)
+        param_subnodelist = (
+            ast.SubNodeList[ast.ParamVar](items=paramvars, kid=params)
+            if paramvars is not None
+            else None
+        )
+
+        ret = ast.FuncSignature(
+            params=param_subnodelist,
+            return_type=None,
+            kid=params,
+        )
+        return ret
 
     def proc_comprehension(self, node: py_ast.comprehension) -> None:
         """Process python node."""
