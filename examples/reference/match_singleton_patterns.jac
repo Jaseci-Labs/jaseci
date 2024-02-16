@@ -1,7 +1,8 @@
-with entry{
-    data=True;
-    match True{
-     # MatchSingleton
+with entry {
+    data = True;
+    match True {
+
+        # MatchSingleton
         case True:
             print("Matched the singleton True.");
         case None:

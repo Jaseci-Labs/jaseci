@@ -43,7 +43,7 @@ walker tourist {
     can make_visit with location|other exit {
         b=tourist;
         a = spawn tourist;
-        a = <-:myedge:a==1,b==2:-;
+        a = [<-:myedge:a==1,b==2:-];
         a = b +:myedge:a=1:+> c;
         a = b <+:myedge:a=1:+ c;
         a = <here> +:myedge:a=1:+> spawn tourist;

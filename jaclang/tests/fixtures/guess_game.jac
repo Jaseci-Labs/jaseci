@@ -18,7 +18,7 @@ node turn {
 :node:turn:can:check {
     guess = guesses.pop(0);
     guess |> <here>.process_guess;
-    visit -->;
+    visit [-->];
 }
 
 :walker:GuessGame:can:start_game {
@@ -26,7 +26,7 @@ node turn {
     for i=0 to i<10 by i+=1  {
         end ++> (end := :> turn);
     }
-    visit -->;
+    visit [-->];
 }
 
 :walker:GuessGame:can:process_guess

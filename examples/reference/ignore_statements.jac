@@ -1,8 +1,8 @@
 walker Visitor {
     can travel with `<root> entry {
-        ignore -->[0];
-        visit --> else {
-            visit<root>;
+        ignore [-->][0];
+        visit [-->] else {
+            visit <root>;
         }
     }
 }

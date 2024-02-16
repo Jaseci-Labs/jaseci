@@ -9,8 +9,8 @@ it is assumed to be a module docstring.
 can add(a: int, b: int) -> int {
     return a + b;
 }
-
 # No docstring for subtract function
+
 can subtract(a: int, b: int) -> int {
     return a - b;
 }

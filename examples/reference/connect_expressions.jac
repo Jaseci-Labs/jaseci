@@ -23,10 +23,10 @@ edge MyEdge {
 }
 
 :walker:Creator:can:travel {
-    for i in (-:MyEdge:val <= 6:->) {
+    for i in [-:MyEdge:val <= 6:->] {
         print(i.value);
     }
-    visit -->;
+    visit [-->];
 }
 
 with entry {

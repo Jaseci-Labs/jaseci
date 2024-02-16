@@ -13,7 +13,7 @@ walker Creator {
         <here> ++> Item();
         <self>.count+=1;
         if <self>.count < 10 {
-            visit -->;
+            visit [-->];
         }
     }
 }
@@ -22,13 +22,13 @@ walker Walk {
     has count: int = 0;
 
     can skip_root with `<root> entry {
-        visit -->;
+        visit [-->];
     }
 
     can step with Item entry {
         <here>.value = <self>.count;
         <self>.count+=1;
-        visit --> else {
+        visit [-->] else {
             print(f"Final Value: {<here>.value - 1}");
             "Done walking." |> print;
             disengage;

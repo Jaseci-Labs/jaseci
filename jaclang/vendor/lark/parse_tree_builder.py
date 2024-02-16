@@ -438,6 +438,7 @@ class ParseTreeBuilder:
             default_callback = self.tree_class
 
         for rule, wrapper_chain in self.rule_builders:
+
             user_callback_name = (
                 rule.alias or rule.options.template_source or rule.origin.name
             )

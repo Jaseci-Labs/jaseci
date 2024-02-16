@@ -147,10 +147,12 @@ class JacFeatureSpec:
     @hookspec(firstresult=True)
     def edge_ref(
         node_obj: NodeArchitype | list[NodeArchitype],
+        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]:
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
 
@@ -160,7 +162,8 @@ class JacFeatureSpec:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]:
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op

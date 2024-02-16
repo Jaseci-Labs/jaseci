@@ -1,10 +1,9 @@
-with entry{
-    day=" sunday";
-
-    match day{
+with entry {
+    day = " sunday";
+    match day {
         case "monday":
-          print("confirmed");
+            print("confirmed");
         case _:
-          print("other");
+            print("other");
     }
 }
