@@ -81,7 +81,7 @@ class JacFormatPassTests(TestCase):
             os.path.dirname(jaclang.__file__), "../examples/reference"
         )
         file_extensions = [".py", ".jac", ".md"]
-        created_files = []
+        created_files = [f"{os.path.join(refr_path, 'introduction.md')}"]
         for heading_name in snake_case_headings:
             for extension in file_extensions:
                 file_name = heading_name + extension

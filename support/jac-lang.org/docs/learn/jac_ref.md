@@ -1,6 +1,6 @@
 # Jac Language Reference
 
-## Introduction
+--8<-- "examples/reference/introduction.md"
 
 ## Base Module structure
 ```yaml linenums="2"

@@ -267,7 +267,9 @@ class AstTool:
             os.path.split(os.path.dirname(__file__))[0], "../examples/reference/"
         )
         with open(created_file_path, "w") as md_file:
-            md_file.write("# Jac Language Reference\n\n## Introduction\n\n")
+            md_file.write(
+                '# Jac Language Reference\n\n--8<-- "examples/reference/introduction.md"\n\n'
+            )
         for heading, lines in result.items():
             heading = heading.strip()
             heading_snakecase = heading_to_snake(heading)
