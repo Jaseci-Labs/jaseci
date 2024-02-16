@@ -6,12 +6,12 @@ nav:
     - ~/learn$:
       - ~/for_coders:
         - 'learn/guide.md'
+        - 'learn/jac_ref.md'
         - 'learn/tips_tricks.md'
       - ~/for_contributors:
         - 'learn/contrib.md'
       - ~/w.i.p$:
         - 'learn/ast_doc.md'
-        - 'learn/jac_ref.md'
         - ~/projects$:
           - 'projects/auto_ref.md'
 
