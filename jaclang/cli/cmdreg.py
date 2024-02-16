@@ -135,7 +135,7 @@ class CommandShell(cmd.Cmd):
                 args.pop("command")
                 ret = command.call(**args)
                 if ret:
-                    print(ret)
+                    self.stdout.write(ret + "\n")
         except Exception as e:
             print(e)
 
@@ -176,6 +176,7 @@ class CommandShell(cmd.Cmd):
                 "\tType 'help all' to see all available commands with details. or,\n"
             )
             self.stdout.write(
-                "\tType 'help <choose on of (format, run, build, check, enter, test, tool, clean)>'\n"
+                f"\tType 'help <choose on of ({', '.join(self.cmd_reg.registry.keys())})>'"
+                " to see details of a specific command.\n"
             )
             self.stdout.write("\tType 'exit' to exit the Jac CLI.\n\n")
