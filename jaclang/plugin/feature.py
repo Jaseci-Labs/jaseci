@@ -222,7 +222,11 @@ class JacFeature:
 """
 
 
-def dotgen(node: NodeAnchor = root, depth: int = 0) -> str:
+def dotgen(node: NodeAnchor = root, depth: float =float('inf')) -> str:
     """Print the dot graph."""
     return pm.hook.dotgen(node=node, depth=depth)
+
+def dijkstra(start_node: NodeAnchor = root) -> str:
+    """Print the dot graph."""
+    return pm.hook.dijkstra(start_node=start_node)
 
