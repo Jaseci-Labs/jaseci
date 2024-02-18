@@ -56,7 +56,7 @@ with entry {
 :walker:game:can:start_game {
     <self>.g = Game();
     <here> ++> start_screen();
-    visit -->;
+    visit [-->];
 }
 :node:level:can:run_game {
     # print("Walker Entry ->", <self>.level_id);
@@ -74,20 +74,20 @@ with entry {
             <here>.fwd_dir =True;
             new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
             <self> +:play:level_id=new_ID:+> level(game_level = <self>.game_level+1, level_id = new_ID);
-            visit -:play:level_id==new_ID:->;
+            visit [-:play:level_id==new_ID:->];
         } else {
             <here>.g.game_over();
             <self>.played = True;
             <here>.g.won = False;
             <here>.fwd_dir = False;
-            visit <-:play:-;
+            visit [<-:play:-];
         }
     } elif <here>.fwd_dir == False{
         new_ID = str(<self>.game_level+1) + "_" + str(random.randint(1000, 9000));
         print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played), '| Created Level ID :', new_ID);
         <here>.fwd_dir = True;
         <self> +:play:level_id=new_ID:+> level(game_level = <self>.game_level+1, level_id = new_ID);
-        visit -:play:level_id==new_ID:->;
+        visit [-:play:level_id==new_ID:->];
     } else {
         print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
         visit <--;
@@ -108,13 +108,13 @@ with entry {
         new_ID = str(1) + "_" + str(random.randint(1000, 9000));
         <self> +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
         <here>.fwd_dir = True;
-        visit -:play:level_id==new_ID:->;
+        visit [-:play:level_id==new_ID:->];
     } else {
         new_ID = str(1) + "_" + str(random.randint(1000, 9000));
         <self> +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
         print(":-: Visiting Intro Screen | Created Level ID :", new_ID);
         <here>.fwd_dir = True;
-        visit -:play:level_id==new_ID:->;
+        visit [-:play:level_id==new_ID:->];
 
     }
 }

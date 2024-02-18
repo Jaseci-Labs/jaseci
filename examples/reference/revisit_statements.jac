@@ -1,2 +1,3 @@
-
-# Semantics undefined
+with entry {
+    print("Not used.");
+}

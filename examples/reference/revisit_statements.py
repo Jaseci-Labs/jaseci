@@ -1,1 +1,1 @@
-# Semantics undefined
+print("Not used.")

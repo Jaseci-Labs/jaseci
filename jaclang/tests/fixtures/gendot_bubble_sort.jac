@@ -19,13 +19,13 @@ walker walker1 {
     end = <here>;
     for i=0 to i<len(list1)+1 by i+=1  {
         end ++> (end := main_node(no=i + 1));
-        visit -->;
+        visit [-->];
     }
 }
 
 walker walker2 {
     can skip_root with `<root> entry {
-        visit -->;
+        visit [-->];
     }
     can process with main_node entry;
 }
@@ -36,12 +36,12 @@ walker walker2 {
     for j in range(0, len(list1) - (<here>.no)) {
         <here> ++> inner_node(main=<here>.no, sub=j + 1);
     }
-    visit -->;
+    visit [-->];
 }
 
 walker walker3 {
     can skiproot with `<root> entry {
-        visit -->;
+        visit [-->];
     }
     can adjust with main_node entry;
 }
@@ -52,7 +52,7 @@ walker walker3 {
 
 walker walker4 {
     can skipmain with main_node entry {
-        visit -->;#  print(f"iteration {<here>.no} started  {list1}");
+        visit [-->];#  print(f"iteration {<here>.no} started  {list1}");
     }
 
     can skipin with inner_node entry {

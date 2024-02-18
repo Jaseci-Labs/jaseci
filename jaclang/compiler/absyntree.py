@@ -1586,7 +1586,6 @@ class AtomTrailer(Expr):
         right: AtomExpr | Expr,
         is_attr: Optional[Token],
         is_null_ok: bool,
-        edge_ref_chain: list[Expr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
@@ -1594,7 +1593,6 @@ class AtomTrailer(Expr):
         self.right = right
         self.is_attr = is_attr
         self.is_null_ok = is_null_ok
-        self.edge_ref_chain = edge_ref_chain
         AstNode.__init__(self, kid=kid)
 
 
@@ -1732,6 +1730,21 @@ class SpecialVarRef(NameSpec):
             return "__post_init__"
         else:
             raise NotImplementedError("ICE: Special var reference not implemented")
+
+
+class EdgeRefTrailer(Expr):
+    """EdgeRefTrailer node type for Jac Ast."""
+
+    def __init__(
+        self,
+        chain: list[Expr],
+        edges_only: bool,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize edge reference trailer expression node."""
+        self.chain = chain
+        self.edges_only = edges_only
+        AstNode.__init__(self, kid=kid)
 
 
 class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):

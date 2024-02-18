@@ -406,6 +406,7 @@ class EBNF_to_BNF(Transformer_InPlace):
 
 
 class SimplifyRule_Visitor(Visitor):
+
     @staticmethod
     def _flatten(tree: Tree):
         while tree.expand_kids_by_data(tree.data):
@@ -736,6 +737,7 @@ def nr_deepcopy_tree(t):
 
 
 class Grammar:
+
     term_defs: List[Tuple[str, Tuple[Tree, int]]]
     rule_defs: List[Tuple[str, Tuple[str, ...], Tree, RuleOptions]]
     ignore: List[str]
@@ -1240,6 +1242,7 @@ class Definition:
 
 
 class GrammarBuilder:
+
     global_keep_all_tokens: bool
     import_paths: List[Union[str, Callable]]
     used_files: Dict[str, str]
@@ -1408,6 +1411,7 @@ class GrammarBuilder:
         return dotted_path, base_path, aliases
 
     def _unpack_definition(self, tree, mangle):
+
         if tree.data == "rule":
             name, params, exp, opts = _make_rule_tuple(*tree.children)
             is_term = False

@@ -261,22 +261,36 @@ class JacFeatureDefaults:
     @hookimpl
     def edge_ref(
         node_obj: NodeArchitype | list[NodeArchitype],
+        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]:
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
-            return node_obj._jac_.edges_to_nodes(dir, filter_type, filter_func)
-        elif isinstance(node_obj, list):
-            connected_nodes = []
+            node_obj = [node_obj]
+        targ_obj_set: Optional[list[NodeArchitype]] = (
+            [target_obj]
+            if isinstance(target_obj, NodeArchitype)
+            else target_obj if target_obj else None
+        )
+        if edges_only:
+            connected_edges: list[EdgeArchitype] = []
+            for node in node_obj:
+                connected_edges += node._jac_.get_edges(
+                    dir, filter_type, filter_func, target_obj=targ_obj_set
+                )
+            return list(set(connected_edges))
+        else:
+            connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
-                    node._jac_.edges_to_nodes(dir, filter_type, filter_func)
+                    node._jac_.edges_to_nodes(
+                        dir, filter_type, filter_func, target_obj=targ_obj_set
+                    )
                 )
             return list(set(connected_nodes))
-        else:
-            raise TypeError("Invalid node object")
 
     @staticmethod
     @hookimpl
@@ -284,23 +298,62 @@ class JacFeatureDefaults:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]:
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
+        edges = []
         for i in left:
             for j in right:
-                i._jac_.connect_node(j, edge_spec())
-        return left
+                conn_edge = edge_spec()
+                edges.append(conn_edge)
+                i._jac_.connect_node(j, conn_edge)
+        return right if not edges_only else edges
 
     @staticmethod
     @hookimpl
-    def disconnect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
-        """Jac's connect operator feature."""
-        return ret if (ret := op1) is not None else op2
+    def disconnect(
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        dir: EdgeDir,
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> bool:  # noqa: ANN401
+        """Jac's disconnect operator feature."""
+        disconnect_occurred = False
+        left = [left] if isinstance(left, NodeArchitype) else left
+        right = [right] if isinstance(right, NodeArchitype) else right
+        for i in left:
+            for j in right:
+                edge_list: list[EdgeArchitype] = [*i._jac_.edges]
+                if filter_type:
+                    edge_list = [e for e in edge_list if isinstance(e, filter_type)]
+                edge_list = filter_func(edge_list) if filter_func else edge_list
+                for e in edge_list:
+                    if (
+                        e._jac_.target
+                        and e._jac_.source
+                        and (not filter_type or isinstance(e, filter_type))
+                    ):
+                        if (
+                            dir in ["OUT", "ANY"]
+                            and i._jac_.obj == e._jac_.source
+                            and e._jac_.target == j._jac_.obj
+                        ):
+                            e._jac_.detach(i._jac_.obj, e._jac_.target)
+                            disconnect_occurred = True
+                        if (
+                            dir in ["IN", "ANY"]
+                            and i._jac_.obj == e._jac_.target
+                            and e._jac_.source == j._jac_.obj
+                        ):
+                            e._jac_.detach(i._jac_.obj, e._jac_.source)
+                            disconnect_occurred = True
+        return disconnect_occurred
 
     @staticmethod
     @hookimpl

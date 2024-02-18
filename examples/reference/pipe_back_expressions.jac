@@ -4,7 +4,6 @@ can double(x: int) -> int {
 
 with entry {
     number = 5;
-    result = double <| number ;
+    result = double <| number;
     print(result);
 }
-
