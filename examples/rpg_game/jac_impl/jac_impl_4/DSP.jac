@@ -90,7 +90,7 @@ with entry {
         visit [-:play:level_id==new_ID:->];
     } else {
         print(":-: Visiting Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
-        visit <--;
+        visit [<--];
     }
 }
 :node:level:can:exit_game {
