@@ -212,11 +212,10 @@ class JacBuiltin:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def dotgen(node: NodeArchitype, depth: float ) -> str:
+    def dotgen(node: NodeArchitype, depth: float) -> str:
         """Print the dot graph."""
         raise NotImplementedError
- 
+
     # def dijkstra(start_node: NodeArchitype ) -> str:
     #     """Print the dot graph."""
     #     raise NotImplementedError
- 

@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+# import heapq
 
 from jaclang.core.construct import (
     EdgeArchitype,
-    NodeAnchor,
     NodeArchitype,
     root,
 )
 
-import heapq
+
 import pluggy
 
 __all__ = [
@@ -24,11 +24,13 @@ hookimpl = pluggy.HookimplMarker("jac")
 
 class JacBuiltin:
     """Jac Builtins."""
+
     @staticmethod
     @hookimpl
-    def dotgen(node, depth):
-        unique_nodes = {}
-        queue = [(node, 0)]  
+    def dotgen(node: NodeArchitype, depth: float) -> str:
+        print(type(node))
+        unique_nodes: dict = {}
+        queue: list[tuple] = [(node, 0)]
         dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];'
         while queue:
             current_node, current_depth = queue.pop(0)
@@ -42,23 +44,29 @@ class JacBuiltin:
             node_number = unique_nodes[current_id][1]
             dot_content += f'\n{node_number} [label="{current_node._jac_.obj}"];'
             if current_depth >= depth:
-                    continue
+                continue
             for edge in current_node._jac_.edges:
                 target_node_id = id(edge._jac_.target._jac_.obj)
-                if target_node_id==current_id:
-                    if edge._jac_.target==edge._jac_.source:
-                        print(edge._jac_.target,edge._jac_.source)
+                if target_node_id == current_id:
+                    if edge._jac_.target == edge._jac_.source:
+                        print(edge._jac_.target, edge._jac_.source)
                     continue
                 if target_node_id not in unique_nodes:
-                    unique_nodes[target_node_id] = [0, len(unique_nodes), current_depth + 1]
+                    unique_nodes[target_node_id] = [
+                        0,
+                        len(unique_nodes),
+                        current_depth + 1,
+                    ]
                     queue.append((edge._jac_.target, current_depth + 1))
-                dot_content += f'\n{node_number} -> {unique_nodes[target_node_id][1]} [label="{edge._jac_.obj.__class__.__name__}"];'
+                dot_content += (
+                    f"\n{node_number} -> {unique_nodes[target_node_id][1]}"
+                    f'[label="{edge._jac_.obj.__class__.__name__}"];'
+                )
                 childs = [edge._jac_.target for edge in current_node._jac_.edges]
                 queue.extend([(child, current_depth + 1) for child in childs])
-        
-       
-        return dot_content + '\n}'
-    
+
+        return dot_content + "\n}"
+
     # @staticmethod
     # @hookimpl
     # def dijkstra(start_node):
@@ -88,8 +96,8 @@ class JacBuiltin:
     #         for edge in current_node._jac_.edges:
     #             target_node = edge._jac_.target
     #             target_node_id = id(target_node)
-    #             new_distance = distances[current_node_id][1] + 1  
+    #             new_distance = distances[current_node_id][1] + 1
     #             if target_node_id not in distances or new_distance < distances[target_node_id][1]:
     #                 distances[target_node_id] = (target_node, new_distance)
-    
+
     #     return {node_name: distance for node_id, (node_name, distance) in distances.items()}

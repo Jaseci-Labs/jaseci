@@ -9,7 +9,6 @@ from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
     Architype,
     EdgeArchitype,
-    NodeAnchor,
     NodeArchitype,
     Root,
     WalkerArchitype,
@@ -218,15 +217,14 @@ class JacFeature:
 
 
 """Jac specific builtins.
-#Need to write a doc string
 """
 
 
-def dotgen(node: NodeAnchor = root, depth: float =float('inf')) -> str:
+def dotgen(node: NodeArchitype = root, depth: float = float("inf")) -> str:
     """Print the dot graph."""
     return pm.hook.dotgen(node=node, depth=depth)
+
 
 # def dijkstra(start_node: NodeAnchor = root) -> str:
 #     """Print the dot graph."""
 #     return pm.hook.dijkstra(start_node=start_node)
-
