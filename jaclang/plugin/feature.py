@@ -226,7 +226,7 @@ def dotgen(node: NodeAnchor = root, depth: float =float('inf')) -> str:
     """Print the dot graph."""
     return pm.hook.dotgen(node=node, depth=depth)
 
-def dijkstra(start_node: NodeAnchor = root) -> str:
-    """Print the dot graph."""
-    return pm.hook.dijkstra(start_node=start_node)
+# def dijkstra(start_node: NodeAnchor = root) -> str:
+#     """Print the dot graph."""
+#     return pm.hook.dijkstra(start_node=start_node)
 
