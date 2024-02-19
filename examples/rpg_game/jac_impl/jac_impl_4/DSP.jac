@@ -58,6 +58,7 @@ with entry {
     <here> ++> start_screen();
     visit [-->];
 }
+
 :node:level:can:run_game {
     # print("Walker Entry ->", <self>.level_id);
 
@@ -93,6 +94,7 @@ with entry {
         visit [<--];
     }
 }
+
 :node:level:can:exit_game {
     if <here>.g.running == False {
         pygame.quit();
@@ -100,6 +102,7 @@ with entry {
         disengage;
     }
 }
+
 :node:start_screen:can:intro_screen {
     # print("Walker Entry -> Intro Screen");
     if <self>.game_started == False {
@@ -118,6 +121,7 @@ with entry {
 
     }
 }
+
 :node:start_screen:can:exit_game {
     if <here>.g.running == False {
         pygame.quit();
