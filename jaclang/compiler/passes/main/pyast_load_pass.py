@@ -274,13 +274,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value: expr
         """
         targets = [self.convert(target) for target in node.targets]
-        valid_targets = [
-            target for target in targets if isinstance(target, ast.AtomExpr)
-        ]
-        if len(valid_targets) == len(targets):
-            valid_targets = ast.SubNodeList[ast.AtomExpr](
-                items=valid_targets, kid=targets
-            )
+        valid = [target for target in targets if isinstance(target, ast.Expr)]
+        if len(valid) == len(targets):
+            valid_targets = ast.SubNodeList[ast.Expr](items=valid, kid=valid)
         else:
             raise self.ice("Length mismatch in assignment targets")
         value = self.convert(node.value)
@@ -635,8 +631,25 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_lambda(self, node: py_ast.Lambda) -> None:
         """Process python node."""
 
-    def proc_list(self, node: py_ast.List) -> None:
-        """Process python node."""
+    def proc_list(self, node: py_ast.List) -> ast.ListVal:
+        """Process python node.
+
+        class List(expr):
+            elts: list[expr]
+            ctx: expr_context
+        """
+        elts = [self.convert(elt) for elt in node.elts]
+        valid_elts = [elt for elt in elts if isinstance(elt, ast.Expr)]
+        if len(valid_elts) != len(elts):
+            raise self.ice("Length mismatch in list elements")
+        return ast.ListVal(
+            values=(
+                ast.SubNodeList[ast.Expr](items=valid_elts, kid=valid_elts)
+                if valid_elts
+                else None
+            ),
+            kid=valid_elts,
+        )
 
     def proc_list_comp(self, node: py_ast.ListComp) -> None:
         """Process python node."""
