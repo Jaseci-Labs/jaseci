@@ -38,9 +38,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Get python node type."""
         print(f"working on {type(node).__name__} ---------------------")
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
-            return getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
+            ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
+        print(f"finshed {type(node).__name__} ---------------------")
+        return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
         """Transform input IR."""
@@ -495,7 +497,31 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Process python node."""
 
     def proc_bin_op(self, node: py_ast.BinOp) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class BinOp(expr):
+            if sys.version_info >= (3, 10):
+                __match_args__ = ("left", "op", "right")
+            left: expr
+            op: operator
+            right: expr
+        """
+        left = self.convert(node.left)
+        op = self.convert(node.op)
+        right = self.convert(node.right)
+        if (
+            isinstance(left, ast.Expr)
+            and isinstance(op, ast.Token)
+            and isinstance(right, ast.Expr)
+        ):
+            return ast.BinaryExpr(
+                left=left,
+                op=op,
+                right=right,
+                kid=[left, op, right],
+            )
+        else:
+            raise self.ice()
 
     def proc_bool_op(self, node: py_ast.BoolOp) -> None:
         """Process python node."""
@@ -548,8 +574,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             s: Any
             n: int | float | complex
         """
-        # if(node.value == None):
-        #     print("node value:", node.value, node.lineno)
         if isinstance(node.value, str):
             return ast.String(
                 file_path=self.mod_path,
@@ -558,6 +582,30 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 line=node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(node.value),
+                pos_start=0,
+                pos_end=0,
+                kid=[],
+            )
+        elif isinstance(node.value, int):
+            return ast.Int(
+                file_path=self.mod_path,
+                name=Tok.INT,
+                value=node.value,
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset,
+                pos_start=0,
+                pos_end=0,
+                kid=[],
+            )
+        elif isinstance(node.value, float):
+            return ast.Float(
+                file_path=self.mod_path,
+                name=Tok.FLOAT,
+                value=node.value,
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset,
                 pos_start=0,
                 pos_end=0,
                 kid=[],
