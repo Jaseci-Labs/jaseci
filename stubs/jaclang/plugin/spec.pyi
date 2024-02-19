@@ -64,15 +64,23 @@ class JacFeatureSpec:
         dir: EdgeDir,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[NodeArchitype]: ...
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-    ) -> NodeArchitype | list[NodeArchitype]: ...
+        edges_only: bool,
+    ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
-    def disconnect(op1: Optional[T], op2: T, op: Any) -> T: ...
+    def disconnect(
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        dir: EdgeDir,
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> bool: ...
     @staticmethod
     def assign_compr(
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
@@ -85,3 +93,7 @@ class JacFeatureSpec:
         conn_type: Optional[Type[EdgeArchitype]],
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[], EdgeArchitype]: ...
+
+class JacBuiltin:
+    @staticmethod
+    def dotgen(node: NodeArchitype, radius: int = 0) -> str: ...

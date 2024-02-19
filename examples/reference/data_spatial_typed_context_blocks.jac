@@ -13,12 +13,12 @@ node Product {
     for i=0 to i<=2 by i+=1  {
         end ++> (end := Product(number=i + 1));
     }
-    visit -->;
+    visit [-->];
 }
 
 :node:Product:can:make -> str {
     print(f"Hi, I am {<s>} returning a String");
-    visit -->;
+    visit [-->];
 }
 
 with entry {

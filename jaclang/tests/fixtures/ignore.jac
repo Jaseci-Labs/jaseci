@@ -17,7 +17,7 @@ node turn {
     for i=0 to i<10 by i+=1 {
         <here> ++> turn();
     }
-    visit -->;
+    visit [-->];
 }
 
 :walker:GuessGame2:can:start_game {
@@ -25,9 +25,9 @@ node turn {
         <here> ++> turn();
     }
     for i=0 to i<15 by i+=1 {
-        ignore -->[i];
+        ignore [-->][i];
     }
-    visit -->;
+    visit [-->];
 }
 
 :node:turn:can:check {

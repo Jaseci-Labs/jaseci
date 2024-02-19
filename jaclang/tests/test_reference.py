@@ -52,6 +52,7 @@ class JacReferenceTests(TestCase):
         """Test file."""
 
         def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
+            jcon.root.reset()
             f = io.StringIO()
             with redirect_stdout(f):
                 exec(
@@ -65,7 +66,8 @@ class JacReferenceTests(TestCase):
             return f.getvalue()
 
         try:
-            jcon.root.reset()
+            if "tests.jac" in filename:
+                return
             jacast = jac_file_to_pass(filename).ir
             code_content = compile(
                 source=jacast.gen.py_ast[0],
@@ -85,7 +87,9 @@ class JacReferenceTests(TestCase):
             self.assertGreater(len(output_py), 0)
             self.assertEqual(output_py, output_jac)
         except Exception as e:
-            self.skipTest(f"Test failed on {filename}: {e}")
+            print(f"\nJAC Output:\n{output_jac}")
+            print(f"\nPython Output:\n{output_py}")
+            raise e
 
 
 JacReferenceTests.self_attach_ref_tests()

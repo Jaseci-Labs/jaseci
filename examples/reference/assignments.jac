@@ -1,8 +1,7 @@
-with entry{
-
-    a=b=16;
+with entry {
+    a = b = 16;
     let c = 18;
-    print(a,b,c);
+    print(a, b, c);
     a>>=2;
     print(a);
     a<<=2;
@@ -10,18 +9,3 @@ with entry{
     c//=4;
     print(c);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

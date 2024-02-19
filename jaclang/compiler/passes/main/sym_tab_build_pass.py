@@ -60,11 +60,17 @@ class SymTabPass(Pass):
         if isinstance(node.sym_name_node, ast.AstSymbolNode):
             node.sym_name_node.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
-            for i in node.values.items:
-                if isinstance(i, ast.AstSymbolNode):
-                    i.py_ctx_func = ast3.Store
-                elif isinstance(i, ast.AtomTrailer):
-                    self.chain_def_insert(self.unwind_atom_trailer(i))
+
+            def fix(item: ast.TupleVal | ast.ListVal) -> None:
+                for i in item.values.items if item.values else []:
+                    if isinstance(i, ast.AstSymbolNode):
+                        i.py_ctx_func = ast3.Store
+                    elif isinstance(i, ast.AtomTrailer):
+                        self.chain_def_insert(self.unwind_atom_trailer(i))
+                    if isinstance(i, (ast.TupleVal, ast.ListVal)):
+                        fix(i)
+
+            fix(node)
         self.handle_hit_outcome(node)
         return node.sym_link
 
@@ -1198,6 +1204,14 @@ class SymTabBuildPass(SymTabPass):
         """Sub objects.
 
         var: Token,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
+        """Sub objects.
+
+        chain: list[Expr],
+        edges_only: bool,
         """
         self.sync_node_to_scope(node)
 

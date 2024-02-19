@@ -37,7 +37,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 ),
                 0,
             )
-        except Exception:
+        except Exception as e:
             from jaclang.utils.helpers import add_line_numbers
 
             print(add_line_numbers(formatted_file_content))
@@ -51,8 +51,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 )
             )
             print(diff)
-            # raise AssertionError("File contents do not match.")
-            self.skipTest("Test failed, but skipping instead of failing.")
+            raise e
+            # self.skipTest("Test failed, but skipping instead of failing.")
 
     def setUp(self) -> None:
         """Set up test."""
@@ -88,7 +88,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        if "circle_clean_tests.jac" in filename or "circle_pure.test.jac" in filename:
+        if "circle_clean_tests.jac" in filename:
             tokens = code_gen_format.ir.gen.jac.split()
             num_test = 0
             for i in range(len(tokens)):
@@ -115,7 +115,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 0,
             )
 
-        except Exception:
+        except Exception as e:
             from jaclang.utils.helpers import add_line_numbers
 
             print(add_line_numbers(code_gen_pure.ir.source.code))
@@ -123,8 +123,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             print(add_line_numbers(code_gen_format.ir.gen.jac))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
             print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
-            self.skipTest("Test failed, but skipping instead of failing.")
-            # raise e
+            # self.skipTest("Test failed, but skipping instead of failing.")
+            raise e
 
 
 JacFormatPassTests.self_attach_micro_tests()

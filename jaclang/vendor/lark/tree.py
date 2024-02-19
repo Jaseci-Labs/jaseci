@@ -29,6 +29,7 @@ from collections import OrderedDict
 
 
 class Meta:
+
     empty: bool
     line: int
     column: int

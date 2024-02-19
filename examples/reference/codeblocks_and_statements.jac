@@ -1,11 +1,7 @@
-with entry{
+with entry {
     print("Welcome to the world of Jaseci!");
-
-    can add(x:int,y:int)->int{
-        return(x+y);
+    can add(x: int, y: int) -> int {
+        return (x + y);
     }
-
-    print(add(10,89));
-
-
+    print(add(10, 89));
 }

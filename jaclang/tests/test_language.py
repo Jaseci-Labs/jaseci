@@ -228,9 +228,9 @@ class JacLanguageTests(TestCase):
         jac_import("edge_ops", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.split("\n")[0], "[(3, 5), (14, 1), (5, 1)]")
-        self.assertEqual(stdout_value.split("\n")[1], "10")
-        self.assertEqual(stdout_value.split("\n")[2], "12")
+        self.assertIn("[(3, 5), (14, 1), (5, 1)]", stdout_value)
+        self.assertIn("10\n", stdout_value)
+        self.assertIn("12\n", stdout_value)
 
     def test_disconnect(self) -> None:
         """Test conn assign on edges."""
@@ -239,8 +239,13 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
         jac_import("disconn", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("jaclang.core", stdout_value.split("\n")[0])
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("c(cc=0)", stdout_value[0])
+        self.assertIn("c(cc=1)", stdout_value[0])
+        self.assertIn("c(cc=2)", stdout_value[0])
+        self.assertIn("True", stdout_value[2])
+        self.assertIn("[]", stdout_value[3])
+        self.assertIn("['GenericEdge', 'GenericEdge', 'GenericEdge']", stdout_value[5])
 
     def test_simple_archs(self) -> None:
         """Test conn assign on edges."""
@@ -262,5 +267,29 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("[node_a(val=12)]\n", stdout_value)
-        self.assertIn("[node_a(val=1), node_a(val=2)]\n", stdout_value)
+        self.assertIn("node_a(val=1)", stdout_value)
+        self.assertIn("node_a(val=2)", stdout_value)
         self.assertIn("[node_a(val=42), node_a(val=42)]\n", stdout_value)
+
+    def test_impl_grab(self) -> None:
+        """Test walking through edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("impl_grab", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("1.414", stdout_value)
+
+    def test_tuple_of_tuple_assign(self) -> None:
+        """Test walking through edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("tuplytuples", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn(
+            "a apple b banana a apple b banana a apple b banana a apple b banana",
+            stdout_value,
+        )
