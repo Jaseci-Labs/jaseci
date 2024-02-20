@@ -71,13 +71,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             for i in elements
             if isinstance(
                 i,
-                (
-                    ast.ElementStmt,
-                    ast.String,
-                    ast.EmptyToken,
-                    ast.Assignment,
-                    ast.IfStmt,
-                ),
+                (ast.ElementStmt, ast.String, ast.EmptyToken),
             )
         ]
         if len(valid) != len(elements):
@@ -140,10 +134,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ret_sig = self.convert(node.returns) if node.returns else None
         if isinstance(ret_sig, ast.Expr):
             if not sig:
-                sig = ret_sig
-                # sig = ast.FuncSignature(params=[], return_type=ret_sig)
+                sig = ast.FuncSignature(params=None, return_type=ret_sig, kid=[ret_sig])
             else:
-                sig.return_type = ast.SubTag[ast.Expr](tag=ret_sig, kid=[ret_sig])
+                sig.return_type = ret_sig
                 sig.add_kids_right([sig.return_type])
         kid = [name, sig, valid_body] if sig else [name, valid_body]
         ret = ast.Ability(
@@ -227,33 +220,35 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        valid_body = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
-        if len(valid_body) != len(body):
+        valid = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
+        if len(valid) != len(body):
             self.error("Length mismatch in classes body")
-        valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid_body, kid=body)
+        valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid, kid=body)
 
         base_classes = [self.convert(base) for base in node.bases]
-        valid_bases = [base for base in base_classes if isinstance(base, ast.AtomExpr)]
-        if len(valid_bases) != len(base_classes):
+        valid2: list[ast.Expr] = [
+            base for base in base_classes if isinstance(base, ast.Expr)
+        ]
+        if len(valid2) != len(base_classes):
             raise self.ice("Length mismatch in base classes")
         valid_bases = (
-            ast.SubNodeList[ast.AtomExpr](items=valid_bases, kid=base_classes)
-            if len(valid_bases)
+            ast.SubNodeList[ast.Expr](items=valid2, kid=base_classes)
+            if len(valid2)
             else None
         )
         body = [self.convert(i) for i in node.body]
-        valid_body = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
-        if len(valid_body) != len(body):
+        valid3 = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
+        if len(valid3) != len(body):
             raise self.ice("Length mismatch in classes body")
-        valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid_body, kid=body)
+        valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid3, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
-        valid_decorators = [i for i in decorators if isinstance(i, ast.Expr)]
-        if len(valid_decorators) != len(decorators):
+        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
+        if len(valid_dec) != len(decorators):
             raise self.ice("Length mismatch in decorators in class")
         valid_decorators = (
-            ast.SubNodeList[ast.Expr](items=valid_decorators, kid=decorators)
-            if len(valid_decorators)
+            ast.SubNodeList[ast.Expr](items=valid_dec, kid=decorators)
+            if len(valid_dec)
             else None
         )
         kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]
@@ -289,11 +284,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             targets: list[expr]
         """
         exprs = [self.convert(target) for target in node.targets]
-        valid_exprs = [expr for expr in exprs if isinstance(expr, ast.AtomExpr)]
+        valid_exprs = [expr for expr in exprs if isinstance(expr, ast.Expr)]
         if not len(valid_exprs) or len(valid_exprs) != len(exprs):
             raise self.ice("Length mismatch in delete targets")
+        target = ast.SubNodeList[ast.Expr | ast.KWPair](items=[*valid_exprs], kid=exprs)
         return ast.DeleteStmt(
-            target=ast.SubNodeList[ast.AtomExpr](items=valid_exprs, kid=exprs),
+            target=(
+                valid_exprs[0]
+                if len(valid_exprs) > 1
+                else ast.TupleVal(values=target, kid=[target])
+            ),
             kid=exprs,
         )
 
@@ -830,6 +830,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 paths.append(
                     ast.ModulePath(
                         path=[name.expr],
+                        level=0,
                         alias=name.alias,
                         kid=[i for i in name.kid if i],
                     )
@@ -877,28 +878,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
             kid=[],
         )
-
-        def dot() -> ast.Token:
-            ast.Token(
-                file_path=self.mod_path,
-                name=Tok.DOT,
-                value=".",
-                line=node.lineno,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-                kid=[],
-            )
-
-        modpaths: list[ast.Token] = []
-        if node.level:
-            for _ in range(node.level):
-                modpaths.append(dot())
+        modpaths: list[ast.Name] = []
         if node.module:
             for i in node.module.split("."):
                 modpaths.append(
-                    ast.Token(
+                    ast.Name(
                         file_path=self.mod_path,
                         name=Tok.NAME,
                         value=i,
@@ -910,10 +894,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         kid=[],
                     )
                 )
-                if i != node.module.split(".")[-1]:
-                    modpaths.append(dot())
         path = ast.ModulePath(
             path=modpaths,
+            level=node.level,
             alias=None,
             kid=modpaths,
         )
