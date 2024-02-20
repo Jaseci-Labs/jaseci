@@ -144,6 +144,7 @@ class Tokens(str, Enum):
     KW_EXCEPT = "KW_EXCEPT"
     KW_FINALLY = "KW_FINALLY"
     KW_RAISE = "KW_RAISE"
+    ELLIPSIS = "ELLIPSIS"
     DOT = "DOT"
     NOT = "NOT"
     EE = "EE"

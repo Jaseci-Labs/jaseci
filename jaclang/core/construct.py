@@ -24,9 +24,9 @@ class ElementAnchor:
 class ObjectAnchor(ElementAnchor):
     """Object Anchor."""
 
-    def spawn_call(self, walk: WalkerArchitype) -> None:
+    def spawn_call(self, walk: WalkerArchitype) -> WalkerArchitype:
         """Invoke data spatial call."""
-        walk._jac_.spawn_call(self.obj)
+        return walk._jac_.spawn_call(self.obj)
 
 
 @dataclass(eq=False)
@@ -156,10 +156,12 @@ class EdgeAnchor(ObjectAnchor):
         # self.target = None  # TODO: Delete me, don't keep attached
         del self
 
-    def spawn_call(self, walk: WalkerArchitype) -> None:
+    def spawn_call(self, walk: WalkerArchitype) -> WalkerArchitype:
         """Invoke data spatial call."""
         if self.target:
-            walk._jac_.spawn_call(self.target)
+            return walk._jac_.spawn_call(self.target)
+        else:
+            raise ValueError("Edge has no target.")
 
 
 @dataclass(eq=False)
@@ -220,7 +222,7 @@ class WalkerAnchor(ObjectAnchor):
         """Disengage walker from traversal."""
         self.disengaged = True
 
-    def spawn_call(self, nd: Architype) -> None:
+    def spawn_call(self, nd: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         self.path = []
         self.next = [nd]
@@ -233,7 +235,7 @@ class WalkerAnchor(ObjectAnchor):
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
-                    return
+                    return self.obj
             for i in self.obj._jac_entry_funcs_:
                 if not i.trigger or isinstance(nd, i.trigger):
                     if i.func:
@@ -241,7 +243,7 @@ class WalkerAnchor(ObjectAnchor):
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
-                    return
+                    return self.obj
             for i in self.obj._jac_exit_funcs_:
                 if not i.trigger or isinstance(nd, i.trigger):
                     if i.func:
@@ -249,7 +251,7 @@ class WalkerAnchor(ObjectAnchor):
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
-                    return
+                    return self.obj
             for i in nd._jac_exit_funcs_:
                 if not i.trigger or isinstance(self.obj, i.trigger):
                     if i.func:
@@ -257,8 +259,9 @@ class WalkerAnchor(ObjectAnchor):
                     else:
                         raise ValueError(f"No function {i.name} to call.")
                 if self.disengaged:
-                    return
+                    return self.obj
         self.ignores = []
+        return self.obj
 
 
 class Architype:

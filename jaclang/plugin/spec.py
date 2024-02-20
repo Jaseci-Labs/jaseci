@@ -109,7 +109,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def spawn_call(op1: Architype, op2: Architype) -> bool:
+    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         raise NotImplementedError
 
