@@ -1037,18 +1037,20 @@ class JacParser(Pass):
         def typed_has_clause(self, kid: list[ast.AstNode]) -> ast.HasVar:
             """Grammar rule.
 
-            typed_has_clause: STRING? named_ref type_tag (EQ expression)?
+            typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_BY POST_INIT_OP)?
             """
             semstr = kid[0] if isinstance(kid[0], ast.String) else None
             name = kid[1] if semstr else kid[0]
             type_tag = kid[2] if semstr else kid[1]
-            value = kid[-1] if isinstance(kid[-1], ast.Expr) else None
+            defer = isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.POST_INIT_OP
+            value = kid[-1] if not defer and isinstance(kid[-1], ast.Expr) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
                 return self.nu(
                     ast.HasVar(
                         semstr=semstr,
                         name=name,
                         type_tag=type_tag,
+                        defer=defer,
                         value=value,
                         kid=kid,
                     )

@@ -160,6 +160,24 @@ class PyastGenPass(Pass):
         )
         self.already_added.append("dataclass")
 
+    def needs_dataclass_field(self) -> None:
+        """Check if enum is needed."""
+        if "dataclass_field" in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.ImportFrom(
+                    module="dataclasses",
+                    names=[
+                        self.sync(ast3.alias(name="field", asname="__jac_field__")),
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            )
+        )
+        self.already_added.append("dataclass_field")
+
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
@@ -1088,6 +1106,11 @@ class PyastGenPass(Pass):
                     ctx=ast3.Load(),
                 )
             )
+        (
+            self.needs_dataclass_field()
+            if node.defer and not (is_static_var or is_in_class)
+            else None
+        )
         node.gen.py_ast = [
             (
                 self.sync(
@@ -1135,8 +1158,33 @@ class PyastGenPass(Pass):
                                     ],
                                 )
                             )
-                            if node.value and not (is_static_var or is_in_class)
-                            else node.value.gen.py_ast[0] if node.value else None
+                            if node.value
+                            and not (is_static_var or is_in_class or node.defer)
+                            else (
+                                self.sync(
+                                    ast3.Call(
+                                        func=self.sync(
+                                            ast3.Name(
+                                                id="__jac_field__",
+                                                ctx=ast3.Load(),
+                                            )
+                                        ),
+                                        args=[],
+                                        keywords=[
+                                            self.sync(
+                                                ast3.keyword(
+                                                    arg="init",
+                                                    value=self.sync(
+                                                        ast3.Constant(value=True)
+                                                    ),
+                                                )
+                                            )
+                                        ],
+                                    )
+                                )
+                                if node.defer and not (is_static_var or is_in_class)
+                                else node.value.gen.py_ast[0] if node.value else None
+                            )
                         ),
                         simple=int(isinstance(node.name, ast.Name)),
                     )

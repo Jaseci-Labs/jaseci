@@ -866,12 +866,14 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         name: Name,
         type_tag: SubTag[Expr],
         value: Optional[Expr],
+        defer: bool,
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
     ) -> None:
         """Initialize has var node."""
         self.name = name
         self.value = value
+        self.defer = defer
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,

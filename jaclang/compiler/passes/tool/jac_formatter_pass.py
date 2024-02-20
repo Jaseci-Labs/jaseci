@@ -372,7 +372,7 @@ class JacFormatPass(Pass):
         path: list[Token],
         alias: Optional[Name],
         """
-        self.emit(node, "".join([i.gen.jac for i in node.path]))
+        self.emit(node, node.path_str)
         if node.alias:
             self.emit(node, " as " + node.alias.gen.jac)
 
@@ -2229,6 +2229,19 @@ class JacFormatPass(Pass):
         self.emit(node, node.value)
 
     def exit_null(self, node: ast.Null) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def exit_ellipsis(self, node: ast.Ellipsis) -> None:
         """Sub objects.
 
         name: str,
