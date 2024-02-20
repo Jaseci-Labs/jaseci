@@ -34,45 +34,14 @@ class JacBuiltin:
         dpeth_of_node: dict[NodeArchitype, int] = {}
         queue: list = [[node, 0]]
         connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
-        found_node = next((item for item in visited_nodes if item[0] == node), None)
 
         def dfs(node: NodeArchitype, cur_depth: int) -> None:
             """Depth first search."""
-            if found_node == 1:
-                return
-            elif found_node is not None:
-                found_node[1] = 1
-            else:
-                visited_nodes.append([node, 1])
-            dpeth_of_node[node] = cur_depth
-            helper(
-                node,
-                cur_depth,
-                connections,
-                visited_nodes,
-                queue,
-                bfs,
-                dfs,
-                depth,
-                node_limit,
-                edge_limit,
-            )
-
-        if bfs:
-            cur_depth = 0
-            while queue:
-                current_node, cur_depth = queue.pop(0)
-                found_node = next(
-                    (item for item in visited_nodes if item[0] == current_node), None
-                )
-                if found_node == 1:
-                    continue
-                elif found_node is not None:
-                    found_node[1] = 1
-                else:
-                    visited_nodes.append([current_node, 1])
+            if node not in visited_nodes:
+                visited_nodes.append(node)
+                dpeth_of_node[node] = cur_depth
                 helper(
-                    current_node,
+                    node,
                     cur_depth,
                     connections,
                     visited_nodes,
@@ -83,21 +52,45 @@ class JacBuiltin:
                     node_limit,
                     edge_limit,
                 )
+
+        if bfs:
+            cur_depth = 0
+            while queue:
+                current_node, cur_depth = queue.pop(0)
+                if current_node not in visited_nodes:
+                    dpeth_of_node[current_node] = cur_depth
+                    visited_nodes.append(current_node)
+                    helper(
+                        current_node,
+                        cur_depth,
+                        connections,
+                        visited_nodes,
+                        queue,
+                        bfs,
+                        dfs,
+                        depth,
+                        node_limit,
+                        edge_limit,
+                    )
         else:
             dfs(node, cur_depth=0)
         dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
-        for unique_node in visited_nodes:
-            dot_content += f'{visited_nodes.index(unique_node)} [label="{unique_node[0]._jac_.obj}"];\n'
-        result_dict: dict[NodeArchitype, int] = {
-            item[0]: index for index, item in enumerate(visited_nodes)
-        }
+        for node_ in visited_nodes:
+            dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}"];\n'
         for source, target, edge in connections:
-            dot_content += (
-                f"{ result_dict[source]} -> {result_dict[target]}"
-                f' [label="{edge._jac_.obj.__class__.__name__}"];\n'
-            )
-        print(visited_nodes)
-        return dot_content + "}"
+            for node in [source, target]:
+                if node not in visited_nodes:
+                    visited_nodes.append(node)
+                    dot_content += f'{visited_nodes.index(node)} [label="{node.obj}"];\n'
+
+            dot_content += f'{visited_nodes.index(source)} -> {visited_nodes.index(target)} '\
+                                f' [label="{edge._jac_.obj.__class__.__name__}"];\n'
+      
+        print(bfs,dpeth_of_node)
+        # for i in dpeth_of_node:
+        #     print(id(i._jac_.obj))
+        # return dot_content + "}"
+        return  "}"
 
     # @staticmethod
     # @hookimpl

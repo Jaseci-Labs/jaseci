@@ -11,20 +11,21 @@ with entry{
     end=x;
     for i in range(0,8){
         locals()[chr(ord('b') + i)] = (values:=[a(val=j*i+5.2*i+6) for j in range(0,3)]);
-        # end ++> (end:=values);
+        end ++> (end:=values);
     }
-    b++>c;
-    c++>b;
-    c++>d;
-    d++>c;
-    d++>e;
-    e++>d;
-    e++>f;
-    f++>e;
+    # b++>c;
+    # c++>b;
+    # c++>d;
+    # d++>c;
+    # d++>e;
+    # e++>d;
+    # e++>f;
+    # f++>e;
     # d1:=dotgen();l1:=d1|>len;  #generate dot for all connected with root
     #  d2:=dotgen(depth=2);l2:=d2|>len;  #generate dot for all connected with root
     #  d3:=dotgen(b[2]);l3:=d3|>len; #generate dot for all connected with b[1] node
-     d4:=dotgen(b[1],bfs=False,node_limit=7,depth=4.96);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
+     d4:=dotgen(b[1],bfs=True,node_limit=1500,edge_limit=1000,depth=800.96);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
+     d5:=dotgen(b[1],bfs=False,node_limit=1500,edge_limit=1000,depth=800.96);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
     # print(d1.count('a(val')==12);
     # print(d2.count('a(val')==6);
     # print(d3.count("a(val")==19);
@@ -34,6 +35,7 @@ with entry{
     # print(d2);
     # print(d3);
     print(d4);
+    print(d5);
     # print(dotgen(node=b[2],bfs=True,depth=3.96,edge_limit=12,node_limit=12.96));
     # print(dijkstra(x[1]));
 }
