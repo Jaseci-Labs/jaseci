@@ -412,7 +412,7 @@ class SymTabBuildPass(SymTabPass):
         """
         if node.alias:
             self.def_insert(node.alias, single_use="import")
-        elif isinstance(node.path[0], ast.Name):
+        elif node.path and isinstance(node.path[0], ast.Name):
             self.def_insert(node.path[0])
         else:
             pass  # Need to support pythonic import symbols with dots in it
@@ -1430,6 +1430,19 @@ class SymTabBuildPass(SymTabPass):
         self.sync_node_to_scope(node)
 
     def enter_null(self, node: ast.Null) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_ellipsis(self, node: ast.Ellipsis) -> None:
         """Sub objects.
 
         name: str,
