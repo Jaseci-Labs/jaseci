@@ -429,15 +429,20 @@ class ModulePath(AstSymbolNode):
         self.level = level
         self.alias = alias
         self.sub_module = sub_module
-        self.path_str: str = "." * self.level + ".".join(
-            [p.value for p in path] if path else ""
-        )
+
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
             sym_name=alias.sym_name if alias else self.path_str,
             sym_name_node=alias if alias else self,
             sym_type=SymbolType.MODULE,
+        )
+
+    @property
+    def path_str(self) -> str:
+        """Get path string."""
+        return ("." * self.level) + ".".join(
+            [p.value for p in self.path] if self.path else ""
         )
 
 

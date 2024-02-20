@@ -3013,6 +3013,19 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = [self.sync(ast3.Constant(value=None))]
 
+    def exit_ellipsis(self, node: ast.Ellipsis) -> None:
+        """Sub objects.
+
+        file_path: str,
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        node.gen.py_ast = [self.sync(ast3.Constant(value=...))]
+
     def exit_semi(self, node: ast.Semi) -> None:
         """Sub objects.
 

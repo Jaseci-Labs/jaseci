@@ -370,7 +370,8 @@ class JacParser(Pass):
                 else None
             )
             if alias is not None:
-                valid_path = valid_path[:-2]
+                valid_path = valid_path[:-1]
+
             return self.nu(
                 ast.ModulePath(
                     path=valid_path,
