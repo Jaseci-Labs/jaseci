@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-# import heapq
+from typing import Any
 
 from jaclang.core.construct import (
     EdgeArchitype,
     NodeArchitype,
     root,
 )
-
+from jaclang.plugin.utils import helper
 
 import pluggy
 
@@ -27,45 +27,77 @@ class JacBuiltin:
 
     @staticmethod
     @hookimpl
-    def dotgen(node: NodeArchitype, depth: float) -> str:
-        print(type(node))
-        unique_nodes: dict = {}
-        queue: list[tuple] = [(node, 0)]
-        dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];'
-        while queue:
-            current_node, current_depth = queue.pop(0)
-            current_id = id(current_node)
-            if current_id in unique_nodes and unique_nodes[current_id][0] == 1:
-                continue
-            if current_id in unique_nodes:
-                unique_nodes[current_id][0] = 1
-            else:
-                unique_nodes[current_id] = [1, len(unique_nodes), current_depth]
-            node_number = unique_nodes[current_id][1]
-            dot_content += f'\n{node_number} [label="{current_node._jac_.obj}"];'
-            if current_depth >= depth:
-                continue
-            for edge in current_node._jac_.edges:
-                target_node_id = id(edge._jac_.target._jac_.obj)
-                if target_node_id == current_id:
-                    if edge._jac_.target == edge._jac_.source:
-                        print(edge._jac_.target, edge._jac_.source)
-                    continue
-                if target_node_id not in unique_nodes:
-                    unique_nodes[target_node_id] = [
-                        0,
-                        len(unique_nodes),
-                        current_depth + 1,
-                    ]
-                    queue.append((edge._jac_.target, current_depth + 1))
-                dot_content += (
-                    f"\n{node_number} -> {unique_nodes[target_node_id][1]}"
-                    f'[label="{edge._jac_.obj.__class__.__name__}"];'
-                )
-                childs = [edge._jac_.target for edge in current_node._jac_.edges]
-                queue.extend([(child, current_depth + 1) for child in childs])
+    def dotgen(
+        node: NodeArchitype, depth: float, bfs: bool, edge_limit: int, node_limit: int
+    ) -> str:
+        visited_nodes: list[Any] = []
+        dpeth_of_node: dict[NodeArchitype, int] = {}
+        queue: list = [[node, 0]]
+        connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
+        found_node = next((item for item in visited_nodes if item[0] == node), None)
 
-        return dot_content + "\n}"
+        def dfs(node: NodeArchitype, cur_depth: int) -> None:
+            """Depth first search."""
+            if found_node == 1:
+                return
+            elif found_node is not None:
+                found_node[1] = 1
+            else:
+                visited_nodes.append([node, 1])
+            dpeth_of_node[node] = cur_depth
+            helper(
+                node,
+                cur_depth,
+                connections,
+                visited_nodes,
+                queue,
+                bfs,
+                dfs,
+                depth,
+                node_limit,
+                edge_limit,
+            )
+
+        if bfs:
+            cur_depth = 0
+            while queue:
+                current_node, cur_depth = queue.pop(0)
+                found_node = next(
+                    (item for item in visited_nodes if item[0] == current_node), None
+                )
+                if found_node == 1:
+                    continue
+                elif found_node is not None:
+                    found_node[1] = 1
+                else:
+                    visited_nodes.append([current_node, 1])
+                helper(
+                    current_node,
+                    cur_depth,
+                    connections,
+                    visited_nodes,
+                    queue,
+                    bfs,
+                    dfs,
+                    depth,
+                    node_limit,
+                    edge_limit,
+                )
+        else:
+            dfs(node, cur_depth=0)
+        dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
+        for unique_node in visited_nodes:
+            dot_content += f'{visited_nodes.index(unique_node)} [label="{unique_node[0]._jac_.obj}"];\n'
+        result_dict: dict[NodeArchitype, int] = {
+            item[0]: index for index, item in enumerate(visited_nodes)
+        }
+        for source, target, edge in connections:
+            dot_content += (
+                f"{ result_dict[source]} -> {result_dict[target]}"
+                f' [label="{edge._jac_.obj.__class__.__name__}"];\n'
+            )
+        print(visited_nodes)
+        return dot_content + "}"
 
     # @staticmethod
     # @hookimpl
