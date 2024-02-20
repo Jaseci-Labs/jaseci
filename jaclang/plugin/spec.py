@@ -218,6 +218,3 @@ class JacBuiltin:
         """Print the dot graph."""
         raise NotImplementedError
 
-    # def dijkstra(start_node: NodeArchitype ) -> str:
-    #     """Print the dot graph."""
-    #     raise NotImplementedError

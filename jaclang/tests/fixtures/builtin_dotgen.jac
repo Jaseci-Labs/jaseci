@@ -34,5 +34,5 @@ with entry{
     # print(d3);
     # print(d4);
     # print(dotgen(node=b[2],bfs=True,depth=3.96,edge_limit=12,node_limit=12.96));
-    # print(dijkstra(x[1]));
+
 }

@@ -89,37 +89,3 @@ class JacBuiltin:
             dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}" fillcolor="{color}"];\n'
         return dot_content + "}"
 
-    # @staticmethod
-    # @hookimpl
-    # def dijkstra(start_node):
-    #     start_node_id = id(start_node)
-    #     distances = {start_node_id: (start_node, 0)}
-    #     visited = set()
-    #     def get_node_by_id(start_node, target_id):
-    #         stack = [start_node]
-    #         visited = set()
-    #         while stack:
-    #             current_node = stack.pop()
-    #             current_node_id = id(current_node)
-    #             if current_node_id in visited:
-    #                 continue
-    #             visited.add(current_node_id)
-    #             if current_node_id == target_id:
-    #                 return current_node
-    #             stack.extend(edge._jac_.target for edge in current_node._jac_.edges)
-    #         return None
-    #     while True:
-    #         current_node_id = min((node_id for node_id in distances if node_id not in visited),
-    #                             key=lambda k: distances[k][1], default=None)
-    #         if current_node_id is None:
-    #             break
-    #         visited.add(current_node_id)
-    #         current_node = get_node_by_id(start_node, current_node_id)
-    #         for edge in current_node._jac_.edges:
-    #             target_node = edge._jac_.target
-    #             target_node_id = id(target_node)
-    #             new_distance = distances[current_node_id][1] + 1
-    #             if target_node_id not in distances or new_distance < distances[target_node_id][1]:
-    #                 distances[target_node_id] = (target_node, new_distance)
-
-    #     return {node_name: distance for node_id, (node_name, distance) in distances.items()}

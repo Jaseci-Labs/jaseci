@@ -233,6 +233,3 @@ def dotgen(
     )
 
 
-# def dijkstra(start_node: NodeAnchor = root) -> str:
-#     """Print the dot graph."""
-#     return pm.hook.dijkstra(start_node=start_node)
