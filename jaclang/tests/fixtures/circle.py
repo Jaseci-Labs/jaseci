@@ -4,17 +4,17 @@
 """
 
 import math as math
+import unittest
 from abc import ABC, abstractmethod
 from enum import Enum
 
-import unittest
 
 # Module-level global var
 RAD = 5
 
 
 def calculate_area(radius: float) -> float:
-    """Function to calculate the area of a circle."""
+    """Calculate the area of a circle."""
     return math.pi * radius * radius
 
 
@@ -27,7 +27,7 @@ Below we have the demonstration of a class to calculate the area of a circle.
 
 
 class ShapeType(Enum):
-    """Enum for shape types"""
+    """Shape types."""
 
     CIRCLE = "Circle"
     UNKNOWN = "Unknown"
@@ -36,7 +36,8 @@ class ShapeType(Enum):
 class Shape(ABC):
     """Base class for a shape."""
 
-    def __init__(self, shape_type: ShapeType):
+    def __init__(self, shape_type: ShapeType) -> None:
+        """Construct shape class."""
         self.shape_type = shape_type
 
     @abstractmethod
@@ -48,7 +49,8 @@ class Shape(ABC):
 class Circle(Shape):
     """Circle class inherits from Shape."""
 
-    def __init__(self, radius: float):
+    def __init__(self, radius: float) -> None:
+        """Construct circle class."""
         super().__init__(ShapeType.CIRCLE)
         self.radius = radius
 
@@ -75,15 +77,20 @@ else:
 
 # Unit Tests!
 class TestShapesFunctions(unittest.TestCase):
+    """Unit tests for the shapes module."""
+
     def test_calculate_area(self) -> None:
+        """Test the calculate_area function."""
         expected_area = 78.53981633974483
         self.assertAlmostEqual(calculate_area(RAD), expected_area)
 
     def test_circle_area(self) -> None:
+        """Test the area method of the Circle class."""
         c = Circle(RAD)
         expected_area = 78.53981633974483
         self.assertAlmostEqual(c.area(), expected_area)
 
     def test_circle_type(self) -> None:
+        """Test the shape_type attribute of the Circle class."""
         c = Circle(RAD)
         self.assertEqual(c.shape_type, ShapeType.CIRCLE)
