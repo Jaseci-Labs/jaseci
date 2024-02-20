@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
 
 from jaclang.core.construct import (
     EdgeArchitype,
@@ -32,7 +31,7 @@ class JacBuiltin:
     ) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         visited_nodes: list[NodeArchitype] = []
-        dpeth_of_node: dict[NodeArchitype, Any] = {node: 0}
+        dpeth_of_node: dict[NodeArchitype, int] = {node: 0}
         queue: list = [[node, 0]]
         connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
 

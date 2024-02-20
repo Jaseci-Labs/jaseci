@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any,Callable
+from typing import Any, Callable
 
 from jaclang.core.construct import (
     EdgeArchitype,
@@ -67,7 +67,7 @@ def traverse_graph(
             new_con = (
                 (node, other_nd, edge) if not is_in_edge else (other_nd, node, edge)
             )
-            if node in dpeth_of_node:
+            if node in dpeth_of_node and dpeth_of_node[node] is not None:
                 if other_nd in dpeth_of_node:
                     dpeth_of_node[node] = min(
                         cur_depth, dpeth_of_node[node], dpeth_of_node[other_nd] + 1
