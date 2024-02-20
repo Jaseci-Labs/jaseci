@@ -108,7 +108,7 @@ class JacFeature:
         return pm.hook.has_instance_default(gen_func=gen_func)
 
     @staticmethod
-    def spawn_call(op1: Architype, op2: Architype) -> bool:
+    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         return pm.hook.spawn_call(op1=op1, op2=op2)
 

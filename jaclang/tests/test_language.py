@@ -266,6 +266,7 @@ class JacLanguageTests(TestCase):
         jac_import("edges_walk", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        self.assertIn("creator()\n", stdout_value)
         self.assertIn("[node_a(val=12)]\n", stdout_value)
         self.assertIn("node_a(val=1)", stdout_value)
         self.assertIn("node_a(val=2)", stdout_value)

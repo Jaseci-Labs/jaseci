@@ -214,15 +214,14 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def spawn_call(op1: Architype, op2: Architype) -> bool:
+    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
-            op1._jac_.spawn_call(op2)
+            return op1._jac_.spawn_call(op2)
         elif isinstance(op2, WalkerArchitype):
-            op2._jac_.spawn_call(op1)
+            return op2._jac_.spawn_call(op1)
         else:
             raise TypeError("Invalid walker object")
-        return True
 
     @staticmethod
     @hookimpl
