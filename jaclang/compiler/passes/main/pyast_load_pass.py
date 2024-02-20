@@ -36,7 +36,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def convert(self, node: py_ast.AST) -> ast.AstNode:
         """Get python node type."""
-        print(f"working on {type(node).__name__} ---------------------")
+        print(
+            f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
+        )
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
@@ -523,6 +525,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
+    def proc_unary_op(self, node: py_ast.UnaryOp) -> None:
+        """Process python node.
+
+        class UnaryOp(expr):
+            op: unaryop
+            operand: expr
+        """
+        op = self.convert(node.op)
+        operand = self.convert(node.operand)
+        if isinstance(op, ast.Token) and isinstance(operand, ast.Expr):
+            return ast.UnaryExpr(
+                op=op,
+                operand=operand,
+                kid=[op, operand],
+            )
+        else:
+            raise self.ice()
+
     def proc_bool_op(self, node: py_ast.BoolOp) -> None:
         """Process python node."""
 
@@ -784,9 +804,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_tuple(self, node: py_ast.Tuple) -> None:
         """Process python node."""
 
-    def proc_unary_op(self, node: py_ast.UnaryOp) -> None:
-        """Process python node."""
-
     def proc_yield(self, node: py_ast.Yield) -> None:
         """Process python node."""
 
@@ -908,6 +925,136 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return_type=None,
             kid=[fs_params],
         )
+
+    def operator(self, tok: Tok, value: str) -> ast.Token:
+        """Create an operator token."""
+        return ast.Token(
+            file_path=self.mod_path,
+            name=tok,
+            value=value,
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+
+    def proc_and(self, node: py_ast.And) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.KW_AND, "and")
+
+    def proc_or(self, node: py_ast.Or) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.KW_OR, "or")
+
+    def proc_add(self, node: py_ast.Add) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.PLUS, "+")
+
+    def proc_bit_and(self, node: py_ast.BitAnd) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.BW_AND, "&")
+
+    def proc_bit_or(self, node: py_ast.BitOr) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.BW_OR, "|")
+
+    def proc_bit_xor(self, node: py_ast.BitXor) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.BW_XOR, "^")
+
+    def proc_div(self, node: py_ast.Div) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.DIV, "/")
+
+    def proc_floor_div(self, node: py_ast.FloorDiv) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.FLOOR_DIV, "//")
+
+    def proc_l_shift(self, node: py_ast.LShift) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.LSHIFT, "<<")
+
+    def proc_mod(self, node: py_ast.Mod) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.MOD, "%")
+
+    def proc_mult(self, node: py_ast.Mult) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.STAR_MUL, "*")
+
+    def proc_mat_mult(self, node: py_ast.MatMult) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.DECOR_OP, "@")
+
+    def proc_pow(self, node: py_ast.Pow) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.STAR_POW, "**")
+
+    def proc_r_shift(self, node: py_ast.RShift) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.RSHIFT, ">>")
+
+    def proc_sub(self, node: py_ast.Sub) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.MINUS, "-")
+
+    def proc_invert(self, node: py_ast.Invert) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.BW_NOT, "~")
+
+    def proc_not(self, node: py_ast.Not) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.NOT, "not")
+
+    def proc_u_add(self, node: py_ast.UAdd) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.PLUS, "+")
+
+    def proc_u_sub(self, node: py_ast.USub) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.MINUS, "-")
+
+    def proc_eq(self, node: py_ast.Eq) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.EE, "==")
+
+    def proc_gt(self, node: py_ast.Gt) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.GT, ">")
+
+    def proc_gt_e(self, node: py_ast.GtE) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.GTE, ">=")
+
+    def proc_in(self, node: py_ast.In) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.KW_IN, "in")
+
+    def proc_is(self, node: py_ast.Is) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.KW_IS, "is")
+
+    def proc_is_not(self, node: py_ast.IsNot) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.KW_ISN, "is not")
+
+    def proc_lt(self, node: py_ast.Lt) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.LT, "<")
+
+    def proc_lt_e(self, node: py_ast.LtE) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.LTE, "<=")
+
+    def proc_not_eq(self, node: py_ast.NotEq) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.NE, "!=")
+
+    def proc_not_in(self, node: py_ast.NotIn) -> ast.Token:
+        """Process python node."""
+        return self.operator(Tok.KW_NIN, "not in")
 
     def proc_comprehension(self, node: py_ast.comprehension) -> None:
         """Process python node."""
