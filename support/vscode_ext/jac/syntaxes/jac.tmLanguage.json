@@ -219,7 +219,7 @@
 				{
 					"name": "meta.property.jac",
 					"begin": "(?x)\\b(has)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
-					"end": "(?=\\)|{)|;",
+					"end": "(?=\\)|{)|;|by",
 					"beginCaptures": {
 						"1": {
 							"name": "storage.type.function.jac"

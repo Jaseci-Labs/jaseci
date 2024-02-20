@@ -266,6 +266,7 @@ class JacLanguageTests(TestCase):
         jac_import("edges_walk", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        self.assertIn("creator()\n", stdout_value)
         self.assertIn("[node_a(val=12)]\n", stdout_value)
         self.assertIn("node_a(val=1)", stdout_value)
         self.assertIn("node_a(val=2)", stdout_value)
@@ -291,5 +292,18 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn(
             "a apple b banana a apple b banana a apple b banana a apple b banana",
+            stdout_value,
+        )
+
+    def test_deferred_field(self) -> None:
+        """Test walking through edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("deferred_field", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn(
+            "5 15",
             stdout_value,
         )
