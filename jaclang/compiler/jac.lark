@@ -17,14 +17,17 @@ element: import_stmt
        | test
 
 // Import/Include Statements
-import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
+import_stmt: KW_IMPORT sub_name KW_FROM from_path COMMA import_items SEMI
            | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
 
-include_stmt: KW_INCLUDE sub_name import_path SEMI
-import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
+from_path: (DOT | ELLIPSIS)* import_path
+         | (DOT | ELLIPSIS)+
+
+import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
 import_items: (import_item COMMA)* import_item
 import_item: named_ref (KW_AS NAME)?
 sub_name: COLON NAME
+include_stmt: KW_INCLUDE sub_name import_path SEMI
 
 // Architypes
 architype: decorators? (enum | architype_def | architype_decl)
@@ -47,7 +50,7 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: STRING? named_ref type_tag (EQ expression)?
+typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_BY POST_INIT_OP)?
 type_tag: COLON expression
 
 // Enumerations
@@ -363,6 +366,7 @@ atom_literal: builtin_type
             | NULL
             | BOOL
             | multistring
+            | ELLIPSIS
             | FLOAT
             | OCT
             | BIN
@@ -613,6 +617,7 @@ RBRACE: /}/
 SEMI: /;/
 EE: /==/
 EQ: /=/
+ELLIPSIS: /\.\.\./
 DOT: /\./
 LT: /</
 GT: />/

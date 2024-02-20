@@ -281,7 +281,7 @@ class JacParser(Pass):
         def import_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
 
-            import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
+            import_stmt: KW_IMPORT sub_name KW_FROM from_path COMMA import_items SEMI
                     | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
             """
             lang = kid[1]
@@ -304,6 +304,35 @@ class JacParser(Pass):
 
             else:
                 raise self.ice()
+
+        def from_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
+            """Grammar rule.
+
+            from_path: (DOT | ELLIPSIS)* import_path
+                    | (DOT | ELLIPSIS)+
+            """
+            level = 0
+            for i in kid:
+                if isinstance(i, ast.Token):
+                    if i.name == Tok.DOT:
+                        level += 1
+                    elif i.name == Tok.ELLIPSIS:
+                        level += 3
+            if isinstance(kid[-1], ast.ModulePath):
+                ret = kid[-1]
+                adds = [i for i in kid if isinstance(i, ast.Token)]
+                ret.level = level
+                ret.add_kids_left(adds)
+                return ret
+            else:
+                return self.nu(
+                    ast.ModulePath(
+                        path=None,
+                        level=level,
+                        alias=None,
+                        kid=kid,
+                    )
+                )
 
         def include_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
@@ -329,9 +358,9 @@ class JacParser(Pass):
         def import_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
             """Grammar rule.
 
-            import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
+            import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
             """
-            valid_path = [i for i in kid if isinstance(i, ast.Token)]
+            valid_path = [i for i in kid if isinstance(i, ast.Name)]
             alias = (
                 kid[-1]
                 if len(kid) > 2
@@ -345,6 +374,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.ModulePath(
                     path=valid_path,
+                    level=0,
                     alias=alias,
                     kid=kid,
                 )
@@ -3710,6 +3740,8 @@ class JacParser(Pass):
                 ret_type = ast.Semi
             elif token.type == Tok.NULL:
                 ret_type = ast.Null
+            elif token.type == Tok.ELLIPSIS:
+                ret_type = ast.Ellipsis
             elif token.type == Tok.FLOAT:
                 ret_type = ast.Float
             elif token.type in [Tok.INT, Tok.INT, Tok.HEX, Tok.BIN, Tok.OCT]:

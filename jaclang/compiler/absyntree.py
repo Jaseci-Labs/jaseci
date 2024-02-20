@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+from types import EllipsisType
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
@@ -417,16 +418,20 @@ class ModulePath(AstSymbolNode):
 
     def __init__(
         self,
-        path: Sequence[Token],
+        path: Optional[list[Name]],
+        level: int,
         alias: Optional[Name],
         kid: Sequence[AstNode],
         sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module path node."""
         self.path = path
+        self.level = level
         self.alias = alias
         self.sub_module = sub_module
-        self.path_str: str = "".join([p.value for p in path])
+        self.path_str: str = "." * self.level + ".".join(
+            [p.value for p in path] if path else ""
+        )
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -2127,7 +2132,9 @@ class Literal(Token, AtomExpr):
         )
 
     @property
-    def lit_value(self) -> int | str | float | bool | None | Callable[[], Any]:
+    def lit_value(
+        self,
+    ) -> int | str | float | bool | None | Callable[[], Any] | EllipsisType:
         """Return literal value in its python type."""
         raise NotImplementedError
 
@@ -2249,6 +2256,17 @@ class Null(Literal):
     def lit_value(self) -> None:
         """Return literal value in its python type."""
         return None
+
+
+class Ellipsis(Literal):
+    """Ellipsis node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.NULL
+
+    @property
+    def lit_value(self) -> EllipsisType:
+        """Return literal value in its python type."""
+        return ...
 
 
 class EmptyToken(Token):
