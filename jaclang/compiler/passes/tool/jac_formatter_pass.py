@@ -2,6 +2,7 @@
 
 This is a pass for formatting Jac code.
 """
+
 import re
 
 import jaclang.compiler.absyntree as ast
@@ -196,28 +197,35 @@ class JacFormatPass(Pass):
                 ):
                     self.emit_ln(node, "")
                     self.indent_level += 1
-                if stmt.name == "LBRACE":
-                    if (
-                        isinstance(node.kid[i + 1], ast.CommentToken)
-                        and node.kid[i + 1].is_inline
-                    ):
+                if stmt.name == Tok.LBRACE:
+                    next_kid = node.kid[i + 1]
+                    if isinstance(next_kid, ast.CommentToken) and next_kid.is_inline:
                         self.emit(node, f" {stmt.value}")
                     else:
                         self.emit(node, f" {stmt.value}")
-                elif stmt.name == "RBRACE":
+                elif stmt.name == Tok.RBRACE:
                     if self.indent_level > 0:
                         self.indent_level -= 1
-                    if stmt.parent.gen.jac.strip() == "{":
+                    if stmt.parent and stmt.parent.gen.jac.strip() == "{":
                         self.emit_ln(node, stmt.gen.jac.strip())
-                    elif isinstance(
-                        stmt.parent.parent,
-                        (ast.ElseIf, ast.IfStmt, ast.IterForStmt, ast.TryStmt),
+                    elif (
+                        stmt.parent
+                        and stmt.parent.parent
+                        and isinstance(
+                            stmt.parent.parent,
+                            (ast.ElseIf, ast.IfStmt, ast.IterForStmt, ast.TryStmt),
+                        )
                     ):
                         self.emit(node, f"{stmt.value}")
                     else:
-                        if i < (len(node.kid) - 1) and (
-                            isinstance(node.kid[i + 1], ast.CommentToken)
-                            and node.kid[i + 1].is_inline
+                        next_kid = (
+                            node.kid[i + 1]
+                            if i < (len(node.kid) - 1)
+                            else ast.EmptyToken()
+                        )
+                        if (
+                            isinstance(next_kid, ast.CommentToken)
+                            and next_kid.is_inline
                         ):
                             self.emit(node, f" {stmt.value}")
                         elif not (node.gen.jac).endswith("\n"):
@@ -229,10 +237,14 @@ class JacFormatPass(Pass):
                             self.emit(node, f"{stmt.value}")
                 elif isinstance(stmt, ast.CommentToken):
                     if stmt.is_inline:
-                        if isinstance(prev_token, ast.Semi) or prev_token.name in [
-                            "LBRACE",
-                            "RBRACE",
-                        ]:
+                        if isinstance(prev_token, ast.Semi) or (
+                            isinstance(prev_token, ast.Token)
+                            and prev_token.name
+                            in [
+                                Tok.LBRACE,
+                                Tok.RBRACE,
+                            ]
+                        ):
                             self.indent_level -= 1
                             self.emit(node, f" {stmt.gen.jac}")
                             self.emit_ln(node, "")
@@ -883,9 +895,11 @@ class JacFormatPass(Pass):
         for i in node.kid:
             if isinstance(i, ast.SubTag):
                 for j in i.kid:
-                    self.emit(node, j.gen.jac) if not j.gen.jac.startswith(
-                        ":"
-                    ) else self.emit(node, f"{j.gen.jac} ")
+                    (
+                        self.emit(node, j.gen.jac)
+                        if not j.gen.jac.startswith(":")
+                        else self.emit(node, f"{j.gen.jac} ")
+                    )
             else:
                 self.emit(node, f" {i.gen.jac}")
         if isinstance(node.kid[-1], ast.CommentToken) and not node.gen.jac.endswith(
@@ -1006,7 +1020,11 @@ class JacFormatPass(Pass):
         count_by: ExprType,
         body: CodeBlock,
         """
-        if isinstance(node.parent.parent, (ast.Ability)):
+        if (
+            node.parent
+            and node.parent.parent
+            and isinstance(node.parent.parent, (ast.Ability))
+        ):
             self.emit_ln(node, "")
 
         start = True
@@ -1036,7 +1054,11 @@ class JacFormatPass(Pass):
         excepts: Optional[ExceptList],
         finally_body: Optional[FinallyStmt],
         """
-        if isinstance(node.parent.parent, (ast.Ability)):
+        if (
+            node.parent
+            and node.parent.parent
+            and isinstance(node.parent.parent, (ast.Ability))
+        ):
             self.emit_ln(node, "")
         start = True
         for i in node.kid:
@@ -1068,7 +1090,11 @@ class JacFormatPass(Pass):
         name: Optional[Token],
         body: CodeBlock,
         """
-        if isinstance(node.parent.parent, (ast.Ability)):
+        if (
+            node.parent
+            and node.parent.parent
+            and isinstance(node.parent.parent, (ast.Ability))
+        ):
             self.emit_ln(node, "")
         start = True
         for i in node.kid:
@@ -1108,7 +1134,11 @@ class JacFormatPass(Pass):
         condition: ExprType,
         body: CodeBlock,
         """
-        if isinstance(node.parent.parent, (ast.Ability)):
+        if (
+            node.parent
+            and node.parent.parent
+            and isinstance(node.parent.parent, (ast.Ability))
+        ):
             self.emit_ln(node, "")
         start = True
         for i in node.kid:
@@ -1246,7 +1276,6 @@ class JacFormatPass(Pass):
                 else:
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Semi):
-                self.emit(node, node.gen.jac.rstrip())
                 self.emit(node, f"{i.gen.jac} ")
             elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
                 self.emit_ln(node, i.gen.jac)
@@ -1267,17 +1296,22 @@ class JacFormatPass(Pass):
 
         parts: list["Token | ExprType"],
         """
-        self.emit(node, 'f"')
+        self.emit(
+            node, node.kid[0].value if isinstance(node.kid[0], ast.Token) else 'f"'
+        )
         if node.parts:
             for part in node.parts.items:
                 if isinstance(part, ast.String) and part.name in [
                     Tok.FSTR_PIECE,
+                    Tok.FSTR_SQ_PIECE,
                     Tok.FSTR_BESC,
                 ]:
                     self.emit(node, f"{part.gen.jac}")
                 else:
                     self.emit(node, "{" + part.gen.jac + "}")
-        self.emit(node, '"')
+        self.emit(
+            node, node.kid[-1].value if isinstance(node.kid[-1], ast.Token) else '"'
+        )
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -1309,7 +1343,7 @@ class JacFormatPass(Pass):
             self.comma_sep_node_list(node.signature.params)
             out += node.signature.params.gen.jac
         if node.signature.return_type:
-            out += f" -> {node.signature.return_type.tag.gen.jac}"
+            out += f" -> {node.signature.return_type.gen.jac}"
         self.emit(node, f"with {out} can {node.body.gen.jac}")
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
@@ -1351,6 +1385,14 @@ class JacFormatPass(Pass):
                     self.emit(node, f" {i.gen.jac}")
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
+
+    def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
+        """Sub objects.
+
+        edge_ref: EdgeRef,
+        """
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
@@ -1412,7 +1454,7 @@ class JacFormatPass(Pass):
                     self.emit(node, f" {i.gen.jac}")
                 else:
                     self.emit_ln(node, i.gen.jac)
-            elif isinstance(prev_token, ast.Token) and prev_token.name == "LBRACE":
+            elif isinstance(prev_token, ast.Token) and prev_token.name == Tok.LBRACE:
                 self.emit(node, f"{i.gen.jac}")
             elif isinstance(i, ast.Semi) or i.gen.jac == ",":
                 self.emit(node, i.gen.jac)
@@ -1499,7 +1541,10 @@ class JacFormatPass(Pass):
         key: ExprType,
         value: ExprType,
         """
-        self.emit(node, f"{node.key.gen.jac}={node.value.gen.jac}")
+        if node.key:
+            self.emit(node, f"{node.key.gen.jac}={node.value.gen.jac}")
+        else:
+            self.emit(node, f"**{node.value.gen.jac}")
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
@@ -1561,7 +1606,7 @@ class JacFormatPass(Pass):
         from_walker: bool = False,
         """
         for i in node.kid:
-            if isinstance(i, (ast.EdgeOpRef, ast.ElseStmt)):
+            if isinstance(i, (ast.EdgeRefTrailer, ast.ElseStmt, ast.SpecialVarRef)):
                 self.emit(node, f" {i.gen.jac}")
             else:
                 self.emit(node, i.gen.jac)
@@ -1707,7 +1752,7 @@ class JacFormatPass(Pass):
         alias: Optional[Token],
         """
         if node.alias:
-            self.emit(node, node.expr.gen.jac + " as " + node.alias.value)
+            self.emit(node, node.expr.gen.jac + " as " + node.alias.gen.jac)
         else:
             self.emit(node, node.expr.gen.jac)
 
@@ -1718,7 +1763,11 @@ class JacFormatPass(Pass):
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
-        if isinstance(node.parent.parent, (ast.Ability)):
+        if (
+            node.parent
+            and node.parent.parent
+            and isinstance(node.parent.parent, (ast.Ability))
+        ):
             self.indent_level -= 1
             self.emit_ln(node, "")
             self.indent_level += 1
@@ -1759,8 +1808,8 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Name):
-                # if not i.value.startswith("test"):
-                self.emit(node, f" {i.value} ")
+                if not i.value.startswith("test_t"):
+                    self.emit(node, f" {i.value} ")
             else:
                 if start:
                     self.emit(node, i.gen.jac)
@@ -1826,10 +1875,10 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Token):
-                if i.name == "LBRACE":
+                if i.name == Tok.LBRACE:
                     self.emit_ln(node, f" {i.value}")
                     self.indent_level += 1
-                elif i.name == "RBRACE":
+                elif i.name == Tok.RBRACE:
                     self.indent_level -= 1
                     self.emit(node, f"{i.value}")
                 else:
@@ -2136,6 +2185,15 @@ class JacFormatPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        # if string is in docstring format and spans multiple lines turn into the multiple single quoted strings
+        if "\n" in node.value and node.parent and isinstance(node.parent, ast.Expr):
+            string_type = node.value[0:3]
+            pure_string = node.value[3:-3]
+            lines = pure_string.split("\n")
+            for line in lines[:-1]:
+                self.emit_ln(node, f"{string_type}{line}\\n{string_type}")
+            self.emit(node, f"{string_type}{lines[-1]}{string_type}")
+            return
         if (
             node.value in ["{", "}"]
             and isinstance(node.parent, ast.SubNodeList)

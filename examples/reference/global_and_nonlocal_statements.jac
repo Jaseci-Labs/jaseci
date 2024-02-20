@@ -1,19 +1,20 @@
-glob x=5,y=10,z=1;
+glob x = "Jaclang ";
 
-can foo() -> none {
-    :g: x,y,z;
-    y = 30;
-    print(x,y);
+can foo() -> None {
+    :g: x ;
 
-    can foo2() ->int {
-        :nl: y;
-        y=9;
-        return (x,y);
+    x = 'Jaclang is ';
+    y = 'Awesome';
+    can foo2() -> tuple[str, str] {
+        :nl: y ;
+
+        y = "Fantastic";
+        return (x, y);
     }
+    print(x, y);
     print(foo2());
-
 }
 
-with entry{
-    print(foo());
+with entry {
+    foo();
 }

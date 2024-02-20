@@ -1,13 +1,14 @@
 """Test ast build pass module."""
+
 import ast as ast3
 from difflib import unified_diff
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.compiler.transpiler import jac_file_to_pass, jac_str_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -36,7 +37,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 ),
                 0,
             )
-        except Exception:
+        except Exception as e:
             from jaclang.utils.helpers import add_line_numbers
 
             print(add_line_numbers(formatted_file_content))
@@ -50,8 +51,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 )
             )
             print(diff)
-            # raise AssertionError("File contents do not match.")
-            self.skipTest("Test failed, but skipping instead of failing.")
+            raise e
+            # self.skipTest("Test failed, but skipping instead of failing.")
 
     def setUp(self) -> None:
         """Set up test."""
@@ -107,14 +108,14 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 len(code_gen_pure.ir.source.comments),
                 len(code_gen_jac.ir.source.comments),
             )
-            before = ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2)
-            after = ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2)
+            before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
+            after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
             self.assertEqual(
                 len("\n".join(unified_diff(before.splitlines(), after.splitlines()))),
                 0,
             )
 
-        except Exception:
+        except Exception as e:
             from jaclang.utils.helpers import add_line_numbers
 
             print(add_line_numbers(code_gen_pure.ir.source.code))
@@ -122,8 +123,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             print(add_line_numbers(code_gen_format.ir.gen.jac))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
             print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
-            self.skipTest("Test failed, but skipping instead of failing.")
-            # raise e
+            # self.skipTest("Test failed, but skipping instead of failing.")
+            raise e
 
 
 JacFormatPassTests.self_attach_micro_tests()

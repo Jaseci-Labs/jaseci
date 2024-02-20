@@ -1,8 +1,9 @@
-=== "Jac"
-    ```jac linenums="1"
-    --8<-- "examples/reference/base_module_structure.jac"
-    ```
-=== "Python"
-    ```python linenums="1"
-    --8<-- "examples/reference/base_module_structure.py"
-    ```
+In Jac, a module is analogous to a Python module, serving as a container for various elements such as functions, classes (referred to as "architypes"), global variables, and other constructs that facilitate code organization and reusability. Each module begins with an optional module-level docstring, which provides a high-level overview of the module's purpose and functionality. This docstring, if present, is positioned at the very start of the module, before any other elements.
+
+Jac adopts a stricter approach to docstring usage compared to Python. It mandates the inclusion of a single docstring at the module level and permits individual docstrings for each element within the module. This ensures that both the module itself and its constituent elements are adequately documented. If only one docstring precedes the first element, it is automatically designated as the module-level docstring.
+
+Elements within a Jac module encompass familiar constructs from Python, including functions and classes, with the addition of some unique elements that will be discussed in further detail. The language enforces type annotations in function signatures to promote type safety, a practice that aids in the development of more robust and error-resistant code.
+
+Moreover, Jac requires that any standalone, module-level code be encapsulated within a `with entry {}` block. This design choice aims to enhance the clarity and cleanliness of the codebase, making it easier for developers to identify the entry point of the module and understand its execution flow.
+
+Through these structural and syntactical conventions, Jac facilitates a disciplined and well-documented approach to programming, aligning with best practices in software development and maintenance.

@@ -1,23 +1,16 @@
-with entry{
-        l = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-    # for num in l{
-    #     if num % 2 == 0{
-    #         skip;
-    #     }
-    #     print(num);
-    # }
-
-    for num in l{
-        if num == 5{
-            break;}
-        print(num);
+with entry {
+    for i in range(9) {
+        if i > 2 {
+            print("loop is stopped!!");
+            break;
+        }
+        print(i);
     }
-
-    for num in l{
-        if num % 2 == 0{
+    for i in "WIN" {
+        if i == "W" {
             continue;
-            }
-        print(num);
+        }
+        print(i);
     }
+    #skip is not working need to look at it
 }

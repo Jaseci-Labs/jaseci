@@ -1,8 +1,6 @@
-with entry{
-    numbers = [1, 2, 3, 4, 5];
-    for i in numbers{
-        if (j := i + i//2) > 3{
-            print(j);
-        }
+with entry {
+    a = 5;
+    if (b := a + a // 2) > 5 {
+        print("b is grater than 5");
     }
 }

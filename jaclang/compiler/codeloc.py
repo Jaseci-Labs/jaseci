@@ -1,4 +1,5 @@
 """Code location info for AST nodes."""
+
 from __future__ import annotations
 
 import ast as ast3
@@ -17,8 +18,9 @@ class CodeGenTarget:
 
     py: str = ""
     jac: str = ""
-    py_ast: Optional[ast3.AST | list[ast3.AST]] = None
+    py_ast: list[ast3.AST] = field(default_factory=lambda: [])
     mypy_ast: list[MypyNode] = field(default_factory=lambda: [])
+    py_bytecode: Optional[bytes] = None
 
 
 class CodeLocInfo:

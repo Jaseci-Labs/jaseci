@@ -1,41 +1,60 @@
 """Command line interface tool for the Jac language."""
+
 import os
+import pickle
 import shutil
 from typing import Optional
 
-from jaclang import jac_import as __jac_import__
+from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandRegistry, CommandShell
+from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.constant import Constants
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.compiler.transpiler import jac_file_to_pass
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.lang_tools import AstTool
-
 
 cmd_registry = CommandRegistry()
 
 
 @cmd_registry.register
-def format(filename: str, outfile: str = "") -> None:
-    """Run the specified .jac file.
+def format(path: str, outfile: str = "", debug: bool = False) -> None:
+    """Run the specified .jac file or format all .jac files in a given directory.
 
-    :param filename: The path to the .jac file.
-    :param main: If True, use '__main__' as the module name, else use the actual module name.
+    :param path: The path to the .jac file or directory containing .jac files.
+    :param outfile: The output file path (only applies when formatting a single file).
+    :param debug: If True, print debug information.
     """
-    if filename.endswith(".jac"):
-        if os.path.exists(filename):
-            code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
-            if code_gen_format.errors_had:
-                print("Errors occurred while formatting the file.")
-            else:
-                if outfile:
-                    with open(outfile, "w") as f:
-                        f.write(code_gen_format.ir.gen.jac)
-                else:
-                    with open(filename, "w") as f:
-                        f.write(code_gen_format.ir.gen.jac)
+
+    def format_file(filename: str) -> None:
+        code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
+        if code_gen_format.errors_had:
+            print(f"Errors occurred while formatting the file {filename}.")
+        elif debug:
+            print(code_gen_format.ir.gen.jac)
+        elif outfile:
+            with open(outfile, "w") as f:
+                f.write(code_gen_format.ir.gen.jac)
+        else:
+            with open(filename, "w") as f:
+                f.write(code_gen_format.ir.gen.jac)
+
+    if path.endswith(".jac"):
+        if os.path.exists(path):
+            format_file(path)
+        else:
+            print("File does not exist.")
+    elif os.path.isdir(path):
+        count = 0
+        for root, _, files in os.walk(path):
+            for file in files:
+                if file.endswith(".jac"):
+                    file_path = os.path.join(root, file)
+                    format_file(file_path)
+                    count += 1
+        print(f"Formatted {count} '.jac' files.")
     else:
-        print("Not a .jac file.")
+        print("Not a .jac file or directory.")
 
 
 @cmd_registry.register
@@ -45,13 +64,59 @@ def run(filename: str, main: bool = True) -> None:
     :param filename: The path to the .jac file.
     :param main: If True, use '__main__' as the module name, else use the actual module name.
     """
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
     if filename.endswith(".jac"):
-        base, mod = os.path.split(filename)
-        base = base if base else "./"
-        mod = mod[:-4]
-        __jac_import__(
+        jac_import(
             target=mod, base_path=base, override_name="__main__" if main else None
         )
+    elif filename.endswith(".jir"):
+        with open(filename, "rb") as f:
+            ir = pickle.load(f)
+            jac_import(
+                target=mod,
+                base_path=base,
+                override_name="__main__" if main else None,
+                mod_bundle=ir,
+            )
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def build(filename: str) -> None:
+    """Build the specified .jac file."""
+    if filename.endswith(".jac"):
+        out = jac_file_to_pass(file_path=filename, schedule=py_code_gen_typed)
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
+        print(f"Errors: {errs}, Warnings: {warnings}")
+        for i in out.ir.flatten():
+            i.gen.mypy_ast = []
+            i.gen.py = ""
+        with open(filename[:-4] + ".jir", "wb") as f:
+            pickle.dump(out.ir, f)
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def check(filename: str) -> None:
+    """Run type checker for a specified .jac file.
+
+    :param filename: The path to the .jac file.
+    """
+    if filename.endswith(".jac"):
+        out = jac_file_to_pass(
+            file_path=filename,
+            schedule=py_code_gen_typed,
+        )
+
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
+
+        print(f"Errors: {errs}, Warnings: {warnings}")
     else:
         print("Not a .jac file.")
 
@@ -68,7 +133,7 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
         base, mod_name = os.path.split(filename)
         base = base if base else "./"
         mod_name = mod_name[:-4]
-        mod = __jac_import__(target=mod_name, base_path=base)
+        mod = jac_import(target=mod_name, base_path=base)
         if not mod:
             print("Errors occurred while importing the module.")
             return
@@ -88,7 +153,7 @@ def test(filename: str) -> None:
 
 
 @cmd_registry.register
-def ast_tool(tool: str, args: Optional[list] = None) -> None:
+def tool(tool: str, args: Optional[list] = None) -> None:
     """Run the specified AST tool with optional arguments.
 
     :param tool: The name of the AST tool to run.
@@ -113,10 +178,9 @@ def clean() -> None:
     from the current directory recursively.
     """
     current_dir = os.getcwd()
-    py_cache = "__pycache__"
     for root, dirs, _files in os.walk(current_dir, topdown=True):
         for folder_name in dirs[:]:
-            if folder_name == Constants.JAC_GEN_DIR or folder_name == py_cache:
+            if folder_name == Constants.JAC_GEN_DIR:
                 folder_to_remove = os.path.join(root, folder_name)
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")

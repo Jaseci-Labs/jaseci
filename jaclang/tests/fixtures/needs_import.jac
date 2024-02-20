@@ -1,4 +1,14 @@
-# """Test of jac importing python."""
+"""Test of jac importing python."""
+
+import:py pyfunc;
+import:py random;
+import:py from pyfunc, my_print;
+
+with entry {
+    my_print(pyfunc);
+    print(random.random());
+}
+
 import:py circle;
 import:py from circle, calculate_area;
 

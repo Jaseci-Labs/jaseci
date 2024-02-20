@@ -8,7 +8,7 @@ from pytest import skip
 
 from mypy import defaults
 from mypy.config_parser import parse_mypy_comments
-from mypy.errors import CompileError
+from mypy.errors import CompileError, Errors
 from mypy.options import Options
 from mypy.parse import parse
 from mypy.test.data import DataDrivenTestCase, DataSuite
@@ -54,8 +54,9 @@ def test_parser(testcase: DataDrivenTestCase) -> None:
             bytes(source, "ascii"),
             fnam="main",
             module="__main__",
-            errors=None,
+            errors=Errors(options),
             options=options,
+            raise_on_error=True,
         )
         a = n.str_with_options(options).split("\n")
     except CompileError as e:
@@ -91,8 +92,9 @@ def test_parse_error(testcase: DataDrivenTestCase) -> None:
             bytes("\n".join(testcase.input), "utf-8"),
             INPUT_FILE_NAME,
             "__main__",
-            None,
-            options,
+            errors=Errors(options),
+            options=options,
+            raise_on_error=True,
         )
         raise AssertionError("No errors reported")
     except CompileError as e:

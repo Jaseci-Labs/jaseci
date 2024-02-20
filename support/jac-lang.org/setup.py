@@ -1,4 +1,5 @@
 """A Pygments lexer for the Jac programming language."""
+
 from setuptools import setup
 
 setup(

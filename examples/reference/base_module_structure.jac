@@ -9,12 +9,12 @@ it is assumed to be a module docstring.
 can add(a: int, b: int) -> int {
     return a + b;
 }
-
 # No docstring for subtract function
+
 can subtract(a: int, b: int) -> int {
     return a - b;
 }
 
-with entry {
+with entry:__main__ {
     print(add(1, subtract(3, 1)));
 }

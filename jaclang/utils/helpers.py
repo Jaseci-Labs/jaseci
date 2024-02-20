@@ -1,7 +1,7 @@
 """Utility functions and classes for Jac compilation toolchain."""
+
 import os
 import re
-import textwrap
 
 
 import jaclang.compiler.absyntree as ast
@@ -37,15 +37,6 @@ def clip_code_section(s: str, target_line: int, line_range: int) -> str:
             line = "*" + line
         result.append(line)
     return "\n".join(result)
-
-
-def dedent_code_block(code: str) -> str:
-    """Dedent a code block."""
-    # lines = code.splitlines()
-    # min_indent = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
-    # dedented_lines = [line[min_indent:] for line in lines]
-    # dedented_code = "\n".join(dedented_lines)
-    return textwrap.dedent(code)
 
 
 def get_ast_nodes_as_snake_case() -> list[str]:

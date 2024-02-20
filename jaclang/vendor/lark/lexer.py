@@ -215,8 +215,7 @@ class Token(str):
         end_line: Optional[int] = None,
         end_column: Optional[int] = None,
         end_pos: Optional[int] = None,
-    ) -> "Token":
-        ...
+    ) -> "Token": ...
 
     @overload
     def __new__(
@@ -229,8 +228,7 @@ class Token(str):
         end_line: Optional[int] = None,
         end_column: Optional[int] = None,
         end_pos: Optional[int] = None,
-    ) -> "Token":
-        ...
+    ) -> "Token": ...
 
     def __new__(cls, *args, **kwargs):
         if "type_" in kwargs:
@@ -273,14 +271,12 @@ class Token(str):
     @overload
     def update(
         self, type: Optional[str] = None, value: Optional[Any] = None
-    ) -> "Token":
-        ...
+    ) -> "Token": ...
 
     @overload
     def update(
         self, type_: Optional[str] = None, value: Optional[Any] = None
-    ) -> "Token":
-        ...
+    ) -> "Token": ...
 
     def update(self, *args, **kwargs):
         if "type_" in kwargs:
@@ -607,12 +603,10 @@ class AbstractBasicLexer(Lexer):
     terminals_by_name: Dict[str, TerminalDef]
 
     @abstractmethod
-    def __init__(self, conf: "LexerConf", comparator=None) -> None:
-        ...
+    def __init__(self, conf: "LexerConf", comparator=None) -> None: ...
 
     @abstractmethod
-    def next_token(self, lex_state: LexerState, parser_state: Any = None) -> Token:
-        ...
+    def next_token(self, lex_state: LexerState, parser_state: Any = None) -> Token: ...
 
     def lex(self, state: LexerState, parser_state: Any) -> Iterator[Token]:
         with suppress(EOFError):

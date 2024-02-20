@@ -71,12 +71,15 @@ class Generator(Iterator[T], Generic[T, U, V]):
     @abstractmethod
     def send(self, value: U) -> T:
         pass
+
     @abstractmethod
     def throw(self, typ: Any, val: Any = None, tb: Any = None) -> None:
         pass
+
     @abstractmethod
     def close(self) -> None:
         pass
+
     @abstractmethod
     def __iter__(self) -> "Generator[T, U, V]":
         pass
@@ -85,15 +88,19 @@ class AsyncGenerator(AsyncIterator[T], Generic[T, U]):
     @abstractmethod
     def __anext__(self) -> Awaitable[T]:
         pass
+
     @abstractmethod
     def asend(self, value: U) -> Awaitable[T]:
         pass
+
     @abstractmethod
     def athrow(self, typ: Any, val: Any = None, tb: Any = None) -> Awaitable[T]:
         pass
+
     @abstractmethod
     def aclose(self) -> Awaitable[T]:
         pass
+
     @abstractmethod
     def __aiter__(self) -> "AsyncGenerator[T, U]":
         pass
@@ -113,9 +120,11 @@ class Coroutine(Awaitable[V], Generic[T, U, V]):
     @abstractmethod
     def send(self, value: U) -> T:
         pass
+
     @abstractmethod
     def throw(self, typ: Any, val: Any = None, tb: Any = None) -> None:
         pass
+
     @abstractmethod
     def close(self) -> None:
         pass
@@ -130,6 +139,7 @@ class AsyncIterable(Protocol[T]):
 class AsyncIterator(AsyncIterable[T], Protocol):
     def __aiter__(self) -> "AsyncIterator[T]":
         return self
+
     @abstractmethod
     def __anext__(self) -> Awaitable[T]:
         pass
@@ -142,18 +152,24 @@ class Sequence(Iterable[T_co], Container[T_co]):
 class Mapping(Iterable[T], Generic[T, T_co], metaclass=ABCMeta):
     def keys(self) -> Iterable[T]:
         pass  # Approximate return type
+
     def __getitem__(self, key: T) -> T_co:
         pass
+
     @overload
     def get(self, k: T) -> Optional[T_co]:
         pass
+
     @overload
     def get(self, k: T, default: Union[T_co, V]) -> Union[T_co, V]:
         pass
+
     def values(self) -> Iterable[T_co]:
         pass  # Approximate return type
+
     def items(self) -> Iterable[Tuple[T, T_co]]:
         pass  # Approximate return type
+
     def __len__(self) -> int: ...
     def __contains__(self, arg: object) -> int:
         pass

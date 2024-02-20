@@ -5,6 +5,7 @@ symbol table. This includes assignments, parameters, arch ref chains,
 and more. This pass also links the symbols in the AST to their corresponding
 sybmols in the symbol table (including uses).
 """
+
 import ast as ast3
 
 import jaclang.compiler.absyntree as ast
@@ -17,14 +18,6 @@ class DefUsePass(SymTabPass):
 
     def after_pass(self) -> None:
         """After pass."""
-        # for i in self.unlinked:
-        #     if not i.sym_name.startswith("[") and type(i.parent) in [
-        #         ast.AtomTrailer,
-        #     ]:
-        #         self.warning(
-        #             f"{i.sym_name} used before being defined.",
-        #             node_override=i,
-        #         )
 
     def enter_architype(self, node: ast.Architype) -> None:
         """Sub objects.

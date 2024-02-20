@@ -1,4 +1,5 @@
 """Tests for Jac Loader."""
+
 import sys
 
 from jaclang import jac_import
@@ -14,11 +15,11 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        h = jac_import("fixtures.hello_world")
+        h = jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        jac_import("fixtures.hello_world")
+        jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn("module 'hello_world'", str(sys.modules))
         self.assertIn("/tests/fixtures/hello_world.jac", str(sys.modules))

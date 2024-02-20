@@ -1,10 +1,11 @@
 """Jaclang setup file."""
+
 from __future__ import annotations
 
 from setuptools import find_packages, setup  # type: ignore
 
 
-VERSION = "0.4.4"
+VERSION = "0.5.3"
 
 setup(
     name="jaclang",

@@ -1,27 +1,26 @@
-walker Adder{
-     can do with `<root> entry;
+walker Adder {
+    can do with `<root> entry;
 }
 
-node node_a{
-    has x:int = 0;
-    has y:int = 0;
+node node_a {
+    has x: int = 0,
+        y: int = 0;
+
     can add with Adder entry;
 }
 
-:walker:Adder:can:do{
+:walker:Adder:can:do {
     <here> ++> node_a();
-
-    visit -->;
-
+    visit [-->];
 }
 
-:node:node_a:can:add{
-    <self>.x= 550 ;
-    <self>.y= 450 ;
-    print(int(<self>.x) + int(<self>.y));
-
+:node:node_a:can:add {
+    <self>.x = 550;
+    <self>.y = 450;
+    print(int(<s>.x) + int(<s>.y));
 }
 
-with entry{
-    Adder() spawn <root>;  # spawn will iniiate the walker Adder from root node
+with entry {
+# spawn will iniiate the walker Adder from root node
+Adder() spawn <root>;
 }

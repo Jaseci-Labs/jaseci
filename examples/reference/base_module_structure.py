@@ -16,4 +16,5 @@ def subtract(a: int, b: int) -> int:
     return a - b
 
 
-print(add(1, subtract(3, 1)))
+if __name__ == "__main__":
+    print(add(1, subtract(3, 1)))

@@ -1,76 +1,34 @@
-#Ability with decorators, access_modifiers
-"""Calculator object with static method"""
-obj Calculator{
-    #static ability(function)
-
-    static can :priv multiply(a :float, b :float) -> float{
-        return a*b;
+obj Divider {
+    can divide(x: float, y: float) -> float {
+        return (x / y);
     }
 }
-with entry{
-    print(Calculator.multiply(9,-2));
-}
-# Animal Archetype with an abstract ability
-obj Animal {
-    """Abstract ability for making a sound."""
-    can make_sound -> str abs;
+#this is an abstract class as it has the abstract method
+
+obj Calculator {
+    static can : priv multiply(a: float, b: float) -> float {
+        return a * b;
+    }
+    can substract -> float abs;
+    can add(number: float, *a: tuple) -> float;
 }
 
-# Concrete obj representing a Dog
-obj Dog:Animal: {
-    """Overridden method to make a dog sound."""
-    can make_sound -> str {
-        return "Woof! Woof!";
+obj substractor :Calculator: {
+    can substract(x: float, y: float) -> float {
+        return (x - y);
     }
 }
 
-# Concrete obj representing a Cat
-obj Cat:Animal: {
-    """Overridden method to make a cat sound."""
-    can make_sound -> str {
-        return "Meow!";
-    }
+:obj:Calculator:can:add
+(number: float, *a: tuple) -> float {
+    return (number * sum(a));
 }
 
-# Ability to simulate interactions with animals
-can interact_with_animal(animal: Animal) -> None {
-    sound = animal.make_sound();
-    print(f"The animal says: {sound}");
+with entry {
+    div = Divider();
+    sub = substractor();
+    print(div.divide(55, 11));
+    print(Calculator.multiply(9, -2));
+    print(sub.add(5, 20, 34, 56));
+    print(sub.substract(9, -2));
 }
-
-# Usage
-with entry{
-    # Creating instances of concrete architypes
-    Milo = Dog();
-    Leo = Cat();
-
-    # Interacting with animals
-    interact_with_animal(Milo);
-    interact_with_animal(Leo);
-}
-# Declaration
-can greet(name: str) -> str;
-
-# Definition after greet has been declared
-:can:greet
-(name: str) -> str {
-    print(f"Hey, {name} Welcome to Jaseci!");
-
-}
-with entry{
-    #ability calling
-    greet('Coder');
-
-}
-#Simple Ability
-"""Ability(Function) to calculate the numbers"""
-can add(*a :tuple) -> int {
-    return sum(a);
-}
-
-with entry{
-    #ability calling
-     print(add(9,-3,4));
-
-}
-

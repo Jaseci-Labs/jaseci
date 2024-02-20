@@ -3,6 +3,7 @@
 This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
+
 import ast as ast3
 import builtins
 from typing import Optional, Sequence
@@ -59,11 +60,17 @@ class SymTabPass(Pass):
         if isinstance(node.sym_name_node, ast.AstSymbolNode):
             node.sym_name_node.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
-            for i in node.values.items:
-                if isinstance(i, ast.AstSymbolNode):
-                    i.py_ctx_func = ast3.Store
-                elif isinstance(i, ast.AtomTrailer):
-                    self.chain_def_insert(self.unwind_atom_trailer(i))
+
+            def fix(item: ast.TupleVal | ast.ListVal) -> None:
+                for i in item.values.items if item.values else []:
+                    if isinstance(i, ast.AstSymbolNode):
+                        i.py_ctx_func = ast3.Store
+                    elif isinstance(i, ast.AtomTrailer):
+                        self.chain_def_insert(self.unwind_atom_trailer(i))
+                    if isinstance(i, (ast.TupleVal, ast.ListVal)):
+                        fix(i)
+
+            fix(node)
         self.handle_hit_outcome(node)
         return node.sym_link
 
@@ -254,6 +261,17 @@ class SymTabBuildPass(SymTabPass):
         is_imported: bool,
         """
         self.pop_scope()
+        if (
+            isinstance(node.parent, ast.Module)
+            and node
+            in [
+                node.parent.impl_mod,
+                node.parent.test_mod,
+            ]
+            and node.sym_tab
+        ):
+            for v in node.sym_tab.tab.values():
+                self.def_insert(v.decl, table_override=self.cur_scope())
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -368,25 +386,36 @@ class SymTabBuildPass(SymTabPass):
             for i in node.items.items:
                 self.def_insert(i, single_use="import item")
         elif node.is_absorb and node.lang.tag.value == "jac":
-            if not node.sub_module or not node.sub_module.sym_tab:
+            if not node.paths[0].sub_module or not node.paths[0].sub_module.sym_tab:
                 self.error(
-                    f"Module {node.path.path_str} not found to include *, or ICE occurred!"
+                    f"Module {node.paths[0].path_str} not found to include *, or ICE occurred!"
                 )
             else:
-                for v in node.sub_module.sym_tab.tab.values():
+                for v in node.paths[0].sub_module.sym_tab.tab.values():
                     self.def_insert(v.decl, table_override=self.cur_scope())
-        else:
-            self.def_insert(
-                node.path,
-                single_use="import",
-            )
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
 
-        path: list[Token],
+        path: Sequence[Token],
+        alias: Optional[Name],
+        sub_module: Optional[Module] = None,
         """
         self.sync_node_to_scope(node)
+
+    def exit_module_path(self, node: ast.ModulePath) -> None:
+        """Sub objects.
+
+        path: Sequence[Token],
+        alias: Optional[Name],
+        sub_module: Optional[Module] = None,
+        """
+        if node.alias:
+            self.def_insert(node.alias, single_use="import")
+        elif isinstance(node.path[0], ast.Name):
+            self.def_insert(node.path[0])
+        else:
+            pass  # Need to support pythonic import symbols with dots in it
 
     def enter_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
@@ -1175,6 +1204,14 @@ class SymTabBuildPass(SymTabPass):
         """Sub objects.
 
         var: Token,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
+        """Sub objects.
+
+        chain: list[Expr],
+        edges_only: bool,
         """
         self.sync_node_to_scope(node)
 

@@ -563,9 +563,11 @@ class InspectionEngine:
         self.module = state
         return (
             state,
-            {"out": f"Unknown module: {file}", "err": "", "status": 1}
-            if state is None
-            else {},
+            (
+                {"out": f"Unknown module: {file}", "err": "", "status": 1}
+                if state is None
+                else {}
+            ),
         )
 
     def run_inspection(
