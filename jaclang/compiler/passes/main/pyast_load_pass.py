@@ -659,20 +659,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         params_in: list[ast.Expr | ast.KWPair] = []
         args = [self.convert(arg) for arg in node.args]
         keywords = [self.convert(keyword) for keyword in node.keywords]
+        
         for i in args:
             if isinstance(i, ast.Expr):
                 params_in.append(i)
         for i in keywords:
             if isinstance(i, ast.KWPair):
                 params_in.append(i)
-        params_in2: ast.SubNodeList = ast.SubNodeList[ast.Expr | ast.KWPair](
-            items=params_in, kid=params_in
-        )
+        if len(params_in)!=0:
+            params_in2: ast.SubNodeList = ast.SubNodeList[ast.Expr | ast.KWPair](
+                items=params_in, kid=params_in
+            )
+        else:
+            params_in2= None
         if isinstance(func, ast.Expr):
             return ast.FuncCall(
                 target=func,
                 params=params_in2,
-                kid=[func, params_in2],
+                kid=[func, params_in2] if params_in2 else [func],
             )
         else:
             raise self.ice()
@@ -811,8 +815,30 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_global(self, node: py_ast.Global) -> None:
         """Process python node."""
 
-    def proc_if_exp(self, node: py_ast.IfExp) -> None:
-        """Process python node."""
+    def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
+        """Process python node.
+        
+        class IfExp(expr):
+            test: expr
+            body: expr
+            orelse: expr
+        """
+        test = self.convert(node.test)
+        body = self.convert(node.body)
+        orelse = self.convert(node.orelse)
+        if (
+            isinstance(test, ast.Expr)
+            and isinstance(body, ast.Expr)
+            and isinstance(orelse, ast.Expr)
+        ):
+            return ast.IfElseExpr(
+                value=body,
+                condition=test,
+                else_value=orelse,
+                kid=[body,test,orelse]
+            )
+        else:
+            self.ice()
 
     def proc_import(self, node: py_ast.Import) -> ast.Import:
         """Process python node.
@@ -1061,14 +1087,46 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_set_comp(self, node: py_ast.SetComp) -> None:
         """Process python node."""
 
-    def proc_slice(self, node: py_ast.Slice) -> None:
-        """Process python node."""
+    def proc_slice(self, node: py_ast.Slice) -> ast.IndexSlice:
+        """Process python node.
+        
+        class Slice(_Slice):
+            lower: expr | None
+            upper: expr | None
+            step: expr | None
+        """
+        print("comes to slice")
+        lower = self.convert(node.lower) if node.lower else None
+        upper = self.convert(node.upper) if node.upper else None
+        step = self.convert(node.step) if node.step else None
+        return ast.IndexSlice(
+            start=lower,
+            stop=upper,
+            step=step,
+            is_range=True,
+            kid=[lower,upper,step]
+        )
 
     def proc_starred(self, node: py_ast.Starred) -> None:
         """Process python node."""
 
     def proc_subscript(self, node: py_ast.Subscript) -> None:
-        """Process python node."""
+        """Process python node.
+        
+        class Subscript(expr):
+            value: expr
+            slice: _Slice
+            ctx: expr_context
+        """
+        value = self.convert(node.value)
+        slice = self.convert(node.slice)
+        ast.AtomTrailer(
+            target=value,
+            right=slice,
+            is_attr=False,
+            is_null_ok=False,
+            kid=[value,slice]
+        )
 
     def proc_try(self, node: py_ast.Try) -> None:
         """Process python node."""
@@ -1215,7 +1273,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 kid=[],
             )
             kwarg.add_kids_left([kwarg.unpack])
-        defaults = [self.convert(expr) for expr in node.defaults]
+        defaults = [self.convert(expr) for expr in node.defaults if type(expr)== None]
 
         params = [*args]
         if vararg:
