@@ -5639,6 +5639,7 @@ spec:
       serviceAccountName: elastic-operator
       securityContext:
         runAsNonRoot: true
+        fsGroup: 65534
       containers:
       - image: "docker.elastic.co/eck/eck-operator:2.7.0"
         imagePullPolicy: IfNotPresent
