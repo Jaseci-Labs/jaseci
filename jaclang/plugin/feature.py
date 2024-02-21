@@ -223,15 +223,19 @@ class JacFeature:
 def dotgen(
     node: NodeArchitype = root,
     depth: float = float("inf"),
-    Traverse:bool=False,
-    edge_type:list[str]=[],
+    traverse: bool = False,
+    edge_type: list[str] = [],
     bfs: bool = True,
     edge_limit: int = 128,
     node_limit: int = 128,
 ) -> str:
     """Print the dot graph."""
     return pm.hook.dotgen(
-        node=node, depth=depth,Traverse=Traverse,edge_type=edge_type, bfs=bfs, edge_limit=edge_limit, node_limit=node_limit
+        edge_type=edge_type,
+        node=node,
+        depth=depth,
+        traverse=traverse,
+        bfs=bfs,
+        edge_limit=edge_limit,
+        node_limit=node_limit,
     )
-
-

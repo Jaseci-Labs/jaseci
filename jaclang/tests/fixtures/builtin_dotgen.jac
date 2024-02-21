@@ -23,7 +23,7 @@ with entry{
     # c++>b;
     d1:=dotgen();l1:=d1|>len;  #generate dot for all connected with root
     #  d2:=dotgen(b[1],Traverse=True,depth=20,bfs=False,node_limit=12);l2:=d2|>len;  #generate dot for all connected with root
-     d2:=dotgen(b[1],edge_type= ["Edge1"],depth=20,Traverse=True,bfs=False,node_limit=19);l2:=d2|>len;  #generate dot for all connected with root
+     d2:=dotgen(b[1],edge_type= ["Edge1"],depth=20,traverse=True,bfs=False,node_limit=19);l2:=d2|>len;  #generate dot for all connected with root
      d3:=dotgen(b[2],edge_limit=5,depth=5);l3:=d3|>len; #generate dot for all connected with b[1] node
      d4:=dotgen(b[1],bfs=True,edge_type= ["Edge1"],node_limit=100,edge_limit=900,depth=300);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
     #  d4:=dotgen(end,bfs=True,node_limit=10,edge_limit=90,depth=30);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
