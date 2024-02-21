@@ -213,7 +213,7 @@ class JacBuiltin:
     @staticmethod
     @hookspec(firstresult=True)
     def dotgen(
-        node: NodeArchitype, depth: float, bfs: bool, edge_limit: int, node_limit: int
+        node: NodeArchitype, depth: float,Traverse:bool, bfs: bool, edge_limit: int, node_limit: int
     ) -> str:
         """Print the dot graph."""
         raise NotImplementedError

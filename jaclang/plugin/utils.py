@@ -44,6 +44,7 @@ colors = [
 
 
 def traverse_graph(
+    Traverse:bool,
     node: NodeArchitype,
     cur_depth: float,
     depth: float,
@@ -60,6 +61,8 @@ def traverse_graph(
     for edge in node._jac_.edges:
         is_self_loop = id(edge._jac_.source) == id(edge._jac_.target)
         is_in_edge = edge._jac_.target == node
+        if Traverse and is_in_edge:
+            continue
         if is_self_loop:
             continue  # lets skip self loop for a while
         else:

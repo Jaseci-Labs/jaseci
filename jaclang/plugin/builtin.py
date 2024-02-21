@@ -27,7 +27,7 @@ class JacBuiltin:
     @staticmethod
     @hookimpl
     def dotgen(
-        node: NodeArchitype, depth: float, bfs: bool, edge_limit: int, node_limit: int
+        node: NodeArchitype, depth: float,Traverse:bool, bfs: bool, edge_limit: int, node_limit: int
     ) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         visited_nodes: list[NodeArchitype] = []
@@ -40,6 +40,7 @@ class JacBuiltin:
             if node not in visited_nodes:
                 visited_nodes.append(node)
                 traverse_graph(
+                    Traverse,
                     node,
                     cur_depth,
                     depth,
@@ -60,6 +61,7 @@ class JacBuiltin:
                 if current_node not in visited_nodes:
                     visited_nodes.append(current_node)
                     traverse_graph(
+                        Traverse,
                         current_node,
                         cur_depth,
                         depth,
