@@ -17,6 +17,7 @@ include:jac main;
 walker game{
 
     has g:Game = None,
+        current_level:int = 1,
         fwd_dir:bool = True,
         map_directory:dict={};
 
@@ -45,7 +46,7 @@ node level{
         level_id:str = '1_1000',
         played:bool = False,
         levelconfig:Map = Map(), # need to look at this
-        time:float=500000;
+        level_time:float=500000;
 
     can run_game with game entry;
     can exit_game with game exit;
@@ -65,17 +66,19 @@ with entry {
 }
 
 :walker:game:can:generate_level {
-    <self>.map_directory[str(<here>.game_level)] = Map();
+    <self>.map_directory[str(<self>.current_level)] = Map();
 }
 
 :node:level:can:run_game {
     # print("Walker Entry ->", <self>.level_id);
 
     if <self>.played == False {
-        if str(<self>.game_level) in <here>.map_directory.keys(){
+        if <here>.current_level != <self>.game_level {
+            <here>.current_level = <self>.game_level;
+        }
+        if str(<self>.game_level) not in <here>.map_directory.keys(){
             <here>.generate_level();
         }
-        print(<here>.map_directory);
 
         <here>.g.GameMap.map = <here>.map_directory[str(<self>.game_level)].map;
         <here>.g.new();
@@ -84,7 +87,11 @@ with entry {
         <here>.g.main();
         end_time = time.time();
         if <here>.g.won == True{
-            <here>.map_directory[str(game_level)].time_to_win_level = end_time - start_time;
+            <self>.level_time = end_time - start_time;
+            if <self>.level_time < <here>.map_directory[str(<self>.game_level)].time_to_win_level {
+                <here>.map_directory[str(<self>.game_level)].time_to_win_level = <self>.level_time;
+            }
+            print('Time:', <self>.level_time);
             <here>.g.game_won();
             <self>.played = True;
             <here>.g.won = False;
