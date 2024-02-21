@@ -1,7 +1,9 @@
 node a{
     has val:int;
 }
-
+edge Edge1 {
+    has val: int = 5;
+}
 with entry{
     end=<r>;
     for i in range(0,4){
@@ -15,23 +17,23 @@ with entry{
     }
     p=b[1];
     for k in range(0,10){
-        p++>(p:=a(val=k));
+        p+:Edge1:val=6:+>(p:=a(val=k));
     }
     # b++>c;
     # c++>b;
     d1:=dotgen();l1:=d1|>len;  #generate dot for all connected with root
     #  d2:=dotgen(b[1],Traverse=True,depth=20,bfs=False,node_limit=12);l2:=d2|>len;  #generate dot for all connected with root
-     d2:=dotgen(b[1],depth=20,Traverse=True,bfs=False,node_limit=120);l2:=d2|>len;  #generate dot for all connected with root
+     d2:=dotgen(b[1],edge_type= ["Edge1"],depth=20,Traverse=True,bfs=False,node_limit=19);l2:=d2|>len;  #generate dot for all connected with root
      d3:=dotgen(b[2],edge_limit=5,depth=5);l3:=d3|>len; #generate dot for all connected with b[1] node
-     d4:=dotgen(b[1],bfs=True,node_limit=100,edge_limit=900,depth=300);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
+     d4:=dotgen(b[1],bfs=True,edge_type= ["Edge1"],node_limit=100,edge_limit=900,depth=300);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
     #  d4:=dotgen(end,bfs=True,node_limit=10,edge_limit=90,depth=30);l4:=d4|>len; #generate dot from nodes with depth 3 connected with b[1] node
-    print(d1.count('a(val')==12);
-    print(d2.count('a(val')==12,d2.count('#F5E5FF')==7);
-    print(d3.count("GenericEdge")==5,d3.count('#F5E5FF')==1);
-    print(d4.count("a(val")==35,d4.count("GenericEdge")==76,d4.count('#FFF0F')==4);
+    print(d1.count('a(val')==12,d1.count('#FFFFE0')==3,'jaclang.core' in d1,d1.count('GenericEdge')==30);
+    print(d2.count('a(val')==19,d2.count('#F5E5FF')==2 ,'Edge1' not in d2,d2.count('GenericEdge')==42);
+    print(d3.count('a(val')==6,d3.count("GenericEdge")==5,d3.count('#F5E5FF')==1);
+    print(d4.count("a(val")==25,d4.count("GenericEdge")==66,d4.count('#FFF0F')==3);
     # print(l3<l2);
     # print(d1);
-    print(d2);
+    # print(d2);
     # print(d3);
     # print(d4);
     # print(dotgen(node=b[2],bfs=True,depth=3.96,edge_limit=12,node_limit=12.96));
