@@ -5,6 +5,7 @@
 import:py pygame;
 import:py sys;
 import:py random;
+import:py time;
 
 # Importing Jac codebase
 include:jac sprites;
@@ -16,7 +17,9 @@ include:jac main;
 walker game{
 
     has g:Game = None,
-        fwd_dir:bool = True;
+        fwd_dir:bool = True,
+        map_directory:dict[Map];
+
     can start_game with `<root> entry;
 }
 
@@ -40,7 +43,8 @@ node level{
     has game_level:int = 1,
         level_id:str = '1_1000',
         played:bool = False,
-        levelmap:list[str] = Map();
+        levelconfig:Level_config = Level_config(), # need to look at this
+        time:float;
 
     can run_game with game entry;
     can exit_game with game exit;
@@ -63,11 +67,16 @@ with entry {
     # print("Walker Entry ->", <self>.level_id);
 
     if <self>.played == False {
-        <here>.g.GameMap.map = <self>.levelmap.map;
+        # if str(game_level) in <here>.map_directory.keys(){
+        #     <here>.generate_map();
+        # }
+
+        <here>.g.GameMap.map = <self>.levelconfig.map;
         <here>.g.new();
         print(":-: Playing Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
+        start_time = time.time();
         <here>.g.main();
-
+        end_time = time.time();
         if <here>.g.won == True{
             <here>.g.game_won();
             <self>.played = True;
