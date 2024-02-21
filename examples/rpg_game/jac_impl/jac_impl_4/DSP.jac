@@ -18,9 +18,10 @@ walker game{
 
     has g:Game = None,
         fwd_dir:bool = True,
-        map_directory:dict[Map];
+        map_directory:dict={};
 
     can start_game with `<root> entry;
+    can generate_level();
 }
 
 edge play{
@@ -43,8 +44,8 @@ node level{
     has game_level:int = 1,
         level_id:str = '1_1000',
         played:bool = False,
-        levelconfig:Level_config = Level_config(), # need to look at this
-        time:float;
+        levelconfig:Map = Map(), # need to look at this
+        time:float=500000;
 
     can run_game with game entry;
     can exit_game with game exit;
@@ -63,21 +64,27 @@ with entry {
     visit [-->];
 }
 
+:walker:game:can:generate_level {
+    <self>.map_directory[str(<here>.game_level)] = Map();
+}
+
 :node:level:can:run_game {
     # print("Walker Entry ->", <self>.level_id);
 
     if <self>.played == False {
-        # if str(game_level) in <here>.map_directory.keys(){
-        #     <here>.generate_map();
-        # }
+        if str(<self>.game_level) in <here>.map_directory.keys(){
+            <here>.generate_level();
+        }
+        print(<here>.map_directory);
 
-        <here>.g.GameMap.map = <self>.levelconfig.map;
+        <here>.g.GameMap.map = <here>.map_directory[str(<self>.game_level)].map;
         <here>.g.new();
         print(":-: Playing Level :", <self>.game_level, "| Level ID :",  <self>.level_id, "| Played :", str(<self>.played));
         start_time = time.time();
         <here>.g.main();
         end_time = time.time();
         if <here>.g.won == True{
+            <here>.map_directory[str(game_level)].time_to_win_level = end_time - start_time;
             <here>.g.game_won();
             <self>.played = True;
             <here>.g.won = False;
