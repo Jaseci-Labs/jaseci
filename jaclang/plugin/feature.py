@@ -13,15 +13,13 @@ from jaclang.core.construct import (
     Root,
     WalkerArchitype,
 )
-from jaclang.core.construct import root
-from jaclang.plugin.spec import JacBuiltin, JacFeatureSpec, T
+from jaclang.plugin.spec import JacFeatureSpec, T
 
 
 import pluggy
 
 pm = pluggy.PluginManager("jac")
 pm.add_hookspecs(JacFeatureSpec)
-pm.add_hookspecs(JacBuiltin)
 
 
 class JacFeature:
@@ -214,28 +212,3 @@ class JacFeature:
         return pm.hook.build_edge(
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
         )
-
-
-"""Jac specific builtins.
-"""
-
-
-def dotgen(
-    node: NodeArchitype = root,
-    depth: float = float("inf"),
-    traverse: bool = False,
-    edge_type: list[str] = [],
-    bfs: bool = True,
-    edge_limit: int = 128,
-    node_limit: int = 128,
-) -> str:
-    """Print the dot graph."""
-    return pm.hook.dotgen(
-        edge_type=edge_type,
-        node=node,
-        depth=depth,
-        traverse=traverse,
-        bfs=bfs,
-        edge_limit=edge_limit,
-        node_limit=node_limit,
-    )

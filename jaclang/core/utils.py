@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -23,7 +23,6 @@ def collect_node_connections(
     if current_node not in visited_nodes:
         visited_nodes.add(current_node)
         edges = current_node.edges
-
         for edge_ in edges:
             target = edge_._jac_.target
             if target:
@@ -64,12 +63,12 @@ colors = [
 
 def traverse_graph(
     node: NodeArchitype,
-    cur_depth: float,
+    cur_depth: int,
     depth: float,
     edge_type: list[str],
     traverse: bool,
     connections: list,
-    dpeth_of_node: dict[NodeArchitype, Any],
+    node_depths: dict[NodeArchitype, int],
     visited_nodes: list,
     queue: list,
     bfs: bool,
@@ -90,20 +89,19 @@ def traverse_graph(
             new_con = (
                 (node, other_nd, edge) if not is_in_edge else (other_nd, node, edge)
             )
-            if node in dpeth_of_node and dpeth_of_node[node] is not None:
-                if other_nd in dpeth_of_node:
-                    dpeth_of_node[node] = min(
-                        cur_depth, dpeth_of_node[node], dpeth_of_node[other_nd] + 1
+            if node in node_depths and node_depths[node] is not None:
+                if other_nd in node_depths:
+                    node_depths[node] = min(
+                        cur_depth, node_depths[node], node_depths[other_nd] + 1
                     )
-                    dpeth_of_node[other_nd] = min(
-                        cur_depth + 1, dpeth_of_node[node] + 1, dpeth_of_node[other_nd]
+                    node_depths[other_nd] = min(
+                        cur_depth + 1, node_depths[node] + 1, node_depths[other_nd]
                     )
                 else:
-                    dpeth_of_node[other_nd] = min(
-                        cur_depth + 1, dpeth_of_node[node] + 1
-                    )
+                    # if node_depths[other_nd] is None:
+                    node_depths[other_nd] = min(cur_depth + 1, node_depths[node] + 1)
             if new_con not in connections and (
-                min(dpeth_of_node[node], dpeth_of_node[other_nd]) + 1 <= depth
+                min(node_depths[node], node_depths[other_nd]) + 1 <= depth
                 and node_limit > len(visited_nodes)
                 and edge_limit > len(connections)
             ):

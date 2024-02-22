@@ -220,6 +220,7 @@ class JacBuiltin:
         bfs: bool,
         edge_limit: int,
         node_limit: int,
+        dot_file: Optional[str],
     ) -> str:
         """Print the dot graph."""
         raise NotImplementedError

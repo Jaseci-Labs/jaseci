@@ -409,11 +409,12 @@ class JacBuiltin:
         bfs: bool,
         edge_limit: int,
         node_limit: int,
+        dot_file: Optional[str],
     ) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        # edge_type1 = ['GenericEdge']
+        edge_type = edge_type if edge_type else []
         visited_nodes: list[NodeArchitype] = []
-        dpeth_of_node: dict[NodeArchitype, int] = {node: 0}
+        node_depths: dict[NodeArchitype, int] = {node: 0}
         queue: list = [[node, 0]]
         connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
 
@@ -428,7 +429,7 @@ class JacBuiltin:
                     edge_type,
                     traverse,
                     connections,
-                    dpeth_of_node,
+                    node_depths,
                     visited_nodes,
                     queue,
                     bfs,
@@ -450,7 +451,7 @@ class JacBuiltin:
                         edge_type,
                         traverse,
                         connections,
-                        dpeth_of_node,
+                        node_depths,
                         visited_nodes,
                         queue,
                         bfs,
@@ -468,9 +469,10 @@ class JacBuiltin:
             )
         for node_ in visited_nodes:
             color = (
-                colors[dpeth_of_node[node_]]
-                if dpeth_of_node[node_] < 25
-                else colors[24]
+                colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
             )
             dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}" fillcolor="{color}"];\n'
+        if dot_file:
+            with open(dot_file, "w") as f:
+                f.write(dot_content + "}")
         return dot_content + "}"

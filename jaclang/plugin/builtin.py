@@ -1,101 +1,38 @@
-"""Jac Language Builtin ."""
+"""Jac specific builtins."""
 
 from __future__ import annotations
 
+from typing import Optional
 
 from jaclang.core.construct import (
-    EdgeArchitype,
     NodeArchitype,
-    root,
 )
-from jaclang.core.utils import colors, traverse_graph
-
-import pluggy
-
-__all__ = [
-    "NodeArchitype",
-    "EdgeArchitype",
-    "root",
-]
-
-hookimpl = pluggy.HookimplMarker("jac")
+from jaclang.core.construct import root
+from jaclang.plugin.feature import pm
+from jaclang.plugin.spec import JacBuiltin
 
 
-# class JacBuiltin:
-#     """Jac Builtins."""
+pm.add_hookspecs(JacBuiltin)
 
-#     @staticmethod
-#     @hookimpl
-#     def dotgen(
-#         edge_type: list[str],
-#         node: NodeArchitype,
-#         depth: float,
-#         traverse: bool,
-#         bfs: bool,
-#         edge_limit: int,
-#         node_limit: int,
-#     ) -> str:
-#         """Generate Dot file for visualizing nodes and edges."""
-#         # edge_type1 = ['GenericEdge']
-#         visited_nodes: list[NodeArchitype] = []
-#         dpeth_of_node: dict[NodeArchitype, int] = {node: 0}
-#         queue: list = [[node, 0]]
-#         connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
 
-#         def dfs(node: NodeArchitype, cur_depth: int) -> None:
-#             """Depth first search."""
-#             if node not in visited_nodes:
-#                 visited_nodes.append(node)
-#                 traverse_graph(
-#                     node,
-#                     cur_depth,
-#                     depth,
-#                     edge_type,
-#                     traverse,
-#                     connections,
-#                     dpeth_of_node,
-#                     visited_nodes,
-#                     queue,
-#                     bfs,
-#                     dfs,
-#                     node_limit,
-#                     edge_limit,
-#                 )
-
-#         if bfs:
-#             cur_depth = 0
-#             while queue:
-#                 current_node, cur_depth = queue.pop(0)
-#                 if current_node not in visited_nodes:
-#                     visited_nodes.append(current_node)
-#                     traverse_graph(
-#                         current_node,
-#                         cur_depth,
-#                         depth,
-#                         edge_type,
-#                         traverse,
-#                         connections,
-#                         dpeth_of_node,
-#                         visited_nodes,
-#                         queue,
-#                         bfs,
-#                         dfs,
-#                         node_limit,
-#                         edge_limit,
-#                     )
-#         else:
-#             dfs(node, cur_depth=0)
-#         dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
-#         for source, target, edge in connections:
-#             dot_content += (
-#                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
-#                 f' [label="{edge._jac_.obj.__class__.__name__} "];\n'
-#             )
-#         for node_ in visited_nodes:
-#             color = (
-#                 colors[dpeth_of_node[node_]]
-#                 if dpeth_of_node[node_] < 25
-#                 else colors[24]
-#             )
-#             dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}" fillcolor="{color}"];\n'
-#         return dot_content + "}"
+def dotgen(
+    node: NodeArchitype = root,
+    depth: float = float("inf"),
+    traverse: bool = False,
+    edge_type: Optional[list[str]] = None,
+    bfs: bool = True,
+    edge_limit: int = 512,
+    node_limit: int = 512,
+    dot_file: Optional[str] = None,
+) -> str:
+    """Print the dot graph."""
+    return pm.hook.dotgen(
+        edge_type=edge_type,
+        node=node,
+        depth=depth,
+        traverse=traverse,
+        bfs=bfs,
+        edge_limit=edge_limit,
+        node_limit=node_limit,
+        dot_file=dot_file,
+    )
