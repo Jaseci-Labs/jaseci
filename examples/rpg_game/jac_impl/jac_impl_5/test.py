@@ -1,12 +1,26 @@
-# # With pipeline, just specify the task and the model id from the Hub.
-# from transformers import pipeline
-# pipe = pipeline("text-generation", model="distilgpt2")
-
-# # If you want more control, you will need to define the tokenizer and model.
-# from transformers import AutoTokenizer, AutoModelForCausalLM
-# tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
-# model = AutoModelForCausalLM.from_pretrained("distilgpt2")
-
-
 from hugchat import hugchat
 from hugchat.login import Login
+
+sign = Login(email, passwd)
+cookies = sign.login()
+
+cookie_path_dir = "./cookies_snapshot"
+sign.saveCookiesToDir(cookie_path_dir)
+
+# start a new huggingchat connection
+chatbot = hugchat.ChatBot(cookies=cookies.get_dict())
+
+# start a new conversation
+chatbot.delete_all_conversations()
+id = chatbot.new_conversation()
+chatbot.change_conversation(id)
+chatbot.switch_llm(2)
+
+# enter your message here
+msg = 'Give me a random integer between 10 and 1000, Just the integer is sufficient no need prefixes or suffixes'
+
+# print the response
+print(chatbot.chat(msg))
+
+# models = chatbot.get_available_llm_models()
+# print(models)
