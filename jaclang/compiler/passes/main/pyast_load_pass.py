@@ -401,15 +401,27 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in for body")
+        
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
         orelse = [self.convert(i) for i in node.orelse]
         valid_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
         if len(valid_orelse) != len(orelse):
             raise self.ice("Length mismatch in for orelse")
-        valid_orelse = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid_orelse, kid=orelse
+        if orelse:
+            valid_orelse = ast.SubNodeList[ast.CodeBlockStmt](
+                items=valid_orelse, kid=orelse
+            )
+        else: 
+            valid_orelse = None
+
+        return ast.InForStmt(
+            target=target,
+            is_async=True,
+            collection=iter,
+            body=valid_body,
+            else_body=valid_orelse,
+            kid=[target,iter,valid_body,valid_orelse] if orelse else [target,iter,valid_body],
         )
-        raise self.ice(f"IMPLEMENT ME{target}{iter}")
 
     def proc_async_for(self, node: py_ast.AsyncFor) -> ast.InForStmt:
         """Process AsyncFor node.
@@ -486,7 +498,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if valid_orelse
             else None
         )
-
         if isinstance(test, ast.Expr):
             ret = ast.IfStmt(
                 condition=test,
@@ -628,14 +639,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice()
 
     def proc_bool_op(self, node: py_ast.BoolOp) -> None:
-        """Process python node."""
+        """Process python node.
 
-        # class BoolOp(expr):
-        # if sys.version_info >= (3, 10):
-        #     __match_args__ = ("op", "values")
-        # op: boolop
-        # values: list[expr]
-        # """
+        class BoolOp(expr): a and b and c
+            op: boolop
+            values: list[expr]
+        """
         # op = self.convert(node.op)
         # values =[self.convert(value) for value in node.values]
         # valid = [value for value in values if isinstance(value, ast.AtomExpr)]
@@ -852,12 +861,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             self.error("Length mismatch in import names")
         paths = []
         for name in valid_names:
-            if isinstance(name.expr, ast.Name) and isinstance(name.alias, ast.Name):
+            if isinstance(name.expr, ast.Name):
                 paths.append(
                     ast.ModulePath(
                         path=[name.expr],
                         level=0,
-                        alias=name.alias,
+                        alias=name.alias if name.alias is not None else None,
                         kid=[i for i in name.kid if i],
                     )
                 )
