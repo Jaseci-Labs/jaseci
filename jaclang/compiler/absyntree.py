@@ -1300,7 +1300,7 @@ class BinaryExpr(Expr):
 
 
 class CompareExpr(Expr):
-    """ExprBinary node type for Jac Ast."""
+    """CompareExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1313,6 +1313,21 @@ class CompareExpr(Expr):
         self.left = left
         self.rights = rights
         self.ops = ops
+        AstNode.__init__(self, kid=kid)
+
+
+class BoolExpr(Expr):
+    """BoolExpr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        op: Token,
+        values: list[Expr],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize binary expression node."""
+        self.values = values
+        self.op = op
         AstNode.__init__(self, kid=kid)
 
 

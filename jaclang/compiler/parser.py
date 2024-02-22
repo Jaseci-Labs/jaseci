@@ -1915,16 +1915,48 @@ class JacParser(Pass):
         def logical_or(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            logical_or: (logical_or KW_OR)? logical_and
+            logical_or: logical_and (KW_OR logical_and)*
             """
-            return self.binary_expr_unwind(kid)
+            if len(kid) > 1:
+                values = [i for i in kid if isinstance(i, ast.Expr)]
+                ops = kid[1] if isinstance(kid[1], ast.Token) else None
+                if not ops:
+                    raise self.ice()
+                return self.nu(
+                    ast.BoolExpr(
+                        op=ops,
+                        values=values,
+                        kid=kid,
+                    )
+                )
+            elif isinstance(kid[0], ast.Expr):
+                return self.nu(kid[0])
+            else:
+
+                raise self.ice()
 
         def logical_and(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            logical_and: (logical_and KW_AND)? logical_not
+            logical_and: logical_not (KW_AND logical_not)*
             """
-            return self.binary_expr_unwind(kid)
+            if len(kid) > 1:
+                values = [i for i in kid if isinstance(i, ast.Expr)]
+                ops = kid[1] if isinstance(kid[1], ast.Token) else None
+                if not ops:
+                    raise self.ice()
+                return self.nu(
+                    ast.BoolExpr(
+                        op=ops,
+                        values=values,
+                        kid=kid,
+                    )
+                )
+            elif isinstance(kid[0], ast.Expr):
+                return self.nu(kid[0])
+            else:
+
+                raise self.ice()
 
         def logical_not(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.

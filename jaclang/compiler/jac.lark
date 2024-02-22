@@ -298,8 +298,8 @@ bitwise_and: (bitwise_and BW_AND)? shift
 shift: (shift (RSHIFT | LSHIFT))? logical_or
 
 // Logical and compare expressions
-logical_or: (logical_or KW_OR)? logical_and
-logical_and: (logical_and KW_AND)? logical_not
+logical_or: logical_and (KW_OR logical_and)*
+logical_and: logical_not (KW_AND logical_not)*
 logical_not: NOT logical_not | compare
 compare: (arithmetic cmp_op)* arithmetic
 
