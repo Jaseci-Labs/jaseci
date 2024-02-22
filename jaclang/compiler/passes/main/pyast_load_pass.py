@@ -645,11 +645,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             op: boolop
             values: list[expr]
         """
-        # op = self.convert(node.op)
-        # values =[self.convert(value) for value in node.values]
-        # valid = [value for value in values if isinstance(value, ast.AtomExpr)]
-        # return ast.Bool(
-        # )
+        op = self.convert(node.op)
+        values =[self.convert(value) for value in node.values]
+        valid = [value for value in values if isinstance(value, ast.Expr)]
+        valid_values = ast.SubNodeList[ast.Expr](
+            items=valid, kid=valid
+        )
+        print("okok")
+        return ast.BoolExpr(
+            op=op,
+            values=valid,
+            kid=[op,valid_values]
+        )
 
     def proc_break(self, node: py_ast.Break) -> None:
         """Process python node."""
