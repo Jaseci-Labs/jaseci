@@ -1934,6 +1934,21 @@ class PyastGenPass(Pass):
             )
         ]
 
+    def exit_bool_expr(self, node: ast.BoolExpr) -> None:
+        """Sub objects.
+
+        op: Token,
+        values: list[Expr],
+        """
+        node.gen.py_ast = [
+            self.sync(
+                ast3.BoolOp(
+                    op=node.op.gen.py_ast[0],
+                    values=[i.gen.py_ast[0] for i in node.values],
+                )
+            )
+        ]
+
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
 
