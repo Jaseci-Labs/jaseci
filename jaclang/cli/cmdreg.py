@@ -110,6 +110,9 @@ class CommandRegistry:
         return all_commands
 
 
+cmd_registry = CommandRegistry()
+
+
 class CommandShell(cmd.Cmd):
     """Command shell for the command line interface."""
 

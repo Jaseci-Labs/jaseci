@@ -6,15 +6,17 @@ import shutil
 from typing import Optional
 
 from jaclang import jac_import
-from jaclang.cli.cmdreg import CommandRegistry, CommandShell
+from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.lang_tools import AstTool
 
-cmd_registry = CommandRegistry()
+
+Cmd.create_cmd()
 
 
 @cmd_registry.register

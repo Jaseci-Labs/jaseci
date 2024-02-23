@@ -215,3 +215,13 @@ class JacBuiltin:
     def dotgen(node: NodeArchitype, radius: int = 0) -> str:
         """Print the dot graph."""
         raise NotImplementedError
+
+
+class JacCmdSpec:
+    """Jac CLI command."""
+
+    @staticmethod
+    @hookspec
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        raise NotImplementedError
