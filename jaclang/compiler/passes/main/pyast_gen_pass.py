@@ -812,23 +812,27 @@ class PyastGenPass(Pass):
                                     )
                                 ),
                                 args=[],
-                                keywords=[
-                                    param.gen.py_ast[0]
-                                    for param in node.body.params.items
-                                ],  # TODO: Add the AOTT Raise and parse the meaning_in as an arg
+                                keywords=(
+                                    [
+                                        param.gen.py_ast[0]
+                                        for param in node.body.params.items
+                                    ]
+                                    if node.body.params
+                                    else []
+                                ),  # TODO: Add the AOTT Raise and parse the meaning_in as an arg
                             )
                         )
                     )
                 )
             ]
-            if node.is_genai_ability
+            if isinstance(node.body, ast.FuncCall)
             else (
                 [
                     self.sync(
                         ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc
                     ),
                     self.sync(ast3.Pass(), node.body),
-                ]
+                ] 
                 if node.doc and node.is_abstract
                 else (
                     [self.sync(ast3.Pass(), node.body)]
@@ -883,7 +887,7 @@ class PyastGenPass(Pass):
             decorator_list.insert(
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
             )
-        if not body and not node.is_genai_ability:
+        if not body and not isinstance(node.body, ast.FuncCall):
             self.error("Ability has no body. Perhaps an impl must be imported.", node)
 
         node.gen.py_ast = [

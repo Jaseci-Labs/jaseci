@@ -687,8 +687,10 @@ class JacParser(Pass):
                     )
             raise self.ice()
 
-        def ability(self, kid: list[ast.AstNode]) -> ast.Ability | ast.AbilityDef:
-            """Grammer rule,
+        def ability(
+            self, kid: list[ast.AstNode]
+        ) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
+            """Grammer rule.
 
             ability: decorators? ability_def
                     | decorators? KW_ASYNC? ability_decl
@@ -718,7 +720,9 @@ class JacParser(Pass):
                         ability.is_static = True
                         decorators.items.remove(dec)  # noqa: B038
                         break
-                if len(decorators.items):
+                if len(decorators.items) and isinstance(
+                    ability, (ast.Ability, ast.AbilityDef)
+                ):
                     ability.decorators = decorators
                     ability.add_kids_left([decorators])
                 return self.nu(ability)
