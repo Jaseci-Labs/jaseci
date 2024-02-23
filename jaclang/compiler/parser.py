@@ -880,7 +880,7 @@ class JacParser(Pass):
                         is_async=False,
                         is_override=is_override,
                         is_static=is_static,
-                        is_abstract=True,
+                        is_abstract=False,
                         access=access,
                         semstr=semstr,
                         signature=signature,
