@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, Sequence, Type, TypeVar
 
 from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import (
@@ -180,6 +180,16 @@ class JacFeatureSpec:
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def filter_compr(
+        target_obj: Sequence[T],
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> list[T]:
+        """Jac's assign comprehension feature."""
         raise NotImplementedError
 
     @staticmethod

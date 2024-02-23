@@ -6,7 +6,7 @@ import os
 import types
 from dataclasses import field
 from functools import wraps
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Sequence, Type
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir
@@ -353,6 +353,16 @@ class JacFeatureDefaults:
                             e._jac_.detach(i._jac_.obj, e._jac_.source)
                             disconnect_occurred = True
         return disconnect_occurred
+
+    @staticmethod
+    @hookimpl
+    def filter_compr(
+        target_obj: Sequence[T],
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> list[T]:
+        """Jac's assign comprehension feature."""
+        return []
 
     @staticmethod
     @hookimpl

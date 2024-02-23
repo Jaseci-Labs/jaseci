@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, TypeAlias
+from typing import Any, Callable, Optional, Sequence, Type, TypeAlias
 
 from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
@@ -187,6 +187,17 @@ class JacFeature:
             dir=dir,
             filter_type=filter_type,
             filter_func=filter_func,
+        )
+
+    @staticmethod
+    def filter_compr(
+        target_obj: Sequence[T],
+        filter_type: Optional[type],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    ) -> list[T]:
+        """Jac's assign comprehension feature."""
+        return pm.hook.filter_compr(
+            target_obj=target_obj, filter_type=filter_type, filter_func=filter_func
         )
 
     @staticmethod
