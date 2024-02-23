@@ -6001,6 +6001,10 @@ spec:
     count: 1
     config:
       node.store.allow_mmap: false
+      http.cors.enabled: true
+      http.cors.allow-origin: "*"
+      http.cors.allow-methods: OPTIONS, POST, GET
+      http.cors.allow-headers: X-Requested-With, X-Auth-Token, Content-Type, Content-Length, Authorization, Access-Control-Allow-Headers, Accept
     volumeClaimTemplates:
     - metadata:
         name: elasticsearch-data
