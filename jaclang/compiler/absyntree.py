@@ -1779,13 +1779,11 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
 
     def __init__(
         self,
-        filter_type: Optional[Expr],
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize edge op reference expression node."""
-        self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
@@ -1834,10 +1832,12 @@ class FilterCompr(AtomExpr):
 
     def __init__(
         self,
-        compares: SubNodeList[CompareExpr],
+        f_type: Optional[Expr],
+        compares: Optional[SubNodeList[CompareExpr]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
+        self.f_type = f_type
         self.compares = compares
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
