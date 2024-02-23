@@ -319,3 +319,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("im in", stdout_value)
         self.assertIn("in the middle", stdout_value)
         self.assertIn("im out", stdout_value)
+        self.assertIn(
+            "{'apple': [1, 2, 3], 'banana': [1, 2, 3], 'cherry': [1, 2, 3]}",
+            stdout_value,
+        )

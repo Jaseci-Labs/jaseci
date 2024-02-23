@@ -2420,9 +2420,9 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Slice(
-                        lower=node.start.gen.py_ast if node.start else None,
-                        upper=node.stop.gen.py_ast if node.stop else None,
-                        step=node.step.gen.py_ast if node.step else None,
+                        lower=node.start.gen.py_ast[0] if node.start else None,
+                        upper=node.stop.gen.py_ast[0] if node.stop else None,
+                        step=node.step.gen.py_ast[0] if node.step else None,
                     )
                 )
             ]

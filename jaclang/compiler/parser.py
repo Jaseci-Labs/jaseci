@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, TypeAlias, cast
+from typing import Callable, TypeAlias
 
 
 import jaclang.compiler.absyntree as ast
@@ -2256,76 +2256,51 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice | ast.ListVal:
+        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
             """Grammar rule.
 
             index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
-                       | list_val
+                    | list_val
             """
-            if len(kid) == 1 and isinstance(kid[0], ast.ListVal):
-                expr = None
-                if not kid[0].values or len(kid[0].values.items) < 1:
-                    self.parse_ref.error("Empty list slice not allowed", kid[0].values)
-                elif len(kid[0].values.items) == 1:
-                    expr = kid[0].values.items[0]  # TODO: Loses braces
+            if len(kid) == 1:
+                index = kid[0]
+                if isinstance(index, ast.ListVal):
+                    expr = index.values.items[0] if index.values else None
+                    return self.nu(
+                        ast.IndexSlice(
+                            start=expr,
+                            stop=None,
+                            step=None,
+                            is_range=False,
+                            kid=kid[0].kid,
+                        )
+                    )
                 else:
-                    vals = cast("ast.SubNodeList[ast.Expr|ast.KWPair]", kid[0].values)
-                    expr = ast.TupleVal(values=vals, kid=kid[0].kid)
-                if expr is None:
                     raise self.ice()
+            else:
+                expr1 = expr2 = expr3 = None
+                chomp = kid[1:]
+                if isinstance(chomp[0], ast.Expr):
+                    expr1 = chomp[0]
+                    chomp = chomp[1:]
+                chomp = chomp[1:]
+                if isinstance(chomp[0], ast.Expr):
+                    expr2 = chomp[0]
+                    chomp = chomp[1:]
+                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON:
+                    chomp = chomp[1:]
+                    if isinstance(chomp[0], ast.Expr):
+                        expr3 = chomp[0]
+                        chomp = chomp[1:]
                 return self.nu(
                     ast.IndexSlice(
-                        start=expr, stop=None, step=None, is_range=False, kid=[expr]
+                        start=expr1,
+                        stop=expr2,
+                        step=expr3,
+                        is_range=True,
+                        kid=kid,
                     )
                 )
-            chomp = [*kid]
-            chomp = chomp[1:]
-            expr1 = chomp[0] if isinstance(chomp[0], ast.Expr) else None
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and isinstance(chomp[1], ast.Expr)
-                else None
-            )
-            chomp = chomp[1:]
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and len(chomp) > 1
-                and isinstance(chomp[1], ast.Expr)
-                else expr2
-            )
-            expr3 = None
-            if len(chomp) > 1:
-                chomp = chomp[1:]
-                expr3 = (
-                    chomp[1]
-                    if isinstance(chomp[0], ast.Token)
-                    and chomp[0].name == Tok.COLON
-                    and isinstance(chomp[1], ast.Expr)
-                    else None
-                )
-                if len(chomp) > 1:
-                    chomp = chomp[1:]
-                    expr3 = (
-                        chomp[1]
-                        if isinstance(chomp[0], ast.Token)
-                        and chomp[0].name == Tok.COLON
-                        and len(chomp) > 1
-                        and isinstance(chomp[1], ast.Expr)
-                        else expr3
-                    )
-            return self.nu(
-                ast.IndexSlice(
-                    start=expr1,
-                    stop=expr2,
-                    step=expr3,
-                    is_range=True,
-                    kid=kid,
-                )
-            )
 
         def atom(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
