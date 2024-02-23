@@ -1,7 +1,11 @@
-"""With LLM Sytax Test"""
+obj model {
+    can __infer__(**kwargs: dict) {
+        return(kwargs);
+    }
+}
+glob llm = model();
 
-can get_personality() with llm(a=4, b=5);
-
+can something(c: str) with llm(a="Hello", b="World");
 with entry {
-    get_personality();
+    print(something('test'));
 }

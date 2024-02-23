@@ -821,9 +821,11 @@ class JacParser(Pass):
                 if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ABSTRACT
                 else None
             )
-            if isinstance(name, ast.NameSpec) and isinstance(
-                signature, (ast.FuncSignature, ast.EventSignature)
-            ) and is_abstract:
+            if (
+                isinstance(name, ast.NameSpec)
+                and isinstance(signature, (ast.FuncSignature, ast.EventSignature))
+                and is_abstract
+            ):
                 return self.nu(
                     ast.Ability(
                         name_ref=name,
@@ -869,10 +871,13 @@ class JacParser(Pass):
             chomp = chomp[1:]
             has_with = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_WITH
             chomp = chomp[1:] if has_with else chomp
-            is_funccall = isinstance(chomp[0],ast.FuncCall)
-            if isinstance(name, ast.NameSpec) and isinstance(
-                signature, (ast.FuncSignature, ast.EventSignature)
-            ) and is_funccall and has_with:
+            is_funccall = isinstance(chomp[0], ast.FuncCall)
+            if (
+                isinstance(name, ast.NameSpec)
+                and isinstance(signature, (ast.FuncSignature, ast.EventSignature))
+                and is_funccall
+                and has_with
+            ):
                 return self.nu(
                     ast.Ability(
                         name_ref=name,

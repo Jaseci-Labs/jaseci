@@ -105,6 +105,15 @@ class JacLanguageTests(TestCase):
             "        line of code.\n",
         )
 
+    def test_with_llm(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value, "{'a': 'Hello', 'b': 'World'}\n")
+
     def test_ignore(self) -> None:
         """Parse micro jac file."""
         construct.root._jac_.edges.clear()
