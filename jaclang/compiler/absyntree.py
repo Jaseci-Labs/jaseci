@@ -632,7 +632,7 @@ class Ability(
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | EventSignature],
-        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
+        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
         doc: Optional[String] = None,
@@ -668,6 +668,11 @@ class Ability(
         if check:
             self.sym_type = SymbolType.METHOD
         return check
+
+    @property
+    def is_genai_ability(self) -> bool:
+        """Check if is genai_ability."""
+        return isinstance(self.body, FuncCall)
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
