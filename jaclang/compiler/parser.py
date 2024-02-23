@@ -893,7 +893,7 @@ class JacParser(Pass):
                         access=access,
                         semstr=semstr,
                         signature=signature,
-                        body=chomp[0],
+                        body=chomp[0],  # type: ignore
                         kid=kid,
                     )
                 )

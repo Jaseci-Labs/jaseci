@@ -830,12 +830,12 @@ class PyastGenPass(Pass):
                 [
                     self.sync(
                         ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc
-                    ),
-                    self.sync(ast3.Pass(), node.body),
-                ] 
+                    ),  # type: ignore
+                    self.sync(ast3.Pass(), node.body),  # type: ignore
+                ]
                 if node.doc and node.is_abstract
                 else (
-                    [self.sync(ast3.Pass(), node.body)]
+                    [self.sync(ast3.Pass(), node.body)]  # type: ignore
                     if node.is_abstract
                     else self.resolve_stmt_block(
                         (
