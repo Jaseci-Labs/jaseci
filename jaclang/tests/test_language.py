@@ -307,3 +307,15 @@ class JacLanguageTests(TestCase):
             "5 15",
             stdout_value,
         )
+
+    def test_with_contexts(self) -> None:
+        """Test walking through edges."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_context", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("im in", stdout_value)
+        self.assertIn("in the middle", stdout_value)
+        self.assertIn("im out", stdout_value)
