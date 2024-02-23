@@ -9,7 +9,7 @@ setup(
     name="cmd-show",
     version=VERSION,
     packages=find_packages(include=["cmd_show", "cmd_show.*"]),
-    install_requires=[],
+    install_requires=["pygments"],
     package_data={
         "": ["*.ini"],
     },
