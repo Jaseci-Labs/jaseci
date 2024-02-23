@@ -404,3 +404,13 @@ class JacBuiltin:
     def dotgen(node: NodeArchitype, radius: int = 0) -> str:
         """Print the dot graph."""
         return dotgen(node, radius)
+
+
+class JacCmdDefaults:
+    """Jac CLI command."""
+
+    @staticmethod
+    @hookimpl
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        pass
