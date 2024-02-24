@@ -21,16 +21,19 @@ class FuseTypeInfoPass(Pass):
     def __handle_node(self, node: ast.AstSymbolNode) -> None:
         try:
             if len(node.gen.mypy_ast) == 1:
-                mypy_node = node.gen.mypy_ast[0].node
-                mypy_type = mypy_node.type
-                if isinstance(mypy_type, mypyInstance):
-                    node.sym_info = ast.SymbolInfo(mypy_type)
-                    self.__debug_print(
-                        f'"{node.__class__.__name__}::{node.value}"'
-                        ' type is "{mypy_type}"'
-                    )
+                if not hasattr(node.gen.mypy_ast[0], "node"):
+                    self.__debug_print("no Var here", type(node.gen.mypy_ast[0]))
                 else:
-                    self.__debug_print(f"{type(mypy_type)} isn't supported yet")
+                    mypy_node = node.gen.mypy_ast[0].node
+                    mypy_type = mypy_node.type
+                    if isinstance(mypy_type, mypyInstance):
+                        node.sym_info = ast.SymbolInfo(mypy_type)
+                        self.__debug_print(
+                            f'"{node.__class__.__name__}::{node.value}"'
+                            ' type is "{mypy_type}"'
+                        )
+                    else:
+                        self.__debug_print(f"{type(mypy_type)} isn't supported yet")
             elif len(node.gen.mypy_ast) > 1:
                 self.__debug_print(
                     f'jac Name node "{node.__class__.__name__}::{node.value}"'
