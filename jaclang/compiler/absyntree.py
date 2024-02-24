@@ -1764,7 +1764,7 @@ class EdgeRefTrailer(Expr):
 
     def __init__(
         self,
-        chain: list[Expr],
+        chain: list[Expr | FilterCompr],
         edges_only: bool,
         kid: Sequence[AstNode],
     ) -> None:

@@ -3110,9 +3110,10 @@ class JacParser(Pass):
         def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
             """Grammar rule.
 
-            edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref expression?)+ RSQUARE
+            edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression?
+                (edge_op_ref (NODE_OP? expression)?)+ RSQUARE
             """
-            valid_chain = [i for i in kid if isinstance(i, (ast.Expr))]
+            valid_chain = [i for i in kid if isinstance(i, (ast.Expr, ast.FilterCompr))]
             return self.nu(
                 ast.EdgeRefTrailer(
                     chain=valid_chain,

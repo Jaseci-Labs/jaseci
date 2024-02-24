@@ -340,3 +340,17 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn("[MyObj(a=0), MyObj(a=1), MyObj(a=2)]\n", stdout_value)
+
+    def test_edge_node_walk(self) -> None:
+        """Test walking through edges and nodes."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edge_node_walk", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("creator()\n", stdout_value)
+        self.assertIn("[node_a(val=12)]\n", stdout_value)
+        self.assertIn("node_a(val=1)", stdout_value)
+        self.assertIn("node_a(val=2)", stdout_value)
+        self.assertIn("[node_b(val=42), node_b(val=42)]\n", stdout_value)
