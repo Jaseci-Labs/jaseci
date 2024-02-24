@@ -2441,7 +2441,7 @@ class PyastGenPass(Pass):
     def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
         """Sub objects.
 
-        chain: list[Expr],
+        chain: list[Expr|FilterCompr],
         edges_only: bool,
         """
         pynode = node.chain[0].gen.py_ast[0]
@@ -2461,11 +2461,23 @@ class PyastGenPass(Pass):
                 not next_i or not isinstance(next_i, ast.EdgeOpRef)
             ):
                 pynode = self.translate_edge_op_ref(
-                    pynode,
-                    cur,
-                    targ=next_i.gen.py_ast[0] if next_i else None,
+                    loc=pynode,
+                    node=cur,
+                    targ=(
+                        next_i.gen.py_ast[0]
+                        if next_i and not isinstance(next_i, ast.FilterCompr)
+                        else None
+                    ),
                     edges_only=node.edges_only and cur == last_edge,
                 )
+                if next_i and isinstance(next_i, ast.FilterCompr):
+                    pynode = self.sync(
+                        ast3.Call(
+                            func=next_i.gen.py_ast[0],
+                            args=[pynode],
+                            keywords=[],
+                        )
+                    )
                 chomp = chomp[1:] if next_i else chomp
             elif isinstance(cur, ast.EdgeOpRef) and isinstance(next_i, ast.EdgeOpRef):
                 pynode = self.translate_edge_op_ref(
