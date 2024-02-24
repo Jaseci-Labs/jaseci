@@ -3294,6 +3294,8 @@ class JacParser(Pass):
             if isinstance(kid[2], ast.SubNodeList):
                 return self.nu(ast.FilterCompr(compares=kid[2], f_type=None, kid=kid))
             elif isinstance(kid[3], ast.FilterCompr):
+                kid[3].add_kids_left(kid[:3])
+                kid[3].add_kids_right(kid[4:])
                 return self.nu(kid[3])
             else:
                 raise self.ice()

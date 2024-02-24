@@ -175,7 +175,6 @@ class JacFeatureSpec:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""

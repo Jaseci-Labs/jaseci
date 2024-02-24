@@ -316,7 +316,6 @@ class JacFeatureDefaults:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
@@ -326,17 +325,11 @@ class JacFeatureDefaults:
         for i in left:
             for j in right:
                 edge_list: list[EdgeArchitype] = [*i._jac_.edges]
-                if filter_type:
-                    edge_list = [e for e in edge_list if isinstance(e, filter_type)]
                 edge_list = filter_func(edge_list) if filter_func else edge_list
                 for e in edge_list:
-                    if (
-                        e._jac_.target
-                        and e._jac_.source
-                        and (not filter_type or isinstance(e, filter_type))
-                    ):
+                    if e._jac_.target and e._jac_.source:
                         if (
-                            dir in ["OUT", "ANY"]
+                            dir in ["OUT", "ANY"]  # TODO: Not ideal
                             and i._jac_.obj == e._jac_.source
                             and e._jac_.target == j._jac_.obj
                         ):
