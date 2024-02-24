@@ -144,7 +144,6 @@ class JacFeature:
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
@@ -153,7 +152,6 @@ class JacFeature:
             node_obj=node_obj,
             target_obj=target_obj,
             dir=dir,
-            filter_type=filter_type,
             filter_func=filter_func,
             edges_only=edges_only,
         )
@@ -178,7 +176,6 @@ class JacFeature:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:
         """Jac's disconnect operator feature."""
@@ -186,7 +183,6 @@ class JacFeature:
             left=left,
             right=right,
             dir=dir,
-            filter_type=filter_type,
             filter_func=filter_func,
         )
 

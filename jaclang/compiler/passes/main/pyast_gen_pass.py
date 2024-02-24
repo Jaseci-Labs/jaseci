@@ -1789,11 +1789,6 @@ class PyastGenPass(Pass):
                                 ast3.Constant(value=node.op.edge_spec.edge_dir.name)
                             ),
                             (
-                                node.op.edge_spec.filter_type.gen.py_ast[0]
-                                if node.op.edge_spec.filter_type is not None
-                                else self.sync(ast3.Constant(value=None))
-                            ),
-                            (
                                 node.op.edge_spec.filter_cond.gen.py_ast[0]
                                 if node.op.edge_spec.filter_cond is not None
                                 else self.sync(ast3.Constant(value=None))
@@ -2552,16 +2547,6 @@ class PyastGenPass(Pass):
                     ),
                     self.sync(
                         ast3.keyword(
-                            arg="filter_type",
-                            value=self.sync(
-                                node.filter_type.gen.py_ast[0]
-                                if node.filter_type
-                                else self.sync(ast3.Constant(value=None))
-                            ),
-                        )
-                    ),
-                    self.sync(
-                        ast3.keyword(
                             arg="filter_func",
                             value=self.sync(
                                 node.filter_cond.gen.py_ast[0]
@@ -2670,38 +2655,76 @@ class PyastGenPass(Pass):
                                         iter=self.sync(
                                             ast3.Name(id="x", ctx=ast3.Load())
                                         ),
-                                        ifs=[
-                                            self.sync(
-                                                ast3.Compare(
-                                                    left=self.sync(
-                                                        ast3.Attribute(
-                                                            value=self.sync(
+                                        ifs=(
+                                            (
+                                                [
+                                                    self.sync(
+                                                        ast3.Call(
+                                                            func=self.sync(
                                                                 ast3.Name(
-                                                                    id="i",
+                                                                    id="isinstance",
                                                                     ctx=ast3.Load(),
-                                                                ),
-                                                                jac_node=x,
+                                                                )
                                                             ),
-                                                            attr=x.gen.py_ast[
-                                                                0
-                                                            ].left.id,
-                                                            ctx=ast3.Load(),
+                                                            args=[
+                                                                self.sync(
+                                                                    ast3.Name(
+                                                                        id="i",
+                                                                        ctx=ast3.Load(),
+                                                                    )
+                                                                ),
+                                                                self.sync(
+                                                                    node.f_type.gen.py_ast[
+                                                                        0
+                                                                    ]
+                                                                ),
+                                                            ],
+                                                            keywords=[],
+                                                        )
+                                                    )
+                                                ]
+                                                if node.f_type
+                                                else []
+                                            )
+                                            + [
+                                                self.sync(
+                                                    ast3.Compare(
+                                                        left=self.sync(
+                                                            ast3.Attribute(
+                                                                value=self.sync(
+                                                                    ast3.Name(
+                                                                        id="i",
+                                                                        ctx=ast3.Load(),
+                                                                    ),
+                                                                    jac_node=x,
+                                                                ),
+                                                                attr=x.gen.py_ast[
+                                                                    0
+                                                                ].left.id,
+                                                                ctx=ast3.Load(),
+                                                            ),
+                                                            jac_node=x,
                                                         ),
-                                                        jac_node=x,
+                                                        ops=x.gen.py_ast[0].ops,
+                                                        comparators=x.gen.py_ast[
+                                                            0
+                                                        ].comparators,
                                                     ),
-                                                    ops=x.gen.py_ast[0].ops,
-                                                    comparators=x.gen.py_ast[
-                                                        0
-                                                    ].comparators,
-                                                ),
-                                                jac_node=x,
-                                            )
-                                            for x in node.compares.items
-                                            if isinstance(x.gen.py_ast[0], ast3.Compare)
-                                            and isinstance(
-                                                x.gen.py_ast[0].left, ast3.Name
-                                            )
-                                        ],
+                                                    jac_node=x,
+                                                )
+                                                for x in (
+                                                    node.compares.items
+                                                    if node.compares
+                                                    else []
+                                                )
+                                                if isinstance(
+                                                    x.gen.py_ast[0], ast3.Compare
+                                                )
+                                                and isinstance(
+                                                    x.gen.py_ast[0].left, ast3.Name
+                                                )
+                                            ]
+                                        ),
                                         is_async=0,
                                     )
                                 )
