@@ -185,10 +185,10 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def filter_compr(
-        target_obj: Sequence[T],
+        target_obj: Sequence[T] | T,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[T]:
+    ) -> list[T] | T | None:
         """Jac's assign comprehension feature."""
         raise NotImplementedError
 

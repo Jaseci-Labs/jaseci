@@ -191,10 +191,10 @@ class JacFeature:
 
     @staticmethod
     def filter_compr(
-        target_obj: Sequence[T],
+        target_obj: Sequence[T] | T,
         filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[T]:
+    ) -> list[T] | T | None:
         """Jac's assign comprehension feature."""
         return pm.hook.filter_compr(
             target_obj=target_obj, filter_type=filter_type, filter_func=filter_func
