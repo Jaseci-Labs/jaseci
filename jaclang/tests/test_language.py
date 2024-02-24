@@ -323,3 +323,20 @@ class JacLanguageTests(TestCase):
             "{'apple': [1, 2, 3], 'banana': [1, 2, 3], 'cherry': [1, 2, 3]}",
             stdout_value,
         )
+
+    def test_typed_filter_compr(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import(
+            "micro.typed_filter_compr",
+            base_path=self.fixture_abs_path("../../../examples/"),
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn(
+            "[MyObj(a=0), MyObj2(a=2), MyObj(a=1), "
+            "MyObj2(a=3), MyObj(a=2), MyObj(a=3)]\n",
+            stdout_value,
+        )
+        self.assertIn("[MyObj(a=0), MyObj(a=1), MyObj(a=2)]\n", stdout_value)
