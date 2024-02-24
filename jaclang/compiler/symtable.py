@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
 from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
 
@@ -41,6 +41,14 @@ class SymbolType(Enum):
     def __str__(self) -> str:
         """Stringify."""
         return self.value
+
+
+class SymbolInfo:
+    """Symbol Info."""
+
+    def __init__(self, typ: Any = None) -> None:  # noqa: ANN401
+        """Initialize."""
+        self.typ = typ
 
 
 class SymbolAccess(Enum):
