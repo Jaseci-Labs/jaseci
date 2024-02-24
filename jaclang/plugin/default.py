@@ -6,7 +6,7 @@ import os
 import types
 from dataclasses import field
 from functools import wraps
-from typing import Any, Callable, Optional, Sequence, Type
+from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir
@@ -262,7 +262,6 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
@@ -278,16 +277,14 @@ class JacFeatureDefaults:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
                 connected_edges += node._jac_.get_edges(
-                    dir, filter_type, filter_func, target_obj=targ_obj_set
+                    dir, filter_func, target_obj=targ_obj_set
                 )
             return list(set(connected_edges))
         else:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
-                    node._jac_.edges_to_nodes(
-                        dir, filter_type, filter_func, target_obj=targ_obj_set
-                    )
+                    node._jac_.edges_to_nodes(dir, filter_func, target_obj=targ_obj_set)
                 )
             return list(set(connected_nodes))
 
@@ -353,16 +350,6 @@ class JacFeatureDefaults:
                             e._jac_.detach(i._jac_.obj, e._jac_.source)
                             disconnect_occurred = True
         return disconnect_occurred
-
-    @staticmethod
-    @hookimpl
-    def filter_compr(
-        target_obj: Sequence[T] | T,
-        filter_type: Optional[type],
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[T] | T | None:
-        """Jac's assign comprehension feature."""
-        return []
 
     @staticmethod
     @hookimpl

@@ -44,15 +44,12 @@ class NodeAnchor(ObjectAnchor):
     def get_edges(
         self,
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         target_obj: Optional[list[NodeArchitype]],
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
         edge_list: list[EdgeArchitype] = [*self.edges]
         ret_edges: list[EdgeArchitype] = []
-        if filter_type:
-            edge_list = [e for e in edge_list if isinstance(e, filter_type)]
         edge_list = filter_func(edge_list) if filter_func else edge_list
         for e in edge_list:
             if (
@@ -75,15 +72,12 @@ class NodeAnchor(ObjectAnchor):
     def edges_to_nodes(
         self,
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         target_obj: Optional[list[NodeArchitype]],
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
         edge_list: list[EdgeArchitype] = [*self.edges]
         node_list: list[NodeArchitype] = []
-        if filter_type:
-            edge_list = [e for e in edge_list if isinstance(e, filter_type)]
         edge_list = filter_func(edge_list) if filter_func else edge_list
         for e in edge_list:
             if e._jac_.target and e._jac_.source:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import (
@@ -149,7 +149,6 @@ class JacFeatureSpec:
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
@@ -180,16 +179,6 @@ class JacFeatureSpec:
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def filter_compr(
-        target_obj: Sequence[T] | T,
-        filter_type: Optional[type],
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    ) -> list[T] | T | None:
-        """Jac's assign comprehension feature."""
         raise NotImplementedError
 
     @staticmethod
