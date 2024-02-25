@@ -60,12 +60,8 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 
 @cmd_registry.register
-def run(filename: str, main: bool = True) -> None:
-    """Run the specified .jac file.
-
-    :param filename: The path to the .jac file.
-    :param main: If True, use '__main__' as the module name, else use the actual module name.
-    """
+def run(filename: str, main: bool = True, cache: bool = True) -> None:
+    """Run the specified .jac file."""
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
@@ -79,6 +75,7 @@ def run(filename: str, main: bool = True) -> None:
             jac_import(
                 target=mod,
                 base_path=base,
+                cachable=cache,
                 override_name="__main__" if main else None,
                 mod_bundle=ir,
             )

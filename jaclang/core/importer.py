@@ -62,8 +62,9 @@ def jac_importer(
                         print(e)
                         logging.error(e)
                 return None
-            with open(pyc_file_path, "rb") as f:
-                codeobj = marshal.load(f)
+            if cachable:
+                with open(pyc_file_path, "rb") as f:
+                    codeobj = marshal.load(f)
 
     module_name = override_name if override_name else module_name
     module = types.ModuleType(module_name)
