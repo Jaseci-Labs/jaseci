@@ -12,11 +12,17 @@ In order for these implementations to work, the following requirements should be
 
 - Python 3.11 or newer
 - Jaclang newest available version
+```
+$ pip install jaclang
+```
 - pygame newest available version
+```
+$ pip install pygame
+```
 
-## Jaclang Implementation 1 - [_py to jac_](/home/jayanaka-98/jaclang/examples/rpg_game/jac_impl/jac_impl_1)
+## Jaclang Implementation 1 - [_py to jac_](./jac_impl/jac_impl_1)
 
-This is the first version of the Jaclang implementation of the RPG. This source code represents an exact conversion of puthon to jaclang.
+This is the first version of the Jaclang implementation of the RPG. This source code represents an exact conversion of python to jaclang.
 
 ### main.py
 
