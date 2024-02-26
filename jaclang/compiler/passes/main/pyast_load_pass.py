@@ -554,8 +554,21 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
         raise self.ice("IMPLEMENT ME")
 
-    def proc_raise(self, node: py_ast.Raise) -> None:
-        """Process python node."""
+    def proc_raise(self, node: py_ast.Raise) -> ast.RaiseStmt:
+        """Process python node.
+
+        class Raise(stmt):
+            exc: expr | None
+            cause: expr | None
+        """
+        exc = self.convert(node.exc) if node.exc else None
+        cause = self.convert(node.cause) if node.cause else None
+        kid = []
+        if exc:
+            kid.append(exc)
+        if cause:
+            kid.append(cause)
+        return ast.RaiseStmt(cause=cause, from_target=exc, kid=kid)
 
     def proc_assert(self, node: py_ast.Assert) -> None:
         """Process python node."""
@@ -806,9 +819,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if node.name is not None
             else None
         )
+
         body = [self.convert(i) for i in node.body]
-        for i in body:
-            print(i)
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in except handler body")
@@ -819,6 +831,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if name:
             kid.append(name)
         kid.append(valid_body)
+
         return ast.Except(
             ex_type=type,
             name=name,
@@ -1190,12 +1203,52 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in try body")
-        # valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
+        valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
+        kid = [valid_body]
 
-        handlers = [self.convert(i) for i in node.handlers]
-        print("inside try: ", len(handlers))
-        for i in handlers:
-            print(i)
+        if len(node.handlers) != 0:
+            handlers = [self.convert(i) for i in node.handlers]
+            valid_handlers = [i for i in handlers if isinstance(i, (ast.Except))]
+            if len(handlers) != len(valid_handlers):
+                raise self.ice("Length mismatch in try handlers")
+            excepts = ast.SubNodeList[ast.Except](
+                items=valid_handlers, kid=valid_handlers
+            )
+            kid.append(excepts)
+        else:
+            excepts = None
+
+        if len(node.orelse) != 0:
+            orelse = [self.convert(i) for i in node.orelse]
+            valid_orelse = [i for i in orelse if isinstance(i, (ast.ElseStmt))]
+            if len(orelse) != len(valid_orelse):
+                raise self.ice("Length mismatch in try orelse")
+            else_body = ast.SubNodeList[ast.ElseStmt](
+                items=valid_orelse, kid=valid_orelse
+            )
+            kid.append(else_body)
+        else:
+            else_body = None
+
+        if len(node.finalbody) != 0:
+            finalbody = [self.convert(i) for i in node.finalbody]
+            valid_finalbody = [i for i in finalbody if isinstance(i, (ast.FinallyStmt))]
+            if len(finalbody) != len(valid_finalbody):
+                raise self.ice("Length mismatch in try finalbody")
+            finally_body = ast.SubNodeList[ast.FinallyStmt](
+                items=valid_finalbody, kid=valid_finalbody
+            )
+            kid.append(finally_body)
+        else:
+            finally_body = None
+
+        return ast.TryStmt(
+            body=valid_body,
+            excepts=excepts,
+            else_body=else_body,
+            finally_body=finally_body,
+            kid=kid,
+        )
 
     def proc_try_star(self, node: py_ast.TryStar) -> None:
         """Process python node."""
