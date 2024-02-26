@@ -211,7 +211,7 @@ class JacFeature:
         return pm.hook.build_edge(
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
         )
-    
+
     @staticmethod
     def with_llm(
         model: Any,  # TODO: Need to change to the model type

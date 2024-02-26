@@ -818,29 +818,45 @@ class PyastGenPass(Pass):
                                 ),
                                 args=[],
                                 keywords=[
-                                    self.sync(ast3.keyword(arg="model", value=node.body.target.gen.py_ast[0])),
                                     self.sync(
-                                        ast3.keyword(arg="model_params", value=self.sync(
-                                        ast3.Dict(keys=[], values=[])
-                                    ))
+                                        ast3.keyword(
+                                            arg="model",
+                                            value=node.body.target.gen.py_ast[0],
+                                        )
                                     ),
                                     self.sync(
-                                        ast3.keyword(arg="incl_info", value=self.sync(
-                                        ast3.Constant(value=None)
-                                    ))
+                                        ast3.keyword(
+                                            arg="model_params",
+                                            value=self.sync(
+                                                ast3.Dict(keys=[], values=[])
+                                            ),
+                                        )
                                     ),
                                     self.sync(
-                                        ast3.keyword(arg="excl_info", value=self.sync(
-                                        ast3.Constant(value=None)
-                                    ))
+                                        ast3.keyword(
+                                            arg="incl_info",
+                                            value=self.sync(ast3.Constant(value=None)),
+                                        )
                                     ),
-                                    self.sync(ast3.keyword(arg="inputs", value=self.sync(
-                                        ast3.Constant(value=None)
-                                    ))),
-                                    self.sync(ast3.keyword(arg="outputs", value=self.sync(
-                                        ast3.Constant(value=None)
-                                    ))),
-                                    self.sync(ast3.keyword(arg="action", value=node.semstr.gen.py_ast[0])), #type: ignore
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="excl_info",
+                                            value=self.sync(ast3.Constant(value=None)),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="inputs",
+                                            value=self.sync(ast3.Constant(value=None)),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="outputs",
+                                            value=self.sync(ast3.Constant(value=None)),
+                                        )
+                                    ),
+                                    self.sync(ast3.keyword(arg="action", value=node.semstr.gen.py_ast[0])),  # type: ignore
                                 ],
                             )
                         )

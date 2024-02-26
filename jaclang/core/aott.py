@@ -1,8 +1,12 @@
-from typing import Any
+"""
+AOTT: Automated Operational Type Transformation.
+This has all the necessary functions to perform the AOTT operations.
+"""
 
 prompt_template = """
 [System Prompt]
-This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed. 
+This is an operation you must perform and return the output values. Neither, the methodology,
+extra sentences nor the code are not needed.
 
 [Information]
 {information_str}
@@ -29,8 +33,7 @@ Reason and return the output result(s) only, adhering to the provided Type in th
 [Output] <Result>
 """
 
-without_reason_suffix = """
-Generate and return the output result(s) only, adhering to the provided Type in the following format
+without_reason_suffix = """Generate and return the output result(s) only, adhering to the provided Type in the following format
 
 [Output] <result>
 """
@@ -44,6 +47,9 @@ def aott_raise(
     action: str,
     reason: bool,
 ) -> str:
+    """
+    AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in).
+    """
     return prompt_template.format(
         information_str=information_str,
         input_types_n_information_str=input_types_n_information_str,
@@ -53,5 +59,9 @@ def aott_raise(
         reason_suffix=with_reason_suffix if reason else without_reason_suffix,
     )
 
-def aott_lower(meaning_out:str, output_type_info: tuple) -> Any:
+
+def aott_lower(meaning_out: str, output_type_info: tuple):
+    """
+    AOTT Lower uses the meaning out provided by the language model and return the result in the desired type.
+    """
     return meaning_out
