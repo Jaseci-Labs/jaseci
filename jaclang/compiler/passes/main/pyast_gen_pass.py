@@ -818,19 +818,33 @@ class PyastGenPass(Pass):
                                 ),
                                 args=[],
                                 keywords=[
-                                    self.sync(ast3.keyword(arg="model", value=None)),
+                                    self.sync(ast3.keyword(arg="model", value=self.sync(
+                                        ast3.Constant(value=None)
+                                    ))),
                                     self.sync(
-                                        ast3.keyword(arg="model_params", value=None)
+                                        ast3.keyword(arg="model_params", value=self.sync(
+                                        ast3.Dict(keys=[], values=[])
+                                    ))
                                     ),
                                     self.sync(
-                                        ast3.keyword(arg="incl_info", value=None)
+                                        ast3.keyword(arg="incl_info", value=self.sync(
+                                        ast3.Constant(value=None)
+                                    ))
                                     ),
                                     self.sync(
-                                        ast3.keyword(arg="excl_info", value=None)
+                                        ast3.keyword(arg="excl_info", value=self.sync(
+                                        ast3.Constant(value=None)
+                                    ))
                                     ),
-                                    self.sync(ast3.keyword(arg="inputs", value=None)),
-                                    self.sync(ast3.keyword(arg="outputs", value=None)),
-                                    self.sync(ast3.keyword(arg="action", value=None)),
+                                    self.sync(ast3.keyword(arg="inputs", value=self.sync(
+                                        ast3.Constant(value=None)
+                                    ))),
+                                    self.sync(ast3.keyword(arg="outputs", value=self.sync(
+                                        ast3.Constant(value=None)
+                                    ))),
+                                    self.sync(ast3.keyword(arg="action", value=self.sync(
+                                        ast3.Constant(value="Apple")
+                                    ))),
                                 ],
                             )
                         )

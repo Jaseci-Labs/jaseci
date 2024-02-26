@@ -1,3 +1,5 @@
+from typing import Any
+
 prompt_template = """
 [System Prompt]
 This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed. 
@@ -51,5 +53,5 @@ def aott_raise(
         reason_suffix=with_reason_suffix if reason else without_reason_suffix,
     )
 
-def aott_lower(meaning_out, output_type_info):
-    return NotImplementedError
+def aott_lower(meaning_out:str, output_type_info: tuple) -> Any:
+    return meaning_out
