@@ -385,7 +385,7 @@ There are mainly five different level object models that needs to be programmed.
 
 ```python
 obj Spritesheet {
-    can <init>(file: str);
+    can init(file: str);
     can get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
 }
 

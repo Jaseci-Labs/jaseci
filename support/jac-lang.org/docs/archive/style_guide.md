@@ -37,12 +37,12 @@
    - **Explanation**: Object and method definitions should be clear with consistent indentation. Use braces to define the scope of objects and methods.
    - **Before**:
      ```jac
-     obj Game{can <init>(attempts:int){...}}
+     obj Game{can init(attempts:int){...}}
      ```
    - **After**:
      ```jac
      obj Game {
-         can <init>(attempts: int) {
+         can init(attempts: int) {
              ...
          }
      }
@@ -52,12 +52,12 @@
    - **Explanation**: Consistent spacing and indentation are crucial for readability. Use spaces around operators and after commas.
    - **Before**:
      ```jac
-     obj Game{can <init>(attempts:int){<self>.attempts=attempts;}}
+     obj Game{can init(attempts:int){<self>.attempts=attempts;}}
      ```
    - **After**:
      ```jac
      obj Game {
-         can <init>(attempts: int) {
+         can init(attempts: int) {
              <self>.attempts = attempts;
          }
      }

@@ -14,7 +14,7 @@ include:jac map;
 Object for impoting sprite character images.
 """
 obj Spritesheet {
-    can <init>(file: str) {
+    can init(file: str) {
         <self>.sheet = pygame.image.load(file).convert();
     }
 
@@ -40,11 +40,11 @@ obj Player:pygame.sprite.Sprite:{
         animation_loop:int = 1;
 
 
-    can <init>(game: None, x: int, y: int){
+    can init(game: None, x: int, y: int){
         <self>.game = game;
         <self>._layer = PLAYER_LAYER;
         <self>.groups = <self>.game.all_sprites;
-        pygame.sprite.Sprite.<init>(<self>,<self>.groups);
+        pygame.sprite.Sprite.init(<self>,<self>.groups);
 
         <self>.x = x * TILESIZE;
         <self>.y = y * TILESIZE;
@@ -220,7 +220,7 @@ obj Enemy:pygame.sprite.Sprite:{
         animation_loop:int = 0,
         movement_loop:int = 0;
 
-    can <init>(game: None, x: int, y:int){
+    can init(game: None, x: int, y:int){
         <self>.game = game;
         <self>.groups = (<self>.game.all_sprites, <self>.game.enemies);
         pygame.sprite.Sprite.__init__(<self>, <self>.groups);
@@ -354,10 +354,10 @@ obj Block:pygame.sprite.Sprite:{
         width:int = TILESIZE,
         height:int = TILESIZE;
 
-    can <init>(game: None, x: int, y: int){
+    can init(game: None, x: int, y: int){
         <self>.game = game;
         <self>.groups = (<self>.game.all_sprites, <self>.game.blocks);
-        pygame.sprite.Sprite.<init>(<self>,<self>.groups);
+        pygame.sprite.Sprite.init(<self>,<self>.groups);
 
         <self>.x = x * TILESIZE;
         <self>.y = y * TILESIZE;
@@ -380,10 +380,10 @@ obj Ground:pygame.sprite.Sprite:{
         width:int = TILESIZE,
         height:int = TILESIZE;
 
-    can <init>(game: None, x: int, y: int){
+    can init(game: None, x: int, y: int){
         <self>.game = game;
         <self>.groups = <self>.game.all_sprites;
-        pygame.sprite.Sprite.<init>(<self>, <self>.groups);
+        pygame.sprite.Sprite.init(<self>, <self>.groups);
 
         <self>.x = x * TILESIZE;
         <self>.y = y * TILESIZE;
@@ -404,7 +404,7 @@ Object class for buttons used in the game (Start, Restart)
 """
 obj Button{
 
-    can <init>(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int){
+    can init(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int){
         <self>.font = pygame.font.Font(GENERAL_FONT, fontsize);
         <self>.content = content;
 
@@ -452,11 +452,11 @@ obj Attack:pygame.sprite.Sprite:{
         height:int = TILESIZE,
         animation_loop:int = 0;
 
-    can <init>(game: None, x:int, y:int){
+    can init(game: None, x:int, y:int){
         <self>.game = game;
 
         <self>.groups = (<self>.game.all_sprites, <self>.game.attacks);
-        pygame.sprite.Sprite.<init>(<self>, <self>.groups);
+        pygame.sprite.Sprite.init(<self>, <self>.groups);
 
         <self>.x = x;
         <self>.y = y;
