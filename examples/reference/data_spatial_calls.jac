@@ -9,7 +9,7 @@ node node_1 {
 }
 
 :node:node_1:can:func_1 {
-    print("visiting ", <s>);
+    print("visiting ", self);
     visit [-->];
 }
 
@@ -22,6 +22,6 @@ node node_1 {
 }
 
 with entry {
-    <r> spawn :> Creator;
-    <r> spawn |> Creator;
+    root spawn :> Creator;
+    root spawn |> Creator;
 }

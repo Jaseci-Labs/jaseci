@@ -25,7 +25,7 @@ edge connector {
 :node:node_a:can:make_something {
     i = 0;
     while i < 5 {
-        print(f"wlecome to {<s>}");
+        print(f"wlecome to {self}");
         i+=1;
     }
 }

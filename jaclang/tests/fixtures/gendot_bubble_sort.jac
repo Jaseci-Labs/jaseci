@@ -47,7 +47,7 @@ walker walker3 {
 }
 
 :walker:walker3:can:adjust {
-    <h> spawn walker4();
+    here spawn walker4();
 }
 
 walker walker4 {
@@ -70,8 +70,8 @@ walker walker4 {
 }
 
 with entry {
-    <r> spawn walker1();
-    <r> spawn walker2();
-    <r> spawn walker3();
-    print(<r>._jac_.gen_dot());
+    root spawn walker1();
+    root spawn walker2();
+    root spawn walker3();
+    print(root._jac_.gen_dot());
 }

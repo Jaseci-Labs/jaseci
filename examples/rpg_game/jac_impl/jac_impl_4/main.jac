@@ -27,7 +27,7 @@ obj Game {
         go_background: pygame.surface.Surface = pygame.image.load('../img/gameover.png'),
         GameMap: Map = Map();
 
-    can <post_init> {
+    can postinit {
         pygame.init();
         self.font: pygame.font.Font=pygame.font.Font(GENERAL_FONT, 32);
     }

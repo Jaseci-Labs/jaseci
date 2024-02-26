@@ -17,7 +17,7 @@ node Product {
 }
 
 :node:Product:can:make -> str {
-    print(f"Hi, I am {<s>} returning a String");
+    print(f"Hi, I am {self} returning a String");
     visit [-->];
 }
 

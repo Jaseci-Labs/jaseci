@@ -1,7 +1,7 @@
 obj SomeObj {
-    has a: int = 5, b: int by <pi>;
+    has a: int = 5, b: int by postinit;
 
-    can <pi> {
+    can postinit {
         self.b = self.a * 3;
     }
 }

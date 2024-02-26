@@ -95,7 +95,7 @@ obj WalkerAnchor :ObjectAnchor: {
 obj Root :AbsRootHook: {
     has _jac_: NodeAnchor | None = None;
 
-    can <pi> {
+    can postinit {
         self._jac_ = NodeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
@@ -103,7 +103,7 @@ obj Root :AbsRootHook: {
 obj GenericEdge :ArchitypeProtocol: {
     has _jac_: EdgeAnchor | None = None;
 
-    can <pi> {
+    can postinit {
         self._jac_ = EdgeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
@@ -112,7 +112,7 @@ obj Master {
     has _jac_: ElementAnchor | None = None;
     has root_node: Root = Root(Root);
 
-    can <pi> {
+    can postinit {
         self._jac_ = ElementAnchor(self);
     }
 }

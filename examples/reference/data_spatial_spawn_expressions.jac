@@ -17,7 +17,7 @@ node node_a {
 :node:node_a:can:add {
     self.x = 550;
     self.y = 450;
-    print(int(<s>.x) + int(<s>.y));
+    print(int(self.x) + int(self.y));
 }
 
 with entry {

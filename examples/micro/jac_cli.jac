@@ -51,14 +51,14 @@ with entry {
 
 :obj:Interface:can:register
 (func: callable) -> callable {
-    <s>.functions.append(func);
+    self.functions.append(func);
     return func;
 }
 
 :obj:Interface:can:create_parser() -> ArgumentParser {
     parser = ArgumentParser();
     parser.add_argument("base", choices=[f.__name__  for f in functions], help="The function to run");
-    for func in <s>.functions {
+    for func in self.functions {
         sig = inspect.signature(func);
         for (name, param) in sig.parameters.items() {
             kwargs = {};
@@ -74,9 +74,9 @@ with entry {
 }
 
 :obj:Interface:can:run_from_cli {
-    parser = <s>.create_parser();
+    parser = self.create_parser();
     args = parser.parse_args();
-    for f in <s>.functions {
+    for f in self.functions {
         if f.__name__ == args.base {
             func = f;
             break;
@@ -92,17 +92,17 @@ with entry {
 
 :obj:ShellCmd:can:init
 (registry: Interface, *args: list, **kwargs: dict) {
-    <s>.cmd.Cmd.__init__(*args, **kwargs);
-    <s>.reg = registry;
+    self.cmd.Cmd.__init__(*args, **kwargs);
+    self.reg = registry;
 }
 
 :obj:ShellCmd:can:default
 (line: str) {
     args = line.split();
-    parser = <s>.reg.create_parser();
+    parser = self.reg.create_parser();
     try  {
         parsed_args = parser.parse_args(args);
-        for f in <s>.reg.functions {
+        for f in self.reg.functions {
             if f.__name__ == parsed_args.base {
                 func = f;
                 break;

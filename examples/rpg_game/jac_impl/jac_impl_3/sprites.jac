@@ -34,7 +34,7 @@ obj Player :pygame.sprite.Sprite: {
         facing: str = 'down',
         animation_loop: float = 1;
 
-    can <post_init>;
+    can postinit;
     can update;
     can movement;
     can collide_enemy;
@@ -57,7 +57,7 @@ obj Enemy :pygame.sprite.Sprite: {
         animation_loop: float = 0,
         movement_loop: int = 0;
 
-    can <post_init>;
+    can postinit;
     can update;
     can movement;
     can animate;
@@ -75,7 +75,7 @@ obj Block :pygame.sprite.Sprite: {
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can <post_init>;
+    can postinit;
 }
 
 """
@@ -89,7 +89,7 @@ obj Ground :pygame.sprite.Sprite: {
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can <post_init>;
+    can postinit;
 }
 
 """"
@@ -104,7 +104,7 @@ obj Attack :pygame.sprite.Sprite: {
         height: int = TILESIZE,
         animation_loop: float = 0;
 
-    can <post_init>;
+    can postinit;
     can update;
     can collide;
     can animate;
@@ -123,7 +123,7 @@ obj Button {
         content: str,
         fontsize: int;
 
-    can <post_init>;
+    can postinit;
     can is_pressed(pos: tuple, pressed: tuple) -> bool;
 }
 
@@ -140,7 +140,7 @@ obj Button {
     return sprite;
 }
 
-:obj:Player:can:<post_init> {
+:obj:Player:can:postinit {
     self._layer = PLAYER_LAYER;
     self._groups = self.game.all_sprites;
     pygame.sprite.Sprite.init(self, self._groups);
@@ -298,7 +298,7 @@ obj Button {
     }
 }
 
-:obj:Enemy:can:<post_init> {
+:obj:Enemy:can:postinit {
     self._groups = (self.game.all_sprites, self.game.enemies);
     pygame.sprite.Sprite.__init__(self, self._groups);
     self.x*=TILESIZE;
@@ -418,7 +418,7 @@ obj Button {
     }
 }
 
-:obj:Block:can:<post_init> {
+:obj:Block:can:postinit {
     self._groups = (self.game.all_sprites, self.game.blocks);
     pygame.sprite.Sprite.init(self, self._groups);
     self.x*=TILESIZE;
@@ -429,7 +429,7 @@ obj Button {
     self.rect.y = self.y;
 }
 
-:obj:Ground:can:<post_init>
+:obj:Ground:can:postinit
 (game: None, x: int, y: int) {
     self._groups = self.game.all_sprites;
     pygame.sprite.Sprite.init(self, self._groups);
@@ -441,7 +441,7 @@ obj Button {
     self.rect.y = self.y;
 }
 
-:obj:Attack:can:<post_init> {
+:obj:Attack:can:postinit {
     self._groups = (self.game.all_sprites, self.game.attacks);
     pygame.sprite.Sprite.init(self, self._groups);
     self.image = self.game.attack_spritesheet.get_sprite(0, 0, self.width, self.height);
@@ -498,7 +498,7 @@ obj Button {
     }
 }
 
-:obj:Button:can:<post_init> {
+:obj:Button:can:postinit {
     self.font = pygame.font.Font(GENERAL_FONT, self.fontsize);
     self.image = pygame.Surface((self.width, self.height));
     self.image.fill(self.bg);

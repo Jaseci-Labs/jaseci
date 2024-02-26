@@ -50,7 +50,7 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_WITH KW_INIT)?
+typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_BY KW_POST_INIT)?
 type_tag: COLON expression
 
 // Enumerations

@@ -134,11 +134,11 @@ obj Game {
 
 Here the fields of this class is defined using has keyword. This symbolyses that the specified 'obj' 'has' the said variable.
 
-In Jaclang, an **init** function is not required as the field variables and input parameters(if any) will auto generate and execute an initialization function in the background. Object parameters are defined variables under 'has' prefix. But in order to initialize the pygame.init() we need a function that runs just after running init which is <post_init>.
+In Jaclang, an **init** function is not required as the field variables and input parameters(if any) will auto generate and execute an initialization function in the background. Object parameters are defined variables under 'has' prefix. But in order to initialize the pygame.init() we need a function that runs just after running init which is postinit.
 
 ```python
     ...
-    can <post_init> {
+    can postinit {
         pygame.init();
         self.font: pygame.font.Font=pygame.font.Font(GENERAL_FONT, 32);
     }
@@ -404,7 +404,7 @@ obj Player :pygame.sprite.Sprite: {
         facing: str = 'down',
         animation_loop: float = 1;
 
-    can <post_init>;
+    can postinit;
     can update;
     can movement;
     can collide_enemy;
@@ -427,7 +427,7 @@ obj Enemy :pygame.sprite.Sprite: {
         animation_loop: float = 0,
         movement_loop: int = 0;
 
-    can <post_init>;
+    can postinit;
     can update;
     can movement;
     can animate;
@@ -445,7 +445,7 @@ obj Block :pygame.sprite.Sprite: {
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can <post_init>;
+    can postinit;
 }
 
 """
@@ -459,7 +459,7 @@ obj Ground :pygame.sprite.Sprite: {
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can <post_init>;
+    can postinit;
 }
 
 """"
@@ -474,7 +474,7 @@ obj Attack :pygame.sprite.Sprite: {
         height: int = TILESIZE,
         animation_loop: float = 0;
 
-    can <post_init>;
+    can postinit;
     can update;
     can collide;
     can animate;
@@ -492,7 +492,7 @@ obj Button {
         bg: tuple,
         content: str,
         fontsize: int;
-    can <post_init>;
+    can postinit;
     can is_pressed(pos: tuple, pressed: tuple) -> bool;
 }
 ```
