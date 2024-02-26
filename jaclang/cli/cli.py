@@ -67,7 +67,10 @@ def run(filename: str, main: bool = True, cache: bool = True) -> None:
     mod = mod[:-4]
     if filename.endswith(".jac"):
         jac_import(
-            target=mod, base_path=base, override_name="__main__" if main else None
+            target=mod,
+            base_path=base,
+            cachable=cache,
+            override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
