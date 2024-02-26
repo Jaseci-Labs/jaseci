@@ -2066,7 +2066,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)(here|self|init|super|root)",
+			"match": "(?x)(here|self|init|postinit|super|root)",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"

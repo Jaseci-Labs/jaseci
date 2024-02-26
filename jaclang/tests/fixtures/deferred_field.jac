@@ -1,5 +1,6 @@
 obj SomeObj {
-    has a: int = 5, b: int by postinit;
+    has a: int = 5,
+        b: int by postinit;
 
     can postinit {
         self.b = self.a * 3;
