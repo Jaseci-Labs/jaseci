@@ -20,16 +20,17 @@ $ pip install jaclang
 $ pip install pygame
 ```
 
-## Jaclang Implementation 1 - [_py to jac_](./jac_impl/jac_impl_1)
+## Explantion on the Structure of the Game
 
-This is the first version of the Jaclang implementation of the RPG. This source code represents an exact conversion of python to jaclang.
+The game is esentially a playable character on a map which the ability of attacking any anemy who are nearby. Enemies are placed accoding to the map configuration and when all the enemies are killed the game is won.
 
 ### main.py
 
-This file contains the main game code which describes the functionality of the game.
+This file contains the main game code which describes the functionality of the game. The game runtime logic structure is written in this code section as well as the intiation of the game instance. The sprites.py, config.py and map.py will be imported in order to propoerly function the game.
 
 ### sprites.py
 
+The game has been developed utilizing the pygame library. Each and every game object is of custom class 'sprite' included within the pygame library.
 All in game sprite models are created within this code.
 
 ### config.py
@@ -44,68 +45,40 @@ Contains the map of the game which can be changed as required.
 - E : Enemy Spawn Point
 - P : Player Spawn Point
 
-## Jaclang Implementation 1 -
+## Imports: _Cross-language modules?_
 
-### main.py
+When programming with **Python** or any other programming language, modules or libraries have a key importace as they extend the capabilities of the base language using pre programmed classes and methods.
 
-This file contains the main game code which describes the functionality of the game.
+In **Jaclang** additionally to the libraries written specifically for the language, any python module can also be imported when programming with Jaclang.
 
-### sprites.py
+```python
+# Importing Python modules
+import:py pygame;
+import:py sys;
+import:py from math, sqrt;
 
-All in game sprite models are created within this code.
+# Including Jac codebase
+include:jac sprites;
+include:jac config;
+include:jac map;
+```
 
-### config.py
+## Variable Definition
 
-Configuration parameters such as windowsize. layer order is stored inthis file.
+When defining variables they should be coupled with a prefix which describes the environment the variable resides in. Additionally the type annotation.
 
-### map.py
+In the below code snippet global variables are defined using the _glob_ prefix  and their type annotations.
 
-Contains the map of the game which can be changed as required.
+```python
+glob WIN_WIDTH:int = 640;
+glob WIN_HEIGHT:int = 480;
+glob TILESIZE:int = 32;
+glob FPS:int = 60;
+...
+glob RED:tuple = (255, 0, 0);
+glob BLACK:tuple = (0, 0, 0);
+glob BLUE:tuple = (0, 0, 255);
+```
 
-- B : Blocks (Walls)
-- E : Enemy Spawn Point
-- P : Player Spawn Point
+## Classes and Objects
 
-## Jaclang Implementation 3 - _Seperating Decleration & Implementation_
-
-### main.py
-
-This file contains the main game code which describes the functionality of the game.
-
-### sprites.py
-
-All in game sprite models are created within this code.
-
-### config.py
-
-Configuration parameters such as windowsize. layer order is stored inthis file.
-
-### map.py
-
-Contains the map of the game which can be changed as required.
-
-- B : Blocks (Walls)
-- E : Enemy Spawn Point
-- P : Player Spawn Point
-
-## Jaclang Implementation 4 - _Data Spatial Programming_
-
-### main.py
-
-This file contains the main game code which describes the functionality of the game.
-
-### sprites.py
-
-All in game sprite models are created within this code.
-
-### config.py
-
-Configuration parameters such as windowsize. layer order is stored inthis file.
-
-### map.py
-
-Contains the map of the game which can be changed as required.
-
-- B : Blocks (Walls)
-- E : Enemy Spawn Point
-- P : Player Spawn Point
