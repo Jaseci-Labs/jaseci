@@ -1,6 +1,6 @@
 obj model {
-    can __infer__(**kwargs: dict) {
-        return(kwargs);
+    can __infer__(meaning_in: str, **kwargs: dict) {
+        return meaning_in;
     }
 }
 glob llm = model();

@@ -818,9 +818,7 @@ class PyastGenPass(Pass):
                                 ),
                                 args=[],
                                 keywords=[
-                                    self.sync(ast3.keyword(arg="model", value=self.sync(
-                                        ast3.Constant(value=None)
-                                    ))),
+                                    self.sync(ast3.keyword(arg="model", value=node.body.target.gen.py_ast[0])),
                                     self.sync(
                                         ast3.keyword(arg="model_params", value=self.sync(
                                         ast3.Dict(keys=[], values=[])
