@@ -148,6 +148,7 @@ In Jaclang, an **init** function is not required as the field variables and inpu
 After initializing the functions/methods of the game class can be defined. Another cutting edge feature of Jaclang is that it is possible to separate the location of an ability(method) definition and its' implementation which will become useful to improve the readability of programs.
 
 ```python
+    ...
     can createTilemap; # Generate the map according to the tilemap variable in map.jac
     can new; # Start a new game level
     can events;
