@@ -840,11 +840,11 @@ class PyastGenPass(Pass):
                                     self.sync(ast3.keyword(arg="outputs", value=self.sync(
                                         ast3.Constant(value=None)
                                     ))),
-                                    self.sync(ast3.keyword(arg="action", value=node.semstr.gen.py_ast[0])),
+                                    self.sync(ast3.keyword(arg="action", value=node.semstr.gen.py_ast[0])), #type: ignore
                                 ],
                             )
                         )
-                    )git
+                    )
                 )
             ]
             if isinstance(node.body, ast.FuncCall)

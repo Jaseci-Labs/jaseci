@@ -5,8 +5,9 @@ obj model {
 }
 glob llm = model();
 
-can 'Function to print something'
-something(c: str) with llm(a="Hello", b="World");
+can 'Summarize the Life of the Individual'
+summarize(name: str) with llm(reason=True);
+
 with entry {
-    print(something('test'));
+    print(summarize('Albert Einstein'));
 }
