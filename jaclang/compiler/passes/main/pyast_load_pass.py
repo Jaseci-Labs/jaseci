@@ -113,7 +113,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
+        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt, ast.TupleVal))]
+        
         if len(valid) != len(body):
             raise self.ice("Length mismatch in function body")
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
@@ -274,7 +275,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if value and not isinstance(value, ast.Expr):
             raise self.ice("Invalid return value")
         else:
-            return None
+            return value
 
     def proc_delete(self, node: py_ast.Delete) -> ast.DeleteStmt:
         """Process python node.
@@ -1136,7 +1137,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         value = self.convert(node.value)
         slice = self.convert(node.slice)
-        ast.AtomTrailer(
+        return ast.AtomTrailer(
             target=value,
             right=slice,
             is_attr=False,
@@ -1150,9 +1151,22 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_try_star(self, node: py_ast.TryStar) -> None:
         """Process python node."""
 
-    def proc_tuple(self, node: py_ast.Tuple) -> None:
-        """Process python node."""
-
+    def proc_tuple(self, node: py_ast.Tuple) -> ast.TupleVal:
+        """Process python node.
+        
+        class Tuple(expr):
+            elts: list[expr]
+            ctx: expr_context
+        """
+        elts = [self.convert(elt) for elt in node.elts]
+        valid = [i for i in elts if isinstance(i,(ast.Expr, ast.KWPair))]
+        if len(elts) != len(valid):
+            raise self.ice("Length mismatch in tuple elts")
+        valid_elts = ast.SubNodeList[ast.Expr | ast.KWPair](items=valid, kid=valid)
+        return ast.TupleVal(
+            values=valid_elts,
+            kid=elts
+        )
     def proc_yield(self, node: py_ast.Yield) -> None:
         """Process python node."""
 
