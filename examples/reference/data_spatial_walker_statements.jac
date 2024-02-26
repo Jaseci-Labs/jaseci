@@ -7,5 +7,5 @@ walker Visitor {
 }
 
 with entry {
-    <root> spawn Visitor();
+    root spawn Visitor();
 }

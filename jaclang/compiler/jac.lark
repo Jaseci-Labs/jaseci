@@ -446,6 +446,7 @@ named_ref: special_ref
 type_ref: TYPE_OP (named_ref | builtin_type)
 
 special_ref: KW_INIT
+            | KW_POST_INIT
             | KW_ROOT
             | KW_SUPER
             | KW_SELF
@@ -548,6 +549,7 @@ KW_CASE: "case"
 KW_HERE: "here"
 KW_SELF: "self"
 KW_INIT: "init"
+KW_POST_INIT: "postinit"
 KW_SUPER: "super"
 KW_ROOT: "root"
 

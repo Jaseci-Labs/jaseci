@@ -26,20 +26,20 @@ obj GuessTheNumberGame :Game: {
         while self.attempts > 0 {
             guess = input("Guess a number between 1 and 100: ");
             if guess.isdigit() {
-                <self>.process_guess(int(guess));
+                self.process_guess(int(guess));
             } else {
                 print("That's not a valid number! Try again.");
             }
         }
-        if not <self>.won {
+        if not self.won {
             print("Sorry, you didn't guess the number. Better luck next time!");
         }
     }
 
     can process_guess(guess: int) {
-        if guess > <self>.correct_number {
+        if guess > self.correct_number {
             print("Too high!");
-        } elif guess < <self>.correct_number {
+        } elif guess < self.correct_number {
             print("Too low!");
         } else {
             print("Congratulations! You guessed correctly.");
@@ -47,7 +47,7 @@ obj GuessTheNumberGame :Game: {
             self.won = True;
         }
         self.attempts-=1;
-        print(f"You have {<self>.attempts} attempts left.");
+        print(f"You have {self.attempts} attempts left.");
     }
 }
 # Run the game

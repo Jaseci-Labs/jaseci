@@ -1,5 +1,5 @@
 walker Creator {
-    can func2 with `<root> entry;
+    can func2 with `root entry;
 }
 
 node node_1 {
@@ -14,7 +14,7 @@ node node_1 {
 }
 
 :walker:Creator:can:func2 {
-    end = <here>;
+    end = here;
     for i=0 to i<5 by i+=1  {
         end ++> (end := node_1(val=i + 1));
     }

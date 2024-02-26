@@ -1,5 +1,5 @@
 walker Producer {
-    can produce with `<root> entry;
+    can produce with `root entry;
 }
 
 node Product {
@@ -9,7 +9,7 @@ node Product {
 }
 
 :walker:Producer:can:produce {
-    end = <here>;
+    end = here;
     for i=0 to i<=2 by i+=1  {
         end ++> (end := Product(number=i + 1));
     }
@@ -22,5 +22,5 @@ node Product {
 }
 
 with entry {
-    <root> spawn Producer();
+    root spawn Producer();
 }

@@ -3,9 +3,9 @@
 obj MyObj {
     has:protect a: int;
     can:priv init(a: int) -> None {
-        <h>.a = a;
+        here.a = a;
     }
     can:pub set_a(val: int) -> None {
-        <h>.a = val;;;;;
+        here.a = val;;;;;
     }
 }
