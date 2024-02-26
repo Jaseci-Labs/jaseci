@@ -423,7 +423,6 @@ class JacFeatureDefaults:
             action,
             reason,
         )
-        print(meaning_in)
         meaning_out = model.__infer__(meaning_in, **model_params)
         output_type_info = (None, None)  # TODO: We have to generate this
         return aott_lower(meaning_out, output_type_info)

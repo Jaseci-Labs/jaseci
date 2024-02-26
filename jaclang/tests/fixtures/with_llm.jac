@@ -5,7 +5,8 @@ obj model {
 }
 glob llm = model();
 
-can something(c: str) with llm(a="Hello", b="World");
+can 'Function to print something'
+something(c: str) with llm(a="Hello", b="World");
 with entry {
     print(something('test'));
 }
