@@ -113,6 +113,7 @@ glob tilemap:List[str] = [
 ## Game Code: main.jac
 
 Here we are defining the game class which is the main body of the game.
+
 ```python
 obj Game {
     has screen: pygame.surface.Surface = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT)),
@@ -130,9 +131,11 @@ obj Game {
 
         ...
 ```
+
 Here the fields of this class is defined using has keyword. This symbolyses that the specified 'obj' 'has' the said variable.
 
 In Jaclang, an **init** function is not required as the field variables and input parameters(if any) will auto generate and execute an initialization function in the background. But in order to initialize the pygame.init() we need a function that runs just after running init which is <post_init>.
+
 ```python
     ...
     can <post_init> {
@@ -141,6 +144,7 @@ In Jaclang, an **init** function is not required as the field variables and inpu
     }
     ...
 ```
+
 After initializing the functions/methods of the game class can be defined. Another cutting edge feature of Jaclang is that it is possible to separate the location of an ability(method) definition and its' implementation which will become useful to improve the readability of programs.
 
 ```python
@@ -155,7 +159,10 @@ After initializing the functions/methods of the game class can be defined. Anoth
     can game_over; # Screen after level has been lost
 }
 ```
+
 Here, only the function names are defined which allows a cleaner body inside the object class.
+
+In python we use the main body of a .py file to code the runtime logic of the operation. In contrast, Jaclang uses **with** _entry_ {} syntax to enclose the runtime code within parenthesis.
 
 ```python
 with entry {
@@ -172,5 +179,30 @@ with entry {
     }
     pygame.quit();
     sys.exit();
+}
+```
+
+Having the objects & method definitions as well as the runtime logic readable with minimal clutter is beneficial to understand the functionality of the program without going through tedious code implementations.
+
+However, the implementation needs to be done somewhere. In Jaclang, this can be any of the included files which is a feature that is highly valuable to maintain a highly readable and developer friendly codebase.
+
+The implementation of the above game class can be shown below.
+
+```python
+:obj:Game:can:createTilemap {
+    for (i, row) in enumerate(tilemap) {
+        for (j, column) in enumerate(row) {
+            Ground(<self>, j, i);
+            if column == "B" {
+                Block(<self>, j, i);
+            }
+            if column == "E" {
+                Enemy(<self>, j, i);
+            }
+            if column == "P" {
+                <self>.player = Player(<self>, j, i);
+            }
+        }
+    }
 }
 ```
