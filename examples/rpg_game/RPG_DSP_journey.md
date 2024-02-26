@@ -383,4 +383,130 @@ There are mainly five different level object models that needs to be programmed.
 - Block : Obstacles
 - Attack : Sward slashes from the player
 
+```python
+obj Spritesheet {
+    can <init>(file: str);
+    can get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
+}
 
+"""
+Object for the player with type pygame.sprite.Sprite
+"""
+obj Player :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
+    has _layer: int = PLAYER_LAYER,
+        width: int = TILESIZE,
+        height: int = TILESIZE,
+        x_change: int = 0,
+        y_change: int = 0,
+        facing: str = 'down',
+        animation_loop: float = 1;
+
+    can <post_init>;
+    can update;
+    can movement;
+    can collide_enemy;
+    can animate;
+    can collide_blocks(direction: str);
+}
+
+"""
+Object for enemies with type pygame.sprite.Sprite
+"""
+obj Enemy :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
+    has _layer: int = ENEMY_LAYER,
+        width: inr = TILESIZE,
+        height: int = TILESIZE,
+        x_change: int = 0,
+        y_change: int = 0,
+        animation_loop: float = 0,
+        movement_loop: int = 0;
+
+    can <post_init>;
+    can update;
+    can movement;
+    can animate;
+    can collide_blocks(direction: str);
+}
+
+"""
+Object for blocks (Walls) with type pygame.sprite.Sprite
+"""
+obj Block :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
+    has _layer: int = BLOCK_LAYER,
+        width: int = TILESIZE,
+        height: int = TILESIZE;
+
+    can <post_init>;
+}
+
+"""
+Object for ground with type pygame.sprite.Sprite
+"""
+obj Ground :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
+    has _layer: int = GROUND_LAYER,
+        width: int = TILESIZE,
+        height: int = TILESIZE;
+
+    can <post_init>;
+}
+
+""""
+Object class for attacks by the player
+"""
+obj Attack :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
+    has _layer: int = ATTACK_LAYER,
+        width: int = TILESIZE,
+        height: int = TILESIZE,
+        animation_loop: float = 0;
+
+    can <post_init>;
+    can update;
+    can collide;
+    can animate;
+}
+
+"""
+Object class for buttons used in the game (Start, Restart)
+"""
+obj Button {
+    has x: int,
+        y: int,
+        width: int,
+        height: int,
+        fg: tuple,
+        bg: tuple,
+        content: str,
+        fontsize: int;
+    can <post_init>;
+    can is_pressed(pos: tuple, pressed: tuple) -> bool;
+}
+```
+
+The implementation of these objects can be found at <link>
+
+## Data Spatial Implementation
+
+Another game changing feature of Jaclang is that it can be programmed in a ''Data-spatial' architecture. This interesting programming paradigm is simply put, graph traversal based programming which has nodes that can have certain attributes and abilities that can be triggered by a walker that traverse the graph on edges.
+
+The point of programming in a data-spatial architecture can be explained using the RPG game itself. After a level has been won or lost the immediately previous game level data will be lost unless saved separately on a global variable.
+
+In a data-spatial implementation of the game architecture, after a level has been won it will create a new level node on the graph and when a game is lost it will go back on the graph and branch off to create a new instance of the game level, leaving all previous level data untouched.
+
+This ability is important when programming in the AI based new era. When integrating large language models into programming it may require previous data to generate something new or do a task. Having a graph based programming loop will enable the program to retrieve necessary information when needed. This is clearly depicted in the following graph.
+
+![DSP](https://drive.google.com/uc?id=15LW7dqCsVY9xmnLg0y-lNTvnCFwtKH6G)
