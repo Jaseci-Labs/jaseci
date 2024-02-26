@@ -841,7 +841,7 @@ class PyastGenPass(Pass):
                                         ast3.Constant(value=None)
                                     ))),
                                     self.sync(ast3.keyword(arg="action", value=self.sync(
-                                        ast3.Constant(value="Apple")
+                                        ast3.Constant(value=node.semstr.lit_value)
                                     ))),
                                 ],
                             )
