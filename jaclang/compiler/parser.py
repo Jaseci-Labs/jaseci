@@ -570,11 +570,12 @@ class JacParser(Pass):
         def special_ref(self, kid: list[ast.AstNode]) -> ast.SpecialVarRef:
             """Grammar rule.
 
-            special_ref: INIT_OP
-                        | ROOT_OP
-                        | SUPER_OP
-                        | SELF_OP
-                        | HERE_OP
+            special_ref: KW_INIT
+                        | KW_POST_INIT
+                        | KW_ROOT
+                        | KW_SUPER
+                        | KW_SELF
+                        | KW_HERE
             """
             if isinstance(kid[0], ast.Token):
                 return self.nu(
