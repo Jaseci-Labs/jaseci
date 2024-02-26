@@ -114,7 +114,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         body = [self.convert(i) for i in node.body]
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt, ast.TupleVal))]
-        
+
         if len(valid) != len(body):
             raise self.ice("Length mismatch in function body")
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
@@ -402,7 +402,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in for body")
-        
+
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
         orelse = [self.convert(i) for i in node.orelse]
         valid_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
@@ -412,7 +412,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             valid_orelse = ast.SubNodeList[ast.CodeBlockStmt](
                 items=valid_orelse, kid=orelse
             )
-        else: 
+        else:
             valid_orelse = None
 
         return ast.InForStmt(
@@ -421,7 +421,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             collection=iter,
             body=valid_body,
             else_body=valid_orelse,
-            kid=[target,iter,valid_body,valid_orelse] if orelse else [target,iter,valid_body],
+            kid=(
+                [target, iter, valid_body, valid_orelse]
+                if orelse
+                else [target, iter, valid_body]
+            ),
         )
 
     def proc_async_for(self, node: py_ast.AsyncFor) -> ast.InForStmt:
@@ -647,17 +651,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             values: list[expr]
         """
         op = self.convert(node.op)
-        values =[self.convert(value) for value in node.values]
+        values = [self.convert(value) for value in node.values]
         valid = [value for value in values if isinstance(value, ast.Expr)]
-        valid_values = ast.SubNodeList[ast.Expr](
-            items=valid, kid=valid
-        )
+        valid_values = ast.SubNodeList[ast.Expr](items=valid, kid=valid)
         print("okok")
-        return ast.BoolExpr(
-            op=op,
-            values=valid,
-            kid=[op,valid_values]
-        )
+        return ast.BoolExpr(op=op, values=valid, kid=[op, valid_values])
 
     def proc_break(self, node: py_ast.Break) -> None:
         """Process python node."""
@@ -676,19 +674,19 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         params_in: list[ast.Expr | ast.KWPair] = []
         args = [self.convert(arg) for arg in node.args]
         keywords = [self.convert(keyword) for keyword in node.keywords]
-        
+
         for i in args:
             if isinstance(i, ast.Expr):
                 params_in.append(i)
         for i in keywords:
             if isinstance(i, ast.KWPair):
                 params_in.append(i)
-        if len(params_in)!=0:
+        if len(params_in) != 0:
             params_in2: ast.SubNodeList = ast.SubNodeList[ast.Expr | ast.KWPair](
                 items=params_in, kid=params_in
             )
         else:
-            params_in2= None
+            params_in2 = None
         if isinstance(func, ast.Expr):
             return ast.FuncCall(
                 target=func,
@@ -834,7 +832,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
         """Process python node.
-        
+
         class IfExp(expr):
             test: expr
             body: expr
@@ -849,10 +847,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(orelse, ast.Expr)
         ):
             return ast.IfElseExpr(
-                value=body,
-                condition=test,
-                else_value=orelse,
-                kid=[body,test,orelse]
+                value=body, condition=test, else_value=orelse, kid=[body, test, orelse]
             )
         else:
             self.ice()
@@ -1106,7 +1101,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def proc_slice(self, node: py_ast.Slice) -> ast.IndexSlice:
         """Process python node.
-        
+
         class Slice(_Slice):
             lower: expr | None
             upper: expr | None
@@ -1117,11 +1112,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         upper = self.convert(node.upper) if node.upper else None
         step = self.convert(node.step) if node.step else None
         return ast.IndexSlice(
-            start=lower,
-            stop=upper,
-            step=step,
-            is_range=True,
-            kid=[lower,upper,step]
+            start=lower, stop=upper, step=step, is_range=True, kid=[lower, upper, step]
         )
 
     def proc_starred(self, node: py_ast.Starred) -> None:
@@ -1129,7 +1120,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def proc_subscript(self, node: py_ast.Subscript) -> None:
         """Process python node.
-        
+
         class Subscript(expr):
             value: expr
             slice: _Slice
@@ -1142,7 +1133,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             right=slice,
             is_attr=False,
             is_null_ok=False,
-            kid=[value,slice]
+            kid=[value, slice],
         )
 
     def proc_try(self, node: py_ast.Try) -> None:
@@ -1153,20 +1144,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def proc_tuple(self, node: py_ast.Tuple) -> ast.TupleVal:
         """Process python node.
-        
+
         class Tuple(expr):
             elts: list[expr]
             ctx: expr_context
         """
         elts = [self.convert(elt) for elt in node.elts]
-        valid = [i for i in elts if isinstance(i,(ast.Expr, ast.KWPair))]
+        valid = [i for i in elts if isinstance(i, (ast.Expr, ast.KWPair))]
         if len(elts) != len(valid):
             raise self.ice("Length mismatch in tuple elts")
         valid_elts = ast.SubNodeList[ast.Expr | ast.KWPair](items=valid, kid=valid)
-        return ast.TupleVal(
-            values=valid_elts,
-            kid=elts
-        )
+        return ast.TupleVal(values=valid_elts, kid=elts)
+
     def proc_yield(self, node: py_ast.Yield) -> None:
         """Process python node."""
 
@@ -1303,7 +1292,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 kid=[],
             )
             kwarg.add_kids_left([kwarg.unpack])
-        defaults = [self.convert(expr) for expr in node.defaults if type(expr)== None]
+        defaults = [self.convert(expr) for expr in node.defaults if type(expr) is None]
 
         params = [*args]
         if vararg:
