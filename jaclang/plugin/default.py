@@ -26,6 +26,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
+from jaclang.core.aott import aott_raise, aott_lower
 from jaclang.core.jacbuiltins import dotgen
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -394,6 +395,37 @@ class JacFeatureDefaults:
             return edge
 
         return builder
+
+    @staticmethod
+    @hookimpl
+    def with_llm(
+        model: Any,  # TODO: Need to change to the model type
+        model_params: dict[str, Any],
+        incl_info: tuple,
+        excl_info: tuple,
+        inputs: tuple,
+        outputs: tuple,
+        action: str,
+    ) -> Any:
+        """Jac's with_llm feature."""
+        reason = False
+        if "reason" in model_params:
+            reason = model_params.pop("reason")
+        input_types_n_information_str = ""  # TODO: We have to generate this
+        output_type_str = ""  # TODO: We have to generate this
+        output_type_info_str = ""  # TODO: We have to generate this
+        information_str = ""  # TODO: We have to generate this
+        meaning_in = aott_raise(
+            information_str,
+            input_types_n_information_str,
+            output_type_str,
+            output_type_info_str,
+            action,
+            reason,
+        )
+        meaning_out = model.__infer__(meaning_in, **model_params)
+        output_type_info = ""  # TODO: We have to generate this
+        return aott_lower(meaning_out, output_type_info)
 
 
 class JacBuiltin:

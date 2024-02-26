@@ -806,20 +806,32 @@ class PyastGenPass(Pass):
                             ast3.Call(
                                 func=self.sync(
                                     ast3.Attribute(
-                                        value=node.body.target.gen.py_ast[0],
-                                        attr="__infer__",
+                                        value=self.sync(
+                                            ast3.Name(
+                                                id=Con.JAC_FEATURE.value,
+                                                ctx=ast3.Load(),
+                                            )
+                                        ),
+                                        attr="with_llm",
                                         ctx=ast3.Load(),
                                     )
                                 ),
                                 args=[],
-                                keywords=(
-                                    [
-                                        param.gen.py_ast[0]
-                                        for param in node.body.params.items
-                                    ]
-                                    if node.body.params
-                                    else []
-                                ),  # TODO: Add the AOTT Raise and parse the meaning_in as an arg
+                                keywords=[
+                                    self.sync(ast3.keyword(arg="model", value=None)),
+                                    self.sync(
+                                        ast3.keyword(arg="model_params", value=None)
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(arg="incl_info", value=None)
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(arg="excl_info", value=None)
+                                    ),
+                                    self.sync(ast3.keyword(arg="inputs", value=None)),
+                                    self.sync(ast3.keyword(arg="outputs", value=None)),
+                                    self.sync(ast3.keyword(arg="action", value=None)),
+                                ],
                             )
                         )
                     )
