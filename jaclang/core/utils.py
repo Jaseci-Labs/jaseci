@@ -30,7 +30,7 @@ def collect_node_connections(
 def traverse_graph(
     node: NodeArchitype,
     cur_depth: int,
-    depth: float,
+    depth: int,
     edge_type: list[str],
     traverse: bool,
     connections: list,
@@ -74,7 +74,10 @@ def traverse_graph(
                 other_nd
                 and new_con not in connections
                 and (
-                    min(node_depths[node], node_depths[other_nd]) + 1 <= depth
+                    (
+                        depth < 0
+                        or min(node_depths[node], node_depths[other_nd]) + 1 <= depth
+                    )
                     and node_limit > len(visited_nodes)
                     and edge_limit > len(connections)
                 )

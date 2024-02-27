@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 def dotgen(
     node: Optional[NodeArchitype] = None,
-    depth: Optional[float] = None,
+    depth: Optional[int] = None,
     traverse: Optional[bool] = None,
     edge_type: Optional[list[str]] = None,
     bfs: Optional[bool] = None,
@@ -24,7 +24,7 @@ def dotgen(
     from jaclang.plugin.feature import pm
 
     node = node if node is not None else root
-    depth = depth if depth is not None else float("inf")
+    depth = depth if depth is not None else -1
     traverse = traverse if traverse is not None else False
     bfs = bfs if bfs is not None else True
     edge_limit = edge_limit if edge_limit is not None else 512

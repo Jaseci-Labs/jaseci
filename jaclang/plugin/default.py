@@ -393,7 +393,7 @@ class JacBuiltin:
     @hookimpl
     def dotgen(
         node: NodeArchitype,
-        depth: float,
+        depth: int,
         traverse: bool,
         edge_type: list[str],
         bfs: bool,
