@@ -308,6 +308,16 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
 
+    def test_gen_dot_builtin(self) -> None:
+        """Test the dot gen of nodes and edges as a builtin."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("True"), 14)
+
     def test_with_contexts(self) -> None:
         """Test walking through edges."""
         construct.root._jac_.edges.clear()

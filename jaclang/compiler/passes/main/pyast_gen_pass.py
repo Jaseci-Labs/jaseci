@@ -138,6 +138,16 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
+        self.preamble.append(
+            self.sync(
+                ast3.ImportFrom(
+                    module="jaclang.plugin.builtin",
+                    names=[self.sync(ast3.alias(name="*", asname=None))],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            )
+        )
         self.already_added.append("jac_feature")
 
     def needs_dataclass(self) -> None:

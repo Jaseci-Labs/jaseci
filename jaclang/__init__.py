@@ -5,7 +5,11 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor"))
 
-from jaclang.plugin.default import JacCmdDefaults, JacFeatureDefaults  # noqa: E402
+from jaclang.plugin.default import (  # noqa: E402
+    JacBuiltin,
+    JacCmdDefaults,
+    JacFeatureDefaults,
+)
 from jaclang.plugin.feature import JacFeature, pm  # noqa: E402
 from jaclang.vendor import lark  # noqa: E402
 from jaclang.vendor import mypy  # noqa: E402
@@ -20,5 +24,6 @@ __all__ = [
     "pluggy",
 ]
 pm.register(JacFeatureDefaults)
+pm.register(JacBuiltin)
 pm.register(JacCmdDefaults)
 pm.load_setuptools_entrypoints("jac")

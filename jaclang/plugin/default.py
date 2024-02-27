@@ -9,7 +9,7 @@ from functools import wraps
 from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.constant import EdgeDir
+from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -26,7 +26,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.jacbuiltins import dotgen
+from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
 
@@ -391,9 +391,84 @@ class JacBuiltin:
 
     @staticmethod
     @hookimpl
-    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
-        """Print the dot graph."""
-        return dotgen(node, radius)
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: list[str],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        edge_type = edge_type if edge_type else []
+        visited_nodes: list[NodeArchitype] = []
+        node_depths: dict[NodeArchitype, int] = {node: 0}
+        queue: list = [[node, 0]]
+        connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
+
+        def dfs(node: NodeArchitype, cur_depth: int) -> None:
+            """Depth first search."""
+            if node not in visited_nodes:
+                visited_nodes.append(node)
+                traverse_graph(
+                    node,
+                    cur_depth,
+                    depth,
+                    edge_type,
+                    traverse,
+                    connections,
+                    node_depths,
+                    visited_nodes,
+                    queue,
+                    bfs,
+                    dfs,
+                    node_limit,
+                    edge_limit,
+                )
+
+        if bfs:
+            cur_depth = 0
+            while queue:
+                current_node, cur_depth = queue.pop(0)
+                if current_node not in visited_nodes:
+                    visited_nodes.append(current_node)
+                    traverse_graph(
+                        current_node,
+                        cur_depth,
+                        depth,
+                        edge_type,
+                        traverse,
+                        connections,
+                        node_depths,
+                        visited_nodes,
+                        queue,
+                        bfs,
+                        dfs,
+                        node_limit,
+                        edge_limit,
+                    )
+        else:
+            dfs(node, cur_depth=0)
+        dot_content = (
+            'digraph {\nnode [style="filled", shape="ellipse", '
+            'fillcolor="invis", fontcolor="black"];\n'
+        )
+        for source, target, edge in connections:
+            dot_content += (
+                f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
+                f' [label="{edge._jac_.obj.__class__.__name__} "];\n'
+            )
+        for node_ in visited_nodes:
+            color = (
+                colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
+            )
+            dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}" fillcolor="{color}"];\n'
+        if dot_file:
+            with open(dot_file, "w") as f:
+                f.write(dot_content + "}")
+        return dot_content + "}"
 
 
 class JacCmdDefaults:
