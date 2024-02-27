@@ -101,6 +101,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
+        print("function name: ", node.name)
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -113,8 +114,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt, ast.TupleVal))]
-
+        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
+        for i in node.body:
+            print("node.body: ", i)
+        for i in body:
+            print("body: ", i)
         if len(valid) != len(body):
             raise self.ice("Length mismatch in function body")
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
@@ -272,10 +276,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value: expr | None
         """
         value = self.convert(node.value) if node.value else None
-        if value and not isinstance(value, ast.Expr):
-            raise self.ice("Invalid return value")
+        if value and isinstance(value, ast.Expr):
+            return ast.ExprStmt(expr=value, in_fstring=False, kid=[value])
         else:
-            return value
+            raise self.ice("Invalid return value")
 
     def proc_delete(self, node: py_ast.Delete) -> ast.DeleteStmt:
         """Process python node.
@@ -1261,11 +1265,39 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             ctx: expr_context
         """
         elts = [self.convert(elt) for elt in node.elts]
-        valid = [i for i in elts if isinstance(i, (ast.Expr, ast.KWPair))]
-        if len(elts) != len(valid):
-            raise self.ice("Length mismatch in tuple elts")
-        valid_elts = ast.SubNodeList[ast.Expr | ast.KWPair](items=valid, kid=valid)
-        return ast.TupleVal(values=valid_elts, kid=elts)
+        if len(node.elts) != 0:
+            valid = [i for i in elts if isinstance(i, (ast.Expr, ast.KWPair))]
+            if len(elts) != len(valid):
+                raise self.ice("Length mismatch in tuple elts")
+            valid_elts = ast.SubNodeList[ast.Expr | ast.KWPair](items=valid, kid=valid)
+            kid = elts
+        else:
+            l_square = ast.Token(
+                file_path=self.mod_path,
+                name=Tok.LSQUARE,
+                value="[",
+                line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+                kid=[],
+            )
+            r_square = ast.Token(
+                file_path=self.mod_path,
+                name=Tok.RSQUARE,
+                value="]",
+                line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+                kid=[],
+            )
+            valid_elts = None
+            kid = [l_square, r_square]
+        print("tuple len", len(node.elts))
+        return ast.TupleVal(values=valid_elts, kid=kid)
 
     def proc_yield(self, node: py_ast.Yield) -> None:
         """Process python node."""
