@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+from types import EllipsisType
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
@@ -417,22 +418,31 @@ class ModulePath(AstSymbolNode):
 
     def __init__(
         self,
-        path: Sequence[Token],
+        path: Optional[list[Name]],
+        level: int,
         alias: Optional[Name],
         kid: Sequence[AstNode],
         sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module path node."""
         self.path = path
+        self.level = level
         self.alias = alias
         self.sub_module = sub_module
-        self.path_str: str = "".join([p.value for p in path])
+
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
             sym_name=alias.sym_name if alias else self.path_str,
             sym_name_node=alias if alias else self,
             sym_type=SymbolType.MODULE,
+        )
+
+    @property
+    def path_str(self) -> str:
+        """Get path string."""
+        return ("." * self.level) + ".".join(
+            [p.value for p in self.path] if self.path else ""
         )
 
 
@@ -856,12 +866,14 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         name: Name,
         type_tag: SubTag[Expr],
         value: Optional[Expr],
+        defer: bool,
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
     ) -> None:
         """Initialize has var node."""
         self.name = name
         self.value = value
+        self.defer = defer
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -1288,7 +1300,7 @@ class BinaryExpr(Expr):
 
 
 class CompareExpr(Expr):
-    """ExprBinary node type for Jac Ast."""
+    """CompareExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1301,6 +1313,21 @@ class CompareExpr(Expr):
         self.left = left
         self.rights = rights
         self.ops = ops
+        AstNode.__init__(self, kid=kid)
+
+
+class BoolExpr(Expr):
+    """BoolExpr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        op: Token,
+        values: list[Expr],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize binary expression node."""
+        self.values = values
+        self.op = op
         AstNode.__init__(self, kid=kid)
 
 
@@ -1737,7 +1764,7 @@ class EdgeRefTrailer(Expr):
 
     def __init__(
         self,
-        chain: list[Expr],
+        chain: list[Expr | FilterCompr],
         edges_only: bool,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1752,13 +1779,11 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
 
     def __init__(
         self,
-        filter_type: Optional[Expr],
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize edge op reference expression node."""
-        self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
@@ -1807,10 +1832,12 @@ class FilterCompr(AtomExpr):
 
     def __init__(
         self,
-        compares: SubNodeList[CompareExpr],
+        f_type: Optional[Expr],
+        compares: Optional[SubNodeList[CompareExpr]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
+        self.f_type = f_type
         self.compares = compares
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -2127,7 +2154,9 @@ class Literal(Token, AtomExpr):
         )
 
     @property
-    def lit_value(self) -> int | str | float | bool | None | Callable[[], Any]:
+    def lit_value(
+        self,
+    ) -> int | str | float | bool | None | Callable[[], Any] | EllipsisType:
         """Return literal value in its python type."""
         raise NotImplementedError
 
@@ -2249,6 +2278,17 @@ class Null(Literal):
     def lit_value(self) -> None:
         """Return literal value in its python type."""
         return None
+
+
+class Ellipsis(Literal):
+    """Ellipsis node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.NULL
+
+    @property
+    def lit_value(self) -> EllipsisType:
+        """Return literal value in its python type."""
+        return ...
 
 
 class EmptyToken(Token):

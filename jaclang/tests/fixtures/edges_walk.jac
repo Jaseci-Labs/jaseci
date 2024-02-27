@@ -29,7 +29,7 @@ edge Edge_c{
 }
 
 with entry{
-    <root> spawn creator();
+    print(<root> spawn creator());
     print(<r>._jac_.gen_dot());
     print([<root> -:Edge_a:->]);
     print([<root> -:Edge_c:->]);
