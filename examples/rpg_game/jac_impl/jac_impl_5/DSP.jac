@@ -22,7 +22,7 @@ walker game{
         map_directory:dict={};
 
     can start_game with `<root> entry;
-    can generate_level();
+    can generate_level(node_level:node);
 }
 
 edge play{
@@ -62,23 +62,31 @@ with entry {
 :walker:game:can:start_game {
     <self>.g = Game();
     <here> ++> start_screen();
+    print(<here>);
     visit [-->];
 }
 
-:walker:game:can:generate_level {
+:walker:game:can:generate_level(node_level:node) {
     prompt = '[System Prompt]\nThis is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.\n';
     prompt += '[Information]\n';
-
+    # node_level = <here>;
     level_config_dict:dict = {};
-
-    for config_key in <here>.map_directory.keys(){
+    print(str(<self>.map_directory.keys()));
+    for config_key in <self>.map_directory.keys(){
         level_key = 'Level_' + config_key;
         level_config_dict[level_key] = {};
-        level_config_dict[level_key]['Level_no'] = ['int',<here>.map_directory[config_key].Level_no];
-        level_config_dict[level_key]['time_to_win_level'] = ['float',<here>.map_directory[config_key].time_to_win_level];
-        level_config_dict[level_key]['map'] = ['list[str]',<here>.map_directory[config_key].map];
+        # level_config_dict[level_key] = vars(<self>.map_directory[config_key]);
+        level_config_dict[level_key]['Level_no'] = ['int',<self>.map_directory[config_key].Level_no];
+        level_config_dict[level_key]['time_to_win_level'] = ['float',<self>.map_directory[config_key].time_to_win_level];
+        level_config_dict[level_key]['map'] = ['list[str]',<self>.map_directory[config_key].map];
     }
-    print(str(levl_config_dict));
+    print(str(level_config_dict));
+
+    if <self>.map_directory {
+        <self>.map_directory[str(<self>.current_level)] = Map();
+    } else {
+        <self>.map_directory[str(<self>.current_level)] = Map();
+    }
     <self>.map_directory[str(<self>.current_level)] = Map();
 }
 
@@ -90,7 +98,7 @@ with entry {
             <here>.current_level = <self>.game_level;
         }
         if str(<self>.game_level) not in <here>.map_directory.keys(){
-            <here>.generate_level();
+            <here>.generate_level(node_level = <self>);
         }
 
         <here>.g.GameMap.map = <here>.map_directory[str(<self>.game_level)].map;

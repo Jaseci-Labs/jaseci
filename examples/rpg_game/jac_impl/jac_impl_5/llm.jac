@@ -1,9 +1,9 @@
-import:py from hugchat, hugchat;
 import:py from hugchat.login, Login;
+import:py from hugchat, hugchat;
+
+include:jac _secrets; # Email and password are included in a secrets.jac file
 
 with entry {
-    email = '';
-    passwd = '';
 
     sign = Login(email, passwd);
     cookies = sign.login();
