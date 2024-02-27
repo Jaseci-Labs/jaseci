@@ -146,8 +146,8 @@ class EdgeAnchor(ObjectAnchor):
         self.is_undirected = is_undirected
         src._jac_.edges.remove(self.obj)
         trg._jac_.edges.remove(self.obj)
-        # self.source = None  # TODO: Delete me, don't keep attached
-        # self.target = None  # TODO: Delete me, don't keep attached
+        self.source = None
+        self.target = None
         del self
 
     def spawn_call(self, walk: WalkerArchitype) -> WalkerArchitype:

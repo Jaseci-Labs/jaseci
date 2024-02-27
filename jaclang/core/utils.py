@@ -6,12 +6,7 @@ from typing import Callable, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from jaclang.core.construct import NodeAnchor, NodeArchitype, EdgeArchitype
-
-__all__ = [
-    "NodeArchitype",
-    "EdgeArchitype",
-]
+    from jaclang.core.construct import NodeAnchor, NodeArchitype
 
 
 def collect_node_connections(
@@ -30,35 +25,6 @@ def collect_node_connections(
                     (current_node.obj, target._jac_.obj, edge_.__class__.__name__)
                 )
                 collect_node_connections(target._jac_, visited_nodes, connections)
-
-
-colors = [
-    "#FFE9E9",
-    "#F0FFF0",
-    "#F5E5FF",
-    "#FFFFE0",
-    "#D2FEFF ",
-    "#E8FFD7",
-    "#FFDEAD",
-    "#FFF0F5",
-    "#F5FFFA",
-    "#FFC0CB",
-    "#7FFFD4",
-    "#C0C0C0",
-    "#ADD8E6",
-    "#FFFAF0",
-    "#f4f3f7",
-    "#f5efff",
-    "#b5d7fd",
-    "#ffc0cb",
-    "#FFC0CB",
-    "#e1d4c0",
-    "#FCDFFF",
-    "#F0FFFF",
-    "#F0F8FF",
-    "#F8F8FF",
-    "#F0FFFF",
-]
 
 
 def traverse_graph(
@@ -98,12 +64,20 @@ def traverse_graph(
                         cur_depth + 1, node_depths[node] + 1, node_depths[other_nd]
                     )
                 else:
-                    # if node_depths[other_nd] is None:
-                    node_depths[other_nd] = min(cur_depth + 1, node_depths[node] + 1)
-            if new_con not in connections and (
-                min(node_depths[node], node_depths[other_nd]) + 1 <= depth
-                and node_limit > len(visited_nodes)
-                and edge_limit > len(connections)
+                    if other_nd:
+                        node_depths[other_nd] = min(
+                            cur_depth + 1, node_depths[node] + 1
+                        )
+                    else:
+                        raise ValueError("Edge is detached from node in graph")
+            if (
+                other_nd
+                and new_con not in connections
+                and (
+                    min(node_depths[node], node_depths[other_nd]) + 1 <= depth
+                    and node_limit > len(visited_nodes)
+                    and edge_limit > len(connections)
+                )
             ):
                 connections.append(new_con)
                 if bfs:

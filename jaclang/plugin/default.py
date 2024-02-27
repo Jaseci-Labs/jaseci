@@ -9,7 +9,7 @@ from functools import wraps
 from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.constant import EdgeDir
+from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -26,7 +26,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.utils import colors, traverse_graph
+from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
 
@@ -451,7 +451,10 @@ class JacBuiltin:
                     )
         else:
             dfs(node, cur_depth=0)
-        dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
+        dot_content = (
+            'digraph {\nnode [style="filled", shape="ellipse", '
+            'fillcolor="invis", fontcolor="black"];\n'
+        )
         for source, target, edge in connections:
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
