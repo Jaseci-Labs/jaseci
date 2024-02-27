@@ -1,15 +1,18 @@
-"""This file containes all definitions of sprites that apear in the game"""
+"""This file containes all definitions of sprites that appear in the game"""
 
+import:py from hugchat.login, Login;
+import:py from hugchat, hugchat;
 
 # Importing python libraries
 import:py pygame;
 import:py from pygame.sprite, AbstractGroup;
 import:py random;
 import:py math;
+import:py from typing, Tuple;
 # Importing configuration and map data
 include:jac config;
 include:jac map;
-import:py from typing, Tuple;
+
 
 """
 Object for impoting sprite character images.

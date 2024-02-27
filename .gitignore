@@ -46,6 +46,9 @@ codegen_output*
 node_modules
 out.dot
 out.txt
+_secrets.jac
+jayanaka.dantanarayana@jaseci.org.json
 
 # Mypy files #
 .mypy_cache*
+

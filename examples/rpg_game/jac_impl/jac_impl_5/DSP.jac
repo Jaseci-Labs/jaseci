@@ -6,12 +6,15 @@ import:py pygame;
 import:py sys;
 import:py random;
 import:py time;
+import:py from hugchat.login, Login;
+import:py from hugchat, hugchat;
 
 # Importing Jac codebase
 include:jac sprites;
 include:jac config;
 include:jac map;
 include:jac main;
+include:jac _secrets;
 
 '''The walker that initiates the game and runs an instance of the game'''
 walker game{
@@ -19,7 +22,8 @@ walker game{
     has g:Game = None,
         current_level:int = 1,
         fwd_dir:bool = True,
-        map_directory:dict={};
+        'Map directory that containes all the levels and their configurations'
+        map_directory:dict=SAMPLE_MAPS;
 
     can start_game with `<root> entry;
     can generate_level(node_level:node);
@@ -54,6 +58,7 @@ node level{
 
 '''Run the game'''
 with entry {
+    llm = model();
     game() spawn <root>;
 }
 
@@ -67,27 +72,36 @@ with entry {
 }
 
 :walker:game:can:generate_level(node_level:node) {
-    prompt = '[System Prompt]\nThis is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.\n';
-    prompt += '[Information]\n';
-    # node_level = <here>;
-    level_config_dict:dict = {};
-    print(str(<self>.map_directory.keys()));
-    for config_key in <self>.map_directory.keys(){
-        level_key = 'Level_' + config_key;
-        level_config_dict[level_key] = {};
-        # level_config_dict[level_key] = vars(<self>.map_directory[config_key]);
-        level_config_dict[level_key]['Level_no'] = ['int',<self>.map_directory[config_key].Level_no];
-        level_config_dict[level_key]['time_to_win_level'] = ['float',<self>.map_directory[config_key].time_to_win_level];
-        level_config_dict[level_key]['map'] = ['list[str]',<self>.map_directory[config_key].map];
-    }
-    print(str(level_config_dict));
+    # prompt = '[System Prompt]\nThis is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.\n';
+    # prompt += '\n[Information]\n';
+    # # node_level = <here>;
+    # level_config_dict:dict = {};
+    # print(str(<self>.map_directory.keys()));
+    # for config_key in <self>.map_directory.keys(){
+    #     level_key = 'Level_' + config_key;
+    #     level_config_dict[level_key] = {};
+    #     # level_config_dict[level_key] = vars(<self>.map_directory[config_key]);
+    #     level_config_dict[level_key]['Level_no'] = ['int', LEVEL_NO_smstr ,<self>.map_directory[config_key].Level_no];
+    #     level_config_dict[level_key]['time_to_win_level'] = ['float', TIME_TO_WIN_LEVEL_smstr ,<self>.map_directory[config_key].time_to_win_level];
+    #     level_config_dict[level_key]['map'] = ['list[str]', MAP_smstr ,<self>.map_directory[config_key].map];
+    # }
+
+    # prompt += 'dict, Map directory that containes all the levels and their configurations, ' + str(level_config_dict) + '\n';
+    # prompt += '\n[Output Type]\n';
+    # prompt += 'List[str]\n';
+    # prompt += '\n[Output Type Explanation]\n';
+    # prompt += MAP_smstr + '\n';
+    # prompt += '\n[Action]\n';
+    # prompt += 'Return the map of the level which is harder than previous levels\n';
+    # prompt += '\n[Result] <result>\n';
 
     if <self>.map_directory {
+        new_map = llm.generate(<self>.map_directory);
+        print(new_map);
         <self>.map_directory[str(<self>.current_level)] = Map();
     } else {
         <self>.map_directory[str(<self>.current_level)] = Map();
     }
-    <self>.map_directory[str(<self>.current_level)] = Map();
 }
 
 :node:level:can:run_game {
@@ -109,9 +123,7 @@ with entry {
         end_time = time.time();
         if <here>.g.won == True{
             <self>.level_time = end_time - start_time;
-            if <self>.level_time < <here>.map_directory[str(<self>.game_level)].time_to_win_level {
-                <here>.map_directory[str(<self>.game_level)].time_to_win_level = <self>.level_time;
-            }
+            <here>.map_directory[str(<self>.game_level)].time_to_win_level = <self>.level_time;
             print('Time:', <self>.level_time);
             <here>.g.game_won();
             <self>.played = True;
