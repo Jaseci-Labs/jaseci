@@ -25,7 +25,7 @@ Map {
     Level_no: int = 1;
     has 'time taken to complete the level in seconds'
     time_to_win_level:float = 60.0;
-    has 'the map of the level having B as block, E as enemy, P as player and . as empty space'
+    has 'the map of the level having B as block, E as enemy, P as player and . as empty space. Size is 20 x 20'
     map: list[str] = [
                                 'BBBBBBBBBBBBBBBBBBBB',
                                 'B..E...............B',

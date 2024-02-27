@@ -45,7 +45,7 @@ node level{
     has game_level:int = 1,
         level_id:str = '1_1000',
         played:bool = False,
-        levelconfig:Map = Map(), # need to look at this
+        level_config:Map = Map(), # need to look at this
         level_time:float=500000;
 
     can run_game with game entry;
@@ -66,6 +66,19 @@ with entry {
 }
 
 :walker:game:can:generate_level {
+    prompt = '[System Prompt]\nThis is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.\n';
+    prompt += '[Information]\n';
+
+    level_config_dict:dict = {};
+
+    for config_key in <here>.map_directory.keys(){
+        level_key = 'Level_' + config_key;
+        level_config_dict[level_key] = {};
+        level_config_dict[level_key]['Level_no'] = ['int',<here>.map_directory[config_key].Level_no];
+        level_config_dict[level_key]['time_to_win_level'] = ['float',<here>.map_directory[config_key].time_to_win_level];
+        level_config_dict[level_key]['map'] = ['list[str]',<here>.map_directory[config_key].map];
+    }
+    print(str(levl_config_dict));
     <self>.map_directory[str(<self>.current_level)] = Map();
 }
 
