@@ -456,7 +456,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         orelse = ast.SubNodeList[ast.CodeBlockStmt](items=valid_orelse, kid=orelse)
         raise self.ice(f"IMPLEMENT ME {target} {iter} ")
 
-    def proc_while(self, node: py_ast.While) -> ast.CodeBlockStmt:
+    def proc_while(self, node: py_ast.While) -> ast.WhileStmt:
         """Process While node.
 
         class While(stmt):
@@ -471,12 +471,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
         body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
-        orelse = [self.convert(stmt) for stmt in node.orelse]
-        valid_orelse = [stmt for stmt in orelse if isinstance(stmt, ast.CodeBlockStmt)]
-        if len(valid_orelse) != len(orelse):
-            raise self.ice("Length mismatch in async for orelse")
-        orelse = ast.SubNodeList[ast.CodeBlockStmt](items=valid_orelse, kid=orelse)
-        raise self.ice(f"IMPLEMENT ME{test}")
+        # orelse = [self.convert(stmt) for stmt in node.orelse]
+        # valid_orelse = [stmt for stmt in orelse if isinstance(stmt, ast.CodeBlockStmt)]
+        # if len(valid_orelse) != len(orelse):
+        #     raise self.ice("Length mismatch in async for orelse")
+        # orelse = ast.SubNodeList[ast.CodeBlockStmt](items=valid_orelse, kid=orelse)
+        return ast.WhileStmt(condition=test, body=body, kid=[test, body])
 
     def proc_if(self, node: py_ast.If) -> ast.IfStmt:
         """Process If node.
@@ -676,6 +676,31 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def proc_break(self, node: py_ast.Break) -> None:
         """Process python node."""
+        l_paren = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.LPAREN,
+            value="(",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        r_paren = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.RPAREN,
+            value=")",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ast.SubNodeList[ast.CodeBlockStmt | ast.ArchBlockStmt](
+            items=[], kid=[l_paren, r_paren]
+        )
 
     def proc_call(self, node: py_ast.Call) -> ast.FuncCall:
         """Process python node.
@@ -1065,8 +1090,25 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid_elts,
         )
 
-    def proc_list_comp(self, node: py_ast.ListComp) -> None:
-        """Process python node."""
+    def proc_list_comp(self, node: py_ast.ListComp) -> ast.ListCompr:
+        """Process python node.
+
+        class ListComp(expr):
+            elt: expr
+            generators: list[comprehension]
+        """
+        elt = self.convert(node.elt)
+        generators = [self.convert(gen) for gen in node.generators]
+        valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
+        if len(generators) == len(valid):
+            compr = ast.SubNodeList[ast.InnerCompr](items=valid, kid=valid)
+        else:
+            self.ice()
+
+        if isinstance(elt, ast.Expr):
+            return ast.ListCompr(out_expr=elt, compr=valid, kid=[elt, compr])
+        else:
+            self.ice()
 
     def proc_match(self, node: py_ast.Match) -> None:
         """Process python node."""
@@ -1585,8 +1627,35 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Process python node."""
         return self.operator(Tok.KW_NIN, "not in")
 
-    def proc_comprehension(self, node: py_ast.comprehension) -> None:
-        """Process python node."""
+    def proc_comprehension(self, node: py_ast.comprehension) -> ast.InnerCompr:
+        """Process python node.
+
+        class comprehension(AST):
+            target: expr
+            iter: expr
+            ifs: list[expr]
+            is_async: int
+        """
+        target = self.convert(node.target)
+        iter = self.convert(node.iter)
+        if len(node.ifs) != 0:
+            ifs_list = [self.convert(ifs) for ifs in node.ifs]
+            valid = [ifs for ifs in ifs_list if isinstance(ifs, ast.Expr)]
+            if len(ifs_list) == len(valid):
+                valid_ifs = ast.SubNodeList[ast.Expr](items=valid, kid=valid)
+            else:
+                raise self.ice("Length mismatch in comprehension ifs")
+        else:
+            valid_ifs = None
+        is_async = node.is_async > 0
+
+        return ast.InnerCompr(
+            is_async=is_async,
+            target=target,
+            collection=iter,
+            conditional=valid_ifs,
+            kid=[target, iter, valid_ifs] if valid_ifs else [target, iter],
+        )
 
     def proc_keyword(self, node: py_ast.keyword) -> ast.KWPair:
         """Process python node.
@@ -1597,8 +1666,20 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         arg: _Identifier
         value: expr
         """
-        if isinstance(node.value, ast.Expr):
-            return ast.KWPair(key=node.arg, value=node.value, kid=[])
+        arg = ast.Name(
+            file_path=self.mod_path,
+            name=Tok.NAME,
+            value=node.arg,
+            line=node.lineno,
+            col_start=node.col_offset,
+            col_end=node.col_offset + len(node.arg),
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        value = self.convert(node.value)
+        if isinstance(value, ast.Expr):
+            return ast.KWPair(key=arg, value=value, kid=[arg, value])
         else:
             raise self.ice()
 
