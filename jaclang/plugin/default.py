@@ -262,7 +262,6 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
@@ -278,16 +277,14 @@ class JacFeatureDefaults:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
                 connected_edges += node._jac_.get_edges(
-                    dir, filter_type, filter_func, target_obj=targ_obj_set
+                    dir, filter_func, target_obj=targ_obj_set
                 )
             return list(set(connected_edges))
         else:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
-                    node._jac_.edges_to_nodes(
-                        dir, filter_type, filter_func, target_obj=targ_obj_set
-                    )
+                    node._jac_.edges_to_nodes(dir, filter_func, target_obj=targ_obj_set)
                 )
             return list(set(connected_nodes))
 
@@ -319,7 +316,6 @@ class JacFeatureDefaults:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
@@ -329,17 +325,11 @@ class JacFeatureDefaults:
         for i in left:
             for j in right:
                 edge_list: list[EdgeArchitype] = [*i._jac_.edges]
-                if filter_type:
-                    edge_list = [e for e in edge_list if isinstance(e, filter_type)]
                 edge_list = filter_func(edge_list) if filter_func else edge_list
                 for e in edge_list:
-                    if (
-                        e._jac_.target
-                        and e._jac_.source
-                        and (not filter_type or isinstance(e, filter_type))
-                    ):
+                    if e._jac_.target and e._jac_.source:
                         if (
-                            dir in ["OUT", "ANY"]
+                            dir in ["OUT", "ANY"]  # TODO: Not ideal
                             and i._jac_.obj == e._jac_.source
                             and e._jac_.target == j._jac_.obj
                         ):
@@ -404,3 +394,13 @@ class JacBuiltin:
     def dotgen(node: NodeArchitype, radius: int = 0) -> str:
         """Print the dot graph."""
         return dotgen(node, radius)
+
+
+class JacCmdDefaults:
+    """Jac CLI command."""
+
+    @staticmethod
+    @hookimpl
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        pass

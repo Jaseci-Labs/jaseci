@@ -40,15 +40,12 @@ class Creator:
             here,
             None,
             Jac.EdgeDir.OUT,
-            filter_type=MyEdge,
-            filter_func=lambda x: [i for i in x if i.val <= 6],
+            filter_func=lambda x: [i for i in x if isinstance(i, MyEdge) if i.val <= 6],
         ):
             print(i.value)
         if Jac.visit_node(
             self,
-            Jac.edge_ref(
-                here, None, Jac.EdgeDir.OUT, filter_type=None, filter_func=None
-            ),
+            Jac.edge_ref(here, None, Jac.EdgeDir.OUT, filter_func=None),
         ):
             pass
 

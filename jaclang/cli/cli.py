@@ -6,15 +6,17 @@ import shutil
 from typing import Optional
 
 from jaclang import jac_import
-from jaclang.cli.cmdreg import CommandRegistry, CommandShell
+from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.lang_tools import AstTool
 
-cmd_registry = CommandRegistry()
+
+Cmd.create_cmd()
 
 
 @cmd_registry.register
@@ -58,18 +60,17 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 
 @cmd_registry.register
-def run(filename: str, main: bool = True) -> None:
-    """Run the specified .jac file.
-
-    :param filename: The path to the .jac file.
-    :param main: If True, use '__main__' as the module name, else use the actual module name.
-    """
+def run(filename: str, main: bool = True, cache: bool = True) -> None:
+    """Run the specified .jac file."""
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
         jac_import(
-            target=mod, base_path=base, override_name="__main__" if main else None
+            target=mod,
+            base_path=base,
+            cachable=cache,
+            override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
@@ -77,6 +78,7 @@ def run(filename: str, main: bool = True) -> None:
             jac_import(
                 target=mod,
                 base_path=base,
+                cachable=cache,
                 override_name="__main__" if main else None,
                 mod_bundle=ir,
             )

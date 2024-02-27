@@ -1789,11 +1789,6 @@ class PyastGenPass(Pass):
                                 ast3.Constant(value=node.op.edge_spec.edge_dir.name)
                             ),
                             (
-                                node.op.edge_spec.filter_type.gen.py_ast[0]
-                                if node.op.edge_spec.filter_type is not None
-                                else self.sync(ast3.Constant(value=None))
-                            ),
-                            (
                                 node.op.edge_spec.filter_cond.gen.py_ast[0]
                                 if node.op.edge_spec.filter_cond is not None
                                 else self.sync(ast3.Constant(value=None))
@@ -2420,9 +2415,9 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Slice(
-                        lower=node.start.gen.py_ast if node.start else None,
-                        upper=node.stop.gen.py_ast if node.stop else None,
-                        step=node.step.gen.py_ast if node.step else None,
+                        lower=node.start.gen.py_ast[0] if node.start else None,
+                        upper=node.stop.gen.py_ast[0] if node.stop else None,
+                        step=node.step.gen.py_ast[0] if node.step else None,
                     )
                 )
             ]
@@ -2446,7 +2441,7 @@ class PyastGenPass(Pass):
     def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
         """Sub objects.
 
-        chain: list[Expr],
+        chain: list[Expr|FilterCompr],
         edges_only: bool,
         """
         pynode = node.chain[0].gen.py_ast[0]
@@ -2466,11 +2461,23 @@ class PyastGenPass(Pass):
                 not next_i or not isinstance(next_i, ast.EdgeOpRef)
             ):
                 pynode = self.translate_edge_op_ref(
-                    pynode,
-                    cur,
-                    targ=next_i.gen.py_ast[0] if next_i else None,
+                    loc=pynode,
+                    node=cur,
+                    targ=(
+                        next_i.gen.py_ast[0]
+                        if next_i and not isinstance(next_i, ast.FilterCompr)
+                        else None
+                    ),
                     edges_only=node.edges_only and cur == last_edge,
                 )
+                if next_i and isinstance(next_i, ast.FilterCompr):
+                    pynode = self.sync(
+                        ast3.Call(
+                            func=next_i.gen.py_ast[0],
+                            args=[pynode],
+                            keywords=[],
+                        )
+                    )
                 chomp = chomp[1:] if next_i else chomp
             elif isinstance(cur, ast.EdgeOpRef) and isinstance(next_i, ast.EdgeOpRef):
                 pynode = self.translate_edge_op_ref(
@@ -2547,16 +2554,6 @@ class PyastGenPass(Pass):
                                     attr=node.edge_dir.name,
                                     ctx=ast3.Load(),
                                 )
-                            ),
-                        )
-                    ),
-                    self.sync(
-                        ast3.keyword(
-                            arg="filter_type",
-                            value=self.sync(
-                                node.filter_type.gen.py_ast[0]
-                                if node.filter_type
-                                else self.sync(ast3.Constant(value=None))
                             ),
                         )
                     ),
@@ -2670,38 +2667,76 @@ class PyastGenPass(Pass):
                                         iter=self.sync(
                                             ast3.Name(id="x", ctx=ast3.Load())
                                         ),
-                                        ifs=[
-                                            self.sync(
-                                                ast3.Compare(
-                                                    left=self.sync(
-                                                        ast3.Attribute(
-                                                            value=self.sync(
+                                        ifs=(
+                                            (
+                                                [
+                                                    self.sync(
+                                                        ast3.Call(
+                                                            func=self.sync(
                                                                 ast3.Name(
-                                                                    id="i",
+                                                                    id="isinstance",
                                                                     ctx=ast3.Load(),
-                                                                ),
-                                                                jac_node=x,
+                                                                )
                                                             ),
-                                                            attr=x.gen.py_ast[
-                                                                0
-                                                            ].left.id,
-                                                            ctx=ast3.Load(),
+                                                            args=[
+                                                                self.sync(
+                                                                    ast3.Name(
+                                                                        id="i",
+                                                                        ctx=ast3.Load(),
+                                                                    )
+                                                                ),
+                                                                self.sync(
+                                                                    node.f_type.gen.py_ast[
+                                                                        0
+                                                                    ]
+                                                                ),
+                                                            ],
+                                                            keywords=[],
+                                                        )
+                                                    )
+                                                ]
+                                                if node.f_type
+                                                else []
+                                            )
+                                            + [
+                                                self.sync(
+                                                    ast3.Compare(
+                                                        left=self.sync(
+                                                            ast3.Attribute(
+                                                                value=self.sync(
+                                                                    ast3.Name(
+                                                                        id="i",
+                                                                        ctx=ast3.Load(),
+                                                                    ),
+                                                                    jac_node=x,
+                                                                ),
+                                                                attr=x.gen.py_ast[
+                                                                    0
+                                                                ].left.id,
+                                                                ctx=ast3.Load(),
+                                                            ),
+                                                            jac_node=x,
                                                         ),
-                                                        jac_node=x,
+                                                        ops=x.gen.py_ast[0].ops,
+                                                        comparators=x.gen.py_ast[
+                                                            0
+                                                        ].comparators,
                                                     ),
-                                                    ops=x.gen.py_ast[0].ops,
-                                                    comparators=x.gen.py_ast[
-                                                        0
-                                                    ].comparators,
-                                                ),
-                                                jac_node=x,
-                                            )
-                                            for x in node.compares.items
-                                            if isinstance(x.gen.py_ast[0], ast3.Compare)
-                                            and isinstance(
-                                                x.gen.py_ast[0].left, ast3.Name
-                                            )
-                                        ],
+                                                    jac_node=x,
+                                                )
+                                                for x in (
+                                                    node.compares.items
+                                                    if node.compares
+                                                    else []
+                                                )
+                                                if isinstance(
+                                                    x.gen.py_ast[0], ast3.Compare
+                                                )
+                                                and isinstance(
+                                                    x.gen.py_ast[0].left, ast3.Name
+                                                )
+                                            ]
+                                        ),
                                         is_async=0,
                                     )
                                 )

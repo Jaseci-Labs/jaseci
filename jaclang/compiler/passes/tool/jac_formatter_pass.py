@@ -1433,11 +1433,7 @@ class JacFormatPass(Pass):
         stop: Optional[ExprType],
         """
         for i in node.kid:
-            if not i.gen.jac.startswith("["):
-                self.emit(node, "[")
             self.emit(node, i.gen.jac)
-        if not i.gen.jac.endswith("]"):
-            self.emit(node, "]")
 
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
