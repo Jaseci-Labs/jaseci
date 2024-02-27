@@ -14,7 +14,7 @@ with entry {
         apple.append(TestObj());
     }
     #To get the instances with the y value less than 7
-    print(apple(=y <= 7));
+    print(apple(?y <= 7));
 }
 #assign comprehension
 
@@ -26,6 +26,6 @@ obj MyObj {
 with entry {
     x = MyObj();
     y = MyObj();
-    mvar = [x, y](*apple=5, banana=7);
+    mvar = [x, y](=apple=5, banana=7);
     print(mvar);
 }

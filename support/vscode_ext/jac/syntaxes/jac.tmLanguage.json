@@ -604,9 +604,6 @@
 			"comment": "valid Python expressions w/o comments and line continuation",
 			"patterns": [
 				{
-					"include": "#backticks"
-				},
-				{
 					"include": "#illegal-anno"
 				},
 				{
@@ -1496,9 +1493,6 @@
 							"include": "#comments"
 						},
 						{
-							"include": "#backticks"
-						},
-						{
 							"include": "#illegal-anno"
 						},
 						{
@@ -2085,16 +2079,6 @@
 		"ellipsis": {
 			"name": "constant.other.ellipsis.jac",
 			"match": "\\.\\.\\."
-		},
-		"backticks": {
-			"name": "invalid.deprecated.backtick.jac",
-			"begin": "\\`",
-			"end": "(?:\\`|(?<!\\\\)(\\n))",
-			"patterns": [
-				{
-					"include": "#expression"
-				}
-			]
 		},
 		"illegal-operator": {
 			"patterns": [

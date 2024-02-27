@@ -24,11 +24,14 @@ class JacFormatPass(Pass):
         """Return string for indent."""
         return " " * self.indent_size * self.indent_level
 
-    def emit(self, node: ast.AstNode, s: str) -> None:
+    def emit(self, node: ast.AstNode, s: str, strip_mode: bool = True) -> None:
         """Emit code to node."""
         node.gen.jac += self.indent_str() + s.replace("\n", "\n" + self.indent_str())
         if "\n" in node.gen.jac:
-            node.gen.jac = node.gen.jac.rstrip(" ")
+            if strip_mode:
+                node.gen.jac = node.gen.jac.rstrip(" ")
+            else:
+                node.gen.jac = node.gen.jac
 
     def emit_ln(self, node: ast.AstNode, s: str) -> None:
         """Emit code to node."""
@@ -847,20 +850,11 @@ class JacFormatPass(Pass):
                     and isinstance(node.right, ast.TupleVal)
                 )
             ):
-                # Check if line break is needed
-                if node.op.value in ["and", "or"] and self.is_line_break_needed(
-                    f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}"
-                ):
-                    self.emit_ln(node, f"{node.left.gen.jac}")
-                    self.emit(
-                        node,
-                        f"    {node.op.value} {node.right.gen.jac}",
-                    )
-                else:
-                    self.emit(
-                        node,
-                        f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
-                    )
+
+                self.emit(
+                    node,
+                    f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
+                )
             else:
                 self.error(
                     f"Binary operator {node.op.value} not supported in bootstrap Jac"
@@ -1332,6 +1326,35 @@ class JacFormatPass(Pass):
             f"Unable to find definition for {decl} declaration. Perhaps there's an `include` missing?"  # noqa
         )
 
+    def exit_bool_expr(self, node: ast.BoolExpr) -> None:
+        """Sub objects.
+
+        op: Token,
+        values: list[Expr],
+        """
+        end = node.values[-1]
+        test_str = ""
+        for i in node.values:
+            test_str += f"{i.gen.jac}"
+            if i != end:
+                test_str += f" {node.op.value} "
+
+        # Check if line break is needed
+        if self.is_line_break_needed(test_str):
+            for i in node.values:
+                if i != end:
+                    self.emit_ln(node, f"{i.gen.jac}")
+                else:
+                    self.emit(node, f"{i.gen.jac}")
+                if i != end:
+                    self.emit(
+                        node,
+                        " " * self.indent_size + f"{node.op.value} ",
+                        strip_mode=False,
+                    )
+        else:
+            self.emit(node, test_str)
+
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
 
@@ -1410,11 +1433,7 @@ class JacFormatPass(Pass):
         stop: Optional[ExprType],
         """
         for i in node.kid:
-            if not i.gen.jac.startswith("["):
-                self.emit(node, "[")
             self.emit(node, i.gen.jac)
-        if not i.gen.jac.endswith("]"):
-            self.emit(node, "]")
 
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.

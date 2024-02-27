@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, TypeAlias, cast
+from typing import Callable, TypeAlias
 
 
 import jaclang.compiler.absyntree as ast
@@ -1915,16 +1915,48 @@ class JacParser(Pass):
         def logical_or(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            logical_or: (logical_or KW_OR)? logical_and
+            logical_or: logical_and (KW_OR logical_and)*
             """
-            return self.binary_expr_unwind(kid)
+            if len(kid) > 1:
+                values = [i for i in kid if isinstance(i, ast.Expr)]
+                ops = kid[1] if isinstance(kid[1], ast.Token) else None
+                if not ops:
+                    raise self.ice()
+                return self.nu(
+                    ast.BoolExpr(
+                        op=ops,
+                        values=values,
+                        kid=kid,
+                    )
+                )
+            elif isinstance(kid[0], ast.Expr):
+                return self.nu(kid[0])
+            else:
+
+                raise self.ice()
 
         def logical_and(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            logical_and: (logical_and KW_AND)? logical_not
+            logical_and: logical_not (KW_AND logical_not)*
             """
-            return self.binary_expr_unwind(kid)
+            if len(kid) > 1:
+                values = [i for i in kid if isinstance(i, ast.Expr)]
+                ops = kid[1] if isinstance(kid[1], ast.Token) else None
+                if not ops:
+                    raise self.ice()
+                return self.nu(
+                    ast.BoolExpr(
+                        op=ops,
+                        values=values,
+                        kid=kid,
+                    )
+                )
+            elif isinstance(kid[0], ast.Expr):
+                return self.nu(kid[0])
+            else:
+
+                raise self.ice()
 
         def logical_not(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2224,76 +2256,51 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice | ast.ListVal:
+        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
             """Grammar rule.
 
             index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
-                       | list_val
+                    | list_val
             """
-            if len(kid) == 1 and isinstance(kid[0], ast.ListVal):
-                expr = None
-                if not kid[0].values or len(kid[0].values.items) < 1:
-                    self.parse_ref.error("Empty list slice not allowed", kid[0].values)
-                elif len(kid[0].values.items) == 1:
-                    expr = kid[0].values.items[0]  # TODO: Loses braces
+            if len(kid) == 1:
+                index = kid[0]
+                if isinstance(index, ast.ListVal):
+                    expr = index.values.items[0] if index.values else None
+                    return self.nu(
+                        ast.IndexSlice(
+                            start=expr,
+                            stop=None,
+                            step=None,
+                            is_range=False,
+                            kid=kid[0].kid,
+                        )
+                    )
                 else:
-                    vals = cast("ast.SubNodeList[ast.Expr|ast.KWPair]", kid[0].values)
-                    expr = ast.TupleVal(values=vals, kid=kid[0].kid)
-                if expr is None:
                     raise self.ice()
+            else:
+                expr1 = expr2 = expr3 = None
+                chomp = kid[1:]
+                if isinstance(chomp[0], ast.Expr):
+                    expr1 = chomp[0]
+                    chomp = chomp[1:]
+                chomp = chomp[1:]
+                if isinstance(chomp[0], ast.Expr):
+                    expr2 = chomp[0]
+                    chomp = chomp[1:]
+                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON:
+                    chomp = chomp[1:]
+                    if isinstance(chomp[0], ast.Expr):
+                        expr3 = chomp[0]
+                        chomp = chomp[1:]
                 return self.nu(
                     ast.IndexSlice(
-                        start=expr, stop=None, step=None, is_range=False, kid=[expr]
+                        start=expr1,
+                        stop=expr2,
+                        step=expr3,
+                        is_range=True,
+                        kid=kid,
                     )
                 )
-            chomp = [*kid]
-            chomp = chomp[1:]
-            expr1 = chomp[0] if isinstance(chomp[0], ast.Expr) else None
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and isinstance(chomp[1], ast.Expr)
-                else None
-            )
-            chomp = chomp[1:]
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and len(chomp) > 1
-                and isinstance(chomp[1], ast.Expr)
-                else expr2
-            )
-            expr3 = None
-            if len(chomp) > 1:
-                chomp = chomp[1:]
-                expr3 = (
-                    chomp[1]
-                    if isinstance(chomp[0], ast.Token)
-                    and chomp[0].name == Tok.COLON
-                    and isinstance(chomp[1], ast.Expr)
-                    else None
-                )
-                if len(chomp) > 1:
-                    chomp = chomp[1:]
-                    expr3 = (
-                        chomp[1]
-                        if isinstance(chomp[0], ast.Token)
-                        and chomp[0].name == Tok.COLON
-                        and len(chomp) > 1
-                        and isinstance(chomp[1], ast.Expr)
-                        else expr3
-                    )
-            return self.nu(
-                ast.IndexSlice(
-                    start=expr1,
-                    stop=expr2,
-                    step=expr3,
-                    is_range=True,
-                    kid=kid,
-                )
-            )
 
         def atom(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -3103,9 +3110,10 @@ class JacParser(Pass):
         def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
             """Grammar rule.
 
-            edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref expression?)+ RSQUARE
+            edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression?
+                (edge_op_ref (NODE_OP? expression)?)+ RSQUARE
             """
-            valid_chain = [i for i in kid if isinstance(i, (ast.Expr))]
+            valid_chain = [i for i in kid if isinstance(i, (ast.Expr, ast.FilterCompr))]
             return self.nu(
                 ast.EdgeRefTrailer(
                     chain=valid_chain,
@@ -3128,24 +3136,13 @@ class JacParser(Pass):
         def edge_to(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_to: ARROW_R_P1 expression (COLON filter_compare_list)? ARROW_R_P2
+            edge_to: ARROW_R_P1 typed_filter_compare_list ARROW_R_P2
                    | ARROW_R
             """
-            ftype = kid[1] if len(kid) >= 3 else None
-            fcond = kid[3] if len(kid) >= 5 else None
-            if (isinstance(ftype, ast.Expr) or ftype is None) and (
-                isinstance(fcond, ast.SubNodeList) or fcond is None
-            ):
-                fcond = ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
-                if fcond:
-                    kid[3] = fcond
+            fcond = kid[1] if len(kid) > 1 else None
+            if isinstance(fcond, ast.FilterCompr) or fcond is None:
                 return self.nu(
-                    ast.EdgeOpRef(
-                        filter_type=ftype,
-                        filter_cond=fcond,
-                        edge_dir=EdgeDir.OUT,
-                        kid=kid,
-                    )
+                    ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.OUT, kid=kid)
                 )
             else:
                 raise self.ice()
@@ -3153,24 +3150,13 @@ class JacParser(Pass):
         def edge_from(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_from: ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_L_P2
+            edge_from: ARROW_L_P1 typed_filter_compare_list ARROW_L_P2
                      | ARROW_L
             """
-            ftype = kid[1] if len(kid) >= 3 else None
-            fcond = kid[3] if len(kid) >= 5 else None
-            if (isinstance(ftype, ast.Expr) or ftype is None) and (
-                isinstance(fcond, ast.SubNodeList) or fcond is None
-            ):
-                fcond = ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
-                if fcond:
-                    kid[3] = fcond
+            fcond = kid[1] if len(kid) > 1 else None
+            if isinstance(fcond, ast.FilterCompr) or fcond is None:
                 return self.nu(
-                    ast.EdgeOpRef(
-                        filter_type=ftype,
-                        filter_cond=fcond,
-                        edge_dir=EdgeDir.IN,
-                        kid=kid,
-                    )
+                    ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.IN, kid=kid)
                 )
             else:
                 raise self.ice()
@@ -3178,24 +3164,13 @@ class JacParser(Pass):
         def edge_any(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
-            edge_any: ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_R_P2
+            edge_any: ARROW_L_P1 typed_filter_compare_list ARROW_R_P2
                     | ARROW_BI
             """
-            ftype = kid[1] if len(kid) >= 3 else None
-            fcond = kid[3] if len(kid) >= 5 else None
-            if (isinstance(ftype, ast.Expr) or ftype is None) and (
-                isinstance(fcond, ast.SubNodeList) or fcond is None
-            ):
-                fcond = ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
-                if fcond:
-                    kid[3] = fcond
+            fcond = kid[1] if len(kid) > 1 else None
+            if isinstance(fcond, ast.FilterCompr) or fcond is None:
                 return self.nu(
-                    ast.EdgeOpRef(
-                        filter_type=ftype,
-                        filter_cond=fcond,
-                        edge_dir=EdgeDir.ANY,
-                        kid=kid,
-                    )
+                    ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.ANY, kid=kid)
                 )
             else:
                 raise self.ice()
@@ -3314,15 +3289,15 @@ class JacParser(Pass):
         def filter_compr(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
             """Grammar rule.
 
-            filter_compr: LPAREN EQ filter_compare_list RPAREN
+            filter_compr: LPAREN NULL_OK filter_compare_list RPAREN
+                        | LPAREN TYPE_OP NULL_OK typed_filter_compare_list RPAREN
             """
             if isinstance(kid[2], ast.SubNodeList):
-                return self.nu(
-                    ast.FilterCompr(
-                        compares=kid[2],
-                        kid=kid,
-                    )
-                )
+                return self.nu(ast.FilterCompr(compares=kid[2], f_type=None, kid=kid))
+            elif isinstance(kid[3], ast.FilterCompr):
+                kid[3].add_kids_left(kid[:3])
+                kid[3].add_kids_right(kid[4:])
+                return self.nu(kid[3])
             else:
                 raise self.ice()
 
@@ -3351,6 +3326,28 @@ class JacParser(Pass):
                     kid=new_kid,
                 )
             )
+
+        def typed_filter_compare_list(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
+            """Grammar rule.
+
+            typed_filter_compare_list: expression (COLON filter_compare_list)?
+            """
+            chomp = [*kid]
+            expr = chomp[0]
+            chomp = chomp[1:]
+            compares = (
+                chomp[1]
+                if len(chomp)
+                and isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.COLON
+                else None
+            )
+            if isinstance(expr, ast.Expr) and (
+                (isinstance(compares, ast.SubNodeList)) or compares is None
+            ):
+                return self.nu(ast.FilterCompr(compares=compares, f_type=expr, kid=kid))
+            else:
+                raise self.ice()
 
         def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.CompareExpr:
             """Grammar rule.

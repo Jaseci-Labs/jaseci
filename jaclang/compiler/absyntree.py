@@ -1300,7 +1300,7 @@ class BinaryExpr(Expr):
 
 
 class CompareExpr(Expr):
-    """ExprBinary node type for Jac Ast."""
+    """CompareExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1313,6 +1313,21 @@ class CompareExpr(Expr):
         self.left = left
         self.rights = rights
         self.ops = ops
+        AstNode.__init__(self, kid=kid)
+
+
+class BoolExpr(Expr):
+    """BoolExpr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        op: Token,
+        values: list[Expr],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize binary expression node."""
+        self.values = values
+        self.op = op
         AstNode.__init__(self, kid=kid)
 
 
@@ -1749,7 +1764,7 @@ class EdgeRefTrailer(Expr):
 
     def __init__(
         self,
-        chain: list[Expr],
+        chain: list[Expr | FilterCompr],
         edges_only: bool,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1764,13 +1779,11 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
 
     def __init__(
         self,
-        filter_type: Optional[Expr],
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize edge op reference expression node."""
-        self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
@@ -1819,10 +1832,12 @@ class FilterCompr(AtomExpr):
 
     def __init__(
         self,
-        compares: SubNodeList[CompareExpr],
+        f_type: Optional[Expr],
+        compares: Optional[SubNodeList[CompareExpr]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
+        self.f_type = f_type
         self.compares = compares
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
