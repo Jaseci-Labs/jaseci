@@ -10,6 +10,7 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir
+from jaclang.core.aott import aott_lower, aott_raise
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -25,7 +26,6 @@ from jaclang.core.construct import (
     WalkerArchitype,
     root,
 )
-from jaclang.core.aott import aott_raise, aott_lower
 from jaclang.core.importer import jac_importer
 from jaclang.core.jacbuiltins import dotgen
 from jaclang.plugin.feature import JacFeature as Jac

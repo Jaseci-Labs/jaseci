@@ -868,33 +868,49 @@ class PyastGenPass(Pass):
                                             arg="inputs",
                                             value=self.sync(
                                                 ast3.List(
-                                                    elts=[
-                                                        self.sync(
-                                                            ast3.Tuple(
-                                                                elts=[
-                                                                    param.semstr.gen.py_ast[
-                                                                        0
+                                                    elts=(
+                                                        [
+                                                            self.sync(
+                                                                ast3.Tuple(
+                                                                    elts=[
+                                                                        (
+                                                                            param.semstr.gen.py_ast[
+                                                                                0
+                                                                            ]
+                                                                            if param.semstr
+                                                                            else None
+                                                                        ),
+                                                                        (
+                                                                            param.type_tag.tag.gen.py_ast[
+                                                                                0
+                                                                            ]
+                                                                            if param.type_tag
+                                                                            else None
+                                                                        ),
+                                                                        self.sync(
+                                                                            ast3.Constant(
+                                                                                value=param.name.value
+                                                                            )
+                                                                        ),
+                                                                        self.sync(
+                                                                            ast3.Name(
+                                                                                id=param.name.value,
+                                                                                ctx=ast3.Load(),
+                                                                            )
+                                                                        ),
                                                                     ],
-                                                                    param.type_tag.tag.gen.py_ast[
-                                                                        0
-                                                                    ],
-                                                                    self.sync(
-                                                                        ast3.Constant(
-                                                                            value=param.name.value
-                                                                        )
-                                                                    ),
-                                                                    self.sync(
-                                                                        ast3.Name(
-                                                                            id=param.name.value,
-                                                                            ctx=ast3.Load(),
-                                                                        )
-                                                                    ),
-                                                                ],
-                                                                ctx=ast3.Load(),
+                                                                    ctx=ast3.Load(),
+                                                                )
                                                             )
+                                                            for param in node.signature.params.items
+                                                        ]
+                                                        if isinstance(
+                                                            node.signature,
+                                                            ast.FuncSignature,
                                                         )
-                                                        for param in node.signature.params.items
-                                                    ],
+                                                        and node.signature.params
+                                                        else []
+                                                    ),
                                                     ctx=ast3.Load(),
                                                 )
                                             ),
@@ -905,14 +921,29 @@ class PyastGenPass(Pass):
                                             arg="outputs",
                                             value=self.sync(
                                                 ast3.Tuple(
-                                                    elts=[
-                                                        node.signature.semstr.gen.py_ast[
-                                                            0
-                                                        ],
-                                                        node.signature.return_type.gen.py_ast[
-                                                            0
-                                                        ],
-                                                    ],
+                                                    elts=(
+                                                        [
+                                                            (
+                                                                node.signature.semstr.gen.py_ast[
+                                                                    0
+                                                                ]
+                                                                if node.signature.semstr
+                                                                else None
+                                                            ),
+                                                            (
+                                                                node.signature.return_type.gen.py_ast[
+                                                                    0
+                                                                ]
+                                                                if node.signature.return_type
+                                                                else None
+                                                            ),
+                                                        ]
+                                                        if isinstance(
+                                                            node.signature,
+                                                            ast.FuncSignature,
+                                                        )
+                                                        else []
+                                                    ),
                                                     ctx=ast3.Load(),
                                                 )
                                             ),
@@ -921,7 +952,11 @@ class PyastGenPass(Pass):
                                     self.sync(
                                         ast3.keyword(
                                             arg="action",
-                                            value=node.semstr.gen.py_ast[0],
+                                            value=(
+                                                node.semstr.gen.py_ast[0]
+                                                if node.semstr
+                                                else None
+                                            ),
                                         )
                                     ),
                                     # type: ignore

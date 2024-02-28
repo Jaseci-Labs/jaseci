@@ -4,6 +4,9 @@ AOTT: Automated Operational Type Transformation.
 This has all the necessary functions to perform the AOTT operations.
 """
 
+from typing import Any
+
+
 prompt_template = """
 [System Prompt]
 This is an operation you must perform and return the output values. Neither, the methodology,
@@ -60,6 +63,6 @@ def aott_raise(
     )
 
 
-def aott_lower(meaning_out: str, output_type_info: tuple):
+def aott_lower(meaning_out: str, output_type_info: tuple) -> Any:
     """AOTT Lower uses the meaning out provided by the language model and return the result in the desired type."""
     return meaning_out
