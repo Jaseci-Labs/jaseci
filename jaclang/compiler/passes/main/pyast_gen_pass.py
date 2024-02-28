@@ -836,7 +836,7 @@ class PyastGenPass(Pass):
                                             value=self.sync(
                                                 ast3.Dict(
                                                     keys=[
-                                                        self.sync(ast3.Constant(value=key.value)) # type: ignore
+                                                        self.sync(ast3.Constant(value=key.value))  # type: ignore
                                                         for key in model_params.keys()
                                                     ],
                                                     values=[

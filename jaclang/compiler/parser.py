@@ -929,7 +929,7 @@ class JacParser(Pass):
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
             """Grammar rule.
 
-            func_decl: (LPAREN func_decl_params? RPAREN)? (STRING? RETURN_HINT expression)?
+            func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
             """
             params = (
                 kid[1] if len(kid) > 1 and isinstance(kid[1], ast.SubNodeList) else None
@@ -939,7 +939,7 @@ class JacParser(Pass):
             )
             semstr = (
                 kid[-3]
-                if return_spec and len(kid) > 2 and isinstance(kid[-3], ast.String)
+                if return_spec and len(kid) > 3 and isinstance(kid[-3], ast.String)
                 else None
             )
             if (isinstance(params, ast.SubNodeList) or params is None) and (
@@ -972,7 +972,7 @@ class JacParser(Pass):
         def param_var(self, kid: list[ast.AstNode]) -> ast.ParamVar:
             """Grammar rule.
 
-            param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
+            param_var: (STAR_POW | STAR_MUL)? NAME (COLON STRING)? type_tag (EQ expression)?
             """
             star = (
                 kid[0]
@@ -981,18 +981,22 @@ class JacParser(Pass):
                 and not isinstance(kid[0], ast.String)
                 else None
             )
-            semstr = (
-                kid[1]
-                if (star and isinstance(kid[1], ast.String))
-                else kid[0] if isinstance(kid[0], ast.String) else None
-            )
-            name = (
-                kid[2] if (star and semstr) else kid[1] if (star or semstr) else kid[0]
-            )
-            type_tag = (
-                kid[3] if (star and semstr) else kid[2] if (star or semstr) else kid[1]
-            )
+            name = kid[1] if (star) else kid[0]
             value = kid[-1] if isinstance(kid[-1], ast.Expr) else None
+            type_tag = kid[-3] if value else kid[-1]
+            semstr = (
+                kid[3]
+                if star and len(kid) > 3 and isinstance(kid[3], ast.String)
+                else (
+                    kid[2]
+                    if len(kid) > 4 and value and isinstance(kid[2], ast.String)
+                    else (
+                        kid[2]
+                        if len(kid) > 2 and isinstance(kid[2], ast.String)
+                        else None
+                    )
+                )
+            )
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
                 return self.nu(
                     ast.ParamVar(
@@ -1102,10 +1106,11 @@ class JacParser(Pass):
             """Grammar rule.
 
             typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_BY POST_INIT_OP)?
+            typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY POST_INIT_OP)?
             """
-            semstr = kid[0] if isinstance(kid[0], ast.String) else None
-            name = kid[1] if semstr else kid[0]
-            type_tag = kid[2] if semstr else kid[1]
+            name = kid[0]
+            semstr = kid[2] if len(kid) > 2 and isinstance(kid[2], ast.String) else None
+            type_tag = kid[3] if semstr else kid[1]
             defer = isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.POST_INIT_OP
             value = kid[-1] if not defer and isinstance(kid[-1], ast.Expr) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
