@@ -256,6 +256,10 @@ class SubTag(AstNode, Generic[T]):
         AstNode.__init__(self, kid=kid)
 
 
+# SubNodeList were created to simplify the type safety of the
+# parser's implementation. We basically need to maintain tokens
+# in the kid list as well as separating out items of interest in
+# the ast node class body.
 class SubNodeList(AstNode, Generic[T]):
     """SubNodeList node type for Jac Ast."""
 
@@ -1305,7 +1309,7 @@ class BinaryExpr(Expr):
 
 
 class CompareExpr(Expr):
-    """ExprBinary node type for Jac Ast."""
+    """CompareExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1318,6 +1322,21 @@ class CompareExpr(Expr):
         self.left = left
         self.rights = rights
         self.ops = ops
+        AstNode.__init__(self, kid=kid)
+
+
+class BoolExpr(Expr):
+    """BoolExpr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        op: Token,
+        values: list[Expr],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize binary expression node."""
+        self.values = values
+        self.op = op
         AstNode.__init__(self, kid=kid)
 
 
@@ -1733,17 +1752,17 @@ class SpecialVarRef(NameSpec):
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
-        if self.var.name == Tok.SELF_OP:
+        if self.var.name == Tok.KW_SELF:
             return "self"
-        elif self.var.name == Tok.SUPER_OP:
+        elif self.var.name == Tok.KW_SUPER:
             return "super()"
-        elif self.var.name == Tok.ROOT_OP:
+        elif self.var.name == Tok.KW_ROOT:
             return Con.ROOT.value
-        elif self.var.name == Tok.HERE_OP:
+        elif self.var.name == Tok.KW_HERE:
             return Con.HERE.value
-        elif self.var.name == Tok.INIT_OP:
+        elif self.var.name == Tok.KW_INIT:
             return "__init__"
-        elif self.var.name == Tok.POST_INIT_OP:
+        elif self.var.name == Tok.KW_POST_INIT:
             return "__post_init__"
         else:
             raise NotImplementedError("ICE: Special var reference not implemented")
@@ -1754,7 +1773,7 @@ class EdgeRefTrailer(Expr):
 
     def __init__(
         self,
-        chain: list[Expr],
+        chain: list[Expr | FilterCompr],
         edges_only: bool,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1769,13 +1788,11 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
 
     def __init__(
         self,
-        filter_type: Optional[Expr],
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize edge op reference expression node."""
-        self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
@@ -1824,10 +1841,12 @@ class FilterCompr(AtomExpr):
 
     def __init__(
         self,
-        compares: SubNodeList[CompareExpr],
+        f_type: Optional[Expr],
+        compares: Optional[SubNodeList[CompareExpr]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
+        self.f_type = f_type
         self.compares = compares
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(

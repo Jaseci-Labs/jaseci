@@ -13,12 +13,15 @@ from jaclang.core.construct import (
     Root,
     WalkerArchitype,
 )
-from jaclang.plugin.spec import JacFeatureSpec, T
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+
 
 import pluggy
 
 pm = pluggy.PluginManager("jac")
 pm.add_hookspecs(JacFeatureSpec)
+pm.add_hookspecs(JacCmdSpec)
+pm.add_hookspecs(JacBuiltin)
 
 
 class JacFeature:
@@ -143,7 +146,6 @@ class JacFeature:
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
@@ -152,7 +154,6 @@ class JacFeature:
             node_obj=node_obj,
             target_obj=target_obj,
             dir=dir,
-            filter_type=filter_type,
             filter_func=filter_func,
             edges_only=edges_only,
         )
@@ -177,7 +178,6 @@ class JacFeature:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:
         """Jac's disconnect operator feature."""
@@ -185,7 +185,6 @@ class JacFeature:
             left=left,
             right=right,
             dir=dir,
-            filter_type=filter_type,
             filter_func=filter_func,
         )
 
@@ -234,10 +233,10 @@ class JacFeature:
         )
 
 
-class JacBuiltin:
-    """Jac Builtins."""
+class JacCmd:
+    """Jac CLI command."""
 
     @staticmethod
-    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
-        """Print the dot graph."""
-        return pm.hook.dotgen(node=node, radius=radius)
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        return pm.hook.create_cmd()

@@ -12,11 +12,11 @@ node inner_node {
 }
 
 walker walker1 {
-    can create_main_node with `<root> entry;
+    can create_main_node with `root entry;
 }
 
 :walker:walker1:can:create_main_node {
-    end = <here>;
+    end = here;
     for i=0 to i<len(list1)+1 by i+=1  {
         end ++> (end := main_node(no=i + 1));
         visit [-->];
@@ -24,7 +24,7 @@ walker walker1 {
 }
 
 walker walker2 {
-    can skip_root with `<root> entry {
+    can skip_root with `root entry {
         visit [-->];
     }
     can process with main_node entry;
@@ -33,32 +33,32 @@ walker walker2 {
 :walker:walker2:can:process {
     :g: list1 ;
 
-    for j in range(0, len(list1) - (<here>.no)) {
-        <here> ++> inner_node(main=<here>.no, sub=j + 1);
+    for j in range(0, len(list1) - (here.no)) {
+        here ++> inner_node(main=here.no, sub=j + 1);
     }
     visit [-->];
 }
 
 walker walker3 {
-    can skiproot with `<root> entry {
+    can skiproot with `root entry {
         visit [-->];
     }
     can adjust with main_node entry;
 }
 
 :walker:walker3:can:adjust {
-    <h> spawn walker4();
+    here spawn walker4();
 }
 
 walker walker4 {
     can skipmain with main_node entry {
-        visit [-->];#  print(f"iteration {<here>.no} started  {list1}");
+        visit [-->];#  print(f"iteration {here.no} started  {list1}");
     }
 
     can skipin with inner_node entry {
         :g: list1 ;
 
-        j = <h>.sub - 1;
+        j = here.sub - 1;
         if list1[j] > list1[j + 1] {
             x = list1[j];
             list1[j] = list1[j + 1];
@@ -70,8 +70,8 @@ walker walker4 {
 }
 
 with entry {
-    <r> spawn walker1();
-    <r> spawn walker2();
-    <r> spawn walker3();
-    print(<r>._jac_.gen_dot());
+    root spawn walker1();
+    root spawn walker2();
+    root spawn walker3();
+    print(root._jac_.gen_dot());
 }

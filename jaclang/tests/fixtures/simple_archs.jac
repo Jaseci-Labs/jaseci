@@ -4,8 +4,9 @@ obj SimpleObj {
     has var1: int,
         var2: int,
         var3: int = 0;
-    can <post_init> {
-       print(<s>.var1, <s>.var2, <s>.var3);
+
+    can postinit {
+        print(self.var1, self.var2, self.var3);
     }
 }
 
@@ -13,12 +14,13 @@ class SimpleClass {
     has var1: int,
         var2: int,
         var3: int = 0;
-    can <init> {
-       print(<s>.var3);
+
+    can init {
+        print(self.var3);
     }
 }
 
 with entry {
-    SimpleObj(1,2);
+    SimpleObj(1, 2);
     SimpleClass();
 }

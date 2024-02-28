@@ -604,9 +604,6 @@
 			"comment": "valid Python expressions w/o comments and line continuation",
 			"patterns": [
 				{
-					"include": "#backticks"
-				},
-				{
 					"include": "#illegal-anno"
 				},
 				{
@@ -1319,7 +1316,7 @@
 		"arch-var-reference": {
 			"patterns": [
 				{
-					"match": "(<h>|<here>|<s>|<self>|<i>|<init>|<sup>|<super>|<r>|<root>)\\s*",
+					"match": "(here|self|init|postinit|super|root)\\s*",
 					"captures": {
 						"1": {
 							"name": "storage.type.class.jac"
@@ -1494,9 +1491,6 @@
 						},
 						{
 							"include": "#comments"
-						},
-						{
-							"include": "#backticks"
 						},
 						{
 							"include": "#illegal-anno"
@@ -2072,7 +2066,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)(<h>|<here>|<s>|<self>|<i>|<init>|<super>|<r>|<root>)",
+			"match": "(?x)(here|self|init|postinit|super|root)",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"
@@ -2085,16 +2079,6 @@
 		"ellipsis": {
 			"name": "constant.other.ellipsis.jac",
 			"match": "\\.\\.\\."
-		},
-		"backticks": {
-			"name": "invalid.deprecated.backtick.jac",
-			"begin": "\\`",
-			"end": "(?:\\`|(?<!\\\\)(\\n))",
-			"patterns": [
-				{
-					"include": "#expression"
-				}
-			]
 		},
 		"illegal-operator": {
 			"patterns": [

@@ -42,7 +42,9 @@ class CommandRegistry:
         name = func.__name__
         cmd = Command(func)
         self.registry[name] = cmd
-        cmd_parser = self.sub_parsers.add_parser(name, description=func.__doc__)
+        cmd_parser: argparse.ArgumentParser = self.sub_parsers.add_parser(
+            name, description=func.__doc__
+        )
         first = True
         for param_name, param in cmd.sig.parameters.items():
             arg_msg = f"type: {param.annotation.__name__}"
@@ -83,17 +85,33 @@ class CommandRegistry:
                 )
             else:
                 arg_msg += f", default: {param.default}"
-                cmd_parser.add_argument(
-                    f"-{param_name[:1]}",
-                    f"--{param_name}",
-                    default=param.default,
-                    help=arg_msg,
-                    type=(
-                        eval(param.annotation)
-                        if isinstance(param.annotation, str)
-                        else param.annotation
-                    ),
-                )
+                if param.annotation == bool:
+                    cmd_parser.add_argument(
+                        f"-{param_name[:1]}",
+                        f"--{param_name}",
+                        default=param.default,
+                        action="store_true",
+                        help=arg_msg,
+                    )
+                    cmd_parser.add_argument(
+                        f"-n{param_name[:1]}",
+                        f"--no-{param_name}",
+                        dest=param_name,
+                        action="store_false",
+                        help=f"Compliment of {arg_msg}",
+                    )
+                else:
+                    cmd_parser.add_argument(
+                        f"-{param_name[:1]}",
+                        f"--{param_name}",
+                        default=param.default,
+                        help=arg_msg,
+                        type=(
+                            eval(param.annotation)
+                            if isinstance(param.annotation, str)
+                            else param.annotation
+                        ),
+                    )
         return func
 
     def get(self, name: str) -> Optional[Command]:
@@ -108,6 +126,9 @@ class CommandRegistry:
             args = comd.sig.parameters
             all_commands[name] = (doc, args)
         return all_commands
+
+
+cmd_registry = CommandRegistry()
 
 
 class CommandShell(cmd.Cmd):

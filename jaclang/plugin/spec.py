@@ -149,7 +149,6 @@ class JacFeatureSpec:
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
@@ -176,7 +175,6 @@ class JacFeatureSpec:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
@@ -226,6 +224,25 @@ class JacBuiltin:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: list[str],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
         """Print the dot graph."""
+        raise NotImplementedError
+
+
+class JacCmdSpec:
+    """Jac CLI command."""
+
+    @staticmethod
+    @hookspec
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
         raise NotImplementedError

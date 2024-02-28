@@ -1015,6 +1015,13 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_bool_expr(self, node: ast.BoolExpr) -> None:
+        """Sub objects.
+
+        value: Token,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
 

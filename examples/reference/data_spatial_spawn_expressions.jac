@@ -1,5 +1,5 @@
 walker Adder {
-    can do with `<root> entry;
+    can do with `root entry;
 }
 
 node node_a {
@@ -10,17 +10,17 @@ node node_a {
 }
 
 :walker:Adder:can:do {
-    <here> ++> node_a();
+    here ++> node_a();
     visit [-->];
 }
 
 :node:node_a:can:add {
-    <self>.x = 550;
-    <self>.y = 450;
-    print(int(<s>.x) + int(<s>.y));
+    self.x = 550;
+    self.y = 450;
+    print(int(self.x) + int(self.y));
 }
 
 with entry {
 # spawn will iniiate the walker Adder from root node
-Adder() spawn <root>;
+Adder() spawn root;
 }

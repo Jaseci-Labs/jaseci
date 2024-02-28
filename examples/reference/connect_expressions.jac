@@ -3,8 +3,8 @@ node node_a {
 }
 
 walker Creator {
-    can create with `<root> entry;
-    can travel with `<root> | node_a entry;
+    can create with `root entry;
+    can travel with `root | node_a entry;
 }
 
 edge MyEdge {
@@ -12,7 +12,7 @@ edge MyEdge {
 }
 
 :walker:Creator:can:create {
-    end = <here>;
+    end = here;
     for i=0 to i<7 by i+=1  {
         if i % 2 == 0 {
             end ++> (end := node_a(value=i));
@@ -30,5 +30,5 @@ edge MyEdge {
 }
 
 with entry {
-    <root> spawn Creator();
+    root spawn Creator();
 }

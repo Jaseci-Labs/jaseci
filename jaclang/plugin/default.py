@@ -9,7 +9,7 @@ from functools import wraps
 from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.constant import EdgeDir
+from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.core.aott import aott_lower, aott_raise
 from jaclang.core.construct import (
     Architype,
@@ -27,7 +27,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.jacbuiltins import dotgen
+from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
 
@@ -263,7 +263,6 @@ class JacFeatureDefaults:
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
@@ -279,16 +278,14 @@ class JacFeatureDefaults:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
                 connected_edges += node._jac_.get_edges(
-                    dir, filter_type, filter_func, target_obj=targ_obj_set
+                    dir, filter_func, target_obj=targ_obj_set
                 )
             return list(set(connected_edges))
         else:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
-                    node._jac_.edges_to_nodes(
-                        dir, filter_type, filter_func, target_obj=targ_obj_set
-                    )
+                    node._jac_.edges_to_nodes(dir, filter_func, target_obj=targ_obj_set)
                 )
             return list(set(connected_nodes))
 
@@ -320,7 +317,6 @@ class JacFeatureDefaults:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
@@ -330,17 +326,11 @@ class JacFeatureDefaults:
         for i in left:
             for j in right:
                 edge_list: list[EdgeArchitype] = [*i._jac_.edges]
-                if filter_type:
-                    edge_list = [e for e in edge_list if isinstance(e, filter_type)]
                 edge_list = filter_func(edge_list) if filter_func else edge_list
                 for e in edge_list:
-                    if (
-                        e._jac_.target
-                        and e._jac_.source
-                        and (not filter_type or isinstance(e, filter_type))
-                    ):
+                    if e._jac_.target and e._jac_.source:
                         if (
-                            dir in ["OUT", "ANY"]
+                            dir in ["OUT", "ANY"]  # TODO: Not ideal
                             and i._jac_.obj == e._jac_.source
                             and e._jac_.target == j._jac_.obj
                         ):
@@ -433,6 +423,91 @@ class JacBuiltin:
 
     @staticmethod
     @hookimpl
-    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
-        """Print the dot graph."""
-        return dotgen(node, radius)
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: list[str],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        edge_type = edge_type if edge_type else []
+        visited_nodes: list[NodeArchitype] = []
+        node_depths: dict[NodeArchitype, int] = {node: 0}
+        queue: list = [[node, 0]]
+        connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
+
+        def dfs(node: NodeArchitype, cur_depth: int) -> None:
+            """Depth first search."""
+            if node not in visited_nodes:
+                visited_nodes.append(node)
+                traverse_graph(
+                    node,
+                    cur_depth,
+                    depth,
+                    edge_type,
+                    traverse,
+                    connections,
+                    node_depths,
+                    visited_nodes,
+                    queue,
+                    bfs,
+                    dfs,
+                    node_limit,
+                    edge_limit,
+                )
+
+        if bfs:
+            cur_depth = 0
+            while queue:
+                current_node, cur_depth = queue.pop(0)
+                if current_node not in visited_nodes:
+                    visited_nodes.append(current_node)
+                    traverse_graph(
+                        current_node,
+                        cur_depth,
+                        depth,
+                        edge_type,
+                        traverse,
+                        connections,
+                        node_depths,
+                        visited_nodes,
+                        queue,
+                        bfs,
+                        dfs,
+                        node_limit,
+                        edge_limit,
+                    )
+        else:
+            dfs(node, cur_depth=0)
+        dot_content = (
+            'digraph {\nnode [style="filled", shape="ellipse", '
+            'fillcolor="invis", fontcolor="black"];\n'
+        )
+        for source, target, edge in connections:
+            dot_content += (
+                f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
+                f' [label="{edge._jac_.obj.__class__.__name__} "];\n'
+            )
+        for node_ in visited_nodes:
+            color = (
+                colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
+            )
+            dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}" fillcolor="{color}"];\n'
+        if dot_file:
+            with open(dot_file, "w") as f:
+                f.write(dot_content + "}")
+        return dot_content + "}"
+
+
+class JacCmdDefaults:
+    """Jac CLI command."""
+
+    @staticmethod
+    @hookimpl
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        pass
