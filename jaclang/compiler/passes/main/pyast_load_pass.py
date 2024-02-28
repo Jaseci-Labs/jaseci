@@ -565,6 +565,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             exc: expr | None
             cause: expr | None
         """
+        print(node.exc, node.cause)
         exc = self.convert(node.exc) if node.exc else None
         cause = self.convert(node.cause) if node.cause else None
         kid = []
@@ -671,15 +672,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         values = [self.convert(value) for value in node.values]
         valid = [value for value in values if isinstance(value, ast.Expr)]
         valid_values = ast.SubNodeList[ast.Expr](items=valid, kid=valid)
-        print("okok")
         return ast.BoolExpr(op=op, values=valid, kid=[op, valid_values])
 
-    def proc_break(self, node: py_ast.Break) -> None:
+    def proc_break(self, node: py_ast.Break) -> ast.CtrlStmt:
         """Process python node."""
-        l_paren = ast.Token(
+        break_tok = ast.Token(
             file_path=self.mod_path,
-            name=Tok.LPAREN,
-            value="(",
+            name=Tok.KW_BREAK,
+            value="KW_BREAK",
             line=0,
             col_start=0,
             col_end=0,
@@ -687,20 +687,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
             kid=[],
         )
-        r_paren = ast.Token(
-            file_path=self.mod_path,
-            name=Tok.RPAREN,
-            value=")",
-            line=0,
-            col_start=0,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-            kid=[],
-        )
-        return ast.SubNodeList[ast.CodeBlockStmt | ast.ArchBlockStmt](
-            items=[], kid=[l_paren, r_paren]
-        )
+        return ast.CtrlStmt(ctrl=break_tok, kid=[break_tok])
 
     def proc_call(self, node: py_ast.Call) -> ast.FuncCall:
         """Process python node.
@@ -812,8 +799,20 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
-    def proc_continue(self, node: py_ast.Continue) -> None:
+    def proc_continue(self, node: py_ast.Continue) -> ast.CtrlStmt:
         """Process python node."""
+        continue_tok = ast.Token(
+            file_path=self.mod_path,
+            name=Tok.KW_CONTINUE,
+            value="KW_CONTINUE",
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        return ast.CtrlStmt(ctrl=continue_tok, kid=[continue_tok])
 
     def proc_dict(self, node: py_ast.Dict) -> None:
         """Process python node."""
@@ -1338,7 +1337,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
             valid_elts = None
             kid = [l_square, r_square]
-        print("tuple len", len(node.elts))
         return ast.TupleVal(values=valid_elts, kid=kid)
 
     def proc_yield(self, node: py_ast.Yield) -> None:
