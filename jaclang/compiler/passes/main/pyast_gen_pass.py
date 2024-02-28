@@ -798,6 +798,11 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
+        if node.is_genai_ability:
+            model_key_values = [
+                (mod_key.key.value, mod_key.value.value)
+                for mod_key in node.body.params.items
+            ]
         body = (
             [
                 self.sync(
@@ -828,7 +833,20 @@ class PyastGenPass(Pass):
                                         ast3.keyword(
                                             arg="model_params",
                                             value=self.sync(
-                                                ast3.Dict(keys=[], values=[])
+                                                ast3.Dict(
+                                                    keys=[
+                                                        self.sync(
+                                                            ast3.Constant(value=key)
+                                                        )
+                                                        for key, _ in model_key_values
+                                                    ],
+                                                    values=[
+                                                        self.sync(
+                                                            ast3.Constant(value=value)
+                                                        )
+                                                        for _, value in model_key_values
+                                                    ],
+                                                )
                                             ),
                                         )
                                     ),
@@ -847,7 +865,47 @@ class PyastGenPass(Pass):
                                     self.sync(
                                         ast3.keyword(
                                             arg="inputs",
-                                            value=self.sync(ast3.Constant(value=None)),
+                                            value=self.sync(
+                                                ast3.List(
+                                                    elts=[
+                                                        self.sync(
+                                                            ast3.Tuple(
+                                                                elts=[
+                                                                    self.sync(
+                                                                        ast3.Constant(
+                                                                            value=x.name.value
+                                                                        )
+                                                                    ),
+                                                                    self.sync(
+                                                                        ast3.Constant(
+                                                                            value=x.type_tag.tag.lit_value.__name__
+                                                                        )
+                                                                    ),
+                                                                    self.sync(
+                                                                        ast3.Constant(
+                                                                            value=x.semstr.lit_value
+                                                                        )
+                                                                    ),
+                                                                    *(
+                                                                        self.sync(
+                                                                            ast3.Name(
+                                                                                id=item.name.value,
+                                                                                ctx=ast3.Load(),
+                                                                            )
+                                                                        )
+                                                                        for item in node.signature.params.items
+                                                                        if item.name.value
+                                                                        == x.name.value
+                                                                    ),
+                                                                ],
+                                                                ctx=ast3.Load(),
+                                                            )
+                                                        )
+                                                        for x in node.signature.params.items
+                                                    ],
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
                                         )
                                     ),
                                     self.sync(
@@ -856,7 +914,13 @@ class PyastGenPass(Pass):
                                             value=self.sync(ast3.Constant(value=None)),
                                         )
                                     ),
-                                    self.sync(ast3.keyword(arg="action", value=node.semstr.gen.py_ast[0])),  # type: ignore
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="action",
+                                            value=node.semstr.gen.py_ast[0],
+                                        )
+                                    ),
+                                    # type: ignore
                                 ],
                             )
                         )

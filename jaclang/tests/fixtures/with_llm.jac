@@ -6,8 +6,8 @@ obj model {
 glob llm = model();
 
 can 'Summarize the Life of the Individual'
-summarize('Name of the Person' name: str) 'Summary' -> str with llm(reason=True);
+summarize('Name of the Person' name: str,'aggy' age:int) 'Summary' -> str with llm(temperature=0.7,reason=True);
 
 with entry {
-    print(summarize('Albert Einstein'));
+    print(summarize('Albert Einstein',89));
 }

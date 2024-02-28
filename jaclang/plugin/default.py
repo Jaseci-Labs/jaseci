@@ -25,8 +25,8 @@ from jaclang.core.construct import (
     WalkerArchitype,
     root,
 )
-from jaclang.core.importer import jac_importer
 from jaclang.core.aott import aott_raise, aott_lower
+from jaclang.core.importer import jac_importer
 from jaclang.core.jacbuiltins import dotgen
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
