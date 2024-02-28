@@ -1747,17 +1747,17 @@ class SpecialVarRef(NameSpec):
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
-        if self.var.name == Tok.SELF_OP:
+        if self.var.name == Tok.KW_SELF:
             return "self"
-        elif self.var.name == Tok.SUPER_OP:
+        elif self.var.name == Tok.KW_SUPER:
             return "super()"
-        elif self.var.name == Tok.ROOT_OP:
+        elif self.var.name == Tok.KW_ROOT:
             return Con.ROOT.value
-        elif self.var.name == Tok.HERE_OP:
+        elif self.var.name == Tok.KW_HERE:
             return Con.HERE.value
-        elif self.var.name == Tok.INIT_OP:
+        elif self.var.name == Tok.KW_INIT:
             return "__init__"
-        elif self.var.name == Tok.POST_INIT_OP:
+        elif self.var.name == Tok.KW_POST_INIT:
             return "__post_init__"
         else:
             raise NotImplementedError("ICE: Special var reference not implemented")

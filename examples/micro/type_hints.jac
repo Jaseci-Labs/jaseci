@@ -1,8 +1,9 @@
 """Type hints aren't that much work."""
 
-can foo(a: int, b: str) -> int {  # type hint needed here
-    c = a + (b|>int);  # no type hint needed here
-    return c;
+can foo(a: int, b: str) -> int { # type hint needed here
+
+c = a + (b |> int);# no type hint needed here
+return c;
 }
 
 obj Bar {
@@ -10,7 +11,8 @@ obj Bar {
     has b_list: list[str] = ["5", "6", "7"];
 
     can init() -> None {
-        for i in <h>.b_list {
+
+        for i in here.b_list {
             foo(5, i) |> print;
         }
     }

@@ -229,7 +229,7 @@ class JacLexer(RegexLexer):
                 Operator.Word,
             ),
             (
-                r"(:g:|:global:|<h>|<here>|<s>|<self>|<i>|<init>|<sup>|<super>|<r>|<root>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:)",
+                r"(:g:|:global:|here|here|self|self|<i>|init|<sup>|super|root|root|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:)",
                 Operator.Word,
             ),
             (r"\?:|\?|:\+:|!=|==|<<|>>|:=|[-~+/*%=<>&^|.]", Operator),

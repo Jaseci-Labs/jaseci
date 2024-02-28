@@ -18,8 +18,8 @@ class DeclDefMatchPassTests(TestCase):
         self.assertFalse(state.errors_had)
         self.assertIn("(o)Test.(c)say_hi", state.ir.sym_tab.tab)
         self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(c)say_hi"].decl.body)
-        self.assertIn("(o)Test.(c)init", state.ir.sym_tab.tab)
-        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(c)init"].decl.body)
+        self.assertIn("(o)Test.(c)__init__", state.ir.sym_tab.tab)
+        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(c)__init__"].decl.body)
 
     def test_ability_connected_to_decl_post(self) -> None:
         """Basic test for pass."""
@@ -27,5 +27,5 @@ class DeclDefMatchPassTests(TestCase):
         self.assertFalse(state.errors_had)
         self.assertIn("(o)Test.(c)say_hi", state.ir.sym_tab.tab)
         self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(c)say_hi"].decl.body)
-        self.assertIn("(o)Test.(c)init", state.ir.sym_tab.tab)
-        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(c)init"].decl.body)
+        self.assertIn("(o)Test.(c)__init__", state.ir.sym_tab.tab)
+        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(c)__init__"].decl.body)

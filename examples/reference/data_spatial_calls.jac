@@ -1,5 +1,5 @@
 walker Creator {
-    can func2 with `<root> entry;
+    can func2 with `root entry;
 }
 
 node node_1 {
@@ -9,12 +9,12 @@ node node_1 {
 }
 
 :node:node_1:can:func_1 {
-    print("visiting ", <s>);
+    print("visiting ", self);
     visit [-->];
 }
 
 :walker:Creator:can:func2 {
-    end = <here>;
+    end = here;
     for i=0 to i<5 by i+=1  {
         end ++> (end := node_1(val=i + 1));
     }
@@ -22,6 +22,6 @@ node node_1 {
 }
 
 with entry {
-    <r> spawn :> Creator;
-    <r> spawn |> Creator;
+    root spawn :> Creator;
+    root spawn |> Creator;
 }
