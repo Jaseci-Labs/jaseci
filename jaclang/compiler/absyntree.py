@@ -256,6 +256,10 @@ class SubTag(AstNode, Generic[T]):
         AstNode.__init__(self, kid=kid)
 
 
+# SubNodeList were created to simplify the type safety of the
+# parser's implementation. We basically need to maintain tokens
+# in the kid list as well as separating out items of interest in
+# the ast node class body.
 class SubNodeList(AstNode, Generic[T]):
     """SubNodeList node type for Jac Ast."""
 
