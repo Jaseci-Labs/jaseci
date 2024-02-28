@@ -74,6 +74,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 (ast.ElementStmt, ast.String, ast.EmptyToken),
             )
         ]
+        for i in elements:
+            print("elements: ", i)
+        for i in valid:
+            print("valid: ", i)
+        print(len(elements), len(valid))
         if len(valid) != len(elements):
             raise self.ice("Invalid module body")
         ret = ast.Module(
@@ -238,12 +243,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if len(valid2)
             else None
         )
-        # body = [self.convert(i) for i in node.body]
-        # print("here")
-        # valid3 = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
-        # if len(valid3) != len(body):
-        #     raise self.ice("Length mismatch in classes body")
-        # valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid3, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
@@ -1025,11 +1024,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if (
                 isinstance(name, ast.ExprAsItem)
                 and isinstance(name.expr, ast.Name)
-                and isinstance(name.alias, ast.Name)
+                and (isinstance(name.alias, ast.Name) or name.alias is None)
             ):
                 valid_names.append(
                     ast.ModuleItem(
-                        name=name.expr, alias=name.alias, kid=[i for i in name.kid if i]
+                        name=name.expr,
+                        alias=name.alias if name.alias is not None else None,
+                        kid=[i for i in name.kid if i],
                     )
                 )
             else:
@@ -1185,7 +1186,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             upper: expr | None
             step: expr | None
         """
-        print("comes to slice")
         lower = self.convert(node.lower) if node.lower else None
         upper = self.convert(node.upper) if node.upper else None
         step = self.convert(node.step) if node.step else None
