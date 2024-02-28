@@ -9,7 +9,7 @@ glob llm = model();
 # summarize('Name of the Person' name: str,'Age of the Person' age:int) 'Summary' -> str with llm(temperature=0.7,reason=True);
 
 can 'Summarize the Life of the Individual'
-summarize( name: 'Name of the Person': str, age: 'Age of the Person': int) -> 'Summary': str with llm(temperature=0.7, reason=True);
+summarize( name: 'Name of the Person': str, age: 'Age of the Person': int) -> 'Summary': str|int with llm(temperature=0.7, reason=True);
 
 
 with entry {

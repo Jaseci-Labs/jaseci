@@ -872,37 +872,28 @@ class PyastGenPass(Pass):
                                                         self.sync(
                                                             ast3.Tuple(
                                                                 elts=[
+                                                                    param.semstr.gen.py_ast[
+                                                                        0
+                                                                    ],
+                                                                    param.type_tag.tag.gen.py_ast[
+                                                                        0
+                                                                    ],
                                                                     self.sync(
                                                                         ast3.Constant(
-                                                                            value=x.name.value
+                                                                            value=param.name.value
                                                                         )
                                                                     ),
                                                                     self.sync(
-                                                                        ast3.Constant(
-                                                                            value=x.type_tag.tag.lit_value.__name__
+                                                                        ast3.Name(
+                                                                            id=param.name.value,
+                                                                            ctx=ast3.Load(),
                                                                         )
-                                                                    ),
-                                                                    self.sync(
-                                                                        ast3.Constant(
-                                                                            value=x.semstr.lit_value
-                                                                        )
-                                                                    ),
-                                                                    *(
-                                                                        self.sync(
-                                                                            ast3.Name(
-                                                                                id=item.name.value,
-                                                                                ctx=ast3.Load(),
-                                                                            )
-                                                                        )
-                                                                        for item in node.signature.params.items
-                                                                        if item.name.value
-                                                                        == x.name.value
                                                                     ),
                                                                 ],
                                                                 ctx=ast3.Load(),
                                                             )
                                                         )
-                                                        for x in node.signature.params.items
+                                                        for param in node.signature.params.items
                                                     ],
                                                     ctx=ast3.Load(),
                                                 )
@@ -912,7 +903,19 @@ class PyastGenPass(Pass):
                                     self.sync(
                                         ast3.keyword(
                                             arg="outputs",
-                                            value=self.sync(ast3.Constant(value=None)),
+                                            value=self.sync(
+                                                ast3.Tuple(
+                                                    elts=[
+                                                        node.signature.semstr.gen.py_ast[
+                                                            0
+                                                        ],
+                                                        node.signature.return_type.gen.py_ast[
+                                                            0
+                                                        ],
+                                                    ],
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
                                         )
                                     ),  # TODO: Add Meaning Types of Outputs
                                     self.sync(
