@@ -798,11 +798,12 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
-        if node.is_genai_ability:
-            model_key_values = [
-                (mod_key.key.value, mod_key.value.value)
-                for mod_key in node.body.params.items
-            ]
+        if isinstance(node.body, ast.FuncCall) and node.body.params is not None:
+            model_params = {
+                param.key: param.value
+                for param in node.body.params.items
+                if isinstance(param, ast.KWPair)
+            }
         body = (
             [
                 self.sync(
@@ -835,16 +836,12 @@ class PyastGenPass(Pass):
                                             value=self.sync(
                                                 ast3.Dict(
                                                     keys=[
-                                                        self.sync(
-                                                            ast3.Constant(value=key)
-                                                        )
-                                                        for key, _ in model_key_values
+                                                        self.sync(ast3.Constant(value=key.value)) # type: ignore
+                                                        for key in model_params.keys()
                                                     ],
                                                     values=[
-                                                        self.sync(
-                                                            ast3.Constant(value=value)
-                                                        )
-                                                        for _, value in model_key_values
+                                                        value.gen.py_ast[0]
+                                                        for value in model_params.values()
                                                     ],
                                                 )
                                             ),
@@ -853,13 +850,17 @@ class PyastGenPass(Pass):
                                     self.sync(
                                         ast3.keyword(
                                             arg="incl_info",
-                                            value=self.sync(ast3.Constant(value=None)),
+                                            value=self.sync(
+                                                ast3.Constant(value=None)
+                                            ),  # TODO: Add incl_info
                                         )
                                     ),
                                     self.sync(
                                         ast3.keyword(
                                             arg="excl_info",
-                                            value=self.sync(ast3.Constant(value=None)),
+                                            value=self.sync(
+                                                ast3.Constant(value=None)
+                                            ),  # TODO: Add excl_info
                                         )
                                     ),
                                     self.sync(
@@ -913,7 +914,7 @@ class PyastGenPass(Pass):
                                             arg="outputs",
                                             value=self.sync(ast3.Constant(value=None)),
                                         )
-                                    ),
+                                    ),  # TODO: Add Meaning Types of Outputs
                                     self.sync(
                                         ast3.keyword(
                                             arg="action",
