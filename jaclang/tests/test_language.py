@@ -112,6 +112,7 @@ class JacLanguageTests(TestCase):
         jac_import("with_llm", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        self.assertIn("{'temperature': 0.7}", stdout_value)
         self.assertIn("Albert Einstein was a German-born", stdout_value)
 
     def test_ignore(self) -> None:
