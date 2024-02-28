@@ -214,14 +214,14 @@ class JacFeature:
 
     @staticmethod
     def with_llm(
-        model: Any,  # TODO: Need to change to the model type
+        model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
         incl_info: tuple,
         excl_info: tuple,
         inputs: tuple,
         outputs: tuple,
         action: str,
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         return pm.hook.with_llm(
             model=model,

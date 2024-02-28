@@ -63,6 +63,6 @@ def aott_raise(
     )
 
 
-def aott_lower(meaning_out: str, output_type_info: tuple) -> Any:
+def aott_lower(meaning_out: str, output_type_info: tuple) -> Any:  # noqa: ANN401
     """AOTT Lower uses the meaning out provided by the language model and return the result in the desired type."""
     return meaning_out
