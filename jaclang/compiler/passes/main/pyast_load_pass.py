@@ -101,7 +101,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
-        print("function name: ", node.name)
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -115,10 +114,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         body = [self.convert(i) for i in node.body]
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
-        for i in node.body:
-            print("node.body: ", i)
-        for i in body:
-            print("body: ", i)
         if len(valid) != len(body):
             raise self.ice("Length mismatch in function body")
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
@@ -225,9 +220,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[],
         )
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
+        valid = [
+            i for i in body if isinstance(i, (ast.ArchBlockStmt, ast.CodeBlockStmt))
+        ]
         if len(valid) != len(body):
-            self.error("Length mismatch in classes body")
+            raise self.ice("Length mismatch in classes body")
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid, kid=body)
 
         base_classes = [self.convert(base) for base in node.bases]
@@ -241,11 +238,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if len(valid2)
             else None
         )
-        body = [self.convert(i) for i in node.body]
-        valid3 = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
-        if len(valid3) != len(body):
-            raise self.ice("Length mismatch in classes body")
-        valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid3, kid=body)
+        # body = [self.convert(i) for i in node.body]
+        # print("here")
+        # valid3 = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
+        # if len(valid3) != len(body):
+        #     raise self.ice("Length mismatch in classes body")
+        # valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid3, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
@@ -565,7 +563,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             exc: expr | None
             cause: expr | None
         """
-        print(node.exc, node.cause)
         exc = self.convert(node.exc) if node.exc else None
         cause = self.convert(node.cause) if node.cause else None
         kid = []
@@ -573,6 +570,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid.append(exc)
         if cause:
             kid.append(cause)
+        if len(kid) == 0:
+            kid = [self.operator(Tok.LPAREN, "("), self.operator(Tok.RPAREN, ")")]
         return ast.RaiseStmt(cause=cause, from_target=exc, kid=kid)
 
     def proc_assert(self, node: py_ast.Assert) -> None:
@@ -1166,28 +1165,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def proc_pass(self, node: py_ast.Pass) -> ast.SubNodeList:
         """Process python node."""
-        l_brace = ast.Token(
-            file_path=self.mod_path,
-            name=Tok.LBRACE,
-            value="{",
-            line=0,
-            col_start=0,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-            kid=[],
-        )
-        r_brace = ast.Token(
-            file_path=self.mod_path,
-            name=Tok.RBRACE,
-            value="}",
-            line=0,
-            col_start=0,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-            kid=[],
-        )
+        l_brace = self.operator(Tok.LBRACE, "{")
+        r_brace = self.operator(Tok.RBRACE, "}")
         return ast.SubNodeList[ast.CodeBlockStmt | ast.ArchBlockStmt](
             items=[], kid=[l_brace, r_brace]
         )
@@ -1313,28 +1292,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             valid_elts = ast.SubNodeList[ast.Expr | ast.KWPair](items=valid, kid=valid)
             kid = elts
         else:
-            l_square = ast.Token(
-                file_path=self.mod_path,
-                name=Tok.LSQUARE,
-                value="[",
-                line=0,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-                kid=[],
-            )
-            r_square = ast.Token(
-                file_path=self.mod_path,
-                name=Tok.RSQUARE,
-                value="]",
-                line=0,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-                kid=[],
-            )
+            l_square = self.operator(Tok.LSQUARE, "[")
+            r_square = self.operator(Tok.RSQUARE, "]")
             valid_elts = None
             kid = [l_square, r_square]
         return ast.TupleVal(values=valid_elts, kid=kid)
