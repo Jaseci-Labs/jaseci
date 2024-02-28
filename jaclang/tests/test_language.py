@@ -112,7 +112,7 @@ class JacLanguageTests(TestCase):
         jac_import("with_llm", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertGreater(len(stdout_value), 0)
+        self.assertIn("Albert Einstein was a German-born", stdout_value)
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
