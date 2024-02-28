@@ -2,13 +2,26 @@
 
 [Demo Video.webm](https://github.com/Jayanaka-98/py-game-RPG/assets/110921856/1ac069eb-7a07-462f-82fe-a8c1e3481935)
 
-This RPG game is developed using a pre-built base game coded in python which can be found in [here](/home/jayanaka-98/jaclang/examples/rpg_game/python_impl).
+This RPG game is developed using a pre-built base game coded in python which can be found in [here](./python_impl/).
 
-The RPG game was then implemented in jaclang in several iterations.
+This is a tutorial on how to build the same game in Jaclang. Two different implementations will be discussed, one taking a more conventional programming approach while the other delving into a more interesting method of programming which is [Data-spatial](#data-spatial-implementation) programming
+
+- [Journey of Building an Zelda-style RPG in JacLang](#journey-of-building-an-zelda-style-rpg-in-jaclang)
+  - [Setting Up](#setting-up)
+  - [Explanation on the Structure of the Game](#explanation-on-the-structure-of-the-game)
+    - [main](#main)
+    - [sprites](#sprites)
+    - [config](#config)
+    - [map](#map)
+  - [Imports: _Cross-language modules?_](#imports-cross-language-modules)
+  - [Global Variable Definition](#global-variable-definition)
+  - [Game Code: main.jac](#game-code-mainjac)
+  - [Programming Sprites and Level objects](#programming-sprites-and-level-objects)
+  - [Data Spatial Implementation](#data-spatial-implementation)
 
 ## Setting Up
 
-In order for these implementations to work, the following requirements should be met.
+In order for the following requirements should be met.
 
 - Python 3.11 or newer
 - Jaclang newest available version
@@ -20,24 +33,26 @@ $ pip install jaclang
 $ pip install pygame
 ```
 
-## Explantion on the Structure of the Game
+## Explanation on the Structure of the Game
 
-The game is essentially a playable character on a map which the ability of attacking any enemy who are nearby. Enemies are placed according to the map configuration and when all the enemies are killed the game is won.
+The game is essentially a playable character on a map having the ability of attacking any enemy who are nearby. Enemies are placed according to the map configuration and the game is won when all the enemies are killed. The game uses the pygame library to create animation and enable gameplay. The game is written under four files to improve readability and codebase management.
 
-### main.py
+![blah](.//jac_impl/RPG%20Space%20-%20Game%20Architecture.png)
+
+### main
 
 This file contains the main game code which describes the functionality of the game. The game runtime logic structure is written in this code section as well as the initiation of the game instance. The sprites.py, config.py and map.py will be imported in order to properly function the game.
 
-### sprites.py
+### sprites
 
 The game has been developed utilizing the pygame library. Each and every game object is of custom class 'sprite' included within the pygame library.
 All in game sprite models are created within this code.
 
-### config.py
+### config
 
 Configuration parameters such as windowsize. layer order is stored in this file.
 
-### map.py
+### map
 
 Contains the map of the game which can be changed as required.
 
@@ -509,4 +524,4 @@ In a data-spatial implementation of the game architecture, after a level has bee
 
 This ability is important when programming in the AI based new era. When integrating large language models into programming it may require previous data to generate something new or do a task. Having a graph based programming loop will enable the program to retrieve necessary information when needed. This is clearly depicted in the following graph.
 
-![DSP](https://drive.google.com/uc?id=15LW7dqCsVY9xmnLg0y-lNTvnCFwtKH6G)
+![DSP](.//jac_impl/RPG%20Space%20-%20DSP.png)
