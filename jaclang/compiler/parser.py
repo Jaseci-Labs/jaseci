@@ -706,7 +706,7 @@ class JacParser(Pass):
                 else None
             )
             ability = chomp[1] if is_async else chomp[0]
-            if not isinstance(ability, (ast.Ability, ast.AbilityDef, ast.FuncCall)):
+            if not isinstance(ability, (ast.Ability, ast.AbilityDef)):
                 raise self.ice()
             if is_async and isinstance(ability, ast.Ability):
                 ability.is_async = True
@@ -721,9 +721,7 @@ class JacParser(Pass):
                         ability.is_static = True
                         decorators.items.remove(dec)  # noqa: B038
                         break
-                if len(decorators.items) and isinstance(
-                    ability, (ast.Ability, ast.AbilityDef)
-                ):
+                if len(decorators.items):
                     ability.decorators = decorators
                     ability.add_kids_left([decorators])
                 return self.nu(ability)
