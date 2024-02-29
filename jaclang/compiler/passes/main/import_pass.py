@@ -145,7 +145,7 @@ class ImportPass(Pass):
                     print(f"\nImporting python module {node.path_str}")
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
-                            py_ast.parse(f.read()), mod_path=mod_path
+                            py_ast.parse(f.read()), mod_path=spec.origin
                         ),
                     ).ir
                 if mod:
