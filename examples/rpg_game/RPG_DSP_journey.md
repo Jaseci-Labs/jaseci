@@ -23,6 +23,11 @@ This is a tutorial on how to build the same game in Jaclang. Two different imple
     - [main.jac](#mainjac)
     - [sprite.jac, config.jac \& map.jac](#spritejac-configjac--mapjac)
     - [Runtime Logic of the program : DSP.jac](#runtime-logic-of-the-program--dspjac)
+      - [Nodes and Walkers](#nodes-and-walkers)
+      - [Start Screen node](#start-screen-node)
+      - [Level node](#level-node)
+      - [Game Walker](#game-walker)
+      - [Initiating the Graph (Begin Runtime)](#initiating-the-graph-begin-runtime)
 
 ## Setting Up
 
@@ -375,38 +380,68 @@ No changes are required on the file as well.
 
 ### Runtime Logic of the program : [DSP.jac](.//jac_impl/jac_impl_4/DSP.jac)
 
+This new file will include the supporting architecture for the build of the data-spatial implementation and the runtime logic for graph traversal.
+The imports for this file would be the same as for the main.jac while it will include the main.jac file as well.
+
 ```python
-
-"""This is the Data Spatial Implementation of the RPG Game"""
-
-
-# This game is built using the pygame module which is imported here
 import:py pygame;
 import:py sys;
 import:py random;
-# Importing Jac codebase
+
 include:jac sprites;
 include:jac config;
 include:jac map;
 include:jac main;
+```
+
+Now the visualization of the graph is really important in order to build the architecture.
+
+![Game DSP Impl](./jac_impl/RPG%20Space%20-%20DSP%20Architecture%20of%20RPG.png)
+
+#### Nodes and Walkers
+
+When the game start, it will visualize the intro screen with a button to start a new game. This should trigger a function to create a new level and the game should start on new level. In the case when the player loses the first level he will go back to the start screen, but it will not be visualized as the functionality must be skipped. When losing the level somewhere down the graph, the player will simply come up one level skip the level and continue to a new instance of the lost level.
+
+For this it can be observed we need two nodes and one walker types.
+
+```python
+'''Start screen node which operate as the virtual root node'''
+node start_screen {
+    ...
+}
+
+'''Level node which containes the runtime of a level'''
+node level {
+    ...
+}
 
 '''The walker that initiates the game and runs an instance of the game'''
 walker game {
-    has g: Game = None,
-        fwd_dir: bool = True;
-
-    can start_game with `root entry;
+    ...
 }
+```
 
-'''Start screen node which operate as the virtual root node'''
+#### Start Screen node
+
+The start screen node should be able to visualize the start screen when the ```game``` walker enters the ````start_screen``` node, and exit the game if the player has pressed the quit button on the game. Encapsulating these abilities and a variable to check if the game has started, we can declare the node object.
+
+```python
 node start_screen {
     has game_started: bool = False;
 
     can intro_screen with game entry;
     can exit_game with game exit;
 }
+```
 
-'''Level node which (should) have unique (ai generated) attributes'''
+> **Syntax Note:** here when declaring when an ability should run (with exit or with entry of a walker), the ```with``` keyword is used following with whether it is ```entry``` or ```exit```.
+
+
+#### Level node
+
+On the other hand, the level node should have the ability to run the game level on that node, and it also should be able to detect whether the player has pressed the exit button. Additionally, each level should have a unique identifier and a level number along with the information whether the level instance was previously played, and its level map.
+
+```python
 node level {
     has game_level: int = 1,
         level_id: str = '1_1000',
@@ -417,9 +452,27 @@ node level {
     can exit_game with game exit;
 }
 
-'''Run the game'''
+```
+
+#### Game Walker
+
+The ```game``` walker is the traversal agent who triggers abilities in nodes. However, the methodology on how this walker should move from node to node can be either defined on the walker itself or on the nodes. In the case of this game, it is defined on the nodes, hence we need it to continue from the ```root``` node after initializing pygame to start the game.
+
+```python
+walker game {
+    has g: Game = None,
+        fwd_dir: bool = True;
+
+    can start_game with `root entry;
+}
+```
+
+#### Initiating the Graph (Begin Runtime)
+
+In the previous implementation we used ```with entry {}``` to begin the program. Here also we are doing the same. But, rather than running the game from there, we are just placing the ```game``` walker on the ```root``` node, which starts the game.
+
+```python
 with entry {
     game() spawn root;
 }
-
 ```
