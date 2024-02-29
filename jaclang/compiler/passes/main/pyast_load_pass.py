@@ -69,18 +69,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [
             i
             for i in elements
-            if isinstance(
-                i,
-                (ast.ElementStmt, ast.String, ast.EmptyToken),
-            )
+            if isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
         ]
-        for i in elements:
-            print("elements: ", i)
-        for i in valid:
-            print("valid: ", i)
-        print(len(elements), len(valid))
-        if len(valid) != len(elements):
+        with_entry = [
+            i
+            for i in elements
+            if not isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
+        ]
+        if (len(valid) + len(with_entry)) != len(elements):
             raise self.ice("Invalid module body")
+        if len(with_entry) != 0:
+            with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
+                items=with_entry, kid=with_entry
+            )
+            module_code = ast.ModuleCode(
+                name=None, body=with_entry_subnodelist, kid=with_entry, doc=None
+            )
+            valid.append(module_code)
+
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
