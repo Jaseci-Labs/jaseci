@@ -1035,6 +1035,7 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        if node.is_static:
             decorator_list.insert(
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
             )
