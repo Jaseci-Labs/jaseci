@@ -1,5 +1,5 @@
 walker Creator {
-    can create with `<root> entry;
+    can create with `root entry;
 }
 
 node node_a {
@@ -13,23 +13,23 @@ edge connector {
 }
 
 :walker:Creator:can:create {
-    end = <here>;
+    end = here;
     for i=0 to i<3 by i+=1  {
         end ++> (end := node_a(val=i));
     }
     end +:connector:value=i:+> (end := node_a(val=i + 10));
-    <root> <+:connector:value=i:+ (end := node_a(val=i + 10));
+    root <+:connector:value=i:+ (end := node_a(val=i + 10));
     visit [-->];
 }
 
 :node:node_a:can:make_something {
     i = 0;
     while i < 5 {
-        print(f"wlecome to {<s>}");
+        print(f"wlecome to {self}");
         i+=1;
     }
 }
 
 with entry {
-    <root> spawn Creator();
+    root spawn Creator();
 }

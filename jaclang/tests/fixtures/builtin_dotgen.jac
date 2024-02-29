@@ -5,7 +5,7 @@ edge Edge1 {
     has val: int = 5;
 }
 with entry{
-    end=<r>;
+    end=root;
     for i in range(0,4){
         end++>(end:=[a(val=i) for i in range(0,3)]);
     }

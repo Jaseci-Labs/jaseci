@@ -5,7 +5,7 @@ The `Car` architype includes three instance variables (`make`, `model`, and `yea
 
 Types are annotated directly after the variable name, followed by a colon. For instance, `make: str` declares a variable `make` of type `string`.
 
-The `Car` architype also defines two methods, `display_car_info` as an instance method and `get_wheels` as a static method. Methods are introduced with the `can` keyword. The instance method `display_car_info` uses a formatted string to print car information, accessing instance variables with the `<self>` reference. The static method `get_wheels` returns the value of the static variable `wheels`.
+The `Car` architype also defines two methods, `display_car_info` as an instance method and `get_wheels` as a static method. Methods are introduced with the `can` keyword. The instance method `display_car_info` uses a formatted string to print car information, accessing instance variables with the `self` reference. The static method `get_wheels` returns the value of the static variable `wheels`.
 
 **Initialization and Method Invocation**
 An instance of `Car` is created using the architype name as a constructor, passing in values for `make`, `model`, and `year`. This instance is assigned to the variable `car`.
