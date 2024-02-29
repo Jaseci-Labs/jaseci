@@ -570,11 +570,12 @@ class JacParser(Pass):
         def special_ref(self, kid: list[ast.AstNode]) -> ast.SpecialVarRef:
             """Grammar rule.
 
-            special_ref: INIT_OP
-                        | ROOT_OP
-                        | SUPER_OP
-                        | SELF_OP
-                        | HERE_OP
+            special_ref: KW_INIT
+                        | KW_POST_INIT
+                        | KW_ROOT
+                        | KW_SUPER
+                        | KW_SELF
+                        | KW_HERE
             """
             if isinstance(kid[0], ast.Token):
                 return self.nu(
@@ -1037,12 +1038,12 @@ class JacParser(Pass):
         def typed_has_clause(self, kid: list[ast.AstNode]) -> ast.HasVar:
             """Grammar rule.
 
-            typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_BY POST_INIT_OP)?
+            typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_BY KW_POST_INIT)?
             """
             semstr = kid[0] if isinstance(kid[0], ast.String) else None
             name = kid[1] if semstr else kid[0]
             type_tag = kid[2] if semstr else kid[1]
-            defer = isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.POST_INIT_OP
+            defer = isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.KW_POST_INIT
             value = kid[-1] if not defer and isinstance(kid[-1], ast.Expr) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
                 return self.nu(

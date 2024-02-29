@@ -37,12 +37,12 @@
    - **Explanation**: Object and method definitions should be clear with consistent indentation. Use braces to define the scope of objects and methods.
    - **Before**:
      ```jac
-     obj Game{can <init>(attempts:int){...}}
+     obj Game{can init(attempts:int){...}}
      ```
    - **After**:
      ```jac
      obj Game {
-         can <init>(attempts: int) {
+         can init(attempts: int) {
              ...
          }
      }
@@ -52,13 +52,13 @@
    - **Explanation**: Consistent spacing and indentation are crucial for readability. Use spaces around operators and after commas.
    - **Before**:
      ```jac
-     obj Game{can <init>(attempts:int){<self>.attempts=attempts;}}
+     obj Game{can init(attempts:int){self.attempts=attempts;}}
      ```
    - **After**:
      ```jac
      obj Game {
-         can <init>(attempts: int) {
-             <self>.attempts = attempts;
+         can init(attempts: int) {
+             self.attempts = attempts;
          }
      }
      ```
@@ -67,11 +67,11 @@
    - **Explanation**: In variable assignments, use spaces around the `=` operator for clarity.
    - **Before**:
      ```jac
-     <self>.attempts=attempts;
+     self.attempts=attempts;
      ```
    - **After**:
      ```jac
-     <self>.attempts = attempts;
+     self.attempts = attempts;
      ```
 
 #### 6. **Conditional and Loop Statements**
@@ -91,22 +91,22 @@
    - **Explanation**: Prefer using formatted string literals for dynamic string creation, as they are more readable and concise.
    - **Before**:
      ```jac
-     print("You have "+<self>.attempts+" attempts left.");
+     print("You have "+self.attempts+" attempts left.");
      ```
    - **After**:
      ```jac
-     print(f"You have {<self>.attempts} attempts left.");
+     print(f"You have {self.attempts} attempts left.");
      ```
 
 #### 8. **Line Breaks and Blank Lines**
    - **Explanation**: Use line breaks and blank lines to separate logical sections of code, enhancing readability.
    - **Before**:
      ```jac
-     <self>.won=False;can play(){...}
+     self.won=False;can play(){...}
      ```
    - **After**:
      ```jac
-     <self>.won = False;
+     self.won = False;
 
      can play() {
          ...

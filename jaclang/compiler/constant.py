@@ -201,12 +201,12 @@ class Tokens(str, Enum):
     CARROW_R_P2 = "CARROW_R_P2"
     GLOBAL_OP = "GLOBAL_OP"
     NONLOCAL_OP = "NONLOCAL_OP"
-    HERE_OP = "HERE_OP"
-    SELF_OP = "SELF_OP"
-    INIT_OP = "INIT_OP"
-    POST_INIT_OP = "POST_INIT_OP"
-    SUPER_OP = "SUPER_OP"
-    ROOT_OP = "ROOT_OP"
+    KW_HERE = "KW_HERE"
+    KW_SELF = "KW_SELF"
+    KW_INIT = "KW_INIT"
+    KW_SUPER = "KW_SUPER"
+    KW_ROOT = "KW_ROOT"
+    KW_POST_INIT = "KW_POST_INIT"
     WALKER_OP = "WALKER_OP"
     NODE_OP = "NODE_OP"
     EDGE_OP = "EDGE_OP"
@@ -234,3 +234,32 @@ class Tokens(str, Enum):
     def __str__(self) -> str:
         """Return the string representation of the token."""
         return self.value
+
+
+colors = [
+    "#FFE9E9",
+    "#F0FFF0",
+    "#F5E5FF",
+    "#FFFFE0",
+    "#D2FEFF ",
+    "#E8FFD7",
+    "#FFDEAD",
+    "#FFF0F5",
+    "#F5FFFA",
+    "#FFC0CB",
+    "#7FFFD4",
+    "#C0C0C0",
+    "#ADD8E6",
+    "#FFFAF0",
+    "#f4f3f7",
+    "#f5efff",
+    "#b5d7fd",
+    "#ffc0cb",
+    "#FFC0CB",
+    "#e1d4c0",
+    "#FCDFFF",
+    "#F0FFFF",
+    "#F0F8FF",
+    "#F8F8FF",
+    "#F0FFFF",
+]

@@ -5,7 +5,7 @@ import:py random;
 walker GuessGame {
     has correct_number: int = (1, 100) |> random.randint;
 
-    can start_game with `<root> entry;
+    can start_game with `root entry;
     can process_guess(guess: int);
 }
 
@@ -16,7 +16,7 @@ node turn {
 :node:turn:can:check {
     guess = "Guess a number between 1 and 100: " |> input;
     if |> guess.isdigit {
-        guess |> int |> <here>.process_guess;
+        guess |> int |> here.process_guess;
     } else {
         "That's not a valid number! Try again." |> print;
     }
@@ -24,7 +24,7 @@ node turn {
 }
 
 :walker:GuessGame:can:start_game {
-    end = <here>;
+    end = here;
     for i=0 to i<10 by i+=1  {
         end ++> (end := turn());
     }
@@ -33,9 +33,9 @@ node turn {
 
 :walker:GuessGame:can:process_guess
 (guess: int) {
-    if guess > <self>.correct_number {
+    if guess > self.correct_number {
         "Too high!" |> print;
-    } elif guess < <self>.correct_number {
+    } elif guess < self.correct_number {
         "Too low!" |> print;
     } else {
         "Congratulations! You guessed correctly." |> print;
@@ -45,5 +45,5 @@ node turn {
 # # Run the game
 
 with entry {
-    :> GuessGame spawn <root>;
+    :> GuessGame spawn root;
 }
