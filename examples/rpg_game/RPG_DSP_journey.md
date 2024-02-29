@@ -218,144 +218,45 @@ Therefore, the entire codebase implementations can be written in different files
             self.running = False;
         }
         keys = pygame.key.get_pressed();
-        if keys[pygame.K_SPACE] {
-            if self.player.facing == 'up' {
-                Attack(self, self.player.rect.x, self.player.rect.y - TILESIZE);
-            }
-            if self.player.facing == 'down' {
-                Attack(self, self.player.rect.x, self.player.rect.y + TILESIZE);
-            }
-            if self.player.facing == 'right' {
-                Attack(self, self.player.rect.x + TILESIZE, self.player.rect.y);
-            }
-            if self.player.facing == 'left' {
-                Attack(self, self.player.rect.x - TILESIZE, self.player.rect.y);
-            }
-        }
+        ...
     }
 }
 # Update all sprites
 
 :obj:Game:can:update {
-    self.all_sprites.update();
-}
+    ...
 # Display the game
 
 :obj:Game:can:draw {
-    self.screen.fill(BLACK);
-    self.all_sprites.draw(self.screen);
-    self.clock.tick(FPS);
-    pygame.display.update();
+    ...
 }
 # Game runtime
 
 :obj:Game:can:main {
-    while self.playing {
-        self.events();
-        self.update();
-        self.draw();
-        if len(self.enemies.sprites()) == 0 {
-            self.won = True;
-            self.playing = False;
-        }
-    }
-    if self.won == False {
-        self.playing = False;
-    }
+    ...
 }
 # Game over screen
 
 :obj:Game:can:game_over() {
-    self.score-=2;
-    text = self.font.render('GaMe OvEr', True, RED);
-    text_rect = text.get_rect(center=(WIN_WIDTH / 2, WIN_HEIGHT / 2));
-    restart_button = Button(10, WIN_HEIGHT - 135, 120, 125, WHITE, BLACK, 'Restart', 32);
-    for sprite in self.all_sprites {
-        sprite.kill();
-    }
-    while self.running {
-        for event in pygame.event.get() {
-            if event.type == pygame.QUIT {
-                self.running = False;
-            }
-        }
-        mouse_pos = pygame.mouse.get_pos();
-        mouse_pressed = pygame.mouse.get_pressed();
-        if restart_button.is_pressed(mouse_pos, mouse_pressed) {
-            self.won = False;
-            self.new();
-            break;
-        }
-        self.screen.blit(self.go_background, (0, 0));
-        self.screen.blit(text, text_rect);
-        self.screen.blit(restart_button.image, restart_button.rect);
-        self.clock.tick(FPS);
-        pygame.display.update();
-    }
+    ...
 }
 # Introduction Screen
 
 :obj:Game:can:intro_screen {
-    intro = True;
-    title = self.font.render('Spud-nik : SOLO', True, BLUE);
-    title_rect = title.get_rect(x=WIN_WIDTH / 2 - 100, y=100);
-    play_button = Button(int(WIN_WIDTH / 2 - 50), 200, 100, 100, WHITE, BLACK, 'Play', 32);
-    while intro {
-        for event in pygame.event.get() {
-            if event.type == pygame.QUIT {
-                intro = False;
-                self.running = False;
-            }
-        }
-        mouse_pos = pygame.mouse.get_pos();
-        mouse_pressed = pygame.mouse.get_pressed();
-        if play_button.is_pressed(mouse_pos, mouse_pressed) {
-            intro = False;
-        }
-        self.screen.blit(self.intro_background, (0, 0));
-        self.screen.blit(title, title_rect);
-        self.screen.blit(play_button.image, play_button.rect);
-        self.clock.tick(FPS);
-        pygame.display.update();
-    }
+    ...
 }
 # Game won
 
 :obj:Game:can:game_won {
-    self.score+=5;
-    text = self.font.render('YOU WON!', True, BLUE);
-    text_rect = text.get_rect(center=(WIN_WIDTH / 2, WIN_HEIGHT / 2));
-    restart_button = Button(10, WIN_HEIGHT - 135, 120, 125, WHITE, BLACK, 'Restart', 32);
-    for sprite in self.all_sprites {
-        sprite.kill();
-    }
-    while self.running {
-        for event in pygame.event.get() {
-            if event.type == pygame.QUIT {
-                self.running = False;
-            }
-        }
-        mouse_pos = pygame.mouse.get_pos();
-        mouse_pressed = pygame.mouse.get_pressed();
-        if restart_button.is_pressed(mouse_pos, mouse_pressed) {
-            self.new();
-            break;
-        }
-        self.screen.blit(self.intro_background, (0, 0));
-        self.screen.blit(text, text_rect);
-        self.screen.blit(restart_button.image, restart_button.rect);
-        self.clock.tick(FPS);
-        pygame.display.update();
-    }
+    ...
 }
-
 ```
 
-The rest of the codebase is programmed similarly which is included in [main.jac](.//jac_impl/jac_impl_3/main.jac).
+The complete codebase is programmed similarly which is included in [main.jac](.//jac_impl/jac_impl_3/main.jac).
 
 ## Programming Sprites and Level objects
 
-The pygame environment is built in a separate sprites.jac file for better codebase management.
+The pygame environment is built in a separate [sprites.jac](.//jac_impl/jac_impl_3/sprites.jac) file for better codebase management.
 
 There are mainly five different level object models that needs to be programmed. Namely,
 
@@ -399,88 +300,39 @@ obj Player :pygame.sprite.Sprite: {
 Object for enemies with type pygame.sprite.Sprite
 """
 obj Enemy :pygame.sprite.Sprite: {
-    has game: Game,
-        x: int,
-        y: int;
-    has _layer: int = ENEMY_LAYER,
-        width: inr = TILESIZE,
-        height: int = TILESIZE,
-        x_change: int = 0,
-        y_change: int = 0,
-        animation_loop: float = 0,
-        movement_loop: int = 0;
-
-    can <post_init>;
-    can update;
-    can movement;
-    can animate;
-    can collide_blocks(direction: str);
+    ...
 }
 
 """
 Object for blocks (Walls) with type pygame.sprite.Sprite
 """
 obj Block :pygame.sprite.Sprite: {
-    has game: Game,
-        x: int,
-        y: int;
-    has _layer: int = BLOCK_LAYER,
-        width: int = TILESIZE,
-        height: int = TILESIZE;
-
-    can postinit;
+    ...
 }
 
 """
 Object for ground with type pygame.sprite.Sprite
 """
 obj Ground :pygame.sprite.Sprite: {
-    has game: Game,
-        x: int,
-        y: int;
-    has _layer: int = GROUND_LAYER,
-        width: int = TILESIZE,
-        height: int = TILESIZE;
-
-    can postinit;
+    ...
 }
 
 """"
 Object class for attacks by the player
 """
 obj Attack :pygame.sprite.Sprite: {
-    has game: Game,
-        x: int,
-        y: int;
-    has _layer: int = ATTACK_LAYER,
-        width: int = TILESIZE,
-        height: int = TILESIZE,
-        animation_loop: float = 0;
-
-    can postinit;
-    can update;
-    can collide;
-    can animate;
+    ...
 }
 
 """
 Object class for buttons used in the game (Start, Restart)
 """
 obj Button {
-    has x: int,
-        y: int,
-        width: int,
-        height: int,
-        fg: tuple,
-        bg: tuple,
-        content: str,
-        fontsize: int;
-    can postinit;
-    can is_pressed(pos: tuple, pressed: tuple) -> bool;
+    ...
 }
 ```
 
-The implementation of these objects can be found [here](<.//jac_impl/jac_impl_3/sprites.jac>).
+The implementation of these objects can be found in [sprites.jac](<.//jac_impl/jac_impl_3/sprites.jac>). The implementations are exactly similar to the implementations previously done in the main.jac file.
 
 ## Data Spatial Implementation
 
