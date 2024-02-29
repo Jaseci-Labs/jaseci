@@ -579,8 +579,21 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid = [self.operator(Tok.LPAREN, "("), self.operator(Tok.RPAREN, ")")]
         return ast.RaiseStmt(cause=cause, from_target=exc, kid=kid)
 
-    def proc_assert(self, node: py_ast.Assert) -> None:
-        """Process python node."""
+    def proc_assert(self, node: py_ast.Assert) -> ast.AssertStmt:
+        """Process python node.
+
+        class Assert(stmt):
+            test: expr
+            msg: expr | None
+        """
+        test = self.convert(node.test)
+        msg = self.convert(node.msg) if node.msg is not None else None
+        if isinstance(test, ast.Expr):
+            return ast.AssertStmt(
+                condition=test,
+                error_msg=msg,
+                kid=[test, msg] if msg is not None else [test],
+            )
 
     def proc_attribute(self, node: py_ast.Attribute) -> ast.AtomTrailer:
         """Proassignment targetscess python node.
@@ -818,8 +831,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         return ast.CtrlStmt(ctrl=continue_tok, kid=[continue_tok])
 
-    def proc_dict(self, node: py_ast.Dict) -> None:
-        """Process python node."""
+    def proc_dict(self, node: py_ast.Dict) -> ast.DictVal:
+        """Process python node.
+
+        class Dict(expr):
+            keys: list[expr | None]
+            values: list[expr]
+        """
+        keys = [self.convert(i) for i in node.keys]
+        values = [self.convert(i) for i in node.values]
+        kvpair: list[ast.KVPair] = []
+        for i in range(len(values)):
+            kvp = ast.KVPair(
+                key=keys[i],
+                value=values[i],
+                kid=[keys[i], values[i]] if keys[i] is not None else [keys[i]],
+            )
+            kvpair.append(kvp)
+        return ast.DictVal(kv_pairs=kvpair, kid=kvpair)
 
     def proc_dict_comp(self, node: py_ast.DictComp) -> None:
         """Process python node."""
@@ -1115,8 +1144,23 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             self.ice()
 
-    def proc_match(self, node: py_ast.Match) -> None:
-        """Process python node."""
+    def proc_match(self, node: py_ast.Match) -> ast.MatchStmt:
+        """Process python node.
+
+        class Match(stmt):
+            subject: expr
+            cases: list[match_case]
+        """
+        subject = self.convert(node.subject)
+        cases = [self.convert(i) for i in node.cases]
+        valid = [case for case in cases if isinstance(case, ast.MatchCase)]
+        if len(cases) == len(valid):
+            valid_cases = ast.SubNodeList[ast.MatchCase](items=valid, kid=valid)
+        else:
+            self.ice()
+        return ast.MatchStmt(
+            target=subject, cases=valid_cases, kid=[subject, valid_cases]
+        )
 
     def proc_match_as(self, node: py_ast.MatchAs) -> None:
         """Process python node."""
@@ -1177,8 +1221,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         braces = ast.SubNodeList[ast.CodeBlockStmt | ast.ArchBlockStmt](
             items=[], kid=[l_brace, r_brace]
         )
-        return ast.ReturnStmt(expr=None, kid=[braces])
-        # return ast.ExprStmt(expr=braces, in_fstring=False,kid=[braces])
+        return ast.ExprStmt(expr=braces, in_fstring=False, kid=[braces])
 
     def proc_set(self, node: py_ast.Set) -> None:
         """Process python node."""
