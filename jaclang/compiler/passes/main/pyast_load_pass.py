@@ -1174,9 +1174,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Process python node."""
         l_brace = self.operator(Tok.LBRACE, "{")
         r_brace = self.operator(Tok.RBRACE, "}")
-        return ast.SubNodeList[ast.CodeBlockStmt | ast.ArchBlockStmt](
+        braces = ast.SubNodeList[ast.CodeBlockStmt | ast.ArchBlockStmt](
             items=[], kid=[l_brace, r_brace]
         )
+        return ast.ReturnStmt(expr=None, kid=[braces])
+        # return ast.ExprStmt(expr=braces, in_fstring=False,kid=[braces])
 
     def proc_set(self, node: py_ast.Set) -> None:
         """Process python node."""
