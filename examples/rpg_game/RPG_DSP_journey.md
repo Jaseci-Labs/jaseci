@@ -18,6 +18,11 @@ This is a tutorial on how to build the same game in Jaclang. Two different imple
   - [Game Code: main.jac](#game-code-mainjac)
   - [Programming Sprites and Level objects](#programming-sprites-and-level-objects)
   - [Data Spatial Implementation](#data-spatial-implementation)
+    - [Data Spatial architecture](#data-spatial-architecture)
+  - [Converting RPG into Data-spatial Architecture](#converting-rpg-into-data-spatial-architecture)
+    - [main.jac](#mainjac)
+    - [sprite.jac, config.jac \& map.jac](#spritejac-configjac--mapjac)
+    - [Runtime Logic of the program : DSP.jac](#runtime-logic-of-the-program--dspjac)
 
 ## Setting Up
 
@@ -336,12 +341,85 @@ The implementation of these objects can be found in [sprites.jac](<.//jac_impl/j
 
 ## Data Spatial Implementation
 
-Another game changing feature of Jaclang is that it can be programmed in a ''Data-spatial' architecture. This interesting programming paradigm is simply put, graph traversal based programming which has nodes that can have certain attributes and abilities that can be triggered by a walker that traverse the graph on edges.
+The implementation we discussed so far is how a conventional programmer would use Jaclang to program a relatively complex object-oriented program. However, Jaclang is super-setting the conventional programming paradigm, meaning that the language supports another programming paradigm.
 
-The point of programming in a data-spatial architecture can be explained using the RPG game itself. After a level has been won or lost the immediately previous game level data will be lost unless saved separately on a global variable.
+### Data Spatial architecture
+
+Graph theory is one of the theories that is in the leading forefront of conceptual innovation. Almost all modern constructs such as programs and networks can be represented using graphs with functions acting as graph traversal entities.
+
+There are two main constructs in graphs which are **nodes** and **edges**. Taking our RPG into consideration a node can be represented by a single level instance and edges represents the progression of the game. This graph like structure is represented in graphical form on the diagram below(Right).
+
+![DSP](.//jac_impl/RPG%20Space%20-%20DSP.png)
+
+There is another construct that needs to be discussed which is the **walker**. In the RPG, the player must play through the levels in order to progress on the graph of levels. This is graph traversal by an agent who is the player. This graph traversal agent is known as a "walker". Walkers can walk on the graph in any specified manner and can perform different abilities upon entry or exit from a node.
+
+When programming the RPG in the conventional method, after a level has been won or lost, the immediately previous game level data will be lost unless saved separately on a global variable.
 
 In a data-spatial implementation of the game architecture, after a level has been won it will create a new level node on the graph and when a game is lost it will go back on the graph and branch off to create a new instance of the game level, leaving all previous level data untouched.
 
-This ability is important when programming in the AI based new era. When integrating large language models into programming it may require previous data to generate something new or do a task. Having a graph based programming loop will enable the program to retrieve necessary information when needed. This is clearly depicted in the following graph.
+This ability is important when the program is required to procedurally generate some data, when reinforcement learning is required or when integrating large language models into programs where chain-of-thought, graph-of-though inference methodologies are inherently supported.
 
-![DSP](.//jac_impl/RPG%20Space%20-%20DSP.png)
+## Converting RPG into Data-spatial Architecture
+
+The game built in the conventional program can be converted into the data spatial architecture with some additional changes. The brilliance of data-spatial implementation is that it is not required to convert the entire program into data-spatial architecture for it to work as a data-spatial program. The graph traversal architecture described above can be run without needing to reprogram the entire codebase.
+
+The fully implemented Data-spatial version can be found at [jac_impl_4](.//jac_impl/jac_impl_4/) if you want to jump in straight.
+
+### main.jac
+
+The only difference in this file is the runtime logic has been removed from here. This is because the main difference in this data-spatial implementation is that the program runtime runs as a graph. Nothing else needs to happen in this file.
+
+### sprite.jac, config.jac & map.jac
+
+No changes are required on the file as well.
+
+### Runtime Logic of the program : [DSP.jac](.//jac_impl/jac_impl_4/DSP.jac)
+
+```python
+
+"""This is the Data Spatial Implementation of the RPG Game"""
+
+
+# This game is built using the pygame module which is imported here
+import:py pygame;
+import:py sys;
+import:py random;
+# Importing Jac codebase
+include:jac sprites;
+include:jac config;
+include:jac map;
+include:jac main;
+
+'''The walker that initiates the game and runs an instance of the game'''
+walker game {
+    has g: Game = None,
+        fwd_dir: bool = True;
+
+    can start_game with `root entry;
+}
+
+'''Start screen node which operate as the virtual root node'''
+node start_screen {
+    has game_started: bool = False;
+
+    can intro_screen with game entry;
+    can exit_game with game exit;
+}
+
+'''Level node which (should) have unique (ai generated) attributes'''
+node level {
+    has game_level: int = 1,
+        level_id: str = '1_1000',
+        played: bool = False,
+        levelmap: list[str] = Map();
+
+    can run_game with game entry;
+    can exit_game with game exit;
+}
+
+'''Run the game'''
+with entry {
+    game() spawn root;
+}
+
+```
