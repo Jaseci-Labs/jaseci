@@ -794,6 +794,8 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        # We need separate production rule for abstract_ability because we don't
+        # want to allow regular abilities outside of classed to be abstract.
         def abstract_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
             """Grammar rule.
 
@@ -819,15 +821,8 @@ class JacParser(Pass):
             is_func = isinstance(chomp[0], ast.FuncSignature)
             signature = chomp[0]
             chomp = chomp[1:]
-            is_abstract = (
-                chomp[0]
-                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ABSTRACT
-                else None
-            )
-            if (
-                isinstance(name, ast.NameSpec)
-                and isinstance(signature, (ast.FuncSignature, ast.EventSignature))
-                and is_abstract
+            if isinstance(name, ast.NameSpec) and isinstance(
+                signature, (ast.FuncSignature, ast.EventSignature)
             ):
                 return self.nu(
                     ast.Ability(
