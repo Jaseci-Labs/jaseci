@@ -380,3 +380,4 @@ class JacLanguageTests(TestCase):
         construct.root._jac_.edges.clear()
         mypass = jac_file_to_pass(self.fixture_abs_path("./slice_vals.jac"))
         self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir.gen.py)
+        self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.ir.gen.py)
