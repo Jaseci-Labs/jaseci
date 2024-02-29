@@ -6,7 +6,7 @@ import sys
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.compiler.compile import jac_str_to_pass
+from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
@@ -374,3 +374,10 @@ class JacLanguageTests(TestCase):
         self.assertIn("node_a(val=1)", stdout_value)
         self.assertIn("node_a(val=2)", stdout_value)
         self.assertIn("[node_b(val=42), node_b(val=42)]\n", stdout_value)
+
+    def test_annotation_tuple_issue(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges.clear()
+        mypass = jac_file_to_pass(self.fixture_abs_path("./slice_vals.jac"))
+        self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir.gen.py)
+        self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.ir.gen.py)

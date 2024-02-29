@@ -2327,14 +2327,23 @@ class JacParser(Pass):
             if len(kid) == 1:
                 index = kid[0]
                 if isinstance(index, ast.ListVal):
-                    expr = index.values.items[0] if index.values else None
+                    if not index.values:
+                        raise self.ice()
+                    if len(index.values.items) == 1:
+                        expr = index.values.items[0] if index.values else None
+                    else:
+                        sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
+                            items=[*index.values.items], kid=index.kid
+                        )
+                        expr = ast.TupleVal(values=sublist, kid=[sublist])
+                        kid = [expr]
                     return self.nu(
                         ast.IndexSlice(
                             start=expr,
                             stop=None,
                             step=None,
                             is_range=False,
-                            kid=kid[0].kid,
+                            kid=kid,
                         )
                     )
                 else:

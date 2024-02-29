@@ -21,12 +21,7 @@ Cmd.create_cmd()
 
 @cmd_registry.register
 def format(path: str, outfile: str = "", debug: bool = False) -> None:
-    """Run the specified .jac file or format all .jac files in a given directory.
-
-    :param path: The path to the .jac file or directory containing .jac files.
-    :param outfile: The output file path (only applies when formatting a single file).
-    :param debug: If True, print debug information.
-    """
+    """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
         code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
