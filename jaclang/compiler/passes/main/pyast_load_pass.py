@@ -335,7 +335,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
-    def proc_aug_assign(self, node: py_ast.AugAssign) -> ast.BinaryExpr:
+    def proc_aug_assign(self, node: py_ast.AugAssign) -> ast.Assignment:
         """Process python node.
 
         class AugAssign(stmt):
@@ -352,10 +352,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(target, ast.Expr)
             and isinstance(op, ast.Token)
         ):
-            return ast.BinaryExpr(
-                left=target,
-                op=op,
-                right=value,
+            targ = ast.SubNodeList[ast.Expr](items=[target], kid=[target])
+            return ast.Assignment(
+                target=targ,
+                type_tag=None,
+                mutable=True,
+                aug_op=op,
+                value=value,
                 kid=[target, op, value],
             )
         else:
@@ -472,7 +475,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
-            raise self.ice("Length mismatch in async for body")
+            raise self.ice("Length mismatch in while body")
         body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
         # orelse = [self.convert(stmt) for stmt in node.orelse]
         # valid_orelse = [stmt for stmt in orelse if isinstance(stmt, ast.CodeBlockStmt)]
