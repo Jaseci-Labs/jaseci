@@ -6,15 +6,16 @@ import:py pygame;
 import:py sys;
 import:py random;
 import:py time;
-import:py from hugchat.login, Login;
-import:py from hugchat, hugchat;
+import:py openai;
+import:py from openai, ChatCompletion;
+import:py re;
 
 # Importing Jac codebase
 include:jac sprites;
 include:jac config;
 include:jac map;
 include:jac main;
-include:jac _secrets;
+# include:jac _secrets;
 
 '''The walker that initiates the game and runs an instance of the game'''
 walker game{
@@ -23,7 +24,7 @@ walker game{
         current_level:int = 1,
         fwd_dir:bool = True,
         'Map directory that containes all the levels and their configurations'
-        map_directory:dict=SAMPLE_MAPS;
+        map_directory:dict={};
 
     can start_game with `<root> entry;
     can generate_level(node_level:node);
@@ -98,7 +99,7 @@ with entry {
     if <self>.map_directory {
         new_map = llm.generate(<self>.map_directory);
         print(new_map);
-        <self>.map_directory[str(<self>.current_level)] = Map();
+        <self>.map_directory[str(<self>.current_level)] = Map(map=new_map);
     } else {
         <self>.map_directory[str(<self>.current_level)] = Map();
     }

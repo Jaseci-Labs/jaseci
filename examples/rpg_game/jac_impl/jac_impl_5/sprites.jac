@@ -1,8 +1,5 @@
 """This file containes all definitions of sprites that appear in the game"""
 
-import:py from hugchat.login, Login;
-import:py from hugchat, hugchat;
-
 # Importing python libraries
 import:py pygame;
 import:py from pygame.sprite, AbstractGroup;
@@ -199,7 +196,7 @@ obj Button {
         <self>.facing = 'down';
     }
 }
-# Player death when collidong with an enemy.
+# Player death when colliding with an enemy.
 
 :obj:Player:can:collide_enemy {
     hits = pygame.sprite.spritecollide(<self>, <self>.game.enemies, False);
