@@ -91,7 +91,8 @@ def print_ast_tree(
         if isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}"
         elif isinstance(node, AstSymbolNode):
-            return f"{node.__class__.__name__} - {node.sym_name}"
+            print("tree printer", id(node), type(node))
+            return f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}"
         else:
             return f"{node.__class__.__name__}"
 
@@ -210,6 +211,10 @@ def _build_symbol_tree_common(
     for sym in node.tab.values():
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
+        
+        # if isinstance(node.owner, ast.AstSymbolNode) and node.owner.sym_info:
+        #     print("From tree printer", id(node.owner))
+        #     SymbolTree(node_name=f"Datatype: {node.owner.sym_info.typ}", parent=symbol_node)
 
         if sym.decl and sym.decl.loc.first_line > 0:
             SymbolTree(
