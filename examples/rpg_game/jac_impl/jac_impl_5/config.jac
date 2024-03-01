@@ -114,7 +114,7 @@ obj model {
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=1.0
+            temperature=0.75
         ).choices[0].message.content;
     }
 
@@ -122,9 +122,9 @@ obj model {
         # pattern = re.compile(r"\[(\'\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),\]");
         # map = pattern.match(response);
         lines = re.findall(r"'([^']*)'", response);
-        print(type(lines));
+        # print(type(lines));
         map = ast.literal_eval(response);
-        print(map);
+        # print(map);
         return map;
     }
 
@@ -132,7 +132,6 @@ obj model {
         prompt = <self>.create_prompt(input);
         response = <self>.get_response(prompt);
         map = <self>.parse_response(response);
-        print(response);
         return map;
     }
 }
