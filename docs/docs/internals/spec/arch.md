@@ -74,7 +74,7 @@ A primary focus of Jaseci 2 is achieving full interoperability with CPython's ab
 Jaseci 2 will introduce a new abstraction that represents a neural network model within the Jaseci runtime stack. This abstraction will build upon and extend the existing ONNX model standard and inference execution approach, providing a more generalizable and extensible framework. By leveraging the strengths of ONNX, Jaseci 2 ensures compatibility with various model types while enabling updates to fundamental compute patterns in a modular and orthogonal manner. The integration of this new abstraction enhances Jaseci's capabilities in machine learning and deep learning domains.
 
 ## New Abstraction to incoporate GenAI Abilities to Programming (NeuroSymbolic Programming)
-<!-- TODO: Talk about the motivation and the approach -->
+<!-- TODO: Talk about the motivation and the approach @chandralegend-->
 
 ## Enhanced Orthogonality and Modularity
 
