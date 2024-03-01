@@ -99,7 +99,7 @@ obj model {
         prompt += 'Must have one Player (P) in map.\n';
         prompt += 'Two consecutive maps should not look alike.\n';
         prompt += 'Hardness should be slightly increased.\n';
-        prompt += 'All enemies should be accessible to the player.\n';
+        prompt += 'All enemies should be accessible to the player (should not be enclosed with blocks).\n';
         prompt += 'The previous level maps are included in [Infomation]. Difficulty can be assesed by the time taken to finish the map.\n';
         prompt += '\n[Result] <result>\n';
 
