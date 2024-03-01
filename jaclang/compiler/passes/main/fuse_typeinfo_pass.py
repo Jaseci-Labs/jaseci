@@ -12,19 +12,13 @@ import mypy.types as mypyTypes
 import os
 
 
-<<<<<<< HEAD
 class FuseTypeInfo(Pass):
     """Python and bytecode file self.__debug_printing pass."""
-=======
-class FuseTypeInfoPass(Pass):
-    """Python and bytecode file printing pass."""
->>>>>>> c4f7c9351a034cdd6e873de0c9cbf275675992b1
 
     def __debug_print(self, *argv):
         if "FuseTypeInfoDebug" in os.environ:
             print("FuseTypeInfo::", *argv)
 
-<<<<<<< HEAD
     def __call_type_handler(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.ProperType):
         mypy_type_name = pascal_to_snake(mypy_type.__class__.__name__)
         type_handler_name = f"get_type_from_{mypy_type_name}"
@@ -45,42 +39,9 @@ class FuseTypeInfoPass(Pass):
             except AttributeError as e:
                 self.__debug_print(f"Internal error happened while parsing \"{e.obj.__class__.__name__}\"")
         return node_handler
-=======
-    def __handle_node(self, node: ast.AstSymbolNode) -> None:
-        try:
-            if len(node.gen.mypy_ast) == 1:
-                if not hasattr(node.gen.mypy_ast[0], "node"):
-                    self.__debug_print("no Var here", type(node.gen.mypy_ast[0]))
-                else:
-                    mypy_node = node.gen.mypy_ast[0].node
-                    mypy_type = mypy_node.type
-                    if isinstance(mypy_type, mypyInstance):
-                        node.sym_info = ast.SymbolInfo(mypy_type)
-                        self.__debug_print(
-                            f'"{node.__class__.__name__}::{node.value}"'
-                            ' type is "{mypy_type}"'
-                        )
-                    else:
-                        self.__debug_print(f"{type(mypy_type)} isn't supported yet")
-            elif len(node.gen.mypy_ast) > 1:
-                self.__debug_print(
-                    f'jac Name node "{node.__class__.__name__}::{node.value}"'
-                    " has multiple mypy nodes associated to it"
-                )
-            else:
-                self.__debug_print(
-                    f'jac Name node "{node.__class__.__name__}::{node.value}"'
-                    " doesn't have mypy node associated to it"
-                )
-        except:
-            self.__debug_print(
-                f'Internal error with "{node.__class__.__name__}::{node}"'
-            )
->>>>>>> c4f7c9351a034cdd6e873de0c9cbf275675992b1
 
     @__handle_node
     def enter_name(self, node: ast.Name) -> None:
-<<<<<<< HEAD
         mypy_node = node.gen.mypy_ast[0].node
         self.__call_type_handler(node, mypy_node.type)
 
@@ -105,25 +66,6 @@ class FuseTypeInfoPass(Pass):
         self.__debug_print("Getting type not supported in", type(node))
 
     @__handle_node
-=======
-        self.__handle_node(node)
-
-    def enter_module_path(self, node: ast.ModulePath):
-        self.__handle_node(node)
-
-    def enter_module_item(self, node: ast.ModuleItem) -> None:
-        self.__handle_node(node)
-
-    def enter_architype(self, node: ast.Architype) -> None:
-        self.__handle_node(node)
-
-    def enter_arch_def(self, node: ast.ArchDef) -> None:
-        self.__handle_node(node)
-
-    def enter_enum(self, node: ast.Enum) -> None:
-        self.__handle_node(node)
-
->>>>>>> c4f7c9351a034cdd6e873de0c9cbf275675992b1
     def enter_enum_def(self, node: ast.EnumDef) -> None:
         self.__debug_print("Getting type not supported in", type(node))
 
