@@ -844,8 +844,26 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kvpair.append(kvp)
         return ast.DictVal(kv_pairs=kvpair, kid=kvpair)
 
-    def proc_dict_comp(self, node: py_ast.DictComp) -> None:
-        """Process python node."""
+    def proc_dict_comp(self, node: py_ast.DictComp) -> ast.DictCompr:
+        """Process python node.
+
+        class DictComp(expr):
+            key: expr
+            value: expr
+            generators: list[comprehension]
+        """
+        key = self.convert(node.key)
+        value = self.convert(node.value)
+        if isinstance(key, ast.Expr) and isinstance(value, ast.Expr):
+            kv_pair = ast.KVPair(key=key, value=value, kid=[key, value])
+        else:
+            self.ice()
+        generators = [self.convert(i) for i in node.generators]
+        valid = [i for i in generators if isinstance(i, (ast.InnerCompr))]
+        if len(valid) != len(generators):
+            raise self.ice("Length mismatch in dict compr generators")
+        compr = ast.SubNodeList[ast.InnerCompr](items=valid, kid=valid)
+        return ast.DictCompr(kv_pair=kv_pair, compr=valid, kid=[kv_pair, compr])
 
     def proc_ellipsis(self, node: py_ast.Ellipsis) -> None:
         """Process python node."""
@@ -937,7 +955,28 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Process python node."""
 
     def proc_global(self, node: py_ast.Global) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class Global(stmt):
+            names: list[_Identifier]
+        """
+        names: list[ast.Name] = []
+        for id in node.names:
+            names.append(
+                ast.Name(
+                    file_path=self.mod_path,
+                    name=Tok.NAME,
+                    value=id,
+                    line=node.lineno,
+                    col_start=node.col_offset,
+                    col_end=node.col_offset + len(id),
+                    pos_start=0,
+                    pos_end=0,
+                    kid=[],
+                )
+            )
+        target = ast.SubNodeList[ast.Name](items=names, kid=names)
+        return ast.GlobalStmt(target=target, kid=target)
 
     def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
         """Process python node.
@@ -1239,7 +1278,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         return ast.SetVal(values=valid_elts, kid=kid)
 
     def proc_set_comp(self, node: py_ast.SetComp) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class SetComp(expr):
+            elt: expr
+            generators: list[comprehension]
+        """
+        return self.proc_list_comp(node)
 
     def proc_slice(self, node: py_ast.Slice) -> ast.IndexSlice:
         """Process python node.
