@@ -427,7 +427,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         return ast.InForStmt(
             target=target,
-            is_async=True,
+            is_async=False,
             collection=iter,
             body=valid_body,
             else_body=valid_orelse,
@@ -448,19 +448,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
             orelse: list[stmt]`
         """
-        target = self.convert(node.target)
-        iter = self.convert(node.iter)
-        body = [self.convert(stmt) for stmt in node.body]
-        valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
-        if len(valid_body) != len(body):
-            raise self.ice("Length mismatch in async for body")
-        body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
-        orelse = [self.convert(stmt) for stmt in node.orelse]
-        valid_orelse = [stmt for stmt in orelse if isinstance(stmt, ast.CodeBlockStmt)]
-        if len(valid_orelse) != len(orelse):
-            raise self.ice("Length mismatch in async for orelse")
-        orelse = ast.SubNodeList[ast.CodeBlockStmt](items=valid_orelse, kid=orelse)
-        raise self.ice(f"IMPLEMENT ME {target} {iter} ")
+        forstmt = self.proc_for(node)
+        forstmt.is_async = True
+        return forstmt
 
     def proc_while(self, node: py_ast.While) -> ast.WhileStmt:
         """Process While node.
@@ -524,7 +514,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             self.ice()
         return ret
 
-    def proc_with(self, node: py_ast.With) -> ast.CodeBlockStmt:
+    def proc_with(self, node: py_ast.With) -> ast.WithStmt:
         """Process With node.
 
         class With(stmt):
@@ -542,9 +532,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
         body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
-        raise self.ice("IMPLEMENT ME")
+        return ast.WithStmt(is_async=False, exprs=items, body=body, kid=[items, body])
 
-    def proc_async_with(self, node: py_ast.AsyncWith) -> ast.CodeBlockStmt:
+    def proc_async_with(self, node: py_ast.AsyncWith) -> ast.WithStmt:
         """Process AsyncWith node.
 
         class AsyncWith(stmt):
@@ -552,17 +542,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             items: list[withitem]
             body: list[stmt]
         """
-        items = [self.convert(item) for item in node.items]
-        valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
-        if len(valid_items) != len(items):
-            raise self.ice("Length mismatch in with items")
-        items = ast.SubNodeList[ast.ExprAsItem](items=valid_items, kid=items)
-        body = [self.convert(stmt) for stmt in node.body]
-        valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
-        if len(valid_body) != len(body):
-            raise self.ice("Length mismatch in async for body")
-        body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
-        raise self.ice("IMPLEMENT ME")
+        ret = self.proc_with(node)
+        ret.is_async = True
+        return ret
 
     def proc_raise(self, node: py_ast.Raise) -> ast.RaiseStmt:
         """Process python node.
@@ -634,7 +616,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         return ret
 
     def proc_await(self, node: py_ast.Await) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class Await(expr):
+            value: expr
+        """
+        value = self.convert(node.value)
+        if isinstance(value, ast.Expr):
+            return ast.AwaitExpr(target=value, kid=[value])
+        else:
+            self.ice()
 
     def proc_bin_op(self, node: py_ast.BinOp) -> None:
         """Process python node.
@@ -1226,8 +1217,26 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         return ast.ExprStmt(expr=braces, in_fstring=False, kid=[braces])
 
-    def proc_set(self, node: py_ast.Set) -> None:
-        """Process python node."""
+    def proc_set(self, node: py_ast.Set) -> ast.SetVal:
+        """Process python node.
+
+        class Set(expr):
+            elts: list[expr]
+        """
+        if len(node.elts) != 0:
+            elts = [self.convert(i) for i in node.elts]
+            valid = [i for i in elts if isinstance(i, (ast.Expr))]
+            if len(valid) != len(elts):
+                raise self.ice("Length mismatch in set body")
+            valid_elts = ast.SubNodeList[ast.Expr](items=valid, kid=valid)
+            kid = valid_elts
+        else:
+            valid_elts = None
+            l_brace = self.operator(Tok.LBRACE, "{")
+            r_brace = self.operator(Tok.RBRACE, "}")
+            braces = ast.SubNodeList[ast.Expr](items=[], kid=[l_brace, r_brace])
+            kid = [braces]
+        return ast.SetVal(values=valid_elts, kid=kid)
 
     def proc_set_comp(self, node: py_ast.SetComp) -> None:
         """Process python node."""
@@ -1352,11 +1361,25 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid = [l_square, r_square]
         return ast.TupleVal(values=valid_elts, kid=kid)
 
-    def proc_yield(self, node: py_ast.Yield) -> None:
-        """Process python node."""
+    def proc_yield(self, node: py_ast.Yield) -> ast.YieldExpr:
+        """Process python node.
 
-    def proc_yield_from(self, node: py_ast.YieldFrom) -> None:
+        class Yield(expr):
+            value: expr | None
+        """
+        value = self.convert(node.value)
+        if isinstance(value, ast.Expr):
+            return ast.YieldExpr(expr=value, with_from=False, kid=[value])
+        else:
+            self.ice()
+
+    def proc_yield_from(self, node: py_ast.YieldFrom) -> ast.YieldExpr:
         """Process python node."""
+        value = self.convert(node.value)
+        if isinstance(value, ast.Expr):
+            return ast.YieldExpr(expr=value, with_from=True, kid=[value])
+        else:
+            self.ice()
 
     def proc_alias(self, node: py_ast.alias) -> ast.ExprAsItem:
         """Process python node.
