@@ -10,6 +10,7 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
+from jaclang.core.aott import aott_lower, aott_raise
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -384,6 +385,37 @@ class JacFeatureDefaults:
             return edge
 
         return builder
+
+    @staticmethod
+    @hookimpl
+    def with_llm(
+        model: Any,  # noqa: ANN401
+        model_params: dict[str, Any],
+        incl_info: tuple,
+        excl_info: tuple,
+        inputs: tuple,
+        outputs: tuple,
+        action: str,
+    ) -> Any:  # noqa: ANN401
+        """Jac's with_llm feature."""
+        reason = False
+        if "reason" in model_params:
+            reason = model_params.pop("reason")
+        input_types_n_information_str = ""  # TODO: We have to generate this
+        output_type_str = ""  # TODO: We have to generate this
+        output_type_info_str = ""  # TODO: We have to generate this
+        information_str = ""  # TODO: We have to generate this
+        meaning_in = aott_raise(
+            information_str,
+            input_types_n_information_str,
+            output_type_str,
+            output_type_info_str,
+            action,
+            reason,
+        )
+        meaning_out = model.__infer__(meaning_in, **model_params)
+        output_type_info = (None, None)  # TODO: We have to generate this
+        return aott_lower(meaning_out, output_type_info)
 
 
 class JacBuiltin:
