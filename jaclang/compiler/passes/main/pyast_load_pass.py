@@ -1,11 +1,10 @@
-# type: ignore
 """Lark parser for Jac Lang."""
 
 from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, TypeVar, Union
+from typing import Optional, TypeAlias, TypeVar, Union
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
@@ -51,6 +50,33 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         self.ir: ast.Module = self.proc_module(ir.ast)
         return self.ir
 
+    def extract_with_entry(
+        self, body: list[ast.AstNode], exclude_types: TypeAlias = T
+    ) -> list[T]:
+        """Extract with entry from a body."""
+        extracted: list[T] = []
+        with_entry_body: list[ast.CodeBlockStmt] = []
+        for i in body:
+            if isinstance(i, exclude_types):
+                if len(with_entry_body):
+                    with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
+                        items=with_entry_body, kid=with_entry_body
+                    )
+                    module_code = ast.ModuleCode(
+                        name=None,
+                        body=with_entry_subnodelist,
+                        kid=with_entry_body,
+                        doc=None,
+                    )
+                    extracted.append(module_code)
+                    with_entry_body = []
+                extracted.append(i)
+            elif isinstance(i, ast.CodeBlockStmt):
+                with_entry_body.append(i)
+            else:
+                self.ice("Invalid type for with entry body")
+        return extracted
+
     def proc_module(self, node: py_ast.Module) -> ast.Module:
         """Process python node.
 
@@ -66,25 +92,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(elements[0].expr, ast.String)
             else elements[0]
         )
-        valid = ([elements[0]] if isinstance(elements[0], ast.String) else []) + [
-            i for i in elements if isinstance(i, (ast.ElementStmt, ast.EmptyToken))
-        ]
-        with_entry = [  # TODO: Broken
-            i
-            for i in elements
-            if not isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
-        ]
-        if (len(valid) + len(with_entry)) != len(elements):
-            raise self.ice("Invalid module body")
-        if len(with_entry) != 0:
-            with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
-                items=with_entry, kid=with_entry
-            )
-            module_code = ast.ModuleCode(
-                name=None, body=with_entry_subnodelist, kid=with_entry, doc=None
-            )
-            valid.append(module_code)
-
+        valid = (
+            [elements[0]] if isinstance(elements[0], ast.String) else []
+        ) + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
