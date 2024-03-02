@@ -66,12 +66,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(elements[0].expr, ast.String)
             else elements[0]
         )
-        valid = [
-            i
-            for i in elements
-            if isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
+        valid = ([elements[0]] if isinstance(elements[0], ast.String) else []) + [
+            i for i in elements if isinstance(i, (ast.ElementStmt, ast.EmptyToken))
         ]
-        with_entry = [
+        with_entry = [  # TODO: Broken
             i
             for i in elements
             if not isinstance(i, (ast.ElementStmt, ast.String, ast.EmptyToken))
