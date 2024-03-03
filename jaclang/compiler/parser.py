@@ -1161,7 +1161,6 @@ class JacParser(Pass):
                         col_end=kid[0].loc.col_end,
                         pos_start=kid[0].pos_start,
                         pos_end=kid[0].pos_end,
-                        kid=kid[0].kid,
                     )
                 )
             else:
@@ -3802,7 +3801,6 @@ class JacParser(Pass):
                         pos_start=token.start_pos if token.start_pos is not None else 0,
                         pos_end=token.end_pos if token.end_pos is not None else 0,
                         is_kwesc=True,
-                        kid=[],
                     )
                 )
             elif token.type == Tok.NAME:
@@ -3841,6 +3839,5 @@ class JacParser(Pass):
                     col_end=token.end_column if token.end_column is not None else 0,
                     pos_start=token.start_pos if token.start_pos is not None else 0,
                     pos_end=token.end_pos if token.end_pos is not None else 0,
-                    kid=[],
                 )
             )
