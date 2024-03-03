@@ -44,9 +44,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
         print(f"finshed {type(node).__name__} ---------------------")
-        print(ret.pp())
         print(ret.unparse())
-        input()
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
@@ -133,7 +131,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=node.col_offset + len(node.name),
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         body = [self.convert(i) for i in node.body]
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
@@ -219,7 +216,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=node.col_offset + len(node.name),
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         arch_type = ast.Token(
             file_path=self.mod_path,
@@ -230,7 +226,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         body = [self.convert(i) for i in node.body]
         valid = [
@@ -603,7 +598,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=node.col_offset + len(node.attr),
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         if isinstance(value, ast.Expr):
             ret = ast.AtomTrailer(
@@ -698,7 +692,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         return ast.CtrlStmt(ctrl=break_tok, kid=[break_tok])
 
@@ -807,7 +800,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 col_end=node.col_offset + len(str(node.value)),
                 pos_start=0,
                 pos_end=0,
-                kid=[],
             )
         else:
             raise self.ice()
@@ -823,7 +815,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         return ast.CtrlStmt(ctrl=continue_tok, kid=[continue_tok])
 
@@ -889,7 +880,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 col_end=node.col_offset + len(node.name),
                 pos_start=0,
                 pos_end=0,
-                kid=[],
             )
             if node.name is not None
             else None
@@ -974,7 +964,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     col_end=node.col_offset + len(id),
                     pos_start=0,
                     pos_end=0,
-                    kid=[],
                 )
             )
         target = ast.SubNodeList[ast.Name](items=names, kid=names)
@@ -1035,7 +1024,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
@@ -1064,7 +1052,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         modpaths: list[ast.Name] = []
         if node.module:
@@ -1079,7 +1066,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         col_end=0,
                         pos_start=0,
                         pos_end=0,
-                        kid=[],
                     )
                 )
         path = ast.ModulePath(
@@ -1239,7 +1225,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=node.col_offset + len(node.id),
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         return ret
 
@@ -1444,7 +1429,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=node.col_offset + len(node.name),
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         asname = (
             ast.Name(
@@ -1456,7 +1440,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 col_end=node.col_offset + len(node.asname),
                 pos_start=0,
                 pos_end=0,
-                kid=[],
             )
             if node.asname
             else None
@@ -1481,7 +1464,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=node.col_offset + len(node.arg),
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         ann_expr = (
             self.convert(node.annotation)
@@ -1495,7 +1477,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 col_end=node.col_offset + 3,
                 pos_start=0,
                 pos_end=0,
-                kid=[],
             )
         )
         if not isinstance(ann_expr, ast.Expr):
@@ -1529,7 +1510,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 col_end=vararg.loc.col_end,
                 pos_start=0,
                 pos_end=0,
-                kid=[],
             )
             vararg.add_kids_left([vararg.unpack])
         kwonlyargs = [self.convert(arg) for arg in node.kwonlyargs]
@@ -1555,7 +1535,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 col_end=kwarg.loc.col_end,
                 pos_start=0,
                 pos_end=0,
-                kid=[],
             )
             kwarg.add_kids_left([kwarg.unpack])
         defaults = [self.convert(expr) for expr in node.defaults if type(expr) is None]
@@ -1589,7 +1568,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
 
     def proc_and(self, node: py_ast.And) -> ast.Token:
@@ -1756,7 +1734,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             col_end=node.col_offset + len(node.arg),
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
         value = self.convert(node.value)
         if isinstance(value, ast.Expr):

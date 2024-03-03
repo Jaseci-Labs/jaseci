@@ -108,14 +108,17 @@ class AstNode:
             ret += k.flatten()
         return ret
 
-    def normalize(self) -> bool:
+    def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
-        return True
+        return False
 
     def unparse(self) -> str:
         """Unparse ast node."""
-        self.normalize()
-        return " ".join([i.unparse() for i in self.kid])
+        valid = self.normalize()
+        res = " ".join([i.unparse() for i in self.kid])
+        if not valid:
+            raise NotImplementedError(f"Node {type(self).__name__} is not valid.")
+        return res
 
 
 class AstSymbolNode(AstNode):
@@ -267,8 +270,8 @@ class SubTag(AstNode, Generic[T]):
 
 # SubNodeList were created to simplify the type safety of the
 # parser's implementation. We basically need to maintain tokens
-# in the kid list as well as separating out items of interest in
-# the ast node class body.
+# of mixed type in the kid list of the subnodelist as well as
+# separating out typed items of interest in the ast node class body.
 class SubNodeList(AstNode, Generic[T]):
     """SubNodeList node type for Jac Ast."""
 
@@ -965,9 +968,12 @@ class ExprStmt(CodeBlockStmt):
         self.in_fstring = in_fstring
         AstNode.__init__(self, kid=kid)
 
-    def unparse(self) -> str:
-        """Unparse ast node."""
-        return super().unparse() + (";\n" if not self.in_fstring else "")
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize ast node."""
+        if deep:
+            res = self.expr.normalize(deep)
+        AstNode.__init__(self, kid=[self.expr, gen_token(Tok.SEMI, ";", self)])
+        return res and self.expr is not None
 
 
 class TryStmt(AstElseBodyNode, CodeBlockStmt):
@@ -1688,6 +1694,17 @@ class FuncCall(Expr):
         self.params = params
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize ast node."""
+        if deep:
+            res = self.target.normalize(deep)
+            res = res and (not self.params or self.params.normalize(deep))
+        AstNode.__init__(self, kid=[self.target, gen_token(Tok.LPAREN, "(", self)])
+        if self.params:
+            self.kid.append(self.params)
+        self.kid.append(gen_token(Tok.RPAREN, ")", self))
+        return res
+
 
 class IndexSlice(AtomExpr):
     """IndexSlice node type for Jac Ast."""
@@ -2082,6 +2099,14 @@ class Token(AstNode):
         self.pos_end = pos_end
         AstNode.__init__(self, kid=[])
 
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize token."""
+        return bool(self.value and self.name)
+
+    def unparse(self) -> str:
+        """Unparse token."""
+        return self.value
+
 
 class Name(Token, NameSpec):
     """Name node type for Jac Ast."""
@@ -2122,10 +2147,9 @@ class Name(Token, NameSpec):
 
     def unparse(self) -> str:
         """Unparse name."""
-        return (
-            (f"<>{self.value}" if self.is_kwesc else self.value) + ",\n"
-            if self.is_enum_singleton
-            else ""
+        super().unparse()
+        return (f"<>{self.value}" if self.is_kwesc else self.value) + (
+            ",\n" if self.is_enum_singleton else ""
         )
 
 
@@ -2279,8 +2303,13 @@ class String(Literal):
         ret_str = ret_str.encode().decode("unicode_escape")
         return ret_str
 
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize string."""
+        return True
+
     def unparse(self) -> str:
         """Unparse string."""
+        super().unparse()
         return repr(self.value)
 
 
@@ -2392,3 +2421,17 @@ class PythonModuleAst(EmptyToken):
         super().__init__()
         self.ast = ast
         self.file_path = mod_path
+
+
+def gen_token(name: Tok, value: str, from_node: AstNode) -> Token:
+    """Generate token."""
+    return Token(
+        name=name,
+        value=value,
+        file_path=from_node.loc.mod_path,
+        col_start=from_node.loc.col_start,
+        col_end=0,
+        line=from_node.loc.first_line,
+        pos_start=0,
+        pos_end=0,
+    )
