@@ -43,6 +43,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
         print(f"finshed {type(node).__name__} ---------------------")
+        print(ret.pp())
+        input()
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
@@ -101,7 +103,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             doc=(elements[0] if isinstance(elements[0], ast.String) else None),
             body=valid[1:] if isinstance(valid[0], ast.String) else valid,
             is_imported=False,
-            kid=elements,
+            kid=valid,
         )
         ret.gen.py_ast = [node]
         return self.nu(ret)
@@ -195,17 +197,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_class_def(self, node: py_ast.ClassDef) -> ast.Architype:
         """Process python node.
 
-        class ClassDef(stmt):name = ast.Name(
-            file_path=self.mod_path,
-            name=Tok.NAME,
-            value=node.name,
-            line=node.lineno,
-            col_start=node.col_offset,
-            col_end=node.col_offset + len(node.name),
-            pos_start=0,
-            pos_end=0,
-            kid=[],
-        )
+        class ClassDef(stmt):
             __match_args__ = ("name", "bases", "keywords", "body",
                               "decorator_list", "type_params")
             name: _Identifier
