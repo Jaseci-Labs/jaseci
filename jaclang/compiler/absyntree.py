@@ -355,7 +355,6 @@ class Test(AstSymbolNode, ElementStmt):
                 line=name.loc.first_line,
                 pos_start=name.pos_start,
                 pos_end=name.pos_end,
-                kid=name.kid,
             )
         )
         self.name.parent = self
@@ -2071,7 +2070,6 @@ class Token(AstNode):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         self.file_path = file_path
@@ -2082,7 +2080,7 @@ class Token(AstNode):
         self.c_end = col_end
         self.pos_start = pos_start
         self.pos_end = pos_end
-        AstNode.__init__(self, kid=kid)
+        AstNode.__init__(self, kid=[])
 
 
 class Name(Token, NameSpec):
@@ -2098,7 +2096,6 @@ class Name(Token, NameSpec):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
         is_enum_singleton: bool = False,
         is_kwesc: bool = False,
     ) -> None:
@@ -2115,7 +2112,6 @@ class Name(Token, NameSpec):
             col_end=col_end,
             pos_start=pos_start,
             pos_end=pos_end,
-            kid=kid,
         )
         AstSymbolNode.__init__(
             self,
@@ -2161,7 +2157,6 @@ class Literal(Token, AtomExpr):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         Token.__init__(
@@ -2174,7 +2169,6 @@ class Literal(Token, AtomExpr):
             col_end=col_end,
             pos_start=pos_start,
             pos_end=pos_end,
-            kid=kid,
         )
         AstSymbolNode.__init__(
             self,
@@ -2206,7 +2200,6 @@ class TokenSymbol(Token, AstSymbolNode):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         Token.__init__(
@@ -2219,7 +2212,6 @@ class TokenSymbol(Token, AstSymbolNode):
             col_end=col_end,
             pos_start=pos_start,
             pos_end=pos_end,
-            kid=kid,
         )
         AstSymbolNode.__init__(
             self,
@@ -2339,7 +2331,6 @@ class EmptyToken(Token):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
 
 

@@ -246,7 +246,6 @@ class SymTabBuildPass(SymTabPass):
                 col_end=0,
                 pos_start=0,
                 pos_end=0,
-                kid=[],
             )
             self.sync_node_to_scope(builtin)
             self.def_insert(builtin)
