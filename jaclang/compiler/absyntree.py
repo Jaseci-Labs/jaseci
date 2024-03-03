@@ -108,6 +108,15 @@ class AstNode:
             ret += k.flatten()
         return ret
 
+    def normalize(self) -> bool:
+        """Normalize ast node."""
+        return True
+
+    def unparse(self) -> str:
+        """Unparse ast node."""
+        self.normalize()
+        return " ".join([i.unparse() for i in self.kid])
+
 
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
@@ -956,6 +965,10 @@ class ExprStmt(CodeBlockStmt):
         self.expr = expr
         self.in_fstring = in_fstring
         AstNode.__init__(self, kid=kid)
+
+    def unparse(self) -> str:
+        """Unparse ast node."""
+        return super().unparse() + (";\n" if not self.in_fstring else "")
 
 
 class TryStmt(AstElseBodyNode, CodeBlockStmt):
@@ -2111,6 +2124,14 @@ class Name(Token, NameSpec):
             sym_type=SymbolType.VAR,
         )
 
+    def unparse(self) -> str:
+        """Unparse name."""
+        return (
+            (f"<>{self.value}" if self.is_kwesc else self.value) + ",\n"
+            if self.is_enum_singleton
+            else ""
+        )
+
 
 class Literal(Token, AtomExpr):
     """Literal node type for Jac Ast."""
@@ -2265,6 +2286,10 @@ class String(Literal):
             ret_str = self.value
         ret_str = ret_str.encode().decode("unicode_escape")
         return ret_str
+
+    def unparse(self) -> str:
+        """Unparse string."""
+        return repr(self.value)
 
 
 class Bool(Literal):

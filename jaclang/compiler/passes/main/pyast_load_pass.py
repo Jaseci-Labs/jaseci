@@ -1,3 +1,4 @@
+# type: ignore
 """Lark parser for Jac Lang."""
 
 from __future__ import annotations
@@ -44,6 +45,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice(f"Unknown node type {type(node).__name__}")
         print(f"finshed {type(node).__name__} ---------------------")
         print(ret.pp())
+        print(ret.unparse())
         input()
         return ret
 
