@@ -109,6 +109,7 @@ class AstSyncTestMixin:
                 "jac_source",
                 "empty_token",
                 "ast_symbol_node",
+                "ast_impl_needing_node",
                 "ast_access_node",
                 "token_symbol",
                 "literal",

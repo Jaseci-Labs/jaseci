@@ -9,7 +9,7 @@ body field.
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
-from jaclang.compiler.symtable import SymbolTable, SymbolType
+from jaclang.compiler.symtable import Symbol, SymbolTable, SymbolType
 
 
 class DeclDefMatchPass(Pass):
@@ -28,6 +28,14 @@ class DeclDefMatchPass(Pass):
         """Rebuild sub node table."""
         self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
 
+    def defn_lookup(self, lookup: Symbol) -> ast.AstImplNeedingNode | None:
+        """Lookup a definition in a symbol table."""
+        for defn in range(len(lookup.defn)):
+            candidate = lookup.defn[len(lookup.defn) - (defn + 1)]
+            if isinstance(candidate, ast.AstImplNeedingNode) and candidate.needs_impl:
+                return candidate
+        return None
+
     def connect_def_impl(self, sym_tab: SymbolTable) -> None:
         """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
@@ -35,7 +43,11 @@ class DeclDefMatchPass(Pass):
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
                 lookup = sym_tab.lookup(arch_refs[0])
-                decl_node = lookup.decl if lookup else None
+                decl_node = (
+                    self.defn_lookup(lookup)
+                    if len(arch_refs) == 1 and lookup
+                    else lookup.defn[-1] if lookup else None
+                )
                 for name in arch_refs[1:]:
                     if decl_node:
                         lookup = (
@@ -43,7 +55,11 @@ class DeclDefMatchPass(Pass):
                             if decl_node.sym_tab
                             else None
                         )
-                        decl_node = lookup.decl if lookup else None
+                        decl_node = (
+                            self.defn_lookup(lookup)
+                            if len(arch_refs) == 1 and lookup
+                            else lookup.defn[-1] if lookup else None
+                        )
                     else:
                         break
                 if not decl_node:

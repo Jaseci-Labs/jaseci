@@ -390,6 +390,7 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.ModuleItem](
                 items=[i for i in kid if isinstance(i, ast.ModuleItem)],
+                delim=",",
                 kid=kid,
             )
             return self.nu(ret)
@@ -509,6 +510,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.Expr](
                         items=valid_decors,
+                        delim="@",
                         kid=kid,
                     )
                 )
@@ -525,6 +527,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Expr](
                     items=valid_inh,
+                    delim=",",
                     kid=kid,
                 )
             )
@@ -655,10 +658,7 @@ class JacParser(Pass):
 
             enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
             """
-            ret = ast.SubNodeList[ast.EnumBlockStmt](
-                items=[],
-                kid=kid,
-            )
+            ret = ast.SubNodeList[ast.EnumBlockStmt](items=[], delim=",", kid=kid)
             ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
             return self.nu(ret)
 
@@ -676,7 +676,9 @@ class JacParser(Pass):
                     kid[0].is_enum_singleton = True
                     return self.nu(kid[0])
                 elif isinstance(kid[2], ast.Expr):
-                    targ = ast.SubNodeList[ast.Expr](items=[kid[0]], kid=[kid[0]])
+                    targ = ast.SubNodeList[ast.Expr](
+                        items=[kid[0]], delim=",", kid=[kid[0]]
+                    )
                     kid[0] = targ
                     return self.nu(
                         ast.Assignment(
@@ -959,6 +961,7 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.ParamVar](
                 items=[i for i in kid if isinstance(i, ast.ParamVar)],
+                delim=",",
                 kid=kid,
             )
             return self.nu(ret)
@@ -1014,6 +1017,7 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.ArchBlockStmt](
                 items=[],
+                delim="\n",
                 kid=kid,
             )
             ret.items = [i for i in kid if isinstance(i, ast.ArchBlockStmt)]
@@ -1092,6 +1096,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.HasVar](
                     items=valid_kid,
+                    delim=",",
                     kid=new_kid,
                 )
             )
@@ -1181,6 +1186,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.CodeBlockStmt](
                         items=[],
+                        delim="\n",
                         kid=kid,
                     )
                 )
@@ -1197,6 +1203,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.CodeBlockStmt](
                         items=valid_stmt,
+                        delim="\n",
                         kid=kid,
                     )
                 )
@@ -1366,6 +1373,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.Except](
                         items=valid_kid,
+                        delim="\n",
                         kid=kid,
                     )
                 )
@@ -1514,6 +1522,7 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.ExprAsItem](
                 items=[i for i in kid if isinstance(i, ast.ExprAsItem)],
+                delim=",",
                 kid=kid,
             )
             return self.nu(ret)
@@ -1774,6 +1783,7 @@ class JacParser(Pass):
             valid_assignees = [i for i in assignees if isinstance(i, (ast.Expr))]
             new_targ = ast.SubNodeList[ast.Expr](
                 items=valid_assignees,
+                delim="=",
                 kid=assignees,
             )
             kid = [x for x in kid if x not in assignees]
@@ -2332,7 +2342,7 @@ class JacParser(Pass):
                         expr = index.values.items[0] if index.values else None
                     else:
                         sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
-                            items=[*index.values.items], kid=index.kid
+                            items=[*index.values.items], delim=",", kid=index.kid
                         )
                         expr = ast.TupleVal(values=sublist, kid=[sublist])
                         kid = [expr]
@@ -2508,6 +2518,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.String | ast.ExprStmt](
                     items=valid_parts,
+                    delim="",
                     kid=valid_parts,
                 )
             )
@@ -2531,6 +2542,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.String | ast.ExprStmt](
                     items=valid_parts,
+                    delim="",
                     kid=valid_parts,
                 )
             )
@@ -2621,6 +2633,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Expr](
                     items=valid_kid,
+                    delim=",",
                     kid=new_kid,
                 )
             )
@@ -2645,6 +2658,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.KWPair](
                     items=valid_kid,
+                    delim=",",
                     kid=new_kid,
                 )
             )
@@ -2697,6 +2711,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Name](
                     items=valid_kid,
+                    delim=",",
                     kid=new_kid,
                 )
             )
@@ -2731,6 +2746,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Expr | ast.KWPair](
                     items=valid_kid,
+                    delim=",",
                     kid=kid,
                 )
             )
@@ -2897,6 +2913,7 @@ class JacParser(Pass):
                     return self.nu(
                         ast.SubNodeList[ast.Expr | ast.KWPair](
                             items=valid_kid,
+                            delim=",",
                             kid=kid,
                         )
                     )
@@ -2926,6 +2943,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Assignment](
                     items=valid_kid,
+                    delim=",",
                     kid=new_kid,
                 )
             )
@@ -3393,6 +3411,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.CompareExpr](
                     items=valid_kid,
+                    delim=",",
                     kid=new_kid,
                 )
             )
@@ -3736,6 +3755,7 @@ class JacParser(Pass):
             valid_kid = [i for i in new_kid if isinstance(i, ast.MatchPattern)]
             return ast.SubNodeList[ast.MatchPattern](
                 items=valid_kid,
+                delim=",",
                 kid=kid,
             )
 
@@ -3781,6 +3801,7 @@ class JacParser(Pass):
                 valid_kid = [i for i in new_kid if isinstance(i, ast.MatchKVPair)]
                 return ast.SubNodeList[ast.MatchKVPair](
                     items=valid_kid,
+                    delim=",",
                     kid=new_kid,
                 )
             else:

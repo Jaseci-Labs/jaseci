@@ -815,12 +815,12 @@ class PyastGenPass(Pass):
                 [
                     self.sync(
                         ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc
-                    ),  # type: ignore
-                    self.sync(ast3.Pass(), node.body),  # type: ignore
+                    ),
+                    self.sync(ast3.Pass(), node.body),
                 ]
                 if node.doc and node.is_abstract
                 else (
-                    [self.sync(ast3.Pass(), node.body)]  # type: ignore
+                    [self.sync(ast3.Pass(), node.body)]
                     if node.is_abstract
                     else self.resolve_stmt_block(
                         (
@@ -875,6 +875,7 @@ class PyastGenPass(Pass):
             )
         if not body and not isinstance(node.body, ast.FuncCall):
             self.error("Ability has no body. Perhaps an impl must be imported.", node)
+            body = [self.sync(ast3.Pass(), node)]
 
         node.gen.py_ast = [
             self.sync(
@@ -2037,7 +2038,7 @@ class PyastGenPass(Pass):
                 params=(
                     node.left.values
                     if isinstance(node.left, ast.TupleVal)
-                    else ast.SubNodeList(items=[node.left], kid=[node.left])
+                    else ast.SubNodeList(items=[node.left], delim=",", kid=[node.left])
                 ),
                 kid=node.kid,
             )
@@ -2071,7 +2072,9 @@ class PyastGenPass(Pass):
                 params=(
                     node.right.values
                     if isinstance(node.right, ast.TupleVal)
-                    else ast.SubNodeList(items=[node.right], kid=[node.right])
+                    else ast.SubNodeList(
+                        items=[node.right], delim=",", kid=[node.right]
+                    )
                 ),
                 kid=node.kid,
             )
