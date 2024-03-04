@@ -15,15 +15,12 @@ include:jac main;
 
 '''The walker that initiates the game and runs an instance of the game'''
 walker game {
-    has g: Game = None,
-        fwd_dir: bool = True;
-
     has g:Game = None,
         current_level:int = 1,
         fwd_dir:bool = True,
         map_directory:dict={};
 
-    can start_game with `<root> entry;
+    can start_game with `root entry;
     can generate_level();
 }
 
