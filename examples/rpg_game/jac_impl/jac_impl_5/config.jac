@@ -31,7 +31,7 @@ Map {
     has Level_no:'Level number':int = 1;
     has time_to_win_level:'time taken to complete the level in seconds':float = 60.0;
     has map:
-    'The map of the level having B as block, E as enemy, P as player and . as empty space. Size is 20 x 20'
+    'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space.All outer characters are B. Only one single player character can be in the map.'
     :list[str] = [
                                 'BBBBBBBBBBBBBBBBBBBB',
                                 'B..................B',
@@ -55,7 +55,7 @@ Map {
 
 glob LEVEL_NO_smstr = 'Level number';
 glob TIME_TO_WIN_LEVEL_smstr = 'time taken to complete the level in seconds';
-glob MAP_smstr = 'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space. Size is 20 x 20. All rows should have 20 characters and there should be 20 rows Where all outer characters are B. Only one single player character can be in the map, placed as far away from other enemy characters. Blocks can be added inside the map to increase map complexity';
+glob MAP_smstr = 'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space.All outer characters are B. Only one single player character can be in the map.';
 
 obj model {
 
@@ -83,7 +83,7 @@ obj model {
         "List[str]"
 
         "[Output Type Explanation]"
-        f"{MAP_smstr}The additional Bricks, one more enemy than in the previous level should replace the . on a map."
+        f"{MAP_smstr}"
 
         "[Prompt]"
         "Return the map of the next level which is different and incrementally challenging than previous levels."
@@ -94,6 +94,7 @@ obj model {
         "Hardness should be slightly increased."
         "All enemies should be accessible to the player (should not be enclosed with blocks)."
         "The previous level maps are included in [Infomation]. Difficulty can be assesed by the time taken to finish the map."
+        "Blocks can be added inside the map to increase map complexity."
 
         "[Result] <result>";
 

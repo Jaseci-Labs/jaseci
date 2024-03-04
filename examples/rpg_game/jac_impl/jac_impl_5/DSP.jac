@@ -29,7 +29,8 @@ walker game{
         :dict={};
 
     can start_game with `root entry;
-    can generate_level(node_level:node);
+    can 'Return the map of the next level which is different and incrementally challenging than previous levels.'
+    generate_level;
 }
 
 edge play{
@@ -73,7 +74,7 @@ with entry {
     visit [-->];
 }
 
-:walker:game:can:generate_level(node_level:node) {
+:walker:game:can:generate_level() {
 
     if self.map_directory {
         new_map = llm.generate(self.map_directory);
@@ -92,7 +93,7 @@ with entry {
             here.current_level = self.game_level;
         }
         if str(self.game_level) not in here.map_directory.keys(){
-            here.generate_level(node_level = self);
+            here.generate_level();
         }
 
         here.g.GameMap.map = here.map_directory[str(self.game_level)].map;
