@@ -27,7 +27,7 @@ obj Game {
         go_background: pygame.surface.Surface = pygame.image.load('../img/gameover.png');
 
     can postinit {
-        pygame.init();
+        pygame.<>init();
         self.font: pygame.font.Font=pygame.font.Font(GENERAL_FONT, 32);
     }
     # Generate the map according to the tilemap variable in map.jac

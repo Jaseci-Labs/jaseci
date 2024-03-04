@@ -28,7 +28,7 @@ obj Game {
         GameMap: Map = Map();
 
     can postinit {
-        pygame.init();
+        pygame.<>init();
         self.font: pygame.font.Font=pygame.font.Font(GENERAL_FONT, 32);
     }
     # Generate the map according to the tilemap variable in map.jac
