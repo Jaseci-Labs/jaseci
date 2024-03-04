@@ -1294,7 +1294,7 @@ Method abilities are reminiscent of traditional class methods in other programmi
 ### The Sentinel
 
 ## Introducing Semstrings
-<!-- TODO: Provide exaplnation on what a semstring is and how to do it in different cases -->
+<!-- TODO: Provide exaplnation on what a semstring is and how to do it in different cases @kugesan1105-->
 
 ## Programming with GenAI
 <!-- TODO: We need to provide simple examples, explanations for each usage (has var, abilities, node, object, method etc.-->
