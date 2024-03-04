@@ -716,12 +716,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         for i in keywords:
             if isinstance(i, ast.KWPair):
                 params_in.append(i)
+        print(params_in)
         if len(params_in) != 0:
             params_in2: ast.SubNodeList = ast.SubNodeList[ast.Expr | ast.KWPair](
                 items=params_in, kid=params_in
             )
         else:
             params_in2 = None
+        print(params_in2)
         if isinstance(func, ast.Expr):
             return ast.FuncCall(
                 target=func,
@@ -1183,29 +1185,127 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             target=subject, cases=valid_cases, kid=[subject, valid_cases]
         )
 
-    def proc_match_as(self, node: py_ast.MatchAs) -> None:
-        """Process python node."""
+    def proc_match_as(self, node: py_ast.MatchAs) -> ast.MatchAs:
+        """Process python node.
 
-    def proc_match_class(self, node: py_ast.MatchClass) -> None:
-        """Process python node."""
+        class MatchAs(pattern):
+            pattern: _Pattern | None
+            name: _Identifier | None
+        """
+        pattern = self.convert(node.pattern) if node.pattern is not None else None
+        name = ast.Name(
+            file_path=self.mod_path,
+            name=Tok.NAME,
+            value=node.name,
+            line=node.lineno,
+            col_start=node.col_offset,
+            col_end=node.col_offset + len(node.name),
+            pos_start=0,
+            pos_end=0,
+        )
+        return ast.MatchAs(
+            name=name,
+            pattern=pattern,
+            kid=[name, pattern] if pattern is not None else [name],
+        )
 
-    def proc_match_mapping(self, node: py_ast.MatchMapping) -> None:
-        """Process python node."""
+    def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
+        """Process python node.
+
+        class MatchClass(pattern):
+            cls: expr
+            patterns: list[pattern]
+            kwd_attrs: list[_Identifier]
+            kwd_patterns: list[pattern]
+        """
+
+    def proc_match_mapping(self, node: py_ast.MatchMapping) -> ast.MatchMapping:
+        """Process python node.
+
+        class MatchMapping(pattern):
+            keys: list[expr]
+            patterns: list[pattern]
+            rest: _Identifier | None
+        """
 
     def proc_match_or(self, node: py_ast.MatchOr) -> None:
-        """Process python node."""
+        """Process python node.
 
-    def proc_match_sequence(self, node: py_ast.MatchSequence) -> None:
-        """Process python node."""
+        class MatchOr(pattern):
+            patterns: list[pattern]
+        """
+        patterns = [self.convert(i) for i in node.patterns]
+        valid = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+        if len(patterns) == len(valid):
+            return ast.MatchOr(patterns=valid, kid=patterns)
+        else:
+            self.ice()
+
+    def proc_match_sequence(self, node: py_ast.MatchSequence) -> ast.MatchSequence:
+        """Process python node.
+
+        class MatchSequence(pattern):
+            patterns: list[pattern]
+        """
+        patterns = [self.convert(i) for i in node.patterns]
+        valid = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+        if len(patterns) == len(valid):
+            return ast.MatchSequence(patterns=valid, kid=patterns)
+        else:
+            self.ice()
 
     def proc_match_singleton(self, node: py_ast.MatchSingleton) -> None:
-        """Process python node."""
+        """Process python node.
 
-    def proc_match_star(self, node: py_ast.MatchStar) -> None:
-        """Process python node."""
+        class MatchSingleton(pattern):
+            value: Literal[True, False] | None
+        """
+        type = "NULL" if node.value is None else "BOOL"
+        ret_type = ast.Null if node.value is None else ast.Bool
+        value = ret_type(
+            file_path=self.mod_path,
+            name=type,
+            value=node.value,
+            line=node.lineno,
+            col_start=node.col_offset,
+            col_end=node.col_offset + len(str(node.value)),
+            pos_start=0,
+            pos_end=0,
+        )
+        return ast.MatchSingleton(value=value, kid=[value])
 
-    def proc_match_value(self, node: py_ast.MatchValue) -> None:
-        """Process python node."""
+    def proc_match_star(self, node: py_ast.MatchStar) -> ast.MatchStar:
+        """Process python node.
+
+        class MatchStar(pattern):
+            name: _Identifier | None
+        """
+        if node.name:
+            name = ast.Name(
+                file_path=self.mod_path,
+                name=Tok.NAME,
+                value=node.name,
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + len(node.name),
+                pos_start=0,
+                pos_end=0,
+            )
+            return ast.MatchStar(name=name, is_list=True, kid=[name])
+        else:
+            return None  # Need to make sure whether it's correct or not
+
+    def proc_match_value(self, node: py_ast.MatchValue) -> ast.MatchValue:
+        """Process python node.
+
+        class MatchValue(pattern):
+            value: expr
+        """
+        value = self.convert(node.value)
+        if isinstance(value, ast.Expr):
+            return ast.MatchValue(value=value, kid=[value])
+        else:
+            self.ice()
 
     def proc_name(self, node: py_ast.Name) -> ast.Name:
         """Process python node.
@@ -1741,8 +1841,26 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
-    def proc_match_case(self, node: py_ast.match_case) -> None:
-        """Process python node."""
+    def proc_match_case(self, node: py_ast.match_case) -> ast.MatchCase:
+        """Process python node.
+
+        class match_case(AST):
+            pattern: _Pattern
+            guard: expr | None
+            body: list[stmt]
+        """
+        pattern = self.convert(node.pattern)
+        guard = self.convert(node.guard) if node.guard is not None else None
+        body = [self.convert(i) for i in node.body]
+        valid = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
+        body = ast.SubNodeList[ast.CodeBlockStmt](items=valid, kid=valid)
+
+        return ast.MatchCase(
+            pattern=pattern,
+            guard=guard,
+            body=body,
+            kid=[pattern, guard, body] if guard is not None else [pattern, body],
+        )
 
     def proc_withitem(self, node: py_ast.withitem) -> None:
         """Process python node."""
