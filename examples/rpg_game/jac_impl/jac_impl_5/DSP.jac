@@ -24,7 +24,9 @@ walker game{
     has g:Game = None,
         current_level:int = 1,
         fwd_dir:bool = True,
-        map_directory:'Map directory that containes all the levels and their configurations':dict={};
+        map_directory:
+        'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game'
+        :dict={};
 
     can start_game with `root entry;
     can generate_level(node_level:node);
@@ -75,7 +77,7 @@ with entry {
 
     if self.map_directory {
         new_map = llm.generate(self.map_directory);
-        print(new_map);
+        # print(new_map);
         self.map_directory[str(self.current_level)] = Map(map=new_map);
     } else {
         self.map_directory[str(self.current_level)] = Map();

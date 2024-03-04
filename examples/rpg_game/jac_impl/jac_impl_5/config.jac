@@ -60,23 +60,8 @@ glob MAP_smstr = 'the map of the level having (B) as block, (E) as enemy, (P) as
 obj model {
 
     has input:dict = {};
-        # sign:Any = Login(email, passwd),
-        # cookie_path_dir:str = "./cookies_snapshot",
-        # cookies:Any = None,
-        # chatbot:Any = None;
-
-    # can <post_init> {
-    #     # self.cookies = self.sign.login();
-    #     # self.sign.saveCookiesToDir(self.cookie_path_dir);
-
-    #     # # start a new huggingchat connection
-    #     # self.chatbot = hugchat.ChatBot(cookies=self.cookies.get_dict());
-    # }
 
     can create_prompt(input:dict)->str{
-        prompt = '[System Prompt]\nThis is an operation you must perform and return the output values only. Neither, the methodology, extra sentences nor the code are needed.\n';
-        prompt += '\n[Information]\n';
-        # node_level = here;
         level_config_dict:dict = {};
         for config_key in input.keys(){
             level_key = 'Level_' + config_key;
@@ -87,20 +72,30 @@ obj model {
             level_config_dict[level_key]['map'] = ['list[str]', MAP_smstr ,input[config_key].map];
         }
 
-        prompt += 'dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game, ' + str(level_config_dict) + '\n';
-        prompt += '\n[Output Type]\n';
-        prompt += 'List[str]\n';
-        prompt += '\n[Output Type Explanation]\n';
-        prompt += MAP_smstr + 'The additional Bricks, one more enemy than in the previous level should replace the . on a map.' +'\n';
-        prompt += '\n[Action]\n';
-        prompt += 'Return the map of the next level which is different and incrementally challenging than previous levels.\n';
-        prompt += '\n[Contex]\n';
-        prompt += 'Must have one Player (P) in map.\n';
-        prompt += 'Two consecutive maps should not look alike.\n';
-        prompt += 'Hardness should be slightly increased.\n';
-        prompt += 'All enemies should be accessible to the player (should not be enclosed with blocks).\n';
-        prompt += 'The previous level maps are included in [Infomation]. Difficulty can be assesed by the time taken to finish the map.\n';
-        prompt += '\n[Result] <result>\n';
+        prompt = ""
+        "[System Prompt]"
+        "This is an operation you must perform and return the output values only. Neither, the methodology, extra sentences nor the code are needed."
+
+        "[Information]"
+        f"Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game,  {str(level_config_dict)} "
+
+        "[Output Type]"
+        "List[str]"
+
+        "[Output Type Explanation]"
+        f"{MAP_smstr}The additional Bricks, one more enemy than in the previous level should replace the . on a map."
+
+        "[Prompt]"
+        "Return the map of the next level which is different and incrementally challenging than previous levels."
+
+        "[Context]"
+        "Must have one Player (P) in map."
+        "Two consecutive maps should not look alike."
+        "Hardness should be slightly increased."
+        "All enemies should be accessible to the player (should not be enclosed with blocks)."
+        "The previous level maps are included in [Infomation]. Difficulty can be assesed by the time taken to finish the map."
+
+        "[Result] <result>";
 
         return prompt;
     }
@@ -118,12 +113,8 @@ obj model {
     }
 
     can parse_response(response:str)->list[str]{
-        # pattern = re.compile(r"\[(\'\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w+),\]");
-        # map = pattern.match(response);
-        lines = re.findall(r"'([^']*)'", response);
-        # print(type(lines));
+        # lines = re.findall(r"'([^']*)'", response);
         map = ast.literal_eval(response);
-        # print(map);
         return map;
     }
 
