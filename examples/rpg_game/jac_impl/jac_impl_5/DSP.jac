@@ -53,7 +53,7 @@ node level{
     has game_level:int = 1,
         level_id:str = '1_1000',
         played:bool = False,
-        level_config:Map = Map(), # need to look at this
+        level_config:Map = Map(),
         level_time:float=500000;
 
     can run_game with game entry;
