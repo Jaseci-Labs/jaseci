@@ -1293,8 +1293,62 @@ Method abilities are reminiscent of traditional class methods in other programmi
 ### Cross Invocation Persistence
 ### The Sentinel
 
-## Introducing Semstrings
+## Introducing Semstrings -A Gateway to Meaningful Interactions with LLM
 <!-- TODO: Provide exaplnation on what a semstring is and how to do it in different cases @kugesan1105-->
+In the dynamic landscape of programming languages, the advent of Jac introduces a novel concept called "**Semstrings**," offering a powerful and expressive way to interact with LLM. Semstrings, short for semantic strings, serve as a bridge between the traditional code structure and the capabilities of language models.They play a pivotal role in shaping the way we communicate with models and generate prompts.
+
+Utilizing Semstrings in Various Cases
+- Ability/Method Declaration 
+- Ability/Method Parameter Declaration
+- Attributes of Architypes
+- Return Type Specification
+
+<span style="color:orange;">
+</span>
+
+
+**Ability/Method Declaration**
+
+ Semstrings play a pivotal role in method and ability declarations, offering a clear and concise description of their intended purpose—essentially defining the action each ability or method is designed to perform.
+ 
+```
+can 'Translate English to French'
+translate(english_word: 'English Word' str) -> 'French Word' str with llm;
+```
+
+In this instance, the semstring <span style="color:orange;">'Translate English to French'</span> serves as a descriptive label, clarifying the intended action when invoking the function. For example, calling the function with translate("cheese") leverages the semstring to guide the model, ensuring a contextually informed response.
+
+
+**Ability/Method Parameter Declaration**
+
+ Semstrings shine prominently in method signatures, serving as guides to define parameters with explicit meanings. By providing meaningful labels, developers ensure that LLM comprehends the purpose and expected inputs clearly. These semstrings also contribute to explaining the input with meaningful context.
+```
+can 'Provide the Answer for the Given Question (A-F)'
+get_answer(question: 'Question' str, choices: 'Answer Choices': dict) -> 'Answer (A-F)' str with llm(reason=True);
+```
+In this instance, the semstrings for parameters (<span style="color:orange;">'Question'</span> and <span style="color:orange;">'Answer Choices'</span>) act as informative labels, offering a clear understanding of what each parameter represents. The labels provide context to LLM, guiding it to interpret and respond to the function's inputs appropriately.
+
+**Attributes of Architypes**
+
+Semstrings play a vital role in describing attributes within architypes, providing a succinct and clear explanation of the purpose and nature of each attribute. This practice makes it easier to convey the respective meanings to prompts.
+```
+obj 'Singer'
+Singer {
+    has name: 'Name of the Singer' str,
+        age: 'Age' int,
+        top_songs: "His/Her's Top 2 Songs" list[str];
+}
+```
+In this architype example, the semstrings associated with attributes (<span style="color:orange;">'Name of the Singer'</span>, <span style="color:orange;">'Age,'</span> and <span style="color:orange;">"His/Her's Top 2 Songs"</span>) serve as concise descriptors. These semstrings effectively communicate the significance of each attribute, facilitating a more straightforward understanding of the architype's structure.
+
+**Return Type Specification**
+
+Utilizing Semstring in return type specifications provides a meaningful way to explain the expected outputs of a function.
+```
+can 'Summarize the Accomplishments'
+summarize (a: 'Accomplishments' list[str]) -> 'Summary of the Accomplishments' str with llm;
+```
+In this example, the semstring <span style="color:orange;">'Summary of the Accomplishments' </span> precisely communicates the nature of the expected output. This clarity ensures that developers, as well as LLM, comprehend the type of information that will be returned by invoking the 'Summarize the Accomplishments' function.
 
 ## Programming with GenAI
 <!-- TODO: We need to provide simple examples, explanations for each usage (has var, abilities, node, object, method etc.-->
