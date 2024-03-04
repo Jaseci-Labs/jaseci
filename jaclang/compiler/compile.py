@@ -16,7 +16,7 @@ def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
         file_path=file_path,
         schedule=pass_schedule,
     )
-    if cache_result and isinstance(code.ir, ast.Module) and not code.errors_had:
+    if cache_result and isinstance(code.ir, ast.Module):
         print_pass = PyOutPass(input_ir=code.ir, prior=code)
         return print_pass
     else:

@@ -35,7 +35,16 @@ class DeclDefMatchPass(Pass):
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
                 lookup = sym_tab.lookup(arch_refs[0])
-                decl_node = lookup.decl if lookup else None
+                decl_node: ast.AstSymbolNode | None = None
+                if lookup:
+                    for defn in range(len(lookup.defn)):
+                        candidate = lookup.defn[len(lookup.defn) - (defn + 1)]
+                        if (
+                            isinstance(candidate, ast.AstImplNeedingNode)
+                            and candidate.needs_impl
+                        ):
+                            decl_node = candidate
+                            break
                 for name in arch_refs[1:]:
                     if decl_node:
                         lookup = (

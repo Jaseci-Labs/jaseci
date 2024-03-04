@@ -815,12 +815,12 @@ class PyastGenPass(Pass):
                 [
                     self.sync(
                         ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc
-                    ),  # type: ignore
-                    self.sync(ast3.Pass(), node.body),  # type: ignore
+                    ),
+                    self.sync(ast3.Pass(), node.body),
                 ]
                 if node.doc and node.is_abstract
                 else (
-                    [self.sync(ast3.Pass(), node.body)]  # type: ignore
+                    [self.sync(ast3.Pass(), node.body)]
                     if node.is_abstract
                     else self.resolve_stmt_block(
                         (
@@ -875,6 +875,7 @@ class PyastGenPass(Pass):
             )
         if not body and not isinstance(node.body, ast.FuncCall):
             self.error("Ability has no body. Perhaps an impl must be imported.", node)
+            body = [self.sync(ast3.Pass(), node)]
 
         node.gen.py_ast = [
             self.sync(
