@@ -2038,7 +2038,7 @@ class PyastGenPass(Pass):
                 params=(
                     node.left.values
                     if isinstance(node.left, ast.TupleVal)
-                    else ast.SubNodeList(items=[node.left], kid=[node.left])
+                    else ast.SubNodeList(items=[node.left], delim=",", kid=[node.left])
                 ),
                 kid=node.kid,
             )
@@ -2072,7 +2072,9 @@ class PyastGenPass(Pass):
                 params=(
                     node.right.values
                     if isinstance(node.right, ast.TupleVal)
-                    else ast.SubNodeList(items=[node.right], kid=[node.right])
+                    else ast.SubNodeList(
+                        items=[node.right], delim=",", kid=[node.right]
+                    )
                 ),
                 kid=node.kid,
             )
