@@ -72,28 +72,6 @@ with entry {
 }
 
 :walker:game:can:generate_level(node_level:node) {
-    # prompt = '[System Prompt]\nThis is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.\n';
-    # prompt += '\n[Information]\n';
-    # # node_level = here;
-    # level_config_dict:dict = {};
-    # print(str(self.map_directory.keys()));
-    # for config_key in self.map_directory.keys(){
-    #     level_key = 'Level_' + config_key;
-    #     level_config_dict[level_key] = {};
-    #     # level_config_dict[level_key] = vars(self.map_directory[config_key]);
-    #     level_config_dict[level_key]['Level_no'] = ['int', LEVEL_NO_smstr ,self.map_directory[config_key].Level_no];
-    #     level_config_dict[level_key]['time_to_win_level'] = ['float', TIME_TO_WIN_LEVEL_smstr ,self.map_directory[config_key].time_to_win_level];
-    #     level_config_dict[level_key]['map'] = ['list[str]', MAP_smstr ,self.map_directory[config_key].map];
-    # }
-
-    # prompt += 'dict, Map directory that containes all the levels and their configurations, ' + str(level_config_dict) + '\n';
-    # prompt += '\n[Output Type]\n';
-    # prompt += 'List[str]\n';
-    # prompt += '\n[Output Type Explanation]\n';
-    # prompt += MAP_smstr + '\n';
-    # prompt += '\n[Action]\n';
-    # prompt += 'Return the map of the level which is harder than previous levels\n';
-    # prompt += '\n[Result] <result>\n';
 
     if self.map_directory {
         new_map = llm.generate(self.map_directory);
