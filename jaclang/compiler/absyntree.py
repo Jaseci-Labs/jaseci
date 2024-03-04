@@ -144,6 +144,9 @@ class AstAccessNode(AstNode):
         )
 
 
+T = TypeVar("T", bound=AstNode)
+
+
 class AstDocNode(AstNode):
     """Nodes that have access."""
 
@@ -200,6 +203,19 @@ class AstImplOnlyNode(AstNode):
         self.decl_link = decl_link
 
 
+class AstImplNeedingNode(AstSymbolNode, Generic[T]):
+    """Impl needing node type for Jac Ast."""
+
+    def __init__(self, body: Optional[T]) -> None:
+        """Initialize impl needing node."""
+        self.body = body
+
+    @property
+    def needs_impl(self) -> bool:
+        """Need impl."""
+        return self.body is None
+
+
 class Expr(AstNode):
     """Expr node type for Jac Ast."""
 
@@ -238,9 +254,6 @@ class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrN
 
 class MatchPattern(AstNode):
     """MatchPattern node type for Jac Ast."""
-
-
-T = TypeVar("T", bound=AstNode)
 
 
 class SubTag(AstNode, Generic[T]):
@@ -470,7 +483,7 @@ class ModuleItem(AstSymbolNode):
         )
 
 
-class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
+class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
@@ -489,7 +502,6 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         self.name = name
         self.arch_type = arch_type
         self.base_classes = base_classes
-        self.body = body
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -513,6 +525,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
                 )
             ),
         )
+        AstImplNeedingNode.__init__(self, body=body)
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
@@ -556,7 +569,7 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
         AstImplOnlyNode.__init__(self, decl_link=decl_link)
 
 
-class Enum(ArchSpec, AstAccessNode):
+class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode):
     """Enum node type for Jac Ast."""
 
     def __init__(
@@ -573,7 +586,6 @@ class Enum(ArchSpec, AstAccessNode):
         """Initialize object arch node."""
         self.name = name
         self.base_classes = base_classes
-        self.body = body
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -581,6 +593,7 @@ class Enum(ArchSpec, AstAccessNode):
             sym_name_node=name,
             sym_type=SymbolType.ENUM_ARCH,
         )
+        AstImplNeedingNode.__init__(self, body=body)
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
@@ -615,13 +628,13 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
 
 
 class Ability(
-    AstSymbolNode,
     AstAccessNode,
     ElementStmt,
     AstAsyncNode,
     ArchBlockStmt,
     CodeBlockStmt,
     AstSemStrNode,
+    AstImplNeedingNode,
 ):
     """Ability node type for Jac Ast."""
 
@@ -649,8 +662,8 @@ class Ability(
         self.is_abstract = is_abstract
         self.decorators = decorators
         self.signature = signature
-        self.body = body
         AstNode.__init__(self, kid=kid)
+        AstImplNeedingNode.__init__(self, body=body)
         AstSemStrNode.__init__(self, semstr=semstr)
         AstSymbolNode.__init__(
             self,

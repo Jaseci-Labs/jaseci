@@ -73,7 +73,7 @@ class DefUsePass(SymTabPass):
         ):
             self.def_insert(
                 node,
-                single_use="has var",
+                single_decl="has var",
                 access_spec=node.parent.parent,
             )
         else:
