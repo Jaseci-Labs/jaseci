@@ -9,7 +9,8 @@ from functools import wraps
 from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.constant import EdgeDir
+from jaclang.compiler.constant import EdgeDir, colors
+from jaclang.core.aott import aott_lower, aott_raise
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -26,7 +27,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.jacbuiltins import dotgen
+from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
 
@@ -385,15 +386,121 @@ class JacFeatureDefaults:
 
         return builder
 
+    @staticmethod
+    @hookimpl
+    def with_llm(
+        model: Any,  # noqa: ANN401
+        model_params: dict[str, Any],
+        incl_info: tuple,
+        excl_info: tuple,
+        inputs: tuple,
+        outputs: tuple,
+        action: str,
+    ) -> Any:  # noqa: ANN401
+        """Jac's with_llm feature."""
+        reason = False
+        if "reason" in model_params:
+            reason = model_params.pop("reason")
+        input_types_n_information_str = ""  # TODO: We have to generate this
+        output_type_str = ""  # TODO: We have to generate this
+        output_type_info_str = ""  # TODO: We have to generate this
+        information_str = ""  # TODO: We have to generate this
+        meaning_in = aott_raise(
+            information_str,
+            input_types_n_information_str,
+            output_type_str,
+            output_type_info_str,
+            action,
+            reason,
+        )
+        meaning_out = model.__infer__(meaning_in, **model_params)
+        output_type_info = (None, None)  # TODO: We have to generate this
+        return aott_lower(meaning_out, output_type_info)
+
 
 class JacBuiltin:
     """Jac Builtins."""
 
     @staticmethod
     @hookimpl
-    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
-        """Print the dot graph."""
-        return dotgen(node, radius)
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: list[str],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        edge_type = edge_type if edge_type else []
+        visited_nodes: list[NodeArchitype] = []
+        node_depths: dict[NodeArchitype, int] = {node: 0}
+        queue: list = [[node, 0]]
+        connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
+
+        def dfs(node: NodeArchitype, cur_depth: int) -> None:
+            """Depth first search."""
+            if node not in visited_nodes:
+                visited_nodes.append(node)
+                traverse_graph(
+                    node,
+                    cur_depth,
+                    depth,
+                    edge_type,
+                    traverse,
+                    connections,
+                    node_depths,
+                    visited_nodes,
+                    queue,
+                    bfs,
+                    dfs,
+                    node_limit,
+                    edge_limit,
+                )
+
+        if bfs:
+            cur_depth = 0
+            while queue:
+                current_node, cur_depth = queue.pop(0)
+                if current_node not in visited_nodes:
+                    visited_nodes.append(current_node)
+                    traverse_graph(
+                        current_node,
+                        cur_depth,
+                        depth,
+                        edge_type,
+                        traverse,
+                        connections,
+                        node_depths,
+                        visited_nodes,
+                        queue,
+                        bfs,
+                        dfs,
+                        node_limit,
+                        edge_limit,
+                    )
+        else:
+            dfs(node, cur_depth=0)
+        dot_content = (
+            'digraph {\nnode [style="filled", shape="ellipse", '
+            'fillcolor="invis", fontcolor="black"];\n'
+        )
+        for source, target, edge in connections:
+            dot_content += (
+                f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
+                f' [label="{edge._jac_.obj.__class__.__name__} "];\n'
+            )
+        for node_ in visited_nodes:
+            color = (
+                colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
+            )
+            dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}" fillcolor="{color}"];\n'
+        if dot_file:
+            with open(dot_file, "w") as f:
+                f.write(dot_content + "}")
+        return dot_content + "}"
 
 
 class JacCmdDefaults:

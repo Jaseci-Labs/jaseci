@@ -50,7 +50,7 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: STRING? named_ref type_tag (EQ expression | KW_BY POST_INIT_OP)?
+typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
 type_tag: COLON expression
 
 // Enumerations
@@ -68,14 +68,16 @@ enum_stmt: NAME EQ expression
 // Abilities
 ability: decorators? ability_def
         | decorators? KW_ASYNC? ability_decl
+        | decorators? genai_ability
 
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?  any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl) KW_WITH atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
-func_decl: (LPAREN func_decl_params? RPAREN)? (STRING? RETURN_HINT expression)?
+func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
 func_decl_params: (param_var COMMA)* param_var
-param_var: (STAR_POW | STAR_MUL)? STRING? NAME type_tag (EQ expression)?
+param_var: (STAR_POW | STAR_MUL)? NAME (COLON STRING)? type_tag (EQ expression)?
 
 // Global variables
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
@@ -445,12 +447,12 @@ named_ref: special_ref
 
 type_ref: TYPE_OP (named_ref | builtin_type)
 
-special_ref: INIT_OP
-            | POST_INIT_OP
-            | ROOT_OP
-            | SUPER_OP
-            | SELF_OP
-            | HERE_OP
+special_ref: KW_INIT
+            | KW_POST_INIT
+            | KW_ROOT
+            | KW_SUPER
+            | KW_SELF
+            | KW_HERE
 
 // Builtin types
 builtin_type: TYP_TYPE
@@ -546,6 +548,13 @@ KW_STATIC: "static"
 KW_OVERRIDE: "override"
 KW_MATCH: "match"
 KW_CASE: "case"
+KW_HERE: "here"
+KW_SELF: "self"
+KW_INIT: "init"
+KW_POST_INIT: "postinit"
+KW_SUPER: "super"
+KW_ROOT: "root"
+
 
 ARROW_BI: /<-->/
 ARROW_L: /<--/
@@ -562,12 +571,7 @@ CARROW_R_P2: /:\+>/
 CARROW_L_P2: /:\+/
 CARROW_R_P1: /\+\:/
 
-HERE_OP: /<h>|<here>/
-SELF_OP: /<s>|<self>/
-INIT_OP: /<i>|<init>/
-POST_INIT_OP: /<pi>|<post_init>/
-SUPER_OP: /<sup>|<super>/
-ROOT_OP: /<r>|<root>/
+
 
 GLOBAL_OP: /:g:|:global:/
 NONLOCAL_OP: /:nl:|:nonlocal:/

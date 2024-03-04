@@ -256,6 +256,10 @@ class SubTag(AstNode, Generic[T]):
         AstNode.__init__(self, kid=kid)
 
 
+# SubNodeList were created to simplify the type safety of the
+# parser's implementation. We basically need to maintain tokens
+# in the kid list as well as separating out items of interest in
+# the ast node class body.
 class SubNodeList(AstNode, Generic[T]):
     """SubNodeList node type for Jac Ast."""
 
@@ -342,7 +346,6 @@ class Test(AstSymbolNode, ElementStmt):
                 line=name.loc.first_line,
                 pos_start=name.pos_start,
                 pos_end=name.pos_end,
-                kid=name.kid,
             )
         )
         self.name.parent = self
@@ -632,7 +635,7 @@ class Ability(
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | EventSignature],
-        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
+        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
         doc: Optional[String] = None,
@@ -668,6 +671,11 @@ class Ability(
         if check:
             self.sym_type = SymbolType.METHOD
         return check
+
+    @property
+    def is_genai_ability(self) -> bool:
+        """Check if is genai_ability."""
+        return isinstance(self.body, FuncCall)
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
@@ -1743,17 +1751,17 @@ class SpecialVarRef(NameSpec):
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
-        if self.var.name == Tok.SELF_OP:
+        if self.var.name == Tok.KW_SELF:
             return "self"
-        elif self.var.name == Tok.SUPER_OP:
+        elif self.var.name == Tok.KW_SUPER:
             return "super()"
-        elif self.var.name == Tok.ROOT_OP:
+        elif self.var.name == Tok.KW_ROOT:
             return Con.ROOT.value
-        elif self.var.name == Tok.HERE_OP:
+        elif self.var.name == Tok.KW_HERE:
             return Con.HERE.value
-        elif self.var.name == Tok.INIT_OP:
+        elif self.var.name == Tok.KW_INIT:
             return "__init__"
-        elif self.var.name == Tok.POST_INIT_OP:
+        elif self.var.name == Tok.KW_POST_INIT:
             return "__post_init__"
         else:
             raise NotImplementedError("ICE: Special var reference not implemented")
@@ -2049,7 +2057,6 @@ class Token(AstNode):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         self.file_path = file_path
@@ -2060,7 +2067,7 @@ class Token(AstNode):
         self.c_end = col_end
         self.pos_start = pos_start
         self.pos_end = pos_end
-        AstNode.__init__(self, kid=kid)
+        AstNode.__init__(self, kid=[])
 
 
 class Name(Token, NameSpec):
@@ -2076,7 +2083,6 @@ class Name(Token, NameSpec):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
         is_enum_singleton: bool = False,
         is_kwesc: bool = False,
     ) -> None:
@@ -2093,7 +2099,6 @@ class Name(Token, NameSpec):
             col_end=col_end,
             pos_start=pos_start,
             pos_end=pos_end,
-            kid=kid,
         )
         AstSymbolNode.__init__(
             self,
@@ -2131,7 +2136,6 @@ class Literal(Token, AtomExpr):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         Token.__init__(
@@ -2144,7 +2148,6 @@ class Literal(Token, AtomExpr):
             col_end=col_end,
             pos_start=pos_start,
             pos_end=pos_end,
-            kid=kid,
         )
         AstSymbolNode.__init__(
             self,
@@ -2176,7 +2179,6 @@ class TokenSymbol(Token, AstSymbolNode):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         Token.__init__(
@@ -2189,7 +2191,6 @@ class TokenSymbol(Token, AstSymbolNode):
             col_end=col_end,
             pos_start=pos_start,
             pos_end=pos_end,
-            kid=kid,
         )
         AstSymbolNode.__init__(
             self,
@@ -2305,7 +2306,6 @@ class EmptyToken(Token):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            kid=[],
         )
 
 

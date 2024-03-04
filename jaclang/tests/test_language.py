@@ -6,7 +6,7 @@ import sys
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.compiler.compile import jac_str_to_pass
+from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
@@ -102,8 +102,19 @@ class JacLanguageTests(TestCase):
             stdout_value,
             "{'apple': None, 'pineapple': None}\n"
             "This is a long\n"
-            "        line of code.\n",
+            "        line of code.\n"
+            "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",
         )
+
+    def test_with_llm(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("{'temperature': 0.7}", stdout_value)
+        self.assertIn("Albert Einstein was a German-born", stdout_value)
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
@@ -308,6 +319,16 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
 
+    def test_gen_dot_builtin(self) -> None:
+        """Test the dot gen of nodes and edges as a builtin."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("True"), 14)
+
     def test_with_contexts(self) -> None:
         """Test walking through edges."""
         construct.root._jac_.edges.clear()
@@ -354,3 +375,10 @@ class JacLanguageTests(TestCase):
         self.assertIn("node_a(val=1)", stdout_value)
         self.assertIn("node_a(val=2)", stdout_value)
         self.assertIn("[node_b(val=42), node_b(val=42)]\n", stdout_value)
+
+    def test_annotation_tuple_issue(self) -> None:
+        """Test conn assign on edges."""
+        construct.root._jac_.edges.clear()
+        mypass = jac_file_to_pass(self.fixture_abs_path("./slice_vals.jac"))
+        self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir.gen.py)
+        self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.ir.gen.py)

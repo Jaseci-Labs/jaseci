@@ -13,13 +13,15 @@ from jaclang.core.construct import (
     Root,
     WalkerArchitype,
 )
-from jaclang.plugin.spec import JacCmdSpec, JacFeatureSpec, T
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+
 
 import pluggy
 
 pm = pluggy.PluginManager("jac")
 pm.add_hookspecs(JacFeatureSpec)
 pm.add_hookspecs(JacCmdSpec)
+pm.add_hookspecs(JacBuiltin)
 
 
 class JacFeature:
@@ -209,14 +211,26 @@ class JacFeature:
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
         )
 
-
-class JacBuiltin:
-    """Jac Builtins."""
-
     @staticmethod
-    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
-        """Print the dot graph."""
-        return pm.hook.dotgen(node=node, radius=radius)
+    def with_llm(
+        model: Any,  # noqa: ANN401
+        model_params: dict[str, Any],
+        incl_info: tuple,
+        excl_info: tuple,
+        inputs: tuple,
+        outputs: tuple,
+        action: str,
+    ) -> Any:  # noqa: ANN401
+        """Jac's with_llm feature."""
+        return pm.hook.with_llm(
+            model=model,
+            model_params=model_params,
+            incl_info=incl_info,
+            excl_info=excl_info,
+            inputs=inputs,
+            outputs=outputs,
+            action=action,
+        )
 
 
 class JacCmd:

@@ -17,4 +17,10 @@ with entry {
         line of code."""
     );
 }
+
+with entry{
+    a={"a":"apple", "b":"ball", "c":"cat"};
+    y={**a, "d":"dog", "e":"elephant"};
+    print(y);
+}
 # Use before def error would be nice

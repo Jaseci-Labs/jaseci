@@ -67,22 +67,22 @@ obj model {
         # chatbot:Any = None;
 
     # can <post_init> {
-    #     # <self>.cookies = <self>.sign.login();
-    #     # <self>.sign.saveCookiesToDir(<self>.cookie_path_dir);
+    #     # self.cookies = self.sign.login();
+    #     # self.sign.saveCookiesToDir(self.cookie_path_dir);
 
     #     # # start a new huggingchat connection
-    #     # <self>.chatbot = hugchat.ChatBot(cookies=<self>.cookies.get_dict());
+    #     # self.chatbot = hugchat.ChatBot(cookies=self.cookies.get_dict());
     # }
 
     can create_prompt(input:dict)->str{
         prompt = '[System Prompt]\nThis is an operation you must perform and return the output values only. Neither, the methodology, extra sentences nor the code are needed.\n';
         prompt += '\n[Information]\n';
-        # node_level = <here>;
+        # node_level = here;
         level_config_dict:dict = {};
         for config_key in input.keys(){
             level_key = 'Level_' + config_key;
             level_config_dict[level_key] = {};
-            # level_config_dict[level_key] = vars(<self>.map_directory[config_key]);
+            # level_config_dict[level_key] = vars(self.map_directory[config_key]);
             level_config_dict[level_key]['Level_no'] = ['int', LEVEL_NO_smstr ,input[config_key].Level_no];
             level_config_dict[level_key]['time_to_win_level'] = ['float', TIME_TO_WIN_LEVEL_smstr ,input[config_key].time_to_win_level];
             level_config_dict[level_key]['map'] = ['list[str]', MAP_smstr ,input[config_key].map];
@@ -129,9 +129,9 @@ obj model {
     }
 
     can generate(input:str){
-        prompt = <self>.create_prompt(input);
-        response = <self>.get_response(prompt);
-        map = <self>.parse_response(response);
+        prompt = self.create_prompt(input);
+        response = self.get_response(prompt);
+        map = self.parse_response(response);
         return map;
     }
 }
