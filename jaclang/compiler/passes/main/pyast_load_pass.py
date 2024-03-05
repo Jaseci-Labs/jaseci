@@ -718,7 +718,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
-    def proc_bin_op(self, node: py_ast.BinOp) -> None:
+    def proc_bin_op(self, node: py_ast.BinOp) -> ast.BinaryExpr:
         """Process python node.
 
         class BinOp(expr):
@@ -745,7 +745,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
-    def proc_unary_op(self, node: py_ast.UnaryOp) -> None:
+    def proc_unary_op(self, node: py_ast.UnaryOp) -> ast.UnaryExpr:
         """Process python node.
 
         class UnaryOp(expr):
@@ -776,7 +776,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_values = ast.SubNodeList[ast.Expr](
             items=valid, delim=Tok.COMMA, kid=values
         )
-        return ast.BoolExpr(op=op, values=valid, kid=[op, valid_values])
+        if isinstance(op, ast.Token) and len(valid) == len(values):
+            return ast.BoolExpr(op=op, values=valid, kid=[op, valid_values])
+        else:
+            raise self.ice()
 
     def proc_break(self, node: py_ast.Break) -> ast.CtrlStmt:
         """Process python node."""
@@ -814,7 +817,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if isinstance(i, ast.KWPair):
                 params_in.append(i)
         if len(params_in) != 0:
-            params_in2: ast.SubNodeList = ast.SubNodeList[ast.Expr | ast.KWPair](
+            params_in2 = ast.SubNodeList[ast.Expr | ast.KWPair](
                 items=params_in, delim=Tok.COMMA, kid=params_in
             )
         else:
@@ -924,14 +927,21 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             keys: list[expr | None]
             values: list[expr]
         """
-        keys = [self.convert(i) for i in node.keys]
+        keys = [self.convert(i) if i else None for i in node.keys]
         values = [self.convert(i) for i in node.values]
+        valid_keys = [i for i in keys if isinstance(i, ast.Expr) or i is None]
+        valid_values = [i for i in values if isinstance(i, ast.Expr)]
         kvpair: list[ast.KVPair] = []
         for i in range(len(values)):
+            key_pluck = valid_keys[i]
             kvp = ast.KVPair(
-                key=keys[i],
-                value=values[i],
-                kid=[keys[i], values[i]] if keys[i] is not None else [keys[i]],
+                key=key_pluck,
+                value=valid_values[i],
+                kid=(
+                    [key_pluck, valid_values[i]]
+                    if key_pluck is not None
+                    else [valid_values[i]]
+                ),
             )
             kvpair.append(kvp)
         return ast.DictVal(kv_pairs=kvpair, kid=kvpair)
@@ -992,20 +1002,22 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice("Length mismatch in except handler body")
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](
             items=valid, delim=Tok.WS, kid=valid
-        )  # delim needed
+        )
         kid = []
         if type:
             kid.append(type)
         if name:
             kid.append(name)
         kid.append(valid_body)
-
-        return ast.Except(
-            ex_type=type,
-            name=name,
-            body=valid_body,
-            kid=kid,
-        )
+        if isinstance(type, ast.Expr) and (isinstance(name, ast.Name) or not name):
+            return ast.Except(
+                ex_type=type,
+                name=name,
+                body=valid_body,
+                kid=kid,
+            )
+        else:
+            raise self.ice()
 
     def proc_expr(self, node: py_ast.Expr) -> ast.ExprStmt:
         """Process python node.
@@ -1040,20 +1052,28 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             self.ice()
         return ret
 
-        # value = self.convert(node.value)
-        # format_spec = self.convert(node.format_spec) if node.format_spec else None
-
     def proc_function_type(self, node: py_ast.FunctionType) -> None:
         """Process python node."""
 
-    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> ast.ListCompr:
+    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> ast.GenCompr:
         """Process python node..
 
         class SetComp(expr):
             elt: expr
             generators: list[comprehension]
         """
-        return self.proc_list_comp(node)
+        elt = self.convert(node.elt)
+        generators = [self.convert(gen) for gen in node.generators]
+        valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
+        if len(generators) != len(valid):
+            raise self.ice("Length mismatch in list comp generators")
+        compr = ast.SubNodeList[ast.InnerCompr](
+            items=valid, delim=Tok.COMMA, kid=valid
+        )  # delim needed
+        if isinstance(elt, ast.Expr):
+            return ast.GenCompr(out_expr=elt, compr=valid, kid=[elt, compr])
+        else:
+            raise self.ice()
 
     def proc_global(self, node: py_ast.Global) -> ast.GlobalStmt:
         """Process python node.
@@ -1061,7 +1081,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         class Global(stmt):
             names: list[_Identifier]
         """
-        names: list[ast.Name] = []
+        names: list[ast.NameSpec] = []
         for id in node.names:
             names.append(
                 ast.Name(
@@ -1075,10 +1095,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.Name](
+        target = ast.SubNodeList[ast.NameSpec](
             items=names, delim=Tok.COMMA, kid=names
         )  # delim needed
-        return ast.GlobalStmt(target=target, kid=target)
+        return ast.GlobalStmt(target=target, kid=[target])
 
     def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
         """Process python node.
@@ -1100,7 +1120,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 value=body, condition=test, else_value=orelse, kid=[body, test, orelse]
             )
         else:
-            self.ice()
+            raise self.ice()
 
     def proc_import(self, node: py_ast.Import) -> ast.Import:
         """Process python node.
@@ -1114,12 +1134,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             self.error("Length mismatch in import names")
         paths = []
         for name in valid_names:
-            if isinstance(name.expr, ast.Name):
+            if isinstance(name.expr, ast.Name) and (
+                isinstance(name.alias, ast.Name) or name.alias is None
+            ):
                 paths.append(
                     ast.ModulePath(
                         path=[name.expr],
                         level=0,
-                        alias=name.alias if name.alias is not None else None,
+                        alias=name.alias,
                         kid=[i for i in name.kid if i],
                     )
                 )
@@ -1282,17 +1304,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         elt = self.convert(node.elt)
         generators = [self.convert(gen) for gen in node.generators]
         valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
-        if len(generators) == len(valid):
-            compr = ast.SubNodeList[ast.InnerCompr](
-                items=valid, delim=Tok.COMMA, kid=valid
-            )  # delim needed
-        else:
-            self.ice()
-
+        if len(generators) != len(valid):
+            raise self.ice("Length mismatch in list comp generators")
+        compr = ast.SubNodeList[ast.InnerCompr](
+            items=valid, delim=Tok.COMMA, kid=valid
+        )  # delim needed
         if isinstance(elt, ast.Expr):
             return ast.ListCompr(out_expr=elt, compr=valid, kid=[elt, compr])
         else:
-            self.ice()
+            raise self.ice()
 
     def proc_match(self, node: py_ast.Match) -> ast.MatchStmt:
         """Process python node.

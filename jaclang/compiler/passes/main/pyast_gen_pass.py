@@ -2409,7 +2409,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        compr: InnerCompr,
+        compr: list[InnerCompr]
         """
         node.gen.py_ast = [
             self.sync(
@@ -2424,7 +2424,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        compr: InnerCompr,
+        compr: list[InnerCompr]
         """
         node.gen.py_ast = [
             self.sync(
@@ -2439,7 +2439,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        compr: InnerCompr,
+        compr: list[InnerCompr]
         """
         node.gen.py_ast = [
             self.sync(
