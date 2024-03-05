@@ -55,6 +55,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         self, body: list[ast.AstNode], exclude_types: TypeAlias = T
     ) -> list[T | ast.ModuleCode]:
         """Extract with entry from a body."""
+
+        def gen_mod_code(with_entry_body: list[ast.CodeBlockStmt]) -> ast.ModuleCode:
+            with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
+                items=with_entry_body, delim="\n", kid=with_entry_body
+            )
+            return ast.ModuleCode(
+                name=None,
+                body=with_entry_subnodelist,
+                kid=with_entry_body,
+                doc=None,
+            )
+
         extracted: list[T | ast.ModuleCode] = []
         with_entry_body: list[ast.CodeBlockStmt] = []
         for i in body:
@@ -62,19 +74,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 extracted.append(i)
             elif isinstance(i, ast.CodeBlockStmt):
                 with_entry_body.append(i)
-                with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
-                    items=with_entry_body, delim="\n", kid=with_entry_body
-                )
-                module_code = ast.ModuleCode(
-                    name=None,
-                    body=with_entry_subnodelist,
-                    kid=with_entry_body,
-                    doc=None,
-                )
-                extracted.append(module_code)
-                with_entry_body = []
             else:
                 self.ice("Invalid type for with entry body")
+
+        if len(with_entry_body):
+            extracted.append(gen_mod_code(with_entry_body))
         return extracted
 
     def proc_module(self, node: py_ast.Module) -> ast.Module:
@@ -229,8 +233,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         body = [self.convert(i) for i in node.body]
         valid = self.extract_with_entry(body, ast.ArchBlockStmt)
-        if len(valid) != len(body):
-            raise self.ice("Length mismatch in classes body")
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](
             items=valid, delim="\n", kid=body
         )
@@ -376,20 +378,27 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         target = self.convert(node.target)
         annotation = self.convert(node.annotation)
         if isinstance(annotation, ast.Expr):
-            annotation = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
+            annotation_subtag = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
         else:
             raise self.ice()
         value = self.convert(node.value) if node.value else None
-        if (
-            isinstance(target, ast.SubNodeList)
-            and (isinstance(value, (ast.Expr, ast.YieldExpr)) or not value)
-            and isinstance(annotation, ast.Expr)
+        print(
+            isinstance(target, ast.SubNodeList),
+            (isinstance(value, (ast.Expr, ast.YieldExpr)) or not value),
+            isinstance(annotation, ast.Expr),
+        )
+        if (isinstance(value, (ast.Expr, ast.YieldExpr)) or not value) and isinstance(
+            annotation, ast.Expr
         ):
             return ast.Assignment(
                 target=target,
                 value=value if isinstance(value, (ast.Expr, ast.YieldExpr)) else None,
-                type_tag=annotation,
-                kid=[target, annotation, value] if value else [target, annotation],
+                type_tag=annotation_subtag,
+                kid=(
+                    [target, annotation_subtag, value]
+                    if value
+                    else [target, annotation_subtag]
+                ),
             )
         else:
             raise self.ice()
@@ -1007,8 +1016,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_function_type(self, node: py_ast.FunctionType) -> None:
         """Process python node."""
 
-    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> None:
-        """Process python node."""
+    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> ast.ListCompr:
+        """Process python node..
+
+        class SetComp(expr):
+            elt: expr
+            generators: list[comprehension]
+        """
+        return self.proc_list_comp(node)
 
     def proc_global(self, node: py_ast.Global) -> ast.GlobalStmt:
         """Process python node.
@@ -1190,8 +1205,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ]
         return ast.MultiString(strings=valid, kid=values)
 
-    def proc_lambda(self, node: py_ast.Lambda) -> None:
-        """Process python node."""
+    def proc_lambda(self, node: py_ast.Lambda) -> ast.LambdaExpr:
+        """Process python node.
+
+        class Lambda(expr):
+            args: arguments
+            body: expr
+        """
+        args = self.convert(node.args)
+        body = self.convert(node.body)
+        return ast.LambdaExpr(signature=args, body=body, kid=[args, body])
 
     def proc_list(self, node: py_ast.List) -> ast.ListVal:
         """Process python node.
@@ -1204,6 +1227,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_elts = [elt for elt in elts if isinstance(elt, ast.Expr)]
         if len(valid_elts) != len(elts):
             raise self.ice("Length mismatch in list elements")
+        if len(valid_elts) == 0:
+            l_square = self.operator(Tok.LSQUARE, "[")
+            r_square = self.operator(Tok.RSQUARE, "]")
+            valid_elts = [l_square, r_square]
         return ast.ListVal(
             values=(
                 ast.SubNodeList[ast.Expr](
@@ -1281,7 +1308,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[name, pattern] if pattern is not None else [name],
         )
 
-    def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
+    def proc_match_class(self, node: py_ast.MatchClass) -> None:
         """Process python node.
 
         class MatchClass(pattern):
@@ -1290,8 +1317,56 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kwd_attrs: list[_Identifier]
             kwd_patterns: list[pattern]
         """
+        cls = self.convert(node.cls)
+        kid = [cls]
+        if len(node.patterns) != 0:
+            patterns = [self.convert(i) for i in node.patterns]
+            valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+            if len(patterns) == len(valid_patterns):
+                patterns_sub = ast.SubNodeList[ast.MatchPattern](
+                    items=valid_patterns, delim=",", kid=valid_patterns
+                )
+                kid.append(patterns_sub)
+            else:
+                self.ice()
+        else:
+            patterns_sub = None
+        names: list[ast.Name] = []
+        for kwd_attrs in node.kwd_attrs:
+            names.append(
+                ast.Name(
+                    file_path=self.mod_path,
+                    name=Tok.NAME,
+                    value=kwd_attrs,
+                    line=node.lineno,
+                    col_start=node.col_offset,
+                    col_end=node.col_offset + len(kwd_attrs),
+                    pos_start=0,
+                    pos_end=0,
+                )
+            )
+        if len(node.kwd_patterns) != 0:
+            kwd_patterns = [self.convert(i) for i in node.kwd_patterns]
+            valid_kwd_patterns = [
+                i for i in kwd_patterns if isinstance(i, ast.MatchPattern)
+            ]
+            if len(kwd_patterns) == len(valid_kwd_patterns):
+                patterns_sub = ast.SubNodeList[ast.MatchPattern](
+                    items=valid_patterns, delim=",", kid=valid_patterns
+                )
+            else:
+                self.ice()
+        else:
+            kwd_patterns = None
 
-    def proc_match_mapping(self, node: py_ast.MatchMapping) -> ast.MatchMapping:
+        # return ast.MatchArch(
+        #     name=cls,
+        #     arg_patterns=patterns_sub,
+        #     kw_patterns=,
+        #     kid=[]
+        # )
+
+    def proc_match_mapping(self, node: py_ast.MatchMapping) -> None:
         """Process python node.
 
         class MatchMapping(pattern):
@@ -1299,6 +1374,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             patterns: list[pattern]
             rest: _Identifier | None
         """
+        # keys = [self.convert(i) for i in node.keys]
+        # valid_keys = [i for i in keys if isinstance(i, ast.Expr)]
+        # patterns = [self.convert(i) for i in node.patterns]
+        # valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
 
     def proc_match_or(self, node: py_ast.MatchOr) -> None:
         """Process python node.
@@ -1435,7 +1514,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid = [l_brace, r_brace]
         return ast.SetVal(values=valid_elts, kid=kid)
 
-    def proc_set_comp(self, node: py_ast.SetComp) -> None:
+    def proc_set_comp(self, node: py_ast.SetComp) -> ast.ListCompr:
         """Process python node.
 
         class SetComp(expr):
@@ -1542,8 +1621,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=kid,
         )
 
-    def proc_try_star(self, node: py_ast.TryStar) -> None:
-        """Process python node."""
+    def proc_try_star(self, node: py_ast.TryStar) -> ast.TryStmt:
+        """Process python node.
+
+        class Try(stmt):
+            body: list[stmt]
+            handlers: list[ExceptHandler]
+            orelse: list[stmt]
+            finalbody: list[stmt]
+        """
+        return self.proc_try(node)
 
     def proc_tuple(self, node: py_ast.Tuple) -> ast.TupleVal:
         """Process python node.
@@ -1948,7 +2035,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
 
     def proc_withitem(self, node: py_ast.withitem) -> None:
-        """Process python node."""
+        """Process python node.
+
+        class withitem(AST):
+            context_expr: expr
+            optional_vars: expr | None
+        """
+        context_expr = self.convert(node.context_expr)
+        optional_vars = (
+            self.convert(node.optional_vars) if node.optional_vars is not None else None
+        )
+        if isinstance(context_expr, ast.Expr):
+            return ast.ExprAsItem(
+                expr=context_expr,
+                alias=optional_vars if optional_vars else None,
+                kid=[context_expr, optional_vars] if optional_vars else [context_expr],
+            )
+        else:
+            self.ice()
 
     def proc_param_spec(self, node: py_ast.ParamSpec) -> None:
         """Process python node."""
