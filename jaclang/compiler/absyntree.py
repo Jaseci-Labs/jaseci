@@ -279,7 +279,7 @@ class SubNodeList(AstNode, Generic[T]):
     def __init__(
         self,
         items: list[T],
-        delim: str,
+        delim: Optional[Tok],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize sub node list node."""

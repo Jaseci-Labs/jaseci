@@ -236,6 +236,14 @@ class Tokens(str, Enum):
         return self.value
 
 
+DELIM_MAP = {
+    Tokens.COMMA: ",",
+    Tokens.EQ: "=",
+    Tokens.DECOR_OP: "@",
+    Tokens.WS: "\n",
+    Tokens.SEMI: ";",
+}
+
 colors = [
     "#FFE9E9",
     "#F0FFF0",
