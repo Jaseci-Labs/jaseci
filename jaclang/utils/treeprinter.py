@@ -211,7 +211,7 @@ def _build_symbol_tree_common(
     for sym in node.tab.values():
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
-        
+
         # if isinstance(node.owner, ast.AstSymbolNode) and node.owner.sym_info:
         #     print("From tree printer", id(node.owner))
         #     SymbolTree(node_name=f"Datatype: {node.owner.sym_info.typ}", parent=symbol_node)
