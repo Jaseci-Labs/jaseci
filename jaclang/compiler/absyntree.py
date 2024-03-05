@@ -290,7 +290,7 @@ class SubNodeList(AstNode, Generic[T]):
 
     def __init__(
         self,
-        items: list[T],
+        items: Sequence[T],
         delim: str,
         kid: Sequence[AstNode],
     ) -> None:
@@ -390,7 +390,7 @@ class Test(AstSymbolNode, ElementStmt):
         AstDocNode.__init__(self, doc=doc)
 
 
-class ModuleCode(ElementStmt):
+class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
     """Free mod code for Jac Ast."""
 
     def __init__(
