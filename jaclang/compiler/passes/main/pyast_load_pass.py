@@ -1266,7 +1266,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         args = self.convert(node.args)
         body = self.convert(node.body)
-        return ast.LambdaExpr(signature=args, body=body, kid=[args, body])
+        if isinstance(args, ast.FuncSignature) and isinstance(body, ast.Expr):
+            return ast.LambdaExpr(signature=args, body=body, kid=[args, body])
+        else:
+            raise self.ice()
 
     def proc_list(self, node: py_ast.List) -> ast.ListVal:
         """Process python node.
@@ -1279,10 +1282,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_elts = [elt for elt in elts if isinstance(elt, ast.Expr)]
         if len(valid_elts) != len(elts):
             raise self.ice("Length mismatch in list elements")
-        if len(valid_elts) == 0:
-            l_square = self.operator(Tok.LSQUARE, "[")
-            r_square = self.operator(Tok.RSQUARE, "]")
-            valid_elts = [l_square, r_square]
+        l_square = self.operator(Tok.LSQUARE, "[")
+        r_square = self.operator(Tok.RSQUARE, "]")
         return ast.ListVal(
             values=(
                 ast.SubNodeList[ast.Expr](
@@ -1291,7 +1292,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 if valid_elts
                 else None
             ),
-            kid=valid_elts,
+            kid=[*valid_elts] if valid_elts else [l_square, r_square],
         )
 
     def proc_list_comp(self, node: py_ast.ListComp) -> ast.ListCompr:
@@ -1324,15 +1325,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         subject = self.convert(node.subject)
         cases = [self.convert(i) for i in node.cases]
         valid = [case for case in cases if isinstance(case, ast.MatchCase)]
-        if len(cases) == len(valid):
-            valid_cases = ast.SubNodeList[ast.MatchCase](
-                items=valid, delim=Tok.COMMA, kid=valid
-            )  # delim needed
+        if isinstance(subject, ast.Expr):
+            return ast.MatchStmt(target=subject, cases=valid, kid=[subject, *valid])
         else:
-            self.ice()
-        return ast.MatchStmt(
-            target=subject, cases=valid_cases, kid=[subject, valid_cases]
-        )
+            raise self.ice()
 
     def proc_match_as(self, node: py_ast.MatchAs) -> ast.MatchAs:
         """Process python node.
@@ -1345,18 +1341,21 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.name,
+            value=node.name if node.name is not None else "_",
             line=node.lineno,
             col_start=node.col_offset,
-            col_end=node.col_offset + len(node.name),
+            col_end=node.col_offset + len(node.name if node.name is not None else "_"),
             pos_start=0,
             pos_end=0,
         )
-        return ast.MatchAs(
-            name=name,
-            pattern=pattern,
-            kid=[name, pattern] if pattern is not None else [name],
-        )
+        if isinstance(pattern, ast.MatchPattern) or pattern is None:
+            return ast.MatchAs(
+                name=name,
+                pattern=pattern,
+                kid=[name, pattern] if pattern is not None else [name],
+            )
+        else:
+            raise self.ice()
 
     def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
         """Process python node.
@@ -1414,10 +1413,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 items=kv_pairs, delim=Tok.COMMA, kid=kv_pairs
             )
             kid.append(kw_patterns)
-
-        return ast.MatchArch(
-            name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
-        )
+        if isinstance(cls, ast.NameSpec):
+            return ast.MatchArch(
+                name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
+            )
+        else:
+            raise self.ice()
 
     def proc_match_mapping(self, node: py_ast.MatchMapping) -> ast.MatchMapping:
         """Process python node.
@@ -1455,7 +1456,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             values.append(ast.MatchStar(name=name, is_list=True, kid=[name]))
         return ast.MatchMapping(values=values, kid=values)
 
-    def proc_match_or(self, node: py_ast.MatchOr) -> None:
+    def proc_match_or(self, node: py_ast.MatchOr) -> ast.MatchOr:
         """Process python node.
 
         class MatchOr(pattern):
@@ -1463,10 +1464,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         patterns = [self.convert(i) for i in node.patterns]
         valid = [i for i in patterns if isinstance(i, ast.MatchPattern)]
-        if len(patterns) == len(valid):
-            return ast.MatchOr(patterns=valid, kid=patterns)
-        else:
-            self.ice()
+        return ast.MatchOr(patterns=valid, kid=valid)
 
     def proc_match_sequence(self, node: py_ast.MatchSequence) -> ast.MatchSequence:
         """Process python node.
@@ -1477,9 +1475,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         patterns = [self.convert(i) for i in node.patterns]
         valid = [i for i in patterns if isinstance(i, ast.MatchPattern)]
         if len(patterns) == len(valid):
-            return ast.MatchSequence(patterns=valid, kid=patterns)
+            return ast.MatchSequence(values=valid, kid=valid)
         else:
-            self.ice()
+            raise self.ice()
 
     def proc_match_singleton(self, node: py_ast.MatchSingleton) -> None:
         """Process python node.
@@ -1658,7 +1656,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         value = self.convert(node.value)
         return ast.UnaryExpr(operand=value, op=star_tok, kid=[value, star_tok])
 
-    def proc_subscript(self, node: py_ast.Subscript) -> None:
+    def proc_subscript(self, node: py_ast.Subscript) -> ast.AtomTrailer:
         """Process python node.
 
         class Subscript(expr):
