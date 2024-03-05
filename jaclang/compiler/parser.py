@@ -2289,7 +2289,7 @@ class JacParser(Pass):
                         target=target,
                         right=chomp[0],
                         is_null_ok=is_null_ok,
-                        is_attr=None,
+                        is_attr=False,
                         kid=kid,
                     )
                 )
@@ -2304,7 +2304,7 @@ class JacParser(Pass):
                         target=(target if chomp[0].name != Tok.DOT_BKWD else chomp[1]),
                         right=(chomp[1] if chomp[0].name != Tok.DOT_BKWD else target),
                         is_null_ok=is_null_ok,
-                        is_attr=chomp[0],
+                        is_attr=True,
                         kid=kid,
                     )
                 )

@@ -1726,7 +1726,7 @@ class AtomTrailer(Expr):
         self,
         target: Expr,
         right: AtomExpr | Expr,
-        is_attr: Optional[Token],
+        is_attr: bool,
         is_null_ok: bool,
         kid: Sequence[AstNode],
     ) -> None:
