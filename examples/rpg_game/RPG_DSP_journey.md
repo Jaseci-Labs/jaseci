@@ -13,7 +13,7 @@ This is a tutorial on how to build the same game in Jaclang. Two different imple
     - [sprites](#sprites)
     - [config](#config)
     - [map](#map)
-  - [Imports: _Cross-language modules?_](#imports-cross-language-modules)
+  - [Imports: _Cross-language imports?_](#imports-cross-language-imports)
   - [Global Variable Definition](#global-variable-definition)
   - [Game Code: main.jac](#game-code-mainjac)
   - [Programming Sprites and Level objects](#programming-sprites-and-level-objects)
@@ -72,7 +72,7 @@ Contains the map of the game which can be changed as required.
 
 The structure of the map is shown on the above diagram. It is possible to maintain a directory of many level maps, but as for the scope of this project the same map will be used for development.
 
-## Imports: _Cross-language modules?_
+## Imports: _Cross-language imports?_
 
 When programming with **Python** or any other programming language, modules or libraries have a key importance as they extend the capabilities of the base language using pre-programmed classes and methods.
 
@@ -88,6 +88,15 @@ include:jac sprites;
 include:jac config;
 include:jac map;
 ```
+
+> **Syntax Note:**
+>
+> - If a specific python module needs to be imported:
+>
+>    ```import:py module;```
+> - If a specific submodule needs to be imported from a module:
+>
+>    ```import:py from module, submodule_1 submodule_2;```
 
 ## Global Variable Definition
 
@@ -106,7 +115,9 @@ glob GENERAL_FONT:str = '../<.tf font file location>';
 ```
 The full global variable definition can be found in [config.jac](..//rpg_game/jac_impl/jac_impl_3/config.jac) and [map.jac](../rpg_game/jac_impl/jac_impl_3/map.jac)
 
-> **Syntax Note:** When comparing with pythonic coding style, the type annotation and line delimiting with ';' can be noted which leads to a more readable code.
+> **Syntax Note:**
+>
+> - When comparing with pythonic coding style, the type annotation and line delimiting with ';' can be noted which leads to a more readable code.
 
 ## Game Code: main.jac
 
@@ -125,23 +136,28 @@ obj Game {
     ...
 ```
 
-> **Syntax Note:** Here the fields of this class is defined using ```has``` keyword. This symbolizes that the specified 'obj' 'has' the said variable.
+> **Syntax Note:**
+>
+> - Here the fields of this class is defined using ```has``` keyword. This symbolizes that the specified 'obj' 'has' the said variable.
 
 In Jaclang, an ```__init__``` function is not required as the field variables and input parameters(if any) will auto generate and execute an initialization function in the background.
 
-Although an ```__init__``` function is not required by the programmer, there are such cases where some other tasks require to be performed just after ```__init__```. These tasks can be performed in Jaclang with ```postinit``` which will be called after(post) the init function.
+Although an ```__init__``` function is not required by the programmer, there are such cases where some other tasks require to be performed just after ```__init__```. These tasks can be performed in Jaclang with ```postinit``` which will be called after(post) the initialization function.
 
 ```python
     ...
     can postinit {
     can postinit {
-        pygame.init();
+        pygame.<>init();
         self.font: pygame.font.Font=pygame.font.Font(GENERAL_FONT, 32);
     }
     ...
 ```
 
-> **Syntax Note:** functions in jaclang is defined such that the ```def``` keyword is substituted with ```can``` keyword which improves the human readability of the code as 'can' depicts an ability of an object.
+> **Syntax Note:**
+>
+> - Functions in jaclang is defined such that the ```def``` keyword is substituted with ```can``` keyword which improves the human readability of the code as 'can' depicts an ability of an object.
+> - The Jaclang keyword for the python ```__init__``` is just ```ìnit```, which can be confusing for the interpreter if a function is defined as ```ìnit()```. This is the case with pygame module. Here, to avoid triggering an unwanted initialization, keyword escape '<>' is used as shown above. This will ignore the ```__init__``` and run the defined function, ```ìnit()```.
 
 After initializing the object, the functions/methods of the game class can be defined. In the below code snippet we declare all the required functions without defining the functionality of those abilities.
 
@@ -159,7 +175,9 @@ After initializing the object, the functions/methods of the game class can be de
 }
 ```
 
-> **Syntax Note:** in Jaclang, function names and their passable parameters can be defined without the full implementation of the function, which allows a cleaner body inside the object class. The definitions can be written any of the included code base locations.
+> **Syntax Note:**
+>
+> - In Jaclang, function names and their passable parameters can be defined without the full implementation of the function, which allows a cleaner body inside the object class. The definitions can be written any of the included code base locations.
 
 In Python we use the main body of a .py file to code the runtime logic of the operation. In contrast, Jaclang uses ```with entry {}``` syntax to enclose the runtime code within parenthesis.
 
@@ -204,8 +222,13 @@ The implementation of the above game class can be done as below on any of the in
 }
 ```
 
-> **Syntax Note:** Here the syntax is such that, for a can(def) function within an obj(class), ```:obj:<obj_name>:can:<func_name>(params){body}```
-Therefore, the entire codebase implementations can be written in different files and the program will work as long as the files are included in the file that will run.
+> **Syntax Note:**
+>
+> - Here the syntax is such that, for a can(def) function within an obj(class),
+>
+>      ```:obj:<obj_name>:can:<func_name>(params){body}```
+>
+> - Therefore, the entire codebase implementations can be written in different files and the program will work as long as the files are included in the file that will run.
 
 ```python
 # Start a new game
@@ -434,8 +457,9 @@ node start_screen {
 }
 ```
 
-> **Syntax Note:** here when declaring when an ability should run (with exit or with entry of a walker), the ```with``` keyword is used following with whether it is ```entry``` or ```exit```.
-
+> **Syntax Note:**
+>
+> - here when declaring when an ability should run (with exit or with entry of a walker), the ```with``` keyword is used following with whether it is ```entry``` or ```exit```.
 
 #### Level node
 
