@@ -1783,7 +1783,7 @@ class JacParser(Pass):
             valid_assignees = [i for i in assignees if isinstance(i, (ast.Expr))]
             new_targ = ast.SubNodeList[ast.Expr](
                 items=valid_assignees,
-                delim="=",
+                delim=Tok.EQ,
                 kid=assignees,
             )
             kid = [x for x in kid if x not in assignees]
