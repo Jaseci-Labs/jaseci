@@ -1,27 +1,36 @@
+
 """This is the Data Spatial Implementation of the RPG Game"""
 
-
 # This game is built using the pygame module which is imported here
+
 import:py pygame;
 import:py sys;
 import:py random;
 import:py time;
+import:py openai;
+import:py from openai, ChatCompletion;
+import:py re;
 
 # Importing Jac codebase
 include:jac sprites;
 include:jac config;
 include:jac map;
 include:jac main;
+# include:jac _secrets;
 
 '''The walker that initiates the game and runs an instance of the game'''
-walker game {
+walker game{
+
     has g:Game = None,
         current_level:int = 1,
         fwd_dir:bool = True,
-        map_directory:dict={};
+        map_directory:
+        'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game'
+        :dict={};
 
     can start_game with `root entry;
-    can generate_level();
+    can 'Return the map of the next level which is different and incrementally challenging than previous levels.'
+    generate_level;
 }
 
 edge play{
@@ -31,10 +40,12 @@ edge play{
 
 '''Start screen node which operate as the virtual root node'''
 node start_screen {
-    has game_started: bool = False;
+
+    has game_started:bool = False;
 
     can intro_screen with game entry;
     can exit_game with game exit;
+
 }
 
 '''Level node which (should) have unique (ai generated) attributes'''
@@ -42,7 +53,7 @@ node level{
     has game_level:int = 1,
         level_id:str = '1_1000',
         played:bool = False,
-        levelconfig:Map = Map(),
+        level_config:Map = Map(),
         level_time:float=500000;
 
     can run_game with game entry;
@@ -51,8 +62,10 @@ node level{
 
 '''Run the game'''
 with entry {
+    llm = model();
     game() spawn root;
 }
+
 #=Walker=&=Node=Abilities=======================================
 
 :walker:game:can:start_game {
@@ -61,8 +74,15 @@ with entry {
     visit [-->];
 }
 
-:walker:game:can:generate_level {
-    self.map_directory[str(self.current_level)] = Map();
+:walker:game:can:generate_level() {
+
+    if self.map_directory {
+        new_map = llm.generate(self.map_directory);
+        # print(new_map);
+        self.map_directory[str(self.current_level)] = Map(map=new_map);
+    } else {
+        self.map_directory[str(self.current_level)] = Map();
+    }
 }
 
 :node:level:can:run_game {
@@ -84,9 +104,7 @@ with entry {
         end_time = time.time();
         if here.g.won == True{
             self.level_time = end_time - start_time;
-            if self.level_time < here.map_directory[str(self.game_level)].time_to_win_level {
-                here.map_directory[str(self.game_level)].time_to_win_level = self.level_time;
-            }
+            here.map_directory[str(self.game_level)].time_to_win_level = self.level_time;
             print('Time:', self.level_time);
             here.g.game_won();
             self.played = True;

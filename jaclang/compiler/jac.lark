@@ -615,7 +615,7 @@ RSHIFT: />>/
 LTE: /<=/
 GTE: />=/
 NE: /!=/
-NOT.1: /not/
+NOT: "not"
 WALRUS_EQ: /:=/
 COLON: /:/
 LBRACE: /{/
