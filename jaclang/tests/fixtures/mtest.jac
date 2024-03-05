@@ -1,5 +1,6 @@
 can math;
 
 with entry {
-    print(math());
+    notmath = math();
+    print(notmath);
 }
