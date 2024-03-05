@@ -1294,7 +1294,6 @@ Method abilities are reminiscent of traditional class methods in other programmi
 ### The Sentinel
 
 ## Introducing Semstrings -A Gateway to Meaningful Interactions with LLM
-<!-- TODO: Provide exaplnation on what a semstring is and how to do it in different cases @kugesan1105-->
 In the dynamic landscape of programming languages, the advent of Jac introduces a novel concept called "**Semstrings**," offering a powerful and expressive way to interact with LLM. Semstrings, short for semantic strings, serve as a bridge between the traditional code structure and the capabilities of language models.They play a pivotal role in shaping the way we communicate with models and generate prompts.
 
 Utilizing Semstrings in Various Cases
@@ -1351,7 +1350,7 @@ summarize (a: 'Accomplishments' list[str]) -> 'Summary of the Accomplishments' s
 In this example, the semstring <span style="color:orange;">'Summary of the Accomplishments' </span> precisely communicates the nature of the expected output. This clarity ensures that developers, as well as LLM, comprehend the type of information that will be returned by invoking the 'Summarize the Accomplishments' function.
 
 ## Programming with GenAI
-<!-- TODO: We need to provide simple examples, explanations for each usage (has var, abilities, node, object, method etc.-->
+<!-- TODO: We need to provide simple examples, explanations for each usage (has var, abilities, node, object, method etc. @chandralegend @kugesan1105-->
 
 ## Real World Examples
 
