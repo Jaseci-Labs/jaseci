@@ -801,6 +801,24 @@ class FuncSignature(AstSemStrNode):
         AstNode.__init__(self, kid=kid)
         AstSemStrNode.__init__(self, semstr=semstr)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.params.normalize(deep) if self.params else res
+            res = res and self.return_type.normalize(deep) if self.return_type else res
+            res = res and self.semstr.normalize(deep) if self.semstr else res
+        new_kid: list[AstNode] = []
+        if self.params:
+            new_kid.append(self.gen_token(Tok.LPAREN))
+            new_kid.append(self.params)
+            new_kid.append(self.gen_token(Tok.RPAREN))
+        if self.return_type:
+            new_kid.append(self.gen_token(Tok.RETURN_HINT))
+            new_kid.append(self.return_type)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
     @property
     def is_method(self) -> bool:
         """Check if is method."""
