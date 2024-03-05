@@ -293,6 +293,12 @@ class SubTag(AstNode, Generic[T]):
         self.tag = tag
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize sub tag node."""
+        res = self.tag.normalize() if deep else True
+        AstNode.__init__(self, kid=[self.gen_token(Tok.COLON), self.tag])
+        return res
+
 
 # SubNodeList were created to simplify the type safety of the
 # parser's implementation. We basically need to maintain tokens
@@ -313,6 +319,7 @@ class SubNodeList(AstNode, Generic[T]):
         AstNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
+        """Normalize sub node list node."""
         res = True
         if deep:
             for i in self.items:
@@ -323,6 +330,7 @@ class SubNodeList(AstNode, Generic[T]):
             if self.delim:
                 new_kid.append(self.gen_token(self.delim))
         new_kid.pop()
+        AstNode.__init__(self, kid=new_kid)
         return res
 
 
@@ -896,6 +904,27 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
         AstSemStrNode.__init__(self, semstr=semstr)
+
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.name.normalize(deep)
+            res = res and self.unpack.normalize(deep) if self.unpack else res
+            res = res and self.type_tag.normalize(deep) if self.type_tag else res
+            res = res and self.value.normalize(deep) if self.value else res
+            res = res and self.semstr.normalize(deep) if self.semstr else res
+        new_kid: list[AstNode] = []
+        if self.unpack:
+            new_kid.append(self.unpack)
+        new_kid.append(self.name)
+        if self.type_tag:
+            new_kid.append(self.type_tag)
+        if self.value:
+            new_kid.append(self.gen_token(Tok.EQ))
+            new_kid.append(self.value)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
