@@ -1308,7 +1308,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=[name, pattern] if pattern is not None else [name],
         )
 
-    def proc_match_class(self, node: py_ast.MatchClass) -> None:
+    def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
         """Process python node.
 
         class MatchClass(pattern):
@@ -1331,42 +1331,45 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 self.ice()
         else:
             patterns_sub = None
-        names: list[ast.Name] = []
-        for kwd_attrs in node.kwd_attrs:
-            names.append(
-                ast.Name(
-                    file_path=self.mod_path,
-                    name=Tok.NAME,
-                    value=kwd_attrs,
-                    line=node.lineno,
-                    col_start=node.col_offset,
-                    col_end=node.col_offset + len(kwd_attrs),
-                    pos_start=0,
-                    pos_end=0,
+
+        if len(node.kwd_patterns):
+            names: list[ast.Name] = []
+            kv_pairs: list[ast.MatchKVPair] = []
+            for kwd_attrs in node.kwd_attrs:
+                names.append(
+                    ast.Name(
+                        file_path=self.mod_path,
+                        name=Tok.NAME,
+                        value=kwd_attrs,
+                        line=node.lineno,
+                        col_start=node.col_offset,
+                        col_end=node.col_offset + len(kwd_attrs),
+                        pos_start=0,
+                        pos_end=0,
+                    )
                 )
-            )
-        if len(node.kwd_patterns) != 0:
             kwd_patterns = [self.convert(i) for i in node.kwd_patterns]
             valid_kwd_patterns = [
                 i for i in kwd_patterns if isinstance(i, ast.MatchPattern)
             ]
-            if len(kwd_patterns) == len(valid_kwd_patterns):
-                patterns_sub = ast.SubNodeList[ast.MatchPattern](
-                    items=valid_patterns, delim=",", kid=valid_patterns
+            for i in range(len(kwd_patterns)):
+                kv_pairs.append(
+                    ast.MatchKVPair(
+                        key=names[i],
+                        value=valid_kwd_patterns[i],
+                        kid=[names[i], valid_kwd_patterns[i]],
+                    )
                 )
-            else:
-                self.ice()
-        else:
-            kwd_patterns = None
+            kw_patterns = ast.SubNodeList[ast.MatchKVPair](
+                items=kv_pairs, delim=",", kid=kv_pairs
+            )
+            kid.append(kw_patterns)
 
-        # return ast.MatchArch(
-        #     name=cls,
-        #     arg_patterns=patterns_sub,
-        #     kw_patterns=,
-        #     kid=[]
-        # )
+        return ast.MatchArch(
+            name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
+        )
 
-    def proc_match_mapping(self, node: py_ast.MatchMapping) -> None:
+    def proc_match_mapping(self, node: py_ast.MatchMapping) -> ast.MatchMapping:
         """Process python node.
 
         class MatchMapping(pattern):
@@ -1374,10 +1377,33 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             patterns: list[pattern]
             rest: _Identifier | None
         """
-        # keys = [self.convert(i) for i in node.keys]
-        # valid_keys = [i for i in keys if isinstance(i, ast.Expr)]
-        # patterns = [self.convert(i) for i in node.patterns]
-        # valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+        values: list[ast.MatchKVPair | ast.MatchStar] = []
+        keys = [self.convert(i) for i in node.keys]
+        valid_keys = [
+            i for i in keys if isinstance(i, (ast.MatchPattern, ast.NameSpec))
+        ]
+        patterns = [self.convert(i) for i in node.patterns]
+        valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+        for i in range(len(valid_keys)):
+            kv_pair = ast.MatchKVPair(
+                key=valid_keys[i],
+                value=valid_patterns[i],
+                kid=[valid_keys[i], valid_patterns[i]],
+            )
+            values.append(kv_pair)
+        if node.rest:
+            name = ast.Name(
+                file_path=self.mod_path,
+                name=Tok.NAME,
+                value=node.rest,
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + len(node.rest),
+                pos_start=0,
+                pos_end=0,
+            )
+            values.append(ast.MatchStar(name=name, is_list=True, kid=[name]))
+        return ast.MatchMapping(values=values, kid=values)
 
     def proc_match_or(self, node: py_ast.MatchOr) -> None:
         """Process python node.
@@ -1480,10 +1506,41 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         return ret
 
     def proc_named_expr(self, node: py_ast.NamedExpr) -> None:
-        """Process python node."""
+        """Process python node.
 
-    def proc_nonlocal(self, node: py_ast.Nonlocal) -> None:
-        """Process python node."""
+        class NamedExpr(expr):
+            target: Name
+            value: expr
+        """
+        target = self.convert(node.target)
+        value = self.convert(node.value)
+        if isinstance(value, ast.Expr):
+            return ast.KWPair(key=target, value=value, kid=[target, value])
+        else:
+            raise self.ice()
+
+    def proc_nonlocal(self, node: py_ast.Nonlocal) -> ast.NonLocalStmt:
+        """Process python node.
+
+        class Nonlocal(stmt):
+            names: list[_Identifier]
+        """
+        names: list[ast.Name] = []
+        for name in node.names:
+            names.append(
+                ast.Name(
+                    file_path=self.mod_path,
+                    name=Tok.NAME,
+                    value=name,
+                    line=node.lineno,
+                    col_start=node.col_offset,
+                    col_end=node.col_offset + len(name),
+                    pos_start=0,
+                    pos_end=0,
+                )
+            )
+        target = ast.SubNodeList[ast.Name](items=names, delim=",", kid=names)
+        return ast.NonLocalStmt(target=target, kid=names)
 
     def proc_pass(self, node: py_ast.Pass) -> ast.SubNodeList:
         """Process python node."""
@@ -1538,8 +1595,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             start=lower, stop=upper, step=step, is_range=True, kid=[lower, upper, step]
         )
 
-    def proc_starred(self, node: py_ast.Starred) -> None:
-        """Process python node."""
+    def proc_starred(self, node: py_ast.Starred) -> ast.UnaryExpr:
+        """Process python node.
+
+        class Starred(expr):
+            value: expr
+            ctx: expr_context
+        """
+        star_tok = self.operator(Tok.STAR_MUL, "*")
+        value = self.convert(node.value)
+        return ast.UnaryExpr(operand=value, op=star_tok, kid=[value, star_tok])
 
     def proc_subscript(self, node: py_ast.Subscript) -> None:
         """Process python node.
