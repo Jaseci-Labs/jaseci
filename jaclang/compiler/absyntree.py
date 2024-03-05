@@ -8,7 +8,7 @@ from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
-from jaclang.compiler.constant import Tokens as Tok
+from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
 from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
@@ -73,6 +73,19 @@ class AstNode:
             return (self, self)
         else:
             raise ValueError(f"Empty kid for Token {type(self).__name__}")
+
+    def gen_token(self, name: Tok, value: Optional[str] = None) -> Token:
+        """Generate token."""
+        return Token(
+            name=name,
+            value=value if value else DELIM_MAP[name],
+            file_path=self.loc.mod_path,
+            col_start=self.loc.col_start,
+            col_end=0,
+            line=self.loc.first_line,
+            pos_start=0,
+            pos_end=0,
+        )
 
     def get_all_sub_nodes(self, typ: Type[T], brute_force: bool = True) -> list[T]:
         """Get all sub nodes of type."""
@@ -290,7 +303,7 @@ class SubNodeList(AstNode, Generic[T]):
 
     def __init__(
         self,
-        items: Sequence[T],
+        items: list[T],
         delim: Optional[Tok],
         kid: Sequence[AstNode],
     ) -> None:
@@ -298,6 +311,19 @@ class SubNodeList(AstNode, Generic[T]):
         self.items = items
         self.delim = delim
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            for i in self.items:
+                res = res and i.normalize()
+        new_kid: list[AstNode] = []
+        for i in self.items:
+            new_kid.append(i)
+            if self.delim:
+                new_kid.append(self.gen_token(self.delim))
+        new_kid.pop()
+        return res
 
 
 # AST Mid Level Node Types
@@ -987,7 +1013,7 @@ class ExprStmt(CodeBlockStmt):
         """Normalize ast node."""
         if deep:
             res = self.expr.normalize(deep)
-        AstNode.__init__(self, kid=[self.expr, gen_token(Tok.SEMI, ";", self)])
+        AstNode.__init__(self, kid=[self.expr, self.gen_token(Tok.SEMI)])
         return res and self.expr is not None
 
 
@@ -1714,10 +1740,10 @@ class FuncCall(Expr):
         if deep:
             res = self.target.normalize(deep)
             res = res and (not self.params or self.params.normalize(deep))
-        AstNode.__init__(self, kid=[self.target, gen_token(Tok.LPAREN, "(", self)])
-        if self.params:
+        AstNode.__init__(self, kid=[self.target, self.gen_token(Tok.LPAREN, "(")])
+        if self.params:  # TODO: Fix
             self.kid.append(self.params)
-        self.kid.append(gen_token(Tok.RPAREN, ")", self))
+        self.kid.append(self.gen_token(Tok.RPAREN, ")"))
         return res
 
 
@@ -2436,17 +2462,3 @@ class PythonModuleAst(EmptyToken):
         super().__init__()
         self.ast = ast
         self.file_path = mod_path
-
-
-def gen_token(name: Tok, value: str, from_node: AstNode) -> Token:
-    """Generate token."""
-    return Token(
-        name=name,
-        value=value,
-        file_path=from_node.loc.mod_path,
-        col_start=from_node.loc.col_start,
-        col_end=0,
-        line=from_node.loc.first_line,
-        pos_start=0,
-        pos_end=0,
-    )
