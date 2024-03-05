@@ -13,7 +13,7 @@ This is a tutorial on how to build the same game in Jaclang. Two different imple
     - [sprites](#sprites)
     - [config](#config)
     - [map](#map)
-  - [Imports: _Cross-language modules?_](#imports-cross-language-modules)
+  - [Imports: _Cross-language imports?_](#imports-cross-language-imports)
   - [Global Variable Definition](#global-variable-definition)
   - [Game Code: main.jac](#game-code-mainjac)
   - [Programming Sprites and Level objects](#programming-sprites-and-level-objects)
@@ -72,7 +72,7 @@ Contains the map of the game which can be changed as required.
 
 The structure of the map is shown on the above diagram. It is possible to maintain a directory of many level maps, but as for the scope of this project the same map will be used for development.
 
-## Imports: _Cross-language modules?_
+## Imports: _Cross-language imports?_
 
 When programming with **Python** or any other programming language, modules or libraries have a key importance as they extend the capabilities of the base language using pre-programmed classes and methods.
 
@@ -457,8 +457,9 @@ node start_screen {
 }
 ```
 
-> **Syntax Note:** here when declaring when an ability should run (with exit or with entry of a walker), the ```with``` keyword is used following with whether it is ```entry``` or ```exit```.
-
+> **Syntax Note:**
+>
+> - here when declaring when an ability should run (with exit or with entry of a walker), the ```with``` keyword is used following with whether it is ```entry``` or ```exit```.
 
 #### Level node
 
