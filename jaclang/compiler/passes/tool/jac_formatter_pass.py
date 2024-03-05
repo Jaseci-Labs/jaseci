@@ -348,7 +348,7 @@ class JacFormatPass(Pass):
         values: Optional[SubNodeList[ExprType]],
         """
         if node.values is not None:
-            self.sep_node_list(node.values, delim=";")
+            self.sep_node_list(node.values, delim=Tok.SEMI)
             self.emit(
                 node,
                 f"{', '.join([value.gen.jac for value in node.values.items])}",
