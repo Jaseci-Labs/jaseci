@@ -43,7 +43,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
         print(f"finshed {type(node).__name__} ---------------------")
-        print(ret.unparse())
+        # print(ret.unparse())
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
@@ -643,11 +643,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         exc = self.convert(node.exc) if node.exc else None
         cause = self.convert(node.cause) if node.cause else None
-        kid = []
+        kid: list[ast.Expr | ast.Token] = []
         if isinstance(exc, ast.Expr):
             kid = [exc]
         if isinstance(cause, ast.Expr):
             kid.append(cause)
+        if not (exc and cause):
+            kid.append(self.operator(Tok.KW_RAISE, "raise"))
         if (isinstance(cause, ast.Expr) or cause is None) and (
             isinstance(exc, ast.Expr) or exc is None
         ):
@@ -851,9 +853,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         ops = [self.convert(op) for op in node.ops]
         valid_ops = [op for op in ops if isinstance(op, ast.Token)]
-        ops2 = ast.SubNodeList[ast.Token](
-            items=valid_ops, delim=Tok.COMMA, kid=ops
-        )  # delim needed
+        ops2 = ast.SubNodeList[ast.Token](items=valid_ops, delim=Tok.COMMA, kid=ops)
 
         kids = [left, ops2, comparators2]
         if (
@@ -964,9 +964,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [i for i in generators if isinstance(i, (ast.InnerCompr))]
         if len(valid) != len(generators):
             raise self.ice("Length mismatch in dict compr generators")
-        compr = ast.SubNodeList[ast.InnerCompr](
-            items=valid, delim=Tok.COMMA, kid=valid
-        )  # delim needed
+        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
         return ast.DictCompr(kv_pair=kv_pair, compr=valid, kid=[kv_pair, compr])
 
     def proc_ellipsis(self, node: py_ast.Ellipsis) -> None:
@@ -1067,9 +1065,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
         if len(generators) != len(valid):
             raise self.ice("Length mismatch in list comp generators")
-        compr = ast.SubNodeList[ast.InnerCompr](
-            items=valid, delim=Tok.COMMA, kid=valid
-        )  # delim needed
+        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
         if isinstance(elt, ast.Expr):
             return ast.GenCompr(out_expr=elt, compr=valid, kid=[elt, compr])
         else:
@@ -1095,9 +1091,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameSpec](
-            items=names, delim=Tok.COMMA, kid=names
-        )  # delim needed
+        target = ast.SubNodeList[ast.NameSpec](items=names, delim=Tok.COMMA, kid=names)
         return ast.GlobalStmt(target=target, kid=[target])
 
     def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
@@ -1227,7 +1221,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         items = (
             ast.SubNodeList[ast.ModuleItem](
                 items=valid_names, delim=Tok.COMMA, kid=valid_names
-            )  # delim needed
+            )
             if valid_names
             else None
         )
@@ -1288,7 +1282,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             values=(
                 ast.SubNodeList[ast.Expr](
                     items=valid_elts, delim=Tok.COMMA, kid=valid_elts
-                )  # delim needed
+                )
                 if valid_elts
                 else None
             ),
@@ -1307,9 +1301,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
         if len(generators) != len(valid):
             raise self.ice("Length mismatch in list comp generators")
-        compr = ast.SubNodeList[ast.InnerCompr](
-            items=valid, delim=Tok.COMMA, kid=valid
-        )  # delim needed
+        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
         if isinstance(elt, ast.Expr):
             return ast.ListCompr(out_expr=elt, compr=valid, kid=[elt, compr])
         else:
@@ -1637,9 +1629,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
         if len(generators) != len(valid):
             raise self.ice("Length mismatch in list comp generators")
-        compr = ast.SubNodeList[ast.InnerCompr](
-            items=valid, delim=Tok.COMMA, kid=valid
-        )  # delim needed
+        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
         if isinstance(elt, ast.Expr):
             return ast.SetCompr(out_expr=elt, compr=valid, kid=[elt, compr])
         else:
@@ -1695,8 +1685,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             ctx: expr_context
         """
         value = self.convert(node.value)
-        slice = self.convert(node.slice)
-        if isinstance(value, ast.Expr) and isinstance(slice, ast.IndexSlice):
+        slice = self.convert(
+            node.slice
+        )  # type of node.slice supposed to be _Slice but it's constant. Proc_slice is no called
+        if isinstance(value, ast.Expr):  # and isinstance(slice, ast.IndexSlice):
             return ast.AtomTrailer(
                 target=value,
                 right=slice,
@@ -1722,7 +1714,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice("Length mismatch in try body")
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](
             items=valid, delim=Tok.WS, kid=valid
-        )  # delim needed
+        )
         kid: list[ast.AstNode] = [valid_body]
 
         if len(node.handlers) != 0:
@@ -1730,7 +1722,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             valid_handlers = [i for i in handlers if isinstance(i, (ast.Except))]
             if len(handlers) != len(valid_handlers):
                 raise self.ice("Length mismatch in try handlers")
-            excepts = ast.SubNodeList[ast.Except](  # delim needed
+            excepts = ast.SubNodeList[ast.Except](
                 items=valid_handlers, delim=Tok.WS, kid=valid_handlers
             )
             kid.append(excepts)
@@ -1742,7 +1734,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             valid_orelse = [i for i in orelse if isinstance(i, (ast.CodeBlockStmt))]
             if len(orelse) != len(valid_orelse):
                 raise self.ice("Length mismatch in try orelse")
-            else_body = ast.SubNodeList[ast.CodeBlockStmt](  # delim needed
+            else_body = ast.SubNodeList[ast.CodeBlockStmt](
                 items=valid_orelse, delim=Tok.WS, kid=valid_orelse
             )
             kid.append(else_body)
@@ -1756,7 +1748,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             ]
             if len(finalbody) != len(valid_finalbody):
                 raise self.ice("Length mismatch in try finalbody")
-            finally_body = ast.SubNodeList[ast.CodeBlockStmt](  # delim needed
+            finally_body = ast.SubNodeList[ast.CodeBlockStmt](
                 items=valid_finalbody, delim=Tok.WS, kid=valid_finalbody
             )
             kid.append(finally_body)
@@ -1802,7 +1794,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 raise self.ice("Length mismatch in tuple elts")
             valid_elts = ast.SubNodeList[ast.Expr | ast.KWPair](
                 items=valid, delim=Tok.COMMA, kid=valid
-            )  # delim needed
+            )
             kid = elts
         else:
             l_square = self.operator(Tok.LSQUARE, "[")
@@ -1970,7 +1962,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice("Length mismatch in arguments")
         fs_params = ast.SubNodeList[ast.ParamVar](
             items=valid_params, delim=Tok.COMMA, kid=valid_params
-        )  # delim needed
+        )
         return ast.FuncSignature(
             params=fs_params,
             return_type=None,
@@ -2123,7 +2115,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             valid = None
         is_async = node.is_async > 0
-        if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr) and valid:
+        if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr):
             return ast.InnerCompr(
                 is_async=is_async,
                 target=target,
@@ -2173,7 +2165,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](
             items=valid, delim=Tok.WS, kid=valid
-        )  # delim needed
+        )
         if isinstance(pattern, ast.MatchPattern) and (
             isinstance(guard, ast.Expr) or guard is None
         ):
