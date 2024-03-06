@@ -218,6 +218,14 @@ class JacFeatureSpec:
         """Jac's with_llm stmt feature."""
         raise NotImplementedError
 
+    @staticmethod
+    @hookspec(firstresult=True)
+    def register_set(
+        key: str, scope: str, semstr: str, value: Any
+    ) -> None:  # noqa: ANN401
+        """Jac's register stmt feature."""
+        raise NotImplementedError
+
 
 class JacBuiltin:
     """Jac Builtins."""
