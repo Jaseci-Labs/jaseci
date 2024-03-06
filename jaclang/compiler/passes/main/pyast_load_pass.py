@@ -2120,22 +2120,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if len(node.ifs) != 0:
             ifs_list = [self.convert(ifs) for ifs in node.ifs]
             valid = [ifs for ifs in ifs_list if isinstance(ifs, ast.Expr)]
-            if len(ifs_list) == len(valid):
-                valid_ifs = ast.SubNodeList[ast.Expr](
-                    items=valid, delim=Tok.COMMA, kid=valid
-                )  # delim needed
-            else:
-                raise self.ice("Length mismatch in comprehension ifs")
         else:
-            valid_ifs = None
+            valid = None
         is_async = node.is_async > 0
         if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr) and valid:
             return ast.InnerCompr(
                 is_async=is_async,
                 target=target,
                 collection=iter,
-                conditional=valid_ifs,
-                kid=[target, iter, valid_ifs] if valid_ifs else [target, iter],
+                conditional=valid,
+                kid=[target, iter, *valid] if valid else [target, iter],
             )
         else:
             raise self.ice()
