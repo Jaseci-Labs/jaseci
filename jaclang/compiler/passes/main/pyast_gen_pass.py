@@ -585,7 +585,7 @@ class PyastGenPass(Pass):
         ]
 
     def exit_architype(self, node: ast.Architype) -> None:
-        # TODO: Add the jac register set
+        # TODO: Add the jac register set @chandralegend
         """Sub objects.
 
         name: Name,
