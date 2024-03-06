@@ -1350,7 +1350,7 @@ summarize (a: 'Accomplishments' list[str]) -> 'Summary of the Accomplishments' s
 In this example, the semstring <span style="color:orange;">'Summary of the Accomplishments' </span> precisely communicates the nature of the expected output. This clarity ensures that developers, as well as LLM, comprehend the type of information that will be returned by invoking the 'Summarize the Accomplishments' function.
 
 ## Programming with GenAI
-<!-- TODO: We need to provide simple examples, explanations for each usage (has var, abilities, node, object, method etc. @chandralegend @kugesan1105-->
+<!-- TODO: We need to provide simple examples, explanations for each usage (has var, abilities, node, object, method etc. @kugesan1105 simpleifed version of the chatgpt one-->
 
 ## Real World Examples
 
