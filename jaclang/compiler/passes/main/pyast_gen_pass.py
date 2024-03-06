@@ -333,7 +333,6 @@ class PyastGenPass(Pass):
         node.gen.py = ast3.unparse(node.gen.py_ast[0])
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
-        # TODO: Add the jac register set
         """Sub objects.
 
         access: Optional[SubTag[Token]],
@@ -341,6 +340,7 @@ class PyastGenPass(Pass):
         is_frozen: bool,
         doc: Optional[String],
         """
+        self.needs_jac_feature()
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             if isinstance(doc, ast3.AST) and isinstance(
@@ -1915,6 +1915,38 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
+        node.gen.py_ast += [
+            self.sync(
+                ast3.Expr(
+                    value=self.sync(
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value,
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    attr="register_set",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            args=[],
+                            keywords=[
+                                self.sync(
+                                    ast3.keyword(
+                                        arg="key",
+                                        value=self.sync(ast3.Constant(value="Hello")),
+                                    )
+                                    # TODO: Add the rest of the keys and values
+                                )
+                            ],
+                        )
+                    )
+                )
+            )
+        ]
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.

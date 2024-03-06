@@ -1,0 +1,1 @@
+glob apple: int = 5, banana: int = 10;
