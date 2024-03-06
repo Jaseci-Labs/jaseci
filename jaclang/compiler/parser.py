@@ -848,7 +848,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-            any_ref (func_decl) KW_WITH atomic_call SEMI
+            any_ref (func_decl) KW_BY atomic_call SEMI
             """
             chomp = [*kid]
             is_override = (
@@ -869,14 +869,14 @@ class JacParser(Pass):
             is_func = isinstance(chomp[0], ast.FuncSignature)
             signature = chomp[0]
             chomp = chomp[1:]
-            has_with = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_WITH
-            chomp = chomp[1:] if has_with else chomp
+            has_by = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_BY
+            chomp = chomp[1:] if has_by else chomp
             is_funccall = isinstance(chomp[0], ast.FuncCall)
             if (
                 isinstance(name, ast.NameSpec)
                 and isinstance(signature, (ast.FuncSignature, ast.EventSignature))
                 and is_funccall
-                and has_with
+                and has_by
             ):
                 return self.nu(
                     ast.Ability(
@@ -2862,7 +2862,7 @@ class JacParser(Pass):
         def inner_compr(self, kid: list[ast.AstNode]) -> ast.InnerCompr:
             """Grammar rule.
 
-            inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN walrus_assign (KW_IF expression)?
+            inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN pipe_call (KW_IF walrus_assign)*
             """
             chomp = [*kid]
             is_async = bool(
@@ -2877,7 +2877,7 @@ class JacParser(Pass):
                         target=chomp[0],
                         collection=chomp[2],
                         conditional=(
-                            chomp[4]
+                            [i for i in chomp[4:] if isinstance(i, ast.Expr)]
                             if len(chomp) > 4 and isinstance(chomp[4], ast.Expr)
                             else None
                         ),

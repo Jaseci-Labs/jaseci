@@ -1500,7 +1500,7 @@ class JacFormatPass(Pass):
             f"{node.collection.gen.jac}"
         )
         if node.conditional:
-            partial += f" if {node.conditional.gen.jac}"
+            partial += " if " + " if ".join(i.gen.jac for i in node.conditional)
         self.emit(node, f"{partial}")
 
     def exit_list_compr(self, node: ast.ListCompr) -> None:
