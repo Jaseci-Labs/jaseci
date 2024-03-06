@@ -333,6 +333,7 @@ class PyastGenPass(Pass):
         node.gen.py = ast3.unparse(node.gen.py_ast[0])
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
+        # TODO: Add the jac register set
         """Sub objects.
 
         access: Optional[SubTag[Token]],
@@ -584,6 +585,7 @@ class PyastGenPass(Pass):
         ]
 
     def exit_architype(self, node: ast.Architype) -> None:
+        # TODO: Add the jac register set
         """Sub objects.
 
         name: Name,
@@ -745,6 +747,7 @@ class PyastGenPass(Pass):
         """
 
     def exit_enum(self, node: ast.Enum) -> None:
+        # TODO: Add the jac register set (Problem: How to Include the Semstring of the Enum Items)
         """Sub objects.
 
         name: Name,
@@ -794,6 +797,7 @@ class PyastGenPass(Pass):
         """
 
     def exit_ability(self, node: ast.Ability) -> None:
+        # TODO: Add the jac register set
         """Sub objects.
 
         name_ref: NameType,
@@ -1236,6 +1240,7 @@ class PyastGenPass(Pass):
         ]
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
+        # TODO: Add the jac register set (Maybe)
         """Sub objects.
 
         is_static: bool,
@@ -1254,6 +1259,7 @@ class PyastGenPass(Pass):
             node.gen.py_ast = node.vars.gen.py_ast  # TODO: This is a list
 
     def exit_has_var(self, node: ast.HasVar) -> None:
+        # TODO: Add the jac register set
         """Sub objects.
 
         name: Name,
