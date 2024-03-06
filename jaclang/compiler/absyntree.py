@@ -1566,7 +1566,7 @@ class InnerCompr(AstAsyncNode):
         is_async: bool,
         target: Expr,
         collection: Expr,
-        conditional: Optional[Expr],
+        conditional: Optional[list[Expr]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""

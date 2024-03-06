@@ -2399,7 +2399,11 @@ class PyastGenPass(Pass):
                 ast3.comprehension(
                     target=node.target.gen.py_ast[0],
                     iter=node.collection.gen.py_ast[0],
-                    ifs=node.conditional.gen.py_ast if node.conditional else [],
+                    ifs=(
+                        [x.gen.py_ast[0] for x in node.conditional]
+                        if node.conditional
+                        else []
+                    ),
                     is_async=0,
                 )
             )

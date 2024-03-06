@@ -317,6 +317,8 @@ class JacLexer(RegexLexer):
                         "yield from",
                         "as",
                         "with",
+                        "to",
+                        "by",
                         # -----
                         "let",
                         "abs",

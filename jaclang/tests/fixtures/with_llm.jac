@@ -16,7 +16,7 @@ glob llm = model();
 
 can 'Summarize the Life of the Individual'
 summarize(name: 'Name of the Person': str, age: 'Age of the Person': int)
-    -> 'Summary': str with llm(temperature=0.7, reason=True);
+    -> 'Summary': str by llm(temperature=0.7, reason=True);
 
 with entry {
     print(summarize('Albert Einstein',89));
