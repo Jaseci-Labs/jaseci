@@ -152,13 +152,9 @@ class FuseTypeInfo(Pass):
 
     def get_type_from_instance(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Instance):
         node.sym_info = ast.SymbolInfo(mypy_type)
-        self.__debug_print(f"\"{node.__class__.__name__}::{node.value}\" type is \"{mypy_type}\"")
-        self.__debug_print(id(node))
 
     def get_type_from_callable_type(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.CallableType):
         node.sym_info = ast.SymbolInfo(mypy_type.ret_type)
-        self.__debug_print(f"\"{node.__class__.__name__}\" type is \"{mypy_type.ret_type}\"")
-        self.__debug_print(id(node))
     
     # def get_type_from_overloaded(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Overloaded):
     #     node.sym_info = ast.SymbolInfo(mypy_type.ret_type)
