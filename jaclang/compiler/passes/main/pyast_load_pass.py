@@ -1685,10 +1685,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             ctx: expr_context
         """
         value = self.convert(node.value)
-        slice = self.convert(
-            node.slice
-        )  # type of node.slice supposed to be _Slice but it's constant. Proc_slice is no called
-        if isinstance(value, ast.Expr):  # and isinstance(slice, ast.IndexSlice):
+        slice = self.convert(node.slice)
+        if not isinstance(slice, ast.IndexSlice) and isinstance(slice, ast.Expr):
+            slice = ast.IndexSlice(
+                start=slice,
+                stop=None,
+                step=None,
+                is_range=False,
+                kid=[slice],
+            )
+        if isinstance(value, ast.Expr) and isinstance(slice, ast.IndexSlice):
             return ast.AtomTrailer(
                 target=value,
                 right=slice,
