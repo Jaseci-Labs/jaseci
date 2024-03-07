@@ -1297,7 +1297,7 @@ Method abilities are reminiscent of traditional class methods in other programmi
 In the dynamic landscape of programming languages, the advent of Jac introduces a novel concept called "**Semstrings**," offering a powerful and expressive way to interact with LLM. Semstrings, short for semantic strings, serve as a bridge between the traditional code structure and the capabilities of language models.They play a pivotal role in shaping the way we communicate with models and generate prompts.
 
 Utilizing Semstrings in Various Cases
-- Ability/Method Declaration 
+- Ability/Method Declaration
 - Ability/Method Parameter Declaration
 - Attributes of Architypes
 - Return Type Specification
@@ -1309,7 +1309,7 @@ Utilizing Semstrings in Various Cases
 **Ability/Method Declaration**
 
  Semstrings play a pivotal role in method and ability declarations, offering a clear and concise description of their intended purpose—essentially defining the action each ability or method is designed to perform.
- 
+
 ```
 can 'Translate English to French'
 translate(english_word: 'English Word' str) -> 'French Word' str with llm;
@@ -1351,6 +1351,85 @@ In this example, the semstring <span style="color:orange;">'Summary of the Accom
 
 ## Programming with GenAI
 <!-- TODO: We need to provide simple examples, explanations for each usage (has var, abilities, node, object, method etc. @kugesan1105 simpleifed version of the chatgpt one-->
+
+GenAI Ability is a powerful feature that enhances interaction with Large Language Models (LLM) by utilizing the keyword `with <model>`. Developers can customize the behavior of functions or methods by modifying associated Semstrings.
+
+**Example Usage**
+
+**1. Function Usage**
+```
+can 'Summarize the Life of the Individual'
+summarize(name: 'Name of the Person': str, age: 'Age of the Person': int)
+    -> 'Summary': str with llm(temperature=0.7, reason=True);
+with entry {
+    print(summarize('Albert Einstein', 89));
+}
+```
+In this example, the summarize function leverages GenAI Ability to provide a summary of an individual's life. The associated Semstring ('Name of the Person', 'Age of the Person') guides the function's behavior. The `with llm` feature allows customization of the interaction, with parameters like temperature and reason influencing the model's response.
+
+**2. Method Usage**
+```
+obj 'Person'
+Person {
+    has name: 'Name' str,
+        dob: 'Date of Birth' str,
+        age: 'Age' int = None;
+    can 'Calculate the Age of a Person'
+    calculate (cur_year: 'Current Year' int) -> 'Calculated Age' int with llm;
+}
+with entry {
+    Einstein = Person(name="Einstein", dob="1879-03-14");
+    age = Einstein.calculate(cur_year=2024);
+    Einstein.age = age;
+    print(Einstein.age);
+}
+```
+In this example, the calculate method of the 'Person' object utilizes GenAI Ability to determine the age of an individual.
+
+**3.Object Creation**
+
+Simplify object creation with attributes automatically populated by LLM.
+```
+obj 'Person'
+Person {
+    has name: 'Name' str,
+        dob: 'date of birth' str,
+        accomplishments: 'Accomplishments' list[str];
+}
+with entry {
+    Einstein = Person(name="Einstein") with llm;
+    print(f"{Einstein.name} was born on {Einstein.dob}. His accomplishments include {Einstein.accomplishments}.");
+}
+```
+In this example, the 'Person' object is created with GenAI Ability, interacting with LLM during attribute initialization.
+
+```
+Automatic Attribute Population: GenAI Ability streamlines object creation by automatically filling attributes using LLM.
+```
+### GenAI Ability Parameters
+
+When using `with <model>` in code, we have the ability to provide additional parameters for fine-tuning the interaction and to customize the interaction.
+
+`with <model>(temperature=0.7, top_k = 3, reason=true,excl_info=(xxx)>`
+
+Here,
+
+ - `incl_info` : This parameter, represented as a tuple, allows us to explicitly specify the details to be passed to the Language Model (LLM) during prompt creation. If `incl_info` is not specified, the default behavior of the Jac engine is to include all variables or objects available within its scope.
+
+- `excl_info` : Similarly represented as a tuple, this parameter enables us to specify information to be excluded from prompts. By default, if not explicitly defined, all variables and objects within the scope will be included in the interaction.
+
+- `model hyperparameters`: It serves as a key-value pair, specifying the hyperparameters for the model during inference. For instance, `with <model>(temperature=0.7, top_k=3, top_p=0.51)` allows us to set specific parameters for the model.
+
+ - `reason`:A boolean parameter, reason provides the option to specify whether reasoning should be included in the interaction. If set to True, it allows for a more detailed explanation or justification in the model's responses.
+
+`with <model>(temperature=0.7, top_k = 3, top_p =0.51, incl_info=(xxx), reson=true) ` <!--TODO : This line needs to be modified  with a working example code snippet later  -->
+
+|    Parameters    |          Type              |
+|    --------      |         -------            |
+|   model_params   |   kw_pair \| None          |
+|     reason       |    bool \| None            |
+|    incl_info     |    tuple \| None           |
+|    excl_info     |    tuple   \| None         |
 
 ## Real World Examples
 
