@@ -47,7 +47,7 @@ $ pip install pygame
 
 The game is essentially a playable character on a map having the ability of attacking any enemy who are nearby. Enemies are placed according to the map configuration and the game is won when all the enemies are killed. The game uses the pygame library to create animation and enable gameplay. The game is written under four files to improve readability and codebase management.
 
-![The architecture](.//jac_impl/RPG%20Space%20-%20Game%20Architecture.png)
+![The architecture](./Diagrams/RPG%20Space%20-%20Game%20Architecture.png)
 
 ### main
 
@@ -377,7 +377,7 @@ Graph theory is one of the theories that is in the leading forefront of conceptu
 
 There are two main constructs in graphs which are **nodes** and **edges**. Taking our RPG into consideration a node can be represented by a single level instance and edges represents the progression of the game. This graph like structure is represented in graphical form on the diagram below(Right).
 
-![DSP](.//jac_impl/RPG%20Space%20-%20DSP.png)
+![DSP](./Diagrams/RPG%20Space%20-%20DSP.png)
 
 There is another construct that needs to be discussed which is the **walker**. In the RPG, the player must play through the levels in order to progress on the graph of levels. This is graph traversal by an agent who is the player. This graph traversal agent is known as a "walker". Walkers can walk on the graph in any specified manner and can perform different abilities upon entry or exit from a node.
 
@@ -419,7 +419,7 @@ include:jac main;
 
 Now the visualization of the graph is really important in order to build the architecture.
 
-![Game DSP Impl](./jac_impl/RPG%20Space%20-%20DSP%20Architecture%20of%20RPG.png)
+![Game DSP Impl](./Diagrams/RPG%20Space%20-%20DSP%20Architecture%20of%20RPG.png)
 
 #### Nodes and Walkers
 
