@@ -1424,12 +1424,12 @@ Here,
 
 `with <model>(temperature=0.7, top_k = 3, top_p =0.51, incl_info=(xxx), reson=true) ` <!--TODO : This line needs to be modified  with a working example code snippet later  -->
 
-|    Parameters    |          Type              |
-|    --------      |         -------            |
-|   model_params   |   kw_pair \| None          |
-|     reason       |    bool \| None            |
-|    incl_info     |    tuple \| None           |
-|    excl_info     |    tuple   \| None         |
+|    Parameters    |      Type          |
+|    --------      |    -------         |
+|   model_params   |   kw_pair          |
+|     reason       |    bool            |
+|    incl_info     |    tuple           |
+|    excl_info     |    tuple           |
 
 ## Real World Examples
 

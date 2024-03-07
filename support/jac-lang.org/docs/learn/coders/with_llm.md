@@ -1,7 +1,22 @@
 <!-- TODO: Guide for coders to use with_llm @kugesan1105 Put the one in the chatgpt -->
 ## Programming with GenAI
-GenAI Ability is a powerful feature that enhances interaction with Large Language Models (LLM) by utilizing the keyword `with <model>`. Developers can customize the behavior of functions or methods by modifying associated.
-[Semstrings](#introducing-semstrings)
+GenAI Ability is a powerful feature that enhances interaction with Large Language Models (LLM) by utilizing the keyword `with <model>`. Developers can customize the behavior of functions or methods by modifying associated
+[Semstrings](#introducing-semstrings).
+
+**Model Initialization**
+
+To incorporate a Large Language Model (LLM) into code, initialize it as a model code construct.
+
+```
+model llm {
+    model_name: "gpt-4";
+    temperature: 0.7;
+    do_sample: true;
+}
+```
+The llm model is defined in this example with specific attributes, such as utilizing the GPT-4 model, setting a temperature of 0.7 for sampling, and enabling text sampling.
+
+This approach allows for the initialization of the desired model as a model code construct with a specific name (in this case, `llm`), facilitating its integration into code.
 
 **Example Usage**
 
