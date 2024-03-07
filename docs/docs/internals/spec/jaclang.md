@@ -1410,7 +1410,7 @@ Automatic Attribute Population: GenAI Ability streamlines object creation by aut
 
 When using `with <model>` in code, we have the ability to provide additional parameters for fine-tuning the interaction and to customize the interaction.
 
-`with <model>(temperature=0.7, top_k = 3, reason=true,excl_info=(xxx)>`
+`with <model>(temperature=0.7, top_k = 3, reason=true,excl_info=(xxx)>)`
 
 Here,
 
@@ -1422,7 +1422,7 @@ Here,
 
  - `reason`:A boolean parameter, reason provides the option to specify whether reasoning should be included in the interaction. If set to True, it allows for a more detailed explanation or justification in the model's responses.
 
-`with <model>(temperature=0.7, top_k = 3, top_p =0.51, incl_info=(xxx), reson=true) ` <!--TODO : This line needs to be modified  with a working example code snippet later  -->
+`with <model>(temperature=0.7, top_k = 3, top_p =0.51, incl_info=(xxx), reason=true) ` <!--TODO : This line needs to be modified  with a working example code snippet later  -->
 
 |    Parameters    |      Type          |
 |    --------      |    -------         |
