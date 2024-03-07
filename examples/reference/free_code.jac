@@ -1,7 +1,7 @@
 import:py math;
 
 obj circle {
-    can <init>(radius: float) {
+    can init(radius: float) {
         self.radius = radius;
     }
 

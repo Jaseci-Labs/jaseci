@@ -204,13 +204,36 @@ class JacFeatureSpec:
         """Jac's root getter."""
         raise NotImplementedError
 
+    @staticmethod
+    @hookspec(firstresult=True)
+    def with_llm(
+        model: Any,  # noqa: ANN401
+        model_params: dict[str, Any],
+        incl_info: tuple,
+        excl_info: tuple,
+        inputs: tuple,
+        outputs: tuple,
+        action: str,
+    ) -> Any:  # noqa: ANN401
+        """Jac's with_llm stmt feature."""
+        raise NotImplementedError
+
 
 class JacBuiltin:
     """Jac Builtins."""
 
     @staticmethod
     @hookspec(firstresult=True)
-    def dotgen(node: NodeArchitype, radius: int = 0) -> str:
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: list[str],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
         """Print the dot graph."""
         raise NotImplementedError
 

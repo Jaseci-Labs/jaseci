@@ -1,15 +1,16 @@
 """Modified for separate defs/decls."""
 
 obj MyObj {
-    has:protect a: int;
-    can:priv init(a: int) -> None;
-    can:pub set_a(val: int) -> None;
+    has : protect a: int;
+
+    can : priv init(a: int) -> None;
+    can : pub set_a(val: int) -> None;
 }
 
 :o:MyObj:c:init {
-        <h>.a = a;
+    here.a = a;
 }
 
 :o:MyObj:c:set_a {
-        <h>.a = val;
+    here.a = val;
 }

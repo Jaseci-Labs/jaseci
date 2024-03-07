@@ -18,3 +18,26 @@ glob BLUE = (0, 0, 255);
 glob WHITE = (255, 255, 255);
 
 glob GENERAL_FONT = '../fonts/8bitoperator_jve.ttf';
+
+obj Map {
+    has Level_no: int = 1,
+        time_to_win_level:float = 60.0,
+        map: list[str] = [
+                                'BBBBBBBBBBBBBBBBBBBB',
+                                'B..E...............B',
+                                'B..................B',
+                                'B....BBBB......E...B',
+                                'B..................B',
+                                'B..................B',
+                                'B.........P........B',
+                                'B..................B',
+                                'B....E.............B',
+                                'B..................B',
+                                'B.......BBB........B',
+                                'B.........B........B',
+                                'B.........B....E...B',
+                                'B.........B........B',
+                                'BBBBBBBBBBBBBBBBBBBB'
+
+                            ];
+}

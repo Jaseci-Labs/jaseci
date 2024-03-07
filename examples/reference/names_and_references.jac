@@ -1,20 +1,20 @@
 obj Animal {
-    can <init>(species: str) {
+    can init(species: str) {
         self.species = species;
     }
 }
 
 obj Dog :Animal: {
-    can <init>(breed: str) {
-        <super>.<init>(species='Dog');
+    can init(breed: str) {
+        super.init(species='Dog');
         self.breed = breed;
         self.sound = "";
-        self.<post_init>();
+        self.postinit();
     }
-    can <post_init>;
+    can postinit;
 }
 
-:obj:Dog:can:<post_init> {
+:obj:Dog:can:postinit {
     self.sound = 'woof woof';
 }
 

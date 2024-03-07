@@ -31,7 +31,7 @@ class JacFormatPassTests(TestCase):
             os.path.dirname(jaclang.__file__), "../examples/reference/edges_walk.jac"
         )
         out = AstTool().ir(["ast.", jac_file_path])
-        forbidden_strings = ["<<", ">>", "<init>", "<super>"]
+        forbidden_strings = ["<<", ">>", "init", "super"]
         for i in forbidden_strings:
             self.assertNotIn(i, out)
 

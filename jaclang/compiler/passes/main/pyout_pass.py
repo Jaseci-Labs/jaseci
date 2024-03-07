@@ -39,8 +39,8 @@ class PyOutPass(Pass):
         mods = [node] + self.get_all_sub_nodes(node, ast.Module)
         for mod in mods:
             mod_path, out_path_py, out_path_pyc = self.get_output_targets(mod)
-            if os.path.exists(out_path_py) and os.path.getmtime(
-                out_path_py
+            if os.path.exists(out_path_pyc) and os.path.getmtime(
+                out_path_pyc
             ) > os.path.getmtime(mod_path):
                 continue
             self.gen_python(mod, out_path=out_path_py)

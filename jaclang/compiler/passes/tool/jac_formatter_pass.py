@@ -348,7 +348,7 @@ class JacFormatPass(Pass):
         values: Optional[SubNodeList[ExprType]],
         """
         if node.values is not None:
-            self.sep_node_list(node.values, delim=";")
+            self.sep_node_list(node.values, delim=Tok.SEMI)
             self.emit(
                 node,
                 f"{', '.join([value.gen.jac for value in node.values.items])}",
@@ -1500,7 +1500,7 @@ class JacFormatPass(Pass):
             f"{node.collection.gen.jac}"
         )
         if node.conditional:
-            partial += f" if {node.conditional.gen.jac}"
+            partial += " if " + " if ".join(i.gen.jac for i in node.conditional)
         self.emit(node, f"{partial}")
 
     def exit_list_compr(self, node: ast.ListCompr) -> None:

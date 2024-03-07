@@ -141,14 +141,14 @@ class EdgeAnchor(ObjectAnchor):
 
     def detach(
         self, src: NodeArchitype, trg: NodeArchitype, is_undirected: bool = False
-    ) -> EdgeAnchor:
+    ) -> None:
         """Detach edge from nodes."""
-        self.source = src  # TODO: Delete me, don't keep attached
-        self.target = trg  # TODO: Delete me, don't keep attached
         self.is_undirected = is_undirected
         src._jac_.edges.remove(self.obj)
         trg._jac_.edges.remove(self.obj)
-        return self
+        self.source = None
+        self.target = None
+        del self
 
     def spawn_call(self, walk: WalkerArchitype) -> WalkerArchitype:
         """Invoke data spatial call."""

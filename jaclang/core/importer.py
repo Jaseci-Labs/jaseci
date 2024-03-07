@@ -46,24 +46,23 @@ def jac_importer(
             codeobj = marshal.loads(codeobj)
     else:
         gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
-        py_file_path = path.join(gen_dir, module_name + ".py")
         pyc_file_path = path.join(gen_dir, module_name + ".jbc")
         if (
             cachable
-            and path.exists(py_file_path)
-            and path.getmtime(py_file_path) > path.getmtime(full_target)
+            and path.exists(pyc_file_path)
+            and path.getmtime(pyc_file_path) > path.getmtime(full_target)
         ):
             with open(pyc_file_path, "rb") as f:
                 codeobj = marshal.load(f)
         else:
-            if error := compile_jac(full_target):
-                if error:
-                    for e in error:
-                        print(e)
-                        logging.error(e)
+            result = compile_jac(full_target, cache_result=cachable)
+            if result.errors_had or not result.ir.gen.py_bytecode:
+                for e in result.errors_had:
+                    print(e)
+                    logging.error(e)
                 return None
-            with open(pyc_file_path, "rb") as f:
-                codeobj = marshal.load(f)
+            else:
+                codeobj = marshal.loads(result.ir.gen.py_bytecode)
 
     module_name = override_name if override_name else module_name
     module = types.ModuleType(module_name)

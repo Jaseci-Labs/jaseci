@@ -8,20 +8,19 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import PyOutPass, pass_schedule
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.compiler.passes.transform import Alert
 
 
-def compile_jac(file_path: str) -> list[Alert]:
+def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     """Start Compile for Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
         schedule=pass_schedule,
     )
-    if isinstance(code.ir, ast.Module) and not code.errors_had:
+    if cache_result and isinstance(code.ir, ast.Module):
         print_pass = PyOutPass(input_ir=code.ir, prior=code)
+        return print_pass
     else:
-        return code.errors_had
-    return print_pass.errors_had
+        return code
 
 
 def jac_file_to_pass(

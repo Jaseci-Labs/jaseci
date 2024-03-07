@@ -21,12 +21,7 @@ Cmd.create_cmd()
 
 @cmd_registry.register
 def format(path: str, outfile: str = "", debug: bool = False) -> None:
-    """Run the specified .jac file or format all .jac files in a given directory.
-
-    :param path: The path to the .jac file or directory containing .jac files.
-    :param outfile: The output file path (only applies when formatting a single file).
-    :param debug: If True, print debug information.
-    """
+    """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
         code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
@@ -60,18 +55,17 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 
 @cmd_registry.register
-def run(filename: str, main: bool = True) -> None:
-    """Run the specified .jac file.
-
-    :param filename: The path to the .jac file.
-    :param main: If True, use '__main__' as the module name, else use the actual module name.
-    """
+def run(filename: str, main: bool = True, cache: bool = True) -> None:
+    """Run the specified .jac file."""
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
         jac_import(
-            target=mod, base_path=base, override_name="__main__" if main else None
+            target=mod,
+            base_path=base,
+            cachable=cache,
+            override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
@@ -79,6 +73,7 @@ def run(filename: str, main: bool = True) -> None:
             jac_import(
                 target=mod,
                 base_path=base,
+                cachable=cache,
                 override_name="__main__" if main else None,
                 mod_bundle=ir,
             )

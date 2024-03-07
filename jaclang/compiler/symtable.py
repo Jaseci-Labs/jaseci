@@ -63,6 +63,8 @@ class SymbolAccess(Enum):
         return self.value
 
 
+# Symbols can have mulitple definitions but resolves decl to be the
+# first such definition in a given scope.
 class Symbol:
     """Symbol."""
 
@@ -151,8 +153,11 @@ class SymbolTable:
         Returns original symbol as collision if single check fails, none otherwise.
         Also updates node.sym to create pointer to symbol.
         """
-        if single and node.sym_name in self.tab:
-            return self.tab[node.sym_name].defn[-1]
+        collision = (
+            self.tab[node.sym_name].defn[-1]
+            if single and node.sym_name in self.tab
+            else None
+        )
         if node.sym_name not in self.tab:
             self.tab[node.sym_name] = Symbol(
                 defn=node,
@@ -162,7 +167,7 @@ class SymbolTable:
         else:
             self.tab[node.sym_name].add_defn(node)
         node.sym_link = self.tab[node.sym_name]
-        return None
+        return collision
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
