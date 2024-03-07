@@ -1,5 +1,9 @@
 # Converting a python Role Playing Game to ```Jaclang```
 
+This document is to serve as a discription for each RPG implementations which were done iteratively to visualize the changes made when converting to Jaclang.
+
+> An in depth tutorial is available [here](./RPG_DSP_journey.md).
+
 ## Pure Python implementation : [python_impl](./python_impl/)
 
 This is a role playing game built using the pygame library in the python language. The game is inspired by a game tutorial available on _YouTube_ available [here](<https://www.youtube.com/playlist?list=PLkkm3wcQHjT7gn81Wn-e78cAyhwBW3FIc>).
