@@ -81,7 +81,7 @@ Here,
 |    excl_info     |    tuple   \| None         |
 
 
-## Introducing Semstrings 
+## Introducing Semstrings
 
 In the dynamic landscape of programming languages, the advent of Jac introduces a novel concept called "**Semstrings**," offering a powerful and expressive way to interact with LLM. Semstrings, short for semantic strings, serve as a bridge between the traditional code structure and the capabilities of language models.They play a pivotal role in shaping the way we communicate with models and generate prompts.
 
