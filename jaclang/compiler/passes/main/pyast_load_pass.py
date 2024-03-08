@@ -897,7 +897,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return type_mapping[value_type](
                 file_path=self.mod_path,
                 name=token_type,
-                value=node.value,
+                value=str(node.value),
                 line=node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(str(node.value)),
