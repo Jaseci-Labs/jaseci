@@ -747,6 +747,43 @@ class Ability(
         else:
             raise NotImplementedError
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.name_ref.normalize(deep)
+            res = res and self.access.normalize(deep) if self.access else res
+            res = res and self.signature.normalize(deep) if self.signature else res
+            res = res and self.body.normalize(deep) if self.body else res
+            res = res and self.semstr.normalize(deep) if self.semstr else res
+            res = res and self.decorators.normalize(deep) if self.decorators else res
+            res = res and self.doc.normalize(deep) if self.doc else res
+        new_kid: list[AstNode] = []
+        if self.doc:
+            new_kid.append(self.doc)
+        if self.is_async:
+            new_kid.append(self.gen_token(Tok.KW_ASYNC))
+        if self.is_override:
+            new_kid.append(self.gen_token(Tok.KW_OVERRIDE))
+        if self.is_static:
+            new_kid.append(self.gen_token(Tok.KW_STATIC))
+        new_kid.append(self.gen_token(Tok.KW_CAN, value="can"))
+        if self.access:
+            new_kid.append(self.access)
+        if self.semstr:
+            new_kid.append(self.semstr)
+        new_kid.append(self.name_ref)
+        if self.signature:
+            new_kid.append(self.signature)
+        if self.body:
+            new_kid.append(self.gen_token(Tok.LBRACE))
+            new_kid.append(self.body)
+            new_kid.append(self.gen_token(Tok.RBRACE))
+        else:
+            new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
     """AbilityDef node type for Jac Ast."""

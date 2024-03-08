@@ -44,7 +44,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice(f"Unknown node type {type(node).__name__}")
         print(f"finshed {type(node).__name__} ---------------------")
         print("normalizing", ret.__class__.__name__)
-        ret.unparse()
+        print(ret.unparse())
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
@@ -139,10 +139,21 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in function body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid, delim=Tok.WS, kid=valid
-        )
-        doc = None
+
+        if (
+            len(valid)
+            and isinstance(valid[0], ast.ExprStmt)
+            and isinstance(valid[0].expr, ast.String)
+        ):
+            doc = valid[0].expr
+            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+                items=valid[1:], delim=Tok.WS, kid=valid[1:]
+            )
+        else:
+            doc = None
+            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+                items=valid, delim=Tok.WS, kid=valid
+            )
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
         if len(valid_dec) != len(decorators):
