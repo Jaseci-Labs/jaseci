@@ -420,10 +420,10 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def register_set(
-        key: str, scope: str, semstr: str = "", value: Any = None  # noqa: ANN401
+        key: str, scope: str, type: Any, semstr: str = ""  # noqa: ANN401
     ) -> None:
         """Jac's register_set feature."""
-        print(f"Registering {key} in {scope} with {semstr} as {value}")
+        print(f"Registering {key} in {scope} with {semstr} of type {type}.")
 
 
 class JacBuiltin:
