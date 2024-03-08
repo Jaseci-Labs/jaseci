@@ -361,6 +361,20 @@ class Module(AstDocNode):
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize module node."""
+        res = True
+        if deep:
+            res = self.doc.normalize() if self.doc else True
+            for i in self.body:
+                res = res and i.normalize()
+        new_kid: list[AstNode] = []
+        if self.doc:
+            new_kid.append(self.doc)
+        new_kid.extend(self.body)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class GlobalVars(ElementStmt, AstAccessNode):
     """GlobalVars node type for Jac Ast."""
@@ -379,6 +393,27 @@ class GlobalVars(ElementStmt, AstAccessNode):
         AstNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize global var node."""
+        res = True
+        if deep:
+            res = self.access.normalize(deep) if self.access else True
+            res = res and self.assignments.normalize(deep)
+            res = res and self.doc.normalize(deep) if self.doc else res
+        new_kid: list[AstNode] = []
+        if self.is_frozen:
+            new_kid.append(self.gen_token(Tok.KW_LET))
+        else:
+            new_kid.append(self.gen_token(Tok.KW_GLOBAL))
+        if self.doc:
+            new_kid.append(self.doc)
+        if self.access:
+            new_kid.append(self.access)
+        new_kid.append(self.assignments)
+        new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class Test(AstSymbolNode, ElementStmt):
@@ -1242,6 +1277,19 @@ class ExprAsItem(AstNode):
         self.expr = expr
         self.alias = alias
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.expr.normalize(deep)
+            res = res and self.alias.normalize(deep) if self.alias else res
+        new_kid: list[AstNode] = [self.expr]
+        if self.alias:
+            new_kid.append(self.gen_token(Tok.KW_AS, "as"))
+            new_kid.append(self.alias)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class RaiseStmt(CodeBlockStmt):

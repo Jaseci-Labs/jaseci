@@ -179,7 +179,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         kid = [name, sig, valid_body] if sig else [name, valid_body]
         ret = ast.Ability(
             name_ref=name,
-            is_func=True,
             is_async=False,
             is_static=False,
             is_abstract=False,
