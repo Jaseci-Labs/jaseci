@@ -585,7 +585,7 @@ class PyastGenPass(Pass):
         ]
 
     def exit_architype(self, node: ast.Architype) -> None:
-        # TODO: Add the jac register set @chandralegend
+        # TODO: Get the Scope of the Architype
         """Sub objects.
 
         name: Name,
@@ -691,7 +691,13 @@ class PyastGenPass(Pass):
                     decorator_list=decorators,
                     type_params=[],
                 )
-            )
+            ),
+            self.register_set_expr(
+                node.name.value,
+                "SCOPE",
+                node.arch_type.value,
+                node.semstr.lit_value if node.semstr else "",
+            ),
         ]
 
     def collect_events(
@@ -747,7 +753,8 @@ class PyastGenPass(Pass):
         """
 
     def exit_enum(self, node: ast.Enum) -> None:
-        # TODO: Add the jac register set (Problem: How to Include the Semstring of the Enum Items)
+        # TODO: Scope of the Enum
+        # TODO: Add Semstring for ENUM Items
         """Sub objects.
 
         name: Name,
@@ -758,8 +765,9 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.needs_enum()
+        enum_body = node.body.body if isinstance(node.body, ast.EnumDef) else node.body
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
+            enum_body,
             doc=node.doc,
         )
         decorators = (
@@ -784,7 +792,13 @@ class PyastGenPass(Pass):
                     decorator_list=decorators,
                     type_params=[],
                 )
-            )
+            ),
+            self.register_set_expr(
+                node.name.value,
+                "SCOPE",
+                "enum",
+                node.semstr.lit_value if node.semstr else "",
+            ),
         ]
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
@@ -797,7 +811,6 @@ class PyastGenPass(Pass):
         """
 
     def exit_ability(self, node: ast.Ability) -> None:
-        # TODO: Add the jac register set
         """Sub objects.
 
         name_ref: NameType,
@@ -1259,7 +1272,6 @@ class PyastGenPass(Pass):
             node.gen.py_ast = node.vars.gen.py_ast  # TODO: This is a list
 
     def exit_has_var(self, node: ast.HasVar) -> None:
-        # TODO: Add the jac register set
         """Sub objects.
 
         name: Name,
@@ -1388,7 +1400,13 @@ class PyastGenPass(Pass):
                         simple=int(isinstance(node.name, ast.Name)),
                     )
                 )
-            )
+            ),
+            self.register_set_expr(
+                node.name.value,
+                "SCOPE",
+                "",
+                node.semstr.lit_value if node.semstr else "",
+            ),
         ]
 
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
@@ -1916,37 +1934,60 @@ class PyastGenPass(Pass):
                 )
             ]
         node.gen.py_ast += [
-            self.sync(
-                ast3.Expr(
-                    value=self.sync(
-                        ast3.Call(
-                            func=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Name(
-                                            id=Con.JAC_FEATURE.value,
-                                            ctx=ast3.Load(),
-                                        )
-                                    ),
-                                    attr="register_set",
-                                    ctx=ast3.Load(),
+            self.register_set_expr("Hello", "World", "Some Type", "Hello World")
+        ]
+
+    def register_set_expr(
+        self, key: str, scope: str, type: str, semstr: str
+    ) -> ast3.AST:
+        """Register set expr."""
+        return self.sync(
+            ast3.Expr(
+                value=self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(
+                                        id=Con.JAC_FEATURE.value,
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                                attr="register_set",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="key",
+                                    value=self.sync(ast3.Constant(value=key)),
                                 )
                             ),
-                            args=[],
-                            keywords=[
-                                self.sync(
-                                    ast3.keyword(
-                                        arg="key",
-                                        value=self.sync(ast3.Constant(value="Hello")),
-                                    )
-                                    # TODO: Add the rest of the keys and values
+                            self.sync(
+                                ast3.keyword(
+                                    arg="scope",
+                                    value=self.sync(ast3.Constant(value=scope)),
                                 )
-                            ],
-                        )
+                            ),
+                            self.sync(
+                                ast3.keyword(
+                                    arg="type",
+                                    value=self.sync(ast3.Constant(value=type)),
+                                )
+                            ),
+                            self.sync(
+                                ast3.keyword(
+                                    arg="semstr",
+                                    value=self.sync(ast3.Constant(value=semstr)),
+                                )
+                            ),
+                        ],
                     )
                 )
             )
-        ]
+        )
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.

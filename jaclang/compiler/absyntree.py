@@ -1295,6 +1295,7 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         kid: Sequence[AstNode],
         mutable: bool = True,
         aug_op: Optional[Token] = None,
+        # TODO: Need the Semstring
     ) -> None:
         """Initialize assignment node."""
         self.target = target
