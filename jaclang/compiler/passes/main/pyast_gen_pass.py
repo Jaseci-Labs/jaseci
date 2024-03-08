@@ -799,7 +799,6 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name_ref: NameType,
-        is_func: bool,
         is_async: bool,
         is_static: bool,
         is_abstract: bool,
