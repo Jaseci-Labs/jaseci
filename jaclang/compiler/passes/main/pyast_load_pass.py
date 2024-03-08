@@ -331,11 +331,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value: expr
         """
         value = self.convert(node.value)
-        if isinstance(value, (ast.Expr)):
-            value_subtag = ast.SubTag[ast.Expr](tag=value, kid=[value])
-        else:
-            raise self.ice()
-
         targets = [self.convert(target) for target in node.targets]
         valid = [target for target in targets if isinstance(target, ast.Expr)]
         if len(valid) == len(targets):
@@ -349,7 +344,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return ast.Assignment(
                 target=valid_targets,
                 value=value,
-                type_tag=value_subtag,
+                type_tag=None,
                 kid=[valid_targets, value],
             )
         else:
