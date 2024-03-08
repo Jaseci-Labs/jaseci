@@ -750,7 +750,6 @@ class JacParser(Pass):
             chomp = chomp[1:] if semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
-            is_func = isinstance(chomp[0], ast.FuncSignature)
             signature = chomp[0]
             chomp = chomp[1:]
             body = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
@@ -760,7 +759,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.Ability(
                         name_ref=name,
-                        is_func=is_func,
                         is_async=False,
                         is_override=is_override,
                         is_static=is_static,
@@ -820,7 +818,6 @@ class JacParser(Pass):
             chomp = chomp[1:] if semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
-            is_func = isinstance(chomp[0], ast.FuncSignature)
             signature = chomp[0]
             chomp = chomp[1:]
             if isinstance(name, ast.NameSpec) and isinstance(
@@ -829,7 +826,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.Ability(
                         name_ref=name,
-                        is_func=is_func,
                         is_async=False,
                         is_override=is_override,
                         is_static=is_static,
@@ -866,22 +862,19 @@ class JacParser(Pass):
             chomp = chomp[1:] if semstr else chomp
             name = chomp[0]
             chomp = chomp[1:]
-            is_func = isinstance(chomp[0], ast.FuncSignature)
             signature = chomp[0]
             chomp = chomp[1:]
             has_by = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_BY
             chomp = chomp[1:] if has_by else chomp
-            is_funccall = isinstance(chomp[0], ast.FuncCall)
             if (
                 isinstance(name, ast.NameSpec)
                 and isinstance(signature, (ast.FuncSignature, ast.EventSignature))
-                and is_funccall
+                and isinstance(chomp[0], ast.FuncCall)
                 and has_by
             ):
                 return self.nu(
                     ast.Ability(
                         name_ref=name,
-                        is_func=is_func,
                         is_async=False,
                         is_override=is_override,
                         is_static=is_static,
@@ -889,7 +882,7 @@ class JacParser(Pass):
                         access=access,
                         semstr=semstr,
                         signature=signature,
-                        body=chomp[0],  # type: ignore
+                        body=chomp[0],
                         kid=kid,
                     )
                 )
