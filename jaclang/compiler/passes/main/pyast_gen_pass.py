@@ -5,6 +5,7 @@ in each node. Module nodes contain the entire module code.
 """
 
 import ast as ast3
+import json
 import textwrap
 from typing import Optional, Sequence, TypeVar
 
@@ -17,6 +18,8 @@ T = TypeVar("T", bound=ast3.AST)
 
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
+
+    registry: dict = {}
 
     @staticmethod
     def node_compilable_test(node: ast3.AST) -> None:
@@ -331,6 +334,8 @@ class PyastGenPass(Pass):
             )
         ]
         node.gen.py = ast3.unparse(node.gen.py_ast[0])
+        with open(node.source.file_path.replace(".jac", "_registry.json"), "w") as f:
+            json.dump(self.registry, f, indent=2)
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -691,14 +696,19 @@ class PyastGenPass(Pass):
                     decorator_list=decorators,
                     type_params=[],
                 )
-            ),
-            self.register_set_expr(
-                node.name.value,
-                "SCOPE",
-                node.arch_type.value,
-                node.semstr.lit_value if node.semstr else "",
-            ),
+            )
         ]
+        scope = self.get_scope(node)
+        self.set_register(
+            node.name.value,
+            scope,
+            node.arch_type.value,
+            node.semstr.lit_value if node.semstr else "",
+        )
+
+    def get_scope(self, node: ast.AstNode) -> str:
+        """Get scope."""
+        return "SCOPE"  # TODO: @kugesan1105
 
     def collect_events(
         self, node: ast.Architype
@@ -792,14 +802,14 @@ class PyastGenPass(Pass):
                     decorator_list=decorators,
                     type_params=[],
                 )
-            ),
-            self.register_set_expr(
-                node.name.value,
-                "SCOPE",
-                "enum",
-                node.semstr.lit_value if node.semstr else "",
-            ),
+            )
         ]
+        self.set_register(
+            node.name.value,
+            "SCOPE",
+            "enum",
+            node.semstr.lit_value if node.semstr else "",
+        )
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -1400,14 +1410,14 @@ class PyastGenPass(Pass):
                         simple=int(isinstance(node.name, ast.Name)),
                     )
                 )
-            ),
-            self.register_set_expr(
-                node.name.value,
-                "SCOPE",
-                "",
-                node.semstr.lit_value if node.semstr else "",
-            ),
+            )
         ]
+        self.set_register(
+            node.name.value,
+            "SCOPE",
+            "",
+            node.semstr.lit_value if node.semstr else "",
+        )
 
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
@@ -1933,61 +1943,11 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        node.gen.py_ast += [
-            self.register_set_expr("Hello", "World", "Some Type", "Hello World")
-        ]
+        self.set_register("Hello", "World", "Some Type", "Hello World")
 
-    def register_set_expr(
-        self, key: str, scope: str, type: str, semstr: str
-    ) -> ast3.AST:
-        """Register set expr."""
-        return self.sync(
-            ast3.Expr(
-                value=self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(
-                                        id=Con.JAC_FEATURE.value,
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                attr="register_set",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="key",
-                                    value=self.sync(ast3.Constant(value=key)),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="scope",
-                                    value=self.sync(ast3.Constant(value=scope)),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="type",
-                                    value=self.sync(ast3.Constant(value=type)),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="semstr",
-                                    value=self.sync(ast3.Constant(value=semstr)),
-                                )
-                            ),
-                        ],
-                    )
-                )
-            )
-        )
+    def set_register(self, key: str, scope: str, type: str, semstr: str) -> None:
+        """Set register."""
+        self.registry[key] = {"scope": scope, "type": type, "semstr": semstr}
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.

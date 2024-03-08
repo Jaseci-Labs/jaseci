@@ -417,12 +417,6 @@ class JacFeatureDefaults:
         output_type_info = (None, None)  # TODO: We have to generate this
         return aott_lower(meaning_out, output_type_info)
 
-    @staticmethod
-    @hookimpl
-    def register_set(key: str, scope: str, type: str, semstr: str = "") -> None:
-        """Jac's register_set feature."""
-        print(f"Registering {key} in {scope} with {semstr} of type {type}.")
-
 
 class JacBuiltin:
     """Jac Builtins."""

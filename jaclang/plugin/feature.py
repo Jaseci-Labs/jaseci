@@ -232,11 +232,6 @@ class JacFeature:
             action=action,
         )
 
-    @staticmethod
-    def register_set(key: str, scope: str, type: str, semstr: str = "") -> None:
-        """Jac's register_set feature."""
-        return pm.hook.register_set(key=key, scope=scope, type=type, semstr=semstr)
-
 
 class JacCmd:
     """Jac CLI command."""
