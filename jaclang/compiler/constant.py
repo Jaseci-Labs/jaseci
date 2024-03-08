@@ -250,6 +250,7 @@ DELIM_MAP = {
     Tokens.LPAREN: "(",
     Tokens.RPAREN: ")",
     Tokens.RETURN_HINT: "->",
+    Tokens.DOT: ".",
 }
 
 colors = [

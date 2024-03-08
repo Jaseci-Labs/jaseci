@@ -6,6 +6,7 @@ import ast as ast3
 from types import EllipsisType
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
+from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
 from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
@@ -76,9 +77,18 @@ class AstNode:
 
     def gen_token(self, name: Tok, value: Optional[str] = None) -> Token:
         """Generate token."""
+        value = (
+            value
+            if value
+            else (
+                DELIM_MAP[name]
+                if name in DELIM_MAP
+                else TOKEN_MAP[name.value] if name.value in TOKEN_MAP else name.value
+            )
+        )
         return Token(
             name=name,
-            value=value if value else DELIM_MAP[name],
+            value=value,
             file_path=self.loc.mod_path,
             col_start=self.loc.col_start,
             col_end=0,
@@ -511,6 +521,36 @@ class Import(ElementStmt, CodeBlockStmt):
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize import node."""
+        res = True
+        if deep:
+            res = self.lang.normalize(deep)
+            for p in self.paths:
+                res = res and p.normalize(deep)
+            res = res and self.items.normalize(deep) if self.items else res
+            res = res and self.doc.normalize(deep) if self.doc else res
+        new_kid: list[AstNode] = []
+        if self.doc:
+            new_kid.append(self.doc)
+        if self.is_absorb:
+            new_kid.append(self.gen_token(Tok.KW_INCLUDE))
+        else:
+            new_kid.append(self.gen_token(Tok.KW_IMPORT))
+        new_kid.append(self.lang)
+        if self.items:
+            new_kid.append(self.gen_token(Tok.KW_FROM))
+        for p in self.paths:
+            new_kid.append(p)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        new_kid.pop()
+        if self.items:
+            new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(self.items)
+        new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class ModulePath(AstSymbolNode):
     """ModulePath node type for Jac Ast."""
@@ -536,6 +576,29 @@ class ModulePath(AstSymbolNode):
             sym_name_node=alias if alias else self,
             sym_type=SymbolType.MODULE,
         )
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize module path node."""
+        res = True
+        if deep:
+            if self.path:
+                for p in self.path:
+                    res = res and p.normalize(deep)
+            res = res and self.alias.normalize(deep) if self.alias else res
+        new_kid: list[AstNode] = []
+        for _ in range(self.level):
+            new_kid.append(self.gen_token(Tok.DOT))
+        if self.path:
+            for p in self.path:
+                res = res and p.normalize(deep)
+                new_kid.append(p)
+                new_kid.append(self.gen_token(Tok.DOT))
+            new_kid.pop()
+        if self.alias:
+            res = res and self.alias.normalize(deep)
+            new_kid.append(self.alias)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
     @property
     def path_str(self) -> str:
@@ -564,6 +627,19 @@ class ModuleItem(AstSymbolNode):
             sym_name_node=alias if alias else name,
             sym_type=SymbolType.MOD_VAR,
         )
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize module item node."""
+        res = True
+        if deep:
+            res = res and self.name.normalize(deep)
+            res = res and self.alias.normalize(deep) if self.alias else res
+        new_kid: list[AstNode] = [self.name]
+        if self.alias:
+            new_kid.append(self.gen_token(Tok.KW_AS))
+            new_kid.append(self.alias)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
@@ -805,7 +881,7 @@ class Ability(
             new_kid.append(self.gen_token(Tok.KW_OVERRIDE))
         if self.is_static:
             new_kid.append(self.gen_token(Tok.KW_STATIC))
-        new_kid.append(self.gen_token(Tok.KW_CAN, value="can"))
+        new_kid.append(self.gen_token(Tok.KW_CAN))
         if self.access:
             new_kid.append(self.access)
         if self.semstr:
@@ -1286,7 +1362,7 @@ class ExprAsItem(AstNode):
             res = res and self.alias.normalize(deep) if self.alias else res
         new_kid: list[AstNode] = [self.expr]
         if self.alias:
-            new_kid.append(self.gen_token(Tok.KW_AS, "as"))
+            new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.alias)
         AstNode.__init__(self, kid=new_kid)
         return res
