@@ -15,6 +15,10 @@
     "Personality": [
       "enum",
       "Personality of the Person"
+    ],
+    "personality_examples": [
+      "dict[str, Personality]",
+      "Personality Information of Famous People"
     ]
   },
   "test(module).Person": {
