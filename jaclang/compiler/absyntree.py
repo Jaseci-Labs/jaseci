@@ -1287,7 +1287,7 @@ class NonLocalStmt(GlobalStmt):
     """NonlocalStmt node type for Jac Ast."""
 
 
-class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
+class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
     """Assignment node type for Jac Ast."""
 
     def __init__(
@@ -1298,6 +1298,7 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         kid: Sequence[AstNode],
         mutable: bool = True,
         aug_op: Optional[Token] = None,
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize assignment node."""
         self.target = target
@@ -1305,6 +1306,7 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         self.mutable = mutable
         self.aug_op = aug_op
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
