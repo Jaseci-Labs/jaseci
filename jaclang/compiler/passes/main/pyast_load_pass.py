@@ -287,7 +287,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             decorators=valid_decorators,
         )
 
-    def proc_return(self, node: py_ast.Return) -> ast.ExprStmt | None:
+    def proc_return(self, node: py_ast.Return) -> ast.ReturnStmt | None:
         """Process python node.
 
         class Return(stmt):
@@ -296,7 +296,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         value = self.convert(node.value) if node.value else None
         if value and isinstance(value, ast.Expr):
-            return ast.ExprStmt(expr=value, in_fstring=False, kid=[value])
+            return ast.ReturnStmt(expr=value , kid=[value])
         else:
             raise self.ice("Invalid return value")
 
