@@ -1770,11 +1770,10 @@ class JacParser(Pass):
                 if value and isinstance(chomp[-3], ast.SubTag)
                 else chomp[:-1] if value else chomp
             )
+            type_tag = chomp[-1] if isinstance(chomp[-1], ast.SubTag) else None
             if not value:
                 semstr = chomp[2] if len(chomp) > 2 else None
-                type_tag = chomp[3] if semstr else chomp[1]
             else:
-                type_tag = chomp[-1] if isinstance(chomp[-1], ast.SubTag) else None
                 if type_tag:
                     chomp = chomp[:-1]
                     semstr = (
@@ -1814,7 +1813,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.Assignment(
                         target=new_targ,
-                        type_tag=type_tag,
+                        type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                         value=value,
                         mutable=is_frozen,
                         aug_op=is_aug,
@@ -1824,7 +1823,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.Assignment(
                     target=new_targ,
-                    type_tag=type_tag,
+                    type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                     value=value,
                     mutable=is_frozen,
                     kid=kid,
