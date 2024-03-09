@@ -1,0 +1,87 @@
+{
+  "Hello": {
+    "scope": "test(Module).Main(obj).Ability.",
+    "type": "Some Type",
+    "semstr": "Hello World"
+  },
+  "name": {
+    "scope": "test(Module).achievement(edge).",
+    "type": "",
+    "semstr": ""
+  },
+  "age": {
+    "scope": "test(Module).person(node).",
+    "type": "",
+    "semstr": "Age of the Person"
+  },
+  "person": {
+    "scope": "test(Module).person(node).",
+    "type": "node",
+    "semstr": "Person"
+  },
+  "year": {
+    "scope": "test(Module).achievement(edge).",
+    "type": "",
+    "semstr": "Year of the Achievement"
+  },
+  "description": {
+    "scope": "test(Module).achievement(edge).",
+    "type": "",
+    "semstr": "Description of the Achievement"
+  },
+  "achievement": {
+    "scope": "test(Module).achievement(edge).",
+    "type": "edge",
+    "semstr": "Achievements"
+  },
+  "Personality": {
+    "scope": "test(Module).Personality(Enum).",
+    "type": "enum",
+    "semstr": "Personality of the Person"
+  },
+  "m1": {
+    "scope": "test(Module).Main(obj).",
+    "type": "",
+    "semstr": ""
+  },
+  "m2": {
+    "scope": "test(Module).Main(obj).",
+    "type": "",
+    "semstr": ""
+  },
+  "Main": {
+    "scope": "test(Module).Main(obj).",
+    "type": "obj",
+    "semstr": ""
+  },
+  "oa": {
+    "scope": "test(Module).outer(obj).",
+    "type": "",
+    "semstr": ""
+  },
+  "ob": {
+    "scope": "test(Module).outer(obj).",
+    "type": "",
+    "semstr": ""
+  },
+  "oic": {
+    "scope": "test(Module).outer(obj).inner(obj).",
+    "type": "",
+    "semstr": ""
+  },
+  "oid": {
+    "scope": "test(Module).outer(obj).inner(obj).",
+    "type": "",
+    "semstr": ""
+  },
+  "inner": {
+    "scope": "test(Module).outer(obj).inner(obj).",
+    "type": "obj",
+    "semstr": ""
+  },
+  "outer": {
+    "scope": "test(Module).outer(obj).",
+    "type": "obj",
+    "semstr": ""
+  }
+}

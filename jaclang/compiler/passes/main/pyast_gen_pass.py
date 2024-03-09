@@ -698,17 +698,43 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        scope = self.get_scope(node)
+
         self.set_register(
             node.name.value,
-            scope,
+            self.get_scope(node),
             node.arch_type.value,
             node.semstr.lit_value if node.semstr else "",
         )
 
     def get_scope(self, node: ast.AstNode) -> str:
         """Get scope."""
-        return "SCOPE"  # TODO: @kugesan1105
+        main_path = ""
+        while node.parent:
+            if isinstance(node, (ast.Architype, ast.Enum, ast.Module)) and isinstance(
+                node.name, ast.Name
+            ):
+                main_path = (
+                    node.name.value
+                    + "("
+                    + (
+                        node.__class__.__name__
+                        if isinstance(node, (ast.Module, ast.Enum))
+                        else node.arch_type.value
+                    )
+                    + ")"
+                    + "."
+                    + main_path
+                )
+            elif isinstance(node, (ast.GlobalVars, ast.Ability)):
+                main_path = node.__class__.__name__ + "." + main_path
+
+            node = node.parent
+        return (
+            (node.name + "(Module)." + main_path)
+            if isinstance(node, ast.Module)
+            else ""
+        )
+        # TODO: @kugesan1105
 
     def collect_events(
         self, node: ast.Architype
@@ -806,7 +832,7 @@ class PyastGenPass(Pass):
         ]
         self.set_register(
             node.name.value,
-            "SCOPE",
+            self.get_scope(node),
             "enum",
             node.semstr.lit_value if node.semstr else "",
         )
@@ -1414,7 +1440,7 @@ class PyastGenPass(Pass):
         ]
         self.set_register(
             node.name.value,
-            "SCOPE",
+            self.get_scope(node),
             "",
             node.semstr.lit_value if node.semstr else "",
         )
@@ -1943,7 +1969,8 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        self.set_register("Hello", "World", "Some Type", "Hello World")
+
+        self.set_register("Hello", self.get_scope(node), "Some Type", "Hello World")
 
     def set_register(self, key: str, scope: str, type: str, semstr: str) -> None:
         """Set register."""
