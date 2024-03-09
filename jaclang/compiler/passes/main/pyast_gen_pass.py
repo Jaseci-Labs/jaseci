@@ -5,7 +5,7 @@ in each node. Module nodes contain the entire module code.
 """
 
 import ast as ast3
-import json
+import os
 import textwrap
 from typing import Optional, Sequence, TypeVar
 
@@ -334,8 +334,14 @@ class PyastGenPass(Pass):
             )
         ]
         node.gen.py = ast3.unparse(node.gen.py_ast[0])
-        with open(node.source.file_path.replace(".jac", "_registry.json"), "w") as f:
-            json.dump(self.registry, f, indent=2)
+        node.module_registry = self.registry
+        if os.environ.get("JAC_REGISTRY_DEBUG", False):
+            import json
+
+            with open(
+                node.source.file_path.replace(".jac", "_registry.json"), "w"
+            ) as f:
+                json.dump(self.registry, f, indent=2)
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -709,32 +715,24 @@ class PyastGenPass(Pass):
     def get_scope(self, node: ast.AstNode) -> str:
         """Get scope."""
         main_path = ""
-        while node.parent:
-            if isinstance(node, (ast.Architype, ast.Enum, ast.Module)) and isinstance(
-                node.name, ast.Name
-            ):
-                main_path = (
-                    node.name.value
-                    + "("
-                    + (
-                        node.__class__.__name__
-                        if isinstance(node, (ast.Module, ast.Enum))
-                        else node.arch_type.value
-                    )
-                    + ")"
-                    + "."
-                    + main_path
-                )
-            elif isinstance(node, (ast.GlobalVars, ast.Ability)):
-                main_path = node.__class__.__name__ + "." + main_path
-
-            node = node.parent
+        if node.parent:
+            main_path = self.get_scope(node.parent)
+        if isinstance(node, (ast.Architype, ast.Enum)):
+            node_type = (
+                node.__class__.__name__
+                if isinstance(node, (ast.Module, ast.Enum))
+                else node.arch_type.value
+            )
+            main_path += (
+                f".{node.name.value}({node_type})"
+                if not isinstance(node.parent, ast.Module)
+                else ""
+            )
         return (
-            (node.name + "(Module)." + main_path)
-            if isinstance(node, ast.Module)
-            else ""
+            main_path
+            if not isinstance(node, ast.Module)
+            else f"{node.name}(module){main_path}"
         )
-        # TODO: @kugesan1105
 
     def collect_events(
         self, node: ast.Architype
@@ -1974,7 +1972,10 @@ class PyastGenPass(Pass):
 
     def set_register(self, key: str, scope: str, type: str, semstr: str) -> None:
         """Set register."""
-        self.registry[key] = {"scope": scope, "type": type, "semstr": semstr}
+        if scope in self.registry:
+            self.registry[scope][key] = (type, semstr)
+        else:
+            self.registry[scope] = {key: (type, semstr)}
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.

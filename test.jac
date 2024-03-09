@@ -1,46 +1,27 @@
-glob apple: int = 5, banana: int = 10;
+obj model {
+    can __infer__(meaning_in: str, **kwargs: dict) {
+        print(meaning_in);
+    }
+}
+glob llm = model();
 
-node 'Person'
-person {
+obj 'Person'
+Person {
     has name: 'Name of the Person': str,
         age: 'Age of the Person': int;
 }
 
-edge 'Achievements'
-achievement {
-    has name: str,
-        year: 'Year of the Achievement': int,
-        description: 'Description of the Achievement': str;
-}
-
 enum 'Personality of the Person'
 Personality {
-   INTROVERT,
-   EXTROVERT
-}
-can :priv kukku(){}
-obj : priv Main{
-    has :priv m1 : int=6;
-    has :priv m2 : int=5;
-
-    can:priv func1(){
-        m3=7;
-        print(self.m1);
-
-    }
-
+   INTROVERT: 'Person who is shy and reticent',
+   EXTROVERT: 'Person who is outgoing and socially confident';
 }
 
-obj :protect outer{
-    has :priv oa : int=10;
-    has :priv ob : int=11;
+can 'Get Personality of the Person'
+get_personality (person: 'Person': Person) -> 'Personality of the Person': Personality by llm();
 
-    obj :priv inner{
-
-
-        has :priv oic : int=12,
-                  oid:int=17;
-
-    }
+with entry {
+    einstein = Person('Albert Einstein', 76);
+    print(einstein.name);
+    print(get_personality(einstein));
 }
-
