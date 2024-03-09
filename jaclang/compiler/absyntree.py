@@ -484,6 +484,22 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         self.body = body
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
+    
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize module code node."""
+        res = True
+        if deep:
+            res = self.name.normalize(deep) if self.name else res
+            res = res and self.body.normalize(deep)
+            res = res and self.doc.normalize(deep) if self.doc else res
+        new_kid: list[AstNode] = []
+        if self.doc:
+            new_kid.append(self.doc)
+        if self.name:
+            new_kid.append(self.name)
+        new_kid.append(self.body)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
@@ -699,6 +715,39 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             else self.body.body.items if isinstance(self.body, ArchDef) else []
         )
         return any(isinstance(i, Ability) and i.is_abstract for i in body)
+    
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.name.normalize(deep)
+            res = res and self.arch_type.normalize(deep)
+            res = res and self.base_classes.normalize(deep) if self.base_classes else res
+            res = res and self.body.normalize(deep) if self.body else res
+            res = res and self.doc.normalize(deep) if self.doc else res
+            res = res and self.semstr.normalize(deep) if self.semstr else res
+            res = res and self.decorators.normalize(deep) if self.decorators else res
+        new_kid: list[AstNode] = []
+        if self.doc:
+            new_kid.append(self.doc)
+        new_kid.append(self.arch_type)
+        if self.access:
+            new_kid.append(self.access)
+        new_kid.append(self.name)
+        if self.base_classes:
+            # new_kid.append(self.gen_token(Tok.))
+            new_kid.append(self.base_classes)
+            # new_kid.append(self.gen_token(Tok.))
+        if self.semstr:
+            new_kid.append(self.semstr)
+        if self.body:
+            new_kid.append(self.gen_token(Tok.LBRACE))
+            new_kid.append(self.body)
+            new_kid.append(self.gen_token(Tok.RBRACE))
+        else:
+            new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class ArchDef(ArchSpec, AstImplOnlyNode):
@@ -1533,6 +1582,23 @@ class AssertStmt(CodeBlockStmt):
         self.condition = condition
         self.error_msg = error_msg
         AstNode.__init__(self, kid=kid)
+    
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize assert statement node."""
+        res = True
+        if deep:
+            res = self.condition.normalize(deep)
+            res = res and self.error_msg.normalize(deep) if self.error_msg else res
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_ASSERT),
+            self.condition,
+        ]
+        if self.error_msg:
+            new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(self.error_msg)
+        new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class CtrlStmt(CodeBlockStmt):
@@ -2151,12 +2217,12 @@ class InnerCompr(AstAsyncNode):
         if deep:
             res = self.target.normalize(deep)
             res = res and self.collection.normalize(deep)
-            for cond in self.conditional:
-                res = res and cond.normalize(deep)
+            if self.conditional:
+                for cond in self.conditional:
+                    res = res and cond.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
-        #kw_for
         new_kid.append(self.gen_token(Tok.KW_FOR)) 
         new_kid.append(self.target)
         new_kid.append(self.gen_token(Tok.KW_IN))
@@ -2196,10 +2262,12 @@ class ListCompr(AtomExpr):
             for comp in self.compr:
                 res = res and comp.normalize(deep)
         new_kid: list[AstNode] = [
+            self.gen_token(Tok.LSQUARE),
             self.out_expr,
         ]
         for comp in self.compr:
             new_kid.append(comp)
+        new_kid.append(self.gen_token(Tok.RSQUARE))
         AstNode.__init__(self, kid=new_kid)
         return res
 
