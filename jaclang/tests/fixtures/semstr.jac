@@ -9,6 +9,8 @@ emotion {
 glob name: 'name of the user': str = 'John Doe',
     age: 'age of the user': int = 25;
 
+let something: 'something': str;
+
 node 'personality'
 personality{
     has niceness: 'how nice the user is': int,
