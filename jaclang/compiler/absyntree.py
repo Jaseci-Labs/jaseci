@@ -1625,7 +1625,6 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         if self.value:
             new_kid.append(self.value)
         AstNode.__init__(self, kid=new_kid)
-        print(self.kid)
         return res
 
 
@@ -1644,6 +1643,17 @@ class BinaryExpr(Expr):
         self.right = right
         self.op = op
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.left.normalize(deep)
+            res = res and self.right.normalize(deep) if self.right else res
+            res = res and self.op.normalize(deep) if self.op else res
+        new_kid: list[AstNode] = [self.left, self.op, self.right]
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class CompareExpr(Expr):
@@ -1706,6 +1716,16 @@ class UnaryExpr(Expr):
         self.operand = operand
         self.op = op
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.operand.normalize(deep)
+            res = res and self.op.normalize(deep) if self.op else res
+        new_kid: list[AstNode] = [self.op, self.operand]
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class IfElseExpr(Expr):
@@ -1982,6 +2002,22 @@ class AtomTrailer(Expr):
         self.is_attr = is_attr
         self.is_null_ok = is_null_ok
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+            res = res and self.right.normalize(deep) if self.right else res
+        new_kid: list[AstNode] = [self.target]
+        if self.is_null_ok:
+            new_kid.append(self.gen_token(Tok.NULL_OK))
+        if self.is_attr:
+            new_kid.append(self.gen_token(Tok.DOT))
+        if self.right:
+            new_kid.append(self.right)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class AtomUnit(Expr):
