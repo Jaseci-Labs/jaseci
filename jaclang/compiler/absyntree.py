@@ -1210,6 +1210,20 @@ class ElseStmt(AstNode):
         """Initialize else node."""
         self.body = body
         AstNode.__init__(self, kid=kid)
+    
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize else statement node."""
+        res = True
+        if deep:
+            res = self.body.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_ELSE),
+            self.gen_token(Tok.LBRACE),
+            self.body,
+            self.gen_token(Tok.RBRACE),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class ExprStmt(CodeBlockStmt):
@@ -1682,6 +1696,7 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.EQ))
         if self.value:
             new_kid.append(self.value)
+        new_kid.append(self.gen_token(Tok.SEMI))
         AstNode.__init__(self, kid=new_kid)
         return res
 
