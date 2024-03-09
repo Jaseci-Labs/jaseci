@@ -645,7 +645,6 @@ class Ability(
     def __init__(
         self,
         name_ref: NameSpec,
-        is_func: bool,
         is_async: bool,
         is_override: bool,
         is_static: bool,
@@ -660,7 +659,6 @@ class Ability(
     ) -> None:
         """Initialize func arch node."""
         self.name_ref = name_ref
-        self.is_func = is_func
         self.is_override = is_override
         self.is_static = is_static
         self.is_abstract = is_abstract
@@ -688,6 +686,11 @@ class Ability(
         if check:
             self.sym_type = SymbolType.METHOD
         return check
+
+    @property
+    def is_func(self) -> bool:
+        """Check if is func."""
+        return isinstance(self.body, FuncSignature)
 
     @property
     def is_genai_ability(self) -> bool:
@@ -1286,7 +1289,7 @@ class NonLocalStmt(GlobalStmt):
     """NonlocalStmt node type for Jac Ast."""
 
 
-class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
+class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
     """Assignment node type for Jac Ast."""
 
     def __init__(
@@ -1297,7 +1300,7 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         kid: Sequence[AstNode],
         mutable: bool = True,
         aug_op: Optional[Token] = None,
-        # TODO: Need the Semstring
+        semstr: Optional[String] = None,
     ) -> None:
         """Initialize assignment node."""
         self.target = target
@@ -1305,6 +1308,7 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         self.mutable = mutable
         self.aug_op = aug_op
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
