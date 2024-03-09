@@ -11,6 +11,8 @@ import mypy.nodes as mypyNode
 import mypy.types as mypyTypes
 import os
 
+import traceback
+
 
 class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
@@ -28,33 +30,53 @@ class FuseTypeInfoPass(Pass):
             getattr(self, type_handler_name)(node, mypy_type)
         else:
             self.__debug_print(
-                f'"mypyTypes::{mypy_type.__class__.__name__}" isn\'t supported yet'
+                f'{node.loc}"mypyTypes::{mypy_type.__class__.__name__}" isn\'t supported yet'
             )
 
     def __handle_node(func) -> None:
         def node_handler(self, node: ast.AstSymbolNode):
+            if not isinstance(node, ast.AstSymbolNode):
+                print(f"Warning {node.__class__.__name__} is not an AstSymbolNode")
             try:
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                 elif len(node.gen.mypy_ast) > 1:
                     self.__debug_print(
-                        f'jac node "{node.__class__.__name__}" has multiple mypy nodes associated to it'
+                        f'jac node "{node.loc}::{node.__class__.__name__}" has multiple mypy nodes associated to it'
                     )
                 else:
-                    self.__debug_print(
-                        f'jac node "{node.__class__.__name__}" doesn\'t have mypy node associated to it'
-                    )
+                    if hasattr(node, "value"):
+                        self.__debug_print(
+                            f'jac node "{node.loc}::{node.__class__.__name__}::{node.value}" doesn\'t have mypy node associated to it'
+                        )
+                    else:
+                        self.__debug_print(
+                            f'jac node "{node.loc}::{node.__class__.__name__}" doesn\'t have mypy node associated to it'
+                        )
             except AttributeError as e:
                 self.__debug_print(
                     f'Internal error happened while parsing "{e.obj.__class__.__name__}"'
                 )
-
+                traceback.print_exc()
+                print(e)
         return node_handler
+
+    def enter_import(self, node: ast.Import):
+        # Pruning the import nodes
+        self.prune()
 
     @__handle_node
     def enter_name(self, node: ast.Name) -> None:
         mypy_node = node.gen.mypy_ast[0].node
-        self.__call_type_handler(node, mypy_node.type)
+        if isinstance(mypy_node, (mypyNode.Var, mypyNode.FuncDef)):
+            self.__call_type_handler(node, mypy_node.type)
+        elif isinstance(mypy_node, mypyNode.MypyFile):
+            node.sym_info = ast.SymbolInfo("types.ModuleType")
+        else:
+            self.__debug_print(
+                f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported',
+                type(mypy_node),
+            )
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath):
@@ -82,7 +104,7 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_ability(self, node: ast.Ability) -> None:
-        self.__debug_print("Getting type not supported in", type(node))
+        self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)        
 
     @__handle_node
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
@@ -98,7 +120,7 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:
-        self.__debug_print("Getting type not supported in", type(node))
+        node.sym_info = ast.SymbolInfo("builtins.str")
 
     @__handle_node
     def enter_f_string(self, node: ast.FString) -> None:
@@ -152,18 +174,6 @@ class FuseTypeInfoPass(Pass):
     def enter_assign_compr(self, node: ast.AssignCompr) -> None:
         self.__debug_print("Getting type not supported in", type(node))
 
-    @__handle_node
-    def enter_func_call(self, node: ast.FuncCall) -> None:
-        mypy_node: mypyNode.CallExpr = node.gen.mypy_ast[0]
-        callee: mypyNode.NameExpr = mypy_node.callee
-        if isinstance(callee.node, (mypyNode.FuncDef, mypyNode.OverloadedFuncDef)):
-            self.__call_type_handler(node, callee.node.type)
-        else:
-            self.__debug_print(
-                f'"{node.__class__.__name__}" mypy node isn\'t "FuncDef"',
-                type(callee.node),
-            )
-
     def get_type_from_instance(
         self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Instance
     ):
@@ -174,7 +184,10 @@ class FuseTypeInfoPass(Pass):
     ):
         node.sym_info = ast.SymbolInfo(mypy_type.ret_type)
     
-    # def get_type_from_overloaded(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Overloaded):
-    #     node.sym_info = ast.SymbolInfo(mypy_type.ret_type)
-    #     self.__debug_print(f"\"{node.__class__.__name__}\" type is \"{mypy_type.ret_type}\"")
-    #     # self.__debug_print(id(node))
+    # TODO: Which overloaded function to get the return value from?
+    def get_type_from_overloaded(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Overloaded):
+        self.__call_type_handler(node, mypy_type.items[0])
+    
+    def get_type_from_none_type(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.NoneType):
+        # expected type is none, no need to do anything
+        pass
