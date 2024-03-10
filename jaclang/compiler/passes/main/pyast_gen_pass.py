@@ -1447,7 +1447,7 @@ class PyastGenPass(Pass):
             (
                 node.type_tag.tag.value
                 if node.type_tag and isinstance(node.type_tag.tag, ast.Name)
-                else ""
+                else None
             ),
             node.semstr.lit_value if node.semstr else "",
         )
@@ -1945,9 +1945,9 @@ class PyastGenPass(Pass):
         type_tag: Optional[SubTag[ExprType]],
         mutable: bool =True,
         """
-        assign_target=''
+        assign_target = ""
         if node.type_tag:
-            assign_target=node.target.items[0].value
+            assign_target = node.target.items[0].value
             node.gen.py_ast = [
                 self.sync(
                     ast3.AnnAssign(
@@ -1971,7 +1971,7 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
-            assign_target=node.target.items[0].value  
+            assign_target = node.target.items[0].value
             node.gen.py_ast = [
                 self.sync(
                     ast3.Assign(
@@ -1981,13 +1981,13 @@ class PyastGenPass(Pass):
             ]
 
         self.set_register(
-            assign_target ,
+            assign_target,
             self.get_scope(node),
-            "Some Type",
+            None,
             node.semstr.lit_value if node.semstr else "",
         )
 
-    def set_register(self, key: str, scope: str, type: str, semstr: str) -> None:
+    def set_register(self, key: str, scope: str, type: str | None, semstr: str) -> None:
         """Set register."""
         if scope in self.registry:
             self.registry[scope][key] = (type, semstr)
