@@ -3302,6 +3302,17 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        if (
+            node.parent
+            and node.parent.parent
+            and node.parent.parent.__class__.__name__ == "Enum"
+        ):
+            self.set_register(
+                node.value,
+                self.get_scope(node),
+                None,
+                "",  # TODO: semstr from enum items
+            )
         node.gen.py_ast = [
             self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
         ]
