@@ -1977,7 +1977,12 @@ class PyastGenPass(Pass):
                 )
             ]
 
-        self.set_register("Hello", self.get_scope(node), "Some Type", "Hello World")
+        self.set_register(
+            "Hello",
+            self.get_scope(node),
+            "Some Type",
+            node.semstr.lit_value if node.semstr else "",
+        )
 
     def set_register(self, key: str, scope: str, type: str, semstr: str) -> None:
         """Set register."""
