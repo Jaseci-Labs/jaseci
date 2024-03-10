@@ -1945,7 +1945,9 @@ class PyastGenPass(Pass):
         type_tag: Optional[SubTag[ExprType]],
         mutable: bool =True,
         """
+        assign_target=''
         if node.type_tag:
+            assign_target=node.target.items[0].value
             node.gen.py_ast = [
                 self.sync(
                     ast3.AnnAssign(
@@ -1969,6 +1971,7 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
+            assign_target=node.target.items[0].value  
             node.gen.py_ast = [
                 self.sync(
                     ast3.Assign(
@@ -1978,7 +1981,7 @@ class PyastGenPass(Pass):
             ]
 
         self.set_register(
-            "Hello",
+            assign_target ,
             self.get_scope(node),
             "Some Type",
             node.semstr.lit_value if node.semstr else "",
