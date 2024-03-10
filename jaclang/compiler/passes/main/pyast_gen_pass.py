@@ -716,25 +716,24 @@ class PyastGenPass(Pass):
 
     def get_scope(self, node: ast.AstNode) -> str:
         """Get scope."""
-        main_path = ""
-        if node.parent:
-            main_path = self.get_scope(node.parent)
-        if isinstance(node, (ast.Architype, ast.Enum)):
-            node_type = (
-                node.__class__.__name__
-                if isinstance(node, (ast.Module, ast.Enum))
-                else node.arch_type.value
+        a = (
+            node.name
+            if isinstance(node, (ast.Module))
+            else (
+                node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
             )
-            main_path += (
-                f".{node.name.value}({node_type})"
-                if not isinstance(node.parent, ast.Module)
-                else ""
-            )
-        return (
-            main_path
-            if not isinstance(node, ast.Module)
-            else f"{node.name}(module){main_path}"
         )
+        main_path = ""
+        while node:
+            if isinstance(node, (ast.Module)):
+                main_path = f"{node.name}({node.__class__.__name__}).{main_path}"
+            elif isinstance(node, (ast.Enum, ast.Architype)) and a != node.name.value:
+                main_path = f"{node.name.value}({node.__class__.__name__}).{main_path}"
+            if node.parent:
+                node = node.parent
+            else:
+                break
+        return main_path
 
     def collect_events(
         self, node: ast.Architype
