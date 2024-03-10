@@ -1947,7 +1947,11 @@ class PyastGenPass(Pass):
         """
         assign_target = ""
         if node.type_tag:
-            assign_target = node.target.items[0].value
+            assign_target = (
+                node.target.items[0].value
+                if isinstance(node.target.items[0], ast.Name)
+                else ""
+            )
             node.gen.py_ast = [
                 self.sync(
                     ast3.AnnAssign(
@@ -1971,7 +1975,11 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
-            assign_target = node.target.items[0].value
+            assign_target = (
+                node.target.items[0].value
+                if isinstance(node.target.items[0], ast.Name)
+                else ""
+            )
             node.gen.py_ast = [
                 self.sync(
                     ast3.Assign(
