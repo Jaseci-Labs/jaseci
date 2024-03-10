@@ -738,7 +738,7 @@ class PyastGenPass(Pass):
                 node = node.parent
             else:
                 break
-        return main_path
+        return main_path[:-1]
 
     def collect_events(
         self, node: ast.Architype

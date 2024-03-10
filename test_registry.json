@@ -1,11 +1,11 @@
 {
-  "test(module)": {
+  "test(Module)": {
     "model": [
       "obj",
       ""
     ],
     "llm": [
-      "model",
+      null,
       ""
     ],
     "Person": [
@@ -19,9 +19,13 @@
     "personality_examples": [
       "dict[str, Personality]",
       "Personality Information of Famous People"
+    ],
+    "einstein": [
+      null,
+      ""
     ]
   },
-  "test(module).Person": {
+  "test(Module).Person(obj)": {
     "name": [
       "str",
       "Name of the Person"
@@ -29,16 +33,6 @@
     "age": [
       "int",
       "Age of the Person"
-    ]
-  },
-  "test(module).Personality": {
-    "INTROVERT": [
-      "",
-      "Person who is shy and reticent"
-    ],
-    "EXTROVERT": [
-      "",
-      "Person who is outgoing and socially confident"
     ]
   }
 }
