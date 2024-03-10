@@ -1,6 +1,7 @@
 """Utility functions and classes for Jac compilation toolchain."""
 
 import os
+import pdb
 import re
 
 
@@ -104,3 +105,15 @@ def import_target_to_relative_path(
         base_path = os.path.dirname(base_path)
     relative_path = os.path.join(base_path, *actual_parts) + file_extension
     return relative_path
+
+
+class Jdb(pdb.Pdb):
+    """Jac debugger."""
+
+    def __init__(self, *args, **kwargs) -> None:  # noqa
+        """Initialize the Jac debugger."""
+        super().__init__(*args, **kwargs)
+        self.prompt = "Jdb > "
+
+
+debugger = Jdb()
