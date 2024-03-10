@@ -728,7 +728,12 @@ class PyastGenPass(Pass):
             if isinstance(node, (ast.Module)):
                 main_path = f"{node.name}({node.__class__.__name__}).{main_path}"
             elif isinstance(node, (ast.Enum, ast.Architype)) and a != node.name.value:
-                main_path = f"{node.name.value}({node.__class__.__name__}).{main_path}"
+                node_type = (
+                    node.__class__.__name__
+                    if isinstance(node, ast.Enum)
+                    else node.arch_type.value
+                )
+                main_path = f"{node.name.value}({node_type}).{main_path}"
             if node.parent:
                 node = node.parent
             else:
@@ -1439,7 +1444,11 @@ class PyastGenPass(Pass):
         self.set_register(
             node.name.value,
             self.get_scope(node),
-            "",
+            (
+                node.type_tag.tag.value
+                if node.type_tag and isinstance(node.type_tag.tag, ast.Name)
+                else ""
+            ),
             node.semstr.lit_value if node.semstr else "",
         )
 
