@@ -103,6 +103,12 @@ class AstNode:
 
         return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
+    def format(self) -> str:
+        """Get all sub nodes of type."""
+        from jaclang.compiler.passes.tool import JacFormatPass
+
+        return JacFormatPass(self, None).ir.gen.jac
+
     def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""
         ret = {
@@ -339,8 +345,9 @@ class SubNodeList(AstNode, Generic[T]):
             new_kid.append(i)
             if self.delim:
                 new_kid.append(self.gen_token(self.delim))
-        new_kid.pop()
-        AstNode.__init__(self, kid=new_kid)
+        if self.delim and self.items:
+            new_kid.pop()
+        AstNode.__init__(self, kid=new_kid if len(new_kid) else [EmptyToken()])
         return res
 
 
@@ -384,6 +391,11 @@ class Module(AstDocNode):
         new_kid.extend(self.body)
         AstNode.__init__(self, kid=new_kid)
         return res
+
+    def unparse(self) -> str:
+        """Unparse module node."""
+        super().unparse()
+        return self.format()
 
 
 class GlobalVars(ElementStmt, AstAccessNode):
@@ -1136,11 +1148,10 @@ class FuncSignature(AstSemStrNode):
             res = self.params.normalize(deep) if self.params else res
             res = res and self.return_type.normalize(deep) if self.return_type else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-        new_kid: list[AstNode] = []
+        new_kid: list[AstNode] = [self.gen_token(Tok.LPAREN)]
         if self.params:
-            new_kid.append(self.gen_token(Tok.LPAREN))
             new_kid.append(self.params)
-            new_kid.append(self.gen_token(Tok.RPAREN))
+        new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))
             new_kid.append(self.return_type)
@@ -1238,7 +1249,6 @@ class ArchRefChain(AstNode):
         new_kid: list[AstNode] = []
         for a in self.archs:
             new_kid.append(a)
-        new_kid.pop()
         AstNode.__init__(self, kid=new_kid)
         return res
 
@@ -1543,7 +1553,7 @@ class ExprStmt(CodeBlockStmt):
             self,
             kid=(
                 [self.expr, self.gen_token(Tok.SEMI)]
-                if self.in_fstring
+                if not self.in_fstring
                 else [self.expr]
             ),
         )
@@ -2233,7 +2243,6 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.EQ))
         if self.value:
             new_kid.append(self.value)
-        new_kid.append(self.gen_token(Tok.SEMI))
         AstNode.__init__(self, kid=new_kid)
         return res
 

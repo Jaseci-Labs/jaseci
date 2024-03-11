@@ -35,16 +35,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def convert(self, node: py_ast.AST) -> ast.AstNode:
         """Get python node type."""
-        print(
-            f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
-        )
+        # print(
+        #     f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
+        # )
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
-        print(f"finshed {type(node).__name__} ---------------------")
-        print("normalizing", ret.__class__.__name__)
-        print(ret.unparse())
+        # print(f"finshed {type(node).__name__} ---------------------")
+        # print("normalizing", ret.__class__.__name__)
+        # print(ret.unparse())
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
@@ -109,6 +109,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
+        print(ret.unparse())
         return self.nu(ret)
 
     def proc_function_def(
@@ -296,7 +297,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         value = self.convert(node.value) if node.value else None
         if value and isinstance(value, ast.Expr):
-            return ast.ReturnStmt(expr=value , kid=[value])
+            return ast.ReturnStmt(expr=value, kid=[value])
         else:
             raise self.ice("Invalid return value")
 
