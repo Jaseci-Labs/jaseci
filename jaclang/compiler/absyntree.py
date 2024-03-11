@@ -534,10 +534,9 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
-            new_kid.append(self.gen_token(Tok.KW_WITH))
-            new_kid.append(self.gen_token(Tok.KW_ENTRY))
+        new_kid.append(self.gen_token(Tok.KW_WITH))
+        new_kid.append(self.gen_token(Tok.KW_ENTRY))
         if self.name:
-            new_kid.append(self.gen_token(Tok.COLON))
             new_kid.append(self.name)
 
         new_kid.append(self.body)
@@ -1214,9 +1213,10 @@ class EventSignature(AstSemStrNode):
             )
             res = res and self.return_type.normalize(deep) if self.return_type else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-        new_kid: list[AstNode] = [self.event]
+        new_kid: list[AstNode] = [self.gen_token(Tok.KW_WITH)]
         if self.arch_tag_info:
             new_kid.append(self.arch_tag_info)
+        new_kid.append(self.event)
         if self.return_type:
             if self.semstr:
                 new_kid.append(self.semstr)
@@ -1707,9 +1707,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.condition)
         new_kid.append(self.gen_token(Tok.KW_BY))
         new_kid.append(self.count_by)
-
         new_kid.append(self.body)
-
         if self.else_body:
             new_kid.append(self.else_body)
         AstNode.__init__(self, kid=new_kid)
@@ -2241,6 +2239,8 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.EQ))
         if self.value:
             new_kid.append(self.value)
+        if not isinstance(self.parent, (GlobalVars)):
+            new_kid.append(self.gen_token(Tok.SEMI))
         AstNode.__init__(self, kid=new_kid)
         return res
 
