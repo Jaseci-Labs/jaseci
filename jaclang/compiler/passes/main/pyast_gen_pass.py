@@ -2299,13 +2299,6 @@ class PyastGenPass(Pass):
             else [self.sync(ast3.Constant(value=""))]
         )
 
-    def exit_expr_list(self, node: ast.ExprList) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType]],
-        """
-        node.gen.py_ast = node.values.gen.py_ast if node.values else []
-
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 

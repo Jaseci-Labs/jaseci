@@ -2394,7 +2394,7 @@ class JacParser(Pass):
                     and isinstance(kid[1], (ast.Expr, ast.YieldExpr))
                     and isinstance(kid[2], ast.Token)
                 ):
-                    ret = ast.AtomUnit(value=kid[1], is_paren=True, kid=kid)
+                    ret = ast.AtomUnit(value=kid[1], kid=kid)
                     return self.nu(ret)
                 else:
                     raise self.ice()
@@ -3191,8 +3191,7 @@ class JacParser(Pass):
         def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
             """Grammar rule.
 
-            edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression?
-                (edge_op_ref (NODE_OP? expression)?)+ RSQUARE
+            (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
             """
             valid_chain = [i for i in kid if isinstance(i, (ast.Expr, ast.FilterCompr))]
             return self.nu(
@@ -3259,7 +3258,7 @@ class JacParser(Pass):
         def connect_op(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
 
-            connect_op: EDGE_OP? (connect_from | connect_to)
+            connect_op: connect_from | connect_to | connect_any
             """
             if len(kid) < 2 and isinstance(kid[0], ast.ConnectOp):
                 return self.nu(kid[0])
@@ -3445,7 +3444,7 @@ class JacParser(Pass):
         def assign_compr(self, kid: list[ast.AstNode]) -> ast.AssignCompr:
             """Grammar rule.
 
-            filter_compr: LPAREN STAR_MUL kw_expr_list RPAREN
+            filter_compr: LPAREN EQ kw_expr_list RPAREN
             """
             if isinstance(kid[2], ast.SubNodeList):
                 return self.nu(

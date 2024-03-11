@@ -502,22 +502,6 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         self.body = body
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
-    
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize module code node."""
-        res = True
-        if deep:
-            res = self.name.normalize(deep) if self.name else res
-            res = res and self.body.normalize(deep)
-            res = res and self.doc.normalize(deep) if self.doc else res
-        new_kid: list[AstNode] = []
-        if self.doc:
-            new_kid.append(self.doc)
-        if self.name:
-            new_kid.append(self.name)
-        new_kid.append(self.body)
-        AstNode.__init__(self, kid=new_kid)
-        return res
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module code node."""
@@ -769,39 +753,6 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             else self.body.body.items if isinstance(self.body, ArchDef) else []
         )
         return any(isinstance(i, Ability) and i.is_abstract for i in body)
-    
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
-        res = True
-        if deep:
-            res = self.name.normalize(deep)
-            res = res and self.arch_type.normalize(deep)
-            res = res and self.base_classes.normalize(deep) if self.base_classes else res
-            res = res and self.body.normalize(deep) if self.body else res
-            res = res and self.doc.normalize(deep) if self.doc else res
-            res = res and self.semstr.normalize(deep) if self.semstr else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
-        new_kid: list[AstNode] = []
-        if self.doc:
-            new_kid.append(self.doc)
-        new_kid.append(self.arch_type)
-        if self.access:
-            new_kid.append(self.access)
-        new_kid.append(self.name)
-        if self.base_classes:
-            # new_kid.append(self.gen_token(Tok.))
-            new_kid.append(self.base_classes)
-            # new_kid.append(self.gen_token(Tok.))
-        if self.semstr:
-            new_kid.append(self.semstr)
-        if self.body:
-            new_kid.append(self.gen_token(Tok.LBRACE))
-            new_kid.append(self.body)
-            new_kid.append(self.gen_token(Tok.RBRACE))
-        else:
-            new_kid.append(self.gen_token(Tok.SEMI))
-        AstNode.__init__(self, kid=new_kid)
-        return res
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize architype node."""
@@ -1378,6 +1329,30 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize has statement node."""
+        res = True
+        if deep:
+            res = self.access.normalize(deep) if self.access else res
+            res = res and self.vars.normalize(deep) if self.vars else res
+            res = res and self.doc.normalize(deep) if self.doc else res
+        new_kid: list[AstNode] = []
+        if self.doc:
+            new_kid.append(self.doc)
+        if self.is_static:
+            new_kid.append(self.gen_token(Tok.KW_STATIC))
+        (
+            new_kid.append(self.gen_token(Tok.KW_LET))
+            if self.is_frozen
+            else new_kid.append(self.gen_token(Tok.KW_HAS))
+        )
+        if self.access:
+            new_kid.append(self.access)
+        new_kid.append(self.vars)
+        new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
     """HasVar node type for Jac Ast."""
@@ -1405,6 +1380,29 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         AstTypedVarNode.__init__(self, type_tag=type_tag)
         AstSemStrNode.__init__(self, semstr=semstr)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize has var node."""
+        res = True
+        if deep:
+            res = self.name.normalize(deep)
+            res = res and self.type_tag.normalize(deep) if self.type_tag else res
+            res = res and self.value.normalize(deep) if self.value else res
+            res = res and self.semstr.normalize(deep) if self.semstr else res
+        new_kid: list[AstNode] = [self.name]
+        if self.semstr:
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(self.semstr)
+        if self.type_tag:
+            new_kid.append(self.type_tag)
+        if self.value:
+            new_kid.append(self.gen_token(Tok.EQ))
+            new_kid.append(self.value)
+        if self.defer:
+            new_kid.append(self.gen_token(Tok.KW_BY))
+            new_kid.append(self.gen_token(Tok.KW_POST_INIT))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class TypedCtxBlock(CodeBlockStmt):
     """TypedCtxBlock node type for Jac Ast."""
@@ -1419,6 +1417,22 @@ class TypedCtxBlock(CodeBlockStmt):
         self.type_ctx = type_ctx
         self.body = body
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize typed context block node."""
+        res = True
+        if deep:
+            res = self.type_ctx.normalize(deep)
+            res = res and self.body.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.RETURN_HINT),
+            self.type_ctx,
+            self.gen_token(Tok.LBRACE),
+            self.body,
+            self.gen_token(Tok.RBRACE),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class IfStmt(CodeBlockStmt, AstElseBodyNode):
@@ -1460,6 +1474,25 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode):
 class ElseIf(IfStmt):
     """ElseIfs node type for Jac Ast."""
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize else if statement node."""
+        res = True
+        if deep:
+            res = self.condition.normalize(deep)
+            res = res and self.body.normalize(deep)
+            res = res and self.else_body.normalize(deep) if self.else_body else res
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_ELIF),
+            self.condition,
+            self.gen_token(Tok.LBRACE),
+            self.body,
+            self.gen_token(Tok.RBRACE),
+        ]
+        if self.else_body:
+            new_kid.append(self.else_body)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class ElseStmt(AstNode):
     """Else node type for Jac Ast."""
@@ -1472,23 +1505,9 @@ class ElseStmt(AstNode):
         """Initialize else node."""
         self.body = body
         AstNode.__init__(self, kid=kid)
-    
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize else statement node."""
-        res = True
-        if deep:
-            res = self.body.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.KW_ELSE),
-            self.gen_token(Tok.LBRACE),
-            self.body,
-            self.gen_token(Tok.RBRACE),
-        ]
-        AstNode.__init__(self, kid=new_kid)
-        return res
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize else node."""
+        """Normalize else statement node."""
         res = True
         if deep:
             res = self.body.normalize(deep)
@@ -1520,7 +1539,14 @@ class ExprStmt(CodeBlockStmt):
         """Normalize ast node."""
         if deep:
             res = self.expr.normalize(deep)
-        AstNode.__init__(self, kid=[self.expr, self.gen_token(Tok.SEMI)])
+        AstNode.__init__(
+            self,
+            kid=(
+                [self.expr, self.gen_token(Tok.SEMI)]
+                if self.in_fstring
+                else [self.expr]
+            ),
+        )
         return res and self.expr is not None
 
 
@@ -1599,8 +1625,7 @@ class Except(CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.name)
         new_kid.append(self.gen_token(Tok.LBRACE))
-        if self.body:
-            new_kid.append(self.body)
+        new_kid.append(self.body)
         new_kid.append(self.gen_token(Tok.RBRACE))
         AstNode.__init__(self, kid=new_kid)
         return res
@@ -1617,6 +1642,20 @@ class FinallyStmt(CodeBlockStmt):
         """Initialize finally statement node."""
         self.body = body
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize finally statement node."""
+        res = True
+        if deep:
+            res = self.body.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_FINALLY),
+            self.gen_token(Tok.LBRACE),
+        ]
+        new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
@@ -1640,6 +1679,32 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize iter for node."""
+        res = True
+        if deep:
+            res = self.iter.normalize(deep)
+            res = self.condition.normalize(deep)
+            res = self.count_by.normalize(deep)
+            res = self.body.normalize(deep)
+            res = self.else_body.normalize(deep) if self.else_body else res
+        new_kid: list[AstNode] = []
+        if self.is_async:
+            new_kid.append(self.gen_token(Tok.KW_ASYNC))
+        new_kid.append(self.gen_token(Tok.KW_FOR))
+        new_kid.append(self.iter)
+        new_kid.append(self.gen_token(Tok.KW_TO))
+        new_kid.append(self.condition)
+        new_kid.append(self.gen_token(Tok.KW_BY))
+        new_kid.append(self.count_by)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        if self.else_body:
+            new_kid.append(self.else_body)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
@@ -1701,7 +1766,6 @@ class WhileStmt(CodeBlockStmt):
         self.body = body
         AstNode.__init__(self, kid=kid)
 
-    
     def normalize(self, deep: bool = False) -> bool:
         """Normalize while statement node."""
         res = True
@@ -1735,6 +1799,23 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         self.body = body
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize with statement node."""
+        res = True
+        if deep:
+            res = self.exprs.normalize(deep)
+            res = res and self.body.normalize(deep)
+        new_kid: list[AstNode] = []
+        if self.is_async:
+            new_kid.append(self.gen_token(Tok.KW_ASYNC))
+        new_kid.append(self.gen_token(Tok.KW_WITH))
+        new_kid.append(self.exprs)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class ExprAsItem(AstNode):
@@ -1809,7 +1890,7 @@ class AssertStmt(CodeBlockStmt):
         self.condition = condition
         self.error_msg = error_msg
         AstNode.__init__(self, kid=kid)
-    
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize assert statement node."""
         res = True
@@ -1862,6 +1943,19 @@ class DeleteStmt(CodeBlockStmt):
         self.target = target
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize delete statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_DELETE),
+            self.target,
+            self.gen_token(Tok.SEMI),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class ReportStmt(CodeBlockStmt):
     """ReportStmt node type for Jac Ast."""
@@ -1875,6 +1969,19 @@ class ReportStmt(CodeBlockStmt):
         self.expr = expr
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize report statement node."""
+        res = True
+        if deep:
+            res = self.expr.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_REPORT),
+            self.expr,
+            self.gen_token(Tok.SEMI),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class ReturnStmt(CodeBlockStmt):
     """ReturnStmt node type for Jac Ast."""
@@ -1887,7 +1994,7 @@ class ReturnStmt(CodeBlockStmt):
         """Initialize return statement node."""
         self.expr = expr
         AstNode.__init__(self, kid=kid)
-    
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize return statement node."""
         res = True
@@ -1916,6 +2023,19 @@ class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ignore statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_IGNORE),
+            self.target,
+            self.gen_token(Tok.SEMI),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     """VisitStmt node type for Jac Ast."""
@@ -1934,6 +2054,26 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize visit statement node."""
+        res = True
+        if deep:
+            res = self.vis_type.normalize(deep) if self.vis_type else res
+            res = self.target.normalize(deep)
+            res = res and self.else_body.normalize(deep) if self.else_body else res
+        new_kid: list[AstNode] = []
+        new_kid.append(self.gen_token(Tok.KW_VISIT))
+        if self.vis_type:
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(self.vis_type)
+            new_kid.append(self.gen_token(Tok.COLON))
+        new_kid.append(self.target)
+        new_kid.append(self.gen_token(Tok.SEMI))
+        if self.else_body:
+            new_kid.append(self.else_body)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     """ReVisitStmt node type for Jac Ast."""
@@ -1950,6 +2090,21 @@ class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize revisit statement node."""
+        res = True
+        if deep:
+            res = self.hops.normalize(deep) if self.hops else res
+            res = res and self.else_body.normalize(deep) if self.else_body else res
+        new_kid: list[AstNode] = [self.gen_token(Tok.KW_REVISIT)]
+        if self.hops:
+            new_kid.append(self.hops)
+        if self.else_body:
+            new_kid.append(self.else_body)
+        new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
     """DisengageStmt node type for Jac Ast."""
@@ -1961,6 +2116,15 @@ class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         """Initialize disengage statement node."""
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize disengage statement node."""
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_DISENGAGE),
+            self.gen_token(Tok.SEMI),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return True
 
 
 class AwaitExpr(Expr):
@@ -1975,6 +2139,18 @@ class AwaitExpr(Expr):
         self.target = target
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize sync statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_AWAIT),
+            self.target,
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class GlobalStmt(CodeBlockStmt):
     """GlobalStmt node type for Jac Ast."""
@@ -1988,9 +2164,35 @@ class GlobalStmt(CodeBlockStmt):
         self.target = target
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize global statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.GLOBAL_OP),
+            self.target,
+            self.gen_token(Tok.SEMI),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class NonLocalStmt(GlobalStmt):
     """NonlocalStmt node type for Jac Ast."""
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize nonlocal statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.NONLOCAL_OP),
+            self.target,
+            self.gen_token(Tok.SEMI),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
@@ -2147,6 +2349,22 @@ class LambdaExpr(Expr):
         self.body = body
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.signature.normalize(deep)
+            res = res and self.body.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_WITH),
+            self.signature,
+            self.gen_token(Tok.KW_CAN),
+            self.body,
+            self.gen_token(Tok.SEMI),
+        ]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class UnaryExpr(Expr):
     """ExprUnary node type for Jac Ast."""
@@ -2224,7 +2442,7 @@ class MultiString(AtomExpr):
             sym_name_node=self,
             sym_type=SymbolType.STRING,
         )
-    
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
@@ -2256,18 +2474,16 @@ class FString(AstSymbolNode):
             sym_type=SymbolType.STRING,
         )
 
-
-class ExprList(AstNode):
-    """ExprList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        values: Optional[SubNodeList[Expr]],
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize expr value node."""
-        self.values = values
-        AstNode.__init__(self, kid=kid)
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.parts.normalize(deep) if self.parts else res
+        new_kid: list[AstNode] = []
+        if self.parts:
+            new_kid.append(self.parts)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class ListVal(AtomExpr):
@@ -2320,6 +2536,20 @@ class SetVal(AtomExpr):
             sym_name_node=self,
             sym_type=SymbolType.SEQUENCE,
         )
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.values.normalize(deep) if self.values else res
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.LBRACE),
+        ]
+        if self.values:
+            new_kid.append(self.values)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class TupleVal(AtomExpr):
@@ -2375,6 +2605,23 @@ class DictVal(AtomExpr):
             sym_type=SymbolType.SEQUENCE,
         )
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            for kv_pair in self.kv_pairs:
+                res = res and kv_pair.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.LBRACE),
+        ]
+        for kv_pair in self.kv_pairs:
+            new_kid.append(kv_pair)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        new_kid.pop()
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class KVPair(AstNode):
     """ExprKVPair node type for Jac Ast."""
@@ -2390,6 +2637,22 @@ class KVPair(AstNode):
         self.value = value
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.key.normalize(deep) if self.key else res
+            res = res and self.value.normalize(deep)
+        new_kid: list[AstNode] = []
+        if self.key:
+            new_kid.append(self.key)
+            new_kid.append(self.gen_token(Tok.COLON))
+        else:
+            new_kid.append(self.gen_token(Tok.STAR_POW))
+        new_kid.append(self.value)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class KWPair(AstNode):
     """ExprKWPair node type for Jac Ast."""
@@ -2404,7 +2667,7 @@ class KWPair(AstNode):
         self.key = key
         self.value = value
         AstNode.__init__(self, kid=kid)
-    
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
@@ -2437,28 +2700,6 @@ class InnerCompr(AstAsyncNode):
         self.conditional = conditional
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
-    
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
-        res = True
-        if deep:
-            res = self.target.normalize(deep)
-            res = res and self.collection.normalize(deep)
-            if self.conditional:
-                for cond in self.conditional:
-                    res = res and cond.normalize(deep)
-        new_kid: list[AstNode] = []
-        if self.is_async:
-            new_kid.append(self.gen_token(Tok.KW_ASYNC))
-        new_kid.append(self.gen_token(Tok.KW_FOR)) 
-        new_kid.append(self.target)
-        new_kid.append(self.gen_token(Tok.KW_IN))
-        new_kid.append(self.collection)
-        if self.conditional:
-            for cond in self.conditional:
-                new_kid.append(cond)
-        AstNode.__init__(self, kid=new_kid)
-        return res
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2521,20 +2762,6 @@ class ListCompr(AtomExpr):
 
 class GenCompr(ListCompr):
     """GenCompr node type for Jac Ast."""
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
-        res = True
-        if deep:
-            res = self.out_expr.normalize(deep)
-            for comp in self.compr:
-                res = res and comp.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.out_expr,
-        ]
-        for comp in self.compr:
-            new_kid.append(comp)
-        AstNode.__init__(self, kid=new_kid)
-        return res
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2653,13 +2880,23 @@ class AtomUnit(Expr):
     def __init__(
         self,
         value: Expr | YieldExpr,
-        is_paren: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom unit expression node."""
         self.value = value
-        self.is_paren = is_paren
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.value.normalize(deep)
+        new_kid: list[AstNode] = []
+        new_kid.append(self.gen_token(Tok.LPAREN))
+        new_kid.append(self.value)
+        new_kid.append(self.gen_token(Tok.RPAREN))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class YieldExpr(Expr):
@@ -2675,6 +2912,20 @@ class YieldExpr(Expr):
         self.expr = expr
         self.with_from = with_from
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize yield statement node."""
+        res = True
+        if deep:
+            res = self.expr.normalize(deep) if self.expr else res
+        new_kid: list[AstNode] = [self.gen_token(Tok.KW_YIELD)]
+        if self.with_from:
+            new_kid.append(self.gen_token(Tok.KW_FROM))
+        if self.expr:
+            new_kid.append(self.expr)
+        new_kid.append(self.gen_token(Tok.SEMI))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class FuncCall(Expr):
@@ -2774,6 +3025,15 @@ class ArchRef(NameSpec):
             sym_type=SymbolType.TYPE,
         )
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.name_ref.normalize(deep)
+        new_kid: list[AstNode] = [self.arch, self.name_ref]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
     def py_resolve_name(self) -> str:
         """Resolve name."""
         if isinstance(self.name_ref, Name):
@@ -2801,6 +3061,15 @@ class SpecialVarRef(NameSpec):
             sym_name_node=var,
             sym_type=SymbolType.VAR,
         )
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.var.normalize(deep)
+        new_kid: list[AstNode] = [self.var]
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
@@ -2834,6 +3103,21 @@ class EdgeRefTrailer(Expr):
         self.edges_only = edges_only
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = True) -> bool:
+        """Normalize ast node."""
+        res = True
+        for expr in self.chain:
+            res = res and expr.normalize(deep)
+        new_kid: list[AstNode] = []
+        if self.edges_only:
+            new_kid.append(self.gen_token(Tok.EDGE_OP))
+        self.gen_token(Tok.LSQUARE)
+        for expr in self.chain:
+            new_kid.append(expr)
+        self.gen_token(Tok.RSQUARE)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
     """EdgeOpRef node type for Jac Ast."""
@@ -2856,6 +3140,36 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
             sym_type=SymbolType.SEQUENCE,
         )
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.filter_cond.normalize(deep) if self.filter_cond else res
+        new_kid: list[AstNode] = []
+        if self.edge_dir == EdgeDir.IN:
+            if not self.filter_cond:
+                new_kid.append(self.gen_token(Tok.ARROW_L))
+            else:
+                new_kid.append(self.gen_token(Tok.ARROW_L_P1))
+                new_kid.append(self.filter_cond)
+                new_kid.append(self.gen_token(Tok.ARROW_L_P2))
+        elif self.edge_dir == EdgeDir.OUT:
+            if not self.filter_cond:
+                new_kid.append(self.gen_token(Tok.ARROW_R))
+            else:
+                new_kid.append(self.gen_token(Tok.ARROW_R_P1))
+                new_kid.append(self.filter_cond)
+                new_kid.append(self.gen_token(Tok.ARROW_R_P2))
+        else:
+            if not self.filter_cond:
+                new_kid.append(self.gen_token(Tok.ARROW_BI))
+            else:
+                new_kid.append(self.gen_token(Tok.ARROW_L_P1))
+                new_kid.append(self.filter_cond)
+                new_kid.append(self.gen_token(Tok.ARROW_R_P2))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class DisconnectOp(WalkerStmtOnlyNode):
     """DisconnectOpRef node type for Jac Ast."""
@@ -2869,6 +3183,15 @@ class DisconnectOp(WalkerStmtOnlyNode):
         self.edge_spec = edge_spec
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.edge_spec.normalize(deep)
+        new_kid: list[AstNode] = [self.gen_token(Tok.NOT), self.edge_spec]
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class ConnectOp(AstNode):
@@ -2886,6 +3209,49 @@ class ConnectOp(AstNode):
         self.conn_assign = conn_assign
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.conn_type.normalize(deep) if self.conn_type else res
+            res = res and self.conn_assign.normalize(deep) if self.conn_assign else res
+        new_kid: list[AstNode] = []
+        if self.edge_dir == EdgeDir.IN:
+            if not self.conn_assign and not self.conn_type:
+                new_kid.append(self.gen_token(Tok.CARROW_L))
+            else:
+                new_kid.append(self.gen_token(Tok.CARROW_L_P1))
+                if self.conn_type:
+                    new_kid.append(self.conn_type)
+                if self.conn_assign:
+                    new_kid.append(self.gen_token(Tok.COLON))
+                    new_kid.append(self.conn_assign)
+                new_kid.append(self.gen_token(Tok.CARROW_L_P2))
+        elif self.edge_dir == EdgeDir.OUT:
+            if not self.conn_assign and not self.conn_type:
+                new_kid.append(self.gen_token(Tok.CARROW_R))
+            else:
+                new_kid.append(self.gen_token(Tok.CARROW_R_P1))
+                if self.conn_type:
+                    new_kid.append(self.conn_type)
+                if self.conn_assign:
+                    new_kid.append(self.gen_token(Tok.COLON))
+                    new_kid.append(self.conn_assign)
+                new_kid.append(self.gen_token(Tok.CARROW_R_P2))
+        else:
+            if not self.conn_assign and not self.conn_type:
+                new_kid.append(self.gen_token(Tok.CARROW_BI))
+            else:
+                new_kid.append(self.gen_token(Tok.CARROW_L_P1))
+                if self.conn_type:
+                    new_kid.append(self.conn_type)
+                if self.conn_assign:
+                    new_kid.append(self.gen_token(Tok.COLON))
+                    new_kid.append(self.conn_assign)
+                new_kid.append(self.gen_token(Tok.CARROW_R_P2))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class FilterCompr(AtomExpr):
@@ -2908,6 +3274,26 @@ class FilterCompr(AtomExpr):
             sym_type=SymbolType.SEQUENCE,
         )
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.f_type.normalize(deep) if self.f_type else res
+            res = res and self.compares.normalize(deep) if self.compares else res
+        new_kid: list[AstNode] = []
+        new_kid.append(self.gen_token(Tok.LPAREN))
+        if self.f_type:
+            new_kid.append(self.gen_token(Tok.TYPE_OP))
+        new_kid.append(self.gen_token(Tok.NULL_OK))
+        if self.f_type:
+            new_kid.append(self.f_type)
+            new_kid.append(self.gen_token(Tok.COLON))
+        if self.compares:
+            new_kid.append(self.compares)
+        new_kid.append(self.gen_token(Tok.RPAREN))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class AssignCompr(AtomExpr):
     """AssignCtx node type for Jac Ast."""
@@ -2926,6 +3312,19 @@ class AssignCompr(AtomExpr):
             sym_name_node=self,
             sym_type=SymbolType.SEQUENCE,
         )
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize ast node."""
+        res = True
+        if deep:
+            res = self.assigns.normalize(deep)
+        new_kid: list[AstNode] = []
+        new_kid.append(self.gen_token(Tok.LPAREN))
+        new_kid.append(self.gen_token(Tok.EQ))
+        new_kid.append(self.assigns)
+        new_kid.append(self.gen_token(Tok.RPAREN))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 # Match Nodes
@@ -2946,6 +3345,24 @@ class MatchStmt(CodeBlockStmt):
         self.cases = cases
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+            for case in self.cases:
+                res = res and case.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_MATCH),
+            self.target,
+            self.gen_token(Tok.LBRACE),
+        ]
+        for case in self.cases:
+            new_kid.append(case)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class MatchCase(AstNode):
     """MatchCase node type for Jac Ast."""
@@ -2963,6 +3380,23 @@ class MatchCase(AstNode):
         self.body = body
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match case node."""
+        res = True
+        if deep:
+            res = self.pattern.normalize(deep)
+            res = res and self.guard.normalize(deep) if self.guard else res
+            res = res and self.body.normalize(deep) if self.body else res
+        new_kid: list[AstNode] = [self.gen_token(Tok.KW_CASE), self.pattern]
+        if self.guard:
+            new_kid.append(self.gen_token(Tok.KW_IF))
+            new_kid.append(self.guard)
+        new_kid.append(self.gen_token(Tok.COLON))
+        if self.body:
+            new_kid.append(self.body)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class MatchOr(MatchPattern):
     """MatchOr node type for Jac Ast."""
@@ -2975,6 +3409,20 @@ class MatchOr(MatchPattern):
         """Initialize match or node."""
         self.patterns = patterns
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match or node."""
+        res = True
+        if deep:
+            for pattern in self.patterns:
+                res = res and pattern.normalize(deep)
+        new_kid: list[AstNode] = []
+        for pattern in self.patterns:
+            new_kid.append(pattern)
+            new_kid.append(self.gen_token(Tok.KW_OR))
+        new_kid.pop()
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class MatchAs(MatchPattern):
@@ -2991,9 +3439,42 @@ class MatchAs(MatchPattern):
         self.pattern = pattern
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match as node."""
+        res = True
+        if deep:
+            res = self.name.normalize(deep)
+            res = res and self.pattern.normalize(deep) if self.pattern else res
+        new_kid: list[AstNode] = []
+        if self.pattern:
+            new_kid.append(self.pattern)
+            new_kid.append(self.gen_token(Tok.KW_AS))
+        new_kid.append(self.name)
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class MatchWild(MatchPattern):
     """Match wild card node type for Jac Ast."""
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match wild card node."""
+        AstNode.__init__(
+            self,
+            kid=[
+                Name(
+                    file_path=self.loc.mod_path,
+                    name=Tok.NAME,
+                    value="_",
+                    col_start=self.loc.col_start,
+                    col_end=self.loc.col_end,
+                    line=self.loc.first_line,
+                    pos_start=self.loc.pos_start,
+                    pos_end=self.loc.pos_end,
+                )
+            ],
+        )
+        return True
 
 
 class MatchValue(MatchPattern):
@@ -3008,6 +3489,14 @@ class MatchValue(MatchPattern):
         self.value = value
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match value node."""
+        res = True
+        if deep:
+            res = self.value.normalize(deep)
+        AstNode.__init__(self, kid=[self.value])
+        return res
+
 
 class MatchSingleton(MatchPattern):
     """MatchSingleton node type for Jac Ast."""
@@ -3020,6 +3509,12 @@ class MatchSingleton(MatchPattern):
         """Initialize match singleton node."""
         self.value = value
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match singleton node."""
+        res = True
+        AstNode.__init__(self, kid=[self.value])
+        return res
 
 
 class MatchSequence(MatchPattern):
@@ -3034,6 +3529,21 @@ class MatchSequence(MatchPattern):
         self.values = values
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match sequence node."""
+        res = True
+        if deep:
+            for value in self.values:
+                res = res and value.normalize(deep)
+        new_kid: list[AstNode] = [self.gen_token(Tok.LSQUARE)]
+        for value in self.values:
+            new_kid.append(value)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        new_kid.pop()
+        new_kid.append(self.gen_token(Tok.RSQUARE))
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class MatchMapping(MatchPattern):
     """MatchMapping node type for Jac Ast."""
@@ -3046,6 +3556,21 @@ class MatchMapping(MatchPattern):
         """Initialize match mapping node."""
         self.values = values
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match mapping node."""
+        res = True
+        if deep:
+            for value in self.values:
+                res = res and value.normalize(deep)
+        new_kid: list[AstNode] = [self.gen_token(Tok.LBRACE)]
+        for value in self.values:
+            new_kid.append(value)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        new_kid.pop()
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class MatchKVPair(MatchPattern):
@@ -3062,6 +3587,18 @@ class MatchKVPair(MatchPattern):
         self.value = value
         AstNode.__init__(self, kid=kid)
 
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match key value pair node."""
+        res = True
+        if deep:
+            res = (
+                self.key.normalize(deep) if isinstance(self.key, MatchPattern) else True
+            )
+            res = res and self.value.normalize(deep)
+        new_kid: list[AstNode] = [self.key, self.gen_token(Tok.COLON), self.value]
+        AstNode.__init__(self, kid=new_kid)
+        return res
+
 
 class MatchStar(MatchPattern):
     """MatchStar node type for Jac Ast."""
@@ -3076,6 +3613,18 @@ class MatchStar(MatchPattern):
         self.name = name
         self.is_list = is_list
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match star node."""
+        res = True
+        if deep:
+            res = self.name.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.STAR_MUL if self.is_list else Tok.STAR_POW)
+        ]
+        new_kid.append(self.name)
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 class MatchArch(MatchPattern):
@@ -3093,6 +3642,26 @@ class MatchArch(MatchPattern):
         self.arg_patterns = arg_patterns
         self.kw_patterns = kw_patterns
         AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize match class node."""
+        res = True
+        if deep:
+            res = self.name.normalize(deep)
+            res = res and (not self.arg_patterns or self.arg_patterns.normalize(deep))
+            res = res and (not self.kw_patterns or self.kw_patterns.normalize(deep))
+        new_kid: list[AstNode] = [self.name]
+        new_kid.append(self.gen_token(Tok.LPAREN))
+        if self.arg_patterns:
+            new_kid.append(self.arg_patterns)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        if self.kw_patterns:
+            new_kid.append(self.kw_patterns)
+        else:
+            new_kid.pop()
+        new_kid.append(self.gen_token(Tok.RPAREN))
+        AstNode.__init__(self, kid=new_kid)
+        return res
 
 
 # AST Terminal Node Types
