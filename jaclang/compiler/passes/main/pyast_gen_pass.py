@@ -2986,14 +2986,14 @@ class PyastGenPass(Pass):
 
         pattern: MatchPattern,
         guard: Optional[ExprType],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         """
         node.gen.py_ast = [
             self.sync(
                 ast3.match_case(
                     pattern=node.pattern.gen.py_ast[0],
                     guard=node.guard.gen.py_ast[0] if node.guard else None,
-                    body=self.resolve_stmt_block(node.body),
+                    body=[x.gen.py_ast[0] for x in node.body],
                 )
             )
         ]

@@ -1014,6 +1014,8 @@ class JacParser(Pass):
                 kid=kid,
             )
             ret.items = [i for i in kid if isinstance(i, ast.ArchBlockStmt)]
+            ret.left_enc = kid[0] if isinstance(kid[0], ast.Token) else None
+            ret.right_enc = kid[-1] if isinstance(kid[-1], ast.Token) else None
             return self.nu(ret)
 
         def member_stmt(self, kid: list[ast.AstNode]) -> ast.ArchBlockStmt:
@@ -1169,34 +1171,18 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.CodeBlockStmt]:
             """Grammar rule.
 
-            code_block: LBRACE statement_list* RBRACE
+            code_block: LBRACE statement* RBRACE
             """
-            if isinstance(kid[1], ast.SubNodeList):
-                kid[1].add_kids_left([kid[0]])
-                kid[1].add_kids_right([kid[2]])
-                return self.nu(kid[1])
-            else:
-                return self.nu(
-                    ast.SubNodeList[ast.CodeBlockStmt](
-                        items=[],
-                        delim=Tok.WS,
-                        kid=kid,
-                    )
-                )
-
-        def statement_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.CodeBlockStmt]:
-            """Grammar rule.
-
-            statement_list: statement+
-            """
+            left_enc = kid[0] if isinstance(kid[0], ast.Token) else None
+            right_enc = kid[-1] if isinstance(kid[-1], ast.Token) else None
             valid_stmt = [i for i in kid if isinstance(i, ast.CodeBlockStmt)]
-            if len(valid_stmt) == len(kid):
+            if len(valid_stmt) == len(kid) - 2:
                 return self.nu(
                     ast.SubNodeList[ast.CodeBlockStmt](
                         items=valid_stmt,
                         delim=Tok.WS,
+                        left_enc=left_enc,
+                        right_enc=right_enc,
                         kid=kid,
                     )
                 )
@@ -3477,15 +3463,13 @@ class JacParser(Pass):
         def match_case_block(self, kid: list[ast.AstNode]) -> ast.MatchCase:
             """Grammar rule.
 
-            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
+            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement+
             """
             pattern = kid[1]
             guard = kid[3] if len(kid) > 4 else None
-            stmts = kid[-1]
-            if (
-                isinstance(pattern, ast.MatchPattern)
-                and isinstance(guard, (ast.Expr, type(None)))
-                and isinstance(stmts, ast.SubNodeList)
+            stmts = [i for i in kid if isinstance(i, ast.CodeBlockStmt)]
+            if isinstance(pattern, ast.MatchPattern) and isinstance(
+                guard, (ast.Expr, type(None))
             ):
                 return self.nu(
                     ast.MatchCase(
