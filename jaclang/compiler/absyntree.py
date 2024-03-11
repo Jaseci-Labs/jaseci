@@ -328,10 +328,14 @@ class SubNodeList(AstNode, Generic[T]):
         items: list[T],
         delim: Optional[Tok],
         kid: Sequence[AstNode],
+        left_enc: Optional[Token] = None,
+        right_enc: Optional[Token] = None,
     ) -> None:
         """Initialize sub node list node."""
         self.items = items
         self.delim = delim
+        self.left_enc = left_enc
+        self.right_enc = right_enc
         AstNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3380,7 +3384,7 @@ class MatchCase(AstNode):
         self,
         pattern: MatchPattern,
         guard: Optional[Expr],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match case node."""
