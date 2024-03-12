@@ -641,26 +641,24 @@ class PyastGenPass(Pass):
                     )
                 )
             )
-            decorators.append(
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Name(id="__jac_dataclass__", ctx=ast3.Load())
-                        ),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="eq",
-                                    value=self.sync(
-                                        ast3.Constant(value=False),
-                                    ),
-                                )
+        decorators.append(
+            self.sync(
+                ast3.Call(
+                    func=self.sync(ast3.Name(id="__jac_dataclass__", ctx=ast3.Load())),
+                    args=[],
+                    keywords=[
+                        self.sync(
+                            ast3.keyword(
+                                arg="eq",
+                                value=self.sync(
+                                    ast3.Constant(value=False),
+                                ),
                             )
-                        ],
-                    )
+                        )
+                    ],
                 )
             )
+        )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.is_abstract:
             self.needs_jac_feature()
@@ -799,6 +797,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name_ref: NameType,
+        is_func: bool,
         is_async: bool,
         is_static: bool,
         is_abstract: bool,
@@ -2986,14 +2985,14 @@ class PyastGenPass(Pass):
 
         pattern: MatchPattern,
         guard: Optional[ExprType],
-        body: list[CodeBlockStmt],
+        body: SubNodeList[CodeBlockStmt],
         """
         node.gen.py_ast = [
             self.sync(
                 ast3.match_case(
                     pattern=node.pattern.gen.py_ast[0],
                     guard=node.guard.gen.py_ast[0] if node.guard else None,
-                    body=[x.gen.py_ast[0] for x in node.body],
+                    body=self.resolve_stmt_block(node.body),
                 )
             )
         ]
