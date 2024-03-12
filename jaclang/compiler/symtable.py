@@ -46,9 +46,10 @@ class SymbolType(Enum):
 class SymbolInfo:
     """Symbol Info."""
 
-    def __init__(self, typ: Any = None) -> None:  # noqa: ANN401
+    def __init__(self, typ: str = "NoType") -> None:  # noqa: ANN401
         """Initialize."""
         self.typ = typ
+        self.typ_sym_table: Optional[SymbolTable] = None
 
 
 class SymbolAccess(Enum):
@@ -168,6 +169,10 @@ class SymbolTable:
             self.tab[node.sym_name].add_defn(node)
         node.sym_link = self.tab[node.sym_name]
         return collision
+    
+    def find_scope(self, name: str) -> Optional[SymbolTable]:
+        for k in self.kid:
+            if k.name == name: return k
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
