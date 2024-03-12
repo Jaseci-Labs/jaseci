@@ -1,5 +1,7 @@
 """Utility functions and classes for Jac compilation toolchain."""
 
+import dis
+import marshal
 import os
 import pdb
 import re
@@ -114,6 +116,16 @@ class Jdb(pdb.Pdb):
         """Initialize the Jac debugger."""
         super().__init__(*args, **kwargs)
         self.prompt = "Jdb > "
+
+    def has_breakpoint(self, bytecode: bytes) -> bool:
+        """Check for breakpoint."""
+        code = marshal.loads(bytecode)
+        instructions = dis.get_instructions(code)
+        return any(
+            instruction.opname in ("LOAD_GLOBAL", "LOAD_NAME", "LOAD_FAST")
+            and instruction.argval == "breakpoint"
+            for instruction in instructions
+        )
 
 
 debugger = Jdb()

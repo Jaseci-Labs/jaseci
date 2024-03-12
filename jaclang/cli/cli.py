@@ -197,12 +197,14 @@ def debug(filename: str) -> None:
         bytecode = jac_file_to_pass(filename).ir.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
+            if db.has_breakpoint(bytecode):
+                run(filename)
+            else:
+                func = types.FunctionType(code, globals())
 
-            func = types.FunctionType(code, globals())
-
-            print("Debugging with Jac debugger.\n")
-            db.runcall(func)
-            print("Done debugging.")
+                print("Debugging with Jac debugger.\n")
+                db.runcall(func)
+                print("Done debugging.")
         else:
             print(f"Error while generating bytecode in {filename}.")
     else:
