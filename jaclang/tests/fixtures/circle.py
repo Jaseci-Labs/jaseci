@@ -3,7 +3,7 @@
 (Module docstrings are optional but good practice in python)
 """
 
-import math as math
+import math as math 
 import unittest
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -68,11 +68,6 @@ if __name__ == "__main__":
 
     # Uncomment the next line if you want to run the unit tests
     # run_tests()
-elif RAD == 1:
-    print("hello")
-else:
-    print("not main")
-    print("dv")
 
 
 # Unit Tests!
