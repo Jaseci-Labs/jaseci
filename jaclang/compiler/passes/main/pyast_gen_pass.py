@@ -1993,11 +1993,7 @@ class PyastGenPass(Pass):
                 else ""
             )
             node.gen.py_ast = [
-                self.sync(
-                    ast3.Assign(
-                        targets=node.target.gen.py_ast, value=value
-                    )
-                )
+                self.sync(ast3.Assign(targets=node.target.gen.py_ast, value=value))
             ]
         if not node.aug_op:
             self.set_register(
