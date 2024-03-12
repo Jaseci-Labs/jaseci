@@ -17,8 +17,12 @@
       "Personality of the Person"
     ],
     "personality_examples": [
-      "dict[str, Personality]",
+      null,
       "Personality Information of Famous People"
+    ],
+    "einstein_age": [
+      null,
+      ""
     ],
     "einstein": [
       null,
@@ -33,6 +37,16 @@
     "age": [
       "int",
       "Age of the Person"
+    ]
+  },
+  "test(Module).Personality(Enum)": {
+    "INTROVERT": [
+      null,
+      "Person who is shy and reticent"
+    ],
+    "EXTROVERT": [
+      null,
+      "Person who is outgoing and socially confident"
     ]
   }
 }

@@ -1995,17 +1995,17 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Assign(
-                        targets=node.target.gen.py_ast, value=node.value.gen.py_ast[0]
+                        targets=node.target.gen.py_ast, value=value
                     )
                 )
             ]
-
-        self.set_register(
-            assign_target,
-            self.get_scope(node),
-            None,
-            node.semstr.lit_value if node.semstr else "",
-        )
+        if not node.aug_op:
+            self.set_register(
+                assign_target,
+                self.get_scope(node),
+                None,
+                node.semstr.lit_value if node.semstr else "",
+            )
 
     def set_register(self, key: str, scope: str, type: str | None, semstr: str) -> None:
         """Set register."""
