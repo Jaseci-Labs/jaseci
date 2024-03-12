@@ -694,6 +694,7 @@ class JacParser(Pass):
                             type_tag=None,
                             kid=kid,
                             semstr=semstr,
+                            is_enum_stmt=True,
                         )
                     )
                 else:
@@ -702,8 +703,20 @@ class JacParser(Pass):
                         if len(kid) == 3 and isinstance(kid[2], ast.String)
                         else None
                     )
-                    kid[0].is_enum_singleton = True
-                    return self.nu(kid[0])  # TODO: Fix this
+                    targ = ast.SubNodeList[ast.Expr](
+                        items=[kid[0]], delim=Tok.COMMA, kid=[kid[0]]
+                    )
+                    kid[0] = targ
+                    return self.nu(
+                        ast.Assignment(
+                            target=targ,
+                            value=None,
+                            type_tag=None,
+                            kid=kid,
+                            semstr=semstr,
+                            is_enum_stmt=True,
+                        )
+                    )
 
             raise self.ice()
 
