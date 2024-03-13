@@ -109,6 +109,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
+        print(ret.pp())
         return self.nu(ret)
 
     def proc_function_def(
@@ -296,7 +297,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         value = self.convert(node.value) if node.value else None
         if value and isinstance(value, ast.Expr):
-            return ast.ReturnStmt(expr=value , kid=[value])
+            return ast.ReturnStmt(expr=value, kid=[value])
         else:
             raise self.ice("Invalid return value")
 
@@ -568,21 +569,30 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_orelse = [
             stmt for stmt in orelse if isinstance(stmt, (ast.CodeBlockStmt))
         ]
-        orelse2 = (
-            ast.SubNodeList[ast.CodeBlockStmt](
-                items=valid_orelse, delim=Tok.WS, kid=orelse
-            )
-            if valid_orelse
-            else None
-        )
+        if valid_orelse:
+            if isinstance(valid_orelse[0], ast.IfStmt):
+                elsebody = self.proc_if(node.orelse[0])
+                else_body = ast.ElseIf(
+                    condition=elsebody.condition,
+                    body=elsebody.body,
+                    else_body=elsebody.else_body,
+                    kid=[elsebody],
+                )
+            else:
+                orelse2 = ast.SubNodeList[ast.CodeBlockStmt](
+                    items=valid_orelse, delim=Tok.WS, kid=orelse
+                )
+                else_body = ast.ElseStmt(body=orelse2, kid=[orelse2])
+        else:
+            else_body = None
         if isinstance(test, ast.Expr):
             ret = ast.IfStmt(
                 condition=test,
                 body=body2,
-                else_body=(
-                    ast.ElseStmt(body=orelse2, kid=[orelse2]) if orelse2 else None
+                else_body=else_body,
+                kid=(
+                    [test, body2, else_body] if else_body is not None else [test, body2]
                 ),
-                kid=[test, body2, orelse2] if orelse2 is not None else [test, body2],
             )
         else:
             raise self.ice()
@@ -659,7 +669,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if (isinstance(cause, ast.Expr) or cause is None) and (
             isinstance(exc, ast.Expr) or exc is None
         ):
-            return ast.RaiseStmt(cause=cause, from_target=exc, kid=kid)
+            if node.exc and not node.cause:
+                return ast.RaiseStmt(
+                    cause=None,
+                    from_target=None,
+                    kid=[self.operator(Tok.KW_RAISE, "raise")],
+                )
+            else:
+                return ast.RaiseStmt(cause=cause, from_target=exc, kid=kid)
         else:
             raise self.ice()
 

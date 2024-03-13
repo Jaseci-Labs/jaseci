@@ -3,7 +3,7 @@
 (Module docstrings are optional but good practice in python)
 """
 
-import math as math 
+import math as math
 import unittest
 from abc import ABC, abstractmethod
 from enum import Enum
