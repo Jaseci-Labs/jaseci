@@ -17,11 +17,11 @@
       "Personality of the Person"
     ],
     "personality_examples": [
-      null,
+      "dict[str,Personality|None]",
       "Personality Information of Famous People"
     ],
     "einstein_age": [
-      null,
+      "int",
       ""
     ],
     "einstein": [
