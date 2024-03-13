@@ -395,7 +395,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("2.0\n", stdout_value)
 
     def test_registry(self) -> None:
-        """Test Jac registry feature"""
+        """Test Jac registry feature."""
         os.environ["JAC_REGISTRY_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -404,7 +404,9 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
-        with open(os.path.join(self.fixture_abs_path("./"), "registry_registry.json"), "r") as f:
+        with open(
+            os.path.join(self.fixture_abs_path("./"), "registry_registry.json"), "r"
+        ) as f:
             registry = json.load(f)
         self.assertEqual(
             registry["registry(Module)"]["personality_examples"],
