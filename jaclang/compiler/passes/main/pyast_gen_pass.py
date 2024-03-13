@@ -1006,6 +1006,18 @@ class PyastGenPass(Pass):
                                     ),
                                     self.sync(
                                         ast3.keyword(
+                                            arg="scope",
+                                            value=(
+                                                self.sync(
+                                                    ast3.Constant(
+                                                        value=self.get_scope(node)
+                                                    )
+                                                )
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
                                             arg="incl_info",
                                             value=self.sync(
                                                 ast3.Constant(value=None)
