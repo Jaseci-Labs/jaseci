@@ -17,7 +17,7 @@ Personality {
    EXTROVERT: 'Person who is outgoing and socially confident'
 }
 
-glob personality_examples: 'Personality Information of Famous People': dict[str, Personality] = {
+glob personality_examples: 'Personality Information of Famous People': dict[str, Personality|None] = {
     'Albert Einstein': Personality.INTROVERT,
     'Barack Obama': Personality.EXTROVERT
 };

@@ -1,8 +1,9 @@
 """Test Jac language generally."""
 
 import io
+import json
+import os
 import sys
-
 
 from jaclang import jac_import
 from jaclang.cli import cli
@@ -392,3 +393,26 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("2.0\n", stdout_value)
+
+    def test_registry(self) -> None:
+        """Test Jac registry feature"""
+        os.environ["JAC_REGISTRY_DEBUG"] = "1"
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("registry", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn("Error", stdout_value)
+
+        with open(os.path.join(self.fixture_abs_path("./"), "registry_registry.json"), "r") as f:
+            registry = json.load(f)
+        self.assertEqual(
+            registry["registry(Module)"]["personality_examples"],
+            ["dict[str,Personality|None]", "Personality Information of Famous People"],
+        )
+        self.assertEqual(
+            registry["registry(Module).Personality(Enum)"]["INTROVERT"],
+            [None, "Person who is shy and reticent"],
+        )
+        os.remove(os.path.join(self.fixture_abs_path("./"), "registry_registry.json"))
+        del os.environ["JAC_REGISTRY_DEBUG"]
