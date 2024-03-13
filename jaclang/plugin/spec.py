@@ -209,6 +209,7 @@ class JacFeatureSpec:
     def with_llm(
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
+        scope: str,
         incl_info: tuple,
         excl_info: tuple,
         inputs: tuple,

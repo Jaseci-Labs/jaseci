@@ -215,6 +215,7 @@ class JacFeature:
     def with_llm(
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
+        scope: str,
         incl_info: tuple,
         excl_info: tuple,
         inputs: tuple,
@@ -225,6 +226,7 @@ class JacFeature:
         return pm.hook.with_llm(
             model=model,
             model_params=model_params,
+            scope=scope,
             incl_info=incl_info,
             excl_info=excl_info,
             inputs=inputs,
