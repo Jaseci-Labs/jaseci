@@ -22,6 +22,8 @@ glob personality_examples: 'Personality Information of Famous People': dict[str,
     'Barack Obama': Personality.EXTROVERT
 };
 
+glob person_value : list[tuple[dict[str, Personality], int]] =(-90);
+
 can 'Get Personality of the Person'
 get_personality (person: 'Person Object': Person) -> 'Personality of the Person': Personality by llm(reason=True, incl_info=(personality_examples));
 
