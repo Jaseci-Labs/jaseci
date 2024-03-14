@@ -402,6 +402,21 @@ class JacFeatureDefaults:
         reason = False
         if "reason" in model_params:
             reason = model_params.pop("reason")
+        import os
+        import json
+
+        with open(
+            os.path.join(os.path.dirname(__file__), "registry.json"), "r"
+        ) as f:  # TODO:while importing modules what will happen to registry
+            registry = json.load(f)
+        if not (incl_info and excl_info):
+            information_str = registry[scope]
+        elif (not incl_info) and excl_info:
+            information_str = [i for i in registry[scope] if i not in excl_info]
+        elif incl_info and (not excl_info):
+            information_str = [i for i in registry[scope] if i in incl_info]
+        else:
+            raise ValueError("Invalid input")
         input_types_n_information_str = ""  # TODO: We have to generate this
         output_type_str = ""  # TODO: We have to generate this
         output_type_info_str = ""  # TODO: We have to generate this

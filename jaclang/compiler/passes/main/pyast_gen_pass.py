@@ -953,15 +953,23 @@ class PyastGenPass(Pass):
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
         if isinstance(node.body, ast.FuncCall):
-            model_params = (
-                {
-                    param.key: param.value
-                    for param in node.body.params.items
-                    if isinstance(param, ast.KWPair)
-                }
-                if node.body.params
-                else {}
-            )
+            model_params = {}
+            include_info = {}
+            exclude_info = {}
+
+            if node.body.params:
+                for param in node.body.params.items:
+                    if isinstance(param, ast.KWPair) and isinstance(
+                        param.key, ast.Name
+                    ):
+                        key = param.key.value
+                        value = param.value
+                        if key not in ["incl_info", "excl_info"]:
+                            model_params[key] = value
+                        elif key == "incl_info":
+                            include_info[key] = value
+                        elif key == "excl_info":
+                            exclude_info[key] = value
             return [
                 self.sync(
                     ast3.Return(
@@ -993,7 +1001,9 @@ class PyastGenPass(Pass):
                                             value=self.sync(
                                                 ast3.Dict(
                                                     keys=[
-                                                        self.sync(ast3.Constant(value=key.value))  # type: ignore
+                                                        self.sync(
+                                                            ast3.Constant(value=key)
+                                                        )
                                                         for key in model_params.keys()
                                                     ],
                                                     values=[
@@ -1020,16 +1030,28 @@ class PyastGenPass(Pass):
                                         ast3.keyword(
                                             arg="incl_info",
                                             value=self.sync(
-                                                ast3.Constant(value=None)
-                                            ),  # TODO: Add incl_info
+                                                ast3.Tuple(
+                                                    elts=[
+                                                        value.gen.py_ast[0]
+                                                        for value in include_info.values()
+                                                    ],
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
                                         )
                                     ),
                                     self.sync(
                                         ast3.keyword(
                                             arg="excl_info",
                                             value=self.sync(
-                                                ast3.Constant(value=None)
-                                            ),  # TODO: Add excl_info
+                                                ast3.Tuple(
+                                                    elts=[
+                                                        value.gen.py_ast[0]
+                                                        for value in exclude_info.values()
+                                                    ],
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
                                         )
                                     ),
                                     self.sync(
