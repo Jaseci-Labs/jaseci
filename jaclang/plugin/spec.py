@@ -88,11 +88,8 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def run_test(filename: str) -> bool:
-        """Run the test suite in the specified .jac file.
-
-        :param filename: The path to the .jac file.
-        """
+    def run_test(filename: str, find: bool, xit: bool) -> bool:
+        """Run the test suite in the specified .jac file."""
         raise NotImplementedError
 
     @staticmethod

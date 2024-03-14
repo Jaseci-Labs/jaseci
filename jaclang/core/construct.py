@@ -333,6 +333,7 @@ class JacTestCheck:
 
     test_case = unittest.TestCase()
     test_suite = unittest.TestSuite()
+    breaker = False
 
     @staticmethod
     def reset() -> None:
@@ -341,9 +342,14 @@ class JacTestCheck:
         JacTestCheck.test_suite = unittest.TestSuite()
 
     @staticmethod
-    def run_test() -> None:
+    def run_test(xit: bool) -> None:
         """Run the test suite."""
-        unittest.TextTestRunner().run(JacTestCheck.test_suite)
+        runner = unittest.TextTestRunner(failfast=xit)
+        result = runner.run(JacTestCheck.test_suite)
+        if result.wasSuccessful():
+            print("All tests passed successfully.")
+        else:
+            JacTestCheck.breaker = True
 
     @staticmethod
     def add_test(test_fun: Callable) -> None:

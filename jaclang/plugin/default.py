@@ -185,20 +185,39 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def run_test(filename: str) -> bool:
-        """Run the test suite in the specified .jac file.
-
-        :param filename: The path to the .jac file.
-        """
-        if filename.endswith(".jac"):
+    def run_test(filename: str, find: bool, xit: bool) -> bool:
+        """Run the test suite in the specified .jac file."""
+        test_file = False
+        if filename.endswith(".jac") and not find:
             base, mod_name = os.path.split(filename)
             base = base if base else "./"
             mod_name = mod_name[:-4]
             JacTestCheck.reset()
             Jac.jac_import(target=mod_name, base_path=base)
-            JacTestCheck.run_test()
-        else:
-            print("Not a .jac file.")
+            JacTestCheck.run_test(xit)
+        elif find or filename:
+            find_files = filename.split(",")
+            current_dir = os.getcwd() if find else filename
+            for root_dir, _, files in os.walk(current_dir, topdown=True):
+                files = (
+                    [file for file in files if (file in find_files)] if find else files
+                )
+
+                for file in files:
+                    if file.endswith(".jac") and file.startswith("test_"):
+                        test_file = True
+                        print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
+                        JacTestCheck.reset()
+                        Jac.jac_import(target=file[:-4], base_path=root_dir)
+                        JacTestCheck.run_test(xit)
+
+                    if JacTestCheck.breaker and xit:
+                        break
+                if JacTestCheck.breaker and xit:
+                    break
+            JacTestCheck.breaker = False
+            print("No test files found.") if not test_file else None
+
         return True
 
     @staticmethod

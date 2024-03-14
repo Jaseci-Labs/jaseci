@@ -141,12 +141,16 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
 
 
 @cmd_registry.register
-def test(filename: str) -> None:
-    """Run the test suite in the specified .jac file.
-
-    :param filename: The path to the .jac file.
+def test(testfiles: str, find: bool = False, xit: bool = False) -> None:
     """
-    Jac.run_test(filename)
+    Run the test suite in the specified .jac file.
+
+    :param testfiles: Files to test. (path/to/file.jac) or (path/to/directory) or (test_1.jac,test_2*.jac,..)
+    :param find: Will find all the test_*.jac files and run one after another. (test_1.jac,test_2*.jac,..)
+                 (Walk from the current directory recursively.)
+    :param xit(exit): Will stop(exit) running tests as soon as finds an error.
+    """
+    Jac.run_test(filename=testfiles, find=find, xit=xit)
 
 
 @cmd_registry.register
