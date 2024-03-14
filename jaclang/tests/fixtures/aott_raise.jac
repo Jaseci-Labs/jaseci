@@ -12,7 +12,7 @@ Person {
         age: 'Age': int = None;
 
     can 'Calculate the Age of a Person'
-    calculate (cur_year: 'Current Year': int) 
+    calculate (cur_year: 'Current Year': int)
     -> 'Calculated Age' :int by llm(temperature=0.7, reason=True,incl_info=(self.age),excl_info=(self.age));
 }
 with entry{
