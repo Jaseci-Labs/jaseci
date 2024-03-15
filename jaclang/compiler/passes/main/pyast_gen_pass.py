@@ -719,21 +719,34 @@ class PyastGenPass(Pass):
         a = (
             node.name
             if isinstance(node, (ast.Module))
-            else (
-                node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
-            )
+            else node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
         )
         main_path = ""
         while node:
             if isinstance(node, (ast.Module)):
                 main_path = f"{node.name}({node.__class__.__name__}).{main_path}"
-            elif isinstance(node, (ast.Enum, ast.Architype)) and a != node.name.value:
-                node_type = (
-                    node.__class__.__name__
-                    if isinstance(node, ast.Enum)
-                    else node.arch_type.value
-                )
-                main_path = f"{node.name.value}({node_type}).{main_path}"
+            elif isinstance(node, (ast.Enum, ast.Architype, ast.Ability)):
+                if isinstance(node, (ast.Enum, ast.Architype)):
+                    name_value = node.name.value
+                else:
+                    name_value = (
+                        node.name_ref.value
+                        if isinstance(node.name_ref, ast.Name)
+                        else ""
+                    )
+                if a != name_value:
+                    node_type = (
+                        node.__class__.__name__
+                        if isinstance(node, (ast.Enum, ast.Ability))
+                        else node.arch_type.value
+                    )
+                    if isinstance(node, ast.Ability) and isinstance(
+                        node.name_ref, ast.Name
+                    ):
+                        main_path = f"{node.name_ref.value}({node_type}).{main_path}"
+                    elif isinstance(node, (ast.Enum, ast.Architype)):
+                        main_path = f"{node.name.value}({node_type}).{main_path}"
+
             if node.parent:
                 node = node.parent
             else:
