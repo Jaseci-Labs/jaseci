@@ -1,0 +1,46 @@
+{
+  "aott_raise(Module)": {
+    "model": [
+      "obj",
+      ""
+    ],
+    "llm": [
+      null,
+      ""
+    ],
+    "theresa": [
+      "list[str,str]",
+      "mother theresa"
+    ],
+    "Person": [
+      "obj",
+      "Person"
+    ],
+    "Einstein": [
+      null,
+      ""
+    ],
+    "age": [
+      null,
+      ""
+    ],
+    "": [
+      null,
+      ""
+    ]
+  },
+  "aott_raise(Module).Person(obj)": {
+    "name": [
+      "str",
+      "Name"
+    ],
+    "dob": [
+      "str",
+      "Date of Birth"
+    ],
+    "age": [
+      "int",
+      "Age"
+    ]
+  }
+}

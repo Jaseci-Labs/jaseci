@@ -13,7 +13,7 @@ Person {
 
     can 'Calculate the Age of a Person'
     calculate (cur_year: 'Current Year': int)
-    -> 'Calculated Age' :int by llm(temperature=0.7, reason=True,incl_info=(self.age),excl_info=(self.age));
+    -> 'Calculated Age' :int by llm(temperature=0.7, reason=True,incl_info=(self), excl_info=(self.age));
 }
 with entry{
     Einstein = Person(name="Einstein", dob="1879-03-14");
