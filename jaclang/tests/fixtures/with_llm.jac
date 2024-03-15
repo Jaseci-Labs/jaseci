@@ -16,8 +16,27 @@ glob llm = model();
 
 can 'Summarize the Life of the Individual'
 summarize(name: 'Name of the Person': str, age: 'Age of the Person': int)
-    -> 'Summary': str by llm(temperature=0.7, reason=True);
+    -> 'Summary': str by llm(temperature=0.7, reason=True, incl_info=());
 
 with entry {
     print(summarize('Albert Einstein',89));
+}
+
+
+glob emoji_examples: 'Examples of Text to Emoji': list[dict[str, str]] = [
+    {
+         "input": "I love football",
+         "output": "⚽"
+    },
+    {
+        "input": "Lets eat pizza",
+        "output": "🍕"
+    }
+];
+
+can 'Get Emoji Representation' 
+get_emoji(input: 'Input': str) -> 'Emoji Representation': str by llm(incl_info=(emoji_examples));
+
+with entry {
+    print(get_emoji('Lets move to paris'));
 }

@@ -1,0 +1,16 @@
+{
+  "with_llm(Module)": {
+    "model": [
+      "obj",
+      ""
+    ],
+    "llm": [
+      null,
+      ""
+    ],
+    "emoji_examples": [
+      "list[dict[str,str]]",
+      "Examples of Text to Emoji"
+    ]
+  }
+}

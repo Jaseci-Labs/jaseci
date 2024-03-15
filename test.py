@@ -25,6 +25,7 @@ module_registry = {
         "Einstein": [None, ""],
         "age": [None, ""],
         "": [None, ""],
+        "emoji_examples": ["list[dict[str,str]]", "Examples of Text to Emoji"],
     },
     "aott_raise(Module).Person(obj)": {
         "name": ["str", "Name"],
@@ -127,7 +128,6 @@ def with_llm(
     action: str,
 ) -> int:
     ic(model, model_params, scope, incl_info, excl_info, inputs, outputs, action)
-    scoped_variables = module_registry[scope]
     included_info = []
     for var_name, i in incl_info:
         type_ann = get_type_annotation(i)
@@ -172,3 +172,25 @@ Einstein = Person(name="Einstein", dob="1879-03-14")
 age = Einstein.calculate(cur_year=2024)
 Einstein.age = age
 print(Einstein.age)
+
+
+emoji_examples = [
+    {"input": "I love football", "output": "â\x9a½"},
+    {"input": "Lets eat pizza", "output": "ð\x9f\x8d\x95"},
+]
+
+
+def get_emoji(input: str) -> str:
+    return with_llm(
+        model=llm,
+        model_params={},
+        scope="aott_raise(Module)",
+        incl_info=[("emoji_examples", emoji_examples)],
+        excl_info=[],
+        inputs=[("Input", str, "input", input)],
+        outputs=("Emoji Representation", str),
+        action="Get Emoji Representation",
+    )
+
+
+print(get_emoji("Lets move to paris"))
