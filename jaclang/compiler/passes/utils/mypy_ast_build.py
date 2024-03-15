@@ -32,7 +32,9 @@ os.environ["MYPYPATH"] = str(
 )
 
 
-mypy_to_jac_node_map: dict[tuple[int, int | None, int | None, int | None], AstNode] = {}
+mypy_to_jac_node_map: dict[
+    tuple[int, int | None, int | None, int | None], list[AstNode]
+] = {}
 
 
 class BuildManager(myb.BuildManager):
@@ -319,7 +321,8 @@ class ASTConverter(myfp.ASTConverter):
         ret = visitor(node)
         # Mypy sometimes inserts its own nodes, such as a Return around lambdas.
         if hasattr(node, "jac_link"):
-            node.jac_link.gen.mypy_ast.append(ret)
+            for i in range(len(node.jac_link)):
+                node.jac_link[i].gen.mypy_ast.append(ret)
             mypy_to_jac_node_map[
                 (ret.line, ret.column, ret.end_line, ret.end_column)
             ] = node.jac_link
@@ -374,7 +377,7 @@ class Errors(mye.Errors):
                 msg=message,
                 node_override=mypy_to_jac_node_map[
                     (line, column, end_line, end_column)
-                ],
+                ][0],
             )
 
 

@@ -41,7 +41,7 @@ class FuseTypeInfoPass(Pass):
                 f = typ_sym_table.find_scope(i)
                 if f:
                     typ_sym_table = f
-        
+
         if typ_sym_table != self.ir.sym_tab:
             node.sym_info.typ_sym_table = typ_sym_table
             print(node.loc, node.sym_info.typ_sym_table.name)
@@ -73,6 +73,7 @@ class FuseTypeInfoPass(Pass):
                 )
                 traceback.print_exc()
                 print(e)
+
         return node_handler
 
     def enter_import(self, node: ast.Import):
@@ -81,19 +82,23 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_name(self, node: ast.Name) -> None:
-        mypy_node = node.gen.mypy_ast[0].node
+        mypy_node = (  # TODO: May want to think about this approach more
+            node.gen.mypy_ast[0].node
+            if (hasattr(node.gen.mypy_ast[0], "node"))
+            else None
+        )
         if isinstance(mypy_node, (mypyNode.Var, mypyNode.FuncDef)):
             self.__call_type_handler(node, mypy_node.type)
-        
+
         elif isinstance(mypy_node, mypyNode.MypyFile):
             node.sym_info = ast.SymbolInfo("types.ModuleType")
-        
+
         elif isinstance(mypy_node, mypyNode.TypeInfo):
             node.sym_info = ast.SymbolInfo(mypy_node.fullname)
-        
+
         elif isinstance(mypy_node, mypyNode.OverloadedFuncDef):
             self.__call_type_handler(node, mypy_node.items[0].func.type)
-        
+
         else:
             self.__debug_print(
                 f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported',
@@ -126,7 +131,7 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_ability(self, node: ast.Ability) -> None:
-        self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)        
+        self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)
 
     @__handle_node
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
@@ -145,9 +150,13 @@ class FuseTypeInfoPass(Pass):
             if isinstance(n, (mypyNode.Var, mypyNode.FuncDef)):
                 self.__call_type_handler(node, n.type)
             else:
-                self.__debug_print("Getting type of 'AssignmentStmt' is only supported with Var and FuncDef")
+                self.__debug_print(
+                    "Getting type of 'AssignmentStmt' is only supported with Var and FuncDef"
+                )
         else:
-            self.__debug_print("Getting type of 'HasVar' is only supported with AssignmentStmt")
+            self.__debug_print(
+                "Getting type of 'HasVar' is only supported with AssignmentStmt"
+            )
 
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:
@@ -214,10 +223,14 @@ class FuseTypeInfoPass(Pass):
         self, node: ast.AstSymbolNode, mypy_type: mypyTypes.CallableType
     ):
         node.sym_info = ast.SymbolInfo(str(mypy_type.ret_type))
-    
+
     # TODO: Which overloaded function to get the return value from?
-    def get_type_from_overloaded(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Overloaded):
+    def get_type_from_overloaded(
+        self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Overloaded
+    ):
         self.__call_type_handler(node, mypy_type.items[0])
-    
-    def get_type_from_none_type(self, node: ast.AstSymbolNode, mypy_type: mypyTypes.NoneType):
+
+    def get_type_from_none_type(
+        self, node: ast.AstSymbolNode, mypy_type: mypyTypes.NoneType
+    ):
         node.sym_info = ast.SymbolInfo("None")

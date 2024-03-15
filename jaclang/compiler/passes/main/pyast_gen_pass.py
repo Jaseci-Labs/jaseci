@@ -210,8 +210,15 @@ class PyastGenPass(Pass):
                 i.col_offset = jac_node.loc.col_start
                 i.end_lineno = jac_node.loc.last_line
                 i.end_col_offset = jac_node.loc.col_end
-                i.jac_link = jac_node  # type: ignore
+                i.jac_link: list[ast3.AST] = [jac_node]  # type: ignore
         return py_node
+
+    def link_identifier(self, jac_node: ast.AstNode, py_node: list[ast3.AST]) -> None:
+        """Link jac name ast to py ast nodes."""
+        jac_node.gen.py_ast = py_node
+        for i in py_node:
+            if isinstance(i.jac_link, list): # type: ignore
+                i.jac_link.append(jac_node) # type: ignore 
 
     def pyinline_sync(
         self,
@@ -225,7 +232,7 @@ class PyastGenPass(Pass):
                         i.lineno += self.cur_node.loc.first_line
                     if hasattr(i, "end_lineno") and i.end_lineno is not None:
                         i.end_lineno += self.cur_node.loc.first_line
-                    i.jac_link = self.cur_node  # type: ignore
+                    i.jac_link: ast3.AST = [self.cur_node]  # type: ignore
         return py_nodes
 
     def resolve_stmt_block(
@@ -893,6 +900,7 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        self.link_identifier(jac_node=node.name_ref, py_node=node.gen.py_ast)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
@@ -1489,6 +1497,8 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        if node.name:
+            self.link_identifier(jac_node=node.name, py_node=node.gen.py_ast)
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
