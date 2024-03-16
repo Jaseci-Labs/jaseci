@@ -1598,8 +1598,9 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_TRY),
         ]
+        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
-
+        new_kid.append(self.gen_token(Tok.RBRACE))
         if self.excepts:
             new_kid.append(self.excepts)
         if self.else_body:
@@ -1640,9 +1641,9 @@ class Except(CodeBlockStmt):
         if self.name:
             new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.name)
-
+        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
-
+        new_kid.append(self.gen_token(Tok.RBRACE))
         AstNode.__init__(self, kid=new_kid)
         return res
 
@@ -1667,8 +1668,9 @@ class FinallyStmt(CodeBlockStmt):
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_FINALLY),
         ]
+        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
-
+        new_kid.append(self.gen_token(Tok.RBRACE))
         AstNode.__init__(self, kid=new_kid)
         return res
 
