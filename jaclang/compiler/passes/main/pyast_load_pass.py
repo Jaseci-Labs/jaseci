@@ -1989,14 +1989,23 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_params = [param for param in params if isinstance(param, ast.ParamVar)]
         if len(valid_params) != len(params):
             raise self.ice("Length mismatch in arguments")
-        fs_params = ast.SubNodeList[ast.ParamVar](
-            items=valid_params, delim=Tok.COMMA, kid=valid_params
-        )
-        return ast.FuncSignature(
-            params=fs_params,
-            return_type=None,
-            kid=[fs_params],
-        )
+        if valid_params:
+            fs_params = ast.SubNodeList[ast.ParamVar](
+                items=valid_params, delim=Tok.COMMA, kid=valid_params
+            ) 
+            return ast.FuncSignature(
+                params=fs_params,
+                return_type=None,
+                kid=[fs_params],
+            )
+        else:
+            _lparen=self.operator(Tok.LPAREN, "(")
+            _rparen=self.operator(Tok.RPAREN, ")")
+            return ast.FuncSignature(
+                params=None,
+                return_type=None,
+                kid=[_lparen, _rparen],
+            )
 
     def operator(self, tok: Tok, value: str) -> ast.Token:
         """Create an operator token."""
