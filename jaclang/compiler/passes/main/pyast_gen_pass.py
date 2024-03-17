@@ -217,8 +217,8 @@ class PyastGenPass(Pass):
         """Link jac name ast to py ast nodes."""
         jac_node.gen.py_ast = py_node
         for i in py_node:
-            if isinstance(i.jac_link, list): # type: ignore
-                i.jac_link.append(jac_node) # type: ignore 
+            if isinstance(i.jac_link, list):  # type: ignore
+                i.jac_link.append(jac_node)  # type: ignore
 
     def pyinline_sync(
         self,
