@@ -2243,6 +2243,7 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             new_kid.append(self.type_tag)
         if self.aug_op:
             new_kid.append(self.aug_op)
+            new_kid.append(self.gen_token(Tok.EQ))
         else:
             new_kid.append(self.gen_token(Tok.EQ))
         if self.value:
