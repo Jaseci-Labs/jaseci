@@ -1047,7 +1047,30 @@ class PyastGenPass(Pass):
                                             value=self.sync(
                                                 ast3.Tuple(
                                                     elts=[
-                                                        value.gen.py_ast[0]
+                                                        self.sync(
+                                                            ast3.Tuple(
+                                                                elts=[
+                                                                    value.gen.py_ast[0],
+                                                                    self.sync(
+                                                                        ast3.Constant(
+                                                                            value=str(
+                                                                                value.value.value
+                                                                                if isinstance(
+                                                                                    value,
+                                                                                    ast.AtomUnit,
+                                                                                )
+                                                                                and isinstance(
+                                                                                    value.value,
+                                                                                    ast.Name,
+                                                                                )
+                                                                                else ""
+                                                                            )
+                                                                        )
+                                                                    ),
+                                                                ],
+                                                                ctx=ast3.Load(),
+                                                            )
+                                                        )
                                                         for value in include_info.values()
                                                     ],
                                                     ctx=ast3.Load(),
@@ -1061,7 +1084,30 @@ class PyastGenPass(Pass):
                                             value=self.sync(
                                                 ast3.Tuple(
                                                     elts=[
-                                                        value.gen.py_ast[0]
+                                                        self.sync(
+                                                            ast3.Tuple(
+                                                                elts=[
+                                                                    value.gen.py_ast[0],
+                                                                    self.sync(
+                                                                        ast3.Constant(
+                                                                            value=str(
+                                                                                value.value.value
+                                                                                if isinstance(
+                                                                                    value,
+                                                                                    ast.AtomUnit,
+                                                                                )
+                                                                                and isinstance(
+                                                                                    value.value,
+                                                                                    ast.Name,
+                                                                                )
+                                                                                else ""
+                                                                            )
+                                                                        )
+                                                                    ),
+                                                                ],
+                                                                ctx=ast3.Load(),
+                                                            )
+                                                        )
                                                         for value in exclude_info.values()
                                                     ],
                                                     ctx=ast3.Load(),
