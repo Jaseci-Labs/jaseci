@@ -1050,7 +1050,6 @@ class PyastGenPass(Pass):
                                                         self.sync(
                                                             ast3.Tuple(
                                                                 elts=[
-                                                                    value.gen.py_ast[0],
                                                                     self.sync(
                                                                         ast3.Constant(
                                                                             value=str(
@@ -1067,6 +1066,7 @@ class PyastGenPass(Pass):
                                                                             )
                                                                         )
                                                                     ),
+                                                                    value.gen.py_ast[0],
                                                                 ],
                                                                 ctx=ast3.Load(),
                                                             )
@@ -1087,7 +1087,6 @@ class PyastGenPass(Pass):
                                                         self.sync(
                                                             ast3.Tuple(
                                                                 elts=[
-                                                                    value.gen.py_ast[0],
                                                                     self.sync(
                                                                         ast3.Constant(
                                                                             value=str(
@@ -1104,6 +1103,7 @@ class PyastGenPass(Pass):
                                                                             )
                                                                         )
                                                                     ),
+                                                                    value.gen.py_ast[0],
                                                                 ],
                                                                 ctx=ast3.Load(),
                                                             )
@@ -1126,11 +1126,15 @@ class PyastGenPass(Pass):
                                                                 ast3.Tuple(
                                                                     elts=[
                                                                         (
-                                                                            param.semstr.gen.py_ast[
-                                                                                0
-                                                                            ]
-                                                                            if param.semstr
-                                                                            else None
+                                                                            self.sync(
+                                                                                ast3.Constant(
+                                                                                    value=(
+                                                                                        param.semstr.lit_value
+                                                                                        if param.semstr
+                                                                                        else None
+                                                                                    )
+                                                                                )
+                                                                            )
                                                                         ),
                                                                         (
                                                                             param.type_tag.tag.gen.py_ast[
@@ -1176,11 +1180,15 @@ class PyastGenPass(Pass):
                                                     elts=(
                                                         [
                                                             (
-                                                                node.signature.semstr.gen.py_ast[
-                                                                    0
-                                                                ]
-                                                                if node.signature.semstr
-                                                                else None
+                                                                self.sync(
+                                                                    ast3.Constant(
+                                                                        value=(
+                                                                            node.signature.semstr.lit_value
+                                                                            if node.signature.semstr
+                                                                            else None
+                                                                        )
+                                                                    )
+                                                                )
                                                             ),
                                                             (
                                                                 node.signature.return_type.gen.py_ast[
