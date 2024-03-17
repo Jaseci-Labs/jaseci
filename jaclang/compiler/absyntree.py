@@ -1070,7 +1070,9 @@ class Ability(
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.body.body)
             else:
+                new_kid.append(self.gen_token(Tok.LBRACE))
                 new_kid.append(self.body)
+                new_kid.append(self.gen_token(Tok.RBRACE))
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
         AstNode.__init__(self, kid=new_kid)
@@ -1715,7 +1717,9 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.condition)
         new_kid.append(self.gen_token(Tok.KW_BY))
         new_kid.append(self.count_by)
+        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
         if self.else_body:
             new_kid.append(self.else_body)
         AstNode.__init__(self, kid=new_kid)
@@ -1759,7 +1763,9 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.collection)
 
         if self.body:
+            new_kid.append(self.gen_token(Tok.LBRACE))
             new_kid.append(self.body)
+            new_kid.append(self.gen_token(Tok.RBRACE))
 
         if self.else_body:
             new_kid.append(self.else_body)
@@ -1792,7 +1798,9 @@ class WhileStmt(CodeBlockStmt):
             self.condition,
         ]
         if self.body:
+            new_kid.append(self.gen_token(Tok.LBRACE))
             new_kid.append(self.body)
+            new_kid.append(self.gen_token(Tok.RBRACE))
 
         AstNode.__init__(self, kid=new_kid)
         return res
@@ -1826,7 +1834,9 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.exprs)
 
+        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
 
         AstNode.__init__(self, kid=new_kid)
         return res

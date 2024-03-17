@@ -1992,15 +1992,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if valid_params:
             fs_params = ast.SubNodeList[ast.ParamVar](
                 items=valid_params, delim=Tok.COMMA, kid=valid_params
-            ) 
+            )
             return ast.FuncSignature(
                 params=fs_params,
                 return_type=None,
                 kid=[fs_params],
             )
         else:
-            _lparen=self.operator(Tok.LPAREN, "(")
-            _rparen=self.operator(Tok.RPAREN, ")")
+            _lparen = self.operator(Tok.LPAREN, "(")
+            _rparen = self.operator(Tok.RPAREN, ")")
             return ast.FuncSignature(
                 params=None,
                 return_type=None,
