@@ -725,7 +725,9 @@ class PyastGenPass(Pass):
         while node:
             if isinstance(node, (ast.Module)):
                 main_path = f"{node.name}({node.__class__.__name__}).{main_path}"
-            elif isinstance(node, (ast.Enum, ast.Architype, ast.Ability)):
+            elif isinstance(
+                node, (ast.Enum, ast.Architype, ast.Ability)
+            ) and not isinstance(node.body, ast.FuncCall):
                 if isinstance(node, (ast.Enum, ast.Architype)):
                     name_value = node.name.value
                 else:

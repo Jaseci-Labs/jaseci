@@ -34,7 +34,7 @@ glob emoji_examples: 'Examples of Text to Emoji': list[dict[str, str]] = [
     }
 ];
 
-can 'Get Emoji Representation' 
+can 'Get Emoji Representation'
 get_emoji(input: 'Input': str) -> 'Emoji Representation': str by llm(incl_info=(emoji_examples));
 
 with entry {

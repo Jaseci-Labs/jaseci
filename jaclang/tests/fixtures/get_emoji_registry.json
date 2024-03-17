@@ -1,0 +1,16 @@
+{
+  "get_emoji(Module)": {
+    "model": [
+      "obj",
+      ""
+    ],
+    "llm": [
+      null,
+      ""
+    ],
+    "emoji_examples": [
+      "list[dict[str,str]]",
+      "Examples of Text to Emoji"
+    ]
+  }
+}
