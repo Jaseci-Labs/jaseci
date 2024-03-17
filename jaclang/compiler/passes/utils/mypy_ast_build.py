@@ -308,18 +308,420 @@ class State(myb.State):
 class ASTConverter(myfp.ASTConverter):
     """Overrides to mypy AST converter for direct AST pass through."""
 
-    def visit(self, node: ast.AST | None) -> myfp.Any:  # noqa: ANN401
+    def visit_Module(self, mod: ast.Module) -> myb.MypyFile:  # noqa: N802
         """Override to mypy AST converter for direct AST pass through."""
-        if node is None:
-            return None
-        typeobj = type(node)
-        visitor = self.visitor_cache.get(typeobj)
-        if visitor is None:
-            method = "visit_" + node.__class__.__name__
-            visitor = getattr(self, method)
-            self.visitor_cache[typeobj] = visitor
-        ret = visitor(node)
-        # Mypy sometimes inserts its own nodes, such as a Return around lambdas.
+        ret = super().visit_Module(mod)
+        self.link_mypy_to_jac_node(mod, ret)
+        return ret
+
+    def visit_FunctionDef(  # noqa: N802
+        self, n: ast.FunctionDef
+    ) -> myfp.FuncDef | myfp.Decorator:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_FunctionDef(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_AsyncFunctionDef(  # noqa: N802
+        self, n: ast.AsyncFunctionDef
+    ) -> myfp.FuncDef | myfp.Decorator:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_AsyncFunctionDef(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_ClassDef(self, n: ast.ClassDef) -> myfp.ClassDef:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_ClassDef(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Return(self, n: ast.Return) -> myfp.ReturnStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Return(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Delete(self, n: ast.Delete) -> myfp.DelStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Delete(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Assign(self, n: ast.Assign) -> myfp.AssignmentStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Assign(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_AnnAssign(self, n: ast.AnnAssign) -> myfp.AssignmentStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_AnnAssign(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_AugAssign(  # noqa: N802
+        self, n: ast.AugAssign
+    ) -> myfp.OperatorAssignmentStmt:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_AugAssign(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_For(self, n: ast.For) -> myfp.ForStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_For(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_AsyncFor(self, n: ast.AsyncFor) -> myfp.ForStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_AsyncFor(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_While(self, n: ast.While) -> myfp.WhileStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_While(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_If(self, n: ast.If) -> myfp.IfStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_If(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_With(self, n: ast.With) -> myfp.WithStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_With(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_AsyncWith(self, n: ast.AsyncWith) -> myfp.WithStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_AsyncWith(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Raise(self, n: ast.Raise) -> myfp.RaiseStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Raise(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Try(self, n: ast.Try) -> myfp.TryStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Try(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_TryStar(self, n: ast.TryStar) -> myfp.TryStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_TryStar(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Assert(self, n: ast.Assert) -> myfp.AssertStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Assert(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Import(self, n: ast.Import) -> myfp.Import:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Import(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_ImportFrom(self, n: ast.ImportFrom) -> myfp.ImportBase:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_ImportFrom(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Global(self, n: ast.Global) -> myfp.GlobalDecl:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Global(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Nonlocal(self, n: ast.Nonlocal) -> myfp.NonlocalDecl:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Nonlocal(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Expr(self, n: ast.Expr) -> myfp.ExpressionStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Expr(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Pass(self, n: ast.Pass) -> myfp.PassStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Pass(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Break(self, n: ast.Break) -> myfp.BreakStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Break(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Continue(self, n: ast.Continue) -> myfp.ContinueStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Continue(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_NamedExpr(self, n: ast.NamedExpr) -> myfp.AssignmentExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_NamedExpr(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_BoolOp(self, n: ast.BoolOp) -> myfp.OpExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_BoolOp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_BinOp(self, n: ast.BinOp) -> myfp.OpExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_BinOp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_UnaryOp(self, n: ast.UnaryOp) -> myfp.UnaryExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_UnaryOp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Lambda(self, n: ast.Lambda) -> myfp.LambdaExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Lambda(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_IfExp(self, n: ast.IfExp) -> myfp.ConditionalExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_IfExp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Dict(self, n: ast.Dict) -> myfp.DictExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Dict(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Set(self, n: ast.Set) -> myfp.SetExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Set(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_ListComp(self, n: ast.ListComp) -> myfp.ListComprehension:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_ListComp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_SetComp(self, n: ast.SetComp) -> myfp.SetComprehension:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_SetComp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_DictComp(  # noqa: N802
+        self, n: ast.DictComp
+    ) -> myfp.DictionaryComprehension:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_DictComp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_GeneratorExp(  # noqa: N802
+        self, n: ast.GeneratorExp
+    ) -> myfp.GeneratorExpr:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_GeneratorExp(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Await(self, n: ast.Await) -> myfp.AwaitExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Await(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Yield(self, n: ast.Yield) -> myfp.YieldExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Yield(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_YieldFrom(self, n: ast.YieldFrom) -> myfp.YieldFromExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_YieldFrom(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Compare(self, n: ast.Compare) -> myfp.ComparisonExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Compare(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Call(self, n: ast.Call) -> myfp.CallExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Call(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Constant(self, n: myfp.Constant) -> myfp.Any:  # noqa: N802, ANN401
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Constant(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_JoinedStr(self, n: ast.JoinedStr) -> myfp.Expression:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_JoinedStr(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_FormattedValue(  # noqa: N802
+        self, n: ast.FormattedValue
+    ) -> myfp.Expression:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_FormattedValue(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Attribute(  # noqa: N802
+        self, n: ast.Attribute
+    ) -> myfp.MemberExpr | myfp.SuperExpr:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Attribute(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Subscript(self, n: ast.Subscript) -> myfp.IndexExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Subscript(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Starred(self, n: ast.Starred) -> myfp.StarExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Starred(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Name(self, n: ast.Name) -> myfp.NameExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Name(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_List(self, n: ast.List) -> myfp.ListExpr | myfp.TupleExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_List(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Tuple(self, n: ast.Tuple) -> myfp.TupleExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Tuple(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Slice(self, n: ast.Slice) -> myfp.SliceExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Slice(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_ExtSlice(self, n: ast.ExtSlice) -> myfp.TupleExpr:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_ExtSlice(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Index(self, n: ast.Index) -> myfp.Node:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Index(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_Match(self, n: ast.Match) -> myfp.MatchStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_Match(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_MatchValue(self, n: ast.MatchValue) -> myfp.ValuePattern:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_MatchValue(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_MatchSingleton(  # noqa: N802
+        self, n: ast.MatchSingleton
+    ) -> myfp.SingletonPattern:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_MatchSingleton(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_MatchSequence(  # noqa: N802
+        self, n: ast.MatchSequence
+    ) -> myfp.SequencePattern:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_MatchSequence(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_MatchMapping(  # noqa: N802
+        self, n: ast.MatchMapping
+    ) -> myfp.MappingPattern:
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_MatchMapping(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_MatchClass(self, n: ast.MatchClass) -> myfp.ClassPattern:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_MatchClass(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_MatchAs(self, n: ast.MatchAs) -> myfp.AsPattern:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_MatchAs(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_MatchOr(self, n: ast.MatchOr) -> myfp.OrPattern:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_MatchOr(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def visit_TypeAlias(self, n: ast.TypeAlias) -> myfp.AssignmentStmt:  # noqa: N802
+        """Override to mypy AST converter for direct AST pass through."""
+        ret = super().visit_TypeAlias(n)
+        self.link_mypy_to_jac_node(n, ret)
+        return ret
+
+    def link_mypy_to_jac_node(
+        self, node: ast.AST, ret: myfp.Any  # noqa: ANN401
+    ) -> None:
+        """Link mypy AST node to Jac AST node."""
         if hasattr(node, "jac_link"):
             for i in range(len(node.jac_link)):
                 node.jac_link[i].gen.mypy_ast.append(ret)
@@ -328,7 +730,6 @@ class ASTConverter(myfp.ASTConverter):
             ] = node.jac_link
         else:
             raise Exception("AST node not linked to Jac node")
-        return ret
 
 
 class Errors(mye.Errors):

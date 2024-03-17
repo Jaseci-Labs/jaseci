@@ -213,10 +213,10 @@ class PyastGenPass(Pass):
                 i.jac_link: list[ast3.AST] = [jac_node]  # type: ignore
         return py_node
 
-    def link_identifier(self, jac_node: ast.AstNode, py_node: list[ast3.AST]) -> None:
+    def link_identifier(self, jac_node: ast.AstNode, py_nodes: list[ast3.AST]) -> None:
         """Link jac name ast to py ast nodes."""
-        jac_node.gen.py_ast = py_node
-        for i in py_node:
+        jac_node.gen.py_ast = py_nodes
+        for i in py_nodes:
             if isinstance(i.jac_link, list):  # type: ignore
                 i.jac_link.append(jac_node)  # type: ignore
 
@@ -574,6 +574,8 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        if node.alias:
+            self.link_identifier(jac_node=node.alias, py_nodes=node.gen.py_ast)
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
@@ -698,6 +700,7 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        self.link_identifier(jac_node=node.name, py_nodes=node.gen.py_ast)
 
     def collect_events(
         self, node: ast.Architype
@@ -900,7 +903,7 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        self.link_identifier(jac_node=node.name_ref, py_node=node.gen.py_ast)
+        self.link_identifier(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
@@ -1242,6 +1245,7 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        self.link_identifier(jac_node=node.name, py_nodes=node.gen.py_ast)
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -1498,7 +1502,7 @@ class PyastGenPass(Pass):
             )
         ]
         if node.name:
-            self.link_identifier(jac_node=node.name, py_node=node.gen.py_ast)
+            self.link_identifier(jac_node=node.name, py_nodes=node.gen.py_ast)
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
@@ -1606,6 +1610,9 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        self.link_identifier(jac_node=node.expr, py_nodes=node.gen.py_ast)
+        if node.alias:
+            self.link_identifier(jac_node=node.alias, py_nodes=node.gen.py_ast)
 
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
@@ -1863,6 +1870,7 @@ class PyastGenPass(Pass):
                     jac_node=x,
                 )
             )
+            self.link_identifier(jac_node=x, py_nodes=[py_nodes[-1]])
         node.gen.py_ast = [*py_nodes]
 
     def exit_non_local_stmt(self, node: ast.NonLocalStmt) -> None:
@@ -1878,6 +1886,7 @@ class PyastGenPass(Pass):
                     jac_node=x,
                 )
             )
+            self.link_identifier(jac_node=x, py_nodes=[py_nodes[-1]])
         node.gen.py_ast = [*py_nodes]
 
     def exit_assignment(self, node: ast.Assignment) -> None:
@@ -2395,6 +2404,8 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        if node.key:
+            self.link_identifier(jac_node=node.key, py_nodes=node.gen.py_ast)
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -2491,23 +2502,21 @@ class PyastGenPass(Pass):
         is_null_ok: bool,
         """
         if node.is_attr:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Attribute(
-                        value=node.target.gen.py_ast[0],
-                        attr=(
-                            node.right.sym_name
-                            if isinstance(node.right, ast.AstSymbolNode)
-                            else ""
-                        ),
-                        ctx=(
-                            node.right.py_ctx_func()
-                            if isinstance(node.right, ast.AstSymbolNode)
-                            else ast3.Load()
-                        ),
+            if isinstance(node.right, ast.AstSymbolNode):
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Attribute(
+                            value=node.target.gen.py_ast[0],
+                            attr=(node.right.sym_name),
+                            ctx=(node.right.py_ctx_func()),
+                        )
                     )
+                ]
+                self.link_identifier(
+                    jac_node=node.right.sym_name_node, py_nodes=node.gen.py_ast
                 )
-            ]
+            else:
+                self.error("Invalid attribute access")
         elif isinstance(node.right, ast.FilterCompr):
             node.gen.py_ast = [
                 self.sync(
