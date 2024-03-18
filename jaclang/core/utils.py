@@ -134,7 +134,7 @@ def filter(
         if not key_exists(filtered_data, incl[0]):
             raise ValueError(f"Invalid scope: {incl[0]}")
         else:
-            res=key_exists(filtered_data, incl[0])
+            res = key_exists(filtered_data, incl[0])
             info_str += f"{str(incl[0])} ({res[1]})  ({res[0]}) = {incl[1]}\n"
     return info_str
 
@@ -144,14 +144,14 @@ registry_data = {
         "model": ["obj", ""],
         "llm": [None, ""],
         "emoji_examples": ["list[dict[str,str]]", "Examples of Text to Emoji"],
-        "outer": ["obj", 'main object '],
+        "outer": ["obj", "main object "],
         "personality_examples": [
             "dict[str,Personality|None]",
             "Personality Information of Famous People",
         ],
     },
     "get_emoji(Module).outer(obj).inner(obj)": {
-        "self.in_var": ["int", 'inner variable']
+        "self.in_var": ["int", "inner variable"]
     },
-    "get_emoji(Module).outer(obj)": {'inner object': ["obj", "inner sem"]},
+    "get_emoji(Module).outer(obj)": {"inner object": ["obj", "inner sem"]},
 }

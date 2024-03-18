@@ -404,7 +404,6 @@ class JacFeatureDefaults:
         action: str,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-
         reason = False
         if "reason" in model_params:
             reason = model_params.pop("reason")
