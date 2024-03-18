@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -88,3 +88,69 @@ def traverse_graph(
                 else:
 
                     dfs(other_nd, cur_depth + 1)
+
+
+def get_type_annotation(data: Any) -> str:  # noqa: ANN401  # TODO: Need to Modify
+    """Get the type annotation of the input data."""
+    if isinstance(data, dict):
+        class_name = next(
+            (value.__class__.__name__ for value in data.values() if value is not None),
+            None,
+        )
+
+        if class_name:
+            return f"dict[str, {class_name}]"
+        else:
+            return "dict[str, Any]"
+    else:
+        return type(data).__name__
+
+
+def filter(
+    scope: str, registry_data: dict, info_str: str, incl_info: tuple[str, str]
+) -> str:
+    """Filter the registry data based on the scope and return the info string."""
+    parts = scope.split(".")
+    avail_scopes = [scope]
+    for i in range(1, len(parts)):
+        avail_scopes.append(".".join(parts[:i]))
+
+    filtered_data = {}
+    for key in avail_scopes:
+        if key in registry_data:
+            filtered_data[key] = registry_data[key]
+
+    def key_exists(dictionary: dict, key: str) -> Any:  # noqa: ANN401
+        """Check if key exists in registry."""
+        for k, v in dictionary.items():
+            if k == key:
+                return v
+            if isinstance(v, dict) and key_exists(v, key):
+                return v[key]
+        return False
+
+    info_str = ""  # TODO: We have to generate this
+    for incl in incl_info:
+        if not key_exists(filtered_data, incl[0]):
+            raise ValueError(f"Invalid scope: {incl[0]}")
+        else:
+            info_str += f"{key_exists(filtered_data, incl[0])}\n"
+    return info_str
+
+
+registry_data = {
+    "get_emoji(Module)": {
+        "model": ["obj", ""],
+        "llm": [None, ""],
+        "emoji_examples": ["list[dict[str,str]]", "Examples of Text to Emoji"],
+        "outer": ["obj", "out sem "],
+        "personality_examples": [
+            "dict[str,Personality|None]",
+            "Personality Information of Famous People",
+        ],
+    },
+    "get_emoji(Module).outer(obj).inner(obj)": {
+        "self.vv": ["int", "semstr of  self.vv "]
+    },
+    "get_emoji(Module).outer(obj)": {"inner": ["obj", "inner sem"]},
+}
