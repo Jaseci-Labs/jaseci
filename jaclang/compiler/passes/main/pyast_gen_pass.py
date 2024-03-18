@@ -755,6 +755,12 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        for i in node.target.archs:
+            if i.sym_link:
+                self.link_identifier(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+                self.link_identifier(
+                    jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
+                )
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
@@ -806,6 +812,12 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        for i in node.target.archs:
+            if i.sym_link:
+                self.link_identifier(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+                self.link_identifier(
+                    jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
+                )
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -1095,6 +1107,15 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        for i in node.target.archs:
+            if i.sym_link:
+                self.link_identifier(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+                self.link_identifier(
+                    jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
+                )
+        if isinstance(node.parent, ast.Ability) and node.parent.signature:
+            # TODO: Here we need to do a link for each subnode to the original parent signature
+            pass
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
