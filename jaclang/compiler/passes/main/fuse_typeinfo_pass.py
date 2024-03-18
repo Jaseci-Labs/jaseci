@@ -4,6 +4,8 @@ This is used to call mypy type checking into Jac files by integrating
 mypy apis into Jac and use jac py ast in it.
 """
 
+from __future__ import annotations
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.utils.helpers import pascal_to_snake
@@ -46,8 +48,9 @@ class FuseTypeInfoPass(Pass):
             node.sym_info.typ_sym_table = typ_sym_table
             print(node.loc, node.sym_info.typ_sym_table.name)
 
+    @staticmethod
     def __handle_node(func) -> None:
-        def node_handler(self, node: ast.AstSymbolNode):
+        def node_handler(self: FuseTypeInfoPass, node: ast.AstSymbolNode):
             if not isinstance(node, ast.AstSymbolNode):
                 print(f"Warning {node.__class__.__name__} is not an AstSymbolNode")
             try:

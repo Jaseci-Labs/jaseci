@@ -701,6 +701,8 @@ class PyastGenPass(Pass):
             )
         ]
         self.link_identifier(jac_node=node.name, py_nodes=node.gen.py_ast)
+        if isinstance(node.body, ast.ArchDef):
+            self.link_identifier(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def collect_events(
         self, node: ast.Architype
@@ -793,6 +795,8 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+        if isinstance(node.body, ast.EnumDef):
+            self.link_identifier(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -904,6 +908,8 @@ class PyastGenPass(Pass):
             )
         ]
         self.link_identifier(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
+        if isinstance(node.body, ast.AbilityDef):
+            self.link_identifier(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
