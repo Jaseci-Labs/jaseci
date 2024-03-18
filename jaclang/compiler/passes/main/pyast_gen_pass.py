@@ -985,6 +985,24 @@ class PyastGenPass(Pass):
                             include_info[key] = value
                         elif key == "excl_info":
                             exclude_info[key] = value
+            for value in include_info.values():
+                if isinstance(value, ast.TupleVal) and isinstance(value.values, ast.SubNodeList):
+                    for i in value.values.items:
+                        if isinstance(i,ast.Name):
+                            pass
+                        elif isinstance(i,ast.AtomTrailer):
+                            def bfs(node: ast.AstNode) -> list[str]:
+                                """Collect type information in assignment using bfs."""
+                                extraced_name = []
+                                if isinstance(node, (ast.BuiltinType, ast.Token)):
+                                    extraced_name.append(node.value)
+                                for child in node.kid:
+                                    extraced_name.extend(bfs(child))
+                                return extraced_name
+                            # return ''.join(bfs(i))
+                elif isinstance(value, ast.AtomUnit) and isinstance(value.value, ast.Name):
+                    pass
+                    # return value
             return [
                 self.sync(
                     ast3.Return(
