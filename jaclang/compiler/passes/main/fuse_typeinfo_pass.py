@@ -46,37 +46,54 @@ class FuseTypeInfoPass(Pass):
 
         if typ_sym_table != self.ir.sym_tab:
             node.sym_info.typ_sym_table = typ_sym_table
-            print(node.loc, node.sym_info.typ_sym_table.name)
 
     @staticmethod
-    def __handle_node(func) -> None:
+    def __handle_node(func):
         def node_handler(self: FuseTypeInfoPass, node: ast.AstSymbolNode):
             if not isinstance(node, ast.AstSymbolNode):
                 print(f"Warning {node.__class__.__name__} is not an AstSymbolNode")
+            
             try:
+                jac_node_str = f'jac node "{node.loc}::{node.__class__.__name__}' 
+                if hasattr(node, "value"):
+                    jac_node_str += f'::{node.value}"'
+                else:
+                    jac_node_str += '"'
+
+                # Jac node has only one mypy node linked to it
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                     self.__set_sym_table_link(node)
+                
+                # Jac node has multiple mypy nodes linked to it
                 elif len(node.gen.mypy_ast) > 1:
-                    self.__debug_print(
-                        f'jac node "{node.loc}::{node.__class__.__name__}" has multiple mypy nodes associated to it'
-                    )
-                else:
-                    if hasattr(node, "value"):
-                        self.__debug_print(
-                            f'jac node "{node.loc}::{node.__class__.__name__}::{node.value}" doesn\'t have mypy node associated to it'
-                        )
+                    # Checking that these nodes are duplicate or not
+                    temp = []
+                    for n in node.gen.mypy_ast:
+                        n_id = f"{type(node)}"
+                        n_id += f"::{n.line}::{n.column}"
+                        n_id += f" - {n.end_line}::{n.end_column}"
+                        if n_id not in temp:
+                            temp.append(n_id)
+
+                    # Check the number of unique mypy nodes linked
+                    if len(temp) > 1:
+                        self.__debug_print(jac_node_str, "has multiple mypy nodes associated to it")
                     else:
-                        self.__debug_print(
-                            f'jac node "{node.loc}::{node.__class__.__name__}" doesn\'t have mypy node associated to it'
-                        )
+                        # self.__debug_print(jac_node_str, "has duplicate mypy nodes associated to it")
+                        func(self, node)
+                        self.__set_sym_table_link(node)
+
+                # Jac node doesn't have mypy nodes linked to it
+                else:
+                    self.__debug_print(jac_node_str, "doesn\'t have mypy node associated to it")
+
             except AttributeError as e:
                 self.__debug_print(
                     f'Internal error happened while parsing "{e.obj.__class__.__name__}"'
                 )
                 traceback.print_exc()
                 print(e)
-
         return node_handler
 
     def enter_import(self, node: ast.Import):
@@ -85,28 +102,44 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_name(self, node: ast.Name) -> None:
-        mypy_node = (  # TODO: May want to think about this approach more
-            node.gen.mypy_ast[0].node
-            if (hasattr(node.gen.mypy_ast[0], "node"))
-            else None
-        )
-        if isinstance(mypy_node, (mypyNode.Var, mypyNode.FuncDef)):
-            self.__call_type_handler(node, mypy_node.type)
+        mypy_node = node.gen.mypy_ast[0] 
+        
+        if hasattr(mypy_node, "node"):
+            orig_node = mypy_node
+            mypy_node = mypy_node.node
 
-        elif isinstance(mypy_node, mypyNode.MypyFile):
-            node.sym_info = ast.SymbolInfo("types.ModuleType")
+            if isinstance(mypy_node, (mypyNode.Var, mypyNode.FuncDef)):
+                self.__call_type_handler(node, mypy_node.type)
 
-        elif isinstance(mypy_node, mypyNode.TypeInfo):
-            node.sym_info = ast.SymbolInfo(mypy_node.fullname)
+            elif isinstance(mypy_node, mypyNode.MypyFile):
+                node.sym_info = ast.SymbolInfo("types.ModuleType")
 
-        elif isinstance(mypy_node, mypyNode.OverloadedFuncDef):
-            self.__call_type_handler(node, mypy_node.items[0].func.type)
+            elif isinstance(mypy_node, mypyNode.TypeInfo):
+                node.sym_info = ast.SymbolInfo(mypy_node.fullname)
 
+            elif isinstance(mypy_node, mypyNode.OverloadedFuncDef):
+                self.__call_type_handler(node, mypy_node.items[0].func.type)
+
+            else:
+                self.__debug_print(
+                    f'"{node.loc}::{node.__class__.__name__}" mypy (with node attr) node isn\'t supported',
+                    type(mypy_node),
+                )
+        
         else:
-            self.__debug_print(
-                f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported',
-                type(mypy_node),
-            )
+            if isinstance(mypy_node, mypyNode.ClassDef):
+                mypy_node: mypyNode.ClassDef = node.gen.mypy_ast[0]
+                node.sym_info.typ = mypy_node.fullname
+                self.__set_sym_table_link(node)
+            elif isinstance(mypy_node, mypyNode.FuncDef):
+                self.__call_type_handler(node, mypy_node.type)
+            elif isinstance(mypy_node, mypyNode.Argument):
+                self.__call_type_handler(node, mypy_node.variable.type)
+            else:
+                self.__debug_print(
+                    f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported',
+                    type(mypy_node),
+                )
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath):
@@ -142,7 +175,8 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_param_var(self, node: ast.ParamVar) -> None:
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node: mypyNode.Argument = node.gen.mypy_ast[0]
+        self.__call_type_handler(node, mypy_node.variable.type)
 
     # TODO: support all lhs if needed
     @__handle_node
@@ -199,7 +233,9 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node: mypyNode.ClassDef = node.gen.mypy_ast[0]
+        node.sym_info.typ = mypy_node.fullname
+        self.__set_sym_table_link(node)
 
     @__handle_node
     def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
@@ -217,6 +253,30 @@ class FuseTypeInfoPass(Pass):
     def enter_assign_compr(self, node: ast.AssignCompr) -> None:
         self.__debug_print("Getting type not supported in", type(node))
 
+    @__handle_node
+    def enter_int(self, node: ast.Int) -> None:
+        node.sym_info.typ = "builtins.int"
+    
+    @__handle_node
+    def enter_int(self, node: ast.Int) -> None:
+        node.sym_info.typ = "builtins.int"
+
+    @__handle_node
+    def enter_float(self, node: ast.Float) -> None:
+        node.sym_info.typ = "builtins.float"
+    
+    @__handle_node
+    def enter_string(self, node: ast.String) -> None:
+        node.sym_info.typ = "builtins.str"
+    
+    @__handle_node
+    def enter_bool(self, node: ast.Bool) -> None:
+        node.sym_info.typ = "builtins.bool"
+    
+    @__handle_node
+    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
+        self.__debug_print("Getting type not supported in", type(node))
+    
     def get_type_from_instance(
         self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Instance
     ):
