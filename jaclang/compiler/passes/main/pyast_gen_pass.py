@@ -213,7 +213,9 @@ class PyastGenPass(Pass):
                 i.jac_link: list[ast3.AST] = [jac_node]  # type: ignore
         return py_node
 
-    def link_identifier(self, jac_node: ast.AstNode, py_nodes: list[ast3.AST]) -> None:
+    def link_jac_py_nodes(
+        self, jac_node: ast.AstNode, py_nodes: list[ast3.AST]
+    ) -> None:
         """Link jac name ast to py ast nodes."""
         jac_node.gen.py_ast = py_nodes
         for i in py_nodes:
@@ -254,7 +256,7 @@ class PyastGenPass(Pass):
                     [
                         x.gen.py_ast
                         for x in node.items
-                        # if not isinstance(x, ast.AstImplOnlyNode)
+                        if not isinstance(x, ast.AstImplOnlyNode)
                     ]
                 )
                 if node and isinstance(node.gen.py_ast, list)
@@ -312,7 +314,8 @@ class PyastGenPass(Pass):
         body: Sequence[ElementStmt],
         is_imported: bool,
         """
-        pre_body = [*node.impl_mod.body, *node.body] if node.impl_mod else node.body
+        clean_body = [i for i in node.body if not isinstance(i, ast.AstImplOnlyNode)]
+        pre_body = [*node.impl_mod.body, *clean_body] if node.impl_mod else clean_body
         pre_body = [*pre_body, *node.test_mod.body] if node.test_mod else pre_body
         body = (
             [
@@ -575,7 +578,7 @@ class PyastGenPass(Pass):
             )
         ]
         if node.alias:
-            self.link_identifier(jac_node=node.alias, py_nodes=node.gen.py_ast)
+            self.link_jac_py_nodes(jac_node=node.alias, py_nodes=node.gen.py_ast)
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
@@ -700,9 +703,9 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        self.link_identifier(jac_node=node.name, py_nodes=node.gen.py_ast)
+        self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
         if isinstance(node.body, ast.ArchDef):
-            self.link_identifier(jac_node=node.body, py_nodes=node.gen.py_ast)
+            self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def collect_events(
         self, node: ast.Architype
@@ -757,8 +760,8 @@ class PyastGenPass(Pass):
         """
         for i in node.target.archs:
             if i.sym_link:
-                self.link_identifier(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
-                self.link_identifier(
+                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+                self.link_jac_py_nodes(
                     jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
                 )
 
@@ -802,7 +805,7 @@ class PyastGenPass(Pass):
             )
         ]
         if isinstance(node.body, ast.EnumDef):
-            self.link_identifier(jac_node=node.body, py_nodes=node.gen.py_ast)
+            self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -814,8 +817,8 @@ class PyastGenPass(Pass):
         """
         for i in node.target.archs:
             if i.sym_link:
-                self.link_identifier(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
-                self.link_identifier(
+                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+                self.link_jac_py_nodes(
                     jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
                 )
 
@@ -919,9 +922,9 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        self.link_identifier(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
+        self.link_jac_py_nodes(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
         if isinstance(node.body, ast.AbilityDef):
-            self.link_identifier(jac_node=node.body, py_nodes=node.gen.py_ast)
+            self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
@@ -1109,8 +1112,8 @@ class PyastGenPass(Pass):
         """
         for i in node.target.archs:
             if i.sym_link:
-                self.link_identifier(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
-                self.link_identifier(
+                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+                self.link_jac_py_nodes(
                     jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
                 )
         if isinstance(node.parent, ast.Ability) and node.parent.signature:
@@ -1272,7 +1275,7 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        self.link_identifier(jac_node=node.name, py_nodes=node.gen.py_ast)
+        self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -1529,7 +1532,7 @@ class PyastGenPass(Pass):
             )
         ]
         if node.name:
-            self.link_identifier(jac_node=node.name, py_nodes=node.gen.py_ast)
+            self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
@@ -1637,9 +1640,9 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        self.link_identifier(jac_node=node.expr, py_nodes=node.gen.py_ast)
+        self.link_jac_py_nodes(jac_node=node.expr, py_nodes=node.gen.py_ast)
         if node.alias:
-            self.link_identifier(jac_node=node.alias, py_nodes=node.gen.py_ast)
+            self.link_jac_py_nodes(jac_node=node.alias, py_nodes=node.gen.py_ast)
 
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
@@ -1897,7 +1900,7 @@ class PyastGenPass(Pass):
                     jac_node=x,
                 )
             )
-            self.link_identifier(jac_node=x, py_nodes=[py_nodes[-1]])
+            self.link_jac_py_nodes(jac_node=x, py_nodes=[py_nodes[-1]])
         node.gen.py_ast = [*py_nodes]
 
     def exit_non_local_stmt(self, node: ast.NonLocalStmt) -> None:
@@ -1913,7 +1916,7 @@ class PyastGenPass(Pass):
                     jac_node=x,
                 )
             )
-            self.link_identifier(jac_node=x, py_nodes=[py_nodes[-1]])
+            self.link_jac_py_nodes(jac_node=x, py_nodes=[py_nodes[-1]])
         node.gen.py_ast = [*py_nodes]
 
     def exit_assignment(self, node: ast.Assignment) -> None:
@@ -2432,7 +2435,7 @@ class PyastGenPass(Pass):
             )
         ]
         if node.key:
-            self.link_identifier(jac_node=node.key, py_nodes=node.gen.py_ast)
+            self.link_jac_py_nodes(jac_node=node.key, py_nodes=node.gen.py_ast)
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -2539,7 +2542,7 @@ class PyastGenPass(Pass):
                         )
                     )
                 ]
-                self.link_identifier(
+                self.link_jac_py_nodes(
                     jac_node=node.right.sym_name_node, py_nodes=node.gen.py_ast
                 )
             else:
