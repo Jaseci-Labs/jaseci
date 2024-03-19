@@ -969,9 +969,8 @@ class PyastGenPass(Pass):
         """Generate llm body."""
         if isinstance(node.body, ast.FuncCall):
             model_params = {}
-            include_info = {}
-            exclude_info = {}
-
+            include_info = []
+            exclude_info = []
             if node.body.params:
                 for param in node.body.params.items:
                     if isinstance(param, ast.KWPair) and isinstance(
@@ -982,27 +981,53 @@ class PyastGenPass(Pass):
                         if key not in ["incl_info", "excl_info"]:
                             model_params[key] = value
                         elif key == "incl_info":
-                            include_info[key] = value
+                            if isinstance(value, ast.AtomUnit):
+                                var_name = (
+                                    value.value.right.value
+                                    if isinstance(value.value, ast.AtomTrailer)
+                                    and isinstance(value.value.right, ast.Name)
+                                    else (
+                                        value.value.value
+                                        if isinstance(value.value, ast.Name)
+                                        else ""
+                                    )
+                                )
+                                include_info.append((var_name, value.gen.py_ast[0]))
+                            elif isinstance(value, ast.TupleVal) and value.values:
+                                for i in value.values.items:
+                                    var_name = (
+                                        i.right.value
+                                        if isinstance(i, ast.AtomTrailer)
+                                        and isinstance(i.right, ast.Name)
+                                        else (
+                                            i.value if isinstance(i, ast.Name) else ""
+                                        )
+                                    )
+                                    include_info.append((var_name, i.gen.py_ast[0]))
                         elif key == "excl_info":
-                            exclude_info[key] = value
-            for value in include_info.values():
-                if isinstance(value, ast.TupleVal) and isinstance(value.values, ast.SubNodeList):
-                    for i in value.values.items:
-                        if isinstance(i,ast.Name):
-                            pass
-                        elif isinstance(i,ast.AtomTrailer):
-                            def bfs(node: ast.AstNode) -> list[str]:
-                                """Collect type information in assignment using bfs."""
-                                extraced_name = []
-                                if isinstance(node, (ast.BuiltinType, ast.Token)):
-                                    extraced_name.append(node.value)
-                                for child in node.kid:
-                                    extraced_name.extend(bfs(child))
-                                return extraced_name
-                            # return ''.join(bfs(i))
-                elif isinstance(value, ast.AtomUnit) and isinstance(value.value, ast.Name):
-                    pass
-                    # return value
+                            if isinstance(value, ast.AtomUnit):
+                                var_name = (
+                                    value.value.right.value
+                                    if isinstance(value.value, ast.AtomTrailer)
+                                    and isinstance(value.value.right, ast.Name)
+                                    else (
+                                        value.value.value
+                                        if isinstance(value.value, ast.Name)
+                                        else ""
+                                    )
+                                )
+                                exclude_info.append((var_name, value.gen.py_ast[0]))
+                            elif isinstance(value, ast.TupleVal) and value.values:
+                                for i in value.values.items:
+                                    var_name = (
+                                        i.right.value
+                                        if isinstance(i, ast.AtomTrailer)
+                                        and isinstance(i.right, ast.Name)
+                                        else (
+                                            i.value if isinstance(i, ast.Name) else ""
+                                        )
+                                    )
+                                    exclude_info.append((var_name, i.gen.py_ast[0]))
             return [
                 self.sync(
                     ast3.Return(
@@ -1063,33 +1088,22 @@ class PyastGenPass(Pass):
                                         ast3.keyword(
                                             arg="incl_info",
                                             value=self.sync(
-                                                ast3.Tuple(
+                                                ast3.List(
                                                     elts=[
                                                         self.sync(
                                                             ast3.Tuple(
                                                                 elts=[
                                                                     self.sync(
                                                                         ast3.Constant(
-                                                                            value=str(
-                                                                                value.value.value
-                                                                                if isinstance(
-                                                                                    value,
-                                                                                    ast.AtomUnit,
-                                                                                )
-                                                                                and isinstance(
-                                                                                    value.value,
-                                                                                    ast.Name,
-                                                                                )
-                                                                                else ""
-                                                                            )
+                                                                            value=key
                                                                         )
                                                                     ),
-                                                                    value.gen.py_ast[0],
+                                                                    value,
                                                                 ],
                                                                 ctx=ast3.Load(),
                                                             )
                                                         )
-                                                        for value in include_info.values()
+                                                        for key, value in include_info
                                                     ],
                                                     ctx=ast3.Load(),
                                                 )
@@ -1100,38 +1114,27 @@ class PyastGenPass(Pass):
                                         ast3.keyword(
                                             arg="excl_info",
                                             value=self.sync(
-                                                ast3.Tuple(
+                                                ast3.List(
                                                     elts=[
                                                         self.sync(
                                                             ast3.Tuple(
                                                                 elts=[
                                                                     self.sync(
                                                                         ast3.Constant(
-                                                                            value=str(
-                                                                                value.value.value
-                                                                                if isinstance(
-                                                                                    value,
-                                                                                    ast.AtomUnit,
-                                                                                )
-                                                                                and isinstance(
-                                                                                    value.value,
-                                                                                    ast.Name,
-                                                                                )
-                                                                                else ""
-                                                                            )
+                                                                            value=key
                                                                         )
                                                                     ),
-                                                                    value.gen.py_ast[0],
+                                                                    value,
                                                                 ],
                                                                 ctx=ast3.Load(),
                                                             )
                                                         )
-                                                        for value in exclude_info.values()
+                                                        for key, value in exclude_info
                                                     ],
                                                     ctx=ast3.Load(),
                                                 )
                                             ),
-                                        )
+                                        ),
                                     ),
                                     self.sync(
                                         ast3.keyword(
@@ -1226,7 +1229,7 @@ class PyastGenPass(Pass):
                                                 )
                                             ),
                                         )
-                                    ),  # TODO: Add Meaning Types of Outputs
+                                    ),
                                     self.sync(
                                         ast3.keyword(
                                             arg="action",

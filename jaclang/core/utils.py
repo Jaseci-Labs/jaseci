@@ -151,7 +151,7 @@ registry_data = {
         ],
     },
     "get_emoji(Module).outer(obj).inner(obj)": {
-        "self.in_var": ["int", "inner variable"]
+        "in_var": ["int", "inner variable"]
     },
     "get_emoji(Module).outer(obj)": {"inner object": ["obj", "inner sem"]},
 }

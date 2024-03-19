@@ -71,7 +71,7 @@ outer{
     inner{
         has in_var:'inner variable':int=9;
     can 'Get Personality of the Person'
-get_personality (person: 'Person Object': Person) -> 'Personality of the Person': Personality by llm(reason=True, incl_info=(personality_examples,self.in_var), excl_info=(self.in_var));
+get_personality (person: 'Person Object': Person) -> 'Personality of the Person': Personality by llm(reason=False, incl_info=(personality_examples,self.in_var), excl_info=(self.in_var));
 
     }
 }
