@@ -815,7 +815,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         break_tok = ast.Token(
             file_path=self.mod_path,
             name=Tok.KW_BREAK,
-            value="KW_BREAK",
+            value="break",
             line=0,
             col_start=0,
             col_end=0,
@@ -931,14 +931,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_end=0,
             )
         else:
-            raise self.ice()
+            raise self.ice("Invalid type for constant")
 
     def proc_continue(self, node: py_ast.Continue) -> ast.CtrlStmt:
         """Process python node."""
         continue_tok = ast.Token(
             file_path=self.mod_path,
             name=Tok.KW_CONTINUE,
-            value="KW_CONTINUE",
+            value="continue",
             line=0,
             col_start=0,
             col_end=0,
@@ -1274,7 +1274,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         values = [self.convert(value) for value in node.values]
         valid = [
-            value for value in values if isinstance(value, (ast.String, ast.FString))
+            value
+            for value in values
+            if isinstance(value, (ast.String, ast.FString, ast.ExprStmt))
         ]
         return ast.MultiString(strings=valid, kid=values)
 
