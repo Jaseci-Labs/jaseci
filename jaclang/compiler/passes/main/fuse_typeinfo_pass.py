@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import traceback
-from typing import Callable
+from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
@@ -18,10 +18,13 @@ import mypy.nodes as MypyNode  # noqa N812
 import mypy.types as MypyTypes  # noqa N812
 
 
+T = TypeVar("T", bound=ast.AstSymbolNode)
+
+
 class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
-    def __debug_print(self, *argv) -> None:
+    def __debug_print(self, *argv: object) -> None:
         if "FuseTypeInfoDebug" in os.environ:
             print("FuseTypeInfo::", *argv)
 
@@ -50,8 +53,10 @@ class FuseTypeInfoPass(Pass):
             node.sym_info.typ_sym_table = typ_sym_table
 
     @staticmethod
-    def __handle_node(func: Callable[[FuseTypeInfoPass, ast.AstSymbolNode], None]):
-        def node_handler(self: FuseTypeInfoPass, node: ast.AstSymbolNode) -> None:
+    def __handle_node(
+        func: Callable[[FuseTypeInfoPass, T], None]
+    ) -> Callable[[FuseTypeInfoPass, T], None]:
+        def node_handler(self: FuseTypeInfoPass, node: T) -> None:
             if not isinstance(node, ast.AstSymbolNode):
                 print(f"Warning {node.__class__.__name__} is not an AstSymbolNode")
 
