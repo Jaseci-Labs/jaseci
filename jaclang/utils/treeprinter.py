@@ -88,10 +88,14 @@ def print_ast_tree(
     from jaclang.compiler.absyntree import AstSymbolNode, Token
 
     def __node_repr_in_tree(node: AstNode) -> str:
-        if isinstance(node, Token):
+        if isinstance(node, Token) and isinstance(node, AstSymbolNode):
+            return (
+                f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}"
+            )
+        elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}"
         elif isinstance(node, AstSymbolNode):
-            return f"{node.__class__.__name__} - {node.sym_name}"
+            return f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}"
         else:
             return f"{node.__class__.__name__}"
 
@@ -210,6 +214,10 @@ def _build_symbol_tree_common(
     for sym in node.tab.values():
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
+
+        # if isinstance(node.owner, ast.AstSymbolNode) and node.owner.sym_info:
+        #     print("From tree printer", id(node.owner))
+        #     SymbolTree(node_name=f"Datatype: {node.owner.sym_info.typ}", parent=symbol_node)
 
         if sym.decl and sym.decl.loc.first_line > 0:
             SymbolTree(

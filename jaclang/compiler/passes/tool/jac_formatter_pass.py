@@ -1930,7 +1930,7 @@ class JacFormatPass(Pass):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Token) and i.value == ":":
                 self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.CodeBlockStmt):
+            elif isinstance(i, ast.SubNodeList):
                 self.indent_level += 1
                 self.emit(node, i.gen.jac.strip())
                 self.indent_level -= 1
