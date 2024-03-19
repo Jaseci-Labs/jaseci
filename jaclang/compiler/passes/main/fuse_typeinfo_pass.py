@@ -9,6 +9,7 @@ from __future__ import annotations
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.utils.helpers import pascal_to_snake
+
 import mypy.nodes as mypyNode
 import mypy.types as mypyTypes
 import os
@@ -52,9 +53,9 @@ class FuseTypeInfoPass(Pass):
         def node_handler(self: FuseTypeInfoPass, node: ast.AstSymbolNode):
             if not isinstance(node, ast.AstSymbolNode):
                 print(f"Warning {node.__class__.__name__} is not an AstSymbolNode")
-            
+
             try:
-                jac_node_str = f'jac node "{node.loc}::{node.__class__.__name__}' 
+                jac_node_str = f'jac node "{node.loc}::{node.__class__.__name__}'
                 if hasattr(node, "value"):
                     jac_node_str += f'::{node.value}"'
                 else:
@@ -64,7 +65,7 @@ class FuseTypeInfoPass(Pass):
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                     self.__set_sym_table_link(node)
-                
+
                 # Jac node has multiple mypy nodes linked to it
                 elif len(node.gen.mypy_ast) > 1:
                     # Checking that these nodes are duplicate or not
@@ -78,7 +79,9 @@ class FuseTypeInfoPass(Pass):
 
                     # Check the number of unique mypy nodes linked
                     if len(temp) > 1:
-                        self.__debug_print(jac_node_str, "has multiple mypy nodes associated to it")
+                        self.__debug_print(
+                            jac_node_str, "has multiple mypy nodes associated to it"
+                        )
                     else:
                         # self.__debug_print(jac_node_str, "has duplicate mypy nodes associated to it")
                         func(self, node)
@@ -86,7 +89,9 @@ class FuseTypeInfoPass(Pass):
 
                 # Jac node doesn't have mypy nodes linked to it
                 else:
-                    self.__debug_print(jac_node_str, "doesn\'t have mypy node associated to it")
+                    self.__debug_print(
+                        jac_node_str, "doesn't have mypy node associated to it"
+                    )
 
             except AttributeError as e:
                 self.__debug_print(
@@ -94,6 +99,7 @@ class FuseTypeInfoPass(Pass):
                 )
                 traceback.print_exc()
                 print(e)
+
         return node_handler
 
     def enter_import(self, node: ast.Import):
@@ -102,10 +108,9 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_name(self, node: ast.Name) -> None:
-        mypy_node = node.gen.mypy_ast[0] 
-        
+        mypy_node = node.gen.mypy_ast[0]
+
         if hasattr(mypy_node, "node"):
-            orig_node = mypy_node
             mypy_node = mypy_node.node
 
             if isinstance(mypy_node, (mypyNode.Var, mypyNode.FuncDef)):
@@ -125,7 +130,7 @@ class FuseTypeInfoPass(Pass):
                     f'"{node.loc}::{node.__class__.__name__}" mypy (with node attr) node isn\'t supported',
                     type(mypy_node),
                 )
-        
+
         else:
             if isinstance(mypy_node, mypyNode.ClassDef):
                 mypy_node: mypyNode.ClassDef = node.gen.mypy_ast[0]
@@ -256,7 +261,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_int(self, node: ast.Int) -> None:
         node.sym_info.typ = "builtins.int"
-    
+
     @__handle_node
     def enter_int(self, node: ast.Int) -> None:
         node.sym_info.typ = "builtins.int"
@@ -264,19 +269,19 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_float(self, node: ast.Float) -> None:
         node.sym_info.typ = "builtins.float"
-    
+
     @__handle_node
     def enter_string(self, node: ast.String) -> None:
         node.sym_info.typ = "builtins.str"
-    
+
     @__handle_node
     def enter_bool(self, node: ast.Bool) -> None:
         node.sym_info.typ = "builtins.bool"
-    
+
     @__handle_node
     def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         self.__debug_print("Getting type not supported in", type(node))
-    
+
     def get_type_from_instance(
         self, node: ast.AstSymbolNode, mypy_type: mypyTypes.Instance
     ):

@@ -169,10 +169,13 @@ class SymbolTable:
             self.tab[node.sym_name].add_defn(node)
         node.sym_link = self.tab[node.sym_name]
         return collision
-    
+
     def find_scope(self, name: str) -> Optional[SymbolTable]:
+        """Find a scope in the symbol table."""
         for k in self.kid:
-            if k.name == name: return k
+            if k.name == name:
+                return k
+        return None
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
