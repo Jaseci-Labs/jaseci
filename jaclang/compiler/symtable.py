@@ -171,7 +171,7 @@ class SymbolTable:
         return collision
 
     def find_scope(self, name: str) -> Optional[SymbolTable]:
-        """Get the scope using symbol name."""
+        """Find a scope in the symbol table."""
         for k in self.kid:
             if k.name == name:
                 return k

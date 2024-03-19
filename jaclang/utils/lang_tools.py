@@ -13,6 +13,7 @@ from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
 
 
+
 class AstKidInfo:
     """Information about a kid."""
 

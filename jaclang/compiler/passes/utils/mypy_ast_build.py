@@ -338,8 +338,8 @@ class ASTConverter(myfp.ASTConverter):
             mypy_to_jac_node_map[
                 (ret.line, ret.column, ret.end_line, ret.end_column)
             ] = node.jac_link
-        else:
-            raise Exception("AST node not linked to Jac node")
+        # else:
+        #     raise Exception("AST node not linked to Jac node")
 
 
 class Errors(mye.Errors):
