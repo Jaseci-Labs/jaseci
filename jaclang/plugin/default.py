@@ -192,6 +192,7 @@ class JacFeatureDefaults:
         xit: bool,
         maxfail: Optional[int],
         directory: Optional[str],
+        verbose: bool,
     ) -> bool:
         """Run the test suite in the specified .jac file."""
         test_file = False
@@ -202,7 +203,7 @@ class JacFeatureDefaults:
                 mod_name = mod_name[:-4]
                 JacTestCheck.reset()
                 Jac.jac_import(target=mod_name, base_path=base)
-                JacTestCheck.run_test(xit, maxfail)
+                JacTestCheck.run_test(xit, maxfail, verbose)
             else:
                 print("Not a .jac file.")
         else:
@@ -227,7 +228,7 @@ class JacFeatureDefaults:
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
                         Jac.jac_import(target=file[:-4], base_path=root_dir)
-                        JacTestCheck.run_test(xit, maxfail)
+                        JacTestCheck.run_test(xit, maxfail, verbose)
 
                     if JacTestCheck.breaker and (xit or maxfail):
                         break

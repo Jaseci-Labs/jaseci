@@ -387,9 +387,10 @@ class JacTestCheck:
         JacTestCheck.test_suite = unittest.TestSuite()
 
     @staticmethod
-    def run_test(xit: bool, maxfail: int | None) -> None:
+    def run_test(xit: bool, maxfail: int | None, verbose: bool) -> None:
         """Run the test suite."""
-        runner = JacTextTestRunner(max_failures=maxfail, failfast=xit)
+        verb = 2 if verbose else 0
+        runner = JacTextTestRunner(max_failures=maxfail, failfast=xit, verbosity=verb)
         result = runner.run(JacTestCheck.test_suite)
         if result.wasSuccessful():
             print("Passed successfully.")

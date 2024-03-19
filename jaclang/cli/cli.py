@@ -147,6 +147,7 @@ def test(
     xit: bool = False,
     maxfail: int = None,  # type:ignore
     directory: str = "",
+    verbose: bool = False,
 ) -> None:
     """Run the test suite in the specified .jac file.
 
@@ -155,9 +156,17 @@ def test(
     :param xit(exit): Stop(exit) running tests as soon as finds an error.
     :param maxfail: Stop running tests after n failures.
     :param directory: Run tests from the specified directory.
+    :param verbose: Show more info.
+
+    jac test => jac test -d .
     """
     Jac.run_test(
-        filepath=filepath, filter=filter, xit=xit, maxfail=maxfail, directory=directory
+        filepath=filepath,
+        filter=filter,
+        xit=xit,
+        maxfail=maxfail,
+        directory=directory,
+        verbose=verbose,
     )
 
 
