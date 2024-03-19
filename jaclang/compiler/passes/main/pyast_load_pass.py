@@ -908,6 +908,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             int: ast.Int,
             float: ast.Float,
             str: ast.String,
+            bytes: ast.String,
             bool: ast.Bool,
             type(None): ast.Null,
         }
@@ -1264,7 +1265,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         return ret
 
-    def proc_joined_str(self, node: py_ast.JoinedStr) -> ast.MultiString:
+    def proc_joined_str(self, node: py_ast.JoinedStr) -> ast.FString:
         """Process python node.
 
         class JoinedStr(expr):
@@ -1274,11 +1275,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         values = [self.convert(value) for value in node.values]
         valid = [
-            value
-            for value in values
-            if isinstance(value, (ast.String, ast.FString, ast.ExprStmt))
+            value for value in values if isinstance(value, (ast.String, ast.ExprStmt))
         ]
-        return ast.MultiString(strings=valid, kid=values)
+        valid_values = ast.SubNodeList[ast.String | ast.ExprStmt](
+            items=valid, delim=Tok.WS, kid=valid
+        )  # not sure about the delim
+        return ast.FString(parts=valid_values, kid=values)
 
     def proc_lambda(self, node: py_ast.Lambda) -> ast.LambdaExpr:
         """Process python node.
