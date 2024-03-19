@@ -51,7 +51,7 @@ class CommandRegistry:
             if param_name == "args":
                 cmd_parser.add_argument("args", nargs=argparse.REMAINDER, help=arg_msg)
             elif param_name == "filepath":
-                first = False if first else False
+                first = False
                 cmd_parser.add_argument(
                     f"{param_name}",
                     type=(
