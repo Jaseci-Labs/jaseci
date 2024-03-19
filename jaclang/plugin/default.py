@@ -195,6 +195,19 @@ class JacFeatureDefaults:
     ) -> bool:
         """Run the test suite in the specified .jac file."""
         test_file = False
+        if filepath:
+            if filepath.endswith(".jac"):
+                base, mod_name = os.path.split(filepath)
+                base = base if base else "./"
+                mod_name = mod_name[:-4]
+                JacTestCheck.reset()
+                Jac.jac_import(target=mod_name, base_path=base)
+                JacTestCheck.run_test(xit, maxfail)
+            else:
+                print("Not a .jac file.")
+        else:
+            directory = directory if directory else os.getcwd()
+
         if filter or directory:
             current_dir = directory if directory else os.getcwd()
             for root_dir, _, files in os.walk(current_dir, topdown=True):
@@ -223,13 +236,6 @@ class JacFeatureDefaults:
             JacTestCheck.breaker = False
             print("No test files found.") if not test_file else None
 
-        elif filepath.endswith(".jac") if filepath else False:
-            base, mod_name = os.path.split(filepath)
-            base = base if base else "./"
-            mod_name = mod_name[:-4]
-            JacTestCheck.reset()
-            Jac.jac_import(target=mod_name, base_path=base)
-            JacTestCheck.run_test(xit, maxfail)
         return True
 
     @staticmethod
