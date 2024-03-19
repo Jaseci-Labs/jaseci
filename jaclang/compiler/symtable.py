@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
 
@@ -169,10 +169,13 @@ class SymbolTable:
             self.tab[node.sym_name].add_defn(node)
         node.sym_link = self.tab[node.sym_name]
         return collision
-    
+
     def find_scope(self, name: str) -> Optional[SymbolTable]:
+        """Get the scope using symbol name."""
         for k in self.kid:
-            if k.name == name: return k
+            if k.name == name:
+                return k
+        return None
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
