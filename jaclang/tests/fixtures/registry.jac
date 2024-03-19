@@ -37,6 +37,4 @@ with entry {
     einstein_age: int = 75;
     einstein_age += 1;
     einstein = Person('Albert Einstein', einstein_age);
-    print(einstein.name);
-    print(get_personality(einstein));
 }

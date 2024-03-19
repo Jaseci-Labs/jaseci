@@ -150,8 +150,6 @@ registry_data = {
             "Personality Information of Famous People",
         ],
     },
-    "get_emoji(Module).outer(obj).inner(obj)": {
-        "in_var": ["int", "inner variable"]
-    },
+    "get_emoji(Module).outer(obj).inner(obj)": {"in_var": ["int", "inner variable"]},
     "get_emoji(Module).outer(obj)": {"inner object": ["obj", "inner sem"]},
 }
