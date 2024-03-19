@@ -2635,14 +2635,17 @@ class DictVal(AtomExpr):
         if deep:
             for kv_pair in self.kv_pairs:
                 res = res and kv_pair.normalize(deep)
-        new_kid: list[AstNode] = []
-        for kv_pair in self.kv_pairs:
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.LBRACE),
+        ]
+        for i, kv_pair in enumerate(self.kv_pairs):
             new_kid.append(kv_pair)
-            new_kid.append(self.gen_token(Tok.COMMA))
-        new_kid.pop()
-
+            if i < len(self.kv_pairs) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
+        new_kid.append(self.gen_token(Tok.RBRACE))
         AstNode.__init__(self, kid=new_kid)
         return res
+    
 
 
 class KVPair(AstNode):

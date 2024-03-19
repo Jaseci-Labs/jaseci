@@ -36,11 +36,27 @@ def my_print(x: object) -> None:
 # print(f"hello {x}")
 
 
+# s=[]
+# a=[1,2,3,4,5]
+# b=(1,2,3,4,5)
+# x=()
+# c={1,2,3,4,5}
+# d={1:"one",2:"two",3:"three",4:"four",5:"five"}
+# qq={}
+# e="hello"
+# f=b"hello"
+
+
 # @my_decorator
 # def say_hello():
 #     '''Say hello'''
 #     print("Hello!")
-
+# x={}   
+# x = {
+#         "name": "John",
+#         "age": 30,
+#         "city": "New York"
+#     }
 
 # class MyClass:
 #     '''My class'''
