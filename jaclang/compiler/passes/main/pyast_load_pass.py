@@ -972,7 +972,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 ),
             )
             kvpair.append(kvp)
-        return ast.DictVal(kv_pairs=kvpair, kid=kvpair)
+        return ast.DictVal(
+            kv_pairs=kvpair,
+            kid=(
+                kvpair
+                if len(kvpair)
+                else [self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")]
+            ),
+        )
 
     def proc_dict_comp(self, node: py_ast.DictComp) -> ast.DictCompr:
         """Process python node.
