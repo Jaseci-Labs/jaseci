@@ -296,7 +296,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value: expr | None
         """
         value = self.convert(node.value) if node.value else None
-        if value and isinstance(value, ast.Expr):
+        if not value:
+            return ast.ReturnStmt(
+                expr=None, kid=[self.operator(Tok.KW_RETURN, "return")]
+            )
+        elif value and isinstance(value, ast.Expr):
             return ast.ReturnStmt(expr=value, kid=[value])
         else:
             raise self.ice("Invalid return value")

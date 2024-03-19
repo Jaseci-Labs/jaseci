@@ -79,8 +79,8 @@ def my_print(x: object) -> None:
 #     print(f"{greeting}, {name}")
 
 
-# greet("Alice")  
-# greet("Bob", greeting="Hi") 
+# greet("Alice")
+# greet("Bob", greeting="Hi")
 
 
 # class MyClass2:
@@ -170,8 +170,8 @@ def my_print(x: object) -> None:
 
 
 # my_list = [1, 2, 3, 4, 5]
-# del my_list[2]  
-# print(my_list)  
+# del my_list[2]
+# print(my_list)
 
 
 # x = 5
@@ -199,9 +199,9 @@ def my_print(x: object) -> None:
 # for num in counter:
 #     print(num)
 
-# x = 0b1010  
-# x &= 0b1100 
-# print(bin(x))  
+# x = 0b1010
+# x &= 0b1100
+# print(bin(x))
 
 
 # squares = {num: num**2 for num in range(1, 6)}
@@ -685,7 +685,7 @@ def my_print(x: object) -> None:
 # def foo():
 #     a = 42
 #     if a > 0:
-#         return 
+#         return
 #     return a
 
 
