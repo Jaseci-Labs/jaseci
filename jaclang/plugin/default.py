@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fnmatch
 import os
 import types
 from dataclasses import field
@@ -185,39 +186,46 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def run_test(filename: str, find: bool, xit: bool) -> bool:
+    def run_test(
+        filepath: str, filter: str, xit: bool, maxfail: int, directory: str
+    ) -> bool:
         """Run the test suite in the specified .jac file."""
         test_file = False
-        if filename.endswith(".jac") and not find:
-            base, mod_name = os.path.split(filename)
-            base = base if base else "./"
-            mod_name = mod_name[:-4]
-            JacTestCheck.reset()
-            Jac.jac_import(target=mod_name, base_path=base)
-            JacTestCheck.run_test(xit)
-        elif find or filename:
-            find_files = filename.split(",")
-            current_dir = os.getcwd() if find else filename
+        if filter or directory:
+            current_dir = directory if directory else os.getcwd()
             for root_dir, _, files in os.walk(current_dir, topdown=True):
                 files = (
-                    [file for file in files if (file in find_files)] if find else files
+                    [file for file in files if fnmatch.fnmatch(file, filter)]
+                    if filter
+                    else files
                 )
-
+                files = [
+                    file
+                    for file in files
+                    if not file.endswith((".test.jac", ".impl.jac"))
+                ]
                 for file in files:
-                    if file.endswith(".jac") and file.startswith("test_"):
+                    if file.endswith(".jac"):
                         test_file = True
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
                         Jac.jac_import(target=file[:-4], base_path=root_dir)
-                        JacTestCheck.run_test(xit)
+                        JacTestCheck.run_test(xit, maxfail)
 
-                    if JacTestCheck.breaker and xit:
+                    if JacTestCheck.breaker and (xit or maxfail):
                         break
-                if JacTestCheck.breaker and xit:
+                if JacTestCheck.breaker and (xit or maxfail):
                     break
             JacTestCheck.breaker = False
             print("No test files found.") if not test_file else None
 
+        elif filepath.endswith(".jac") if filepath else False:
+            base, mod_name = os.path.split(filepath)
+            base = base if base else "./"
+            mod_name = mod_name[:-4]
+            JacTestCheck.reset()
+            Jac.jac_import(target=mod_name, base_path=base)
+            JacTestCheck.run_test(xit, maxfail)
         return True
 
     @staticmethod

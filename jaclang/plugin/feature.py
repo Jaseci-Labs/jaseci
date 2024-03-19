@@ -96,9 +96,21 @@ class JacFeature:
         return pm.hook.create_test(test_fun=test_fun)
 
     @staticmethod
-    def run_test(filename: str, find: bool = False, xit: bool = False) -> bool:
+    def run_test(
+        filepath: str,
+        filter: Optional[str] = None,
+        xit: bool = False,
+        maxfail: Optional[int] = None,
+        directory: Optional[str] = None,
+    ) -> bool:
         """Run the test suite in the specified .jac file."""
-        return pm.hook.run_test(filename=filename, find=find, xit=xit)
+        return pm.hook.run_test(
+            filepath=filepath,
+            filter=filter,
+            xit=xit,
+            maxfail=maxfail,
+            directory=directory,
+        )
 
     @staticmethod
     def elvis(op1: Optional[T], op2: T) -> T:
