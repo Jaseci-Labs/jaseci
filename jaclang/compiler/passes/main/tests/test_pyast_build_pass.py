@@ -17,11 +17,18 @@ class PyastBuildPassTests(TestCase):
 
     def test_synced_to_latest_py_ast(self) -> None:
         """Basic test for pass."""
-        visit_methods = [
-            method
-            for method in dir(getattr(py_ast, "_Unparser"))  # noqa: B009
-            if method.startswith("visit_")
-        ]
+        unparser_cls = py_ast._Unparser
+        visit_methods = (
+            [
+                method
+                for method in dir(unparser_cls)  # noqa: B009
+                if method.startswith("visit_")
+            ]
+            + list(unparser_cls.binop.keys())
+            + list(unparser_cls.unop.keys())
+            + list(unparser_cls.boolops.keys())
+            + list(unparser_cls.cmpops.keys())
+        )
         node_names = [
             pascal_to_snake(method.replace("visit_", "")) for method in visit_methods
         ]
