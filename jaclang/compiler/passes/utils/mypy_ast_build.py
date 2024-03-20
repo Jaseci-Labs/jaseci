@@ -32,9 +32,7 @@ os.environ["MYPYPATH"] = str(
 )
 
 
-mypy_to_jac_node_map: dict[
-    tuple[int, int | None, int | None, int | None], list[AstNode]
-] = {}
+mypy_to_jac_node_map: dict[tuple[int, int | None, int | None, int | None], AstNode] = {}
 
 
 class BuildManager(myb.BuildManager):
@@ -310,36 +308,24 @@ class ASTConverter(myfp.ASTConverter):
 
     def visit(self, node: ast.AST | None) -> myfp.Any:  # noqa: ANN401
         """Override to mypy AST converter for direct AST pass through."""
-        ret = super().visit(node)
-        if node and ret:
-            self.link_mypy_to_jac_node(node, ret)
-        return ret
-
-    def make_argument(
-        self,
-        arg: ast.arg,
-        default: ast.expr | None,
-        kind: myfp.ArgKind,
-        no_type_check: bool,
-        pos_only: bool = False,
-    ) -> myfp.Argument:
-        """Override to mypy AST converter for direct AST pass through."""
-        ret = super().make_argument(arg, default, kind, no_type_check, pos_only)
-        self.link_mypy_to_jac_node(arg, ret)
-        return ret
-
-    def link_mypy_to_jac_node(
-        self, node: ast.AST, ret: myfp.Any  # noqa: ANN401
-    ) -> None:
-        """Link mypy AST node to Jac AST node."""
+        if node is None:
+            return None
+        typeobj = type(node)
+        visitor = self.visitor_cache.get(typeobj)
+        if visitor is None:
+            method = "visit_" + node.__class__.__name__
+            visitor = getattr(self, method)
+            self.visitor_cache[typeobj] = visitor
+        ret = visitor(node)
+        # Mypy sometimes inserts its own nodes, such as a Return around lambdas.
         if hasattr(node, "jac_link"):
-            for i in range(len(node.jac_link)):
-                node.jac_link[i].gen.mypy_ast.append(ret)
+            node.jac_link.gen.mypy_ast.append(ret)
             mypy_to_jac_node_map[
                 (ret.line, ret.column, ret.end_line, ret.end_column)
             ] = node.jac_link
         # else:
         #     raise Exception("AST node not linked to Jac node")
+        return ret
 
 
 class Errors(mye.Errors):
@@ -388,7 +374,7 @@ class Errors(mye.Errors):
                 msg=message,
                 node_override=mypy_to_jac_node_map[
                     (line, column, end_line, end_column)
-                ][0],
+                ],
             )
 
 
