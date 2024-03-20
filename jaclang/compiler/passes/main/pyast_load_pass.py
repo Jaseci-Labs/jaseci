@@ -35,16 +35,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def convert(self, node: py_ast.AST) -> ast.AstNode:
         """Get python node type."""
-        print(
-            f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
-        )
+        # print(
+        #     f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
+        # )
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
-        print(f"finshed {type(node).__name__} ---------------------")
-        print("normalizing", ret.__class__.__name__)
-        print(ret.unparse())
+        # print(f"finshed {type(node).__name__} ---------------------")
+        # print("normalizing", ret.__class__.__name__)
+        # print(ret.unparse())
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
@@ -109,7 +109,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
-        print(ret.pp())
         return self.nu(ret)
 
     def proc_function_def(
@@ -574,13 +573,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             stmt for stmt in orelse if isinstance(stmt, (ast.CodeBlockStmt))
         ]
         if valid_orelse:
-            if isinstance(valid_orelse[0], ast.IfStmt):
-                elsebody = self.proc_if(node.orelse[0])
-                else_body = ast.ElseIf(
-                    condition=elsebody.condition,
-                    body=elsebody.body,
-                    else_body=elsebody.else_body,
-                    kid=[elsebody],
+            first_elm = valid_orelse[0]
+            if isinstance(first_elm, ast.IfStmt):
+                else_body: Optional[ast.ElseIf | ast.ElseStmt] = ast.ElseIf(
+                    condition=first_elm.condition,
+                    body=first_elm.body,
+                    else_body=first_elm.else_body,
+                    kid=first_elm.kid,
                 )
             else:
                 orelse2 = ast.SubNodeList[ast.CodeBlockStmt](
@@ -975,7 +974,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         return ast.DictVal(
             kv_pairs=kvpair,
             kid=(
-                kvpair
+                [*kvpair]
                 if len(kvpair)
                 else [self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")]
             ),
@@ -2216,20 +2215,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         guard = self.convert(node.guard) if node.guard is not None else None
         body = [self.convert(i) for i in node.body]
         valid = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid, delim=Tok.WS, kid=valid
-        )
         if isinstance(pattern, ast.MatchPattern) and (
             isinstance(guard, ast.Expr) or guard is None
         ):
             return ast.MatchCase(
                 pattern=pattern,
                 guard=guard,
-                body=valid_body,
+                body=valid,
                 kid=(
-                    [pattern, guard, valid_body]
-                    if guard is not None
-                    else [pattern, valid_body]
+                    [pattern, guard, *valid] if guard is not None else [pattern, *valid]
                 ),
             )
         else:

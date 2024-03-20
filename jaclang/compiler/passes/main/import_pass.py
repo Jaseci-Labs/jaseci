@@ -142,7 +142,7 @@ class ImportPass(Pass):
                 if spec.origin in self.import_table:
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
-                    print(f"\nImporting python module {node.path_str}")
+                    # print(f"\nImporting python module {node.path_str}")
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
                             py_ast.parse(f.read()), mod_path=spec.origin
