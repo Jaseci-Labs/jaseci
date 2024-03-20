@@ -1,4 +1,5 @@
 """Built in actions for Jaseci"""
+
 import requests
 from jaseci.jsorc.live_actions import jaseci_action
 
@@ -157,6 +158,68 @@ def multipart(
             )
 
     res = requests.post(url, data=data, files=_files, headers=header)
+    ret = {"status_code": res.status_code}
+    try:
+        ret["response"] = res.json()
+    except Exception:
+        ret["response"] = res.text
+
+    for stream in stream_to_be_close:
+        stream.close()
+
+    return ret
+
+
+@jaseci_action()
+def trigger(
+    method: str,
+    url: str,
+    data: dict = None,
+    json: dict = None,
+    files: list = None,
+    header: dict = {},
+    meta: dict = {},
+    **kwargs
+):
+    """
+    Issue request
+    Param 1 - method
+    Param 2 - url
+    Param 3 - data (Optional) used for request body
+    Param 4 - files (Optional) used for request files
+    Param 5 - header
+
+    Return - response object
+    """
+
+    hook = meta["h"]
+    _files = []
+    stream_to_be_close = []
+
+    if files is not None:
+        for f in files:
+            file_handler = hook.get_file_handler(f)
+            stream = file_handler.open("rb", None, True)
+            stream_to_be_close.append(stream)
+            _files.append(
+                (
+                    file_handler.field or "file",
+                    (file_handler.name, stream, file_handler.content_type),
+                )
+            )
+
+    act = getattr(requests, method)
+
+    if data is not None:
+        kwargs["data"] = data
+
+    if json is not None:
+        kwargs["json"] = json
+
+    if _files:
+        kwargs["files"] = _files
+
+    res = act(url, headers=header, **kwargs)
     ret = {"status_code": res.status_code}
     try:
         ret["response"] = res.json()
