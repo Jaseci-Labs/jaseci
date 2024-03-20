@@ -150,3 +150,35 @@ class JacCliTests(TestCase):
         os.remove(
             f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
         )
+
+    def test_run_test(self) -> None:
+        """Basic test for pass."""
+        process = subprocess.Popen(
+            ["jac", "test", f"{self.fixture_abs_path('run_test.jac')}", "-m 2"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("Ran 3 tests", stderr)
+        self.assertIn("FAILED (failures=2)", stderr)
+        self.assertIn("F.F", stderr)
+
+        process = subprocess.Popen(
+            [
+                "jac",
+                "test",
+                "-d" + f"{self.fixture_abs_path('../../../')}",
+                "-f" + "circle*",
+                "-x",
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("circle", stdout)
+        self.assertNotIn("circle_purfe.test", stdout)
+        self.assertNotIn("circle_pure.impl", stdout)
