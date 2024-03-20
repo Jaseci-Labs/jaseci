@@ -90,11 +90,13 @@ def collate_examples(
         "input_ids": pad_sequence(
             all_input_ids, batch_first=True, padding_value=padding_token_id
         ).long(),
-        "labels": pad_images(
-            target_label_ids, padding_value=-100, padding_length=(pad_length, None)
-        )
-        if not no_target_label_ids
-        else None,
+        "labels": (
+            pad_images(
+                target_label_ids, padding_value=-100, padding_length=(pad_length, None)
+            )
+            if not no_target_label_ids
+            else None
+        ),
     }
 
     if return_batch_examples:
@@ -236,13 +238,15 @@ def strided_split(
             torch.tensor(
                 [-100] + offset[chunk_start:chunk_end, 1].tolist(), dtype=torch.long
             ).long(),
-            torch.tensor(
-                [[-100] * max_entity_length]
-                + target_label_ids[chunk_start:chunk_end].tolist(),
-                dtype=torch.long,
-            ).long()
-            if target_label_ids is not None
-            else None,
+            (
+                torch.tensor(
+                    [[-100] * max_entity_length]
+                    + target_label_ids[chunk_start:chunk_end].tolist(),
+                    dtype=torch.long,
+                ).long()
+                if target_label_ids is not None
+                else None
+            ),
         )
         yield ex
         chunk_start += stride

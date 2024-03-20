@@ -1,6 +1,7 @@
 """
 Logger api as a mixin
 """
+
 import re
 from jaseci.extens.api.interface import Interface
 from jaseci.utils.log_utils import parse_logs

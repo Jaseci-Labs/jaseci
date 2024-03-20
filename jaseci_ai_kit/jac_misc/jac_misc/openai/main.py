@@ -8,6 +8,7 @@ Features:
 
 Requires OpenAI API Key
 """
+
 from enum import Enum
 from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import logger
