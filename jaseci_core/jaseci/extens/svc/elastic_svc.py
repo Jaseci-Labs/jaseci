@@ -70,9 +70,9 @@ class ElasticService(JsOrc.CommonService):
                         "elastic",
                         metadata.get("namespace"),
                     )
-                    self.config[
-                        "auth"
-                    ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+                    self.config["auth"] = (
+                        f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+                    )
 
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")

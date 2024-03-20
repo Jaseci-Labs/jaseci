@@ -372,11 +372,13 @@ def collate_examples(
         "input_ids": pad_sequence(
             all_input_ids, batch_first=True, padding_value=padding_token_id
         ).long(),
-        "labels": pad_images(
-            target_label_ids, padding_value=-100, padding_length=(pad_length, None)
-        )
-        if not no_target_label_ids
-        else None,
+        "labels": (
+            pad_images(
+                target_label_ids, padding_value=-100, padding_length=(pad_length, None)
+            )
+            if not no_target_label_ids
+            else None
+        ),
     }
 
     if return_batch_examples:

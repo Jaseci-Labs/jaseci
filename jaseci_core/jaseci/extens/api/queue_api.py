@@ -1,6 +1,7 @@
 """
 Queue api functions as a mixin
 """
+
 from jaseci.extens.api.interface import Interface
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.task_svc import TaskService
