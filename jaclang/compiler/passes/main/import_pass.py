@@ -160,5 +160,5 @@ class ImportPass(Pass):
                 f"Failed to import python module {node.path_str}: {e}",
                 node_override=node,
             )
-            exit(1)
+            raise e
         return None

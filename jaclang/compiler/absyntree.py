@@ -2489,7 +2489,7 @@ class MultiString(AtomExpr):
         return res
 
 
-class FString(AstSymbolNode):
+class FString(AtomExpr):
     """FString node type for Jac Ast."""
 
     def __init__(

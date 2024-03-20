@@ -176,7 +176,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else:
                 sig.return_type = ret_sig
                 sig.add_kids_right([sig.return_type])
-        kid = [name, sig, valid_body] if sig else [name, valid_body]
+        kid = ([doc] if doc else []) + (
+            [name, sig, valid_body] if sig else [name, valid_body]
+        )
         ret = ast.Ability(
             name_ref=name,
             is_async=False,
@@ -343,7 +345,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
         else:
             raise self.ice("Length mismatch in assignment targets")
-
         if isinstance(value, ast.Expr):
             return ast.Assignment(
                 target=valid_targets,
@@ -1284,9 +1285,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value for value in values if isinstance(value, (ast.String, ast.ExprStmt))
         ]
         valid_values = ast.SubNodeList[ast.String | ast.ExprStmt](
-            items=valid, delim=Tok.WS, kid=valid
-        )  # not sure about the delim
-        return ast.FString(parts=valid_values, kid=values)
+            items=valid, delim=None, kid=valid
+        )
+        return ast.FString(parts=valid_values, kid=[valid_values])
 
     def proc_lambda(self, node: py_ast.Lambda) -> ast.LambdaExpr:
         """Process python node.
