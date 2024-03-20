@@ -9,7 +9,13 @@ from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
+from jaclang.compiler.symtable import (
+    Symbol,
+    SymbolAccess,
+    SymbolInfo,
+    SymbolTable,
+    SymbolType,
+)
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 
@@ -120,6 +126,7 @@ class AstSymbolNode(AstNode):
         self.sym_name: str = sym_name
         self.sym_name_node = sym_name_node
         self.sym_type: SymbolType = sym_type
+        self.sym_info: SymbolInfo = SymbolInfo()
         self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
 
@@ -281,14 +288,10 @@ class SubNodeList(AstNode, Generic[T]):
         items: list[T],
         delim: Optional[Tok],
         kid: Sequence[AstNode],
-        left_enc: Optional[Token] = None,
-        right_enc: Optional[Token] = None,
     ) -> None:
         """Initialize sub node list node."""
         self.items = items
         self.delim = delim
-        self.left_enc = left_enc
-        self.right_enc = right_enc
         AstNode.__init__(self, kid=kid)
 
 
@@ -647,6 +650,7 @@ class Ability(
     def __init__(
         self,
         name_ref: NameSpec,
+        is_func: bool,
         is_async: bool,
         is_override: bool,
         is_static: bool,
@@ -661,6 +665,7 @@ class Ability(
     ) -> None:
         """Initialize func arch node."""
         self.name_ref = name_ref
+        self.is_func = is_func
         self.is_override = is_override
         self.is_static = is_static
         self.is_abstract = is_abstract
@@ -688,11 +693,6 @@ class Ability(
         if check:
             self.sym_type = SymbolType.METHOD
         return check
-
-    @property
-    def is_func(self) -> bool:
-        """Check if is func."""
-        return isinstance(self.body, FuncSignature)
 
     @property
     def is_genai_ability(self) -> bool:
@@ -1923,7 +1923,7 @@ class MatchCase(AstNode):
         self,
         pattern: MatchPattern,
         guard: Optional[Expr],
-        body: list[CodeBlockStmt],
+        body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match case node."""

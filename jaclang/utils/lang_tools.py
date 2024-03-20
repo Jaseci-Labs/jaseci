@@ -8,6 +8,7 @@ from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
 
@@ -209,7 +210,7 @@ class AstTool:
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
             ir = jac_file_to_pass(
-                file_name
+                file_name, schedule=py_code_gen_typed
             ).ir  # Assuming jac_file_to_pass is defined elsewhere
 
             match output:
