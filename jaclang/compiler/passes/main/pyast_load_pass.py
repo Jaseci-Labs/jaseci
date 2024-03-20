@@ -1583,7 +1583,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         return ret
 
-    def proc_named_expr(self, node: py_ast.NamedExpr) -> ast.KWPair:
+    def proc_named_expr(self, node: py_ast.NamedExpr) -> ast.BinaryExpr:
         """Process python node.
 
         class NamedExpr(expr):
@@ -1593,7 +1593,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         target = self.convert(node.target)
         value = self.convert(node.value)
         if isinstance(value, ast.Expr) and isinstance(target, ast.Name):
-            return ast.KWPair(key=target, value=value, kid=[target, value])
+            return ast.BinaryExpr(
+                left=target,
+                op=self.operator(Tok.WALRUS_EQ, ":="),
+                right=value,
+                kid=[target, value],
+            )
         else:
             raise self.ice()
 
@@ -1685,6 +1690,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         upper = self.convert(node.upper) if node.upper else None
         step = self.convert(node.step) if node.step else None
         valid_kid = [i for i in [lower, upper, step] if i]
+        if not valid_kid:
+            valid_kid = [self.operator(Tok.COLON, ":")]
         if (
             (isinstance(lower, ast.Expr) or lower is None)
             and (isinstance(upper, ast.Expr) or upper is None)
