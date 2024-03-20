@@ -9,8 +9,8 @@ with entry {
     print(random.random());
 }
 
-import:py circle;
-import:py from circle, calculate_area;
+import:py circle_pysolo;
+import:py from circle_pysolo, calculate_area;
 
 with entry {
     print(f"are {calculate_area(2.0)}");
