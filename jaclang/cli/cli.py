@@ -162,9 +162,8 @@ def tool(tool: str, args: Optional[list] = None) -> None:
                 print(getattr(AstTool(), tool)(args))
             else:
                 print(getattr(AstTool(), tool)())
-        except Exception as e:
-            print(f"Error while running ast tool {tool}, check args: {e}")
-            raise e
+        except Exception:
+            print(f"Error while running ast tool {tool}, check args.")
     else:
         print(f"Ast tool {tool} not found.")
 
