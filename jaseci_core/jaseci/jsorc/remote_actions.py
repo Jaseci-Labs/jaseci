@@ -1,6 +1,7 @@
 """
 General action base class with automation for hot loading
 """
+
 from jaseci.utils.utils import logger, ColCodes as Cc
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse

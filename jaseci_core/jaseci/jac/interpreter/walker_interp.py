@@ -4,6 +4,7 @@ Walker interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+
 from jaseci.prim.node import Node
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.jac_set import JacSet

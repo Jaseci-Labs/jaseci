@@ -1,6 +1,7 @@
 """
 Object api as a mixin
 """
+
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.element import Element
 
