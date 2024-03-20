@@ -51,7 +51,7 @@ def my_print(x: object) -> None:
 # def say_hello():
 #     '''Say hello'''
 #     print("Hello!")
-# x={}   
+# x={}
 # x = {
 #         "name": "John",
 #         "age": 30,
