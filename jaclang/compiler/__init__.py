@@ -1,5 +1,5 @@
-# type: ignore
 """Jac compiler tools."""
+
 import contextlib
 import logging
 import os
@@ -28,5 +28,8 @@ from .__jac_gen__ import jac_parser as jac_lark  # noqa: E402
 
 jac_lark.logger.setLevel(logging.DEBUG)
 contextlib.suppress(AttributeError)
-
-__all__ = ["jac_lark"]
+TOKEN_MAP = {
+    x.name: x.pattern.value
+    for x in jac_lark.Lark_StandAlone().parser.lexer_conf.terminals
+}
+__all__ = ["jac_lark", "TOKEN_MAP"]

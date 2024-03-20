@@ -342,18 +342,6 @@ class JacFormatPass(Pass):
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
-    def exit_expr_list(self, node: ast.ExprList) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType]],
-        """
-        if node.values is not None:
-            self.sep_node_list(node.values, delim=Tok.SEMI)
-            self.emit(
-                node,
-                f"{', '.join([value.gen.jac for value in node.values.items])}",
-            )
-
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
@@ -1916,7 +1904,7 @@ class JacFormatPass(Pass):
 
         pattern: ExprType,
         guard: Optional[ExprType],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         """
         start = True
         for i in node.kid:
@@ -1930,7 +1918,7 @@ class JacFormatPass(Pass):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Token) and i.value == ":":
                 self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.SubNodeList):
+            elif isinstance(i, ast.CodeBlockStmt):
                 self.indent_level += 1
                 self.emit(node, i.gen.jac.strip())
                 self.indent_level -= 1

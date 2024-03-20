@@ -22,6 +22,13 @@ class CodeGenTarget:
     mypy_ast: list[MypyNode] = field(default_factory=lambda: [])
     py_bytecode: Optional[bytes] = None
 
+    def clean(self) -> None:
+        """Clean code generation target."""
+        self.py = ""
+        self.jac = ""
+        self.py_ast = []
+        self.mypy_ast = []
+
 
 class CodeLocInfo:
     """Code location info."""

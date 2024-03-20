@@ -2347,13 +2347,6 @@ class PyastGenPass(Pass):
             else [self.sync(ast3.Constant(value=""))]
         )
 
-    def exit_expr_list(self, node: ast.ExprList) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType]],
-        """
-        node.gen.py_ast = node.values.gen.py_ast if node.values else []
-
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
@@ -2464,7 +2457,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        compr: InnerCompr,
+        compr: list[InnerCompr]
         """
         node.gen.py_ast = [
             self.sync(
@@ -2479,7 +2472,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        compr: InnerCompr,
+        compr: list[InnerCompr]
         """
         node.gen.py_ast = [
             self.sync(
@@ -2494,7 +2487,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        compr: InnerCompr,
+        compr: list[InnerCompr]
         """
         node.gen.py_ast = [
             self.sync(
@@ -2528,7 +2521,7 @@ class PyastGenPass(Pass):
 
         target: Expr,
         right: AtomExpr | Expr,
-        is_attr: Optional[Token],
+        is_attr: bool,
         is_null_ok: bool,
         """
         if node.is_attr:
@@ -2626,19 +2619,11 @@ class PyastGenPass(Pass):
         target: Expr,
         params: Optional[SubNodeList[Expr | KWPair]],
         """
-        node.gen.py_ast = [self.sync(self.gen_func_call(node.target, node.params))]
-
-    def gen_func_call(
-        self,
-        target: ast.Expr,
-        params: Optional[ast.SubNodeList[ast.Expr | ast.KWPair]],
-    ) -> ast3.Call:
-        """Generate a function call."""
-        func = target.gen.py_ast[0]
+        func = node.target.gen.py_ast[0]
         args = []
         keywords = []
-        if params and len(params.items) > 0:
-            for x in params.items:
+        if node.params and len(node.params.items) > 0:
+            for x in node.params.items:
                 if isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_POW:
                     keywords.append(
                         self.sync(ast3.keyword(value=x.operand.gen.py_ast[0]), x)
@@ -2651,7 +2636,9 @@ class PyastGenPass(Pass):
                     keywords.append(x.gen.py_ast[0])
                 else:
                     self.ice("Invalid Parameter")
-        return ast3.Call(func=func, args=args, keywords=keywords)
+        node.gen.py_ast = [
+            self.sync(ast3.Call(func=func, args=args, keywords=keywords))
+        ]
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
@@ -3034,14 +3021,14 @@ class PyastGenPass(Pass):
 
         pattern: MatchPattern,
         guard: Optional[ExprType],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         """
         node.gen.py_ast = [
             self.sync(
                 ast3.match_case(
                     pattern=node.pattern.gen.py_ast[0],
                     guard=node.guard.gen.py_ast[0] if node.guard else None,
-                    body=self.resolve_stmt_block(node.body),
+                    body=[x.gen.py_ast[0] for x in node.body],
                 )
             )
         ]
