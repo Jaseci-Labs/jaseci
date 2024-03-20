@@ -1904,7 +1904,7 @@ class JacFormatPass(Pass):
 
         pattern: ExprType,
         guard: Optional[ExprType],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         """
         start = True
         for i in node.kid:

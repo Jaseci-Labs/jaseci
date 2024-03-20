@@ -10,7 +10,13 @@ from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
 from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
-from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
+from jaclang.compiler.symtable import (
+    Symbol,
+    SymbolAccess,
+    SymbolInfo,
+    SymbolTable,
+    SymbolType,
+)
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 
@@ -161,6 +167,7 @@ class AstSymbolNode(AstNode):
         self.sym_name: str = sym_name
         self.sym_name_node = sym_name_node
         self.sym_type: SymbolType = sym_type
+        self.sym_info: SymbolInfo = SymbolInfo()
         self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
 
@@ -2645,7 +2652,6 @@ class DictVal(AtomExpr):
         new_kid.append(self.gen_token(Tok.RBRACE))
         AstNode.__init__(self, kid=new_kid)
         return res
-    
 
 
 class KVPair(AstNode):

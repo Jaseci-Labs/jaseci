@@ -3462,7 +3462,7 @@ class JacParser(Pass):
         def match_case_block(self, kid: list[ast.AstNode]) -> ast.MatchCase:
             """Grammar rule.
 
-            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement+
+            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
             """
             pattern = kid[1]
             guard = kid[3] if len(kid) > 4 else None
