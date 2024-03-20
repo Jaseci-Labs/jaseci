@@ -389,7 +389,7 @@ class JacTestCheck:
     @staticmethod
     def run_test(xit: bool, maxfail: int | None, verbose: bool) -> None:
         """Run the test suite."""
-        verb = 2 if verbose else 0
+        verb = 2 if verbose else 1
         runner = JacTextTestRunner(max_failures=maxfail, failfast=xit, verbosity=verb)
         result = runner.run(JacTestCheck.test_suite)
         if result.wasSuccessful():
