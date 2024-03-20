@@ -13,9 +13,9 @@ class StripeTests(CoreTest):
     def setUpClass(cls):
         config = JsOrc.settings("STRIPE_CONFIG")
         config["enabled"] = True
-        config[
-            "api_key"
-        ] = "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
+        config["api_key"] = (
+            "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
+        )
         config["webhook_key"] = "test_webhook_key"
 
         JsOrc.svc_reset("stripe")

@@ -205,11 +205,11 @@ class Book:
                     auth_level = (
                         "public"
                         if j in Sm._public_api
-                        else "user"
-                        if j in Sm._private_api
-                        else "admin"
-                        if j in Sm._admin_api
-                        else "cli_only"
+                        else (
+                            "user"
+                            if j in Sm._private_api
+                            else "admin" if j in Sm._admin_api else "cli_only"
+                        )
                     )
                     break
             if not found:
@@ -438,11 +438,11 @@ class modifiedBook:
                     auth_level = (
                         "public"
                         if j in Sm._public_api
-                        else "user"
-                        if j in Sm._private_api
-                        else "admin"
-                        if j in Sm._admin_api
-                        else "cli_only"
+                        else (
+                            "user"
+                            if j in Sm._private_api
+                            else "admin" if j in Sm._admin_api else "cli_only"
+                        )
                     )
                     break
             if not found:

@@ -7,7 +7,7 @@ repos:
       - id: check-json
       - id: trailing-whitespace
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 24.3.0
     hooks:
       - id: black
         # It is recommended to specify the latest version of Python

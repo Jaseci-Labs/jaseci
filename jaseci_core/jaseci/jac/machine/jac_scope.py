@@ -3,6 +3,7 @@ Variable scope manager for Jac
 
 Utility for all runtime interaction with variables in different scopes
 """
+
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jsorc.live_actions import get_global_actions
 

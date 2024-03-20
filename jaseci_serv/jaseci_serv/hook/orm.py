@@ -4,6 +4,7 @@ core engine.
 
 FIX: Serious permissions work needed
 """
+
 import uuid
 
 from django.core.exceptions import ObjectDoesNotExist
