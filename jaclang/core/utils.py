@@ -148,12 +148,12 @@ def type_explanation_func(
     type_collector.append("personality_examples")
     duplicate = type_collector.copy()
 
-    def capture_pattern(x):
-        """Capture the pattern"""
+    def capture_pattern(x: str) -> list[str]:
+        """Capture the pattern."""
         return re.findall(r"(\w+)(?:\(\w+\))?", x)
 
-    def get_data():
-        """Get the data"""
+    def get_data() -> dict:
+        """Get the data."""
         for i in duplicate:
             for key, value in filtered_data.items():
                 if isinstance(value, dict):
@@ -174,7 +174,15 @@ def type_explanation_func(
         return result
 
     get_data()
-    return str(result)
+    type_info = ""
+    for key, value in result.items():
+        type_info += f"{key}\n"
+        if isinstance(value[0], list):
+            for i in value:  # TODO : need to implement this
+                type_info += f"  {i}\n"
+        else:
+            type_info += f"  {value}\n"
+    return type_info
 
 
 def extract_non_primary_type(type_str: str, type_collector: list) -> list:
