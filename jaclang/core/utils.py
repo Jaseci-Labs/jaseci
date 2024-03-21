@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Callable, TYPE_CHECKING
 
 
@@ -90,35 +91,36 @@ def traverse_graph(
                     dfs(other_nd, cur_depth + 1)
 
 
-def get_type_annotation(data: Any) -> str:  # noqa: ANN401  # TODO: Need to Modify
+def get_type_annotation(data: Any, type_collector: list) -> str:  # noqa: ANN401
     """Get the type annotation of the input data."""
     if isinstance(data, dict):
         class_name = next(
             (value.__class__.__name__ for value in data.values() if value is not None),
             None,
         )
-
         if class_name:
-            return f"dict[str, {class_name}]"
+            ret = f"dict[str, {class_name}]"
+            type_collector = extract_non_primary_type(ret, type_collector)
+            return ret
         else:
             return "dict[str, Any]"
     else:
-        return type(data).__name__
+        ret = str(type(data).__name__)
+        type_collector = extract_non_primary_type(ret, type_collector)
+        return ret
 
 
 def filter(
-    scope: str, registry_data: dict, info_str: str, incl_info: tuple[str, str]
-) -> str:
+    scope: str, registry_data: dict, incl_info: tuple[str, str], type_collector: list
+) -> tuple:
     """Filter the registry data based on the scope and return the info string."""
-    parts = scope.split(".")
-    avail_scopes = [scope]
-    for i in range(1, len(parts)):
-        avail_scopes.append(".".join(parts[:i]))
+    avail_scopes = [scope] + [
+        ".".join(scope.split(".")[:i]) for i in range(1, len(scope.split(".")))
+    ]
 
-    filtered_data = {}
-    for key in avail_scopes:
-        if key in registry_data:
-            filtered_data[key] = registry_data[key]
+    filtered_data = {
+        key: registry_data[key] for key in avail_scopes if key in registry_data
+    }
 
     def key_exists(dictionary: dict, key: str) -> Any:  # noqa: ANN401
         """Check if key exists in registry."""
@@ -129,14 +131,56 @@ def filter(
                 return v[key]
         return False
 
-    info_str = ""  # TODO: We have to generate this
+    info_str = ""
     for incl in incl_info:
         if not key_exists(filtered_data, incl[0]):
             raise ValueError(f"Invalid scope: {incl[0]}")
-        else:
-            res = key_exists(filtered_data, incl[0])
-            info_str += f"{str(incl[0])} ({res[1]})  ({res[0]}) = {incl[1]}\n"
-    return info_str
+        res = key_exists(filtered_data, incl[0])
+        type_collector = extract_non_primary_type(res[0], type_collector)
+        info_str += f"{res[1]} ({str(incl[0])}) ({res[0]}) = {incl[1]}\n"
+    return (info_str, filtered_data)
+
+
+def type_explanation_func(type_collector: list) -> str:  # noqa: ANN401
+    """Return the type explanation string."""
+    result: dict = {}
+
+    def find_values(data: dict, keys: list, result: dict) -> None:
+        """Recursively search for values of key in the registry data."""
+        for key, value in data.items():
+            if isinstance(value, dict):
+                find_values(value, keys, result)
+                for k in keys:
+                    if k in key:
+                        result[key] = value
+            else:
+                for k in keys:
+                    if k in key:
+                        result[k] = value
+
+    find_values(registry_data, type_collector, result)
+    return str(result)
+
+
+def extract_non_primary_type(type_str: str, type_collector: list) -> list:
+    """Extract non-primary types from the type string."""
+    pattern = r"(?:\[|,\s*|\|)([a-zA-Z_][a-zA-Z0-9_]*)|([a-zA-Z_][a-zA-Z0-9_]*)"
+    matches = re.findall(pattern, type_str)
+    primary_types = [
+        "str",
+        "int",
+        "float",
+        "bool",
+        "list",
+        "dict",
+        "tuple",
+        "set",
+        "Any",
+        "None",
+    ]
+    non_primary_types = [m for t in matches for m in t if m and m not in primary_types]
+    type_collector.extend(non_primary_types)
+    return list(set(type_collector))
 
 
 registry_data = {
@@ -144,12 +188,26 @@ registry_data = {
         "model": ["obj", ""],
         "llm": [None, ""],
         "emoji_examples": ["list[dict[str,str]]", "Examples of Text to Emoji"],
-        "outer": ["obj", "main object "],
+        "PersonalityIndex": ["class", "Personality Index of a Person"],
+        "Personality": ["enum", "Personality of the Person"],
         "personality_examples": [
             "dict[str,Personality|None]",
             "Personality Information of Famous People",
         ],
+        "Person": ["obj", "Person"],
+        "outer": ["obj", "main object "],
+        "obj1": [None, ""],
+        "pp": [None, ""],
+    },
+    "get_emoji(Module).PersonalityIndex(class)": {"": [None, ""]},
+    "get_emoji(Module).Personality(Enum)": {
+        "INTROVERT": [None, "Person who is shy and reticent"],
+        "EXTROVERT": [None, "Person who is outgoing and socially confident"],
+    },
+    "get_emoji(Module).Person(obj)": {
+        "name": ["str", "Name of the Person"],
+        "age": ["int", "Age of the Person"],
     },
     "get_emoji(Module).outer(obj).inner(obj)": {"in_var": ["int", "inner variable"]},
-    "get_emoji(Module).outer(obj)": {"inner object": ["obj", "inner sem"]},
+    "get_emoji(Module).outer(obj)": {"inner": ["obj", "inner object"]},
 }

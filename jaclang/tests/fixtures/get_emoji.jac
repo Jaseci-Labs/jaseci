@@ -3,20 +3,6 @@ import:py re;
 obj model {
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
-        print(kwargs);
-        # can llm(prompt:str){
-        #     return openai.chat.completions.create(
-        #             model="gpt-4",
-        #             messages=[
-        #                 {"role": "system", "content": "You are a helpful assistant."},
-        #                 {"role": "user", "content": prompt}
-        #             ],
-        #             temperature=0.7
-        #         ).choices[0].message.content;
-
-        # }
-        # response = llm(meaning_in);
-        # return response;
         return "{paris emoji}";
     }
 }
@@ -71,31 +57,13 @@ outer{
     inner{
         has in_var:'inner variable':int=9;
     can 'Get Personality of the Person'
-get_personality (person: 'Person Object': Person) -> 'Personality of the Person': Personality by llm(reason=False, incl_info=(personality_examples,self.in_var), excl_info=(self.in_var));
+get_personality (person: 'Person Object': list[Person]) -> 'Personality of the Person': Personality by llm(reason=False, incl_info=(personality_examples,self.in_var), excl_info=(self.in_var));
 
     }
 }
 
-# [INPUTS INFO]
-
-
-# [INPUT TYPE INFORMATION]
-
-
-# [OUTPUT TYPE]
-# Personality
-
-# [OUTPUT TYPE INFORMATION]
-# Personality of the Person (Personality)
-# Personality of the Person (Personality) (enum) = {
-#     Personality.INTROVERT: 'Person who is shy and reticent' = PersonalityIndex(1),
-#     Personality.EXTROVERT: 'Person who is outgoing and socially confident' (PersonalityIndex) = PersonalityIndex(10)
-# }
-# Personality Index of the Person (PersonalityIndex) (class) = {
-#     value: 'Personality Index' (int)
-# }
-
 with entry{
     obj1=outer.inner(34);
-    print(obj1.get_personality('Albert Einstein'));
+    pp=Person('Albert Einstein', 76);
+    print(obj1.get_personality(pp));
 }

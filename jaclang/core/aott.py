@@ -11,18 +11,19 @@ prompt_template = """
 [System Prompt]
 This is an operation you must perform and return the output values. Neither, the methodology,
 extra sentences nor the code are not needed.
+Input formatting: Explanation of the Input (variable_name) (type) = value
 
 [Information]
-{information_str}
+{information}
 
-[Inputs and Input Type Information]
-{input_types_n_information_str}
+[Inputs Information]
+{inputs_information}
 
-[Output Type]
-{output_type_str}
+[Output Information]
+{output_information}
 
-[Output Type Explanations]
-{output_type_info_str}
+[Type Explanations]
+{type_explanations}
 
 [Action]
 {action}
@@ -45,19 +46,19 @@ without_reason_suffix = """Generate and return the output result(s) only, adheri
 
 
 def aott_raise(
-    information_str: str,
-    input_types_n_information_str: str,
-    output_type_str: str,
-    output_type_info_str: str,
+    information: str,
+    inputs_information: str,
+    output_information: str,
+    type_explanations: str,
     action: str,
     reason: bool,
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
     return prompt_template.format(
-        information_str=information_str,
-        input_types_n_information_str=input_types_n_information_str,
-        output_type_str=output_type_str,
-        output_type_info_str=output_type_info_str,
+        information=information,
+        inputs_information=inputs_information,
+        output_information=output_information,
+        type_explanations=type_explanations,
         action=action,
         reason_suffix=with_reason_suffix if reason else without_reason_suffix,
     )

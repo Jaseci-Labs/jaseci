@@ -32,6 +32,7 @@ from jaclang.core.utils import (
     get_type_annotation,
     registry_data,
     traverse_graph,
+    type_explanation_func,
 )
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -407,20 +408,24 @@ class JacFeatureDefaults:
         reason = False
         if "reason" in model_params:
             reason = model_params.pop("reason")
-        information_str = ""
-        information_str = filter(scope, registry_data, information_str, incl_info)
-        input_types_n_information_str = ""
-        for i in inputs:
-            input_types_n_information_str += (
-                f"{i[2]} ({get_type_annotation(i[3])}) ({i[0]}) = {i[3]},\n"
-            )
-        output_type_str = outputs[0]
-        output_type_info_str = outputs[1]
+        type_collector: list = []
+        information, filtered_data = filter(
+            scope, registry_data, incl_info, type_collector
+        )
+        inputs_information = "\n".join(
+            [
+                f" {i[0]} ({i[2]}) ({get_type_annotation(i[3], type_collector)}) = {i[3]}"
+                for i in inputs
+            ]
+        )
+        output_information = outputs[0]
+        get_type_annotation(outputs[0], type_collector)
+        type_explanations = type_explanation_func(type_collector)
         meaning_in = aott_raise(
-            information_str,
-            input_types_n_information_str,
-            output_type_str,
-            output_type_info_str,
+            information,
+            inputs_information,
+            output_information,
+            type_explanations,
             action,
             reason,
         )
