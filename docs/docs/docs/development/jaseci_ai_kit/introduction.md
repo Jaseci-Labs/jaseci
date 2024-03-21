@@ -25,7 +25,7 @@ Jaseci provides a selection of pre-built text encoders that are available for us
 | ----------- | ----------------- | ------------------------------------------ | ----------------------- | ------ | ----------------------------------------------------------- | ----------------------------------------- |
 | `use_enc`   | USE Encoder       | [Link](jac_nlp/text_encoders/use_enc.md)   | Zero-shot               | Ready  | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
 | `use_qa`    | USE QA            | [Link](jac_nlp/text_encoders/use_qa.md)    | Zero-shot               | Ready  | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
-| `fast_enc`  | FastText          | [Link](jac_nlp/text_encoders/fast_enc.md)  | Training req.           | Ready  | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
+| `fast_enc`  | FastText          |   | Training req.           | Deprecated  | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
 | `bi_enc`    | Bi-Encoder        | [Link](jac_nlp/text_encoders/bi_enc.md)    | Training req./Zero-shot | Ready  | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
 | `sbert_sim` | SBert Similarity  | [Link](jac_nlp/text_encoders/sbert_sim.md) | Training req./Zero-shot | Ready  | SBert Encoders for Sentence Similarity                      | [Paper](https://arxiv.org/abs/1908.10084) |
 
@@ -37,8 +37,8 @@ Jaseci offers pre-built NER models that can be utilized immediately without any 
 
 | Module                | Model Description | Docs                           | Type          | Status | Description                                                     | Resources                                                                                               |
 | --------------------- | ----------------- | ------------------------------ | ------------- | ------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `ent_ext`/ `lstm_ner` | Flair NER         | [Link](jac_nlp/ner/ent_ext.md) | Training req. | Ready  | Entity extraction using the FLAIR NER framework                 |
 | `tfm_ner`             | Transformer NER   | [Link](jac_nlp/ner/tfm_ner.md) | Training req. | Ready  | Token classification on Transformer models, can be used for NER | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
+| `ent_ext`/ `lstm_ner` | Flair NER         |  | Training req. | Deprecated  | Entity extraction using the FLAIR NER framework                 |
 
 #### Text Segmentation Modules
 
@@ -59,7 +59,7 @@ Jaseci AI kit contains pre-built SOTA Summarization models that can be utilized 
 | Module      | Model Description | Docs                                       | Type             | Status | Description                                          | Resources                                                                                                         |
 | ----------- | ----------------- | ------------------------------------------ | ---------------- | ------ | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `cl_summer` | Summarizer        | [Link](jac_nlp/summerization/cl_summer.md) | No Training req. | Ready  | Extractive Summarization using Sumy                  | [Doc.](https://miso-belica.github.io/sumy/)                                                                       |
-| `t5_sum`    | Summarizer        | [Link](jac_nlp/summerization/t5_sum.md)    | No Training req. | Ready  | Abstractive Summarization using the T5 Model         | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
+| `t5_sum`    | Summarizer        |     | No Training req. | Deprecated | Abstractive Summarization using the T5 Model         | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
 | `bart_sum`  | Summarizer        | [Link](jac_nlp/summerization/bart_sum.md)  | No Training req. | Ready  | Abstractive Summarization using the Bart Large Model | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
 
 #### Topic Modeling Models
