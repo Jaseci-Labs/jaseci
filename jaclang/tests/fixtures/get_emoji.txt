@@ -1,0 +1,25 @@
+[System Prompt]
+This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are needed.  
+Input formatting: Explanation of the Input (variable_name) (type) = value
+
+[Information]
+Personality Information of Famous People (personality_examples) (dict[str, Personality]) = {
+    'Barack Obama': Personality.EXTROVERT
+}
+
+[Inputs  Information]
+Person Object (person) (Person) = Person(name="Albert Einstein", age=78)
+
+[Output  Information]
+Personality of the Person (Personality)
+
+[Type Explanations]
+Person (Person) (Class) = (Name of the Person (name) (str), Age of the Person (age) (int))
+Personality of the Person (Personality) (Enum) = (Person who is shy and reticent (INTROVERT) (EnumItem), Person who is outgoing and socially confident (EXTROVERT) (EnumItem) )
+
+[Action]
+Get the Personality of the Person
+
+Generate and return the output result(s) only, adhering to the provided Type in the following format
+
+[Output] <result>
