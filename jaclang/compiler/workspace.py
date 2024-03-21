@@ -98,10 +98,13 @@ class Workspace:
                         warnings=build.warnings_had,
                     )
 
-    def rebuild_file(self, file_path: str, deep: bool = False) -> bool:
+    def rebuild_file(
+        self, file_path: str, deep: bool = False, source: str = ""
+    ) -> bool:
         """Rebuild a file."""
-        with open(file_path, "r") as f:
-            source = f.read()
+        if source == "":
+            with open(file_path, "r") as f:
+                source = f.read()
         build = jac_str_to_pass(
             jac_str=source,
             file_path=file_path,
