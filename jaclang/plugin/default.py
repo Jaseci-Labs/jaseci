@@ -398,7 +398,7 @@ class JacFeatureDefaults:
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
         scope: str,
-        incl_info: tuple,
+        incl_info: tuple[str, str],
         excl_info: tuple,
         inputs: tuple,
         outputs: tuple,
@@ -420,7 +420,7 @@ class JacFeatureDefaults:
         )
         output_information = outputs[0]
         get_type_annotation(outputs[0], type_collector)
-        type_explanations = type_explanation_func(type_collector)
+        type_explanations = type_explanation_func(type_collector, filtered_data)
         meaning_in = aott_raise(
             information,
             inputs_information,

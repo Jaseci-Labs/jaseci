@@ -117,7 +117,6 @@ def filter(
     avail_scopes = [scope] + [
         ".".join(scope.split(".")[:i]) for i in range(1, len(scope.split(".")))
     ]
-
     filtered_data = {
         key: registry_data[key] for key in avail_scopes if key in registry_data
     }
@@ -141,24 +140,40 @@ def filter(
     return (info_str, filtered_data)
 
 
-def type_explanation_func(type_collector: list) -> str:  # noqa: ANN401
+def type_explanation_func(
+    type_collector: list, filtered_data: dict
+) -> str:  # noqa: ANN401
     """Return the type explanation string."""
     result: dict = {}
+    type_collector.append("personality_examples")
+    duplicate = type_collector.copy()
 
-    def find_values(data: dict, keys: list, result: dict) -> None:
-        """Recursively search for values of key in the registry data."""
-        for key, value in data.items():
-            if isinstance(value, dict):
-                find_values(value, keys, result)
-                for k in keys:
-                    if k in key:
-                        result[key] = value
-            else:
-                for k in keys:
-                    if k in key:
-                        result[k] = value
+    def capture_pattern(x):
+        """Capture the pattern"""
+        return re.findall(r"(\w+)(?:\(\w+\))?", x)
 
-    find_values(registry_data, type_collector, result)
+    def get_data():
+        """Get the data"""
+        for i in duplicate:
+            for key, value in filtered_data.items():
+                if isinstance(value, dict):
+                    for inner_key, inner_value in value.items():
+                        if inner_key == i:
+                            result[i] = inner_value
+                            break
+                else:
+                    if capture_pattern(key) in i:
+                        result[i] = value
+                        break
+        for i in duplicate:
+            for key, value in registry_data.items():
+                expected_key = capture_pattern(key).pop()
+                if expected_key == i:
+                    result[i] = [result[i], value]
+                    break
+        return result
+
+    get_data()
     return str(result)
 
 
@@ -183,6 +198,7 @@ def extract_non_primary_type(type_str: str, type_collector: list) -> list:
     return list(set(type_collector))
 
 
+duplicate = ["personality_examples", "Personality", "Person"]
 registry_data = {
     "get_emoji(Module)": {
         "model": ["obj", ""],
