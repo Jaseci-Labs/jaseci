@@ -9,9 +9,8 @@ from typing import Any
 
 prompt_template = """
 [System Prompt]
-This is an operation you must perform and return the output values. Neither, the methodology,
-extra sentences nor the code are not needed.
-Input formatting: Explanation of the Input (variable_name) (type) = value
+This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.
+Input/Type formatting: Explanation of the Input (variable_name) (type) = value
 
 [Information]
 {information}
@@ -38,8 +37,7 @@ Reason and return the output result(s) only, adhering to the provided Type in th
 [Output] <Result>
 """
 
-without_reason_suffix = """Generate and return the output result(s) only, adhering to the provided Type in the
- following format
+without_reason_suffix = """Generate and return the output result(s) only, adhering to the provided Type in the following format
 
 [Output] <result>
 """

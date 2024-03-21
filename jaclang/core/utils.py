@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Any, Callable, TYPE_CHECKING
+from enum import Enum
 
 
 if TYPE_CHECKING:
@@ -91,7 +92,7 @@ def traverse_graph(
                     dfs(other_nd, cur_depth + 1)
 
 
-def get_type_annotation(data: Any, type_collector: list) -> str:  # noqa: ANN401
+def get_type_annotation(data: Any) -> str:  # noqa: ANN401
     """Get the type annotation of the input data."""
     if isinstance(data, dict):
         class_name = next(
@@ -99,21 +100,16 @@ def get_type_annotation(data: Any, type_collector: list) -> str:  # noqa: ANN401
             None,
         )
         if class_name:
-            ret = f"dict[str, {class_name}]"
-            type_collector = extract_non_primary_type(ret, type_collector)
-            return ret
+            return f"dict[str, {class_name}]"
         else:
             return "dict[str, Any]"
     else:
-        ret = str(type(data).__name__)
-        type_collector = extract_non_primary_type(ret, type_collector)
-        return ret
+        return str(type(data).__name__)
 
 
-def filter(
-    scope: str, registry_data: dict, incl_info: tuple[str, str], type_collector: list
-) -> tuple:
+def filter(scope: str, registry_data: dict, incl_info: tuple[str, str]) -> tuple:
     """Filter the registry data based on the scope and return the info string."""
+    collected_types = []
     avail_scopes = [scope] + [
         ".".join(scope.split(".")[:i]) for i in range(1, len(scope.split(".")))
     ]
@@ -135,91 +131,45 @@ def filter(
         if not key_exists(filtered_data, incl[0]):
             raise ValueError(f"Invalid scope: {incl[0]}")
         res = key_exists(filtered_data, incl[0])
-        type_collector = extract_non_primary_type(res[0], type_collector)
+        collected_types.extend(extract_non_primary_type(res[0]))
         info_str += f"{res[1]} ({str(incl[0])}) ({res[0]}) = {incl[1]}\n"
-    return (info_str, filtered_data)
+    return (info_str, filtered_data, collected_types)
 
 
-def type_explanation_func(
-    type_collector: list, filtered_data: dict
-) -> str:  # noqa: ANN401
-    """Return the type explanation string."""
-    result: dict = {}
-    type_collector.append("personality_examples")
-    duplicate1 = type_collector.copy()
-    new_arr = []
-
-    def capture_pattern(x: str) -> list[str]:
-        """Capture the pattern."""
-        return re.findall(r"(\w+)(?:\(\w+\))?", x)
-
-    def foo(duplicate11) -> str:
-        """Get the type info."""
-        type_info = ""
-
-        def get_data() -> dict:
-            """Get the data."""
-            for i in duplicate11:
-                for key, value in filtered_data.items():
-                    if isinstance(value, dict):
-                        for inner_key, inner_value in value.items():
-                            if inner_key == i:
-                                result[i] = inner_value
-                                break
-                    else:
-                        if capture_pattern(key) in i:
-                            result[i] = value
-                            break
-            for i in duplicate11:
-                for key, value in registry_data.items():
-                    expected_key = capture_pattern(key).pop()
-                    if expected_key == i:
-                        result[i] = [result[i], value]
-                        break
-
-            return result
-
-        get_data()
-        for key, value in result.items():
-            if isinstance(value[0], list):
-                class_name = value[0][1]
-                type_name = "class" if value[0][0] == "obj" else value[0][0]
-                type_info += f"{class_name} ({key}) ({type_name}) = "
-
-                if isinstance(value[1], dict):
-                    items = []
-                    for k, v in value[1].items():
-                        item_type = v[0] if v[0] is not None else "EnumItem"
-                        if (
-                            item_type not in type_collector
-                            and item_type not in new_arr
-                            and item_type != "EnumItem"
-                        ):
-                            extract_non_primary_type(item_type, new_arr)
-                        item_desc = v[1]
-                        items.append(f"({item_desc} ({k}) ({item_type}))")
-                    type_info += ", ".join(items)
-                else:
-                    type_info += str(value[1])
-
-                type_info += "\n"
-            else:
-                type_info += f"{value[1]} ({key}) ({value[0]})\n"
-                print("item : ", value[0])
-                if value[0] not in type_collector:
-                    extract_non_primary_type(value[0], new_arr)
-        print("new arr", new_arr)
-        if new_arr:
-            foo(new_arr)
-
-        return type_info
-
-    print(new_arr)
-    return foo(duplicate1)
+def get_type_explanation(type_str: str) -> str:
+    main_registry_type_info = None
+    scope = None
+    for k, v in registry_data.items():
+        for i, j in v.items():
+            if i == type_str:
+                main_registry_type_info = j
+                scope = k
+                break
+    if not main_registry_type_info:
+        return
+    type_type = main_registry_type_info[0]
+    type_semstr = main_registry_type_info[1]
+    type_info = registry_data[f"{scope}.{type_str}({type_type})"]
+    type_info_str = []
+    type_info_types = []
+    if type_type == "Enum":
+        for k, v in type_info.items():
+            type_info_str.append(f"{v[1]} ({k}) (EnumItem)")
+    elif type_type in ["obj", "class", "node", "edge"]:
+        for k, v in type_info.items():
+            type_info_str.append(f"{v[1]} ({k}) ({v[0]})")
+            if extract_non_primary_type(v[0]):
+                type_info_types.extend(extract_non_primary_type(v[0]))
+    return (
+        f"{type_semstr} ({type_str}) ({type_type}) = {', '.join(type_info_str)}",
+        set(type_info_types),
+    )
 
 
-def extract_non_primary_type(type_str: str, type_collector: list) -> list:
+def extract_non_primary_type(type_str: str) -> list:
     """Extract non-primary types from the type string."""
+    if not type_str:
+        return []
     pattern = r"(?:\[|,\s*|\|)([a-zA-Z_][a-zA-Z0-9_]*)|([a-zA-Z_][a-zA-Z0-9_]*)"
     matches = re.findall(pattern, type_str)
     primary_types = [
@@ -235,8 +185,44 @@ def extract_non_primary_type(type_str: str, type_collector: list) -> list:
         "None",
     ]
     non_primary_types = [m for t in matches for m in t if m and m not in primary_types]
-    type_collector.extend(non_primary_types)
-    return list(set(type_collector))
+    return non_primary_types
+
+
+def get_all_type_explanations(type_list: list) -> str:
+    collected_type_explanations = {}
+    for type_item in type_list:
+        type_explanation, nested_types = get_type_explanation(type_item)
+        if type_item not in collected_type_explanations:
+            collected_type_explanations[type_item] = type_explanation
+            if nested_types:
+                nested_collected_type_explanations = get_all_type_explanations(
+                    nested_types
+                )
+                for k, v in nested_collected_type_explanations.items():
+                    if k not in collected_type_explanations:
+                        collected_type_explanations[k] = v
+    return collected_type_explanations
+
+def get_object_string(obj):
+    if isinstance(obj, str):
+        return f'"{obj}"'
+    elif isinstance(obj, (int, float, bool)):
+        return str(obj)
+    elif isinstance(obj, list):
+        return '[' + ', '.join(get_object_string(item) for item in obj) + ']'
+    elif isinstance(obj, tuple):
+        return '(' + ', '.join(get_object_string(item) for item in obj) + ')'
+    elif isinstance(obj, dict):
+        return '{' + ', '.join(f"{get_object_string(key)}: {get_object_string(value)}" for key, value in obj.items()) + '}'
+    elif isinstance(obj, Enum):
+        return f"{obj.__class__.__name__}.{obj.name}"
+    elif isinstance(obj, type):  # Check if the object is a type (class)
+        return str(obj)
+    elif hasattr(obj, '__dict__'):
+        args = ', '.join(f"{key}={get_object_string(value)}" for key, value in vars(obj).items() if key!="_jac_")
+        return f"{obj.__class__.__name__}({args})"
+    else:
+        return str(obj)
 
 
 registry_data = {
@@ -245,7 +231,7 @@ registry_data = {
         "llm": [None, ""],
         "emoji_examples": ["list[dict[str,str]]", "Examples of Text to Emoji"],
         "PersonalityIndex": ["class", "Personality Index of a Person"],
-        "Personality": ["enum", "Personality of the Person"],
+        "Personality": ["Enum", "Personality of the Person"],
         "personality_examples": [
             "dict[str,Personality|None]",
             "Personality Information of Famous People",
@@ -263,7 +249,9 @@ registry_data = {
     "get_emoji(Module).Person(obj)": {
         "name": ["str", "Name of the Person"],
         "age": ["int", "Age of the Person"],
+        "personality": ["Personality", "Personality of the Person"],
     },
     "get_emoji(Module).outer(obj).inner(obj)": {"in_var": ["int", "inner variable"]},
     "get_emoji(Module).outer(obj)": {"inner": ["obj", "inner object"]},
 }
+module_name = "get_emoji"
