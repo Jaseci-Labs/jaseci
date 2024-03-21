@@ -146,43 +146,76 @@ def type_explanation_func(
     """Return the type explanation string."""
     result: dict = {}
     type_collector.append("personality_examples")
-    duplicate = type_collector.copy()
+    duplicate1 = type_collector.copy()
+    new_arr = []
 
     def capture_pattern(x: str) -> list[str]:
         """Capture the pattern."""
         return re.findall(r"(\w+)(?:\(\w+\))?", x)
 
-    def get_data() -> dict:
-        """Get the data."""
-        for i in duplicate:
-            for key, value in filtered_data.items():
-                if isinstance(value, dict):
-                    for inner_key, inner_value in value.items():
-                        if inner_key == i:
-                            result[i] = inner_value
-                            break
-                else:
-                    if capture_pattern(key) in i:
-                        result[i] = value
-                        break
-        for i in duplicate:
-            for key, value in registry_data.items():
-                expected_key = capture_pattern(key).pop()
-                if expected_key == i:
-                    result[i] = [result[i], value]
-                    break
-        return result
+    def foo(duplicate11) -> str:
+        """Get the type info."""
+        type_info = ""
 
-    get_data()
-    type_info = ""
-    for key, value in result.items():
-        type_info += f"{key}\n"
-        if isinstance(value[0], list):
-            for i in value:  # TODO : need to implement this
-                type_info += f"  {i}\n"
-        else:
-            type_info += f"  {value}\n"
-    return type_info
+        def get_data() -> dict:
+            """Get the data."""
+            for i in duplicate11:
+                for key, value in filtered_data.items():
+                    if isinstance(value, dict):
+                        for inner_key, inner_value in value.items():
+                            if inner_key == i:
+                                result[i] = inner_value
+                                break
+                    else:
+                        if capture_pattern(key) in i:
+                            result[i] = value
+                            break
+            for i in duplicate11:
+                for key, value in registry_data.items():
+                    expected_key = capture_pattern(key).pop()
+                    if expected_key == i:
+                        result[i] = [result[i], value]
+                        break
+
+            return result
+
+        get_data()
+        for key, value in result.items():
+            if isinstance(value[0], list):
+                class_name = value[0][1]
+                type_name = "class" if value[0][0] == "obj" else value[0][0]
+                type_info += f"{class_name} ({key}) ({type_name}) = "
+
+                if isinstance(value[1], dict):
+                    items = []
+                    for k, v in value[1].items():
+                        item_type = v[0] if v[0] is not None else "EnumItem"
+                        if (
+                            item_type not in type_collector
+                            and item_type not in new_arr
+                            and item_type != "EnumItem"
+                        ):
+                            extract_non_primary_type(item_type, new_arr)
+                        item_desc = v[1]
+                        items.append(f"({item_desc} ({k}) ({item_type}))")
+                    type_info += ", ".join(items)
+                else:
+                    type_info += str(value[1])
+
+                type_info += "\n"
+            else:
+                type_info += f"{value[1]} ({key}) ({value[0]})\n"
+                print("item : ", value[0])
+                if value[0] not in type_collector:
+                    extract_non_primary_type(value[0], new_arr)
+        print("new arr", new_arr)
+        if new_arr:
+            foo(new_arr)
+
+        return type_info
+
+    print(new_arr)
+    return foo(duplicate1)
 
 
 def extract_non_primary_type(type_str: str, type_collector: list) -> list:
@@ -206,7 +239,6 @@ def extract_non_primary_type(type_str: str, type_collector: list) -> list:
     return list(set(type_collector))
 
 
-duplicate = ["personality_examples", "Personality", "Person"]
 registry_data = {
     "get_emoji(Module)": {
         "model": ["obj", ""],
