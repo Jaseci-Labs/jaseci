@@ -1804,6 +1804,7 @@ class JacParser(Pass):
                     ):
                         assignees += [chomp[0]]
                         is_aug = chomp[1]
+                        chomp = chomp[2:]
                     else:
                         while (
                             len(chomp) > 1
