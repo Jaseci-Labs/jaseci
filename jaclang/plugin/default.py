@@ -411,7 +411,7 @@ class JacFeatureDefaults:
         if "reason" in model_params:
             reason = model_params.pop("reason")
         type_collector: list = []
-        information, filtered_data, collected_types = filter(
+        information, collected_types = filter(
             scope, registry_data, incl_info
         )
         type_collector.extend(collected_types)

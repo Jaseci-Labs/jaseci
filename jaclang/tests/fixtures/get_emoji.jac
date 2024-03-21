@@ -36,8 +36,8 @@ PersonalityIndex {
 
 enum 'Personality of the Person'
 Personality {
-   INTROVERT: 'Person who is shy and reticent' = PersonalityIndex(1),
-   EXTROVERT: 'Person who is outgoing and socially confident' = PersonalityIndex(10)
+   INTROVERT: 'Person who is shy and reticent',
+   EXTROVERT: 'Person who is outgoing and socially confident'
 }
 
 glob personality_examples: 'Personality Information of Famous People': dict[str, Personality|None] = {

@@ -126,14 +126,14 @@ def filter(scope: str, registry_data: dict, incl_info: tuple[str, str]) -> tuple
                 return v[key]
         return False
 
-    info_str = ""
+    info_str = []
     for incl in incl_info:
         if not key_exists(filtered_data, incl[0]):
             raise ValueError(f"Invalid scope: {incl[0]}")
         res = key_exists(filtered_data, incl[0])
         collected_types.extend(extract_non_primary_type(res[0]))
-        info_str += f"{res[1]} ({str(incl[0])}) ({res[0]}) = {incl[1]}\n"
-    return (info_str, filtered_data, collected_types)
+        info_str.append(f"{res[1]} ({str(incl[0])}) ({res[0]}) = {get_object_string(incl[1])}")
+    return ("\n".join(info_str), collected_types)
 
 
 def get_type_explanation(type_str: str) -> str:
@@ -216,8 +216,6 @@ def get_object_string(obj):
         return '{' + ', '.join(f"{get_object_string(key)}: {get_object_string(value)}" for key, value in obj.items()) + '}'
     elif isinstance(obj, Enum):
         return f"{obj.__class__.__name__}.{obj.name}"
-    elif isinstance(obj, type):  # Check if the object is a type (class)
-        return str(obj)
     elif hasattr(obj, '__dict__'):
         args = ', '.join(f"{key}={get_object_string(value)}" for key, value in vars(obj).items() if key!="_jac_")
         return f"{obj.__class__.__name__}({args})"
