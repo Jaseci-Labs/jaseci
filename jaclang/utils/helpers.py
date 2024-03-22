@@ -1,6 +1,9 @@
 """Utility functions and classes for Jac compilation toolchain."""
 
+import dis
+import marshal
 import os
+import pdb
 import re
 
 
@@ -104,3 +107,25 @@ def import_target_to_relative_path(
         base_path = os.path.dirname(base_path)
     relative_path = os.path.join(base_path, *actual_parts) + file_extension
     return relative_path
+
+
+class Jdb(pdb.Pdb):
+    """Jac debugger."""
+
+    def __init__(self, *args, **kwargs) -> None:  # noqa
+        """Initialize the Jac debugger."""
+        super().__init__(*args, **kwargs)
+        self.prompt = "Jdb > "
+
+    def has_breakpoint(self, bytecode: bytes) -> bool:
+        """Check for breakpoint."""
+        code = marshal.loads(bytecode)
+        instructions = dis.get_instructions(code)
+        return any(
+            instruction.opname in ("LOAD_GLOBAL", "LOAD_NAME", "LOAD_FAST")
+            and instruction.argval == "breakpoint"
+            for instruction in instructions
+        )
+
+
+debugger = Jdb()

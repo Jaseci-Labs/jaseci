@@ -1,8 +1,10 @@
 """Command line interface tool for the Jac language."""
 
+import marshal
 import os
 import pickle
 import shutil
+import types
 from typing import Optional
 
 from jaclang import jac_import
@@ -13,6 +15,7 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
 
@@ -203,6 +206,30 @@ def clean() -> None:
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")
     print("Done cleaning.")
+
+
+@cmd_registry.register
+def debug(filename: str) -> None:
+    """Debug the specified .jac file using pdb."""
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
+    if filename.endswith(".jac"):
+        bytecode = jac_file_to_pass(filename).ir.gen.py_bytecode
+        if bytecode:
+            code = marshal.loads(bytecode)
+            if db.has_breakpoint(bytecode):
+                run(filename)
+            else:
+                func = types.FunctionType(code, globals())
+
+                print("Debugging with Jac debugger.\n")
+                db.runcall(func)
+                print("Done debugging.")
+        else:
+            print(f"Error while generating bytecode in {filename}.")
+    else:
+        print("Not a .jac file.")
 
 
 def start_cli() -> None:
