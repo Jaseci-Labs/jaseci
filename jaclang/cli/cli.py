@@ -209,7 +209,7 @@ def clean() -> None:
 
 
 @cmd_registry.register
-def debug(filename: str) -> None:
+def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     """Debug the specified .jac file using pdb."""
     base, mod = os.path.split(filename)
     base = base if base else "./"
@@ -219,7 +219,7 @@ def debug(filename: str) -> None:
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
-                run(filename)
+                run(filename, main, cache)
             else:
                 func = types.FunctionType(code, globals())
 
