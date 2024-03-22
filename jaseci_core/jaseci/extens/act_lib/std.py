@@ -234,3 +234,8 @@ def log_activity(
 @jaseci_action()
 def clear_cache(all: bool = True, meta: dict = {}):
     meta["h"].clear_cache(all)
+
+
+@jaseci_action()
+def title(string: str):
+    return string.title()

@@ -1,6 +1,7 @@
 """Built in actions for Jaseci"""
 
 from datetime import datetime, timedelta
+from typing import Union
 from jaseci.jsorc.live_actions import jaseci_action
 from dateutil.relativedelta import relativedelta
 
@@ -52,11 +53,18 @@ def timestamp_now():
     return int(datetime.utcnow().timestamp())
 
 
+@jaseci_action
+def timestamp_to_datetime(timestamp: int):
+    return datetime.fromtimestamp(timestamp)
+
+
 @jaseci_action()
-def datetime_obj(date: str = None):
+def datetime_obj(date: Union[str, int] = None):
     """Get utc date time now or parse one to dict format"""
-    if date:
+    if isinstance(date, str):
         date = datetime.fromisoformat(date)
+    elif isinstance(date, int):
+        date = datetime.fromtimestamp(date)
     else:
         date = datetime.utcnow()
 
