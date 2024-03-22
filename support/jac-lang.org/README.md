@@ -23,16 +23,16 @@ nav:
 
 To open a preview of the mkdocs server locally, following steps should be followed.
 
-1. Install Jaclang from source.
+1. Install necessaries such as pygments and jaclang syntax highlighting from source.
 
     ```bash
+    cd support/jac-lang.org/
     pip install -e .
     ```
 
 2. Bash the following lines to initiate the server.
 
     ```bash
-    cd support/jac-lang.org/
     mkdocs serve
     ```
 
