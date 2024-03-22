@@ -104,6 +104,17 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("Errors: 0, Warnings: 1", stdout_value)
 
+    def test_type_info(self) -> None:
+        """Testing for type info inside the ast tool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('type_info.jac')}"])
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        with open(self.fixture_abs_path("type_info_expected_output")) as f:
+            expected_out = "".join(f.readlines())
+        self.assertEqual(expected_out, stdout_value)
+
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
         if os.path.exists(f"{self.fixture_abs_path('needs_import.jir')}"):

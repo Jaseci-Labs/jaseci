@@ -1,0 +1,375 @@
+1:1 - 19:2	Module
+1:1 - 1:18	+-- Import
+1:1 - 1:7	|   +-- Token - import
+1:7 - 1:10	|   +-- SubTag
+1:7 - 1:8	|   |   +-- Token - :
+1:8 - 1:10	|   |   +-- Name - py - Type: NoType
+1:11 - 1:17	|   +-- ModulePath - pygame - Type: NoType
+1:11 - 1:17	|   |   +-- Name - pygame - Type: NoType
+1:17 - 1:18	|   +-- Semi - ;
+3:1 - 6:2	+-- Architype - Spritesheet - Type: NoType
+3:1 - 3:4	|   +-- Token - obj
+3:5 - 3:16	|   +-- Name - Spritesheet - Type: type_info.Spritesheet
+3:17 - 6:2	|   +-- SubNodeList
+3:17 - 3:18	|       +-- Token - {
+4:5 - 4:25	|       +-- Ability - init - Type: None
+4:5 - 4:8	|       |   +-- Token - can
+4:9 - 4:13	|       |   +-- Name - init - Type: None
+4:13 - 4:24	|       |   +-- FuncSignature
+4:13 - 4:14	|       |   |   +-- Token - (
+4:14 - 4:23	|       |   |   +-- SubNodeList
+4:14 - 4:23	|       |   |   |   +-- ParamVar - file - Type: builtins.str
+4:14 - 4:18	|       |   |   |       +-- Name - file - Type: builtins.str
+4:18 - 4:23	|       |   |   |       +-- SubTag
+4:18 - 4:19	|       |   |   |           +-- Token - :
+4:20 - 4:23	|       |   |   |           +-- BuiltinType - str - Type: NoType
+4:23 - 4:24	|       |   |   +-- Token - )
+4:24 - 4:25	|       |   +-- Semi - ;
+8:1 - 11:2	|       |   +-- AbilityDef - (o)Spritesheet.(c)init - Type: NoType
+8:1 - 8:26	|       |       +-- ArchRefChain
+8:1 - 8:17	|       |       |   +-- ArchRef - Spritesheet - Type: type_info.Spritesheet
+8:1 - 8:6	|       |       |   |   +-- Token - :obj:
+8:6 - 8:17	|       |       |   |   +-- Name - Spritesheet - Type: type_info.Spritesheet
+8:17 - 8:26	|       |       |   +-- ArchRef - init - Type: NoType
+8:17 - 8:22	|       |       |       +-- Token - :can:
+8:22 - 8:26	|       |       |       +-- Name - init - Type: None
+9:1 - 9:12	|       |       +-- FuncSignature
+9:1 - 9:2	|       |       |   +-- Token - (
+9:2 - 9:11	|       |       |   +-- SubNodeList
+9:2 - 9:11	|       |       |   |   +-- ParamVar - file - Type: NoType
+9:2 - 9:6	|       |       |   |       +-- Name - file - Type: NoType
+9:6 - 9:11	|       |       |   |       +-- SubTag
+9:6 - 9:7	|       |       |   |           +-- Token - :
+9:8 - 9:11	|       |       |   |           +-- BuiltinType - str - Type: NoType
+9:11 - 9:12	|       |       |   +-- Token - )
+9:13 - 11:2	|       |       +-- SubNodeList
+9:13 - 9:14	|       |           +-- Token - {
+10:5 - 10:52	|       |           +-- Assignment
+10:5 - 10:17	|       |           |   +-- SubNodeList
+10:5 - 10:15	|       |           |   |   +-- AtomTrailer
+10:5 - 10:9	|       |           |   |   |   +-- Name - self - Type: type_info.Spritesheet
+10:9 - 10:10	|       |           |   |   |   +-- Token - .
+10:10 - 10:15	|       |           |   |   |   +-- Name - sheet - Type: pygame.surface.Surface
+10:16 - 10:17	|       |           |   |   +-- Token - =
+10:18 - 10:51	|       |           |   +-- FuncCall
+10:18 - 10:49	|       |           |   |   +-- AtomTrailer
+10:18 - 10:41	|       |           |   |   |   +-- FuncCall
+10:18 - 10:35	|       |           |   |   |   |   +-- AtomTrailer
+10:18 - 10:30	|       |           |   |   |   |   |   +-- AtomTrailer
+10:18 - 10:24	|       |           |   |   |   |   |   |   +-- Name - pygame - Type: types.ModuleType
+10:24 - 10:25	|       |           |   |   |   |   |   |   +-- Token - .
+10:25 - 10:30	|       |           |   |   |   |   |   |   +-- Name - image - Type: types.ModuleType
+10:30 - 10:31	|       |           |   |   |   |   |   +-- Token - .
+10:31 - 10:35	|       |           |   |   |   |   |   +-- Name - load - Type: pygame.surface.Surface
+10:35 - 10:36	|       |           |   |   |   |   +-- Token - (
+10:36 - 10:40	|       |           |   |   |   |   +-- SubNodeList
+10:36 - 10:40	|       |           |   |   |   |   |   +-- Name - file - Type: builtins.str
+10:40 - 10:41	|       |           |   |   |   |   +-- Token - )
+10:41 - 10:42	|       |           |   |   |   +-- Token - .
+10:42 - 10:49	|       |           |   |   |   +-- Name - convert - Type: NoType
+10:49 - 10:50	|       |           |   |   +-- Token - (
+10:50 - 10:51	|       |           |   |   +-- Token - )
+10:51 - 10:52	|       |           |   +-- Semi - ;
+11:1 - 11:2	|       |           +-- Token - }
+5:5 - 5:79	|       +-- Ability - get_sprite - Type: pygame.surface.Surface
+5:5 - 5:8	|       |   +-- Token - can
+5:9 - 5:19	|       |   +-- Name - get_sprite - Type: pygame.surface.Surface
+5:19 - 5:78	|       |   +-- FuncSignature
+5:19 - 5:20	|       |   |   +-- Token - (
+5:20 - 5:59	|       |   |   +-- SubNodeList
+5:20 - 5:26	|       |   |   |   +-- ParamVar - x - Type: builtins.int
+5:20 - 5:21	|       |   |   |   |   +-- Name - x - Type: builtins.int
+5:21 - 5:26	|       |   |   |   |   +-- SubTag
+5:21 - 5:22	|       |   |   |   |       +-- Token - :
+5:23 - 5:26	|       |   |   |   |       +-- BuiltinType - int - Type: NoType
+5:26 - 5:27	|       |   |   |   +-- Token - ,
+5:28 - 5:34	|       |   |   |   +-- ParamVar - y - Type: builtins.int
+5:28 - 5:29	|       |   |   |   |   +-- Name - y - Type: builtins.int
+5:29 - 5:34	|       |   |   |   |   +-- SubTag
+5:29 - 5:30	|       |   |   |   |       +-- Token - :
+5:31 - 5:34	|       |   |   |   |       +-- BuiltinType - int - Type: NoType
+5:34 - 5:35	|       |   |   |   +-- Token - ,
+5:36 - 5:46	|       |   |   |   +-- ParamVar - width - Type: builtins.int
+5:36 - 5:41	|       |   |   |   |   +-- Name - width - Type: builtins.int
+5:41 - 5:46	|       |   |   |   |   +-- SubTag
+5:41 - 5:42	|       |   |   |   |       +-- Token - :
+5:43 - 5:46	|       |   |   |   |       +-- BuiltinType - int - Type: NoType
+5:46 - 5:47	|       |   |   |   +-- Token - ,
+5:48 - 5:59	|       |   |   |   +-- ParamVar - height - Type: builtins.int
+5:48 - 5:54	|       |   |   |       +-- Name - height - Type: builtins.int
+5:54 - 5:59	|       |   |   |       +-- SubTag
+5:54 - 5:55	|       |   |   |           +-- Token - :
+5:56 - 5:59	|       |   |   |           +-- BuiltinType - int - Type: NoType
+5:59 - 5:60	|       |   |   +-- Token - )
+5:61 - 5:63	|       |   |   +-- Token - ->
+5:64 - 5:78	|       |   |   +-- AtomTrailer
+5:64 - 5:70	|       |   |       +-- Name - pygame - Type: NoType
+5:70 - 5:71	|       |   |       +-- Token - .
+5:71 - 5:78	|       |   |       +-- Name - Surface - Type: NoType
+5:78 - 5:79	|       |   +-- Semi - ;
+13:1 - 19:2	|       |   +-- AbilityDef - (o)Spritesheet.(c)get_sprite - Type: NoType
+13:1 - 13:32	|       |       +-- ArchRefChain
+13:1 - 13:17	|       |       |   +-- ArchRef - Spritesheet - Type: type_info.Spritesheet
+13:1 - 13:6	|       |       |   |   +-- Token - :obj:
+13:6 - 13:17	|       |       |   |   +-- Name - Spritesheet - Type: type_info.Spritesheet
+13:17 - 13:32	|       |       |   +-- ArchRef - get_sprite - Type: NoType
+13:17 - 13:22	|       |       |       +-- Token - :can:
+13:22 - 13:32	|       |       |       +-- Name - get_sprite - Type: pygame.surface.Surface
+14:1 - 14:42	|       |       +-- FuncSignature
+14:1 - 14:2	|       |       |   +-- Token - (
+14:2 - 14:41	|       |       |   +-- SubNodeList
+14:2 - 14:8	|       |       |   |   +-- ParamVar - x - Type: NoType
+14:2 - 14:3	|       |       |   |   |   +-- Name - x - Type: NoType
+14:3 - 14:8	|       |       |   |   |   +-- SubTag
+14:3 - 14:4	|       |       |   |   |       +-- Token - :
+14:5 - 14:8	|       |       |   |   |       +-- BuiltinType - int - Type: NoType
+14:8 - 14:9	|       |       |   |   +-- Token - ,
+14:10 - 14:16	|       |       |   |   +-- ParamVar - y - Type: NoType
+14:10 - 14:11	|       |       |   |   |   +-- Name - y - Type: NoType
+14:11 - 14:16	|       |       |   |   |   +-- SubTag
+14:11 - 14:12	|       |       |   |   |       +-- Token - :
+14:13 - 14:16	|       |       |   |   |       +-- BuiltinType - int - Type: NoType
+14:16 - 14:17	|       |       |   |   +-- Token - ,
+14:18 - 14:28	|       |       |   |   +-- ParamVar - width - Type: NoType
+14:18 - 14:23	|       |       |   |   |   +-- Name - width - Type: NoType
+14:23 - 14:28	|       |       |   |   |   +-- SubTag
+14:23 - 14:24	|       |       |   |   |       +-- Token - :
+14:25 - 14:28	|       |       |   |   |       +-- BuiltinType - int - Type: NoType
+14:28 - 14:29	|       |       |   |   +-- Token - ,
+14:30 - 14:41	|       |       |   |   +-- ParamVar - height - Type: NoType
+14:30 - 14:36	|       |       |   |       +-- Name - height - Type: NoType
+14:36 - 14:41	|       |       |   |       +-- SubTag
+14:36 - 14:37	|       |       |   |           +-- Token - :
+14:38 - 14:41	|       |       |   |           +-- BuiltinType - int - Type: NoType
+14:41 - 14:42	|       |       |   +-- Token - )
+14:43 - 19:2	|       |       +-- SubNodeList
+14:43 - 14:44	|       |           +-- Token - {
+15:5 - 15:46	|       |           +-- Assignment
+15:5 - 15:13	|       |           |   +-- SubNodeList
+15:5 - 15:11	|       |           |   |   +-- Name - sprite - Type: pygame.surface.Surface
+15:12 - 15:13	|       |           |   |   +-- Token - =
+15:14 - 15:45	|       |           |   +-- FuncCall
+15:14 - 15:28	|       |           |   |   +-- AtomTrailer
+15:14 - 15:20	|       |           |   |   |   +-- Name - pygame - Type: types.ModuleType
+15:20 - 15:21	|       |           |   |   |   +-- Token - .
+15:21 - 15:28	|       |           |   |   |   +-- Name - Surface - Type: pygame.surface.Surface
+15:28 - 15:29	|       |           |   |   +-- Token - (
+15:29 - 15:44	|       |           |   |   +-- SubNodeList
+15:29 - 15:44	|       |           |   |   |   +-- ListVal - [ListVal] - Type: NoType
+15:29 - 15:30	|       |           |   |   |       +-- Token - [
+15:30 - 15:43	|       |           |   |   |       +-- SubNodeList
+15:30 - 15:35	|       |           |   |   |       |   +-- Name - width - Type: builtins.int
+15:35 - 15:36	|       |           |   |   |       |   +-- Token - ,
+15:37 - 15:43	|       |           |   |   |       |   +-- Name - height - Type: builtins.int
+15:43 - 15:44	|       |           |   |   |       +-- Token - ]
+15:44 - 15:45	|       |           |   |   +-- Token - )
+15:45 - 15:46	|       |           |   +-- Semi - ;
+16:5 - 16:60	|       |           +-- ExprStmt
+16:5 - 16:59	|       |           |   +-- FuncCall
+16:5 - 16:16	|       |           |   |   +-- AtomTrailer
+16:5 - 16:11	|       |           |   |   |   +-- Name - sprite - Type: pygame.surface.Surface
+16:11 - 16:12	|       |           |   |   |   +-- Token - .
+16:12 - 16:16	|       |           |   |   |   +-- Name - blit - Type: NoType
+16:16 - 16:17	|       |           |   |   +-- Token - (
+16:17 - 16:58	|       |           |   |   +-- SubNodeList
+16:17 - 16:27	|       |           |   |   |   +-- AtomTrailer
+16:17 - 16:21	|       |           |   |   |   |   +-- Name - self - Type: type_info.Spritesheet
+16:21 - 16:22	|       |           |   |   |   |   +-- Token - .
+16:22 - 16:27	|       |           |   |   |   |   +-- Name - sheet - Type: NoType
+16:27 - 16:28	|       |           |   |   |   +-- Token - ,
+16:29 - 16:35	|       |           |   |   |   +-- TupleVal - [TupleVal] - Type: NoType
+16:29 - 16:30	|       |           |   |   |   |   +-- Token - (
+16:30 - 16:34	|       |           |   |   |   |   +-- SubNodeList
+16:30 - 16:31	|       |           |   |   |   |   |   +-- Int - 0 - Type: builtins.int
+16:31 - 16:32	|       |           |   |   |   |   |   +-- Token - ,
+16:33 - 16:34	|       |           |   |   |   |   |   +-- SubNodeList
+16:33 - 16:34	|       |           |   |   |   |   |       +-- Int - 0 - Type: builtins.int
+16:34 - 16:35	|       |           |   |   |   |   +-- Token - )
+16:35 - 16:36	|       |           |   |   |   +-- Token - ,
+16:37 - 16:58	|       |           |   |   |   +-- TupleVal - [TupleVal] - Type: NoType
+16:37 - 16:38	|       |           |   |   |       +-- Token - (
+16:38 - 16:57	|       |           |   |   |       +-- SubNodeList
+16:38 - 16:39	|       |           |   |   |       |   +-- Name - x - Type: builtins.int
+16:39 - 16:40	|       |           |   |   |       |   +-- Token - ,
+16:41 - 16:57	|       |           |   |   |       |   +-- SubNodeList
+16:41 - 16:42	|       |           |   |   |       |       +-- Name - y - Type: builtins.int
+16:42 - 16:43	|       |           |   |   |       |       +-- Token - ,
+16:44 - 16:49	|       |           |   |   |       |       +-- Name - width - Type: builtins.int
+16:49 - 16:50	|       |           |   |   |       |       +-- Token - ,
+16:51 - 16:57	|       |           |   |   |       |       +-- Name - height - Type: builtins.int
+16:57 - 16:58	|       |           |   |   |       +-- Token - )
+16:58 - 16:59	|       |           |   |   +-- Token - )
+16:59 - 16:60	|       |           |   +-- Semi - ;
+17:5 - 17:32	|       |           +-- ExprStmt
+17:5 - 17:31	|       |           |   +-- FuncCall
+17:5 - 17:24	|       |           |   |   +-- AtomTrailer
+17:5 - 17:11	|       |           |   |   |   +-- Name - sprite - Type: pygame.surface.Surface
+17:11 - 17:12	|       |           |   |   |   +-- Token - .
+17:12 - 17:24	|       |           |   |   |   +-- Name - set_colorkey - Type: NoType
+17:24 - 17:25	|       |           |   |   +-- Token - (
+17:25 - 17:30	|       |           |   |   +-- SubNodeList
+17:25 - 17:30	|       |           |   |   |   +-- Name - BLACK - Type: NoType
+17:30 - 17:31	|       |           |   |   +-- Token - )
+17:31 - 17:32	|       |           |   +-- Semi - ;
+18:5 - 18:19	|       |           +-- ReturnStmt
+18:5 - 18:11	|       |           |   +-- Token - return
+18:12 - 18:18	|       |           |   +-- Name - sprite - Type: pygame.surface.Surface
+18:18 - 18:19	|       |           |   +-- Semi - ;
+19:1 - 19:2	|       |           +-- Token - }
+6:1 - 6:2	|       +-- Token - }
+8:1 - 11:2	+-- AbilityDef - (o)Spritesheet.(c)init - Type: NoType
+8:1 - 8:26	|   +-- ArchRefChain
+8:1 - 8:17	|   |   +-- ArchRef - Spritesheet - Type: type_info.Spritesheet
+8:1 - 8:6	|   |   |   +-- Token - :obj:
+8:6 - 8:17	|   |   |   +-- Name - Spritesheet - Type: type_info.Spritesheet
+8:17 - 8:26	|   |   +-- ArchRef - init - Type: NoType
+8:17 - 8:22	|   |       +-- Token - :can:
+8:22 - 8:26	|   |       +-- Name - init - Type: None
+9:1 - 9:12	|   +-- FuncSignature
+9:1 - 9:2	|   |   +-- Token - (
+9:2 - 9:11	|   |   +-- SubNodeList
+9:2 - 9:11	|   |   |   +-- ParamVar - file - Type: NoType
+9:2 - 9:6	|   |   |       +-- Name - file - Type: NoType
+9:6 - 9:11	|   |   |       +-- SubTag
+9:6 - 9:7	|   |   |           +-- Token - :
+9:8 - 9:11	|   |   |           +-- BuiltinType - str - Type: NoType
+9:11 - 9:12	|   |   +-- Token - )
+9:13 - 11:2	|   +-- SubNodeList
+9:13 - 9:14	|       +-- Token - {
+10:5 - 10:52	|       +-- Assignment
+10:5 - 10:17	|       |   +-- SubNodeList
+10:5 - 10:15	|       |   |   +-- AtomTrailer
+10:5 - 10:9	|       |   |   |   +-- Name - self - Type: type_info.Spritesheet
+10:9 - 10:10	|       |   |   |   +-- Token - .
+10:10 - 10:15	|       |   |   |   +-- Name - sheet - Type: pygame.surface.Surface
+10:16 - 10:17	|       |   |   +-- Token - =
+10:18 - 10:51	|       |   +-- FuncCall
+10:18 - 10:49	|       |   |   +-- AtomTrailer
+10:18 - 10:41	|       |   |   |   +-- FuncCall
+10:18 - 10:35	|       |   |   |   |   +-- AtomTrailer
+10:18 - 10:30	|       |   |   |   |   |   +-- AtomTrailer
+10:18 - 10:24	|       |   |   |   |   |   |   +-- Name - pygame - Type: types.ModuleType
+10:24 - 10:25	|       |   |   |   |   |   |   +-- Token - .
+10:25 - 10:30	|       |   |   |   |   |   |   +-- Name - image - Type: types.ModuleType
+10:30 - 10:31	|       |   |   |   |   |   +-- Token - .
+10:31 - 10:35	|       |   |   |   |   |   +-- Name - load - Type: pygame.surface.Surface
+10:35 - 10:36	|       |   |   |   |   +-- Token - (
+10:36 - 10:40	|       |   |   |   |   +-- SubNodeList
+10:36 - 10:40	|       |   |   |   |   |   +-- Name - file - Type: builtins.str
+10:40 - 10:41	|       |   |   |   |   +-- Token - )
+10:41 - 10:42	|       |   |   |   +-- Token - .
+10:42 - 10:49	|       |   |   |   +-- Name - convert - Type: NoType
+10:49 - 10:50	|       |   |   +-- Token - (
+10:50 - 10:51	|       |   |   +-- Token - )
+10:51 - 10:52	|       |   +-- Semi - ;
+11:1 - 11:2	|       +-- Token - }
+13:1 - 19:2	+-- AbilityDef - (o)Spritesheet.(c)get_sprite - Type: NoType
+13:1 - 13:32	    +-- ArchRefChain
+13:1 - 13:17	    |   +-- ArchRef - Spritesheet - Type: type_info.Spritesheet
+13:1 - 13:6	    |   |   +-- Token - :obj:
+13:6 - 13:17	    |   |   +-- Name - Spritesheet - Type: type_info.Spritesheet
+13:17 - 13:32	    |   +-- ArchRef - get_sprite - Type: NoType
+13:17 - 13:22	    |       +-- Token - :can:
+13:22 - 13:32	    |       +-- Name - get_sprite - Type: pygame.surface.Surface
+14:1 - 14:42	    +-- FuncSignature
+14:1 - 14:2	    |   +-- Token - (
+14:2 - 14:41	    |   +-- SubNodeList
+14:2 - 14:8	    |   |   +-- ParamVar - x - Type: NoType
+14:2 - 14:3	    |   |   |   +-- Name - x - Type: NoType
+14:3 - 14:8	    |   |   |   +-- SubTag
+14:3 - 14:4	    |   |   |       +-- Token - :
+14:5 - 14:8	    |   |   |       +-- BuiltinType - int - Type: NoType
+14:8 - 14:9	    |   |   +-- Token - ,
+14:10 - 14:16	    |   |   +-- ParamVar - y - Type: NoType
+14:10 - 14:11	    |   |   |   +-- Name - y - Type: NoType
+14:11 - 14:16	    |   |   |   +-- SubTag
+14:11 - 14:12	    |   |   |       +-- Token - :
+14:13 - 14:16	    |   |   |       +-- BuiltinType - int - Type: NoType
+14:16 - 14:17	    |   |   +-- Token - ,
+14:18 - 14:28	    |   |   +-- ParamVar - width - Type: NoType
+14:18 - 14:23	    |   |   |   +-- Name - width - Type: NoType
+14:23 - 14:28	    |   |   |   +-- SubTag
+14:23 - 14:24	    |   |   |       +-- Token - :
+14:25 - 14:28	    |   |   |       +-- BuiltinType - int - Type: NoType
+14:28 - 14:29	    |   |   +-- Token - ,
+14:30 - 14:41	    |   |   +-- ParamVar - height - Type: NoType
+14:30 - 14:36	    |   |       +-- Name - height - Type: NoType
+14:36 - 14:41	    |   |       +-- SubTag
+14:36 - 14:37	    |   |           +-- Token - :
+14:38 - 14:41	    |   |           +-- BuiltinType - int - Type: NoType
+14:41 - 14:42	    |   +-- Token - )
+14:43 - 19:2	    +-- SubNodeList
+14:43 - 14:44	        +-- Token - {
+15:5 - 15:46	        +-- Assignment
+15:5 - 15:13	        |   +-- SubNodeList
+15:5 - 15:11	        |   |   +-- Name - sprite - Type: pygame.surface.Surface
+15:12 - 15:13	        |   |   +-- Token - =
+15:14 - 15:45	        |   +-- FuncCall
+15:14 - 15:28	        |   |   +-- AtomTrailer
+15:14 - 15:20	        |   |   |   +-- Name - pygame - Type: types.ModuleType
+15:20 - 15:21	        |   |   |   +-- Token - .
+15:21 - 15:28	        |   |   |   +-- Name - Surface - Type: pygame.surface.Surface
+15:28 - 15:29	        |   |   +-- Token - (
+15:29 - 15:44	        |   |   +-- SubNodeList
+15:29 - 15:44	        |   |   |   +-- ListVal - [ListVal] - Type: NoType
+15:29 - 15:30	        |   |   |       +-- Token - [
+15:30 - 15:43	        |   |   |       +-- SubNodeList
+15:30 - 15:35	        |   |   |       |   +-- Name - width - Type: builtins.int
+15:35 - 15:36	        |   |   |       |   +-- Token - ,
+15:37 - 15:43	        |   |   |       |   +-- Name - height - Type: builtins.int
+15:43 - 15:44	        |   |   |       +-- Token - ]
+15:44 - 15:45	        |   |   +-- Token - )
+15:45 - 15:46	        |   +-- Semi - ;
+16:5 - 16:60	        +-- ExprStmt
+16:5 - 16:59	        |   +-- FuncCall
+16:5 - 16:16	        |   |   +-- AtomTrailer
+16:5 - 16:11	        |   |   |   +-- Name - sprite - Type: pygame.surface.Surface
+16:11 - 16:12	        |   |   |   +-- Token - .
+16:12 - 16:16	        |   |   |   +-- Name - blit - Type: NoType
+16:16 - 16:17	        |   |   +-- Token - (
+16:17 - 16:58	        |   |   +-- SubNodeList
+16:17 - 16:27	        |   |   |   +-- AtomTrailer
+16:17 - 16:21	        |   |   |   |   +-- Name - self - Type: type_info.Spritesheet
+16:21 - 16:22	        |   |   |   |   +-- Token - .
+16:22 - 16:27	        |   |   |   |   +-- Name - sheet - Type: NoType
+16:27 - 16:28	        |   |   |   +-- Token - ,
+16:29 - 16:35	        |   |   |   +-- TupleVal - [TupleVal] - Type: NoType
+16:29 - 16:30	        |   |   |   |   +-- Token - (
+16:30 - 16:34	        |   |   |   |   +-- SubNodeList
+16:30 - 16:31	        |   |   |   |   |   +-- Int - 0 - Type: builtins.int
+16:31 - 16:32	        |   |   |   |   |   +-- Token - ,
+16:33 - 16:34	        |   |   |   |   |   +-- SubNodeList
+16:33 - 16:34	        |   |   |   |   |       +-- Int - 0 - Type: builtins.int
+16:34 - 16:35	        |   |   |   |   +-- Token - )
+16:35 - 16:36	        |   |   |   +-- Token - ,
+16:37 - 16:58	        |   |   |   +-- TupleVal - [TupleVal] - Type: NoType
+16:37 - 16:38	        |   |   |       +-- Token - (
+16:38 - 16:57	        |   |   |       +-- SubNodeList
+16:38 - 16:39	        |   |   |       |   +-- Name - x - Type: builtins.int
+16:39 - 16:40	        |   |   |       |   +-- Token - ,
+16:41 - 16:57	        |   |   |       |   +-- SubNodeList
+16:41 - 16:42	        |   |   |       |       +-- Name - y - Type: builtins.int
+16:42 - 16:43	        |   |   |       |       +-- Token - ,
+16:44 - 16:49	        |   |   |       |       +-- Name - width - Type: builtins.int
+16:49 - 16:50	        |   |   |       |       +-- Token - ,
+16:51 - 16:57	        |   |   |       |       +-- Name - height - Type: builtins.int
+16:57 - 16:58	        |   |   |       +-- Token - )
+16:58 - 16:59	        |   |   +-- Token - )
+16:59 - 16:60	        |   +-- Semi - ;
+17:5 - 17:32	        +-- ExprStmt
+17:5 - 17:31	        |   +-- FuncCall
+17:5 - 17:24	        |   |   +-- AtomTrailer
+17:5 - 17:11	        |   |   |   +-- Name - sprite - Type: pygame.surface.Surface
+17:11 - 17:12	        |   |   |   +-- Token - .
+17:12 - 17:24	        |   |   |   +-- Name - set_colorkey - Type: NoType
+17:24 - 17:25	        |   |   +-- Token - (
+17:25 - 17:30	        |   |   +-- SubNodeList
+17:25 - 17:30	        |   |   |   +-- Name - BLACK - Type: NoType
+17:30 - 17:31	        |   |   +-- Token - )
+17:31 - 17:32	        |   +-- Semi - ;
+18:5 - 18:19	        +-- ReturnStmt
+18:5 - 18:11	        |   +-- Token - return
+18:12 - 18:18	        |   +-- Name - sprite - Type: pygame.surface.Surface
+18:18 - 18:19	        |   +-- Semi - ;
+19:1 - 19:2	        +-- Token - }
+
