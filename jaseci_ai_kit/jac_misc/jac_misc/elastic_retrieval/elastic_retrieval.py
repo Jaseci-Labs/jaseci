@@ -10,6 +10,7 @@ from elasticsearch import Elasticsearch
 
 OAI_CLIENT = None
 ES_CLIENT = None
+MAX_DIMENSIONS = getenv("ELASTICSEARCH_VECTOR_SIZE", "2048")
 CONFIG = {
     "elastic": {
         "url": getenv("ELASTICSEARCH_URL", "http://localhost:9200"),
@@ -33,7 +34,7 @@ CONFIG = {
                         "id": {"type": "keyword"},
                         "embedding": {
                             "type": "dense_vector",
-                            "dims": int(getenv("ELASTICSEARCH_VECTOR_SIZE", "1536")),
+                            "dims": int(MAX_DIMENSIONS),
                             "index": True,
                             "similarity": getenv("ELASTICSEARCH_SIMILARITY", "cosine"),
                         },
@@ -45,7 +46,10 @@ CONFIG = {
     },
     "openai": {"api_key": getenv("OPENAI_API_KEY")},
     "openai_embedding": {
-        "model": getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"),
+        "model": getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large"),
+        "extra_body": {
+            "dimensions": int(getenv("OPENAI_EMBEDDING_DIMENSIONS", MAX_DIMENSIONS))
+        },
     },
     "chunk_config": {
         "chunk_size": int(getenv("CHUNK_SIZE", "200")),
