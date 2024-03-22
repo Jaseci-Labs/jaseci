@@ -90,5 +90,58 @@ class TestLarkParser(TestCaseMicroSuite):
                 continue
             self.assertIn(i, rules)
 
+    def test_all_ast_has_normalize(self) -> None:
+        """Test for enter/exit name diffs with parser."""
+        import jaclang.compiler.absyntree as ast
+        import inspect
+        import sys
+
+        exclude = [
+            "AstNode",
+            "WalkerStmtOnlyNode",
+            "JacSource",
+            "EmptyToken",
+            "AstSymbolNode",
+            "AstImplNeedingNode",
+            "AstAccessNode",
+            "TokenSymbol",
+            "Literal",
+            "AstDocNode",
+            "AstSemStrNode",
+            "PythonModuleAst",
+            "AstAsyncNode",
+            "AstElseBodyNode",
+            "AstTypedVarNode",
+            "AstImplOnlyNode",
+            "Expr",
+            "AtomExpr",
+            "ElementStmt",
+            "ArchBlockStmt",
+            "EnumBlockStmt",
+            "CodeBlockStmt",
+            "NameSpec",
+            "ArchSpec",
+            "MatchPattern",
+        ]
+        module_name = ast.__name__
+        module = sys.modules[module_name]
+
+        # Retrieve the source code of the module
+        source_code = inspect.getsource(module)
+
+        classes = inspect.getmembers(module, inspect.isclass)
+        ast_node_classes = [
+            cls
+            for _, cls in classes
+            if issubclass(cls, ast.AstNode) and not issubclass(cls, ast.Token)
+        ]
+
+        ordered_classes = sorted(
+            ast_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
+        )
+        for cls in ordered_classes:
+            if cls.__name__ not in exclude:
+                self.assertIn("normalize", cls.__dict__)
+
 
 TestLarkParser.self_attach_micro_tests()

@@ -93,8 +93,7 @@ def build(filename: str) -> None:
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
         for i in out.ir.flatten():
-            i.gen.mypy_ast = []
-            i.gen.py = ""
+            i.gen.clean()
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out.ir, f)
     else:
@@ -144,12 +143,33 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
 
 
 @cmd_registry.register
-def test(filename: str) -> None:
+def test(
+    filepath: str,
+    filter: str = "",
+    xit: bool = False,
+    maxfail: int = None,  # type:ignore
+    directory: str = "",
+    verbose: bool = False,
+) -> None:
     """Run the test suite in the specified .jac file.
 
-    :param filename: The path to the .jac file.
+    :param filepath: Path/to/file.jac
+    :param filter: Filter the files using Unix shell style conventions.
+    :param xit(exit): Stop(exit) running tests as soon as finds an error.
+    :param maxfail: Stop running tests after n failures.
+    :param directory: Run tests from the specified directory.
+    :param verbose: Show more info.
+
+    jac test => jac test -d .
     """
-    Jac.run_test(filename)
+    Jac.run_test(
+        filepath=filepath,
+        filter=filter,
+        xit=xit,
+        maxfail=maxfail,
+        directory=directory,
+        verbose=verbose,
+    )
 
 
 @cmd_registry.register
@@ -165,8 +185,9 @@ def tool(tool: str, args: Optional[list] = None) -> None:
                 print(getattr(AstTool(), tool)(args))
             else:
                 print(getattr(AstTool(), tool)())
-        except Exception:
-            print(f"Error while running ast tool {tool}, check args.")
+        except Exception as e:
+            print(f"Error while running ast tool {tool}, check args: {e}")
+            raise e
     else:
         print(f"Ast tool {tool} not found.")
 
