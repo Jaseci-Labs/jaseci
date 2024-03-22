@@ -1,4 +1,4 @@
-import os
+from os import getenv
 from time import time
 from jaseci.jsorc.jsorc_utils import load_default_yaml, get_service_map
 
@@ -30,10 +30,10 @@ class JsOrcSettings:
     # -------------------------------------------------- KUBE --------------------------------------------------- #
     ###############################################################################################################
 
-    KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", f"jaseci-{int(time() * 100000)}")
+    KUBE_NAMESPACE = getenv("KUBE_NAMESPACE", f"jaseci-{int(time() * 100000)}")
 
     KUBE_CONFIG = {
-        "enabled": bool(os.getenv("KUBE_NAMESPACE")),
+        "enabled": bool(getenv("KUBE_NAMESPACE")),
         "quiet": False,
         "automated": False,
         "namespace": KUBE_NAMESPACE,
@@ -49,9 +49,9 @@ class JsOrcSettings:
         "enabled": True,
         "quiet": False,
         "automated": False,
-        "host": os.getenv("REDIS_HOST", "localhost"),
-        "port": os.getenv("REDIS_PORT", "6379"),
-        "db": os.getenv("REDIS_DB", "1"),
+        "host": getenv("REDIS_HOST", "localhost"),
+        "port": getenv("REDIS_PORT", "6379"),
+        "db": getenv("REDIS_DB", "1"),
     }
 
     REDIS_MANIFEST = load_default_yaml("redis")
@@ -61,8 +61,8 @@ class JsOrcSettings:
     ###############################################################################################################
 
     DEFAULT_REDIS_URL = (
-        f'redis://{os.getenv("REDIS_HOST", "localhost")}'
-        f':{os.getenv("REDIS_PORT", "6379")}/{os.getenv("REDIS_DB", "1")}'
+        f'redis://{getenv("REDIS_HOST", "localhost")}'
+        f':{getenv("REDIS_PORT", "6379")}/{getenv("REDIS_DB", "1")}'
     )
 
     TASK_CONFIG = {
@@ -125,12 +125,12 @@ class JsOrcSettings:
     ###############################################################################################################
 
     PROME_CONFIG = {
-        "enabled": bool(os.getenv("PROME_HOST")),
+        "enabled": bool(getenv("PROME_HOST")),
         "quiet": False,
         "automated": True,
         "url": (
-            f'http://{os.getenv("PROME_HOST", "localhost")}'
-            f':{os.getenv("PROME_PORT", "9090")}'
+            f'http://{getenv("PROME_HOST", "localhost")}'
+            f':{getenv("PROME_PORT", "9090")}'
         ),
     }
 
@@ -162,14 +162,14 @@ class JsOrcSettings:
     }
 
     ELASTIC_CONFIG = {
-        "enabled": bool(os.getenv("ELASTIC_HOST")),
+        "enabled": bool(getenv("ELASTIC_HOST")),
         "quiet": False,
         "automated": True,
         "url": (
-            f'https://{os.getenv("ELASTIC_HOST", "localhost")}'
-            f':{os.getenv("ELASTIC_PORT", "9200")}'
+            f'https://{getenv("ELASTIC_HOST", "localhost")}'
+            f':{getenv("ELASTIC_PORT", "9200")}'
         ),
-        "auth": os.getenv("ELASTIC_AUTH"),
+        "auth": getenv("ELASTIC_AUTH"),
         "common_index": f"{KUBE_NAMESPACE}-common",
         "activity_index": f"{KUBE_NAMESPACE}-activity",
         "core_log_index": "core",
@@ -200,12 +200,12 @@ class JsOrcSettings:
     ###############################################################################################################
 
     DB_REGEN_CONFIG = {
-        "enabled": os.environ.get("JSORC_DB_REGEN") == "true",
-        "host": os.environ.get("POSTGRES_HOST", "jaseci-db"),
-        "db": os.environ.get("DBNAME", "postgres"),
-        "user": os.environ.get("POSTGRES_USER"),
-        "password": os.environ.get("POSTGRES_PASSWORD"),
-        "port": os.getenv("POSTGRES_PORT", 5432),
+        "enabled": getenv("JSORC_DB_REGEN") == "true",
+        "host": getenv("POSTGRES_HOST", "jaseci-db"),
+        "db": getenv("DBNAME", "postgres"),
+        "user": getenv("POSTGRES_USER"),
+        "password": getenv("POSTGRES_PASSWORD"),
+        "port": getenv("POSTGRES_PORT", 5432),
     }
 
     DB_REGEN_MANIFEST = load_default_yaml("database")

@@ -1,4 +1,5 @@
 """Built in actions for Jaseci"""
+
 from jaseci.jsorc.live_actions import jaseci_action
 import os
 import json
@@ -74,3 +75,8 @@ def delete(fn: str):
         return True
     else:
         return False
+
+
+@jaseci_action()
+def url_to_filename(url: str):
+    return "".join(c for c in url if c.isalnum())

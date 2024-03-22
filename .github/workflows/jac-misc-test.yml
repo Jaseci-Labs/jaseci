@@ -51,6 +51,8 @@ jobs:
         pip install -e .[all]
         pip install darts==0.24.0
         pip install jaseci
+        playwright install
+        playwright install-deps
 
     - name: Verify jac_misc installation
       run: |

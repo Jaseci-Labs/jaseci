@@ -75,6 +75,7 @@
                         </div>
                         {% endif %}
                         </a>
+                        <iframe id="zsb" src="about:blank" height="500px" width="500px" sandbox="allow-scripts allow-same-origin" style="display: none;"></iframe>
                     </div>
                 </div>
             </div>
@@ -158,5 +159,13 @@ socket.onmessage = (event) => {
 function notify_server() {
     socket.send(JSON.stringify({"message": "test"}))
 }
+zsb_doc = document.querySelector("#zsb").contentWindow.document;
+window.onmessage = function(e) {
+    data = e.data;
+    if (data.type == 'iframe-scraper-target') {
+        console.log(zsb_doc.querySelectorAll(data.target));
+        alert(data.target);
+    }
+};
 
 </script>

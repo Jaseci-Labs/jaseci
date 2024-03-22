@@ -1,6 +1,7 @@
 """
 Webhook API
 """
+
 from jaseci.extens.api.interface import Interface
 from fastapi import HTTPException
 from jaseci.jsorc.jsorc import JsOrc
@@ -55,9 +56,11 @@ class WebhookApi:
             )
             sentinel = self._h.get_obj(
                 master_id,
-                self._h.get_glob("GLOB_SENTINEL")
-                if sentinel_id == "global"
-                else sentinel_id,
+                (
+                    self._h.get_glob("GLOB_SENTINEL")
+                    if sentinel_id == "global"
+                    else sentinel_id
+                ),
             )
 
             payload = {"event": req_body}

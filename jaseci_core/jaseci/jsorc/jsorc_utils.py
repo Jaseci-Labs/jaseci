@@ -245,9 +245,13 @@ class CommonService:
             return (
                 self if cast and cast.__name__ == self.__class__.__name__ else self.app
             )
-        raise Exception(
+        exec = Exception(
             msg or f"{self.__class__.__name__} is disabled or not yet configured!"
         )
+
+        if self.error:
+            raise exec from self.error
+        raise exec
 
     def is_ready(self):
         return self.state.is_ready() and self.app is None

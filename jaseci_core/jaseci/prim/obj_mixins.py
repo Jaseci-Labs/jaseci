@@ -3,6 +3,7 @@ Jaseci object mixins
 
 Various mixins to define properties of Jaseci objects
 """
+
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 import uuid
@@ -27,11 +28,15 @@ class Anchored:
             and self._h._machine.parent().j_type == "sentinel"
             else None
         )
-        mast = self.get_master()
-        if arch is None and mast.active_snt() is not None:
-            arch = mast.active_snt().get_arch_for(self)
-        elif arch is None and self.parent() and self.parent().j_type == "sentinel":
+
+        if arch is None and self.parent() and self.parent().j_type == "sentinel":
             arch = self.parent().get_arch_for(self)
+
+        if arch is None:
+            mast = self.get_master()
+            if mast.active_snt() is not None:
+                arch = mast.active_snt().get_arch_for(self)
+
         self.cache_arch(arch)
         return arch
 
@@ -80,9 +85,11 @@ class Sharable:
         self.j_access = (
             mode
             if mode is not None
-            else self._h.get_obj(self._m_id, self._m_id).perm_default
-            if self._h.has_obj(self._m_id)
-            else "private"
+            else (
+                self._h.get_obj(self._m_id, self._m_id).perm_default
+                if self._h.has_obj(self._m_id)
+                else "private"
+            )
         )
         self.j_r_acc_ids = IdList(self)
         self.j_rw_acc_ids = IdList(self)

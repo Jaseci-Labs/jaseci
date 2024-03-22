@@ -4,6 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+
 from copy import copy
 from jaseci.utils.utils import logger, exc_stack_as_str_list, generate_stack_as_str_list
 from jaseci.jsorc.live_actions import live_actions, load_preconfig_actions
@@ -99,9 +100,11 @@ class MachineState:
                     "u_calls": 0 if name in MachineState.recur_detect_set else 1,
                     "tot_time": self._jac_scope._total_time
                     + (time.time() - self._jac_scope._start_time),
-                    "cum_time": 0
-                    if name in MachineState.recur_detect_set
-                    else time.time() - self._jac_scope._cum_start_time,
+                    "cum_time": (
+                        0
+                        if name in MachineState.recur_detect_set
+                        else time.time() - self._jac_scope._cum_start_time
+                    ),
                 }
             else:
                 c = self._mast._jac_profile[name]["calls"]

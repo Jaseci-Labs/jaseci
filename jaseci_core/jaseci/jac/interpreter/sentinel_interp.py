@@ -4,6 +4,7 @@ Sentinel interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+
 from jaseci.prim.architype import Architype
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.utils.utils import parse_str_token
@@ -215,8 +216,10 @@ class SentinelInterp(Interp):
             );
         """
         kid = self.set_cur_ast(jac_ast)
-        self.run_multistring(kid[2]) if kid[1].name == "NAME" else self.run_multistring(
-            kid[1]
+        (
+            self.run_multistring(kid[2])
+            if kid[1].name == "NAME"
+            else self.run_multistring(kid[1])
         )
         testcase = {
             "name": kid[1].token_text() if kid[1].name == "NAME" else "",

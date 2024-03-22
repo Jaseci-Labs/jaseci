@@ -4,6 +4,7 @@ Sentinel interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+
 from jaseci.prim.node import Node
 from jaseci.prim.edge import Edge
 from jaseci.prim.walker import Walker
@@ -206,9 +207,13 @@ class ArchitypeInterp(Interp):
                 .get_jac_ast()
                 .kid[-1]
             )
-            self.run_attr_block(super_jac_ast, item) if not isinstance(
-                item, Walker
-            ) else self.run_walker_block(super_jac_ast, item)
-        self.run_attr_block(jac_ast, item) if not isinstance(
-            item, Walker
-        ) else self.run_walker_block(jac_ast, item)
+            (
+                self.run_attr_block(super_jac_ast, item)
+                if not isinstance(item, Walker)
+                else self.run_walker_block(super_jac_ast, item)
+            )
+        (
+            self.run_attr_block(jac_ast, item)
+            if not isinstance(item, Walker)
+            else self.run_walker_block(jac_ast, item)
+        )

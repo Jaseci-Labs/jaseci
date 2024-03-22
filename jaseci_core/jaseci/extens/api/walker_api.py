@@ -1,6 +1,7 @@
 """
 Walker api functions as a mixin
 """
+
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.walker import Walker
 from jaseci.prim.node import Node

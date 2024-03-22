@@ -1,6 +1,7 @@
 """
 Graph api functions as a mixin
 """
+
 from jaseci.extens.api.interface import Interface
 from jaseci.utils.id_list import IdList
 from jaseci.prim.graph import Graph

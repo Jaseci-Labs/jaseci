@@ -4,6 +4,7 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
+
 from collections import OrderedDict
 from jaseci.prim.element import Element
 from jaseci.prim.obj_mixins import Anchored

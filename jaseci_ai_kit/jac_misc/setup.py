@@ -11,6 +11,7 @@ MODULES = [
     "huggingface",
     "langchain",
     "forecast",
+    "scraper",
 ]
 
 

@@ -1,6 +1,7 @@
 """
 Mix in for jac code object in Jaseci
 """
+
 import json
 from jaseci.utils.utils import logger
 from jaseci.jac.ir.ast_builder import JacAstBuilder
@@ -93,9 +94,7 @@ class JacCode:
         self.code_ir = (
             ir.strip()
             if (isinstance(ir, str))
-            else json.dumps(ir)
-            if (isinstance(ir, dict))
-            else jac_ast_to_ir(ir)
+            else json.dumps(ir) if (isinstance(ir, dict)) else jac_ast_to_ir(ir)
         )
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions

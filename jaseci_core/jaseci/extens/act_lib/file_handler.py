@@ -1,4 +1,5 @@
 """Built in actions for Jaseci"""
+
 import mimetypes
 import magic
 from os import path
