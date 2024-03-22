@@ -235,6 +235,7 @@ class JacFeatureDefaults:
                 if JacTestCheck.breaker and (xit or maxfail):
                     break
             JacTestCheck.breaker = False
+            JacTestCheck.failcount = 0
             print("No test files found.") if not test_file else None
 
         return True
