@@ -11,7 +11,7 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
-from jaclang.core.aott import aott_lower, aott_raise
+from jaclang.core.aott import aott_raise, get_reasoning_output
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -452,8 +452,8 @@ class JacFeatureDefaults:
             reason,
         )
         meaning_out = model.__infer__(meaning_in, **model_params)
-        output_type_info = (None, None)  # TODO: We have to generate this
-        return aott_lower(meaning_out, output_type_info)
+        reasoning, output = get_reasoning_output(meaning_out)
+        return output
 
 
 class JacBuiltin:

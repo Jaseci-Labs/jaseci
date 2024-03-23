@@ -1,6 +1,7 @@
 obj model {
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
+        return "[Output] Something";
     }
 }
 glob llm = model();
@@ -40,5 +41,5 @@ outer{
 with entry{
     obj1=outer.inner(["I won noble prize in Physics", "I am popular for my theory of relativity"]);
     pp=Person('Albert Einstein', 76);
-    obj1.get_personality(pp);
+    print(obj1.get_personality(pp));
 }

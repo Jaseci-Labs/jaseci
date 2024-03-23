@@ -1054,7 +1054,8 @@ class PyastGenPass(Pass):
             )
             return [
                 self.sync(
-                    ast3.Return(
+                    ast3.Assign(
+                        targets=[self.sync(ast3.Name(id="output", ctx=ast3.Store()))],
                         value=self.sync(
                             ast3.Call(
                                 func=self.sync(
@@ -1285,9 +1286,55 @@ class PyastGenPass(Pass):
                                     ),
                                 ],
                             )
-                        )
+                        ),
                     )
-                )
+                ),
+                self.sync(
+                    ast3.Try(
+                        body=[
+                            self.sync(
+                                ast3.Return(
+                                    value=self.sync(
+                                        ast3.Call(
+                                            func=self.sync(
+                                                ast3.Name(id="eval", ctx=ast3.Load())
+                                            ),
+                                            args=[
+                                                self.sync(
+                                                    ast3.Name(
+                                                        id="output", ctx=ast3.Load()
+                                                    )
+                                                )
+                                            ],
+                                            keywords=[],
+                                        )
+                                    )
+                                )
+                            )
+                        ],
+                        handlers=[
+                            self.sync(
+                                ast3.ExceptHandler(
+                                    type=None,
+                                    name=None,
+                                    body=[
+                                        self.sync(
+                                            ast3.Return(
+                                                value=self.sync(
+                                                    ast3.Name(
+                                                        id="output", ctx=ast3.Load()
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ],
+                                )
+                            )
+                        ],
+                        orelse=[],
+                        finalbody=[],
+                    )
+                ),
             ]
         else:
             return []

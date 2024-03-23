@@ -4,7 +4,24 @@ AOTT: Automated Operational Type Transformation.
 This has all the necessary functions to perform the AOTT operations.
 """
 
+import re
 from typing import Any
+
+
+def get_reasoning_output(s: str) -> tuple:
+    """Get the reasoning and output from the meaning out string."""
+    reasoning_match = re.search(r"\[Reasoning\](.*)\[Output\]", s)
+    output_match = re.search(r"\[Output\](.*)", s)
+
+    if reasoning_match and output_match:
+        reasoning = reasoning_match.group(1)
+        output = output_match.group(1)
+        return (reasoning.strip(), output.strip())
+    elif output_match:
+        output = output_match.group(1)
+        return (None, output.strip())
+    else:
+        return (None, None)
 
 
 prompt_template = """
@@ -62,6 +79,11 @@ def aott_raise(
     )
 
 
-def aott_lower(meaning_out: str, output_type_info: tuple) -> Any:  # noqa: ANN401
+def aott_lower(meaning_out: str) -> Any:  # noqa: ANN401
     """AOTT Lower uses the meaning out provided by the language model and return the result in the desired type."""
-    return meaning_out
+    reasoning, output = get_reasoning_output(meaning_out)
+    try:
+        return (reasoning, eval(output))
+    except Exception as e:
+        print(e)
+        return (reasoning, output)

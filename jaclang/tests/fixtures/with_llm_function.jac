@@ -2,6 +2,7 @@ obj model {
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(kwargs);
         print(meaning_in);
+        return "[Output] Something";
     }
 }
 glob llm = model();
@@ -22,5 +23,5 @@ can 'Get Emoji Representation'
 get_emoji(input: 'Text Input': str) -> 'Emoji Representation': str by llm(temperature=0.7,  incl_info=(emoji_examples),excl_info=());
 
 with entry {
-    get_emoji('Lets move to paris');
+    print(get_emoji('Lets move to paris'));
 }
