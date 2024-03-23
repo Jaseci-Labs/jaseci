@@ -338,8 +338,17 @@ class PyastGenPass(Pass):
         if os.environ.get("JAC_REGISTRY_DEBUG", False):
             import json
 
+            src_file = node.source.file_path
+            os.makedirs(
+                os.path.join(os.path.dirname(src_file), "__jac_gen__"), exist_ok=True
+            )
             with open(
-                node.source.file_path.replace(".jac", "_registry.json"), "w"
+                os.path.join(
+                    os.path.dirname(src_file),
+                    "__jac_gen__",
+                    os.path.basename(src_file).replace(".jac", "_registry.json"),
+                ),
+                "w",
             ) as f:
                 json.dump(self.registry, f, indent=2)
 
@@ -1062,6 +1071,16 @@ class PyastGenPass(Pass):
                                 ),
                                 args=[],
                                 keywords=[
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="file_loc",
+                                            value=self.sync(
+                                                ast3.Name(
+                                                    id="__file__", ctx=ast3.Load()
+                                                )
+                                            ),
+                                        )
+                                    ),
                                     self.sync(
                                         ast3.keyword(
                                             arg="model",

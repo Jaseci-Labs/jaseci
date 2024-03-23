@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import types
 from dataclasses import field
@@ -33,7 +34,6 @@ from jaclang.core.utils import (
     get_all_type_explanations,
     get_object_string,
     get_type_annotation,
-    registry_data,
     traverse_graph,
 )
 from jaclang.plugin.feature import JacFeature as Jac
@@ -397,6 +397,7 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def with_llm(
+        file_loc: str,
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
         scope: str,
@@ -407,9 +408,20 @@ class JacFeatureDefaults:
         action: str,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", "_registry.json"),
+            ),
+            "r",
+        ) as f:
+            registry_data = json.load(f)
+
         reason = False
         if "reason" in model_params:
             reason = model_params.pop("reason")
+
         type_collector: list = []
         information, collected_types = filter(scope, registry_data, incl_info)
         type_collector.extend(collected_types)
@@ -421,15 +433,16 @@ class JacFeatureDefaults:
             inputs_information_list.append(
                 f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
             )
-
         inputs_information = "\n".join(inputs_information_list)
 
         output_information = f"{outputs[0]} ({outputs[2]})"
         type_collector.extend(extract_non_primary_type(outputs[2]))
+
         type_explanations_list = list(
-            get_all_type_explanations(type_collector).values()
+            get_all_type_explanations(type_collector, registry_data).values()
         )
         type_explanations = "\n".join(type_explanations_list)
+
         meaning_in = aott_raise(
             information,
             inputs_information,

@@ -213,6 +213,7 @@ class JacFeature:
 
     @staticmethod
     def with_llm(
+        file_loc: str,
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
         scope: str,
@@ -224,6 +225,7 @@ class JacFeature:
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         return pm.hook.with_llm(
+            file_loc=file_loc,
             model=model,
             model_params=model_params,
             scope=scope,

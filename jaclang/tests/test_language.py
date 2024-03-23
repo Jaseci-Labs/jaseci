@@ -107,15 +107,45 @@ class JacLanguageTests(TestCase):
             "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",
         )
 
-    def test_with_llm(self) -> None:
+    def test_with_llm_function(self) -> None:
         """Parse micro jac file."""
+        os.environ["JAC_REGISTRY_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("with_llm", base_path=self.fixture_abs_path("./"))
+        jac_import("with_llm_function", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("{'temperature': 0.7}", stdout_value)
-        self.assertIn("Albert Einstein was a German-born", stdout_value)
+        self.assertIn("Emoji Representation (str)", stdout_value)
+        self.assertIn('Text Input (input) (str) = "Lets move to paris"', stdout_value)
+        self.assertIn(
+            'Examples of Text to Emoji (emoji_examples) (list[dict[str,str]]) = [{"input": "I love tp drink pina coladas"',  # noqa E501
+            stdout_value,
+        )
+        del os.environ["JAC_REGISTRY_DEBUG"]
+
+    def test_with_llm_method(self) -> None:
+        """Parse micro jac file."""
+        os.environ["JAC_REGISTRY_DEBUG"] = "1"
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm_method", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[Reasoning] <Reason>", stdout_value)
+        self.assertIn(
+            "Personality Index of a Person (PersonalityIndex) (class) = Personality Index (index) (int)",
+            stdout_value,
+        )
+        self.assertIn(
+            "Personality of the Person (dict[Personality,PersonalityIndex])",
+            stdout_value,
+        )
+        self.assertIn(
+            'Diary Entries (diary_entries) (None) = ["I won noble prize in Physics", "I am popular for my theory of relativity"]',  # noqa E501
+            stdout_value,
+        )
+        del os.environ["JAC_REGISTRY_DEBUG"]
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
@@ -405,7 +435,10 @@ class JacLanguageTests(TestCase):
         self.assertNotIn("Error", stdout_value)
 
         with open(
-            os.path.join(self.fixture_abs_path("./"), "registry_registry.json"), "r"
+            os.path.join(
+                self.fixture_abs_path("./"), "__jac_gen__", "registry_registry.json"
+            ),
+            "r",
         ) as f:
             registry = json.load(f)
         self.assertEqual(
@@ -416,5 +449,9 @@ class JacLanguageTests(TestCase):
             registry["registry(Module).Personality(Enum)"]["INTROVERT"],
             [None, "Person who is shy and reticent"],
         )
-        os.remove(os.path.join(self.fixture_abs_path("./"), "registry_registry.json"))
+        os.remove(
+            os.path.join(
+                self.fixture_abs_path("./"), "__jac_gen__", "registry_registry.json"
+            )
+        )
         del os.environ["JAC_REGISTRY_DEBUG"]

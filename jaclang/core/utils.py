@@ -138,7 +138,9 @@ def filter(scope: str, registry_data: dict, incl_info: tuple[str, str]) -> tuple
     return ("\n".join(info_str), collected_types)
 
 
-def get_type_explanation(type_str: str) -> tuple[str, set[Any]] | None:
+def get_type_explanation(
+    type_str: str, registry_data: dict
+) -> tuple[str, set[Any]] | None:
     """Get the type explanation of the input type string."""
     main_registry_type_info = None
     scope = None
@@ -194,18 +196,18 @@ def extract_non_primary_type(type_str: str) -> list:
     return non_primary_types
 
 
-def get_all_type_explanations(type_list: list) -> dict:
+def get_all_type_explanations(type_list: list, registry_data: dict) -> dict:
     """Get all type explanations from the input type list."""
     collected_type_explanations = {}
     for type_item in type_list:
-        type_explanation = get_type_explanation(type_item)
+        type_explanation = get_type_explanation(type_item, registry_data)
         if type_explanation is not None:
             type_explanation_str, nested_types = type_explanation
             if type_item not in collected_type_explanations:
                 collected_type_explanations[type_item] = type_explanation_str
             if nested_types:
                 nested_collected_type_explanations = get_all_type_explanations(
-                    list(nested_types)
+                    list(nested_types), registry_data
                 )
                 for k, v in nested_collected_type_explanations.items():
                     if k not in collected_type_explanations:
@@ -243,35 +245,3 @@ def get_object_string(obj: Any) -> Any:  # noqa: ANN401
         return f"{obj.__class__.__name__}({args})"
     else:
         return str(obj)
-
-
-registry_data = {
-    "get_emoji(Module)": {
-        "model": ["obj", ""],
-        "llm": [None, ""],
-        "emoji_examples": ["list[dict[str,str]]", "Examples of Text to Emoji"],
-        "PersonalityIndex": ["class", "Personality Index of a Person"],
-        "Personality": ["Enum", "Personality of the Person"],
-        "personality_examples": [
-            "dict[str,Personality|None]",
-            "Personality Information of Famous People",
-        ],
-        "Person": ["obj", "Person"],
-        "outer": ["obj", "main object "],
-        "obj1": [None, ""],
-        "pp": [None, ""],
-    },
-    "get_emoji(Module).PersonalityIndex(class)": {"": [None, ""]},
-    "get_emoji(Module).Personality(Enum)": {
-        "INTROVERT": [None, "Person who is shy and reticent"],
-        "EXTROVERT": [None, "Person who is outgoing and socially confident"],
-    },
-    "get_emoji(Module).Person(obj)": {
-        "name": ["str", "Name of the Person"],
-        "age": ["int", "Age of the Person"],
-        "personality": ["Personality", "Personality of the Person"],
-    },
-    "get_emoji(Module).outer(obj).inner(obj)": {"in_var": ["int", "inner variable"]},
-    "get_emoji(Module).outer(obj)": {"inner": ["obj", "inner object"]},
-}
-module_name = "get_emoji"

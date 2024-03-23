@@ -207,6 +207,7 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def with_llm(
+        file_loc: str,
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
         scope: str,
