@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, TYPE_CHECKING
 from enum import Enum
+from typing import Any, Callable, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -132,34 +132,40 @@ def filter(scope: str, registry_data: dict, incl_info: tuple[str, str]) -> tuple
             raise ValueError(f"Invalid scope: {incl[0]}")
         res = key_exists(filtered_data, incl[0])
         collected_types.extend(extract_non_primary_type(res[0]))
-        info_str.append(f"{res[1]} ({str(incl[0])}) ({res[0]}) = {get_object_string(incl[1])}")
+        info_str.append(
+            f"{res[1]} ({str(incl[0])}) ({res[0]}) = {get_object_string(incl[1])}"
+        )
     return ("\n".join(info_str), collected_types)
 
 
-def get_type_explanation(type_str: str) -> str:
+def get_type_explanation(type_str: str) -> tuple[str, set[Any]] | None:
+    """Get the type explanation of the input type string."""
     main_registry_type_info = None
     scope = None
     for k, v in registry_data.items():
-        for i, j in v.items():
-            if i == type_str:
-                main_registry_type_info = j
-                scope = k
-                break
+        if isinstance(v, dict):
+            for i, j in v.items():
+                if i == type_str:
+                    main_registry_type_info = j
+                    scope = k
+                    break
     if not main_registry_type_info:
-        return
+        return None
     type_type = main_registry_type_info[0]
     type_semstr = main_registry_type_info[1]
     type_info = registry_data[f"{scope}.{type_str}({type_type})"]
     type_info_str = []
     type_info_types = []
-    if type_type == "Enum":
+    if type_type == "Enum" and isinstance(type_info, dict):
         for k, v in type_info.items():
-            type_info_str.append(f"{v[1]} ({k}) (EnumItem)")
-    elif type_type in ["obj", "class", "node", "edge"]:
+            if isinstance(v, list):
+                type_info_str.append(f"{v[1]} ({k}) (EnumItem)")
+    elif type_type in ["obj", "class", "node", "edge"] and isinstance(type_info, dict):
         for k, v in type_info.items():
-            type_info_str.append(f"{v[1]} ({k}) ({v[0]})")
-            if extract_non_primary_type(v[0]):
-                type_info_types.extend(extract_non_primary_type(v[0]))
+            if isinstance(v, list):
+                type_info_str.append(f"{v[1]} ({k}) ({v[0]})")
+                if extract_non_primary_type(v[0]):
+                    type_info_types.extend(extract_non_primary_type(v[0]))
     return (
         f"{type_semstr} ({type_str}) ({type_type}) = {', '.join(type_info_str)}",
         set(type_info_types),
@@ -188,36 +194,52 @@ def extract_non_primary_type(type_str: str) -> list:
     return non_primary_types
 
 
-def get_all_type_explanations(type_list: list) -> str:
+def get_all_type_explanations(type_list: list) -> dict:
+    """Get all type explanations from the input type list."""
     collected_type_explanations = {}
     for type_item in type_list:
-        type_explanation, nested_types = get_type_explanation(type_item)
-        if type_item not in collected_type_explanations:
-            collected_type_explanations[type_item] = type_explanation
+        type_explanation = get_type_explanation(type_item)
+        if type_explanation is not None:
+            type_explanation_str, nested_types = type_explanation
+            if type_item not in collected_type_explanations:
+                collected_type_explanations[type_item] = type_explanation_str
             if nested_types:
                 nested_collected_type_explanations = get_all_type_explanations(
-                    nested_types
+                    list(nested_types)
                 )
                 for k, v in nested_collected_type_explanations.items():
                     if k not in collected_type_explanations:
                         collected_type_explanations[k] = v
     return collected_type_explanations
 
-def get_object_string(obj):
+
+def get_object_string(obj: Any) -> Any:  # noqa: ANN401
+    """Get the string representation of the input object."""
     if isinstance(obj, str):
         return f'"{obj}"'
     elif isinstance(obj, (int, float, bool)):
         return str(obj)
     elif isinstance(obj, list):
-        return '[' + ', '.join(get_object_string(item) for item in obj) + ']'
+        return "[" + ", ".join(get_object_string(item) for item in obj) + "]"
     elif isinstance(obj, tuple):
-        return '(' + ', '.join(get_object_string(item) for item in obj) + ')'
+        return "(" + ", ".join(get_object_string(item) for item in obj) + ")"
     elif isinstance(obj, dict):
-        return '{' + ', '.join(f"{get_object_string(key)}: {get_object_string(value)}" for key, value in obj.items()) + '}'
+        return (
+            "{"
+            + ", ".join(
+                f"{get_object_string(key)}: {get_object_string(value)}"
+                for key, value in obj.items()
+            )
+            + "}"
+        )
     elif isinstance(obj, Enum):
         return f"{obj.__class__.__name__}.{obj.name}"
-    elif hasattr(obj, '__dict__'):
-        args = ', '.join(f"{key}={get_object_string(value)}" for key, value in vars(obj).items() if key!="_jac_")
+    elif hasattr(obj, "__dict__"):
+        args = ", ".join(
+            f"{key}={get_object_string(value)}"
+            for key, value in vars(obj).items()
+            if key != "_jac_"
+        )
         return f"{obj.__class__.__name__}({args})"
     else:
         return str(obj)

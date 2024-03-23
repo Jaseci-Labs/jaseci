@@ -216,7 +216,7 @@ class JacFeature:
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
         scope: str,
-        incl_info: tuple,
+        incl_info: tuple[str, str],
         excl_info: tuple,
         inputs: tuple,
         outputs: tuple,

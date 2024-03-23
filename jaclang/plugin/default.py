@@ -28,13 +28,13 @@ from jaclang.core.construct import (
 )
 from jaclang.core.importer import jac_importer
 from jaclang.core.utils import (
+    extract_non_primary_type,
     filter,
+    get_all_type_explanations,
+    get_object_string,
     get_type_annotation,
     registry_data,
     traverse_graph,
-    get_all_type_explanations,
-    extract_non_primary_type,
-    get_object_string,
 )
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -413,18 +413,23 @@ class JacFeatureDefaults:
         type_collector: list = []
         information, collected_types = filter(scope, registry_data, incl_info)
         type_collector.extend(collected_types)
-        inputs_information = []
+
+        inputs_information_list = []
         for i in inputs:
             typ_anno = get_type_annotation(i[3])
             type_collector.extend(extract_non_primary_type(typ_anno))
-            inputs_information.append(
+            inputs_information_list.append(
                 f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
             )
-        inputs_information = "\n".join(inputs_information)
-        output_information = f"{outputs[0]} ({outputs[1]})"
-        type_collector.extend(extract_non_primary_type(get_type_annotation(outputs[0])))
-        type_explanations = list(get_all_type_explanations(type_collector).values())
-        type_explanations = "\n".join(type_explanations)
+
+        inputs_information = "\n".join(inputs_information_list)
+
+        output_information = f"{outputs[0]} ({outputs[2]})"
+        type_collector.extend(extract_non_primary_type(outputs[2]))
+        type_explanations_list = list(
+            get_all_type_explanations(type_collector).values()
+        )
+        type_explanations = "\n".join(type_explanations_list)
         meaning_in = aott_raise(
             information,
             inputs_information,

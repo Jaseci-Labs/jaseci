@@ -26,11 +26,11 @@ with entry {
 glob emoji_examples: 'Examples of Text to Emoji': list[dict[str, str]] = [
     {
          "input": "I love football",
-         "output": "⚽"
+        "output": "{soccer emoji}"
     },
     {
         "input": "Lets eat pizza",
-        "output": "🍕"
+        "output": "{pizza emoji}"
     }
 ];
 

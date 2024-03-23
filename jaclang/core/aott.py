@@ -28,7 +28,7 @@ Input/Type formatting: Explanation of the Input (variable_name) (type) = value
 {action}
 
 {reason_suffix}
-"""
+"""  # noqa E501
 
 with_reason_suffix = """
 Reason and return the output result(s) only, adhering to the provided Type in the following format
@@ -40,7 +40,7 @@ Reason and return the output result(s) only, adhering to the provided Type in th
 without_reason_suffix = """Generate and return the output result(s) only, adhering to the provided Type in the following format
 
 [Output] <result>
-"""
+"""  # noqa E501
 
 
 def aott_raise(

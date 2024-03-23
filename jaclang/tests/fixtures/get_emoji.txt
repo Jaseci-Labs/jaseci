@@ -1,5 +1,5 @@
 [System Prompt]
-This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are needed.  
+This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are needed.
 Input formatting: Explanation of the Input (variable_name) (type) = value
 
 [Information]

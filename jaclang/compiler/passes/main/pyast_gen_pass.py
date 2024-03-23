@@ -852,7 +852,7 @@ class PyastGenPass(Pass):
         self.set_register(
             node.name.value,
             self.get_scope(node),
-            "enum",
+            "Enum",
             node.semstr.lit_value if node.semstr else "",
         )
 
@@ -965,6 +965,15 @@ class PyastGenPass(Pass):
             )
         ]
 
+    def bfs_collect_type(self, node: ast.AstNode) -> list[str]:
+        """Collect type information in assignment using bfs."""
+        extracted_type = []
+        if isinstance(node, (ast.BuiltinType, ast.Token)):
+            extracted_type.append(node.value)
+        for child in node.kid:
+            extracted_type.extend(self.bfs_collect_type(child))
+        return extracted_type
+
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
         if isinstance(node.body, ast.FuncCall):
@@ -1028,6 +1037,12 @@ class PyastGenPass(Pass):
                                         )
                                     )
                                     exclude_info.append((var_name, i.gen.py_ast[0]))
+            extracted = (
+                "".join(self.bfs_collect_type(node.signature.return_type))
+                if isinstance(node.signature, ast.FuncSignature)
+                and node.signature.return_type
+                else None
+            )
             return [
                 self.sync(
                     ast3.Return(
@@ -1217,6 +1232,15 @@ class PyastGenPass(Pass):
                                                                 ]
                                                                 if node.signature.return_type
                                                                 else None
+                                                            ),
+                                                            (
+                                                                self.sync(
+                                                                    ast3.Constant(
+                                                                        value=(
+                                                                            extracted
+                                                                        )
+                                                                    )
+                                                                )
                                                             ),
                                                         ]
                                                         if isinstance(
@@ -2120,17 +2144,10 @@ class PyastGenPass(Pass):
                 self.sync(ast3.Assign(targets=node.target.gen.py_ast, value=value))
             ]
 
-        def bfs(node: ast.AstNode) -> list[str]:
-            """Collect type information in assignment using bfs."""
-            extracted_type = []
-            if isinstance(node, (ast.BuiltinType, ast.Token)):
-                extracted_type.append(node.value)
-            for child in node.kid:
-                extracted_type.extend(bfs(child))
-            return extracted_type
-
         extracted_type = (
-            "".join(bfs(node.type_tag.kid[1:][0])) if node.type_tag else None
+            "".join(self.bfs_collect_type(node.type_tag.kid[1:][0]))
+            if node.type_tag
+            else None
         )
 
         if not node.aug_op:
