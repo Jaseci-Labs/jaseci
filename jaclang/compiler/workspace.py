@@ -46,10 +46,11 @@ class ModuleInfo:
 class Workspace:
     """Class for managing workspace."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, lazy_parse: bool = False) -> None:
         """Initialize workspace."""
         self.path = path
         self.modules: dict[str, ModuleInfo] = {}
+        self.lazy_parse = lazy_parse
         self.rebuild_workspace()
 
     def rebuild_workspace(self) -> None:
@@ -63,6 +64,15 @@ class Workspace:
         ]:
             if file in self.modules:
                 continue
+            if self.lazy_parse:
+                # If lazy_parse is True, add the file to modules with empty IR
+                self.modules[file] = ModuleInfo(
+                    ir=None,
+                    errors=[],
+                    warnings=[],
+                )
+                continue
+            
             with open(file, "r") as f:
                 source = f.read()
             build = jac_str_to_pass(
@@ -195,6 +205,8 @@ class Workspace:
     def get_uses(self, file_path: str) -> Sequence[ast.AstSymbolNode]:  # need test
         """Return a list of definitions for a file."""
         uses = []
+        if self.lazy_parse:
+            return uses
         if file_path in self.modules:
             root_table = self.modules[file_path].ir.sym_tab
             if file_path in self.modules and isinstance(root_table, SymbolTable):
