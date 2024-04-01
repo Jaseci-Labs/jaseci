@@ -1466,7 +1466,7 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Semi) or i.gen.jac == ",":
                 self.emit(node, i.gen.jac)
             else:
-                if start:
+                if start or i.gen.jac == "}":
                     self.emit(node, i.gen.jac)
                     start = False
                 else:
@@ -1540,7 +1540,10 @@ class JacFormatPass(Pass):
         value: ExprType,
         """
         for i in node.kid:
-            self.emit(node, i.gen.jac)
+            if i.gen.jac == ":":
+                self.emit(node, f"{i.gen.jac} ")
+            else:
+                self.emit(node, i.gen.jac)
 
     def exit_k_w_pair(self, node: ast.KWPair) -> None:
         """Sub objects.
