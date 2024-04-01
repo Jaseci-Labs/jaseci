@@ -41,15 +41,10 @@ class JacFormatPassTests(TestCase):
             os.path.dirname(jaclang.__file__),
             "../examples/reference/names_and_references.jac",
         )
-        try:
-            msg = "error in " + jac_file
-            out = AstTool().ir(["ast", jac_file])
-            self.assertIn("+-- Token", out, msg)
-            self.assertIsNotNone(out, msg=msg)
-        except Exception as e:
-            self.skipTest(
-                f"Test skipped due to that other issue on main Go fix it: {e}"
-            )
+        msg = "error in " + jac_file
+        out = AstTool().ir(["ast", jac_file])
+        self.assertIn("+-- Token", out, msg)
+        self.assertIsNotNone(out, msg=msg)
 
     def test_print_py(self) -> None:
         """Testing for print_py AstTool."""
@@ -61,22 +56,18 @@ class JacFormatPassTests(TestCase):
             for f in os.listdir(jac_py_directory)
             if f.endswith(("names_and_references.jac", "names_and_references.py"))
         ]
-        try:
-            for file in jac_py_files:
-                msg = "error in " + file
-                out = AstTool().ir(["pyast", jac_py_directory + file])
-                if file.endswith(".jac"):
-                    self.assertIn("Module(", out, msg)
-                    self.assertIsNotNone(out, msg=msg)
-                elif file.endswith(".py"):
-                    if len(out.splitlines()) <= 4:
-                        continue
-                    self.assertIn("Module(", out, msg)
-                    self.assertIsNotNone(out, msg=msg)
-        except Exception as e:
-            self.skipTest(
-                f"Test skipped due to that other issue on main Go fix it: {e}"
-            )
+
+        for file in jac_py_files:
+            msg = "error in " + file
+            out = AstTool().ir(["pyast", jac_py_directory + file])
+            if file.endswith(".jac"):
+                self.assertIn("Module(", out, msg)
+                self.assertIsNotNone(out, msg=msg)
+            elif file.endswith(".py"):
+                if len(out.splitlines()) <= 4:
+                    continue
+                self.assertIn("Module(", out, msg)
+                self.assertIsNotNone(out, msg=msg)
 
     def test_automated(self) -> None:
         """Testing for py, jac, md files for each content in Jac Grammer."""
