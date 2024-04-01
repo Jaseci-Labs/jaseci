@@ -114,7 +114,7 @@ class FuseTypeInfoPass(Pass):
         self.prune()
 
     @__handle_node
-    def enter_name(self, node: ast.Name) -> None:
+    def enter_name(self, node: ast.NameSpec) -> None:
         """Pass handler for name nodes."""
         mypy_node = node.gen.mypy_ast[0]
 
@@ -289,7 +289,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Pass handler for SpecialVarRef nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        return self.enter_name(node)
 
     @__handle_node
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
