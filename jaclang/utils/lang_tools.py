@@ -230,6 +230,8 @@ class AstTool:
                     return ir.pp()
                 case "ast.":
                     return ir.dotgen()
+                case "unparse":
+                    return ir.unparse()
                 case "pyast":
                     return (
                         f"\n{py_ast.dump(ir.gen.py_ast[0], indent=2)}"
