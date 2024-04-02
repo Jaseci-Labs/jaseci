@@ -104,6 +104,17 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("Errors: 0, Warnings: 1", stdout_value)
 
+    def test_type_info(self) -> None:
+        """Testing for type info inside the ast tool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('type_info.jac')}"])
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("type_info.Spritesheet"), 13)
+        self.assertEqual(stdout_value.count("builtins.int"), 24)
+        self.assertEqual(stdout_value.count("pygame.surface.Surface"), 18)
+
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
         if os.path.exists(f"{self.fixture_abs_path('needs_import.jir')}"):
@@ -150,3 +161,35 @@ class JacCliTests(TestCase):
         os.remove(
             f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
         )
+
+    def test_run_test(self) -> None:
+        """Basic test for pass."""
+        process = subprocess.Popen(
+            ["jac", "test", f"{self.fixture_abs_path('run_test.jac')}", "-m 2"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("Ran 3 tests", stderr)
+        self.assertIn("FAILED (failures=2)", stderr)
+        self.assertIn("F.F", stderr)
+
+        process = subprocess.Popen(
+            [
+                "jac",
+                "test",
+                "-d" + f"{self.fixture_abs_path('../../../')}",
+                "-f" + "circle*",
+                "-x",
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("circle", stdout)
+        self.assertNotIn("circle_purfe.test", stdout)
+        self.assertNotIn("circle_pure.impl", stdout)

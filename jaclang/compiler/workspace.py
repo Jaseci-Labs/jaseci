@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Sequence
+from typing import Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
@@ -33,7 +33,7 @@ class ModuleInfo:
 
     def __init__(
         self,
-        ir: ast.Module,
+        ir: Optional[ast.Module],
         errors: Sequence[Alert],
         warnings: Sequence[Alert],
     ) -> None:
@@ -46,10 +46,11 @@ class ModuleInfo:
 class Workspace:
     """Class for managing workspace."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, lazy_parse: bool = False) -> None:
         """Initialize workspace."""
         self.path = path
         self.modules: dict[str, ModuleInfo] = {}
+        self.lazy_parse = lazy_parse
         self.rebuild_workspace()
 
     def rebuild_workspace(self) -> None:
@@ -63,6 +64,15 @@ class Workspace:
         ]:
             if file in self.modules:
                 continue
+            if self.lazy_parse:
+                # If lazy_parse is True, add the file to modules with empty IR
+                self.modules[file] = ModuleInfo(
+                    ir=None,
+                    errors=[],
+                    warnings=[],
+                )
+                continue
+
             with open(file, "r") as f:
                 source = f.read()
             build = jac_str_to_pass(
@@ -98,10 +108,13 @@ class Workspace:
                         warnings=build.warnings_had,
                     )
 
-    def rebuild_file(self, file_path: str, deep: bool = False) -> bool:
+    def rebuild_file(
+        self, file_path: str, deep: bool = False, source: str = ""
+    ) -> bool:
         """Rebuild a file."""
-        with open(file_path, "r") as f:
-            source = f.read()
+        if source == "":
+            with open(file_path, "r") as f:
+                source = f.read()
         build = jac_str_to_pass(
             jac_str=source,
             file_path=file_path,
@@ -152,30 +165,40 @@ class Workspace:
         self, file_path: str, deep: bool = False
     ) -> list[ast.ModulePath]:
         """Return a list of dependencies for a file."""
+        mod_ir = self.modules[file_path].ir
         if deep:
-            return [
-                i
-                for i in self.modules[file_path].ir.get_all_sub_nodes(ast.ModulePath)
-                if i.parent
-                and isinstance(i.parent, ast.Import)
-                and i.parent.lang.tag.value == "jac"
-            ]
+            return (
+                [
+                    i
+                    for i in mod_ir.get_all_sub_nodes(ast.ModulePath)
+                    if i.parent
+                    and isinstance(i.parent, ast.Import)
+                    and i.parent.lang.tag.value == "jac"
+                ]
+                if mod_ir
+                else []
+            )
         else:
-            return [
-                i
-                for i in self.modules[file_path].ir.get_all_sub_nodes(ast.ModulePath)
-                if i.loc.mod_path == file_path
-                and i.parent
-                and isinstance(i.parent, ast.Import)
-                and i.parent.lang.tag.value == "jac"
-            ]
+            return (
+                [
+                    i
+                    for i in mod_ir.get_all_sub_nodes(ast.ModulePath)
+                    if i.loc.mod_path == file_path
+                    and i.parent
+                    and isinstance(i.parent, ast.Import)
+                    and i.parent.lang.tag.value == "jac"
+                ]
+                if mod_ir
+                else []
+            )
 
     def get_symbols(self, file_path: str) -> Sequence[Symbol]:
         """Return a list of symbols for a file."""
         symbols = []
+        mod_ir = self.modules[file_path].ir
         if file_path in self.modules:
-            root_table = self.modules[file_path].ir.sym_tab
-            if file_path in self.modules and isinstance(root_table, SymbolTable):
+            root_table = mod_ir.sym_tab if mod_ir else None
+            if file_path in self.modules and root_table:
                 for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
                     symbols += list(i.tab.values())
         return symbols
@@ -191,10 +214,13 @@ class Workspace:
 
     def get_uses(self, file_path: str) -> Sequence[ast.AstSymbolNode]:  # need test
         """Return a list of definitions for a file."""
-        uses = []
+        mod_ir = self.modules[file_path].ir
+        uses: list[ast.AstSymbolNode] = []
+        if self.lazy_parse:
+            return uses
         if file_path in self.modules:
-            root_table = self.modules[file_path].ir.sym_tab
-            if file_path in self.modules and isinstance(root_table, SymbolTable):
+            root_table = mod_ir.sym_tab if mod_ir else None
+            if file_path in self.modules and root_table:
                 for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
                     uses += i.uses
         return uses

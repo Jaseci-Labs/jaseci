@@ -1047,13 +1047,6 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_expr_list(self, node: ast.ExprList) -> None:
-        """Sub objects.
-
-        values: list[ExprType],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
