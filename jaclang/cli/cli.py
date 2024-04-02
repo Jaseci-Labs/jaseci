@@ -1,8 +1,10 @@
 """Command line interface tool for the Jac language."""
 
+import marshal
 import os
 import pickle
 import shutil
+import types
 from typing import Optional
 
 from jaclang import jac_import
@@ -13,6 +15,7 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
 
@@ -90,8 +93,7 @@ def build(filename: str) -> None:
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
         for i in out.ir.flatten():
-            i.gen.mypy_ast = []
-            i.gen.py = ""
+            i.gen.clean()
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out.ir, f)
     else:
@@ -141,12 +143,33 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
 
 
 @cmd_registry.register
-def test(filename: str) -> None:
+def test(
+    filepath: str,
+    filter: str = "",
+    xit: bool = False,
+    maxfail: int = None,  # type:ignore
+    directory: str = "",
+    verbose: bool = False,
+) -> None:
     """Run the test suite in the specified .jac file.
 
-    :param filename: The path to the .jac file.
+    :param filepath: Path/to/file.jac
+    :param filter: Filter the files using Unix shell style conventions.
+    :param xit(exit): Stop(exit) running tests as soon as finds an error.
+    :param maxfail: Stop running tests after n failures.
+    :param directory: Run tests from the specified directory.
+    :param verbose: Show more info.
+
+    jac test => jac test -d .
     """
-    Jac.run_test(filename)
+    Jac.run_test(
+        filepath=filepath,
+        filter=filter,
+        xit=xit,
+        maxfail=maxfail,
+        directory=directory,
+        verbose=verbose,
+    )
 
 
 @cmd_registry.register
@@ -162,8 +185,9 @@ def tool(tool: str, args: Optional[list] = None) -> None:
                 print(getattr(AstTool(), tool)(args))
             else:
                 print(getattr(AstTool(), tool)())
-        except Exception:
-            print(f"Error while running ast tool {tool}, check args.")
+        except Exception as e:
+            print(f"Error while running ast tool {tool}, check args: {e}")
+            raise e
     else:
         print(f"Ast tool {tool} not found.")
 
@@ -182,6 +206,30 @@ def clean() -> None:
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")
     print("Done cleaning.")
+
+
+@cmd_registry.register
+def debug(filename: str, main: bool = True, cache: bool = False) -> None:
+    """Debug the specified .jac file using pdb."""
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
+    if filename.endswith(".jac"):
+        bytecode = jac_file_to_pass(filename).ir.gen.py_bytecode
+        if bytecode:
+            code = marshal.loads(bytecode)
+            if db.has_breakpoint(bytecode):
+                run(filename, main, cache)
+            else:
+                func = types.FunctionType(code, globals())
+
+                print("Debugging with Jac debugger.\n")
+                db.runcall(func)
+                print("Done debugging.")
+        else:
+            print(f"Error while generating bytecode in {filename}.")
+    else:
+        print("Not a .jac file.")
 
 
 def start_cli() -> None:
