@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import fnmatch
+import json
 import os
 import types
 from dataclasses import field
