@@ -113,8 +113,7 @@ enum_ref: ENUM_OP named_ref
 ability_ref: ABILITY_OP named_ref
 
 // Codeblocks and Statements
-code_block: LBRACE statement_list? RBRACE
-statement_list: statement+
+code_block: LBRACE statement* RBRACE
 
 statement: import_stmt
        | ability
@@ -162,7 +161,7 @@ finally_stmt: KW_FINALLY code_block
 
 // Match statements
 match_stmt: KW_MATCH expression LBRACE match_case_block+ RBRACE
-match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
+match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement+
 
 // Match patterns
 pattern_seq: (or_pattern | as_pattern)

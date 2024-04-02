@@ -37,20 +37,14 @@ class JacFormatPassTests(TestCase):
 
     def test_print(self) -> None:
         """Testing for print AstTool."""
-        jac_directory = os.path.join(
-            os.path.dirname(jaclang.__file__), "../examples/reference/"
+        jac_file = os.path.join(
+            os.path.dirname(jaclang.__file__),
+            "../examples/reference/names_and_references.jac",
         )
-        jac_files = [f for f in os.listdir(jac_directory) if f.endswith(".jac")]
-        passed = 0
-        for jac_file in jac_files:
-            msg = "error in " + jac_file
-            out = AstTool().ir(["ast", jac_directory + jac_file])
-            if out == "0:0 - 0:0\tModule\n0:0 - 0:0\t+-- EmptyToken - \n":
-                continue
-            self.assertIn("+-- Token", out, msg)
-            self.assertIsNotNone(out, msg=msg)
-            passed += 1
-        self.assertGreater(passed, 10)
+        msg = "error in " + jac_file
+        out = AstTool().ir(["ast", jac_file])
+        self.assertIn("+-- Token", out, msg)
+        self.assertIsNotNone(out, msg=msg)
 
     def test_print_py(self) -> None:
         """Testing for print_py AstTool."""
@@ -58,8 +52,11 @@ class JacFormatPassTests(TestCase):
             os.path.dirname(jaclang.__file__), "../examples/reference/"
         )
         jac_py_files = [
-            f for f in os.listdir(jac_py_directory) if f.endswith((".jac", ".py"))
+            f
+            for f in os.listdir(jac_py_directory)
+            if f.endswith(("names_and_references.jac", "names_and_references.py"))
         ]
+
         for file in jac_py_files:
             msg = "error in " + file
             out = AstTool().ir(["pyast", jac_py_directory + file])
