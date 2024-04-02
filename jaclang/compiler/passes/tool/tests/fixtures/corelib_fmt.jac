@@ -63,7 +63,7 @@ obj ObjectAnchor :ElementAnchor, ArchitypeProtocol: {
 }
 
 obj NodeAnchor :ObjectAnchor: {
-    has edges: dict[EdgeDir, list[Edge]] = {EdgeDir.IN:[], EdgeDir.OUT:[] };
+    has edges: dict[EdgeDir, list[Edge]] = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
     can connect_node(nd: Node, edg: Edge) -> Node;
     can edges_to_nodes(dir: EdgeDir) -> list[Node];
@@ -260,7 +260,7 @@ obj JacPlugin {
 :obj:ObjectAnchor:can:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        cls.ds_entry_funcs.append({'types':triggers, 'func':func });
+        cls.ds_entry_funcs.append({'types': triggers, 'func': func});
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
@@ -272,7 +272,7 @@ obj JacPlugin {
 :obj:ObjectAnchor:can:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        cls.ds_exit_funcs.append({'types':triggers, 'func':func });
+        cls.ds_exit_funcs.append({'types': triggers, 'func': func});
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }

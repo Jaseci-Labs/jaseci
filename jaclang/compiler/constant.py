@@ -242,6 +242,15 @@ DELIM_MAP = {
     Tokens.DECOR_OP: "@",
     Tokens.WS: "\n",
     Tokens.SEMI: ";",
+    Tokens.COLON: ":",
+    Tokens.LBRACE: "{",
+    Tokens.RBRACE: "}",
+    Tokens.LSQUARE: "[",
+    Tokens.RSQUARE: "]",
+    Tokens.LPAREN: "(",
+    Tokens.RPAREN: ")",
+    Tokens.RETURN_HINT: "->",
+    Tokens.DOT: ".",
 }
 
 colors = [

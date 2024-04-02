@@ -1,6 +1,6 @@
 # Jac Coding Manual
 
-Jac is all of pythons goodness wrapped in a language that gives the coder wings. Lets jump right in!
+Jac is all of python's goodness wrapped in a language that gives the coder wings. Lets jump right in!
 
 ## Get Jac
 

@@ -50,6 +50,18 @@ class CommandRegistry:
             arg_msg = f"type: {param.annotation.__name__}"
             if param_name == "args":
                 cmd_parser.add_argument("args", nargs=argparse.REMAINDER, help=arg_msg)
+            elif param_name == "filepath":
+                first = False
+                cmd_parser.add_argument(
+                    f"{param_name}",
+                    type=(
+                        eval(param.annotation)
+                        if isinstance(param.annotation, str)
+                        else param.annotation
+                    ),
+                    help=arg_msg,
+                    nargs="?",
+                )
             elif param.default is param.empty:
                 if first:
                     first = False

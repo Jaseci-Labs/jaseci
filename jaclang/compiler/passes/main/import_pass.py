@@ -47,8 +47,10 @@ class ImportPass(Pass):
                     self.annex_impl(mod)
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
-                # elif i.lang.tag.value == "py":
-                #     self.import_py_module(node=i, mod_path=node.loc.mod_path)
+                # elif i.parent.lang.tag.value == "py":
+                #     mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
+                #     i.sub_module = mod
+                #     i.add_kids_right([mod], pos_update=False)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
         self.annex_impl(node)
@@ -140,9 +142,10 @@ class ImportPass(Pass):
                 if spec.origin in self.import_table:
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
+                    # print(f"\nImporting python module {node.path_str}")
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
-                            py_ast.parse(f.read()), mod_path=mod_path
+                            py_ast.parse(f.read()), mod_path=spec.origin
                         ),
                     ).ir
                 if mod:
@@ -157,4 +160,5 @@ class ImportPass(Pass):
                 f"Failed to import python module {node.path_str}: {e}",
                 node_override=node,
             )
+            raise e
         return None
