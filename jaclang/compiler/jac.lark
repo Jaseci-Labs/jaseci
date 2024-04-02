@@ -61,8 +61,8 @@ enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
 enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
 
-enum_stmt: NAME EQ expression
-         | NAME
+enum_stmt: NAME (COLON STRING)? EQ expression
+         | NAME (COLON STRING)?
          | py_code_block
 
 // Abilities
@@ -255,7 +255,7 @@ ignore_stmt: KW_IGNORE expression SEMI
 
 // Assignments
 assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
-          | atomic_chain type_tag (EQ (yield_expr | expression))?
+          | atomic_chain (COLON STRING)? type_tag (EQ (yield_expr | expression))?
           | atomic_chain aug_op (yield_expr | expression)
 
 aug_op: RSHIFT_EQ

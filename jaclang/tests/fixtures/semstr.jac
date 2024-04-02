@@ -1,10 +1,15 @@
 enum 'enum'
 emotion {
-    Happy,
-    Sad,
+    Happy: 'Happy Person',
+    Sad: 'Sad Person' = 1,
     Calm,
     Angry
 }
+
+glob name: 'name of the user': str = 'John Doe',
+    age: 'age of the user': int = 25;
+
+let something: 'something': str;
 
 node 'personality'
 personality{

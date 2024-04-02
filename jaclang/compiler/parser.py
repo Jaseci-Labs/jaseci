@@ -599,6 +599,7 @@ class JacParser(Pass):
             if isinstance(kid[0], (ast.Enum, ast.EnumDef)):
                 return self.nu(kid[0])
             else:
+
                 raise self.ice()
 
         def enum_decl(self, kid: list[ast.AstNode]) -> ast.Enum:
@@ -665,17 +666,23 @@ class JacParser(Pass):
         def enum_stmt(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
             """Grammar rule.
 
-            enum_stmt: NAME EQ expression
-                    | NAME
+            enum_stmt: NAME (COLON STRING)? EQ expression
+                    | NAME (COLON STRING)?
                     | py_code_block
             """
             if isinstance(kid[0], ast.PyInlineCode):
                 return self.nu(kid[0])
             if isinstance(kid[0], (ast.Name)):
-                if len(kid) == 1:
-                    kid[0].is_enum_singleton = True
-                    return self.nu(kid[0])
-                elif isinstance(kid[2], ast.Expr):
+                if (
+                    len(kid) >= 3
+                    and isinstance(kid[-1], ast.Expr)
+                    and not isinstance(kid[-1], ast.String)
+                ):
+                    semstr = (
+                        kid[2]
+                        if len(kid) > 3 and isinstance(kid[2], ast.String)
+                        else None
+                    )
                     targ = ast.SubNodeList[ast.Expr](
                         items=[kid[0]], delim=Tok.COMMA, kid=[kid[0]]
                     )
@@ -683,11 +690,34 @@ class JacParser(Pass):
                     return self.nu(
                         ast.Assignment(
                             target=targ,
-                            value=kid[2],
+                            value=kid[-1],
                             type_tag=None,
                             kid=kid,
+                            semstr=semstr,
+                            is_enum_stmt=True,
                         )
                     )
+                else:
+                    semstr = (
+                        kid[2]
+                        if len(kid) == 3 and isinstance(kid[2], ast.String)
+                        else None
+                    )
+                    targ = ast.SubNodeList[ast.Expr](
+                        items=[kid[0]], delim=Tok.COMMA, kid=[kid[0]]
+                    )
+                    kid[0] = targ
+                    return self.nu(
+                        ast.Assignment(
+                            target=targ,
+                            value=None,
+                            type_tag=None,
+                            kid=kid,
+                            semstr=semstr,
+                            is_enum_stmt=True,
+                        )
+                    )
+
             raise self.ice()
 
         def ability(
@@ -1724,41 +1754,53 @@ class JacParser(Pass):
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
 
-            assignment: KW_LET? (atomic_chain EQ)+ (yield_stmt | expression)
-                    | atomic_chain type_tag (EQ (yield_stmt | expression))?
-                    | atomic_chain aug_op (yield_stmt | expression)
+            assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
+                    | atomic_chain (COLON STRING)? type_tag (EQ (yield_expr | expression))?
+                    | atomic_chain aug_op (yield_expr | expression)
             """
             chomp = [*kid]
             is_frozen = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
             is_aug = None
             assignees = []
             chomp = chomp[1:] if is_frozen else chomp
-            if (
-                len(chomp) > 1
-                and isinstance(chomp[1], ast.Token)
-                and chomp[1].name != Tok.EQ
-            ):
-                assignees += [chomp[0]]
-                is_aug = chomp[1]
-                chomp = chomp[2:]
-            elif (
-                len(chomp) > 1
-                and isinstance(chomp[1], ast.Token)
-                and chomp[1].name == Tok.EQ
-            ):
-                while (
-                    isinstance(chomp[0], ast.Expr)
-                    and len(chomp) > 1
-                    and isinstance(chomp[1], ast.Token)
-                    and chomp[1].name == Tok.EQ
-                ):
-                    assignees += [chomp[0], chomp[1]]
-                    chomp = chomp[2:]
-            elif isinstance(chomp[0], ast.Expr):
-                assignees += [chomp[0]]
-                chomp = chomp[1:]
+            value = chomp[-1] if isinstance(chomp[-1], ast.Expr) else None
+            chomp = (
+                chomp[:-2]
+                if value and isinstance(chomp[-3], ast.SubTag)
+                else chomp[:-1] if value else chomp
+            )
+            type_tag = chomp[-1] if isinstance(chomp[-1], ast.SubTag) else None
+            if not value:
+                semstr = chomp[2] if len(chomp) > 2 else None
             else:
-                raise self.ice()
+                if type_tag:
+                    chomp = chomp[:-1]
+                    semstr = (
+                        chomp[-1]
+                        if len(chomp) > 1 and isinstance(chomp[-1], ast.String)
+                        else None
+                    )
+                    chomp = chomp[:-2] if semstr else chomp
+                else:
+                    if (
+                        isinstance(chomp[1], ast.Token)
+                        and chomp[1].name != Tok.EQ
+                        and chomp[1].name != Tok.COLON
+                    ):
+                        assignees += [chomp[0]]
+                        is_aug = chomp[1]
+                        chomp = chomp[2:]
+                    else:
+                        while (
+                            len(chomp) > 1
+                            and isinstance(chomp[0], ast.Expr)
+                            and isinstance(chomp[1], ast.Token)
+                            and chomp[1].name == Tok.EQ
+                        ):
+                            assignees += [chomp[0], chomp[1]]
+                            chomp = chomp[2:]
+
+            assignees += chomp
             valid_assignees = [i for i in assignees if isinstance(i, (ast.Expr))]
             new_targ = ast.SubNodeList[ast.Expr](
                 items=valid_assignees,
@@ -1767,28 +1809,11 @@ class JacParser(Pass):
             )
             kid = [x for x in kid if x not in assignees]
             kid.insert(1, new_targ) if is_frozen else kid.insert(0, new_targ)
-            type_tag = (
-                chomp[0]
-                if len(chomp) > 0 and isinstance(chomp[0], ast.SubTag)
-                else None
-            )
-            chomp = chomp[1:] if type_tag else chomp
-            if (
-                len(chomp) > 0
-                and isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.EQ
-            ):
-                chomp = chomp[1:]
-            value = (
-                chomp[0]
-                if len(chomp) > 0 and isinstance(chomp[0], (ast.YieldExpr, ast.Expr))
-                else None
-            )
             if is_aug:
                 return self.nu(
                     ast.Assignment(
                         target=new_targ,
-                        type_tag=type_tag,
+                        type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                         value=value,
                         mutable=is_frozen,
                         aug_op=is_aug,
@@ -1798,7 +1823,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.Assignment(
                     target=new_targ,
-                    type_tag=type_tag,
+                    type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                     value=value,
                     mutable=is_frozen,
                     kid=kid,

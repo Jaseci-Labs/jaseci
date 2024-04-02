@@ -1927,6 +1927,21 @@ class PyastGenPass(Pass):
         type_tag: Optional[SubTag[ExprType]],
         mutable: bool =True,
         """
+        value = (
+            node.value.gen.py_ast[0]
+            if node.value
+            else (
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(ast3.Name(id="__jac_auto__", ctx=ast3.Load())),
+                        args=[],
+                        keywords=[],
+                    )
+                )
+                if node.is_enum_stmt
+                else self.ice()
+            )
+        )
         if node.type_tag:
             node.gen.py_ast = [
                 self.sync(
@@ -1938,25 +1953,19 @@ class PyastGenPass(Pass):
                     )
                 )
             ]
-        elif not node.value:
-            self.ice()
         elif node.aug_op:
             node.gen.py_ast = [
                 self.sync(
                     ast3.AugAssign(
                         target=node.target.items[0].gen.py_ast[0],
                         op=node.aug_op.gen.py_ast[0],
-                        value=node.value.gen.py_ast[0],
+                        value=value,
                     )
                 )
             ]
         else:
             node.gen.py_ast = [
-                self.sync(
-                    ast3.Assign(
-                        targets=node.target.gen.py_ast, value=node.value.gen.py_ast[0]
-                    )
-                )
+                self.sync(ast3.Assign(targets=node.target.gen.py_ast, value=value))
             ]
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
@@ -3249,24 +3258,6 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
         ]
-        if node.is_enum_singleton and isinstance(node.gen.py_ast[0], ast3.Name):
-            node.gen.py_ast[0].ctx = ast3.Store()
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Assign(
-                        targets=node.gen.py_ast,
-                        value=self.sync(
-                            ast3.Call(
-                                func=self.sync(
-                                    ast3.Name(id="__jac_auto__", ctx=ast3.Load())
-                                ),
-                                args=[],
-                                keywords=[],
-                            )
-                        ),
-                    )
-                )
-            ]
 
     def exit_float(self, node: ast.Float) -> None:
         """Sub objects.
