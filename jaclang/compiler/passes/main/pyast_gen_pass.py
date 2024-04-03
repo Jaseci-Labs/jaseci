@@ -350,7 +350,6 @@ class PyastGenPass(Pass):
         is_frozen: bool,
         doc: Optional[String],
         """
-        self.needs_jac_feature()
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             if isinstance(doc, ast3.AST) and isinstance(
@@ -597,7 +596,6 @@ class PyastGenPass(Pass):
         ]
 
     def exit_architype(self, node: ast.Architype) -> None:
-        # TODO: Get the Scope of the Architype
         """Sub objects.
 
         name: Name,
@@ -709,32 +707,6 @@ class PyastGenPass(Pass):
         if isinstance(node.body, ast.ArchDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
-    def get_scope(self, node: ast.AstNode) -> str:
-        """Get scope."""
-        a = (
-            node.name
-            if isinstance(node, (ast.Module))
-            else (
-                node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
-            )
-        )
-        main_path = ""
-        while node:
-            if isinstance(node, (ast.Module)):
-                main_path = f"{node.name}({node.__class__.__name__}).{main_path}"
-            elif isinstance(node, (ast.Enum, ast.Architype)) and a != node.name.value:
-                node_type = (
-                    node.__class__.__name__
-                    if isinstance(node, ast.Enum)
-                    else node.arch_type.value
-                )
-                main_path = f"{node.name.value}({node_type}).{main_path}"
-            if node.parent:
-                node = node.parent
-            else:
-                break
-        return main_path[:-1]
-
     def collect_events(
         self, node: ast.Architype
     ) -> tuple[list[ast3.AST], list[ast3.AST]]:
@@ -794,8 +766,6 @@ class PyastGenPass(Pass):
                 )
 
     def exit_enum(self, node: ast.Enum) -> None:
-        # TODO: Scope of the Enum
-        # TODO: Add Semstring for ENUM Items
         """Sub objects.
 
         name: Name,
@@ -806,9 +776,8 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.needs_enum()
-        enum_body = node.body.body if isinstance(node.body, ast.EnumDef) else node.body
         body = self.resolve_stmt_block(
-            enum_body,
+            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
             doc=node.doc,
         )
         decorators = (
@@ -1309,7 +1278,6 @@ class PyastGenPass(Pass):
         self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
-        # TODO: Add the jac register set (Maybe)
         """Sub objects.
 
         is_static: bool,
