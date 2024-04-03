@@ -404,7 +404,13 @@ class JacLanguageTests(TestCase):
         self.assertNotIn("Error", stdout_value)
 
         with open(
-            os.path.join(self.fixture_abs_path("./"), "__jac_gen__", "registry.registry.pkl"), "rb"
+            os.path.join(
+                self.fixture_abs_path("./"), "__jac_gen__", "registry.registry.pkl"
+            ),
+            "rb",
         ) as f:
             registry = pickle.load(f)
-        registry.pp()
+
+        self.assertEqual(len(registry.registry), 3)
+        self.assertEqual(len(list(registry.registry.items())[0][1]), 7)
+        self.assertEqual(list(registry.registry.items())[1][0].scope, "Person")

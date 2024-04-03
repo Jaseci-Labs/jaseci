@@ -1,47 +1,70 @@
+"""Jac Registry Pass.
+
+This pass is responsible for creating object containing the senstring, scope,
+type of different important nodes in the AST as we loose access to the
+semstrings after PyASTGen pass. So we create those as a pickled file for
+each module
+"""
+
 import os
 import pickle
 
 import jaclang.compiler.absyntree as ast
-from jaclang.core.registry import Registry, SemInfo, Scope
 from jaclang.compiler.passes import Pass
+from jaclang.core.registry import Registry, Scope, SemInfo
 
 
 class RegistryPass(Pass):
+    """Creates a registry for each module."""
+
     modules_visited: list[ast.Module] = []
 
-    def enter_module(self, node: ast.Module):
+    def enter_module(self, node: ast.Module) -> None:
+        """Create registry for each module."""
         node.registry = Registry()
         self.modules_visited.append(node)
 
-    def exit_module(self, node: ast.Module):
-        module_dir = os.path.join(os.path.abspath(os.path.dirname(node.source.file_path)), "__jac_gen__")
+    def exit_module(self, node: ast.Module) -> None:
+        """Save registry for each module."""
+        module_dir = os.path.join(
+            os.path.abspath(os.path.dirname(node.source.file_path)), "__jac_gen__"
+        )
         module_name = node.name
         os.makedirs(module_dir, exist_ok=True)
-        with open(
-            os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb"
-        ) as f:
+        with open(os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb") as f:
             pickle.dump(node.registry, f)
         self.modules_visited.pop()
 
-    def exit_architype(self, node: ast.Architype):
+    def exit_architype(self, node: ast.Architype) -> None:
+        """Save architype information."""
         scope = self.get_scope(node)
         seminfo = SemInfo(
             node.name.value,
             node.arch_type.value,
             node.semstr.lit_value if node.semstr else None,
         )
-        if len(self.modules_visited) and self.modules_visited[-1].registry and scope.parent:
+        if (
+            len(self.modules_visited)
+            and self.modules_visited[-1].registry
+            and scope.parent
+        ):
             self.modules_visited[-1].registry.add(scope.parent, seminfo)
 
-    def exit_enum(self, node: ast.Enum):
+    def exit_enum(self, node: ast.Enum) -> None:
+        """Save enum information."""
         scope = self.get_scope(node)
         seminfo = SemInfo(
             node.name.value, "Enum", node.semstr.lit_value if node.semstr else None
         )
-        if len(self.modules_visited) and self.modules_visited[-1].registry and scope.parent:
+        if (
+            len(self.modules_visited)
+            and self.modules_visited[-1].registry
+            and scope.parent
+        ):
             self.modules_visited[-1].registry.add(scope.parent, seminfo)
 
-    def exit_has_var(self, node: ast.HasVar):
+    def exit_has_var(self, node: ast.HasVar) -> None:
+        """Save variable information."""
         scope = self.get_scope(node)
         seminfo = SemInfo(
             node.name.value,
@@ -55,7 +78,8 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def exit_assignment(self, node: ast.Assignment):
+    def exit_assignment(self, node: ast.Assignment) -> None:
+        """Save assignment information."""
         if node.aug_op:
             return
 
@@ -77,7 +101,8 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def exit_name(self, node: ast.Name):
+    def exit_name(self, node: ast.Name) -> None:
+        """Save name information. for enum stmts."""
         if (
             node.parent
             and node.parent.parent
@@ -89,6 +114,7 @@ class RegistryPass(Pass):
                 self.modules_visited[-1].registry.add(scope, seminfo)
 
     def get_scope(self, node: ast.AstNode) -> Scope:
+        """Get scope of the node."""
         a = (
             node.name
             if isinstance(node, ast.Module)

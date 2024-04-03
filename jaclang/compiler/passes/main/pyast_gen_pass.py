@@ -5,7 +5,6 @@ in each node. Module nodes contain the entire module code.
 """
 
 import ast as ast3
-import os
 import textwrap
 from typing import Optional, Sequence, TypeVar
 
@@ -1976,11 +1975,6 @@ class PyastGenPass(Pass):
             )
         )
         if node.type_tag:
-            assign_target = (
-                node.target.items[0].value
-                if isinstance(node.target.items[0], ast.Name)
-                else ""
-            )
             node.gen.py_ast = [
                 self.sync(
                     ast3.AnnAssign(
@@ -2002,11 +1996,6 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
-            assign_target = (
-                node.target.items[0].value
-                if isinstance(node.target.items[0], ast.Name)
-                else ""
-            )
             node.gen.py_ast = [
                 self.sync(ast3.Assign(targets=node.target.gen.py_ast, value=value))
             ]
