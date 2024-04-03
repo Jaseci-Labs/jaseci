@@ -1,6 +1,6 @@
 obj model {
     can __infer__(meaning_in: str, **kwargs: dict) {
-        print(meaning_in);
+        # print(meaning_in);
     }
 }
 glob llm = model();
@@ -29,6 +29,6 @@ with entry {
     einstein_age: int = 75;
     einstein_age += 1;
     einstein = Person('Albert Einstein', einstein_age);
-    print(einstein.name);
-    print(get_personality(einstein));
+    # print(einstein.name);
+    # print(get_personality(einstein));
 }
