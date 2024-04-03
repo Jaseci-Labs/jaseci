@@ -19,8 +19,6 @@ T = TypeVar("T", bound=ast3.AST)
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
 
-    registry: dict = {}
-
     @staticmethod
     def node_compilable_test(node: ast3.AST) -> None:
         """Convert any AST node to a compilable module node."""
@@ -344,14 +342,6 @@ class PyastGenPass(Pass):
             )
         ]
         node.gen.py = ast3.unparse(node.gen.py_ast[0])
-        node.module_registry = self.registry
-        if os.environ.get("JAC_REGISTRY_DEBUG", False):
-            import json
-
-            with open(
-                node.source.file_path.replace(".jac", "_registry.json"), "w"
-            ) as f:
-                json.dump(self.registry, f, indent=2)
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -720,13 +710,6 @@ class PyastGenPass(Pass):
         if isinstance(node.body, ast.ArchDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
-        self.set_register(
-            node.name.value,
-            self.get_scope(node),
-            node.arch_type.value,
-            node.semstr.lit_value if node.semstr else "",
-        )
-
     def get_scope(self, node: ast.AstNode) -> str:
         """Get scope."""
         a = (
@@ -853,12 +836,6 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        self.set_register(
-            node.name.value,
-            self.get_scope(node),
-            "enum",
-            node.semstr.lit_value if node.semstr else "",
-        )
         if isinstance(node.body, ast.EnumDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
@@ -1482,16 +1459,6 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-        self.set_register(
-            node.name.value,
-            self.get_scope(node),
-            (
-                node.type_tag.tag.value
-                if node.type_tag and isinstance(node.type_tag.tag, ast.Name)
-                else None
-            ),
-            node.semstr.lit_value if node.semstr else "",
-        )
 
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
@@ -2043,34 +2010,6 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(ast3.Assign(targets=node.target.gen.py_ast, value=value))
             ]
-
-        def bfs(node: ast.AstNode) -> list[str]:
-            """Collect type information in assignment using bfs."""
-            extracted_type = []
-            if isinstance(node, (ast.BuiltinType, ast.Token)):
-                extracted_type.append(node.value)
-            for child in node.kid:
-                extracted_type.extend(bfs(child))
-            return extracted_type
-
-        extracted_type = (
-            "".join(bfs(node.type_tag.kid[1:][0])) if node.type_tag else None
-        )
-
-        if not node.aug_op:
-            self.set_register(
-                assign_target,
-                self.get_scope(node),
-                extracted_type,
-                node.semstr.lit_value if node.semstr else "",
-            )
-
-    def set_register(self, key: str, scope: str, type: str | None, semstr: str) -> None:
-        """Set register."""
-        if scope in self.registry:
-            self.registry[scope][key] = (type, semstr)
-        else:
-            self.registry[scope] = {key: (type, semstr)}
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
@@ -3359,17 +3298,6 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        if (
-            node.parent
-            and node.parent.parent
-            and node.parent.parent.__class__.__name__ == "Enum"
-        ):
-            self.set_register(
-                node.value,
-                self.get_scope(node),
-                None,
-                "",  # TODO: semstr from enum items
-            )
         node.gen.py_ast = [
             self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
         ]
