@@ -1,3 +1,5 @@
+"""Test registry pass."""
+
 import os
 
 from jaclang.compiler.compile import jac_file_to_pass
