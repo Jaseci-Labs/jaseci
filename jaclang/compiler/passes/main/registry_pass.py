@@ -10,6 +10,7 @@ import os
 import pickle
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
 from jaclang.core.registry import Registry, Scope, SemInfo
 
@@ -27,7 +28,7 @@ class RegistryPass(Pass):
     def exit_module(self, node: ast.Module) -> None:
         """Save registry for each module."""
         module_dir = os.path.join(
-            os.path.abspath(os.path.dirname(node.source.file_path)), "__jac_gen__"
+            os.path.abspath(os.path.dirname(node.source.file_path)), Con.JAC_GEN_DIR
         )
         module_name = node.name
         os.makedirs(module_dir, exist_ok=True)
