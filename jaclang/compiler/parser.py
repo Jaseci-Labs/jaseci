@@ -1782,6 +1782,7 @@ class JacParser(Pass):
                     )
                     chomp = chomp[:-2] if semstr else chomp
                 else:
+                    semstr = None
                     if (
                         isinstance(chomp[1], ast.Token)
                         and chomp[1].name != Tok.EQ
@@ -1827,6 +1828,7 @@ class JacParser(Pass):
                     value=value,
                     mutable=is_frozen,
                     kid=kid,
+                    semstr=semstr if isinstance(semstr, ast.String) else None,
                 )
             )
 

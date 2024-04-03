@@ -1,8 +1,9 @@
 """Test Jac language generally."""
 
 import io
+import os
+import pickle
 import sys
-
 
 from jaclang import jac_import
 from jaclang.cli import cli
@@ -392,3 +393,24 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("2.0\n", stdout_value)
+
+    def test_registry(self) -> None:
+        """Test Jac registry feature."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("registry", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn("Error", stdout_value)
+
+        with open(
+            os.path.join(
+                self.fixture_abs_path("./"), "__jac_gen__", "registry.registry.pkl"
+            ),
+            "rb",
+        ) as f:
+            registry = pickle.load(f)
+
+        self.assertEqual(len(registry.registry), 3)
+        self.assertEqual(len(list(registry.registry.items())[0][1]), 7)
+        self.assertEqual(list(registry.registry.items())[1][0].scope, "Person")
