@@ -13,6 +13,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
 from jaclang.core.registry import Registry, Scope, SemInfo
+from jaclang.core.utils import get_scope
 
 
 class RegistryPass(Pass):
@@ -38,7 +39,7 @@ class RegistryPass(Pass):
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Save architype information."""
-        scope = self.get_scope(node)
+        scope = get_scope(node)
         seminfo = SemInfo(
             node.name.value,
             node.arch_type.value,
@@ -53,7 +54,7 @@ class RegistryPass(Pass):
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Save enum information."""
-        scope = self.get_scope(node)
+        scope = get_scope(node)
         seminfo = SemInfo(
             node.name.value, "Enum", node.semstr.lit_value if node.semstr else None
         )
@@ -66,7 +67,7 @@ class RegistryPass(Pass):
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Save variable information."""
-        scope = self.get_scope(node)
+        scope = get_scope(node)
         seminfo = SemInfo(
             node.name.value,
             (
@@ -89,7 +90,7 @@ class RegistryPass(Pass):
             if node.type_tag
             else None
         )
-        scope = self.get_scope(node)
+        scope = get_scope(node)
         seminfo = SemInfo(
             (
                 node.target.items[0].value
@@ -109,7 +110,7 @@ class RegistryPass(Pass):
             and node.parent.parent
             and node.parent.parent.__class__.__name__ == "Enum"
         ):
-            scope = self.get_scope(node)
+            scope = get_scope(node)
             seminfo = SemInfo(node.value, None, None)
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
@@ -130,10 +131,10 @@ class RegistryPass(Pass):
                 else node.arch_type.value
             )
             if node.parent:
-                return Scope(a, node_type, self.get_scope(node.parent))
+                return Scope(a, node_type, get_scope(node.parent))
         else:
             if node.parent:
-                return self.get_scope(node.parent)
+                return get_scope(node.parent)
         return Scope("", "", None)
 
     def extract_type(self, node: ast.AstNode) -> list[str]:

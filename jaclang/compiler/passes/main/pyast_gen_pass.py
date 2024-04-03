@@ -11,6 +11,7 @@ from typing import Optional, Sequence, TypeVar
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
 from jaclang.compiler.passes import Pass
+from jaclang.core.utils import get_scope
 
 T = TypeVar("T", bound=ast3.AST)
 
@@ -1064,7 +1065,7 @@ class PyastGenPass(Pass):
                                             value=(
                                                 self.sync(
                                                     ast3.Constant(
-                                                        value=self.get_scope(node)
+                                                        value=str(get_scope(node))
                                                     )
                                                 )
                                             ),

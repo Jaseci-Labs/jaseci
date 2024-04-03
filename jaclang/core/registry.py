@@ -34,6 +34,17 @@ class Scope:
             return f"{self.parent}.{self.scope}({self.type})"
         return f"{self.scope}({self.type})"
 
+    @staticmethod
+    def get_scope_from_str(scope_str: str) -> Optional["Scope"]:
+        """Get scope from string."""
+        scope_list = scope_str.split(".")
+        parent = None
+        for scope in scope_list:
+            scope_name, scope_type = scope.split("(")
+            scope_type = scope_type[:-1]
+            parent = Scope(scope_name, scope_type, parent)
+        return parent
+
 
 class Registry:
     """Registry class."""
