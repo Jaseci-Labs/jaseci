@@ -10,7 +10,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.symtable import SymbolTable
-from jaclang.utils.helpers import extract_headings, heading_to_snake, pascal_to_snake
+from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
 
 class AstKidInfo:
@@ -258,40 +258,5 @@ class AstTool:
 
     def automate_ref(self) -> str:
         """Automate the reference guide generation."""
-        file_path = os.path.join(
-            os.path.split(os.path.dirname(__file__))[0], "../jaclang/compiler/jac.lark"
-        )
-        result = extract_headings(file_path)
-        created_file_path = os.path.join(
-            os.path.split(os.path.dirname(__file__))[0],
-            "../support/jac-lang.org/docs/learn/jac_ref.md",
-        )
-        destination_folder = os.path.join(
-            os.path.split(os.path.dirname(__file__))[0], "../examples/reference/"
-        )
-        with open(created_file_path, "w") as md_file:
-            md_file.write(
-                '# Jac Language Reference\n\n--8<-- "examples/reference/introduction.md"\n\n'
-            )
-        for heading, lines in result.items():
-            heading = heading.strip()
-            heading_snakecase = heading_to_snake(heading)
-            content = (
-                f'## {heading}\n**Grammar Snippet**\n```yaml linenums="{lines[0]}"\n--8<-- '
-                f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
-                f'**Code Example**\n=== "Jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/'
-                f'{heading_snakecase}.jac"\n'
-                f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
-                f'{heading_snakecase}.py"\n    ```\n'
-                "**Description**\n\n--8<-- "
-                f'"examples/reference/'
-                f'{heading_snakecase}.md"\n'
-            )
-            with open(created_file_path, "a") as md_file:
-                md_file.write(f"{content}\n")
-            md_file_name = f"{heading_snakecase}.md"
-            md_file_path = os.path.join(destination_folder, md_file_name)
-            if not os.path.exists(md_file_path):
-                with open(md_file_path, "w") as md_file:
-                    md_file.write("")
+        auto_generate_refs()
         return "References generated."
