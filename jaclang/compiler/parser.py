@@ -286,7 +286,11 @@ class JacParser(Pass):
             """
             lang = kid[1]
             paths = [i for i in kid if isinstance(i, ast.ModulePath)]
-
+            print(paths, "path---------")
+            py_compat_path_str = []
+            for path in paths:
+                py_compat_path_str.append(path.path_str.lstrip("."))
+            print(py_compat_path_str, "<-------------")
             items = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             is_absorb = False
             if isinstance(lang, ast.SubTag) and (

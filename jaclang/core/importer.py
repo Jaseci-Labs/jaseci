@@ -5,7 +5,7 @@ import sys
 import types
 from os import path
 from typing import Optional
-
+import importlib
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
@@ -18,8 +18,10 @@ def jac_importer(
     cachable: bool = True,
     override_name: Optional[str] = None,
     mod_bundle: Optional[Module] = None,
+    lng: Optional[str] = None,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
+    # if lng == Con.JAC_LANG_IMP:
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
 
     module_name = path.splitext(file_name)[0]
@@ -80,13 +82,18 @@ def jac_importer(
         setattr(sys.modules[package_path], module_name, module)
         sys.modules[f"{package_path}.{module_name}"] = module
     sys.modules[module_name] = module
-
     path_added = False
     if caller_dir not in sys.path:
         sys.path.append(caller_dir)
         path_added = True
     if not codeobj:
         raise ImportError(f"No bytecode found for {full_target}")
+
+    try:
+        imported_module = importlib.import_module("math")
+        setattr(__import__("__main__"), "math", imported_module)
+    except ImportError:
+        print(f"Failed to import module {module_name}")
     exec(codeobj, module.__dict__)
     if path_added:
         sys.path.remove(caller_dir)
