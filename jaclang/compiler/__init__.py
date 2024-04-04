@@ -8,6 +8,7 @@ import sys
 cur_dir = os.path.dirname(__file__)
 if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
     from jaclang.vendor.lark.tools import standalone
+    from jaclang.utils.helpers import auto_generate_refs
 
     os.makedirs(os.path.join(cur_dir, "__jac_gen__"), exist_ok=True)
     with open(os.path.join(cur_dir, "__jac_gen__", "__init__.py"), "w"):
@@ -22,6 +23,8 @@ if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
     ]
     standalone.main()  # type: ignore
     sys.argv = save_argv
+    auto_generate_refs()
+
 
 from .__jac_gen__ import jac_parser as jac_lark  # noqa: E402
 

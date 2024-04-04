@@ -10,6 +10,7 @@ from .pyast_load_pass import PyastBuildPass  # type: ignore # noqa: I100
 from .pyast_gen_pass import PyastGenPass  # noqa: I100
 from .schedules import py_code_gen  # noqa: I100
 from .type_check_pass import JacTypeCheckPass  # noqa: I100
+from .registry_pass import RegistryPass  # noqa: I100
 
 
 pass_schedule = py_code_gen
@@ -24,4 +25,5 @@ __all__ = [
     "PyastBuildPass",
     "PyastGenPass",
     "JacTypeCheckPass",
+    "RegistryPass",
 ]
