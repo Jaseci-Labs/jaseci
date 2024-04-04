@@ -145,7 +145,6 @@ class JacLanguageTests(TestCase):
 
     def test_with_llm_lower(self) -> None:
         """Parse micro jac file."""
-        os.environ["JAC_REGISTRY_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("with_llm_lower", base_path=self.fixture_abs_path("./"))
@@ -157,21 +156,13 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            "Person (Person) (obj) = Fullname of the Person (full_name) (str), Year of Death (yod) (int), Personality of the Person (personality) (Personality)",  # noqa E501
+            "Person (obj) (Person) = Fullname of the Person (str) (full_name), Year of Death (int) (yod), Personality of the Person (Personality) (personality)",  # noqa E501
             stdout_value,
         )
         self.assertIn(
             "J. Robert Oppenheimer was a Introvert person who died in 1967",
             stdout_value,
         )
-        os.remove(
-            os.path.join(
-                self.fixture_abs_path("./"),
-                "__jac_gen__",
-                "with_llm_lower_registry.json",
-            )
-        )
-        del os.environ["JAC_REGISTRY_DEBUG"]
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
