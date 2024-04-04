@@ -73,6 +73,7 @@ class JacFeatureSpec:
     def jac_import(
         target: str,
         base_path: str,
+        absorb: bool,
         cachable: bool,
         override_name: Optional[str],
         mod_bundle: Optional[Module],

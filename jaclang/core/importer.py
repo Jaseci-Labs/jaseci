@@ -15,6 +15,7 @@ from jaclang.utils.log import logging
 def jac_importer(
     target: str,
     base_path: str,
+    absorb: bool = False,
     cachable: bool = True,
     override_name: Optional[str] = None,
     mod_bundle: Optional[Module] = None,
@@ -22,17 +23,17 @@ def jac_importer(
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     # if lng == Con.JAC_LANG_IMP:
-
+    print("absorb---------------", absorb)
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
 
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
 
-    try:
-        imported_module = importlib.import_module(target)
-        setattr(__import__("__main__"), target, imported_module)
-    except ImportError:
-        print(f"Failed to import module {module_name}")
+    # try:
+    #     imported_module = importlib.import_module(target)
+    #     setattr(__import__("__main__"), target, imported_module)
+    # except ImportError:
+    #     print(f"Failed to import module {module_name}")
 
     if package_path and f"{package_path}.{module_name}" in sys.modules:
         return sys.modules[f"{package_path}.{module_name}"]
@@ -89,6 +90,7 @@ def jac_importer(
         setattr(sys.modules[package_path], module_name, module)
         sys.modules[f"{package_path}.{module_name}"] = module
     sys.modules[module_name] = module
+
     path_added = False
     if caller_dir not in sys.path:
         sys.path.append(caller_dir)
@@ -97,6 +99,27 @@ def jac_importer(
         raise ImportError(f"No bytecode found for {full_target}")
 
     exec(codeobj, module.__dict__)
+
+    # try:
+    #     print("target", target)
+    #     imported_module = importlib.import_module(target)
+    #     setattr(__import__("__main__"), target, imported_module)
+    # except ImportError:
+    #     print(f"Failed to import module {module_name}")
+    try:
+        imported_module = importlib.import_module(target)
+        if absorb:
+            # from X import *
+            main_module = __import__("__main__")
+            for name in dir(imported_module):
+                if not name.startswith("_"):
+                    setattr(main_module, name, getattr(imported_module, name))
+        else:
+            # import X
+            setattr(__import__("__main__"), target, imported_module)
+    except ImportError:
+        print(f"Failed to import module {target}")
+
     if path_added:
         sys.path.remove(caller_dir)
 

@@ -157,6 +157,7 @@ class JacFeatureDefaults:
     def jac_import(
         target: str,
         base_path: str,
+        absorb: bool,
         cachable: bool,
         override_name: Optional[str],
         mod_bundle: Optional[Module],
@@ -166,9 +167,11 @@ class JacFeatureDefaults:
         result = jac_importer(
             target=target,
             base_path=base_path,
+            absorb=absorb,
             cachable=cachable,
             override_name=override_name,
             mod_bundle=mod_bundle,
+            lng=lng,
         )
         return result
 

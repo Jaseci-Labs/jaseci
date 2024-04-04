@@ -77,6 +77,7 @@ class JacFeature:
     def jac_import(
         target: str,
         base_path: str,
+        absorb: bool = False,
         cachable: bool = True,
         override_name: Optional[str] = None,
         mod_bundle: Optional[Module] = None,
@@ -86,6 +87,7 @@ class JacFeature:
         return pm.hook.jac_import(
             target=target,
             base_path=base_path,
+            absorb=absorb,
             cachable=cachable,
             override_name=override_name,
             mod_bundle=mod_bundle,

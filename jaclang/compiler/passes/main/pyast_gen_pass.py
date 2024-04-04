@@ -536,6 +536,14 @@ class PyastGenPass(Pass):
                                             ),
                                         )
                                     ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="absorb",
+                                            value=self.sync(
+                                                ast3.Constant(value=node.is_absorb),
+                                            ),
+                                        )
+                                    ),
                                 ],
                             )
                         )
