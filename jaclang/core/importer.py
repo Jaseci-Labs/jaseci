@@ -22,10 +22,17 @@ def jac_importer(
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     # if lng == Con.JAC_LANG_IMP:
+
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
 
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
+
+    try:
+        imported_module = importlib.import_module(target)
+        setattr(__import__("__main__"), target, imported_module)
+    except ImportError:
+        print(f"Failed to import module {module_name}")
 
     if package_path and f"{package_path}.{module_name}" in sys.modules:
         return sys.modules[f"{package_path}.{module_name}"]
@@ -89,11 +96,6 @@ def jac_importer(
     if not codeobj:
         raise ImportError(f"No bytecode found for {full_target}")
 
-    try:
-        imported_module = importlib.import_module("math")
-        setattr(__import__("__main__"), "math", imported_module)
-    except ImportError:
-        print(f"Failed to import module {module_name}")
     exec(codeobj, module.__dict__)
     if path_added:
         sys.path.remove(caller_dir)
