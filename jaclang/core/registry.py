@@ -18,6 +18,10 @@ class SemInfo:
         self.type = type
         self.semstr = semstr
 
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return f"{self.semstr} ({self.type}) ({self.name})"
+
 
 class Scope:
     """Scope class."""
@@ -33,6 +37,10 @@ class Scope:
         if self.parent:
             return f"{self.parent}.{self.scope}({self.type})"
         return f"{self.scope}({self.type})"
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class."""
+        return self.__str__()
 
     @staticmethod
     def get_scope_from_str(scope_str: str) -> Optional["Scope"]:
@@ -62,6 +70,38 @@ class Registry:
         else:
             self.registry[scope] = []
         self.registry[scope].append(seminfo)
+
+    def lookup(
+        self,
+        scope: Optional[Scope] = None,
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> tuple[Optional[Scope], Optional[SemInfo | list[SemInfo]]]:
+        """Lookup semantic information in the registry."""
+        if scope:
+            for k, v in self.registry.items():
+                if str(k) == str(scope):
+                    if name:
+                        for i in v:
+                            if i.name == name:
+                                return k, i
+                    elif type:
+                        for i in v:
+                            if i.type == type:
+                                return k, i
+                    else:
+                        return k, v
+        else:
+            for k, v in self.registry.items():
+                if name:
+                    for i in v:
+                        if i.name == name:
+                            return k, i
+                elif type:
+                    for i in v:
+                        if i.type == type:
+                            return k, i
+        return None, None
 
     def pp(self) -> None:
         """Pretty print the registry."""

@@ -77,8 +77,10 @@ def get_info_types(
     """Filter the registry data based on the scope and return the info string."""
     collected_types = []
     avail_scopes = []
-    while scope:
+    while True:
         avail_scopes.append(str(scope))
+        if not scope.parent:
+            break
         scope = scope.parent
 
     filtered_registry = {
@@ -144,6 +146,7 @@ def get_all_type_explanations(type_list: list, mod_registry: Registry) -> dict:
     collected_type_explanations = {}
     for type_item in type_list:
         type_explanation = get_type_explanation(type_item, mod_registry)
+        print(type_item, type_explanation)
         if type_explanation is not None:
             type_explanation_str, nested_types = type_explanation
             if type_item not in collected_type_explanations:
@@ -160,38 +163,33 @@ def get_all_type_explanations(type_list: list, mod_registry: Registry) -> dict:
 
 def get_type_explanation(
     type_str: str, mod_registry: Registry
-) -> tuple[str, set[Any]] | None:
+) -> tuple[str | None, set[str] | None]:
     """Get the type explanation of the input type string."""
-    main_registry_type_info = None
-    scope = None
-    for k, v in registry_data.items():
-        if isinstance(v, dict):
-            for i, j in v.items():
-                if i == type_str:
-                    main_registry_type_info = j
-                    scope = k
-                    break
-    if not main_registry_type_info:
-        return None
-    type_type = main_registry_type_info[0]
-    type_semstr = main_registry_type_info[1]
-    type_info = registry_data[f"{scope}.{type_str}({type_type})"]
-    type_info_str = []
-    type_info_types = []
-    if type_type == "Enum" and isinstance(type_info, dict):
-        for k, v in type_info.items():
-            if isinstance(v, list):
-                type_info_str.append(f"{v[1]} ({k}) (EnumItem)")
-    elif type_type in ["obj", "class", "node", "edge"] and isinstance(type_info, dict):
-        for k, v in type_info.items():
-            if isinstance(v, list):
-                type_info_str.append(f"{v[1]} ({k}) ({v[0]})")
-                if extract_non_primary_type(v[0]):
-                    type_info_types.extend(extract_non_primary_type(v[0]))
-    return (
-        f"{type_semstr} ({type_str}) ({type_type}) = {', '.join(type_info_str)}",
-        set(type_info_types),
-    )
+    scope, sem_info = mod_registry.lookup(name=type_str)
+    if isinstance(sem_info, SemInfo) and sem_info.type:
+        sem_info_scope = Scope(sem_info.name, sem_info.type, scope)
+        _, type_info = mod_registry.lookup(scope=sem_info_scope)
+        type_info_str = []
+        type_info_types = []
+        if sem_info.type == "Enum" and isinstance(type_info, list):
+            for enum_item in type_info:
+                type_info_str.append(
+                    f"{enum_item.semstr} (EnumItem) ({enum_item.name})"
+                )
+        elif sem_info.type in ["obj", "class", "node", "edge"] and isinstance(
+            type_info, list
+        ):
+            for arch_item in type_info:
+                type_info_str.append(
+                    f"{arch_item.semstr} ({arch_item.type}) ({arch_item.name})"
+                )
+                if arch_item.type and extract_non_primary_type(arch_item.type):
+                    type_info_types.extend(extract_non_primary_type(arch_item.type))
+        return (
+            f"{sem_info.semstr} ({sem_info.type}) ({sem_info.name}) = {', '.join(type_info_str)}",
+            set(type_info_types),
+        )
+    return None, None
 
 
 def extract_non_primary_type(type_str: str) -> list:

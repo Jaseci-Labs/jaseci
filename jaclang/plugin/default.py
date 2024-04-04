@@ -457,7 +457,10 @@ class JacFeatureDefaults:
             "rb",
         ) as f:
             mod_registry = pickle.load(f)
+
         _scope = Scope.get_scope_from_str(scope)
+        assert _scope is not None
+
         reason = False
         if "reason" in model_params:
             reason = model_params.pop("reason")
@@ -481,6 +484,7 @@ class JacFeatureDefaults:
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
         )
+        print(type_explanations_list)
         type_explanations = "\n".join(type_explanations_list)
 
         meaning_in = aott_raise(
