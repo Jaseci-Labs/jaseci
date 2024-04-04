@@ -67,14 +67,15 @@ class RegistryPass(Pass):
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Save variable information."""
+        extracted_type = (
+            "".join(self.extract_type(node.type_tag.kid[1:][0]))
+            if node.type_tag
+            else None
+        )
         scope = get_scope(node)
         seminfo = SemInfo(
             node.name.value,
-            (
-                node.type_tag.tag.value
-                if node.type_tag and isinstance(node.type_tag.tag, ast.Name)
-                else None
-            ),
+            extracted_type,
             node.semstr.lit_value if node.semstr else None,
         )
         if len(self.modules_visited) and self.modules_visited[-1].registry:

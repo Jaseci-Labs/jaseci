@@ -83,11 +83,10 @@ def get_info_types(
             break
         scope = scope.parent
 
-    filtered_registry = {
-        _scope: sem_info_list
-        for _scope, sem_info_list in mod_registry.registry.items()
-        if str(_scope) in avail_scopes
-    }
+    filtered_registry = Registry()
+    for _scope, sem_info_list in mod_registry.registry.items():
+        if str(_scope) in avail_scopes:
+            filtered_registry.registry[_scope] = sem_info_list
 
     def find_sem_info(
         _registry: dict[Scope, list[SemInfo]], name: str
@@ -100,9 +99,13 @@ def get_info_types(
 
     info_str = []
     for incl in incl_info:
-        sem_info = find_sem_info(filtered_registry, incl[0])
-        if sem_info and sem_info.type:
-            collected_types.extend(extract_non_primary_type(sem_info.type))
+        _, sem_info = filtered_registry.lookup(name=incl[0])
+        if sem_info and isinstance(sem_info, SemInfo):
+            (
+                collected_types.extend(extract_non_primary_type(sem_info.type))
+                if sem_info.type
+                else None
+            )
             info_str.append(
                 f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) = {get_object_string(incl[1])}"
             )
@@ -146,7 +149,6 @@ def get_all_type_explanations(type_list: list, mod_registry: Registry) -> dict:
     collected_type_explanations = {}
     for type_item in type_list:
         type_explanation = get_type_explanation(type_item, mod_registry)
-        print(type_item, type_explanation)
         if type_explanation is not None:
             type_explanation_str, nested_types = type_explanation
             if type_item not in collected_type_explanations:

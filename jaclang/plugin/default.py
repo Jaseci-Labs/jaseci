@@ -484,7 +484,6 @@ class JacFeatureDefaults:
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
         )
-        print(type_explanations_list)
         type_explanations = "\n".join(type_explanations_list)
 
         meaning_in = aott_raise(

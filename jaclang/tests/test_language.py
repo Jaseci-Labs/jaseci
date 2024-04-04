@@ -109,7 +109,6 @@ class JacLanguageTests(TestCase):
 
     def test_with_llm_function(self) -> None:
         """Parse micro jac file."""
-        os.environ["JAC_REGISTRY_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("with_llm_function", base_path=self.fixture_abs_path("./"))
@@ -122,11 +121,9 @@ class JacLanguageTests(TestCase):
             'Examples of Text to Emoji (emoji_examples) (list[dict[str,str]]) = [{"input": "I love tp drink pina coladas"',  # noqa E501
             stdout_value,
         )
-        del os.environ["JAC_REGISTRY_DEBUG"]
 
     def test_with_llm_method(self) -> None:
         """Parse micro jac file."""
-        os.environ["JAC_REGISTRY_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("with_llm_method", base_path=self.fixture_abs_path("./"))
@@ -134,7 +131,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("[Reasoning] <Reason>", stdout_value)
         self.assertIn(
-            "Personality Index of a Person (PersonalityIndex) (class) = Personality Index (index) (int)",
+            "Personality Index of a Person (class) (PersonalityIndex) = Personality Index (int) (index)",
             stdout_value,
         )
         self.assertIn(
@@ -142,10 +139,9 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            'Diary Entries (diary_entries) (None) = ["I won noble prize in Physics", "I am popular for my theory of relativity"]',  # noqa E501
+            'Diary Entries (diary_entries) (list[str]) = ["I won noble prize in Physics", "I am popular for my theory of relativity"]',  # noqa E501
             stdout_value,
         )
-        del os.environ["JAC_REGISTRY_DEBUG"]
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
@@ -442,5 +438,5 @@ class JacLanguageTests(TestCase):
             registry = pickle.load(f)
 
         self.assertEqual(len(registry.registry), 3)
-        self.assertEqual(len(list(registry.registry.items())[0][1]), 7)
+        self.assertEqual(len(list(registry.registry.items())[0][1]), 10)
         self.assertEqual(list(registry.registry.items())[1][0].scope, "Person")
