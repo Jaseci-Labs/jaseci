@@ -12,6 +12,7 @@ MODULES = [
     "langchain",
     "forecast",
     "scraper",
+    "aws_apigateway",
 ]
 
 
