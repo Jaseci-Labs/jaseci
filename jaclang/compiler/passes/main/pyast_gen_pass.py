@@ -482,8 +482,6 @@ class PyastGenPass(Pass):
         path_alias = {}
         for path in node.paths:
             py_compat_path_str.append(path.path_str.lstrip("."))
-            print(path.alias.sym_name) if path.alias else False
-            # target= path.sym_name node.paths[p].path_str
             path_alias[path.path_str.lstrip(".")] = (
                 path.alias.sym_name if path.alias else False
             )

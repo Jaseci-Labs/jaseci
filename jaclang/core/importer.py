@@ -25,11 +25,6 @@ def jac_importer(
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     # if lng == Con.JAC_LANG_IMP:
-    print("absorb---------------", absorb)
-    print("items---------------", items)
-    print("lng---------------", lng)
-    print("target---------------", target)
-    print("mdl_alias---------------", mdl_alias)
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
 
     module_name = path.splitext(file_name)[0]
@@ -115,44 +110,16 @@ def jac_importer(
     return module
 
 
-# def py_import(target, items={}, absorb=False, mdl_alias=False):
-#     try:
-#         imported_module = importlib.import_module(target)
-#         main_module = __import__('__main__')
-
-#         if absorb:
-#             # from X import *
-#             for name in dir(imported_module):
-#                 if not name.startswith('_'):
-#                     setattr(main_module, name, getattr(imported_module, name))
-#         elif items:
-#             # from X import a, b, c
-#             # from X import a as A, b as B, c as C
-#             for name, alias in items.items():
-#                 setattr(main_module, alias if alias is not None else name, getattr(imported_module, name))
-#         else:
-#             # import X
-#             # import X as Y
-
-#             setattr(main_module, mdl_alias if mdl_alias else target, imported_module)
-#     except ImportError:
-#         print(f"Failed to import module {target}")
-
-
 def py_import(target, items={}, absorb=False, mdl_alias=False):
     try:
         imported_module = importlib.import_module(target)
         main_module = __import__("__main__")
         if absorb:
-            # from X import *
-
             for name in dir(imported_module):
                 if not name.startswith("_"):
                     setattr(main_module, name, getattr(imported_module, name))
 
         elif items:
-            # from X import a, b, c
-            # from X import a as A, b as B, c as C
             for name, alias in items.items():
                 setattr(
                     main_module,
@@ -161,7 +128,6 @@ def py_import(target, items={}, absorb=False, mdl_alias=False):
                 )
 
         else:
-            # import X
             setattr(
                 __import__("__main__"),
                 mdl_alias if mdl_alias else target,

@@ -7,13 +7,8 @@ import:jac from jacsamp, my_print as m;
 
 
 with entry{
-    # print("math" in globals(),"---------------------");
-    # print(math.sqrt(4));
-    # print(random.randint(1, 10));
     print(sq(4), s(30));
     print(randint(1, 10));
-    print(h.x);
-    print(lllm);
     print(m("--->my_print<---"));
 
     }
