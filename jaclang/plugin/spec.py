@@ -75,9 +75,11 @@ class JacFeatureSpec:
         base_path: str,
         absorb: bool,
         cachable: bool,
+        mdl_alias: bool,
         override_name: Optional[str],
         mod_bundle: Optional[Module],
         lng: Optional[str],
+        items: Optional[dict[str, Any]],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         raise NotImplementedError

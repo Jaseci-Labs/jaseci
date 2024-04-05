@@ -40,4 +40,5 @@ with entry {
     print('');
     root spawn GuessGame2();
     print('');
+    lllm=1;
 }

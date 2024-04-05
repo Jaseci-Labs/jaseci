@@ -473,16 +473,35 @@ class PyastGenPass(Pass):
         sub_module: Optional[Module],
         """
         py_nodes: list[ast3.AST] = []
+
         if node.doc:
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
         py_compat_path_str = []
+        path_alias = {}
         for path in node.paths:
             py_compat_path_str.append(path.path_str.lstrip("."))
+            print(path.alias.sym_name) if path.alias else False
+            # target= path.sym_name node.paths[p].path_str
+            path_alias[path.path_str.lstrip(".")] = (
+                path.alias.sym_name if path.alias else False
+            )
+        imfrm = {}
+        if node.items:
+            for item in node.items.items:
+                imfrm[item.name.sym_name] = item.alias.sym_name if item.alias else False
+
+        keys = []
+        values = []
+        for k in imfrm.keys():
+            keys.append(self.sync(ast3.Constant(value=k)))
+        for v in imfrm.values():
+            values.append(self.sync(ast3.Constant(value=v)))
+
         # if node.lang.tag.value == Con.JAC_LANG_IMP:
         self.needs_jac_import()
-        for p in range(len(py_compat_path_str)):
+        for p, a in path_alias.items():
             py_nodes.append(
                 self.sync(
                     ast3.Expr(
@@ -497,10 +516,7 @@ class PyastGenPass(Pass):
                                         ast3.keyword(
                                             arg="target",
                                             value=self.sync(
-                                                ast3.Constant(
-                                                    value=node.paths[p].path_str
-                                                ),
-                                                node.paths[p],
+                                                ast3.Constant(value=p),
                                             ),
                                         )
                                     ),
@@ -541,6 +557,22 @@ class PyastGenPass(Pass):
                                             arg="absorb",
                                             value=self.sync(
                                                 ast3.Constant(value=node.is_absorb),
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="mdl_alias",
+                                            value=self.sync(
+                                                ast3.Constant(value=a),
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="items",
+                                            value=self.sync(
+                                                ast3.Dict(keys=keys, values=values),
                                             ),
                                         )
                                     ),

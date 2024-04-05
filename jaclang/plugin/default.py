@@ -159,9 +159,11 @@ class JacFeatureDefaults:
         base_path: str,
         absorb: bool,
         cachable: bool,
+        mdl_alias: bool,
         override_name: Optional[str],
         mod_bundle: Optional[Module],
         lng: Optional[str],
+        items: Optional[dict[str, Any]],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         result = jac_importer(
@@ -169,9 +171,11 @@ class JacFeatureDefaults:
             base_path=base_path,
             absorb=absorb,
             cachable=cachable,
+            mdl_alias=mdl_alias,
             override_name=override_name,
             mod_bundle=mod_bundle,
             lng=lng,
+            items=items,
         )
         return result
 

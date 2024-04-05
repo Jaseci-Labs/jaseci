@@ -4,7 +4,7 @@ import marshal
 import sys
 import types
 from os import path
-from typing import Optional
+from typing import Optional, Any
 import importlib
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
@@ -17,24 +17,28 @@ def jac_importer(
     base_path: str,
     absorb: bool = False,
     cachable: bool = True,
+    mdl_alias: bool = False,
     override_name: Optional[str] = None,
     mod_bundle: Optional[Module] = None,
     lng: Optional[str] = None,
+    items: Optional[dict[str, Any]] = None,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     # if lng == Con.JAC_LANG_IMP:
     print("absorb---------------", absorb)
+    print("items---------------", items)
+    print("lng---------------", lng)
+    print("target---------------", target)
+    print("mdl_alias---------------", mdl_alias)
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
 
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
-
-    # try:
-    #     imported_module = importlib.import_module(target)
-    #     setattr(__import__("__main__"), target, imported_module)
-    # except ImportError:
-    #     print(f"Failed to import module {module_name}")
-
+    (
+        py_import(target=target, items=items, absorb=absorb, mdl_alias=mdl_alias)
+        if lng == "py"
+        else None
+    )
     if package_path and f"{package_path}.{module_name}" in sys.modules:
         return sys.modules[f"{package_path}.{module_name}"]
     elif not package_path and module_name in sys.modules:
@@ -97,30 +101,71 @@ def jac_importer(
         path_added = True
     if not codeobj:
         raise ImportError(f"No bytecode found for {full_target}")
-
     exec(codeobj, module.__dict__)
 
-    # try:
-    #     print("target", target)
-    #     imported_module = importlib.import_module(target)
-    #     setattr(__import__("__main__"), target, imported_module)
-    # except ImportError:
-    #     print(f"Failed to import module {module_name}")
-    try:
-        imported_module = importlib.import_module(target)
-        if absorb:
-            # from X import *
-            main_module = __import__("__main__")
-            for name in dir(imported_module):
-                if not name.startswith("_"):
-                    setattr(main_module, name, getattr(imported_module, name))
-        else:
-            # import X
-            setattr(__import__("__main__"), target, imported_module)
-    except ImportError:
-        print(f"Failed to import module {target}")
+    (
+        py_import(target=target, items=items, absorb=absorb, mdl_alias=mdl_alias)
+        if lng == Con.JAC_LANG_IMP
+        else None
+    )
 
     if path_added:
         sys.path.remove(caller_dir)
 
     return module
+
+
+# def py_import(target, items={}, absorb=False, mdl_alias=False):
+#     try:
+#         imported_module = importlib.import_module(target)
+#         main_module = __import__('__main__')
+
+#         if absorb:
+#             # from X import *
+#             for name in dir(imported_module):
+#                 if not name.startswith('_'):
+#                     setattr(main_module, name, getattr(imported_module, name))
+#         elif items:
+#             # from X import a, b, c
+#             # from X import a as A, b as B, c as C
+#             for name, alias in items.items():
+#                 setattr(main_module, alias if alias is not None else name, getattr(imported_module, name))
+#         else:
+#             # import X
+#             # import X as Y
+
+#             setattr(main_module, mdl_alias if mdl_alias else target, imported_module)
+#     except ImportError:
+#         print(f"Failed to import module {target}")
+
+
+def py_import(target, items={}, absorb=False, mdl_alias=False):
+    try:
+        imported_module = importlib.import_module(target)
+        main_module = __import__("__main__")
+        if absorb:
+            # from X import *
+
+            for name in dir(imported_module):
+                if not name.startswith("_"):
+                    setattr(main_module, name, getattr(imported_module, name))
+
+        elif items:
+            # from X import a, b, c
+            # from X import a as A, b as B, c as C
+            for name, alias in items.items():
+                setattr(
+                    main_module,
+                    alias if alias else name,
+                    getattr(imported_module, name),
+                )
+
+        else:
+            # import X
+            setattr(
+                __import__("__main__"),
+                mdl_alias if mdl_alias else target,
+                imported_module,
+            )
+    except ImportError:
+        print(f"Failed to import module {target}")

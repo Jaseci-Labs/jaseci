@@ -79,9 +79,11 @@ class JacFeature:
         base_path: str,
         absorb: bool = False,
         cachable: bool = True,
+        mdl_alias: bool = False,
         override_name: Optional[str] = None,
         mod_bundle: Optional[Module] = None,
         lng: Optional[str] = None,
+        items: Optional[dict[str, Any]] = None,
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         return pm.hook.jac_import(
@@ -89,9 +91,11 @@ class JacFeature:
             base_path=base_path,
             absorb=absorb,
             cachable=cachable,
+            mdl_alias=mdl_alias,
             override_name=override_name,
             mod_bundle=mod_bundle,
             lng=lng,
+            items=items,
         )
 
     @staticmethod
