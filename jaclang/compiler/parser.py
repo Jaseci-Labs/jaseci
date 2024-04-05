@@ -286,19 +286,8 @@ class JacParser(Pass):
             """
             lang = kid[1]
             paths = [i for i in kid if isinstance(i, ast.ModulePath)]
-            print(paths, "path---------")
-            path_alias = {}
-            py_compat_path_str = []
-            for path in paths:
-                py_compat_path_str.append(path.path_str.lstrip("."))
-                # print(path.alias.name.,"----Alias-------") if path.alias else None
-                path_alias[path.path_str.lstrip(".")] = (
-                    path.alias.sym_name if path.alias else False
-                )
-            print(path_alias, "<-------------wwwwwwwww")
-            print(py_compat_path_str, "<-------------")
+
             items = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
-            print(items.pp()) if items else None
             is_absorb = False
             if isinstance(lang, ast.SubTag) and (
                 isinstance(items, ast.SubNodeList) or items is None
@@ -404,11 +393,6 @@ class JacParser(Pass):
                 delim=Tok.COMMA,
                 kid=kid,
             )
-            items = [i for i in kid if isinstance(i, ast.ModuleItem)]
-            imfrm = {}
-            for item in items:
-                imfrm[item.name.sym_name] = item.alias.sym_name if item.alias else False
-            print(imfrm)
             return self.nu(ret)
 
         def import_item(self, kid: list[ast.AstNode]) -> ast.ModuleItem:
@@ -421,7 +405,6 @@ class JacParser(Pass):
             if isinstance(name, ast.Name) and (
                 alias is None or isinstance(alias, ast.Name)
             ):
-                print(name.sym_name, alias.sym_name, "<------name, alias------")
                 return self.nu(
                     ast.ModuleItem(
                         name=name,
