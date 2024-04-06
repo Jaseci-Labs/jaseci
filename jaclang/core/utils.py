@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Callable, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
-from jaclang.core.registry import Scope
+from jaclang.core.registry import SemScope
 
 if TYPE_CHECKING:
     from jaclang.core.construct import NodeAnchor, NodeArchitype
@@ -92,7 +92,7 @@ def traverse_graph(
                     dfs(other_nd, cur_depth + 1)
 
 
-def get_scope(node: ast.AstNode) -> Scope:
+def get_sem_scope(node: ast.AstNode) -> SemScope:
     """Get scope of the node."""
     a = (
         node.name
@@ -100,7 +100,7 @@ def get_scope(node: ast.AstNode) -> Scope:
         else node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
     )
     if isinstance(node, ast.Module):
-        return Scope(a, "Module", None)
+        return SemScope(a, "Module", None)
     elif isinstance(node, (ast.Enum, ast.Architype)):
         node_type = (
             node.__class__.__name__
@@ -108,8 +108,8 @@ def get_scope(node: ast.AstNode) -> Scope:
             else node.arch_type.value
         )
         if node.parent:
-            return Scope(a, node_type, get_scope(node.parent))
+            return SemScope(a, node_type, get_sem_scope(node.parent))
     else:
         if node.parent:
-            return get_scope(node.parent)
-    return Scope("", "", None)
+            return get_sem_scope(node.parent)
+    return SemScope("", "", None)

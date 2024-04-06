@@ -37,7 +37,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.registry import Scope
+from jaclang.core.registry import SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -458,7 +458,7 @@ class JacFeatureDefaults:
         ) as f:
             mod_registry = pickle.load(f)
 
-        _scope = Scope.get_scope_from_str(scope)
+        _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None
 
         reason = False

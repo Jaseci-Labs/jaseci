@@ -12,8 +12,8 @@ import pickle
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
-from jaclang.core.registry import Registry, Scope, SemInfo
-from jaclang.core.utils import get_scope
+from jaclang.core.registry import SemInfo, SemRegistry, SemScope
+from jaclang.core.utils import get_sem_scope
 
 
 class RegistryPass(Pass):
@@ -23,7 +23,7 @@ class RegistryPass(Pass):
 
     def enter_module(self, node: ast.Module) -> None:
         """Create registry for each module."""
-        node.registry = Registry()
+        node.registry = SemRegistry()
         self.modules_visited.append(node)
 
     def exit_module(self, node: ast.Module) -> None:
@@ -39,7 +39,7 @@ class RegistryPass(Pass):
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Save architype information."""
-        scope = get_scope(node)
+        scope = get_sem_scope(node)
         seminfo = SemInfo(
             node.name.value,
             node.arch_type.value,
@@ -54,7 +54,7 @@ class RegistryPass(Pass):
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Save enum information."""
-        scope = get_scope(node)
+        scope = get_sem_scope(node)
         seminfo = SemInfo(
             node.name.value, "Enum", node.semstr.lit_value if node.semstr else None
         )
@@ -72,7 +72,7 @@ class RegistryPass(Pass):
             if node.type_tag
             else None
         )
-        scope = get_scope(node)
+        scope = get_sem_scope(node)
         seminfo = SemInfo(
             node.name.value,
             extracted_type,
@@ -91,7 +91,7 @@ class RegistryPass(Pass):
             if node.type_tag
             else None
         )
-        scope = get_scope(node)
+        scope = get_sem_scope(node)
         seminfo = SemInfo(
             (
                 node.target.items[0].value
@@ -111,12 +111,12 @@ class RegistryPass(Pass):
             and node.parent.parent
             and node.parent.parent.__class__.__name__ == "Enum"
         ):
-            scope = get_scope(node)
+            scope = get_sem_scope(node)
             seminfo = SemInfo(node.value, None, None)
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def get_scope(self, node: ast.AstNode) -> Scope:
+    def get_scope(self, node: ast.AstNode) -> SemScope:
         """Get scope of the node."""
         a = (
             node.name
@@ -124,7 +124,7 @@ class RegistryPass(Pass):
             else node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
         )
         if isinstance(node, ast.Module):
-            return Scope(a, "Module", None)
+            return SemScope(a, "Module", None)
         elif isinstance(node, (ast.Enum, ast.Architype)):
             node_type = (
                 node.__class__.__name__
@@ -132,11 +132,11 @@ class RegistryPass(Pass):
                 else node.arch_type.value
             )
             if node.parent:
-                return Scope(a, node_type, get_scope(node.parent))
+                return SemScope(a, node_type, get_sem_scope(node.parent))
         else:
             if node.parent:
-                return get_scope(node.parent)
-        return Scope("", "", None)
+                return get_sem_scope(node.parent)
+        return SemScope("", "", None)
 
     def extract_type(self, node: ast.AstNode) -> list[str]:
         """Collect type information in assignment using bfs."""
