@@ -8,7 +8,7 @@ import re
 from enum import Enum
 from typing import Any
 
-from jaclang.core.registry import Registry, Scope, SemInfo
+from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 
 
 PROMPT_TEMPLATE = """
@@ -72,8 +72,8 @@ def aott_lower(meaning_out: str, output_type_info: tuple) -> Any:  # noqa: ANN40
 
 
 def get_info_types(
-    scope: Scope, mod_registry: Registry, incl_info: list[tuple[str, str]]
-) -> tuple:
+    scope: SemScope, mod_registry: SemRegistry, incl_info: list[tuple[str, str]]
+) -> tuple[str, list[str]]:
     """Filter the registry data based on the scope and return the info string."""
     collected_types = []
     avail_scopes = []
@@ -83,19 +83,10 @@ def get_info_types(
             break
         scope = scope.parent
 
-    filtered_registry = Registry()
+    filtered_registry = SemRegistry()
     for _scope, sem_info_list in mod_registry.registry.items():
         if str(_scope) in avail_scopes:
             filtered_registry.registry[_scope] = sem_info_list
-
-    def find_sem_info(
-        _registry: dict[Scope, list[SemInfo]], name: str
-    ) -> SemInfo | None:
-        for sem_info_list in _registry.values():
-            for sem_info in sem_info_list:
-                if sem_info.name == name:
-                    return sem_info
-        return None
 
     info_str = []
     for incl in incl_info:
@@ -144,7 +135,7 @@ def get_object_string(obj: Any) -> Any:  # noqa: ANN401
         return str(obj)
 
 
-def get_all_type_explanations(type_list: list, mod_registry: Registry) -> dict:
+def get_all_type_explanations(type_list: list, mod_registry: SemRegistry) -> dict:
     """Get all type explanations from the input type list."""
     collected_type_explanations = {}
     for type_item in type_list:
@@ -164,12 +155,12 @@ def get_all_type_explanations(type_list: list, mod_registry: Registry) -> dict:
 
 
 def get_type_explanation(
-    type_str: str, mod_registry: Registry
+    type_str: str, mod_registry: SemRegistry
 ) -> tuple[str | None, set[str] | None]:
     """Get the type explanation of the input type string."""
     scope, sem_info = mod_registry.lookup(name=type_str)
     if isinstance(sem_info, SemInfo) and sem_info.type:
-        sem_info_scope = Scope(sem_info.name, sem_info.type, scope)
+        sem_info_scope = SemScope(sem_info.name, sem_info.type, scope)
         _, type_info = mod_registry.lookup(scope=sem_info_scope)
         type_info_str = []
         type_info_types = []

@@ -4,6 +4,8 @@ This module contains classes and functions for managing the registry of
 semantic information.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 
@@ -23,10 +25,12 @@ class SemInfo:
         return f"{self.semstr} ({self.type}) ({self.name})"
 
 
-class Scope:
+class SemScope:
     """Scope class."""
 
-    def __init__(self, scope: str, type: str, parent: Optional["Scope"] = None) -> None:
+    def __init__(
+        self, scope: str, type: str, parent: Optional[SemScope] = None
+    ) -> None:
         """Initialize the class."""
         self.parent = parent
         self.type = type
@@ -43,25 +47,25 @@ class Scope:
         return self.__str__()
 
     @staticmethod
-    def get_scope_from_str(scope_str: str) -> Optional["Scope"]:
+    def get_scope_from_str(scope_str: str) -> Optional[SemScope]:
         """Get scope from string."""
         scope_list = scope_str.split(".")
         parent = None
         for scope in scope_list:
             scope_name, scope_type = scope.split("(")
             scope_type = scope_type[:-1]
-            parent = Scope(scope_name, scope_type, parent)
+            parent = SemScope(scope_name, scope_type, parent)
         return parent
 
 
-class Registry:
+class SemRegistry:
     """Registry class."""
 
     def __init__(self) -> None:
         """Initialize the class."""
-        self.registry: dict[Scope, list[SemInfo]] = {}
+        self.registry: dict[SemScope, list[SemInfo]] = {}
 
-    def add(self, scope: Scope, seminfo: SemInfo) -> None:
+    def add(self, scope: SemScope, seminfo: SemInfo) -> None:
         """Add semantic information to the registry."""
         for k in self.registry.keys():
             if str(k) == str(scope):
@@ -73,10 +77,10 @@ class Registry:
 
     def lookup(
         self,
-        scope: Optional[Scope] = None,
+        scope: Optional[SemScope] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
-    ) -> tuple[Optional[Scope], Optional[SemInfo | list[SemInfo]]]:
+    ) -> tuple[Optional[SemScope], Optional[SemInfo | list[SemInfo]]]:
         """Lookup semantic information in the registry."""
         if scope:
             for k, v in self.registry.items():
