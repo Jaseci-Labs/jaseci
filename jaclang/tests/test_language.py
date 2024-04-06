@@ -143,6 +143,27 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
 
+    def test_with_llm_lower(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm_lower", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[Reasoning] <Reason>", stdout_value)
+        self.assertIn(
+            'Name of the Person (name) (str) = "Oppenheimer"',
+            stdout_value,
+        )
+        self.assertIn(
+            "Person (obj) (Person) = Fullname of the Person (str) (full_name), Year of Death (int) (yod), Personality of the Person (Personality) (personality)",  # noqa E501
+            stdout_value,
+        )
+        self.assertIn(
+            "J. Robert Oppenheimer was a Introvert person who died in 1967",
+            stdout_value,
+        )
+
     def test_ignore(self) -> None:
         """Parse micro jac file."""
         construct.root._jac_.edges.clear()
