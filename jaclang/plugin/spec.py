@@ -215,8 +215,8 @@ class JacFeatureSpec:
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
         scope: str,
-        incl_info: tuple[str, str],
-        excl_info: tuple,
+        incl_info: list[tuple[str, str]],
+        excl_info: list[tuple[str, str]],
         inputs: tuple,
         outputs: tuple,
         action: str,

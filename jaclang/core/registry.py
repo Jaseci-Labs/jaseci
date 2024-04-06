@@ -4,6 +4,8 @@ This module contains classes and functions for managing the registry of
 semantic information.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 
@@ -27,7 +29,7 @@ class SemScope:
     """Scope class."""
 
     def __init__(
-        self, scope: str, type: str, parent: Optional["SemScope"] = None
+        self, scope: str, type: str, parent: Optional[SemScope] = None
     ) -> None:
         """Initialize the class."""
         self.parent = parent
@@ -45,7 +47,7 @@ class SemScope:
         return self.__str__()
 
     @staticmethod
-    def get_scope_from_str(scope_str: str) -> Optional["SemScope"]:
+    def get_scope_from_str(scope_str: str) -> Optional[SemScope]:
         """Get scope from string."""
         scope_list = scope_str.split(".")
         parent = None

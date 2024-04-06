@@ -12,7 +12,7 @@ import pickle
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
-from jaclang.core.registry import SemInfo, SemRegistry, SemScope
+from jaclang.core.registry import SemInfo, SemRegistry
 from jaclang.core.utils import get_sem_scope
 
 
@@ -115,28 +115,6 @@ class RegistryPass(Pass):
             seminfo = SemInfo(node.value, None, None)
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
-
-    def get_scope(self, node: ast.AstNode) -> SemScope:
-        """Get scope of the node."""
-        a = (
-            node.name
-            if isinstance(node, ast.Module)
-            else node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
-        )
-        if isinstance(node, ast.Module):
-            return SemScope(a, "Module", None)
-        elif isinstance(node, (ast.Enum, ast.Architype)):
-            node_type = (
-                node.__class__.__name__
-                if isinstance(node, ast.Enum)
-                else node.arch_type.value
-            )
-            if node.parent:
-                return SemScope(a, node_type, get_sem_scope(node.parent))
-        else:
-            if node.parent:
-                return get_sem_scope(node.parent)
-        return SemScope("", "", None)
 
     def extract_type(self, node: ast.AstNode) -> list[str]:
         """Collect type information in assignment using bfs."""

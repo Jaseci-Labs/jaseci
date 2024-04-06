@@ -84,7 +84,7 @@ def get_reasoning_output(s: str) -> tuple:
 
 def get_info_types(
     scope: SemScope, mod_registry: SemRegistry, incl_info: list[tuple[str, str]]
-) -> tuple:
+) -> tuple[str, list[str]]:
     """Filter the registry data based on the scope and return the info string."""
     collected_types = []
     avail_scopes = []
@@ -98,15 +98,6 @@ def get_info_types(
     for _scope, sem_info_list in mod_registry.registry.items():
         if str(_scope) in avail_scopes:
             filtered_registry.registry[_scope] = sem_info_list
-
-    def find_sem_info(
-        _registry: dict[SemScope, list[SemInfo]], name: str
-    ) -> SemInfo | None:
-        for sem_info_list in _registry.values():
-            for sem_info in sem_info_list:
-                if sem_info.name == name:
-                    return sem_info
-        return None
 
     info_str = []
     for incl in incl_info:
