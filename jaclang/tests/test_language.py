@@ -107,15 +107,41 @@ class JacLanguageTests(TestCase):
             "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",
         )
 
-    def test_with_llm(self) -> None:
+    def test_with_llm_function(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("with_llm", base_path=self.fixture_abs_path("./"))
+        jac_import("with_llm_function", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("{'temperature': 0.7}", stdout_value)
-        self.assertIn("Albert Einstein was a German-born", stdout_value)
+        self.assertIn("Emoji Representation (str)", stdout_value)
+        self.assertIn('Text Input (input) (str) = "Lets move to paris"', stdout_value)
+        self.assertIn(
+            'Examples of Text to Emoji (emoji_examples) (list[dict[str,str]]) = [{"input": "I love tp drink pina coladas"',  # noqa E501
+            stdout_value,
+        )
+
+    def test_with_llm_method(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm_method", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[Reasoning] <Reason>", stdout_value)
+        self.assertIn(
+            "Personality Index of a Person (class) (PersonalityIndex) = Personality Index (int) (index)",
+            stdout_value,
+        )
+        self.assertIn(
+            "Personality of the Person (dict[Personality,PersonalityIndex])",
+            stdout_value,
+        )
+        self.assertIn(
+            'Diary Entries (diary_entries) (list[str]) = ["I won noble prize in Physics", "I am popular for my theory of relativity"]',  # noqa E501
+            stdout_value,
+        )
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
@@ -412,5 +438,5 @@ class JacLanguageTests(TestCase):
             registry = pickle.load(f)
 
         self.assertEqual(len(registry.registry), 3)
-        self.assertEqual(len(list(registry.registry.items())[0][1]), 7)
+        self.assertEqual(len(list(registry.registry.items())[0][1]), 10)
         self.assertEqual(list(registry.registry.items())[1][0].scope, "Person")

@@ -17,7 +17,7 @@ from jaclang.compiler.symtable import (
     SymbolTable,
     SymbolType,
 )
-from jaclang.core.registry import Registry
+from jaclang.core.registry import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 
@@ -383,7 +383,7 @@ class Module(AstDocNode):
         kid: Sequence[AstNode],
         impl_mod: Optional[Module] = None,
         test_mod: Optional[Module] = None,
-        registry: Optional[Registry] = None,
+        registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
         self.name = name

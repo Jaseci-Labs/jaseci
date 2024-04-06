@@ -22,13 +22,16 @@ glob personality_examples: 'Personality Information of Famous People': dict[str,
     'Barack Obama': Personality.EXTROVERT
 };
 
-can 'Get Personality of the Person'
-get_personality (person: 'Person Object': Person) -> 'Personality of the Person': Personality by llm(reason=True, incl_info=(personality_examples));
+glob person_value : list[tuple[dict[str, Personality], int]] =(-90);
 
+can foo() {
+   person_value=22;
+   can bar() {
+       person_value=33;
+   }
+}
 with entry {
     einstein_age: int = 75;
     einstein_age += 1;
     einstein = Person('Albert Einstein', einstein_age);
-    print(einstein.name);
-    print(get_personality(einstein));
 }

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import pickle
 import types
 from dataclasses import field
 from functools import wraps
@@ -11,7 +12,15 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
-from jaclang.core.aott import aott_lower, aott_raise
+from jaclang.core.aott import (
+    aott_lower,
+    aott_raise,
+    extract_non_primary_type,
+    get_all_type_explanations,
+    get_info_types,
+    get_object_string,
+    get_type_annotation,
+)
 from jaclang.core.construct import (
     Architype,
     DSFunc,
@@ -28,6 +37,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
+from jaclang.core.registry import SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -427,27 +437,60 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def with_llm(
+        file_loc: str,
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
-        incl_info: tuple,
-        excl_info: tuple,
+        scope: str,
+        incl_info: list[tuple[str, str]],
+        excl_info: list[tuple[str, str]],
         inputs: tuple,
         outputs: tuple,
         action: str,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
+            ),
+            "rb",
+        ) as f:
+            mod_registry = pickle.load(f)
+
+        _scope = SemScope.get_scope_from_str(scope)
+        assert _scope is not None
+
         reason = False
         if "reason" in model_params:
             reason = model_params.pop("reason")
-        input_types_n_information_str = ""  # TODO: We have to generate this
-        output_type_str = ""  # TODO: We have to generate this
-        output_type_info_str = ""  # TODO: We have to generate this
-        information_str = ""  # TODO: We have to generate this
+
+        type_collector: list = []
+        information, collected_types = get_info_types(_scope, mod_registry, incl_info)
+        type_collector.extend(collected_types)
+
+        inputs_information_list = []
+        for i in inputs:
+            typ_anno = get_type_annotation(i[3])
+            type_collector.extend(extract_non_primary_type(typ_anno))
+            inputs_information_list.append(
+                f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
+            )
+        inputs_information = "\n".join(inputs_information_list)
+
+        output_information = f"{outputs[0]} ({outputs[2]})"
+        type_collector.extend(extract_non_primary_type(outputs[2]))
+
+        type_explanations_list = list(
+            get_all_type_explanations(type_collector, mod_registry).values()
+        )
+        type_explanations = "\n".join(type_explanations_list)
+
         meaning_in = aott_raise(
-            information_str,
-            input_types_n_information_str,
-            output_type_str,
-            output_type_info_str,
+            information,
+            inputs_information,
+            output_information,
+            type_explanations,
             action,
             reason,
         )
