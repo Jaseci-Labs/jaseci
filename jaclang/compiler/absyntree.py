@@ -2885,12 +2885,14 @@ class AtomTrailer(Expr):
         is_attr: bool,
         is_null_ok: bool,
         kid: Sequence[AstNode],
+        is_genai: bool = False,
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
         self.is_attr = is_attr
         self.is_null_ok = is_null_ok
+        self.is_genai = is_genai
         AstNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = True) -> bool:

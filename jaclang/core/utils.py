@@ -113,3 +113,13 @@ def get_sem_scope(node: ast.AstNode) -> SemScope:
         if node.parent:
             return get_sem_scope(node.parent)
     return SemScope("", "", None)
+
+
+def extract_type(node: ast.AstNode) -> list[str]:
+    """Collect type information in assignment using bfs."""
+    extracted_type = []
+    if isinstance(node, (ast.BuiltinType, ast.Token)):
+        extracted_type.append(node.value)
+    for child in node.kid:
+        extracted_type.extend(extract_type(child))
+    return extracted_type

@@ -11,7 +11,7 @@ from typing import Optional, Sequence, TypeVar
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
 from jaclang.compiler.passes import Pass
-from jaclang.core.utils import get_sem_scope
+from jaclang.core.utils import extract_type, get_sem_scope
 
 T = TypeVar("T", bound=ast3.AST)
 
@@ -927,21 +927,20 @@ class PyastGenPass(Pass):
         if isinstance(node.body, ast.AbilityDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
-    def bfs_collect_type(self, node: ast.AstNode) -> list[str]:
-        """Collect type information in assignment using bfs."""
-        extracted_type = []
-        if isinstance(node, (ast.BuiltinType, ast.Token)):
-            extracted_type.append(node.value)
-        for child in node.kid:
-            extracted_type.extend(self.bfs_collect_type(child))
-        return extracted_type
-
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
         if isinstance(node.body, ast.FuncCall):
+            model = node.body.target.gen.py_ast[0]
+            scope = str(get_sem_scope(node))
             model_params = {}
             include_info = []
             exclude_info = []
+            extracted_type = (
+                "".join(extract_type(node.signature.return_type))
+                if isinstance(node.signature, ast.FuncSignature)
+                and node.signature.return_type
+                else None
+            )
             if node.body.params:
                 for param in node.body.params.items:
                     if isinstance(param, ast.KWPair) and isinstance(
@@ -999,246 +998,81 @@ class PyastGenPass(Pass):
                                         )
                                     )
                                     exclude_info.append((var_name, i.gen.py_ast[0]))
-            extracted = (
-                "".join(self.bfs_collect_type(node.signature.return_type))
+            inputs = (
+                [
+                    self.sync(
+                        ast3.Tuple(
+                            elts=[
+                                (
+                                    self.sync(
+                                        ast3.Constant(
+                                            value=(
+                                                param.semstr.lit_value
+                                                if param.semstr
+                                                else None
+                                            )
+                                        )
+                                    )
+                                ),
+                                (
+                                    param.type_tag.tag.gen.py_ast[0]
+                                    if param.type_tag
+                                    else None
+                                ),
+                                self.sync(ast3.Constant(value=param.name.value)),
+                                self.sync(
+                                    ast3.Name(
+                                        id=param.name.value,
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                            ],
+                            ctx=ast3.Load(),
+                        )
+                    )
+                    for param in node.signature.params.items
+                ]
                 if isinstance(node.signature, ast.FuncSignature)
-                and node.signature.return_type
-                else None
+                and node.signature.params
+                else []
             )
+            outputs = (
+                [
+                    (
+                        self.sync(
+                            ast3.Constant(
+                                value=(
+                                    node.signature.semstr.lit_value
+                                    if node.signature.semstr
+                                    else None
+                                )
+                            )
+                        )
+                    ),
+                    (
+                        node.signature.return_type.gen.py_ast[0]
+                        if node.signature.return_type
+                        else None
+                    ),
+                    (self.sync(ast3.Constant(value=(extracted_type)))),
+                ]
+                if isinstance(node.signature, ast.FuncSignature)
+                else []
+            )
+            action = node.semstr.gen.py_ast[0] if node.semstr else None
             return [
                 self.sync(
                     ast3.Assign(
                         targets=[self.sync(ast3.Name(id="output", ctx=ast3.Store()))],
-                        value=self.sync(
-                            ast3.Call(
-                                func=self.sync(
-                                    ast3.Attribute(
-                                        value=self.sync(
-                                            ast3.Name(
-                                                id=Con.JAC_FEATURE.value,
-                                                ctx=ast3.Load(),
-                                            )
-                                        ),
-                                        attr="with_llm",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                args=[],
-                                keywords=[
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="file_loc",
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id="__file__", ctx=ast3.Load()
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="model",
-                                            value=node.body.target.gen.py_ast[0],
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="model_params",
-                                            value=self.sync(
-                                                ast3.Dict(
-                                                    keys=[
-                                                        self.sync(
-                                                            ast3.Constant(value=key)
-                                                        )
-                                                        for key in model_params.keys()
-                                                    ],
-                                                    values=[
-                                                        value.gen.py_ast[0]
-                                                        for value in model_params.values()
-                                                    ],
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="scope",
-                                            value=(
-                                                self.sync(
-                                                    ast3.Constant(
-                                                        value=str(get_sem_scope(node))
-                                                    )
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="incl_info",
-                                            value=self.sync(
-                                                ast3.List(
-                                                    elts=[
-                                                        self.sync(
-                                                            ast3.Tuple(
-                                                                elts=[
-                                                                    self.sync(
-                                                                        ast3.Constant(
-                                                                            value=key
-                                                                        )
-                                                                    ),
-                                                                    value,
-                                                                ],
-                                                                ctx=ast3.Load(),
-                                                            )
-                                                        )
-                                                        for key, value in include_info
-                                                    ],
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="excl_info",
-                                            value=self.sync(
-                                                ast3.List(
-                                                    elts=[
-                                                        self.sync(
-                                                            ast3.Tuple(
-                                                                elts=[
-                                                                    self.sync(
-                                                                        ast3.Constant(
-                                                                            value=key
-                                                                        )
-                                                                    ),
-                                                                    value,
-                                                                ],
-                                                                ctx=ast3.Load(),
-                                                            )
-                                                        )
-                                                        for key, value in exclude_info
-                                                    ],
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                        ),
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="inputs",
-                                            value=self.sync(
-                                                ast3.List(
-                                                    elts=(
-                                                        [
-                                                            self.sync(
-                                                                ast3.Tuple(
-                                                                    elts=[
-                                                                        (
-                                                                            self.sync(
-                                                                                ast3.Constant(
-                                                                                    value=(
-                                                                                        param.semstr.lit_value
-                                                                                        if param.semstr
-                                                                                        else None
-                                                                                    )
-                                                                                )
-                                                                            )
-                                                                        ),
-                                                                        (
-                                                                            param.type_tag.tag.gen.py_ast[
-                                                                                0
-                                                                            ]
-                                                                            if param.type_tag
-                                                                            else None
-                                                                        ),
-                                                                        self.sync(
-                                                                            ast3.Constant(
-                                                                                value=param.name.value
-                                                                            )
-                                                                        ),
-                                                                        self.sync(
-                                                                            ast3.Name(
-                                                                                id=param.name.value,
-                                                                                ctx=ast3.Load(),
-                                                                            )
-                                                                        ),
-                                                                    ],
-                                                                    ctx=ast3.Load(),
-                                                                )
-                                                            )
-                                                            for param in node.signature.params.items
-                                                        ]
-                                                        if isinstance(
-                                                            node.signature,
-                                                            ast.FuncSignature,
-                                                        )
-                                                        and node.signature.params
-                                                        else []
-                                                    ),
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="outputs",
-                                            value=self.sync(
-                                                ast3.Tuple(
-                                                    elts=(
-                                                        [
-                                                            (
-                                                                self.sync(
-                                                                    ast3.Constant(
-                                                                        value=(
-                                                                            node.signature.semstr.lit_value
-                                                                            if node.signature.semstr
-                                                                            else None
-                                                                        )
-                                                                    )
-                                                                )
-                                                            ),
-                                                            (
-                                                                node.signature.return_type.gen.py_ast[
-                                                                    0
-                                                                ]
-                                                                if node.signature.return_type
-                                                                else None
-                                                            ),
-                                                            (
-                                                                self.sync(
-                                                                    ast3.Constant(
-                                                                        value=(
-                                                                            extracted
-                                                                        )
-                                                                    )
-                                                                )
-                                                            ),
-                                                        ]
-                                                        if isinstance(
-                                                            node.signature,
-                                                            ast.FuncSignature,
-                                                        )
-                                                        else []
-                                                    ),
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="action",
-                                            value=(
-                                                node.semstr.gen.py_ast[0]
-                                                if node.semstr
-                                                else None
-                                            ),
-                                        )
-                                    ),
-                                ],
-                            )
+                        value=self.by_llm_call(
+                            model,
+                            model_params,
+                            scope,
+                            inputs,
+                            outputs,
+                            action,
+                            include_info,
+                            exclude_info,
                         ),
                     )
                 ),
@@ -1291,6 +1125,144 @@ class PyastGenPass(Pass):
             ]
         else:
             return []
+
+    def by_llm_call(
+        self,
+        model,
+        model_params,
+        scope,
+        inputs,
+        outputs,
+        action,
+        include_info,
+        exclude_info,
+    ) -> ast3.Call:
+        return self.sync(
+            ast3.Call(
+                func=self.sync(
+                    ast3.Attribute(
+                        value=self.sync(
+                            ast3.Name(
+                                id=Con.JAC_FEATURE.value,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="with_llm",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[],
+                keywords=[
+                    self.sync(
+                        ast3.keyword(
+                            arg="file_loc",
+                            value=self.sync(ast3.Name(id="__file__", ctx=ast3.Load())),
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="model",
+                            value=model,
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="model_params",
+                            value=self.sync(
+                                ast3.Dict(
+                                    keys=[
+                                        self.sync(ast3.Constant(value=key))
+                                        for key in model_params.keys()
+                                    ],
+                                    values=[
+                                        value.gen.py_ast[0]
+                                        for value in model_params.values()
+                                    ],
+                                )
+                            ),
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="scope",
+                            value=(self.sync(ast3.Constant(value=scope))),
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="incl_info",
+                            value=self.sync(
+                                ast3.List(
+                                    elts=[
+                                        self.sync(
+                                            ast3.Tuple(
+                                                elts=[
+                                                    self.sync(ast3.Constant(value=key)),
+                                                    value,
+                                                ],
+                                                ctx=ast3.Load(),
+                                            )
+                                        )
+                                        for key, value in include_info
+                                    ],
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="excl_info",
+                            value=self.sync(
+                                ast3.List(
+                                    elts=[
+                                        self.sync(
+                                            ast3.Tuple(
+                                                elts=[
+                                                    self.sync(ast3.Constant(value=key)),
+                                                    value,
+                                                ],
+                                                ctx=ast3.Load(),
+                                            )
+                                        )
+                                        for key, value in exclude_info
+                                    ],
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                        ),
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="inputs",
+                            value=self.sync(
+                                ast3.List(
+                                    elts=inputs,
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="outputs",
+                            value=self.sync(
+                                ast3.Tuple(
+                                    elts=outputs,
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                        )
+                    ),
+                    self.sync(
+                        ast3.keyword(
+                            arg="action",
+                            value=action,
+                        )
+                    ),
+                ],
+            )
+        )
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -2723,7 +2695,10 @@ class PyastGenPass(Pass):
         right: AtomExpr | Expr,
         is_attr: bool,
         is_null_ok: bool,
+        is_genai: bool = False,
         """
+        if node.is_genai:
+            node.gen.py_ast = []
         if node.is_attr:
             if isinstance(node.right, ast.AstSymbolNode):
                 node.gen.py_ast = [
