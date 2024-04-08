@@ -7,6 +7,8 @@ from datetime import datetime
 from datetime import timedelta
 from jaseci.jsorc.live_actions import jaseci_action
 
+from string import ascii_letters, digits
+
 lorem_words = (
     "adipisci aliquam amet consectetur dolor dolore dolorem eius "
     "est et incidunt ipsum labore magnam modi neque non numquam "
@@ -68,6 +70,12 @@ def text(min_lenth: int = 3, max_length: int = 6, sep: str = "\n\n"):
 def word():
     """Get a random sentence"""
     return random.choice(lorem_words)
+
+
+@jaseci_action()
+def string(length: int):
+    """Get a random string"""
+    return "".join(choice(ascii_letters + digits) for _ in range(length))
 
 
 @jaseci_action()
