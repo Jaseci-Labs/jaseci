@@ -17,6 +17,7 @@ from jaclang.compiler.symtable import (
     SymbolTable,
     SymbolType,
 )
+from jaclang.core.registry import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 
@@ -382,6 +383,7 @@ class Module(AstDocNode):
         kid: Sequence[AstNode],
         impl_mod: Optional[Module] = None,
         test_mod: Optional[Module] = None,
+        registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
         self.name = name
@@ -391,6 +393,7 @@ class Module(AstDocNode):
         self.impl_mod = impl_mod
         self.test_mod = test_mod
         self.mod_deps: dict[str, Module] = {}
+        self.registry = registry
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -2226,7 +2229,7 @@ class NonLocalStmt(GlobalStmt):
         return res
 
 
-class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
+class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
     """Assignment node type for Jac Ast."""
 
     def __init__(
@@ -2237,13 +2240,17 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         kid: Sequence[AstNode],
         mutable: bool = True,
         aug_op: Optional[Token] = None,
+        semstr: Optional[String] = None,
+        is_enum_stmt: bool = False,
     ) -> None:
         """Initialize assignment node."""
         self.target = target
         self.value = value
         self.mutable = mutable
         self.aug_op = aug_op
+        self.is_enum_stmt = is_enum_stmt
         AstNode.__init__(self, kid=kid)
+        AstSemStrNode.__init__(self, semstr=semstr)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
 
     def normalize(self, deep: bool = True) -> bool:

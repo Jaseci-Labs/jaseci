@@ -211,10 +211,12 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def with_llm(
+        file_loc: str,
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
-        incl_info: tuple,
-        excl_info: tuple,
+        scope: str,
+        incl_info: list[tuple[str, str]],
+        excl_info: list[tuple[str, str]],
         inputs: tuple,
         outputs: tuple,
         action: str,

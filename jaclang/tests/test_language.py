@@ -1,8 +1,9 @@
 """Test Jac language generally."""
 
 import io
+import os
+import pickle
 import sys
-
 
 from jaclang import jac_import
 from jaclang.cli import cli
@@ -106,15 +107,62 @@ class JacLanguageTests(TestCase):
             "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",
         )
 
-    def test_with_llm(self) -> None:
+    def test_with_llm_function(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("with_llm", base_path=self.fixture_abs_path("./"))
+        jac_import("with_llm_function", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("{'temperature': 0.7}", stdout_value)
-        self.assertIn("Albert Einstein was a German-born", stdout_value)
+        self.assertIn("Emoji Representation (str)", stdout_value)
+        self.assertIn('Text Input (input) (str) = "Lets move to paris"', stdout_value)
+        self.assertIn(
+            'Examples of Text to Emoji (emoji_examples) (list[dict[str,str]]) = [{"input": "I love tp drink pina coladas"',  # noqa E501
+            stdout_value,
+        )
+
+    def test_with_llm_method(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm_method", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[Reasoning] <Reason>", stdout_value)
+        self.assertIn(
+            "Personality Index of a Person (class) (PersonalityIndex) = Personality Index (int) (index)",
+            stdout_value,
+        )
+        self.assertIn(
+            "Personality of the Person (dict[Personality,PersonalityIndex])",
+            stdout_value,
+        )
+        self.assertIn(
+            'Diary Entries (diary_entries) (list[str]) = ["I won noble prize in Physics", "I am popular for my theory of relativity"]',  # noqa E501
+            stdout_value,
+        )
+
+    def test_with_llm_lower(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm_lower", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[Reasoning] <Reason>", stdout_value)
+        self.assertIn(
+            'Name of the Person (name) (str) = "Oppenheimer"',
+            stdout_value,
+        )
+        self.assertIn(
+            "Person (obj) (Person) = Fullname of the Person (str) (full_name), Year of Death (int) (yod), Personality of the Person (Personality) (personality)",  # noqa E501
+            stdout_value,
+        )
+        self.assertIn(
+            "J. Robert Oppenheimer was a Introvert person who died in 1967",
+            stdout_value,
+        )
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
@@ -392,3 +440,24 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("2.0\n", stdout_value)
+
+    def test_registry(self) -> None:
+        """Test Jac registry feature."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("registry", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn("Error", stdout_value)
+
+        with open(
+            os.path.join(
+                self.fixture_abs_path("./"), "__jac_gen__", "registry.registry.pkl"
+            ),
+            "rb",
+        ) as f:
+            registry = pickle.load(f)
+
+        self.assertEqual(len(registry.registry), 3)
+        self.assertEqual(len(list(registry.registry.items())[0][1]), 10)
+        self.assertEqual(list(registry.registry.items())[1][0].scope, "Person")

@@ -101,4 +101,3 @@ class JacTypeCheckPass(Pass):
             new_modules=new_modules,  # To parse the dependancies of modules
         )
         myab.process_graph(graph, manager)
-        myab.semantic_analysis_for_scc(graph, [self.__modules[0].name], errors)
