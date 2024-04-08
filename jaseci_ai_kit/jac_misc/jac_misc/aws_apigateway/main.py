@@ -62,6 +62,18 @@ def create_method(
     )
 
 
+@jaseci_action(act_group=["aws_apigateway"], allow_remote=True)
+def put_method_response(
+    restApiId: str, resourceId: str, httpMethod: str, options: dict = {}
+) -> IntegrationExtraResponseTypeDef:
+    return get_client().put_method_response(
+        restApiId=restApiId,
+        resourceId=resourceId,
+        httpMethod=httpMethod,
+        **options,
+    )
+
+
 # POST, requestModels = {"application/json": "AskQuestionModel"}
 @jaseci_action(act_group=["aws_apigateway"], allow_remote=True)
 def put_integration(
@@ -77,6 +89,18 @@ def update_integration(
     restApiId: str, resourceId: str, httpMethod: str, options: dict = {}
 ) -> IntegrationExtraResponseTypeDef:
     return get_client().update_integration(
+        restApiId=restApiId,
+        resourceId=resourceId,
+        httpMethod=httpMethod,
+        **options,
+    )
+
+
+@jaseci_action(act_group=["aws_apigateway"], allow_remote=True)
+def put_integration_response(
+    restApiId: str, resourceId: str, httpMethod: str, options: dict = {}
+) -> IntegrationExtraResponseTypeDef:
+    return get_client().put_integration_response(
         restApiId=restApiId,
         resourceId=resourceId,
         httpMethod=httpMethod,
