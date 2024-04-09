@@ -193,3 +193,15 @@ class JacCliTests(TestCase):
         self.assertIn("circle", stdout)
         self.assertNotIn("circle_purfe.test", stdout)
         self.assertNotIn("circle_pure.impl", stdout)
+
+        process = subprocess.Popen(
+            ["jac", "test", "-f" + "*run_test.jac", "-m 3"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        print(stderr)
+        self.assertIn("...F", stderr)
+        self.assertIn("F.F", stderr)
