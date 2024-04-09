@@ -2323,6 +2323,20 @@ class JacParser(Pass):
             atomic_call: atomic_chain LPAREN param_list? RPAREN
             """
             if (
+                len(kid) > 4
+                and isinstance(kid[0], ast.Expr)
+                and kid[-2]
+                and isinstance(kid[-2], ast.FuncCall)
+            ):
+                return self.nu(
+                    ast.FuncCall(
+                        target=kid[0],
+                        params=kid[2] if isinstance(kid[2], ast.SubNodeList) else None,
+                        genai_call=kid[-2],
+                        kid=kid,
+                    )
+                )
+            if (
                 len(kid) == 4
                 and isinstance(kid[0], ast.Expr)
                 and isinstance(kid[2], ast.SubNodeList)

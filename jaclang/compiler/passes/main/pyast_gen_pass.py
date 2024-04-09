@@ -1128,15 +1128,16 @@ class PyastGenPass(Pass):
 
     def by_llm_call(
         self,
-        model,
-        model_params,
-        scope,
-        inputs,
-        outputs,
-        action,
-        include_info,
-        exclude_info,
+        model: ast3.AST,
+        model_params: dict[str, ast.Expr],
+        scope: str,
+        inputs: Sequence[Optional[ast3.AST]],
+        outputs: list[Optional[ast3.AST]],
+        action: Optional[ast3.AST],
+        include_info: list[tuple[str, ast3.AST]],
+        exclude_info: list[tuple[str, ast3.AST]],
     ) -> ast3.Call:
+        """Return the LLM Call, e.g. _Jac.with_llm()."""
         return self.sync(
             ast3.Call(
                 func=self.sync(

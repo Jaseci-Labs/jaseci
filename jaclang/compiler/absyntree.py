@@ -2974,10 +2974,12 @@ class FuncCall(Expr):
         target: Expr,
         params: Optional[SubNodeList[Expr | KWPair]],
         kid: Sequence[AstNode],
+        genai_call: Optional[FuncCall] = None,
     ) -> None:
         """Initialize function call expression node."""
         self.target = target
         self.params = params
+        self.genai_call = genai_call
         AstNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = True) -> bool:
