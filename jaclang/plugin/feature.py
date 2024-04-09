@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, TypeAlias
+from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
@@ -79,11 +79,11 @@ class JacFeature:
         base_path: str,
         absorb: bool = False,
         cachable: bool = True,
-        mdl_alias: bool = False,
+        mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
         mod_bundle: Optional[Module] = None,
         lng: Optional[str] = None,
-        items: Optional[dict[str, Any]] = None,
+        items: Optional[dict[str, Union[str, bool]]] = None,
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         return pm.hook.jac_import(

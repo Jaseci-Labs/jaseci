@@ -7,7 +7,7 @@ import os
 import types
 from dataclasses import field
 from functools import wraps
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
@@ -159,11 +159,11 @@ class JacFeatureDefaults:
         base_path: str,
         absorb: bool,
         cachable: bool,
-        mdl_alias: bool,
+        mdl_alias: Optional[str],
         override_name: Optional[str],
         mod_bundle: Optional[Module],
         lng: Optional[str],
-        items: Optional[dict[str, Any]],
+        items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         result = jac_importer(
