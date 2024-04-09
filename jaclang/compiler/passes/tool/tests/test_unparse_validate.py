@@ -24,11 +24,10 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
                 target=PyastGenPass,
                 schedule=without_format,
             )
-            # print(f"Testing {code_gen_pure.ir.name}")
             before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
-            # print('before ast {{{{}}}}' , code_gen_pure.ir.dotgen())
             x = code_gen_pure.ir.unparse()
             # print(x)
+            # print(f"Testing {code_gen_pure.ir.name}")
             code_gen_jac = jac_str_to_pass(
                 jac_str=x,
                 file_path=filename,
@@ -36,8 +35,6 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
                 schedule=without_format,
             )
             after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
-            # print('after ast {{{{}}}}' , code_gen_jac.ir.dotgen())
-            # print('after code :::::-->> ', code_gen_jac.ir.unparse())
             self.assertEqual(
                 len("\n".join(unified_diff(before.splitlines(), after.splitlines()))),
                 0,
