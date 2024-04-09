@@ -864,7 +864,7 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
         return res
 
 
-class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode):
+class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
     """Enum node type for Jac Ast."""
 
     def __init__(
