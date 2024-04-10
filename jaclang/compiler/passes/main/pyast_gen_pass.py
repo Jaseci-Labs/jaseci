@@ -209,8 +209,16 @@ class PyastGenPass(Pass):
             if isinstance(i, ast3.AST):
                 i.lineno = jac_node.loc.first_line
                 i.col_offset = jac_node.loc.col_start
-                i.end_lineno = jac_node.loc.last_line
-                i.end_col_offset = jac_node.loc.col_end
+                i.end_lineno = (
+                    jac_node.loc.last_line
+                    if jac_node.loc.last_line
+                    else jac_node.loc.first_line
+                )
+                i.end_col_offset = (
+                    jac_node.loc.col_end
+                    if jac_node.loc.col_end
+                    else jac_node.loc.col_start
+                )
                 i.jac_link: list[ast3.AST] = [jac_node]  # type: ignore
         return py_node
 
@@ -249,14 +257,17 @@ class PyastGenPass(Pass):
         doc: Optional[ast.String] = None,
     ) -> list[ast3.AST]:
         """Unwind codeblock."""
+        valid_stmts = (
+            [i for i in node.items if not isinstance(i, ast.Semi)] if node else []
+        )
         ret: list[ast3.AST] = (
             [self.sync(ast3.Pass(), node)]
-            if isinstance(node, ast.SubNodeList) and not node.items
+            if isinstance(node, ast.SubNodeList) and not valid_stmts
             else (
                 self.flatten(
                     [
                         x.gen.py_ast
-                        for x in node.items
+                        for x in valid_stmts
                         if not isinstance(x, ast.AstImplOnlyNode)
                     ]
                 )
@@ -2460,7 +2471,10 @@ class PyastGenPass(Pass):
         elif node.op.name in [Tok.STAR_MUL]:
             node.gen.py_ast = [
                 self.sync(
-                    ast3.Starred(value=node.operand.gen.py_ast[0], ctx=ast3.Load())
+                    ast3.Starred(
+                        value=node.operand.gen.py_ast[0],
+                        ctx=ast3.Load(),
+                    )
                 )
             ]
         elif node.op.name in [Tok.STAR_POW]:

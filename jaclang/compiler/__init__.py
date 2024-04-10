@@ -35,4 +35,54 @@ TOKEN_MAP = {
     x.name: x.pattern.value
     for x in jac_lark.Lark_StandAlone().parser.lexer_conf.terminals
 }
+
+TOKEN_MAP.update(
+    {
+        "CARROW_L": "<++",
+        "CARROW_R": "++>",
+        "GLOBAL_OP": ":global:",
+        "NONLOCAL_OP": ":nonlocal:",
+        "WALKER_OP": ":walker:",
+        "NODE_OP": ":node:",
+        "EDGE_OP": ":edge:",
+        "CLASS_OP": ":class:",
+        "OBJECT_OP": ":obj:",
+        "TYPE_OP": "`",
+        "ABILITY_OP": ":can:",
+        "ELVIS_OP": "?:",
+        "NULL_OK": "?",
+        "KW_OR": "|",
+        "ARROW_BI": "<-->",
+        "ARROW_L": "<--",
+        "ARROW_R": "-->",
+        "ARROW_L_P1": "<-:",
+        "ARROW_R_P2": ":->",
+        "ARROW_L_P2": ":-",
+        "ARROW_R_P1": "-:",
+        "CARROW_BI": "<++>",
+        "CARROW_L": "<++",
+        "CARROW_R": "++>",
+        "CARROW_L_P1": "<+:",
+        "CARROW_R_P2": ":+>",
+        "CARROW_L_P2": ":+",
+        "CARROW_R_P1": "+:",
+        "PIPE_FWD": "|>",
+        "PIPE_BKWD": "<|",
+        "A_PIPE_FWD": ":>",
+        "A_PIPE_BKWD": "<:",
+        "DOT_FWD": ".>",
+        "STAR_POW_EQ": "**=",
+        "MUL_EQ": "*=",
+        "FLOOR_DIV_EQ": "//=",
+        "DIV_EQ": "/=",
+        "BW_OR_EQ": "|=",
+        "BW_XOR_EQ": "^=",
+        "STAR_POW": "**",
+        "STAR_MUL": "*",
+        "FLOOR_DIV": "//",
+        "DIV": "/",
+    }
+)
+
+
 __all__ = ["jac_lark", "TOKEN_MAP"]
