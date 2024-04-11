@@ -49,7 +49,6 @@ class SemScope:
     @staticmethod
     def get_scope_from_str(scope_str: str) -> Optional[SemScope]:
         """Get scope from string."""
-        print("scope str --> ", scope_str)
         scope_list = scope_str.split(".")
         parent = None
         for scope in scope_list:

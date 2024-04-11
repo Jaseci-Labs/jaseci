@@ -472,7 +472,6 @@ class JacFeatureDefaults:
         attr_scope = None
         for x in attr.split("."):
             attr_scope, _ = mod_registry.lookup(attr_scope, x)
-        print(str(attr_scope))
         return str(attr_scope)
 
     @staticmethod
@@ -509,7 +508,6 @@ class JacFeatureDefaults:
         type_collector: list = []
         information, collected_types = get_info_types(_scope, mod_registry, incl_info)
         type_collector.extend(collected_types)
-
         inputs_information_list = []
         for i in inputs:
             typ_anno = get_type_annotation(i[3])

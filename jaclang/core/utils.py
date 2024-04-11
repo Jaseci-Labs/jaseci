@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast as ast3
 from typing import Callable, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
@@ -127,9 +128,7 @@ def extract_type(node: ast.AstNode) -> list[str]:
 
 def extract_params(
     body: ast.FuncCall,
-) -> tuple[
-    dict[str, ast.AstNode], list[tuple[str, ast.AstNode]], list[tuple[str, ast.AstNode]]
-]:
+) -> tuple[dict[str, ast.Expr], list[tuple[str, ast3.AST]], list[tuple[str, ast3.AST]]]:
     """Extract model parameters, include and exclude information."""
     model_params = {}
     include_info = []
