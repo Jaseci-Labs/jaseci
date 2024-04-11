@@ -16,7 +16,7 @@ Person {
 }
 
 with entry {
-    einstein: 'Einstein Object': Person = Person(name="Albert Einstein", by llm1());
+    einstein: 'Einstein Object': Person = Person(name="Albert Einstein" -> by llm1());
     print(einstein.dob); #14/03/1879
 }
 
@@ -38,11 +38,11 @@ University {
 with entry {
     umich: 'Univeristy of Michigan': University = University(name="University of Michigan", location="Ann Arbor, Michigan");
     cs_department: 'Computer Science Department': University.Department = umich.Department(
-        name="Computer Science",
-        by llm2(incl_info=(umich))
+        name="Computer Science"
+        -> by llm2(incl_info=(umich))
     );
     umich.departments.append(cs_department);
 
-    umich.departments.append(umich.Department(name="Electrical Engineering", by llm2(incl_info=(umich))));
+    umich.departments.append(umich.Department(name="Electrical Engineering" -> by llm2(incl_info=(umich))));
     print(cs_department.head); # Person(name='Jason Mars', dob='1994-01-01', age=30)
 }
