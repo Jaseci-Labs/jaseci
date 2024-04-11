@@ -37,7 +37,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.registry import SemScope
+from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -433,6 +433,47 @@ class JacFeatureDefaults:
             return edge
 
         return builder
+
+    @staticmethod
+    @hookimpl
+    def get_semstr_type(
+        file_loc: str, scope: str, attr: str, return_semstr: bool = True
+    ) -> Optional[str]:
+        """Jac's get_semstr_type feature."""
+        _scope = SemScope.get_scope_from_str(scope)
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
+            ),
+            "rb",
+        ) as f:
+            mod_registry: SemRegistry = pickle.load(f)
+        _, attr_seminfo = mod_registry.lookup(_scope, attr)
+        if attr_seminfo and isinstance(attr_seminfo, SemInfo):
+            return attr_seminfo.semstr if return_semstr else attr_seminfo.type
+        return None
+
+    @staticmethod
+    @hookimpl
+    def obj_scope(file_loc: str, attr: str) -> str:
+        """Jac's gather_scope feature."""
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
+            ),
+            "rb",
+        ) as f:
+            mod_registry: SemRegistry = pickle.load(f)
+
+        attr_scope = None
+        for x in attr.split("."):
+            attr_scope, _ = mod_registry.lookup(attr_scope, x)
+        print(str(attr_scope))
+        return str(attr_scope)
 
     @staticmethod
     @hookimpl

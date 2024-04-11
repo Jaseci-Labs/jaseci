@@ -37,7 +37,7 @@ University {
 
 with entry {
     umich: 'Univeristy of Michigan': University = University(name="University of Michigan", location="Ann Arbor, Michigan");
-    cs_department: 'Computer Science Department': University.Department = umich.Department(
+    cs_department: 'Computer Science Department': University.Department = University().Department(
         name="Computer Science"
         -> by llm2(incl_info=(umich))
     );

@@ -2320,7 +2320,7 @@ class JacParser(Pass):
         def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
             """Grammar rule.
 
-            atomic_call: atomic_chain LPAREN param_list? RPAREN
+            atomic_call: atomic_chain LPAREN param_list? (RETURN_HINT KW_BY atomic_call)? RPAREN
             """
             if (
                 len(kid) > 4

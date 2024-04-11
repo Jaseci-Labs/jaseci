@@ -123,3 +123,66 @@ def extract_type(node: ast.AstNode) -> list[str]:
     for child in node.kid:
         extracted_type.extend(extract_type(child))
     return extracted_type
+
+
+def extract_params(
+    body: ast.FuncCall,
+) -> tuple[
+    dict[str, ast.AstNode], list[tuple[str, ast.AstNode]], list[tuple[str, ast.AstNode]]
+]:
+    """Extract model parameters, include and exclude information."""
+    model_params = {}
+    include_info = []
+    exclude_info = []
+    if body.params:
+        for param in body.params.items:
+            if isinstance(param, ast.KWPair) and isinstance(param.key, ast.Name):
+                key = param.key.value
+                value = param.value
+                if key not in ["incl_info", "excl_info"]:
+                    model_params[key] = value
+                elif key == "incl_info":
+                    if isinstance(value, ast.AtomUnit):
+                        var_name = (
+                            value.value.right.value
+                            if isinstance(value.value, ast.AtomTrailer)
+                            and isinstance(value.value.right, ast.Name)
+                            else (
+                                value.value.value
+                                if isinstance(value.value, ast.Name)
+                                else ""
+                            )
+                        )
+                        include_info.append((var_name, value.gen.py_ast[0]))
+                    elif isinstance(value, ast.TupleVal) and value.values:
+                        for i in value.values.items:
+                            var_name = (
+                                i.right.value
+                                if isinstance(i, ast.AtomTrailer)
+                                and isinstance(i.right, ast.Name)
+                                else (i.value if isinstance(i, ast.Name) else "")
+                            )
+                            include_info.append((var_name, i.gen.py_ast[0]))
+                elif key == "excl_info":
+                    if isinstance(value, ast.AtomUnit):
+                        var_name = (
+                            value.value.right.value
+                            if isinstance(value.value, ast.AtomTrailer)
+                            and isinstance(value.value.right, ast.Name)
+                            else (
+                                value.value.value
+                                if isinstance(value.value, ast.Name)
+                                else ""
+                            )
+                        )
+                        exclude_info.append((var_name, value.gen.py_ast[0]))
+                    elif isinstance(value, ast.TupleVal) and value.values:
+                        for i in value.values.items:
+                            var_name = (
+                                i.right.value
+                                if isinstance(i, ast.AtomTrailer)
+                                and isinstance(i.right, ast.Name)
+                                else (i.value if isinstance(i, ast.Name) else "")
+                            )
+                            exclude_info.append((var_name, i.gen.py_ast[0]))
+    return model_params, include_info, exclude_info
