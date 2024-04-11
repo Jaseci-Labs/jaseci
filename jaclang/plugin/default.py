@@ -471,7 +471,8 @@ class JacFeatureDefaults:
 
         attr_scope = None
         for x in attr.split("."):
-            attr_scope, _ = mod_registry.lookup(attr_scope, x)
+            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
+            attr_scope = SemScope(attr_sem_info.name, attr_sem_info.type, attr_scope)
         return str(attr_scope)
 
     @staticmethod

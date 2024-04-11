@@ -107,6 +107,13 @@ class SemRegistry:
                             return k, i
         return None, None
 
+    @property
+    def module_scope(self) -> SemScope:
+        """Get the module scope."""
+        for i in self.registry.keys():
+            if not i.parent:
+                return i
+
     def pp(self) -> None:
         """Pretty print the registry."""
         for k, v in self.registry.items():

@@ -18,7 +18,7 @@ T = TypeVar("T", bound=ast3.AST)
 
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
-
+    cout=1
     @staticmethod
     def node_compilable_test(node: ast3.AST) -> None:
         """Convert any AST node to a compilable module node."""
@@ -2792,8 +2792,8 @@ class PyastGenPass(Pass):
             )
             outputs = [
                 self.sync(ast3.Constant(value="semstr")),
-                self.sync(ast3.Constant(value=_output_)),
                 self.sync(ast3.Constant(value="_output_")),
+                self.sync(ast3.Constant(value='Person' if self.cout==1 else 'University.Department')),
             ]
             if node.params and node.params.items:
                 inputs = [
@@ -2891,8 +2891,10 @@ class PyastGenPass(Pass):
                     for kw_pair in node.params.items
                     if isinstance(kw_pair, ast.KWPair)
                 ]
+                self.cout+=1
             else:
                 inputs = []
+
             node.gen.py_ast = [
                 self.by_llm_call(
                     model,
