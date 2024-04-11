@@ -437,7 +437,7 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def get_semstr_type(
-        file_loc: str, scope: str, attr: str, return_semstr: bool = True
+        file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
         _scope = SemScope.get_scope_from_str(scope)
@@ -471,9 +471,18 @@ class JacFeatureDefaults:
 
         attr_scope = None
         for x in attr.split("."):
-            print("x =>", x, "attr_scope==>", attr_scope)
             attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            attr_scope = SemScope(attr_sem_info.name, attr_sem_info.type, attr_scope)
+            if attr_sem_info.type not in ["class", "obj", "node", "edge"]:
+                attr_scope, attr_sem_info = mod_registry.lookup(
+                    None, attr_sem_info.type
+                )
+                attr_scope = SemScope(
+                    attr_sem_info.name, attr_sem_info.type, attr_scope
+                )
+            else:
+                attr_scope = SemScope(
+                    attr_sem_info.name, attr_sem_info.type, attr_scope
+                )
         return str(attr_scope)
 
     @staticmethod
@@ -503,7 +512,7 @@ class JacFeatureDefaults:
                 attr_scope = SemScope(
                     attr_sem_info.name, attr_sem_info.type, attr_scope
                 )
-        return attr_sem_info.semstr, attr_sem_info.type
+        return attr_sem_info.semstr, attr_scope.as_type_str
 
     @staticmethod
     @hookimpl
@@ -514,7 +523,7 @@ class JacFeatureDefaults:
         scope: str,
         incl_info: list[tuple[str, str]],
         excl_info: list[tuple[str, str]],
-        inputs: tuple,
+        inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
     ) -> Any:  # noqa: ANN401
@@ -529,6 +538,7 @@ class JacFeatureDefaults:
         ) as f:
             mod_registry = pickle.load(f)
 
+        outputs = outputs[0] if isinstance(outputs, list) else outputs
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None
 
@@ -549,12 +559,7 @@ class JacFeatureDefaults:
         inputs_information = "\n".join(inputs_information_list)
 
         output_information = f"{outputs[0]} ({outputs[1]})"
-        if isinstance(outputs[1], list):
-            type_collector.extend(
-                extract_non_primary_type("".join(list(outputs[1][0])))
-            )
-        else:
-            type_collector.extend(extract_non_primary_type(outputs[1]))
+        type_collector.extend(extract_non_primary_type(outputs[1]))
 
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
@@ -569,7 +574,6 @@ class JacFeatureDefaults:
             action,
             reason,
         )
-        print(meaning_in, "\n\n\n\n")
         meaning_out = model.__infer__(meaning_in, **model_params)
         reasoning, output = get_reasoning_output(meaning_out)
         return output

@@ -57,6 +57,20 @@ class SemScope:
             parent = SemScope(scope_name, scope_type, parent)
         return parent
 
+    @property
+    def as_type_str(self) -> Optional[str]:
+        """Return the type string representation of the SemsScope."""
+        if self.type not in ["class", "node", "obj"]:
+            return
+        type_str = self.scope
+        node = self.parent
+        while node.parent:
+            if node.type not in ["class", "node", "obj"]:
+                return
+            type_str = f"{node.scope}.{type_str}"
+            node = node.parent
+        return type_str
+
 
 class SemRegistry:
     """Registry class."""

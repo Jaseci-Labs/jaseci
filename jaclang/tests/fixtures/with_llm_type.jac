@@ -41,8 +41,8 @@ with entry {
         name="Computer Science"
         -> by llm2(incl_info=(umich))
     );
-    # umich.departments.append(cs_department);
+    print(cs_department.head); # Person(name='Jason Mars', dob='1994-01-01', age=30)
 
-    # umich.departments.append(umich.Department(name="Electrical Engineering" -> by llm2(incl_info=())));
-    # print(cs_department.head); # Person(name='Jason Mars', dob='1994-01-01', age=30)
+    umich.departments.append(umich.Department(name="Computer Science" -> by llm2(incl_info=())));
+    print(umich.departments[0].head); # Person(name='Jason Mars', dob='1994-01-01', age=30)
 }

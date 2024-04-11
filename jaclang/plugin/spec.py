@@ -211,7 +211,7 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def get_semstr_type(
-        file_loc: str, scope: str, attr: str, return_semstr: bool = True
+        file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type stmt feature."""
         raise NotImplementedError

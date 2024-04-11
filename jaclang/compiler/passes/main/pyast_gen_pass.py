@@ -1185,11 +1185,15 @@ class PyastGenPass(Pass):
                     self.sync(
                         ast3.keyword(
                             arg="outputs",
-                            value=self.sync(
-                                ast3.Tuple(
-                                    elts=outputs,
-                                    ctx=ast3.Load(),
+                            value=(
+                                self.sync(
+                                    ast3.Tuple(
+                                        elts=outputs,
+                                        ctx=ast3.Load(),
+                                    )
                                 )
+                                if not isinstance(outputs, ast3.Call)
+                                else outputs
                             ),
                         )
                     ),
@@ -2787,35 +2791,32 @@ class PyastGenPass(Pass):
                     keywords=[],
                 )
             )
-            outputs = [
-                self.sync(ast3.Constant(value=None)),
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(
-                                        id=Con.JAC_FEATURE.value,
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                attr="get_sem_type",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[
-                            self.sync(
+            outputs = self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
                                 ast3.Name(
-                                    id="__file__",
+                                    id=Con.JAC_FEATURE.value,
                                     ctx=ast3.Load(),
                                 )
                             ),
-                            self.sync(ast3.Constant(value=str(_output_))),
-                        ],
-                        keywords=[],
-                    )
-                ),
-            ]
+                            attr="get_sem_type",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=[
+                        self.sync(
+                            ast3.Name(
+                                id="__file__",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        self.sync(ast3.Constant(value=str(_output_))),
+                    ],
+                    keywords=[],
+                )
+            )
             if node.params and node.params.items:
                 inputs = [
                     self.sync(
@@ -2917,16 +2918,24 @@ class PyastGenPass(Pass):
                 inputs = []
 
             node.gen.py_ast = [
-                self.by_llm_call(
-                    model,
-                    model_params,
-                    scope,
-                    inputs,
-                    outputs,
-                    action,
-                    include_info,
-                    exclude_info,
-                ),
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(ast3.Name(id="eval", ctx=ast3.Load())),
+                        args=[
+                            self.by_llm_call(
+                                model,
+                                model_params,
+                                scope,
+                                inputs,
+                                outputs,
+                                action,
+                                include_info,
+                                exclude_info,
+                            ),
+                        ],
+                        keywords=[],
+                    )
+                )
             ]
         else:
             node.gen.py_ast = [
