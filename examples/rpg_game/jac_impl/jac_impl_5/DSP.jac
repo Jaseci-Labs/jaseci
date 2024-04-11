@@ -7,8 +7,8 @@ import:py pygame;
 import:py sys;
 import:py random;
 import:py time;
-import:py openai;
-import:py from openai, ChatCompletion;
+# import:py openai;
+# import:py from openai, ChatCompletion;
 import:py re;
 
 # Importing Jac codebase
@@ -18,6 +18,56 @@ include:jac map;
 include:jac main;
 # include:jac _secrets;
 
+obj model {
+    can __infer__(meaning_in: str, **kwargs: dict) {
+        print(meaning_in);
+        return "[Output] Something";
+    }
+}
+glob llm = model();
+# model llm:OpenAIModel {
+#     model_name="gpt-4";
+# }
+
+obj llm:model {
+    model_name="claude-3-sonnet-20240229";
+}
+
+glob context:str =  "# These rules must be strictly adhered to while creating a maps."
+                    "- Must have only one Player (P) in map at the middle of the map ."
+                    "- Two consecutive maps should not look alike."
+                    "- Hardness should be slightly increased between consecutive maps."
+                    "- All enemies should be accessible to the player (should not be enclosed with blocks)."
+                    "- Blocks can be added inside the map to increase map complexity."
+                    "- Hardnes of a level can be determined by the time taken to complete a level and number of retry attempts.";
+
+obj 'Consists of level configuration data of a certain level'
+Map {
+    has Level_no:'Level number':int = 1;
+    has time_to_win_level:'time taken to complete the level in seconds':float = 60.0;
+    has nos_retry:'How many retry attempts before completing the level':int = 0;
+    has map:
+    'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space. All outer characters are B. Only one single player character (P) can be in the map.'
+    :list[str] = [
+                                'BBBBBBBBBBBBBBBBBBBB',
+                                'B...E..............B',
+                                'B.......B..........B',
+                                'B....BBBB..........B',
+                                'B..................B',
+                                'B..................B',
+                                'B.........P........B',
+                                'B..................B',
+                                'B.............E....B',
+                                'B..................B',
+                                'B..................B',
+                                'B.........B........B',
+                                'B.........B........B',
+                                'B.........B........B',
+                                'BBBBBBBBBBBBBBBBBBBB'
+
+                            ];
+}
+
 '''The walker that initiates the game and runs an instance of the game'''
 walker game{
 
@@ -25,12 +75,18 @@ walker game{
         current_level:int = 1,
         fwd_dir:bool = True,
         map_directory:
-        'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game'
-        :dict={};
+        'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game.'
+        :dict={},
+        context:str = "Must have one Player (P) in map."
+                    "Two consecutive maps should not look alike."
+                    "Hardness should be slightly increased."
+                    "All enemies should be accessible to the player (should not be enclosed with blocks)."
+                    "The previous level maps are included in [Infomation]. Difficulty can be assesed by the time taken to finish the map."
+                    "Blocks can be added inside the map to increase map complexity.";
 
     can start_game with `root entry;
-    can 'Return the map of the next level which is different and incrementally challenging than previous levels.'
-    generate_level;
+    can 'Return the map of the next level which is different and incrementally challenging than previous levels. Block (B) layout in two consecutive maps should be different.'
+    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.8, incl_info=(context));
 }
 
 edge play{
@@ -62,7 +118,6 @@ node level{
 
 '''Run the game'''
 with entry {
-    llm = model();
     game() spawn root;
 }
 
@@ -74,16 +129,9 @@ with entry {
     visit [-->];
 }
 
-:walker:game:can:generate_level() {
+# :walker:game:can:generate_level() {
 
-    if self.map_directory {
-        new_map = llm.generate(self.map_directory);
-        # print(new_map);
-        self.map_directory[str(self.current_level)] = Map(map=new_map);
-    } else {
-        self.map_directory[str(self.current_level)] = Map();
-    }
-}
+# }
 
 :node:level:can:run_game {
     # print("Walker Entry ->", self.level_id);
@@ -93,7 +141,13 @@ with entry {
             here.current_level = self.game_level;
         }
         if str(self.game_level) not in here.map_directory.keys(){
-            here.generate_level();
+            if here.map_directory {
+                new_map = here.generate_level(here.map_directory);
+                print(new_map);
+                here.map_directory[str(here.current_level)] = Map(map=new_map, Level_no=here.current_level);
+            } else {
+                here.map_directory[str(here.current_level)] = Map();
+            }
         }
 
         here.g.GameMap.map = here.map_directory[str(self.game_level)].map;
@@ -115,6 +169,7 @@ with entry {
             visit [-:play:level_id==new_ID:->];
         } else {
             here.g.game_over();
+            here.map_directory[str(self.game_level)].nos_retry += 1;
             self.played = True;
             here.g.won = False;
             here.fwd_dir = False;
