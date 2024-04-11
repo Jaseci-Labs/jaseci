@@ -223,6 +223,11 @@ class JacFeatureSpec:
         raise NotImplementedError
 
     @staticmethod
+    def get_sem_type(file_loc: str, attr: str) -> tuple[str, str]:
+        """Jac's get_semstr_type feature."""
+        raise NotImplementedError
+
+    @staticmethod
     @hookspec(firstresult=True)
     def with_llm(
         file_loc: str,

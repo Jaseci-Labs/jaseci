@@ -18,7 +18,9 @@ T = TypeVar("T", bound=ast3.AST)
 
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
-    cout=1
+
+    cout = 1
+
     @staticmethod
     def node_compilable_test(node: ast3.AST) -> None:
         """Convert any AST node to a compilable module node."""
@@ -989,11 +991,6 @@ class PyastGenPass(Pass):
                                 )
                             )
                         )
-                    ),
-                    (
-                        node.signature.return_type.gen.py_ast[0]
-                        if node.signature.return_type
-                        else None
                     ),
                     (self.sync(ast3.Constant(value=(extracted_type)))),
                 ]
@@ -2791,9 +2788,33 @@ class PyastGenPass(Pass):
                 )
             )
             outputs = [
-                self.sync(ast3.Constant(value="semstr")),
-                self.sync(ast3.Constant(value="_output_")),
-                self.sync(ast3.Constant(value='Person' if self.cout==1 else 'University.Department')),
+                self.sync(ast3.Constant(value=None)),
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(
+                                        id=Con.JAC_FEATURE.value,
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                                attr="get_sem_type",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[
+                            self.sync(
+                                ast3.Name(
+                                    id="__file__",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            self.sync(ast3.Constant(value=str(_output_))),
+                        ],
+                        keywords=[],
+                    )
+                ),
             ]
             if node.params and node.params.items:
                 inputs = [
@@ -2891,7 +2912,7 @@ class PyastGenPass(Pass):
                     for kw_pair in node.params.items
                     if isinstance(kw_pair, ast.KWPair)
                 ]
-                self.cout+=1
+                self.cout += 1
             else:
                 inputs = []
 

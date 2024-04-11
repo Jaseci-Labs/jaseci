@@ -471,9 +471,39 @@ class JacFeatureDefaults:
 
         attr_scope = None
         for x in attr.split("."):
+            print("x =>", x, "attr_scope==>", attr_scope)
             attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
             attr_scope = SemScope(attr_sem_info.name, attr_sem_info.type, attr_scope)
         return str(attr_scope)
+
+    @staticmethod
+    @hookimpl
+    def get_sem_type(file_loc: str, attr: str) -> tuple[str, str]:
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
+            ),
+            "rb",
+        ) as f:
+            mod_registry: SemRegistry = pickle.load(f)
+
+        attr_scope = None
+        for x in attr.split("."):
+            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
+            if attr_sem_info.type not in ["class", "obj", "node", "edge"]:
+                attr_scope, attr_sem_info = mod_registry.lookup(
+                    None, attr_sem_info.type
+                )
+                attr_scope = SemScope(
+                    attr_sem_info.name, attr_sem_info.type, attr_scope
+                )
+            else:
+                attr_scope = SemScope(
+                    attr_sem_info.name, attr_sem_info.type, attr_scope
+                )
+        return attr_sem_info.semstr, attr_sem_info.type
 
     @staticmethod
     @hookimpl
@@ -518,8 +548,13 @@ class JacFeatureDefaults:
             )
         inputs_information = "\n".join(inputs_information_list)
 
-        output_information = f"{outputs[0]} ({outputs[2]})"
-        type_collector.extend(extract_non_primary_type(outputs[2]))
+        output_information = f"{outputs[0]} ({outputs[1]})"
+        if isinstance(outputs[1], list):
+            type_collector.extend(
+                extract_non_primary_type("".join(list(outputs[1][0])))
+            )
+        else:
+            type_collector.extend(extract_non_primary_type(outputs[1]))
 
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
@@ -534,6 +569,7 @@ class JacFeatureDefaults:
             action,
             reason,
         )
+        print(meaning_in, "\n\n\n\n")
         meaning_out = model.__infer__(meaning_in, **model_params)
         reasoning, output = get_reasoning_output(meaning_out)
         return output
