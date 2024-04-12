@@ -1,4 +1,5 @@
 from re import search
+from uuid import uuid4, UUID
 from playwright.sync_api import sync_playwright, Page
 
 from jaseci.jsorc.jsorc import JsOrc
@@ -19,8 +20,16 @@ def custom_notify_client(target: str, data: dict):
             socket.notify("client", target, data)
 
 
-def notify_client(target: str, pages: list, urls: dict, processing: dict, content=None):
+def notify_client(
+    target: str,
+    trigger_id: UUID,
+    pages: list,
+    urls: dict,
+    processing: dict,
+    content=None,
+):
     data = {
+        "trigger_id": trigger_id,
         "processing": processing,
         "pending": [p["goto"]["url"] for p in pages],
         "scanned": urls["scanned"],
@@ -38,6 +47,8 @@ def scrape(
     content = ""
     urls = {"scanned": [], "scanned_urls": set(), "scraped": [], "crawled": set()}
 
+    trigger_id = uuid4()
+
     with sync_playwright() as spw:
         browser = spw.chromium.launch()
         page = browser.new_page()
@@ -50,7 +61,9 @@ def scrape(
                 url = pg_goto.get("url") or "N/A"
                 page.source = url
 
-                notify_client(target, pages, urls, {"url": url, "status": "started"})
+                notify_client(
+                    target, trigger_id, pages, urls, {"url": url, "status": "started"}
+                )
 
                 goto(page, pg_goto, urls)
 
@@ -58,17 +71,21 @@ def scrape(
 
                 crawler(page, pg.get("crawler") or {}, urls, pages, pre_configs)
 
-                notify_client(target, pages, urls, {"url": url, "status": "completed"})
+                notify_client(
+                    target, trigger_id, pages, urls, {"url": url, "status": "completed"}
+                )
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
-                notify_client(target, pages, urls, {"url": url, "status": "failed"})
+                notify_client(
+                    target, trigger_id, pages, urls, {"url": url, "status": "failed"}
+                )
 
         browser.close()
 
     content = " ".join(content.split())
 
-    notify_client(target, pages, urls, None, content)
+    notify_client(target, trigger_id, pages, urls, None, content)
 
     if detailed:
         return {

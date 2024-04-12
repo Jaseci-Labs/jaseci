@@ -1,7 +1,7 @@
 import asyncio
 import websocket
 
-from uuid import uuid4
+from uuid import uuid4, UUID
 from os import getenv
 from re import search
 from orjson import dumps
@@ -43,9 +43,16 @@ class Client:
                 pass
 
     def notify_client(
-        self, target: str, pages: list, urls: dict, processing: dict, content=None
+        self,
+        target: str,
+        trigger_id: UUID,
+        pages: list,
+        urls: dict,
+        processing: dict,
+        content=None,
     ):
         data = {
+            "trigger_id": trigger_id,
             "processing": processing,
             "pending": [p["goto"]["url"] for p in pages],
             "scanned": urls["scanned"],
@@ -90,6 +97,7 @@ async def scrape(
     urls = {"scanned": [], "scanned_urls": set(), "scraped": [], "crawled": set()}
 
     ws = Client()
+    trigger_id = uuid4()
 
     async with async_playwright() as aspw:
         browser = await aspw.chromium.launch()
@@ -103,7 +111,9 @@ async def scrape(
                 url = pg_goto.get("url") or "N/A"
                 page.source = url
 
-                ws.notify_client(target, pages, urls, {"url": url, "status": "started"})
+                ws.notify_client(
+                    target, trigger_id, pages, urls, {"url": url, "status": "started"}
+                )
 
                 await goto(page, pg_goto, urls)
 
@@ -112,18 +122,20 @@ async def scrape(
                 await crawler(page, pg.get("crawler") or {}, urls, pages, pre_configs)
 
                 ws.notify_client(
-                    target, pages, urls, {"url": url, "status": "completed"}
+                    target, trigger_id, pages, urls, {"url": url, "status": "completed"}
                 )
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
-                ws.notify_client(target, pages, urls, {"url": url, "status": "failed"})
+                ws.notify_client(
+                    target, trigger_id, pages, urls, {"url": url, "status": "failed"}
+                )
 
         await browser.close()
 
     content = " ".join(content.split())
 
-    ws.notify_client(target, pages, urls, None, content)
+    ws.notify_client(target, trigger_id, pages, urls, None, content)
     ws.close()
 
     if detailed:
