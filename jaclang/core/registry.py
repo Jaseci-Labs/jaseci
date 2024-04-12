@@ -61,12 +61,12 @@ class SemScope:
     def as_type_str(self) -> Optional[str]:
         """Return the type string representation of the SemsScope."""
         if self.type not in ["class", "node", "obj"]:
-            return
+            return None
         type_str = self.scope
         node = self.parent
-        while node.parent:
+        while node and node.parent:
             if node.type not in ["class", "node", "obj"]:
-                return
+                return type_str
             type_str = f"{node.scope}.{type_str}"
             node = node.parent
         return type_str
@@ -126,7 +126,8 @@ class SemRegistry:
         """Get the module scope."""
         for i in self.registry.keys():
             if not i.parent:
-                return i
+                break
+        return i
 
     def pp(self) -> None:
         """Pretty print the registry."""

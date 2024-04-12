@@ -1070,7 +1070,7 @@ class PyastGenPass(Pass):
         model_params: dict[str, ast.Expr],
         scope: ast3.AST,
         inputs: Sequence[Optional[ast3.AST]],
-        outputs: Sequence[Optional[ast3.AST]],
+        outputs: Sequence[Optional[ast3.AST]] | ast3.Call,
         action: Optional[ast3.AST],
         include_info: list[tuple[str, ast3.AST]],
         exclude_info: list[tuple[str, ast3.AST]],

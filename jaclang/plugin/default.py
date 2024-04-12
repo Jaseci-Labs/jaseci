@@ -472,22 +472,33 @@ class JacFeatureDefaults:
         attr_scope = None
         for x in attr.split("."):
             attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if attr_sem_info.type not in ["class", "obj", "node", "edge"]:
+            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
+                "class",
+                "obj",
+                "node",
+                "edge",
+            ]:
                 attr_scope, attr_sem_info = mod_registry.lookup(
                     None, attr_sem_info.type
                 )
-                attr_scope = SemScope(
-                    attr_sem_info.name, attr_sem_info.type, attr_scope
-                )
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
             else:
-                attr_scope = SemScope(
-                    attr_sem_info.name, attr_sem_info.type, attr_scope
-                )
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
         return str(attr_scope)
 
     @staticmethod
     @hookimpl
-    def get_sem_type(file_loc: str, attr: str) -> tuple[str, str]:
+    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
         with open(
             os.path.join(
                 os.path.dirname(file_loc),
@@ -501,18 +512,31 @@ class JacFeatureDefaults:
         attr_scope = None
         for x in attr.split("."):
             attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if attr_sem_info.type not in ["class", "obj", "node", "edge"]:
+            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
+                "class",
+                "obj",
+                "node",
+                "edge",
+            ]:
                 attr_scope, attr_sem_info = mod_registry.lookup(
                     None, attr_sem_info.type
                 )
-                attr_scope = SemScope(
-                    attr_sem_info.name, attr_sem_info.type, attr_scope
-                )
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
             else:
-                attr_scope = SemScope(
-                    attr_sem_info.name, attr_sem_info.type, attr_scope
-                )
-        return attr_sem_info.semstr, attr_scope.as_type_str
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
+        if isinstance(attr_sem_info, SemInfo) and isinstance(attr_scope, SemScope):
+            return attr_sem_info.semstr, attr_scope.as_type_str
+        return "", ""  #
 
     @staticmethod
     @hookimpl
