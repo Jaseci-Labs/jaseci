@@ -1,5 +1,6 @@
 """Command line interface tool for the Jac language."""
 
+import importlib
 import marshal
 import os
 import pickle
@@ -13,6 +14,7 @@ from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.helpers import debugger as db
@@ -228,6 +230,62 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
                 print("Done debugging.")
         else:
             print(f"Error while generating bytecode in {filename}.")
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def graph(
+    filename: str,
+    initial: str = "",
+    depth: int = -1,
+    traverse: bool = False,
+    connection: list[str] = [],  # noqa: B006
+    bfs: bool = False,
+    edge_limit: int = 512,
+    node_limit: int = 512,
+    saveto: str = "",
+) -> None:
+    """Generate and Visualize a graph based on the specified .jac file contents and parameters.
+
+    :param filename: The name of the file to generate the graph from.
+    :param initial: The initial node for graph traversal (default is root node).
+    :param depth: The maximum depth for graph traversal (-1 for unlimited depth, default is -1).
+    :param traverse: Flag to indicate whether to traverse the graph (default is False).
+    :param connection: List of node connections(edge type) to include in the graph (default is an empty list).
+    :param bfs: Flag to indicate whether to use breadth-first search for traversal (default is False).
+    :param edge_limit: The maximum number of edges allowed in the graph.
+    :param node_limit: The maximum number of nodes allowed in the graph.
+    :param saveto: Path to save the generated graph.
+    """
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
+    if filename.endswith(".jac"):
+        jac_import(
+            target=mod,
+            base_path=base,
+        )
+        module = importlib.import_module(mod)
+        globals().update(vars(module))
+        try:
+            node = globals().get(initial, eval(initial)) if initial else None
+            graph = dotgen(
+                node=node,
+                depth=depth,
+                traverse=traverse,
+                edge_type=connection,
+                bfs=bfs,
+                edge_limit=edge_limit,
+                node_limit=node_limit,
+            )
+        except Exception as e:
+            print(f"Error while generating graph: {e}")
+            return
+        file_name = saveto if saveto else f"{mod}.dot"
+        with open(file_name, "w") as file:
+            file.write(graph)
+        print(f">>> Graph content saved to {os.path.join(os.getcwd(), file_name)}")
     else:
         print("Not a .jac file.")
 
