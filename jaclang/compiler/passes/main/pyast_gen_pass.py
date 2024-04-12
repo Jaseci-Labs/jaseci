@@ -2765,6 +2765,12 @@ class PyastGenPass(Pass):
                 )
             )
             _output_ = "".join(extract_type(node.target))
+            include_info.append(
+                (
+                    _output_.split(".")[0],
+                    self.sync(ast3.Name(id=_output_.split(".")[0], ctx=ast3.Load())),
+                )
+            )
             scope = self.sync(
                 ast3.Call(
                     func=self.sync(
