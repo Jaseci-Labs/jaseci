@@ -15,10 +15,10 @@ Person {
         age: 'Age of the Person': int;
 }
 
-# with entry {
-#     einstein: 'Einstein Object': Person = Person(name="Albert Einstein" -> by llm1());
-#     print(einstein.dob); #14/03/1879
-# }
+with entry {
+    einstein: 'Einstein Object': Person = Person(name="Albert Einstein" -> by llm1());
+    print(einstein.dob); #14/03/1879
+}
 
 glob llm2 = model(output_str="University.Department(name='Computer Science', head=Person(name='Jason Mars', dob='1994-01-01', age=30))");
 
