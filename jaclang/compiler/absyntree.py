@@ -343,6 +343,7 @@ class SubNodeList(AstNode, Generic[T]):
         items: list[T],
         delim: Optional[Tok],
         kid: Sequence[AstNode],
+        is_global: bool = False,
         left_enc: Optional[Token] = None,
         right_enc: Optional[Token] = None,
     ) -> None:
@@ -351,6 +352,7 @@ class SubNodeList(AstNode, Generic[T]):
         self.delim = delim
         self.left_enc = left_enc
         self.right_enc = right_enc
+        self.is_global = is_global
         AstNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -436,6 +438,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
     ) -> None:
         """Initialize global var node."""
         self.assignments = assignments
+        self.assignments.is_global = True
         self.is_frozen = is_frozen
         AstNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
@@ -2278,7 +2281,10 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             if not self.aug_op:
                 new_kid.append(self.gen_token(Tok.EQ))
             new_kid.append(self.value)
-        if (not self.is_enum_stmt) and not self.has_parent_of_type(IterForStmt):
+        if isinstance(self.parent, SubNodeList) and self.parent.is_global:
+            if self.parent.kid.index(self) == len(self.parent.kid) - 1:
+                new_kid.append(self.gen_token(Tok.SEMI))
+        elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
             new_kid.append(self.gen_token(Tok.SEMI))
         AstNode.__init__(self, kid=new_kid)
         return res
@@ -2527,6 +2533,11 @@ class FString(AtomExpr):
             res = self.parts.normalize(deep) if self.parts else res
         new_kid: list[AstNode] = []
         if self.parts:
+            for i in self.parts.items:
+                if isinstance(i, String):
+                    i.value = (
+                        "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
+                    )
             new_kid.append(self.parts)
         AstNode.__init__(self, kid=new_kid)
         return res
@@ -3158,10 +3169,9 @@ class EdgeRefTrailer(Expr):
         new_kid: list[AstNode] = []
         if self.edges_only:
             new_kid.append(self.gen_token(Tok.EDGE_OP))
-        self.gen_token(Tok.LSQUARE)
-        for expr in self.chain:
-            new_kid.append(expr)
-        self.gen_token(Tok.RSQUARE)
+        new_kid.append(self.gen_token(Tok.LSQUARE))
+        new_kid.extend(self.chain)
+        new_kid.append(self.gen_token(Tok.RSQUARE))
         AstNode.__init__(self, kid=new_kid)
         return res
 
@@ -3197,22 +3207,16 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
             if not self.filter_cond:
                 new_kid.append(self.gen_token(Tok.ARROW_L))
             else:
-                new_kid.append(self.gen_token(Tok.LSQUARE))
                 new_kid.append(self.gen_token(Tok.ARROW_L_P1))
                 new_kid.append(self.filter_cond)
                 new_kid.append(self.gen_token(Tok.ARROW_L_P2))
-                new_kid.append(self.gen_token(Tok.RSQUARE))
         elif self.edge_dir == EdgeDir.OUT:
             if not self.filter_cond:
-                new_kid.append(self.gen_token(Tok.LSQUARE))
                 new_kid.append(self.gen_token(Tok.ARROW_R))
-                new_kid.append(self.gen_token(Tok.RSQUARE))
             else:
-                new_kid.append(self.gen_token(Tok.LSQUARE))
                 new_kid.append(self.gen_token(Tok.ARROW_R_P1))
                 new_kid.append(self.filter_cond)
                 new_kid.append(self.gen_token(Tok.ARROW_R_P2))
-                new_kid.append(self.gen_token(Tok.RSQUARE))
         else:
             if not self.filter_cond:
                 new_kid.append(self.gen_token(Tok.ARROW_BI))
@@ -3341,8 +3345,9 @@ class FilterCompr(AtomExpr):
             new_kid.append(self.gen_token(Tok.NULL_OK))
         if self.f_type:
             new_kid.append(self.f_type)
-            new_kid.append(self.gen_token(Tok.COLON))
         if self.compares:
+            if self.f_type:
+                new_kid.append(self.gen_token(Tok.COLON))
             new_kid.append(self.compares)
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.RPAREN))
