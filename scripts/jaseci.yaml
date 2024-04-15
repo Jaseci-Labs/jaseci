@@ -155,7 +155,7 @@ spec:
     spec:
       containers:
         - name: jaseci-db
-          image: postgres:alpine
+          image: postgres:15-alpine
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_USER
