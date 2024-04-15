@@ -28,6 +28,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
             x = code_gen_pure.ir.unparse()
             # print(x)
             # print(f"Testing {code_gen_pure.ir.name}")
+            # print(code_gen_pure.ir.pp())
             code_gen_jac = jac_str_to_pass(
                 jac_str=x,
                 file_path=filename,
