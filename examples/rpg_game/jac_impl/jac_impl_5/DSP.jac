@@ -5,33 +5,38 @@
 
 import:py pygame;
 import:py sys;
+import:py os;
 import:py random;
 import:py time;
-# import:py openai;
-# import:py from openai, ChatCompletion;
-import:py re;
+import:py from openai, OpenAI;
 
 # Importing Jac codebase
 include:jac sprites;
 include:jac config;
 include:jac map;
 include:jac main;
-# include:jac _secrets;
 
 obj model {
+    has model_name:str = "gpt-4";
+    has api_key:str = os.getenv('OPENAI_API_KEY');
+    has model:OpenAI = None;
+
+    can postinit {
+        self.model = OpenAI(api_key=self.api_key);
+    }
+
     can __infer__(meaning_in: str, **kwargs: dict) {
-        print(meaning_in);
-        return "[Output] Something";
+        
+        x = self.model.chat.completions.create(
+            model=self.model_name,
+            temperature=0.8,
+            max_tokens=1024,
+            messages=[{"role": "user", "content": meaning_in}]
+        ).choices[0];
+        return x.message.content;
     }
 }
 glob llm = model();
-# model llm:OpenAIModel {
-#     model_name="gpt-4";
-# }
-
-obj llm:model {
-    model_name="claude-3-sonnet-20240229";
-}
 
 glob context:str =  "# These rules must be strictly adhered to while creating a maps."
                     "- Must have only one Player (P) in map at the middle of the map ."
@@ -143,7 +148,7 @@ with entry {
         if str(self.game_level) not in here.map_directory.keys(){
             if here.map_directory {
                 new_map = here.generate_level(here.map_directory);
-                print(new_map);
+                # print(new_map);
                 here.map_directory[str(here.current_level)] = Map(map=new_map, Level_no=here.current_level);
             } else {
                 here.map_directory[str(here.current_level)] = Map();
@@ -159,7 +164,7 @@ with entry {
         if here.g.won == True{
             self.level_time = end_time - start_time;
             here.map_directory[str(self.game_level)].time_to_win_level = self.level_time;
-            print('Time:', self.level_time);
+            # print('Time:', self.level_time);
             here.g.game_won();
             self.played = True;
             here.g.won = False;
