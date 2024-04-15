@@ -26,7 +26,7 @@ obj model {
     }
 
     can __infer__(meaning_in: str, **kwargs: dict) {
-        
+
         x = self.model.chat.completions.create(
             model=self.model_name,
             temperature=0.8,
@@ -125,7 +125,7 @@ node level{
 
 '''Run the game'''
 with entry {
-    game() spawn root;
+    root spawn game();
 }
 
 #=Walker=&=Node=Abilities=======================================
