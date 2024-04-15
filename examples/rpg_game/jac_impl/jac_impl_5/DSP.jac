@@ -87,11 +87,13 @@ walker game{
                     "Hardness should be slightly increased."
                     "All enemies should be accessible to the player (should not be enclosed with blocks)."
                     "The previous level maps are included in [Infomation]. Difficulty can be assesed by the time taken to finish the map."
-                    "Blocks can be added inside the map to increase map complexity.";
+                    "Blocks can be added inside the map to increase map complexity."
+                    "Block (B) layout in two consecutive maps should be different.";
 
     can start_game with `root entry;
-    can 'Return the map of the next level which is different and incrementally challenging than previous levels. Block (B) layout in two consecutive maps should be different.'
-    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.8, incl_info=(context));
+
+    can 'Return the map of the next level which is different and incrementally challenging than previous levels. '
+    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.8, context=(context));
 }
 
 edge play{
