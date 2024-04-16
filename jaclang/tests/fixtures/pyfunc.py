@@ -73,15 +73,23 @@ while x < 10:
     x += 1
     print("hello")
 
-# try:
-#     result = 10 / 0
-# except ZeroDivisionError:
-#     print("Cannot divide by zero!")
-# else:
-#     print(result)
-# finally:
-#     print("This will always execute.")
+try:
+    result = 10 / 0
+except ZeroDivisionError:
+    print("Cannot divide by zero!")
+else:
+    print(result)
+finally:
+    print("This will always execute.")
 
+filename = "semstr.jac"
+
+try:
+    with open(filename, "r") as file:
+        content = file.read()
+        print(content)
+except :
+    print(f"File not found")
 
 def foox():
     return 9 + 4
@@ -126,23 +134,23 @@ greet2(name="Alice", age=30)
 
 name = "Alice"
 age = 30
-# print("Name: {}, Age: {}".format(name, age))
+print("Name: {}, Age: {}".format(name, age))
 
-# path = r'C:\Users\Alice\Documents'
-# hello_world_bytes = b"\x48\x65\x6C\x6C\x6F\x20\x57\x6F\x72\x6C\x64"
-# print(hello_world_bytes)
-# print(type(hello_world_bytes))
+path = r'C:\Users\Alice\Documents'
+hello_world_bytes = b"\x48\x65\x6C\x6C\x6F\x20\x57\x6F\x72\x6C\x64"
+print(hello_world_bytes)
+print(type(hello_world_bytes))
 
-# ret_str = r"Hello\\nWorld"
-# print(ret_str)
+ret_str = r"Hello\\nWorld"
+print(ret_str)
 
-# br = br"Hello\\nWorld"
-# print(br)
-# print(type(br))
+br = br"Hello\\nWorld"
+print(br)
+print(type(br))
 
-# rb = rb"Hello\\nWorld"
-# print(rb)
-# print(type(rb))
+rb = rb"Hello\\nWorld"
+print(rb)
+print(type(rb))
 
 x = True
 y = False
@@ -159,15 +167,6 @@ elif uu==10:
     print("uu is 10")
 else:
     print("uu is not 9 or 10")
-filename = "semstr.jac"
-
-# try:
-#     with open(filename, "r") as file:
-#         content = file.read()
-#         print(content)
-# except FileNotFoundError:
-#     print(f"File {filename} not found")
-
 
 def my_functionx():
     '''My function'''
@@ -304,10 +303,10 @@ def foo(value: int):
     assert value > 0, "Value must be positive"
 
 
-# try:
-#     foo(-5)
-# except AssertionError as e:
-#     print("Asserted:", e)
+try:
+    foo(-5)
+except AssertionError as e:
+    print("Asserted:", e)
 
 a = b = 16
 c = 18
@@ -397,11 +396,11 @@ def add(x: int, y: int) -> int:
 
 
 print(add(10, 89))
-# try:
-#     with open(__file__.replace(".py", ".jac"), "r") as file:
-#         print(file.read())
-# except:
-#     print("File not found")
+try:
+    with open(__file__.replace(".py", ".jac"), "r") as file:
+        print(file.read())
+except:
+    print("File not found")
 
 for i in range(9):
     if i > 2:
@@ -429,20 +428,20 @@ else:
     x = 2
 
 print(x)
-# x = "a"
-# y = 25
-# print(f"Hello {x} {y} {{This is an escaped curly brace}}")
-# person = {"name": "Jane", "age": 25}
-# print(f"Hello, {person['name']}! You're {person['age']} years old.")
-# print("This is the first line.\n This is the second line.")
-# print("This will not print.\r This will be printed")
-# print("This is \t tabbed.")
-# print("Line 1\x0cLine 2")
-# words = ["Hello", "World!", "I", "am", "a", "Jactastic!"]
-# print(
-#     f'''{"""
-# """.join(words)}'''
-# )
+x = "a"
+y = 25
+print(f"Hello {x} {y} {{This is an escaped curly brace}}")
+person = {"name": "Jane", "age": 25}
+print(f"Hello, {person['name']}! You're {person['age']} years old.")
+print("This is the first line.\n This is the second line.")
+print("This will not print.\r This will be printed")
+print("This is \t tabbed.")
+print("Line 1\x0cLine 2")
+words = ["Hello", "World!", "I", "am", "a", "Jactastic!"]
+print(
+    f'''{"""
+""".join(words)}'''
+)
 for i in "ban":
     for j in range(1, 3):
         for k in range(1, 3, 1):
@@ -569,95 +568,95 @@ print(3 in a)
 print(True or False)
 print(False and False)
 
-# day = " sunday"
-# match day:
-#     case "monday":
-#         print("confirmed")
-#     case _:
-#         print("other")
+day = " sunday"
+match day:
+    case "monday":
+        print("confirmed")
+    case _:
+        print("other")
 
-# num = 89
-# match num:
-#     case 89:
-#         print("Correct")
-#     case 8:
-#         print("Nope")
+num = 89
+match num:
+    case 89:
+        print("Correct")
+    case 8:
+        print("Nope")
 
-# data = {"key1": 1, "key2": 2, "232": 3453}
+data = {"key1": 1, "key2": 2, "232": 3453}
 
-# match data:
-#     case {"key1": 1, "key2": 2, **rest}:
-#         print(f"Matched a mapping with key1 and key2. Rest: {rest}")
+match data:
+    case {"key1": 1, "key2": 2, **rest}:
+        print(f"Matched a mapping with key1 and key2. Rest: {rest}")
 
-# class Point:
-#     def __init__(self, x: float, y: float):
-#         self.x = x
-#         self.y = y
-
-
-# def match_example(data: any):
-#     match data:
-#         # MatchValue
-#         case 42:
-#             print("Matched the value 42.")
-
-#         # MatchSingleton
-#         case True:
-#             print("Matched the singleton True.")
-#         case None:
-#             print("Matched the singleton None.")
-
-#         # MatchSequence
-#         case [1, 2, 3]:
-#             print("Matched a specific sequence [1, 2, 3].")
-
-#         # MatchStar
-#         case [1, *rest, 3]:
-#             print(
-#                 f"Matched a sequence starting with 1 and ending with 3. Middle: {rest}"
-#             )
-
-#         # MatchMapping
-#         case {"key1": 1, "key2": 2, **rest}:
-#             print(f"Matched a mapping with key1 and key2. Rest: {rest}")
-
-#         # MatchClass
-#         case Point(x=int(a), y=0):
-#             print(f"Point with x={a} and y=0")
-
-#         # MatchAs
-#         case [1, 2, rest_val as value]:
-#             print(f"Matched a sequence and captured the last value: {value}")
-
-#         # MatchOr
-#         case [1, 2] | [3, 4]:
-#             print("Matched either the sequence [1, 2] or [3, 4].")
-
-#         case _:
-#             print("No match found.")
+class Point:
+    def __init__(self, x: float, y: float):
+        self.x = x
+        self.y = y
 
 
-# match_example(Point(x=9, y=0))
+def match_example(data: any):
+    match data:
+        # MatchValue
+        case 42:
+            print("Matched the value 42.")
 
-# data = [1, 2, 3]
-# match data:
-#     case [1, 2, 3]:
-#         print("Matched")
-#     case _:
-#         print("Not Found")
-# data = True
-# match True:
-#     # MatchSingleton
-#     case True:
-#         print("Matched the singleton True.")
-#     case None:
-#         print("Matched the singleton None.")
-# a = 8
-# match a:
-#     case 7:
-#         print("Doable")
-#     case _:
-#         print("Undoable")
+        # MatchSingleton
+        case True:
+            print("Matched the singleton True.")
+        case None:
+            print("Matched the singleton None.")
+
+        # MatchSequence
+        case [1, 2, 3]:
+            print("Matched a specific sequence [1, 2, 3].")
+
+        # MatchStar
+        case [1, *rest, 3]:
+            print(
+                f"Matched a sequence starting with 1 and ending with 3. Middle: {rest}"
+            )
+
+        # MatchMapping
+        case {"key1": 1, "key2": 2, **rest}:
+            print(f"Matched a mapping with key1 and key2. Rest: {rest}")
+
+        # MatchClass
+        case Point(x=int(a), y=0):
+            print(f"Point with x={a} and y=0")
+
+        # MatchAs
+        case [1, 2, rest_val as value]:
+            print(f"Matched a sequence and captured the last value: {value}")
+
+        # MatchOr
+        case [1, 2] | [3, 4]:
+            print("Matched either the sequence [1, 2] or [3, 4].")
+
+        case _:
+            print("No match found.")
+
+
+match_example(Point(x=9, y=0))
+
+data = [1, 2, 3]
+match data:
+    case [1, 2, 3]:
+        print("Matched")
+    case _:
+        print("Not Found")
+data = True
+match True:
+    # MatchSingleton
+    case True:
+        print("Matched the singleton True.")
+    case None:
+        print("Matched the singleton None.")
+a = 8
+match a:
+    case 7:
+        print("Doable")
+    case _:
+        print("Undoable")
 
 class Animal:
     def __init__(self, animal_type):
@@ -699,10 +698,10 @@ def foo(value: int):
         raise ValueError("Value must be non-negative")
 
 
-# try:
-#     foo(-1)
-# except ValueError as e:
-#     print("Raised:", e)
+try:
+    foo(-1)
+except ValueError as e:
+    print("Raised:", e)
 
 def foo():
     a = 42
@@ -813,11 +812,11 @@ def _aix_vrtl(vrmf):
 
 
 def _aix_bos_rte():
-    # try:
-    #     import subprocess
-    #     out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.rte"])
-    # except ImportError:
-    #     out = _read_cmd_output("/usr/bin/lslpp -Lqc bos.rte")
+    try:
+        import subprocess
+        out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.rte"])
+    except ImportError:
+        out = _read_cmd_output("/usr/bin/lslpp -Lqc bos.rte")
     out = out.decode("utf-8")
     out = out.strip().split(":")  # type: ignore
     _bd = int(out[-1]) if out[-1] != '' else 9988
@@ -843,9 +842,9 @@ def aix_buildtag():
     Return the platform_tag of the system Python was built on.
     """
     build_date = sysconfig.get_config_var("AIX_BUILDDATE")
-    # try:
-    #     build_date = int(build_date)
-    # except (ValueError, TypeError):
-        # raise ValueError(f"AIX_BUILDDATE is not defined or invalid: "
-                        #  f"{build_date!r}")
+    try:
+        build_date = int(build_date)
+    except (ValueError, TypeError):
+        raise ValueError(f"AIX_BUILDDATE is not defined or invalid: "
+                         f"{build_date!r}")
     return _aix_tag(_aix_bgt(), build_date)

@@ -278,6 +278,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if len(valid_dec)
             else None
         )
+        if (
+            base_classes
+            and isinstance(base_classes[0], ast.Name)
+            and base_classes[0].value == "Enum"
+        ):
+            if len(base_classes) > 1:
+                raise ValueError(
+                    "Python's Enum class cannot be used with multiple inheritance."
+                )
+            arch_type.name = Tok.KW_ENUM
+            arch_type.value = "enum"
+            valid_bases = None
         kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]
         return ast.Architype(
             arch_type=arch_type,
@@ -1015,6 +1027,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
         """
         type = self.convert(node.type) if node.type is not None else None
+        if not type:
+            type = ast.Name(
+                file_path=self.mod_path,
+                name=Tok.NAME,
+                value="Any",
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + 3,
+                pos_start=0,
+                pos_end=0,
+            )
         name = (
             ast.Name(
                 file_path=self.mod_path,
@@ -1361,32 +1384,37 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
-    def proc_match_as(self, node: py_ast.MatchAs) -> ast.MatchAs:
+    def proc_match_as(self, node: py_ast.MatchAs) -> ast.MatchAs | ast.MatchWild:
         """Process python node.
 
         class MatchAs(pattern):
             pattern: _Pattern | None
             name: _Identifier | None
         """
-        pattern = self.convert(node.pattern) if node.pattern is not None else None
+        pattern = self.convert(node.pattern) if node.pattern else None
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.name if node.name is not None else "_",
+            value=node.name if node.name else "_",
             line=node.lineno,
             col_start=node.col_offset,
-            col_end=node.col_offset + len(node.name if node.name is not None else "_"),
+            col_end=(
+                (node.col_offset + len(node.name))
+                if node.name
+                else (node.col_offset + 1)
+            ),
             pos_start=0,
             pos_end=0,
         )
-        if isinstance(pattern, ast.MatchPattern) or pattern is None:
+
+        if isinstance(pattern, ast.MatchPattern):
             return ast.MatchAs(
                 name=name,
                 pattern=pattern,
-                kid=[name, pattern] if pattern is not None else [name],
+                kid=[name, pattern] if pattern else [name],
             )
         else:
-            raise self.ice()
+            return ast.MatchWild(kid=[name])
 
     def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
         """Process python node.
@@ -1444,6 +1472,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 items=kv_pairs, delim=Tok.COMMA, kid=kv_pairs
             )
             kid.append(kw_patterns)
+        else:
+            kw_patterns = None
         if isinstance(cls, ast.NameSpec):
             return ast.MatchArch(
                 name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
