@@ -111,3 +111,12 @@ def put_integration_response(
 @jaseci_action(act_group=["aws_apigateway"], allow_remote=True)
 def delete_resource(restApiId: str, resourceId: str) -> EmptyResponseMetadataTypeDef:
     return get_client().delete_resource(restApiId=restApiId, resourceId=resourceId)
+
+
+@jaseci_action(act_group=["aws_apigateway"], allow_remote=True)
+def create_deployment(
+    restApiId: str, stageName: str, options: dict = {}
+) -> EmptyResponseMetadataTypeDef:
+    return get_client().create_deployment(
+        restApiId=restApiId, stageName=stageName, **options
+    )
