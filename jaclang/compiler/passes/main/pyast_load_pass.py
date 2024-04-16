@@ -44,7 +44,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice(f"Unknown node type {type(node).__name__}")
         # print(f"finshed {type(node).__name__} ---------------------")
         # print("normalizing", ret.__class__.__name__)
-        # print(ret.unparse())
+        print(ret.unparse())
+        # ret.unparse()
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
