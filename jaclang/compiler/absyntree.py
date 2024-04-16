@@ -2628,14 +2628,27 @@ class TupleVal(AtomExpr):
         res = True
         if deep:
             res = self.values.normalize(deep) if self.values else res
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.LPAREN),
-        ]
+        in_ret_type = (
+            self.parent
+            and isinstance(self.parent, IndexSlice)
+            and self.parent
+            and isinstance(self.parent.parent, AtomTrailer)
+            and self.parent.parent
+            and isinstance(self.parent.parent.parent, FuncSignature)
+        )
+        new_kid: list[AstNode] = (
+            [
+                self.gen_token(Tok.LPAREN),
+            ]
+            if not in_ret_type
+            else []
+        )
         if self.values:
             new_kid.append(self.values)
             if len(self.values.items) < 2:
                 new_kid.append(self.gen_token(Tok.COMMA))
-        new_kid.append(self.gen_token(Tok.RPAREN))
+        if not in_ret_type:
+            new_kid.append(self.gen_token(Tok.RPAREN))
         AstNode.set_kids(self, nodes=new_kid)
         return res
 
