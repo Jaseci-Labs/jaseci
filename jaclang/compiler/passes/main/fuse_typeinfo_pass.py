@@ -89,7 +89,9 @@ class FuseTypeInfoPass(Pass):
                             jac_node_str, "has multiple mypy nodes associated to it"
                         )
                     else:
-                        # self.__debug_print(jac_node_str, "has duplicate mypy nodes associated to it")
+                        self.__debug_print(
+                            jac_node_str, "has duplicate mypy nodes associated to it"
+                        )
                         func(self, node)
                         self.__set_sym_table_link(node)
 
@@ -114,7 +116,7 @@ class FuseTypeInfoPass(Pass):
         self.prune()
 
     @__handle_node
-    def enter_name(self, node: ast.NameSpec) -> None:
+    def enter_name(self, node: ast.AstNode) -> None:
         """Pass handler for name nodes."""
         mypy_node = node.gen.mypy_ast[0]
 
@@ -134,6 +136,9 @@ class FuseTypeInfoPass(Pass):
             elif isinstance(mypy_node, MypyNode.OverloadedFuncDef):
                 self.__call_type_handler(node, mypy_node.items[0].func.type)
 
+            elif mypy_node is None:
+                node.sym_info = ast.SymbolInfo("None")
+
             else:
                 self.__debug_print(
                     f'"{node.loc}::{node.__class__.__name__}" mypy (with node attr) node isn\'t supported',
@@ -148,6 +153,8 @@ class FuseTypeInfoPass(Pass):
                 self.__call_type_handler(node, mypy_node.type)
             elif isinstance(mypy_node, MypyNode.Argument):
                 self.__call_type_handler(node, mypy_node.variable.type)
+            elif isinstance(mypy_node, MypyNode.Decorator):
+                self.__call_type_handler(node, mypy_node.func.type.ret_type)
             else:
                 self.__debug_print(
                     f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported',
@@ -167,7 +174,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_architype(self, node: ast.Architype) -> None:
         """Pass handler for Architype nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.enter_name(node)
 
     @__handle_node
     def enter_arch_def(self, node: ast.ArchDef) -> None:
@@ -177,7 +184,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_enum(self, node: ast.Enum) -> None:
         """Pass handler for Enum nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.enter_name(node)
 
     @__handle_node
     def enter_enum_def(self, node: ast.EnumDef) -> None:
@@ -191,13 +198,20 @@ class FuseTypeInfoPass(Pass):
             self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)
         else:
             self.__debug_print(
-                f"{node.loc}: Can't get type of an ability from mypy node other than Ability."
+                f"{node.loc}: Can't get type of an ability from mypy node other than Ability.",
+                type(node.gen.mypy_ast[0]),
             )
 
     @__handle_node
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
         """Pass handler for AbilityDef nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        if isinstance(node.gen.mypy_ast[0], MypyNode.FuncDef):
+            self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)
+        else:
+            self.__debug_print(
+                f"{node.loc}: Can't get type of an AbilityDef from mypy node other than FuncDef.",
+                type(node.gen.mypy_ast[0]),
+            )
 
     @__handle_node
     def enter_param_var(self, node: ast.ParamVar) -> None:
@@ -242,22 +256,22 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_list_val(self, node: ast.ListVal) -> None:
         """Pass handler for ListVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        node.sym_info = ast.SymbolInfo("builtins.list")
 
     @__handle_node
     def enter_set_val(self, node: ast.SetVal) -> None:
         """Pass handler for SetVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        node.sym_info = ast.SymbolInfo("builtins.set")
 
     @__handle_node
     def enter_tuple_val(self, node: ast.TupleVal) -> None:
         """Pass handler for TupleVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        node.sym_info = ast.SymbolInfo("builtins.tuple")
 
     @__handle_node
     def enter_dict_val(self, node: ast.DictVal) -> None:
         """Pass handler for DictVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        node.sym_info = ast.SymbolInfo("builtins.dict")
 
     @__handle_node
     def enter_list_compr(self, node: ast.ListCompr) -> None:
@@ -281,9 +295,13 @@ class FuseTypeInfoPass(Pass):
             mypy_node: MypyNode.ClassDef = node.gen.mypy_ast[0]
             node.sym_info.typ = mypy_node.fullname
             self.__set_sym_table_link(node)
+        elif isinstance(node.gen.mypy_ast[0], MypyNode.FuncDef):
+            mypy_node2: MypyNode.FuncDef = node.gen.mypy_ast[0]
+            self.__call_type_handler(node, mypy_node2.type)
         else:
             self.__debug_print(
-                f"{node.loc}: Can't get ArchRef value from mypyNode other than ClassDef"
+                f"{node.loc}: Can't get ArchRef value from mypyNode other than ClassDef",
+                type(node.gen.mypy_ast[0]),
             )
 
     @__handle_node
@@ -355,3 +373,15 @@ class FuseTypeInfoPass(Pass):
     ) -> None:
         """Get type info from mypy type NoneType."""
         node.sym_info = ast.SymbolInfo("None")
+
+    def get_type_from_any_type(
+        self, node: ast.AstSymbolNode, mypy_type: MypyTypes.AnyType
+    ) -> None:
+        """Get type info from mypy type NoneType."""
+        node.sym_info = ast.SymbolInfo("Any")
+
+    def get_type_from_tuple_type(
+        self, node: ast.AstSymbolNode, mypy_type: MypyTypes.TupleType
+    ) -> None:
+        """Get type info from mypy type TupleType."""
+        node.sym_info = ast.SymbolInfo("builtins.tuple")
