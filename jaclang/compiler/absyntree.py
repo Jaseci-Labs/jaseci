@@ -2636,7 +2636,6 @@ class TupleVal(AtomExpr):
             and self.parent.parent
             and isinstance(self.parent.parent.parent, FuncSignature)
         )
-        print(in_ret_type)
         new_kid: list[AstNode] = (
             [
                 self.gen_token(Tok.LPAREN),
