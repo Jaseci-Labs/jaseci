@@ -325,15 +325,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 else:
                     if isinstance(x, ast.ExprStmt) and isinstance(x.expr, ast.String):
                         continue
-                    import astor
-
                     tok = ast.Token(
                         file_path=self.mod_path,
                         name=Tok.PYNLINE,
-                        value=astor.to_source(i),
+                        value=py_ast.unparse(i),
                         line=node.lineno,
                         col_start=node.col_offset,
-                        col_end=node.col_offset + len(astor.to_source(i)),
+                        col_end=node.col_offset + len(py_ast.unparse(i)),
                         pos_start=0,
                         pos_end=0,
                     )
@@ -345,13 +343,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             enum_body = ast.SubNodeList[ast.EnumBlockStmt](
                 items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
             )
+            if doc:
+                doc.line_no = name.line_no
             return ast.Enum(
                 name=name,
                 access=None,
                 base_classes=None,
                 body=enum_body,
                 kid=[name, enum_body],
-                doc=None,  # FIXME: doc,
+                doc=doc,  # FIXME: doc,
                 decorators=valid_decorators,
             )
         kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]

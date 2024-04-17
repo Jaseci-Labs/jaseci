@@ -10,6 +10,7 @@ class ShapeType(Enum):
 
     CIRCLE = "Circle"
     UNKNOWN = "Unknown"
+    print("hello")
 
 
 f: int = 34
