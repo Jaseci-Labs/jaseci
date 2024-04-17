@@ -1,5 +1,5 @@
-from __future__ import annotations
 """Python function."""
+from __future__ import annotations
 
 
 def my_print(x: object) -> None:
@@ -417,6 +417,8 @@ class Color(Enum):
     RED = 1
     pencil = auto()
     print("text")
+    def __str__(self):
+        return f"{self.name} {self.value}"
 
 
 print(Color.RED.value)

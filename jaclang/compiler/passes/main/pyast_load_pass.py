@@ -52,7 +52,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Transform input IR."""
         self.ir: ast.Module = self.proc_module(ir.ast)
         return self.ir
-
+    
     def extract_with_entry(
         self, body: list[ast.AstNode], exclude_types: TypeAlias = T
     ) -> list[T | ast.ModuleCode]:
@@ -60,7 +60,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         def gen_mod_code(with_entry_body: list[ast.CodeBlockStmt]) -> ast.ModuleCode:
             with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
-                items=with_entry_body, delim=Tok.WS, kid=with_entry_body
+                items=with_entry_body, delim=Tok.WS, kid=with_entry_body,  left_enc=self.operator(Tok.LBRACE, "{"), right_enc=self.operator(Tok.RBRACE, "}")
             )
             return ast.ModuleCode(
                 name=None,
@@ -71,16 +71,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         extracted: list[T | ast.ModuleCode] = []
         with_entry_body: list[ast.CodeBlockStmt] = []
-        for i in body:
-            if isinstance(i, exclude_types):
+        for i in body: # [c1 , a, c2]
+            if isinstance(i, exclude_types): 
+                if len(with_entry_body):
+                    extracted.append(gen_mod_code(with_entry_body))
+                    with_entry_body = []
                 extracted.append(i)
             elif isinstance(i, ast.CodeBlockStmt):
-                with_entry_body.append(i)
+                with_entry_body.append(i)#[c1]
             else:
                 self.ice("Invalid type for with entry body")
-
         if len(with_entry_body):
-            extracted.append(gen_mod_code(with_entry_body))
+                    extracted.append(gen_mod_code(with_entry_body))
         return extracted
 
     def proc_module(self, node: py_ast.Module) -> ast.Module:
@@ -214,7 +216,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ability.is_async = True
         return ability
 
-    def proc_class_def(self, node: py_ast.ClassDef) -> ast.Architype:
+    def proc_class_def(self, node: py_ast.ClassDef) -> ast.Architype | ast.Enum:
         """Process python node.
 
         class ClassDef(stmt):
@@ -249,6 +251,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         body = [self.convert(i) for i in node.body]
+        doc = (
+            body[0].expr
+            if isinstance(body[0], ast.ExprStmt)
+            and isinstance(body[0].expr, ast.String)
+            else None
+        )
+        body = body[1:] if doc else body
         valid: list[ast.ArchBlockStmt] = self.extract_with_entry(
             body, ast.ArchBlockStmt
         )
@@ -267,7 +276,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if len(valid2)
             else None
         )
-        doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
         if len(valid_dec) != len(decorators):
@@ -290,7 +298,39 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 )
             arch_type.name = Tok.KW_ENUM
             arch_type.value = "enum"
-            valid_bases = None
+            valid_enum_body:list[ast.EnumBlockStmt] = []
+            for  i in node.body:
+                x = self.convert(i)
+                if isinstance(x, ast.EnumBlockStmt):
+                    valid_enum_body.append(x)
+                else:
+                    import astor
+                    tok = ast.Token(
+                        file_path=self.mod_path,
+                        name=Tok.PYNLINE,
+                        value=astor.to_source(i),
+                        line=node.lineno,
+                        col_start=node.col_offset,
+                        col_end=node.col_offset + len(astor.to_source(i)),
+                        pos_start=0,
+                        pos_end=0,
+                    )
+                    valid_enum_body.append(ast.PyInlineCode(code=tok,kid=[tok]))
+
+            valid_enum_body2:list[ast.EnumBlockStmt] = [i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)]
+            enum_body = ast.SubNodeList[ast.EnumBlockStmt](
+                items=valid_enum_body2, delim=Tok.WS, kid=valid_enum_body2
+            )
+            return ast.Enum(
+                name=name,
+                access=None,
+                base_classes=None,
+                body=enum_body,
+                kid=[name, enum_body],
+                doc=doc,
+                decorators=valid_decorators,
+            )
+            
         kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]
         return ast.Architype(
             arch_type=arch_type,
