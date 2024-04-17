@@ -110,14 +110,7 @@ class FuseTypeInfoPass(Pass):
 
         return node_handler
 
-    def enter_import(self, node: ast.Import) -> None:
-        """Pass handler for import nodes."""
-        # Pruning the import nodes
-        self.prune()
-
-    @__handle_node
-    def enter_name(self, node: ast.AstNode) -> None:
-        """Pass handler for name nodes."""
+    def __collect_type_from_symbol(self, node: ast.AstSymbolNode) -> None:
         mypy_node = node.gen.mypy_ast[0]
 
         if hasattr(mypy_node, "node"):
@@ -161,6 +154,16 @@ class FuseTypeInfoPass(Pass):
                     type(mypy_node),
                 )
 
+    def enter_import(self, node: ast.Import) -> None:
+        """Pass handler for import nodes."""
+        # Pruning the import nodes
+        self.prune()
+
+    @__handle_node
+    def enter_name(self, node: ast.NameSpec) -> None:
+        """Pass handler for name nodes."""
+        self.__collect_type_from_symbol(node)
+
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Pass handler for ModulePath nodes."""
@@ -174,7 +177,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_architype(self, node: ast.Architype) -> None:
         """Pass handler for Architype nodes."""
-        self.enter_name(node)
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_arch_def(self, node: ast.ArchDef) -> None:
@@ -184,7 +187,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_enum(self, node: ast.Enum) -> None:
         """Pass handler for Enum nodes."""
-        self.enter_name(node)
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_enum_def(self, node: ast.EnumDef) -> None:
