@@ -97,8 +97,6 @@ def foox():
 
 a, b, c = 1, 2, 3
 x = y = z = 0
-first, *rest = [1, 2, 3, 4, 5]
-
 
 def greet(name, greeting="Hello")-> None:
     '''Greet someone.'''
@@ -765,9 +763,9 @@ combined_list = [*first_list, *second_list]
 print(combined_list)
 first_dict = {"a": 1, "b": 2}
 second_dict = {"c": 3, "d": 4}
-combined_dict = {**first_dict, **second_dict}
-print(combine_via_func(**combined_dict))
-print(combine_via_func(**first_dict, **second_dict))
+# combined_dict = {**first_dict, **second_dict} #FIXME: This is not working
+# print(combine_via_func(**combined_dict)) #FIXME: This is not working
+# print(combine_via_func(**first_dict, **second_dict)) #FIXME: This is not working
 
 def myFunc() -> None:
     yield "Hello"

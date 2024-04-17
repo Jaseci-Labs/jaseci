@@ -110,6 +110,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
+        print("module is here", ret.unparse())
         return self.nu(ret)
 
     def proc_function_def(
@@ -240,7 +241,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         arch_type = ast.Token(
             file_path=self.mod_path,
             name=Tok.KW_OBJECT,
-            value="object",
+            value="obj",
             line=node.lineno,
             col_start=0,
             col_end=0,
