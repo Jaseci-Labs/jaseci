@@ -48,9 +48,7 @@ class ImportPass(Pass):
                     self.annex_impl(mod)
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
-                elif i.parent.lang.tag.value == "py" and os.environ.get(
-                    "JAC_PROC_DEBUG", False
-                ):
+                elif i.parent.lang.tag.value == "py":
                     mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
