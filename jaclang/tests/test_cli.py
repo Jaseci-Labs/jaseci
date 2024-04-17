@@ -1,12 +1,13 @@
 """Test Jac cli module."""
 
+import inspect
 import io
 import os
 import subprocess
 import sys
 
-
 from jaclang.cli import cli
+from jaclang.plugin.builtin import dotgen
 from jaclang.utils.test import TestCase
 
 
@@ -205,3 +206,24 @@ class JacCliTests(TestCase):
         print(stderr)
         self.assertIn("...F", stderr)
         self.assertIn("F.F", stderr)
+
+    def test_graph_coverage(self) -> None:
+        """Test for coverage of graph cmd."""
+        graph_params = set(inspect.signature(cli.graph).parameters.keys())
+        dotgen_params = set(inspect.signature(dotgen).parameters.keys())
+        dotgen_params = dotgen_params - {"node", "dot_file", "edge_type"}
+        dotgen_params.update({"initial", "saveto", "connection"})
+        self.assertTrue(dotgen_params.issubset(graph_params))
+        self.assertEqual(len(dotgen_params) + 1, len(graph_params))
+
+    def test_graph(self) -> None:
+        """Test for graph CLI cmd."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.graph(
+            f"{self.fixture_abs_path('../../../examples/reference/connect_expressions.jac')}"
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("11\n13\n15\n>>> Graph content saved to", stdout_value)
+        self.assertIn("connect_expressions.dot\n", stdout_value)
