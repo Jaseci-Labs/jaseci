@@ -29,8 +29,6 @@ class RegistryPass(Pass):
     def exit_module(self, node: ast.Module) -> None:
         """Save registry for each module."""
         module_name = node.name
-        if module_name == 'random':
-            return 
         module_dir = os.path.join(
             os.path.abspath(os.path.dirname(node.source.file_path)), Con.JAC_GEN_DIR
         )

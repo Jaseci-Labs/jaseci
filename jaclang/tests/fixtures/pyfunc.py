@@ -1,11 +1,14 @@
+# flake8: noqa
+
 """Python function."""
+
 from __future__ import annotations
 
 
 def my_print(x: object) -> None:
     """Print function."""
     print(x)
-    return ''
+    return ""
 
 
 def my_some_func(a: int, b: int) -> int:
@@ -22,15 +25,17 @@ numbers = [1, 2, 3, 4, 5]
 squares = [x**2 for x in numbers]
 squares_dict = {x: x**2 for x in numbers}
 squares_generator = (x**2 for x in numbers)
-add = lambda x, y: x + y # noqa
+add = lambda x, y: x + y  # noqa
 
 
 def my_decorator(func):
-    '''Decorator'''
+    """Decorator"""
+
     def wrapper():
         print("Something is happening before the function is called.")
         func()
         print("Something is happening after the function is called.")
+
     return wrapper
 
 
@@ -38,37 +43,38 @@ x = 5
 print(f"hello {x}")
 
 
-s=[]
-a=[1,2,3,4,5]
-b=(1,2,3,4,5)
-x=()
-c={1,2,3,4,5}
-d={1:"one",2:"two",3:"three",4:"four",5:"five"}
-qq={}
-e="hello"
-f=b"hello"
+s = []
+a = [1, 2, 3, 4, 5]
+b = (1, 2, 3, 4, 5)
+x = ()
+c = {1, 2, 3, 4, 5}
+d = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+qq = {}
+e = "hello"
+f = b"hello"
 
 
 @my_decorator
 def say_hello():
-    '''Say hello'''
+    """Say hello"""
     print("Hello!")
-x={}
-x = {
-        "name": "John",
-        "age": 30,
-        "city": "New York"
-    }
+
+
+x = {}
+x = {"name": "John", "age": 30, "city": "New York"}
+
 
 class MyClass:
-    '''My class'''
+    """My class"""
+
     def __init__(self, x):
         self.x = x
 
     def my_method(self):
         print("My method")
 
-x=9
+
+x = 9
 while x < 10:
     x += 1
     print("hello")
@@ -88,8 +94,9 @@ try:
     with open(filename, "r") as file:
         content = file.read()
         print(content)
-except :
+except:
     print(f"File not found")
+
 
 def foox():
     return 9 + 4
@@ -98,8 +105,9 @@ def foox():
 a, b, c = 1, 2, 3
 x = y = z = 0
 
-def greet(name, greeting="Hello")-> None:
-    '''Greet someone.'''
+
+def greet(name, greeting="Hello") -> None:
+    """Greet someone."""
     print(f"{greeting}, {name}")
 
 
@@ -116,7 +124,7 @@ class MyClass2:
 
 
 def average(*args):
-    '''Average function'''
+    """Average function"""
     return sum(args) / len(args)
 
 
@@ -124,7 +132,7 @@ avg = average(1, 2, 3, 4, 5)
 
 
 def greet2(**kwargs):
-    '''Greet someone.'''
+    """Greet someone."""
     print(f"Hello, {kwargs['name']}!")
 
 
@@ -134,7 +142,7 @@ name = "Alice"
 age = 30
 print("Name: {}, Age: {}".format(name, age))
 
-path = r'C:\Users\Alice\Documents'
+path = r"C:\Users\Alice\Documents"
 hello_world_bytes = b"\x48\x65\x6C\x6C\x6F\x20\x57\x6F\x72\x6C\x64"
 print(hello_world_bytes)
 print(type(hello_world_bytes))
@@ -142,7 +150,7 @@ print(type(hello_world_bytes))
 ret_str = r"Hello\\nWorld"
 print(ret_str)
 
-br = br"Hello\\nWorld"
+br = rb"Hello\\nWorld"
 print(br)
 print(type(br))
 
@@ -158,19 +166,22 @@ z = x and y
 x = 5
 assert x == 5, "x should be equal to 5"
 
-uu=9
-if uu==9:
+uu = 9
+if uu == 9:
     print("uu is 9")
-elif uu==10:
+elif uu == 10:
     print("uu is 10")
 else:
     print("uu is not 9 or 10")
 
+
 def my_functionx():
-    '''My function'''
+    """My function"""
+
     def my_inner_function():
-        '''Inner function'''
+        """Inner function"""
         return 9
+
     my_inner_function()
     for i in range(10):
         if i == 5:
@@ -180,7 +191,7 @@ def my_functionx():
     pass
 
 
-x=90
+x = 90
 if not isinstance(x, int):
     raise ValueError("x must be an integer")
 else:
@@ -205,8 +216,8 @@ else:
     print("Neither x is equal to y nor y is equal to z")
 
 
-def count_up_to(n: int)-> int:
-    '''Count up to n'''
+def count_up_to(n: int) -> int:
+    """Count up to n"""
     count = 1
     while count <= n:
         yield count
@@ -266,6 +277,7 @@ print(div.divide(55, 11))
 print(Calculator.multiply(9, -2))
 print(sub.add(5, 20, 34, 56))
 print(sub.substract(9, -2))
+
 
 class Car:
     wheels: int = 4
@@ -417,6 +429,7 @@ class Color(Enum):
     RED = 1
     pencil = auto()
     print("text")
+
     def __str__(self):
         return f"{self.name} {self.value}"
 
@@ -465,6 +478,7 @@ def foo(n_1: float):
 print("Hello World!")
 print(foo(7))
 print(int(Circle(10).area()))
+
 
 def foo(x: int, y: int, z: int) -> None:
     return (x * y, y * z)
@@ -588,6 +602,7 @@ match data:
     case {"key1": 1, "key2": 2, **rest}:
         print(f"Matched a mapping with key1 and key2. Rest: {rest}")
 
+
 class Point:
     def __init__(self, x: float, y: float):
         self.x = x
@@ -658,6 +673,7 @@ match a:
     case _:
         print("Undoable")
 
+
 class Animal:
     def __init__(self, animal_type):
         self.animal_type = animal_type
@@ -676,6 +692,8 @@ class Dog(Animal):
 
 dog1 = Dog(breed="Labrador")
 print(dog1.animal_type, dog1.breed, dog1.sound)
+
+
 def double(x: int) -> int:
     return x * 2
 
@@ -683,6 +701,7 @@ def double(x: int) -> int:
 number = 5
 result = double(number)
 print(result)
+
 
 def square(x: int) -> int:
     return x**2
@@ -703,6 +722,7 @@ try:
 except ValueError as e:
     print("Raised:", e)
 
+
 def foo():
     a = 42
     if a > 0:
@@ -711,6 +731,7 @@ def foo():
 
 
 print("Returned:", foo())
+
 
 class Sample:
     def __init__(self):
@@ -745,6 +766,7 @@ class TestCases(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+
 def foo(first: int, second: int) -> None:
     print(first, second)
 
@@ -769,6 +791,7 @@ second_dict = {"c": 3, "d": 4}
 # print(combine_via_func(**combined_dict)) #FIXME: This is not working
 # print(combine_via_func(**first_dict, **second_dict)) #FIXME: This is not working
 
+
 def myFunc() -> None:
     yield "Hello"
     yield 91
@@ -789,8 +812,8 @@ def _read_cmd_output(commandstring, capture_stderr=False):
     """Output from successful command execution or None"""
     import os
     import contextlib
-    fp = open("/tmp/_aix_support.%s"%(
-        os.getpid(),), "w+b")
+
+    fp = open("/tmp/_aix_support.%s" % (os.getpid(),), "w+b")
 
     with contextlib.closing(fp) as fp:
         if capture_stderr:
@@ -801,7 +824,7 @@ def _read_cmd_output(commandstring, capture_stderr=False):
 
 
 def _aix_tag(vrtl, bd):
-    _sz = 32 if sys.maxsize == (2**31-1) else 64
+    _sz = 32 if sys.maxsize == (2**31 - 1) else 64
     _bd = bd if bd != 0 else 9988
     return "aix-{:1x}{:1d}{:02d}-{:04d}-{}".format(vrtl[0], vrtl[1], vrtl[2], _bd, _sz)
 
@@ -814,12 +837,13 @@ def _aix_vrtl(vrmf):
 def _aix_bos_rte():
     try:
         import subprocess
+
         out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.rte"])
     except ImportError:
         out = _read_cmd_output("/usr/bin/lslpp -Lqc bos.rte")
     out = out.decode("utf-8")
     out = out.strip().split(":")  # type: ignore
-    _bd = int(out[-1]) if out[-1] != '' else 9988
+    _bd = int(out[-1]) if out[-1] != "" else 9988
     return (str(out[2]), _bd)
 
 
@@ -845,6 +869,5 @@ def aix_buildtag():
     try:
         build_date = int(build_date)
     except (ValueError, TypeError):
-        raise ValueError(f"AIX_BUILDDATE is not defined or invalid: "
-                         f"{build_date!r}")
+        raise ValueError(f"AIX_BUILDDATE is not defined or invalid: " f"{build_date!r}")
     return _aix_tag(_aix_bgt(), build_date)

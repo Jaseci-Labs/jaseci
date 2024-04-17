@@ -820,7 +820,9 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
                 for item in self.body.items:
-                    if isinstance(item, Ability) and isinstance(item.name_ref, Name): # TODO :turn init into has_var
+                    if isinstance(item, Ability) and isinstance(
+                        item.name_ref, Name
+                    ):  # TODO :turn init into has_var
                         if item.name_ref.value == "__init__":
                             item.name_ref.value = "init"
                         if (
