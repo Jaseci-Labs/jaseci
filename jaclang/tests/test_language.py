@@ -5,11 +5,9 @@ import os
 import pickle
 import sys
 
-import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
-from jaclang.compiler.passes.main.import_pass import ImportPass  # noqa: I100
 from jaclang.core import construct
 from jaclang.utils.test import TestCase
 
@@ -476,47 +474,55 @@ class JacLanguageTests(TestCase):
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion."""
         os.environ["JAC_PROC_DEBUG"] = "1"
-        mod_path = self.fixture_abs_path("needs_import_1.jac")
-        mod = jac_file_to_pass(mod_path, target=ImportPass).ir.get_all_sub_nodes(
-            ast.Module
-        )[0]
-        output = mod.__class__.__bases__[0].unparse(mod)
-        self.assertIn("with entry { avg = average ( 1 , 2 , 3 , 4 , 5 ) ; }", output)
-        self.assertEqual(output.count("with entry"), 13)
-        self.assertIn("'My class' obj MyClass { can init ( x : Any )", output)
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        print(stdout_value)
+        self.assertIn("can greet2(**kwargs: Any)", stdout_value)
+        self.assertEqual(stdout_value.count("with entry {"), 13)
         self.assertIn(
-            "obj MyClass2 { 'Constructor docstring.' can init (  ) { ; }", output
+            "Enum for shape types\nenum ShapeType { CIRCLE=Circle,",
+            stdout_value,
         )
-        self.assertIn("pyfunc_1 imported", output)
-        self.assertIn("", output)
+        self.assertIn(
+            "\nUNKNOWN=Unknown,\n::py::\nprint('hello')\n::py::\n }", stdout_value
+        )
+        self.assertIn("pyfunc_1 imported", stdout_value)
+        self.assertIn("assert x == 5 , x should be equal to 5 ; ", stdout_value)
+        self.assertIn("if not x == y {", stdout_value)
+        self.assertIn("can greet2(**kwargs: Any) {", stdout_value)
+        self.assertIn("squares_dict={x: x ** 2  for x in numbers};", stdout_value)
+        self.assertIn("Say hello\n@ my_decorator \n can say_hello()", stdout_value)
         del os.environ["JAC_PROC_DEBUG"]
 
-    # def test_needs_import_2(self) -> None:
-    #     """Test py ast to Jac ast conversion."""
-    #     os.environ["JAC_PROC_DEBUG"] = "1"
-    #     mod_path = self.fixture_abs_path("needs_import_2.jac")
-    #     mod = jac_file_to_pass(mod_path, target=ImportPass).ir.get_all_sub_nodes(
-    #         ast.Module
-    #     )[0]
-    #     output = mod.__class__.__bases__[0].unparse(mod)
-    # self.assertIn(
-    #     "except AssertionError as e { print ( 'Asserted:' , e ) ; }", output
-    # )
-    # self.assertEqual(output.count("\\\\\\\\\\\\"), 2)
-    #     del os.environ["JAC_PROC_DEBUG"]
+    def test_needs_import_2(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        os.environ["JAC_PROC_DEBUG"] = "1"
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("obj X {\n    with entry {\n        a_b=67;", stdout_value)
+        self.assertIn("pyfunc_2 imported", stdout_value)
+        self.assertIn("Hello\\\\nWorld\nb'Hello\\\\\\\\nWorld'", stdout_value)
+        self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
+        self.assertIn("obj Circle {\n    can init(radius: float", stdout_value)
+        del os.environ["JAC_PROC_DEBUG"]
 
-    # def test_needs_import_3(self) -> None:
-    #     """Test py ast to Jac ast conversion."""
-    #     os.environ["JAC_PROC_DEBUG"] = "1"
-    #     mod_path = self.fixture_abs_path("needs_import_3.jac")
-    #     mod = jac_file_to_pass(mod_path, target=ImportPass).ir.get_all_sub_nodes(
-    #         ast.Module
-    #     )[0]
-    #     output = mod.__class__.__bases__[0].unparse(mod)
-    # self.assertIn(" case _ as day : print ( 'o", output)
-    # self.assertIn(
-    #     "'Python function for testing py imports.' with entry { :g:|:global:",
-    #     output,
-    # )
-    # self.assertEqual(output.count("with entry"), 14)
-    # del os.environ["JAC_PROC_DEBUG"]
+    def test_needs_import_3(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        os.environ["JAC_PROC_DEBUG"] = "1"
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("pyfunc_3 imported", stdout_value)
+        self.assertIn("if 0 <= x<= 5 {", stdout_value)
+        self.assertIn("  case _:\n", stdout_value)
+        self.assertIn(" case Point(x = int(_), y = 0):\n", stdout_value)
+        self.assertIn("obj Sample {\n    can init", stdout_value)
+        del os.environ["JAC_PROC_DEBUG"]
