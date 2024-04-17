@@ -473,22 +473,23 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual("2\n", stdout_value)
 
-    # def test_needs_import_1(self) -> None:
-    #     """Test py ast to Jac ast conversion."""
-    #     os.environ["JAC_PROC_DEBUG"] = "1"
-    #     mod_path = self.fixture_abs_path("needs_import_1.jac")
-    #     mod = jac_file_to_pass(mod_path, target=ImportPass).ir.get_all_sub_nodes(
-    #         ast.Module
-    #     )[0]
-    #     output = mod.__class__.__bases__[0].unparse(mod)
-    #     self.assertIn("with entry { avg = average ( 1 , 2 , 3 , 4 , 5 ) ; }", output)
-    # self.assertEqual(output.count("with entry"), 12)
-    # self.assertIn("'My class' obj MyClass { can init ( x : Any )", output)
-    # self.assertIn(
-    #     "obj MyClass2 { 'Constructor docstring.' can init (  ) { ; }", output
-    # )
-    # self.assertIn("", output)
-    # del os.environ["JAC_PROC_DEBUG"]
+    def test_needs_import_1(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        os.environ["JAC_PROC_DEBUG"] = "1"
+        mod_path = self.fixture_abs_path("needs_import_1.jac")
+        mod = jac_file_to_pass(mod_path, target=ImportPass).ir.get_all_sub_nodes(
+            ast.Module
+        )[0]
+        output = mod.__class__.__bases__[0].unparse(mod)
+        self.assertIn("with entry { avg = average ( 1 , 2 , 3 , 4 , 5 ) ; }", output)
+        self.assertEqual(output.count("with entry"), 13)
+        self.assertIn("'My class' obj MyClass { can init ( x : Any )", output)
+        self.assertIn(
+            "obj MyClass2 { 'Constructor docstring.' can init (  ) { ; }", output
+        )
+        self.assertIn("pyfunc_1 imported", output)
+        self.assertIn("", output)
+        del os.environ["JAC_PROC_DEBUG"]
 
     # def test_needs_import_2(self) -> None:
     #     """Test py ast to Jac ast conversion."""

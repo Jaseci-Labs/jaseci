@@ -52,7 +52,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Transform input IR."""
         self.ir: ast.Module = self.proc_module(ir.ast)
         return self.ir
-    
+
     def extract_with_entry(
         self, body: list[ast.AstNode], exclude_types: TypeAlias = T
     ) -> list[T | ast.ModuleCode]:
@@ -116,7 +116,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
-        print("module is here", ret.unparse())
+        if os.environ.get("JAC_PROC_DEBUG", False):
+            print("module is here", ret.unparse())
         return self.nu(ret)
 
     def proc_function_def(
@@ -325,6 +326,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     if isinstance(x, ast.ExprStmt) and isinstance(x.expr, ast.String):
                         continue
                     import astor
+
                     tok = ast.Token(
                         file_path=self.mod_path,
                         name=Tok.PYNLINE,
@@ -349,7 +351,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 base_classes=None,
                 body=enum_body,
                 kid=[name, enum_body],
-                doc=None,  #FIXME: doc,
+                doc=None,  # FIXME: doc,
                 decorators=valid_decorators,
             )
         kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]
