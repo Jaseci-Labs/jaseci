@@ -479,7 +479,8 @@ class JacLanguageTests(TestCase):
         jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        with open(os.path.join(self.fixture_abs_path("./"), "pyfunc_1.txt")) as f:
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.txt")
+        with open(py_out_path) as f:
             output = f.read()
         self.assertIn("pyfunc_1 imported", stdout_value)
         self.assertIn("can greet2(**kwargs: Any)", output)
@@ -494,6 +495,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict={x: x ** 2  for x in numbers};", output)
         self.assertIn("Say hello\n@ my_decorator \n can say_hello()", output)
+        os.remove(py_out_path)
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_2(self) -> None:
@@ -504,13 +506,15 @@ class JacLanguageTests(TestCase):
         jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        with open(os.path.join(self.fixture_abs_path("./"), "pyfunc_2.txt")) as f:
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.txt")
+        with open(py_out_path) as f:
             output = f.read()
         self.assertIn("pyfunc_2 imported", stdout_value)
         self.assertIn("obj X {\n    with entry {\n        a_b=67;", output)
-        self.assertIn("Hello\\\\nWorld\nb'Hello\\\\\\\\nWorld'", output)
+        self.assertIn("br=b'Hello\\\\\\\\nWorld'", output)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
         self.assertIn("obj Circle {\n    can init(radius: float", output)
+        os.remove(py_out_path)
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_3(self) -> None:
@@ -521,11 +525,13 @@ class JacLanguageTests(TestCase):
         jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        with open(os.path.join(self.fixture_abs_path("./"), "pyfunc_3.txt")) as f:
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.txt")
+        with open(py_out_path) as f:
             output = f.read()
         self.assertIn("pyfunc_3 imported", stdout_value)
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point(x = int(_), y = 0):\n", output)
         self.assertIn("obj Sample {\n    can init", output)
+        os.remove(py_out_path)
         del os.environ["JAC_PROC_DEBUG"]
