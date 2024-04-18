@@ -117,7 +117,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         ret.gen.py_ast = [node]
         if os.environ.get("JAC_PROC_DEBUG", False):
-            print("module is here", ret.unparse())
+            with open(self.mod_path.replace(".py", ".txt"), "w") as f:
+                f.write(ret.unparse())
+        else:
+            ret.unparse()
         return self.nu(ret)
 
     def proc_function_def(

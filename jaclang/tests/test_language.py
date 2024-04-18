@@ -479,22 +479,21 @@ class JacLanguageTests(TestCase):
         jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
-        self.assertIn("can greet2(**kwargs: Any)", stdout_value)
-        self.assertEqual(stdout_value.count("with entry {"), 13)
+        with open(os.path.join(self.fixture_abs_path("./"), "pyfunc_1.txt")) as f:
+            output = f.read()
+        self.assertIn("pyfunc_1 imported", stdout_value)
+        self.assertIn("can greet2(**kwargs: Any)", output)
+        self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
             "Enum for shape types\nenum ShapeType { CIRCLE=Circle,",
-            stdout_value,
+            output,
         )
-        self.assertIn(
-            "\nUNKNOWN=Unknown,\n::py::\nprint('hello')\n::py::\n }", stdout_value
-        )
-        self.assertIn("pyfunc_1 imported", stdout_value)
-        self.assertIn("assert x == 5 , x should be equal to 5 ; ", stdout_value)
-        self.assertIn("if not x == y {", stdout_value)
-        self.assertIn("can greet2(**kwargs: Any) {", stdout_value)
-        self.assertIn("squares_dict={x: x ** 2  for x in numbers};", stdout_value)
-        self.assertIn("Say hello\n@ my_decorator \n can say_hello()", stdout_value)
+        self.assertIn("\nUNKNOWN=Unknown,\n::py::\nprint('hello')\n::py::\n }", output)
+        self.assertIn("assert x == 5 , x should be equal to 5 ; ", output)
+        self.assertIn("if not x == y {", output)
+        self.assertIn("can greet2(**kwargs: Any) {", output)
+        self.assertIn("squares_dict={x: x ** 2  for x in numbers};", output)
+        self.assertIn("Say hello\n@ my_decorator \n can say_hello()", output)
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_2(self) -> None:
@@ -505,11 +504,13 @@ class JacLanguageTests(TestCase):
         jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn("obj X {\n    with entry {\n        a_b=67;", stdout_value)
+        with open(os.path.join(self.fixture_abs_path("./"), "pyfunc_2.txt")) as f:
+            output = f.read()
         self.assertIn("pyfunc_2 imported", stdout_value)
-        self.assertIn("Hello\\\\nWorld\nb'Hello\\\\\\\\nWorld'", stdout_value)
+        self.assertIn("obj X {\n    with entry {\n        a_b=67;", output)
+        self.assertIn("Hello\\\\nWorld\nb'Hello\\\\\\\\nWorld'", output)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
-        self.assertIn("obj Circle {\n    can init(radius: float", stdout_value)
+        self.assertIn("obj Circle {\n    can init(radius: float", output)
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_3(self) -> None:
@@ -520,9 +521,11 @@ class JacLanguageTests(TestCase):
         jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        with open(os.path.join(self.fixture_abs_path("./"), "pyfunc_3.txt")) as f:
+            output = f.read()
         self.assertIn("pyfunc_3 imported", stdout_value)
-        self.assertIn("if 0 <= x<= 5 {", stdout_value)
-        self.assertIn("  case _:\n", stdout_value)
-        self.assertIn(" case Point(x = int(_), y = 0):\n", stdout_value)
-        self.assertIn("obj Sample {\n    can init", stdout_value)
+        self.assertIn("if 0 <= x<= 5 {", output)
+        self.assertIn("  case _:\n", output)
+        self.assertIn(" case Point(x = int(_), y = 0):\n", output)
+        self.assertIn("obj Sample {\n    can init", output)
         del os.environ["JAC_PROC_DEBUG"]
