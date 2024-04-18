@@ -202,6 +202,5 @@ class JacCliTests(TestCase):
             text=True,
         )
         stdout, stderr = process.communicate()
-        print(stderr)
         self.assertIn("...F", stderr)
         self.assertIn("F.F", stderr)
