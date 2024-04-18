@@ -2141,7 +2141,7 @@ class PyastGenPass(Pass):
                     )
                 )
                 if node.is_enum_stmt
-                else self.ice()
+                else None if node.type_tag else self.ice()
             )
         )
         if node.type_tag:
