@@ -82,9 +82,6 @@ Beyond the key architypes, a Jac module incorporates several additional element 
 
 1. **Freestyle Abilities**: Freestyle Abilities are like functions but with a data-spatial twist. They execute and return values like function however instead of taking parameters, freestyle abilitys are sent to the data they need to process and leverage a duck typing philosophy to their execution. They can be thought of as mobile computation units that are dispatched to data elements, and the can be spawned on any type including, objects, dictionaries, lists, etc.
 
-1. **Gen AI Ability**: Gen AI Ability is a special type of ability which used LLMs/SLMs to perform different tasks without the need for explicit programming. `by <model>` keyword at end of the ability definition activates this feature. This uses the semstrings we have specified in variables, abilities, architypes etc. to understand the context.
-
-
 1. **Global Variable Definitions**: Global variables can be declared and defined within a module. These are accessible throughout the module's scope. However, Jac's design philosophy mildly discourages extensive reliance on globals. This discouragement stems from a desire to enhance modularity and encapsulation, promote code readability, and support codebase scalability. Overuse of global variables can lead to tightly coupled, less maintainable code.
     1. Note: While Jac provides the ability to declare global variables, developers are urged to exercise this power sparingly. Overdependence on global variables often results in code that is hard to debug, difficult to understand, and not modular, reducing the scalability of the codebase. Instead, the Jac language promotes encapsulation and modular design through its architype and abilities system, leading to cleaner, more maintainable, and scalable code.
 

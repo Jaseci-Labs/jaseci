@@ -2,10 +2,10 @@
 <!-- TODO: Guide for coders to use by_llm @kugesan1105 Put the one in the chatgpt -->
 GenAI Ability is a powerful feature that enhances interaction with Large Language Models (LLM) by utilizing the keyword `by <model>`. Developers can customize the behavior of functions or methods by modifying associated
 [Semstrings](#introducing-semstrings).
-
+Jaclang will be extended to support a new abstraction that simplifies the development of llm applications. With the introduction of the `with <language_model>` syntax, developers can easily activate this abstraction by placing it after any ability. This new feature eliminates the need for explicit prompting and allows for a more streamlined coding experience. It's important to note that when using this ability, the return will be handled by the abstraction itself, removing the need for an explicit ability body.
 **Model Initialization**
 
-To incorporate a Large Language Model (LLM) into code, initialize it as a model code construct.
+<!--To incorporate a Large Language Model (LLM) into code, initialize it as a model code construct.
 
 ```
 model llm {
@@ -16,7 +16,8 @@ model llm {
 ```
 The llm model is defined in this example with specific attributes, such as utilizing the GPT-4 model, setting a temperature of 0.7 for sampling, and enabling text sampling.
 
-This approach allows for the initialization of the desired model as a model code construct with a specific name (in this case, `llm`), facilitating its integration into code.
+This approach allows for the initialization of the desired model as a model code construct with a specific name (in this case, `llm`), facilitating its integration into code. -->
+
 
 **Example Usage**
 
@@ -39,13 +40,13 @@ Person {
         dob: 'Date of Birth' str,
         age: 'Age' int = None;
     can 'Calculate the Age of a Person'
-    calculate (cur_year: 'Current Year' int) -> 'Calculated Age' int by llm;
+    calculate (cur_year: 'Current Year': int) -> 'Calculated Age': int by llm();
 }
 with entry {
-    Einstein = Person(name="Einstein", dob="1879-03-14");
-    age = Einstein.calculate(cur_year=2024);
-    Einstein.age = age;
-    print(Einstein.age);
+    einstein 'Einstein Object': Person = Person(name="Einstein", dob="1879-03-14");
+    age = einstein.calculate(cur_year=2024);
+    einstein.age = age;
+    print(einstein.age);
 }
 ```
 In this example, the calculate method of the 'Person' object utilizes GenAI Ability to determine the age of an individual.
@@ -58,35 +59,39 @@ obj 'Person'
 Person {
     has name: 'Name' str,
         dob: 'date of birth' str,
-        accomplishments: 'Accomplishments' list[str];
+        accomplishments: 'Accomplishments': list[str];
 }
 with entry {
-    Einstein = Person(name="Einstein") by llm;
-    print(f"{Einstein.name} was born on {Einstein.dob}. His accomplishments include {Einstein.accomplishments}.");
+    einstein: 'Einstein Object': Person = Person(name="Albert Einstein") by llm1();
+    print(f"{einstein.name} was born on {einstein.dob}. His accomplishments include {einstein.accomplishments}.");
 }
 ```
 In this example, the 'Person' object is created with GenAI Ability, interacting with LLM during attribute initialization.
 
-```
+
 Automatic Attribute Population: GenAI Ability streamlines object creation by automatically filling attributes using LLM.
-```
+
 ### GenAI Ability Parameters
 
 When using `by <model>` in code, we have the ability to provide additional parameters for fine-tuning the interaction and to customize the interaction.
 
-`by <model>(temperature=0.7, top_k = 3, reason=true,excl_info=(xxx)>)`
+```
+by <model>(temperature=0.7, top_k = 3, reason=true, incl_info=(xxx), context=[])
+```
 
 Here,
 
- - `incl_info` : This parameter, represented as a tuple, allows us to explicitly specify the details to be passed to the Language Model (LLM) during prompt creation. If `incl_info` is not specified, the default behavior of the Jac engine is to include all variables or objects available within its scope.
+ - `incl_info` :  A tuple specifying details to be passed to the LLM during prompt creation.
 
-- `excl_info` : Similarly represented as a tuple, this parameter enables us to specify information to be excluded from prompts. By default, if not explicitly defined, all variables and objects within the scope will be included in the interaction.
+- `excl_info` :  A tuple specifying information to be excluded from prompts. By default, all variables/objects in scope are included.
 
-- `model hyperparameters`: It serves as a key-value pair, specifying the hyperparameters for the model during inference. For instance, `by <model>(temperature=0.7, top_k=3, top_p=0.51)` allows us to set specific parameters for the model.
+- `model hyperparameters`: Key-value pairs specifying hyperparameters for the model during inference, e.g., temperature=0.7, top_k=3, top_p=0.51.
 
- - `reason`:A boolean parameter, reason provides the option to specify whether reasoning should be included in the interaction. If set to True, it allows for a more detailed explanation or justification in the model's responses.
+ - `reason`:A boolean indicating whether to include reasoning/explanation in the model's responses.
 
-`by <model>(temperature=0.7, top_k = 3, top_p =0.51, incl_info=(xxx), reason=true) ` <!--TODO : This line needs to be modified  with a working example code snippet later  -->
+- `context`: List of information to gie external information to llm for our use cases
+
+`by <model>(temperature=0.7, top_k = 3, top_p =0.51, incl_info=(xxx), context=[""],reason=true) ` <!--TODO : This line needs to be modified  with a working example code snippet later  -->
 
 |    Parameters    |          Type              |
 |    --------      |         -------            |
@@ -94,6 +99,7 @@ Here,
 |     reason       |    bool \| None            |
 |    incl_info     |    tuple \| None           |
 |    excl_info     |    tuple   \| None         |
+|    context       |    List                    |
 
 
 ## Introducing Semstrings
@@ -105,6 +111,7 @@ Utilizing Semstrings in Various Cases
 - Ability/Method Parameter Declaration
 - Attributes of Architypes
 - Return Type Specification
+-
 
 <span style="color:orange;">
 </span>
@@ -116,7 +123,7 @@ Utilizing Semstrings in Various Cases
 
 ```
 can 'Translate English to French'
-translate(english_word: 'English Word' str) -> 'French Word' str by llm;
+translate(english_word: 'English Word': str) -> 'French Word' : str by llm();
 ```
 
 In this instance, the semstring <span style="color:orange;">'Translate English to French'</span> serves as a descriptive label, clarifying the intended action when invoking the function. For example, calling the function with translate("cheese") leverages the semstring to guide the model, ensuring a contextually informed response.
@@ -149,6 +156,6 @@ In this architype example, the semstrings associated with attributes (<span styl
 Utilizing Semstring in return type specifications provides a meaningful way to explain the expected outputs of a function.
 ```
 can 'Summarize the Accomplishments'
-summarize (a: 'Accomplishments' list[str]) -> 'Summary of the Accomplishments' str by llm;
+summarize (a: 'Accomplishments': list[str]) -> 'Summary of the Accomplishments' : str by llm;
 ```
 In this example, the semstring <span style="color:orange;">'Summary of the Accomplishments' </span> precisely communicates the nature of the expected output. This clarity ensures that developers, as well as LLM, comprehend the type of information that will be returned by invoking the 'Summarize the Accomplishments' function.
