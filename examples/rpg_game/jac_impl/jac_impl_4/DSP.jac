@@ -51,7 +51,7 @@ node level{
 
 '''Run the game'''
 with entry {
-    game() spawn root;
+    root spawn game();
 }
 #=Walker=&=Node=Abilities=======================================
 

@@ -164,6 +164,23 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
 
+    def test_with_llm_type(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("with_llm_type", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("14/03/1879", stdout_value)
+        self.assertEqual(
+            "Person(name='Jason Mars', dob='1994-01-01', age=30)",
+            stdout_value.split("\n")[1],
+        )
+        self.assertIn(
+            "Person(name='Jason Mars', dob='1994-01-01', age=30)",
+            stdout_value.split("\n")[2],
+        )
+
     def test_ignore(self) -> None:
         """Parse micro jac file."""
         construct.root._jac_.edges.clear()

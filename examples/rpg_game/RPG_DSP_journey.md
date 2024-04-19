@@ -497,6 +497,6 @@ In the previous implementation we used ```with entry {}``` to begin the program.
 
 ```python
 with entry {
-    game() spawn root;
+    root spawn game();
 }
 ```

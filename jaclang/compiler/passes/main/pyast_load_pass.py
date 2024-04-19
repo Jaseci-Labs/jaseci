@@ -855,6 +855,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return ast.FuncCall(
                 target=func,
                 params=params_in2,
+                genai_call=None,
                 kid=[func, params_in2] if params_in2 else [func],
             )
         else:
