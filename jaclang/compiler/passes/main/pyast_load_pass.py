@@ -107,10 +107,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = (
             [elements[0]] if isinstance(elements[0], ast.String) else []
         ) + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
+        doc_str = elements[0] if isinstance(elements[0], ast.String) else None
+        if doc_str:
+            doc_str.value = f'"""{doc_str.value}"""'
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
-            doc=(elements[0] if isinstance(elements[0], ast.String) else None),
+            doc=doc_str,
             body=valid[1:] if isinstance(valid[0], ast.String) else valid,
             is_imported=False,
             kid=valid,
@@ -158,6 +161,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(valid[0].expr, ast.String)
         ):
             doc = valid[0].expr
+            doc.value = f'"""{doc.value}"""'
             valid_body = ast.SubNodeList[ast.CodeBlockStmt](
                 items=valid[1:],
                 delim=Tok.WS,
@@ -299,6 +303,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(body[0].expr, ast.String)
             else None
         )
+        if doc:
+            doc.value = f'"""{doc.value}"""' 
         body = body[1:] if doc else body
         valid: list[ast.ArchBlockStmt] = self.extract_with_entry(
             body, ast.ArchBlockStmt
