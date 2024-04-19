@@ -298,6 +298,7 @@ def convert(filename: str, tree: bool = False) -> None:
     """Convert a Python file to Jac.
 
     :param filename: The path to the .py file.
+    :param tree: Flag to show the AST tree.(Default-False).
     """
     if filename.endswith(".py"):
         with open(filename, "r") as f:
