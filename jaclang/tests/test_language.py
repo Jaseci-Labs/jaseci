@@ -478,3 +478,12 @@ class JacLanguageTests(TestCase):
         self.assertEqual(len(registry.registry), 3)
         self.assertEqual(len(list(registry.registry.items())[0][1]), 10)
         self.assertEqual(list(registry.registry.items())[1][0].scope, "Person")
+
+    def test_enum_inside_arch(self) -> None:
+        """Test Enum as member stmt."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("enum_inside_archtype", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("2\n", stdout_value)

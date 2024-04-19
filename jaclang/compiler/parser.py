@@ -1772,6 +1772,7 @@ class JacParser(Pass):
             type_tag = chomp[-1] if isinstance(chomp[-1], ast.SubTag) else None
             if not value:
                 semstr = chomp[2] if len(chomp) > 2 else None
+                chomp = chomp[:-2] if semstr else chomp
             else:
                 if type_tag:
                     chomp = chomp[:-1]
