@@ -294,7 +294,7 @@ def graph(
 
 
 @cmd_registry.register
-def convert(filename: str) -> None:
+def convert(filename: str, tree: bool = False) -> None:
     """Convert a Python file to Jac.
 
     :param filename: The path to the .py file.
@@ -303,8 +303,17 @@ def convert(filename: str) -> None:
         with open(filename, "r") as f:
             mod = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(ast3.parse(f.read()), mod_path=filename),
-            ).ir.pp()
-            print(mod)
+            ).ir
+
+            schedule = py_code_gen_typed
+            target = schedule[-1]
+            for i in schedule:
+                if i == target:
+                    break
+                ast_ret = i(input_ir=mod, prior=None)
+            ast_ret = target(input_ir=mod, prior=None)
+            print("\t\t--- Jac AST ---\n", ast_ret.ir.pp()) if tree else None
+            print("\t\t--- Jac code ---\n", ast_ret.ir.format())
     else:
         print("Not a .py file.")
 
