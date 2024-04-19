@@ -1,8 +1,10 @@
 # Programming with GenAI
 <!-- TODO: Guide for coders to use by_llm @kugesan1105 Put the one in the chatgpt -->
-GenAI Ability is a powerful feature that enhances interaction with Large Language Models (LLM) by utilizing the keyword `by <model>`. Developers can customize the behavior of functions or methods by modifying associated
+GenAI Ability is a powerful feature that enhances interaction with Large Language Models (LLM) by utilizing the keyword <span style="color:orange;">by &lt;model&gt;</span>. Developers can customize the behavior of functions or methods by modifying associated
 [Semstrings](#introducing-semstrings).
-Jaclang will be extended to support a new abstraction that simplifies the development of llm applications. With the introduction of the `with <language_model>` syntax, developers can easily activate this abstraction by placing it after any ability. This new feature eliminates the need for explicit prompting and allows for a more streamlined coding experience. It's important to note that when using this ability, the return will be handled by the abstraction itself, removing the need for an explicit ability body.
+ This new feature eliminates the need for explicit prompting and allows for a more streamlined coding experience.
+
+
 **Model Initialization**
 
 <!--To incorporate a Large Language Model (LLM) into code, initialize it as a model code construct.
@@ -89,7 +91,7 @@ Here,
 
  - `reason`:A boolean indicating whether to include reasoning/explanation in the model's responses.
 
-- `context`: List of information to gie external information to llm for our use cases
+- `context`: List of information to give external information to llm for our use cases
 
 `by <model>(temperature=0.7, top_k = 3, top_p =0.51, incl_info=(xxx), context=[""],reason=true) ` <!--TODO : This line needs to be modified  with a working example code snippet later  -->
 
@@ -107,15 +109,50 @@ Here,
 In the dynamic landscape of programming languages, the advent of Jac introduces a novel concept called "**Semstrings**," offering a powerful and expressive way to interact with LLM. Semstrings, short for semantic strings, serve as a bridge between the traditional code structure and the capabilities of language models.They play a pivotal role in shaping the way we communicate with models and generate prompts.
 
 Utilizing Semstrings in Various Cases
+
+- Architype Declaration
+- Enum and Enum Items Declaration
+- Global variables Declaration
 - Ability/Method Declaration
 - Ability/Method Parameter Declaration
 - Attributes of Architypes
 - Return Type Specification
--
+
 
 <span style="color:orange;">
 </span>
 
+**Architype Declaration**
+```
+
+obj "A collection of dad jokes with punchlines"
+JokeList {
+    has jokes: list[tuple[str, str]];
+}
+```
+In this architype(Object) declaration, the semstring <span style="color:orange;"> "A collection of dad jokes with punchlines"</span> provides a clear and concise description of the purpose of the JokeList architype. It guide the LLM that this JpkeList is designed to store a collection of dad jokes, each consisting of a joke and its corresponding punchline.
+
+
+**Enum and Enum Items Declaration**
+
+```
+enum 'Personality of the Person'
+Personality {
+   INTROVERT: 'Person who is shy and reticent',
+   EXTROVERT: 'Person who is outgoing and socially confident'
+}
+```
+In this enum declaration, the semstring <span style="color:orange;">'Personality of the Person'</span> provides a descriptive label for the purpose of the Personality enumeration. Additionally, the semstrings <span style="color:orange;">'Person who is shy and reticent'</span> and <span style="color:orange;"> 'Person who is outgoing and socially confident'</span> serve as meaningful explanations for the INTROVERT and EXTROVERT enum items, respectively.
+
+**Global variables Declaration**
+
+```
+glob personality_examples: 'Personality Information of Famous People': dict[str, Personality|None] = {
+    'Albert Einstein': Personality.INTROVERT,
+    'Barack Obama': Personality.EXTROVERT
+}
+```
+In this global variable declaration, the semstring <span style="color:orange;">'Personality Information of Famous People'</span> provides a clear and concise description of the purpose and content of the personality_examples variable.
 
 **Ability/Method Declaration**
 
