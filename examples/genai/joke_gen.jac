@@ -1,6 +1,6 @@
-import:py jaclang.core.llms, Anthropic;
+import:py from jaclang.core.llms, Anthropic;
 
-llm = Anthropic(model_name="claude-3-sonnet-20240229");
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 obj "A list of good dad jokes. A indicates the punchline"
 JokeList {

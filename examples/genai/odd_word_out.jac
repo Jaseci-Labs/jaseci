@@ -1,6 +1,6 @@
 import:py jaclang.core.llms, Anthropic;
 
-llm = Anthropic(model_name="claude-3-sonnet-20240229");
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 glob examples: 'Examples for Picking Odd Word out': list[dict] = [
     {
@@ -24,5 +24,5 @@ pick_odd_word_out_v2(options: 'Options to pick from': list[str]) -> 'OPTIONS, RE
 with entry {
     options = ["Bentley", "Ferrari", "Lamborghini", "Casio", "Toyota"];
     print(pick_odd_word_out_v1(options));
-    print(pick_odd_word_out_v2(options)); 
+    print(pick_odd_word_out_v2(options));
 }

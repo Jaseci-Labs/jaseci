@@ -1,6 +1,6 @@
 import:py jaclang.core.llms, Anthropic;
 
-llm = Anthropic(model_name="claude-3-sonnet-20240229");
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 enum 'Personality of the Person'
 Personality {

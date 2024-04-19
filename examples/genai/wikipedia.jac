@@ -2,7 +2,7 @@ import:py wikipedia;
 
 import:py jaclang.core.llms, Anthropic;
 
-llm = Anthropic(model_name="claude-3-sonnet-20240229");
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 obj 'Question Answering'
 QA {

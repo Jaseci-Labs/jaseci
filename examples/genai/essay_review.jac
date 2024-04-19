@@ -1,6 +1,6 @@
 import:py jaclang.core.llms, Anthropic;
 
-llm = Anthropic(model_name="claude-3-sonnet-20240229");
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 obj Essay {
     has essay: 'Essay': str;
@@ -10,7 +10,7 @@ obj Essay {
 
     can 'Generate a summary'
     generate_summary(judgements: 'Judgements': dict) -> 'Summary': str by llm(incl_info=(self.essay));
-    
+
     can 'Give essay a letter grade (A-D)'
     give_grade(summary: 'Summary': str) -> 'Grade': str by llm();
 }

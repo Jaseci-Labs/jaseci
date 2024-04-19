@@ -1,6 +1,6 @@
 import:py jaclang.core.llms, Anthropic;
 
-llm = Anthropic(model_name="claude-3-sonnet-20240229");
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 can 'Finds the best professional to answer the given question'
 get_expert(question: 'Question': str)-> 'Expert Profession': str by llm(reason=True);
