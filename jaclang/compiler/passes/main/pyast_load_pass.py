@@ -267,6 +267,32 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         body = [self.convert(i) for i in node.body]
+        for i in body:
+            if (
+                isinstance(i, ast.Ability)
+                and isinstance(i.name_ref, ast.Name)
+                and i.name_ref.value == "__init__"
+            ):
+                tok = ast.Token(
+                    file_path=self.mod_path,
+                    name=Tok.KW_INIT,
+                    value="init",
+                    line=node.lineno,
+                    col_start=node.col_offset,
+                    col_end=node.col_offset + len("init"),
+                    pos_start=0,
+                    pos_end=0,
+                )
+                i.name_ref = ast.SpecialVarRef(var=tok, kid=[tok])
+            if (
+                isinstance(i, ast.Ability)
+                and i.signature
+                and isinstance(i.signature, ast.FuncSignature)
+                and i.signature.params
+            ):
+                i.signature.params.items = [
+                    j for j in i.signature.params.items if j.name.value != "self"
+                ]
         doc = (
             body[0].expr
             if isinstance(body[0], ast.ExprStmt)

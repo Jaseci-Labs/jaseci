@@ -819,22 +819,22 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
-                for item in self.body.items:
-                    if isinstance(item, Ability) and isinstance(
-                        item.name_ref, Name
-                    ):  # TODO :turn init into has_var
-                        if item.name_ref.value == "__init__":
-                            item.name_ref.value = "init"
-                        if (
-                            item.signature
-                            and isinstance(item.signature, FuncSignature)
-                            and item.signature.params
-                        ):
-                            item.signature.params.items = [
-                                j
-                                for j in item.signature.params.items
-                                if j.name.value != "self"
-                            ]
+                # for item in self.body.items:
+                #     if isinstance(item, Ability) and isinstance(
+                #         item.name_ref, Name
+                #     ):  # TODO :turn init into has_var
+                #         if item.name_ref.value == "__init__":
+                #             item.name_ref.value = "init"
+                #         if (
+                #             item.signature
+                #             and isinstance(item.signature, FuncSignature)
+                #             and item.signature.params
+                #         ):
+                #             item.signature.params.items = [
+                #                 j
+                #                 for j in item.signature.params.items
+                #                 if j.name.value != "self"
+                #             ]
 
                 new_kid.append(self.body)
         else:
