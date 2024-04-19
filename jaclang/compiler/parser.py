@@ -2321,7 +2321,7 @@ class JacParser(Pass):
         def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
             """Grammar rule.
 
-            atomic_call: atomic_chain LPAREN param_list? (RETURN_HINT KW_BY atomic_call)? RPAREN
+            atomic_call: atomic_chain LPAREN param_list? (KW_BY atomic_call)? RPAREN
             """
             if (
                 len(kid) > 4
@@ -2342,9 +2342,13 @@ class JacParser(Pass):
                 and isinstance(kid[0], ast.Expr)
                 and isinstance(kid[2], ast.SubNodeList)
             ):
-                return self.nu(ast.FuncCall(target=kid[0], params=kid[2], kid=kid))
+                return self.nu(
+                    ast.FuncCall(target=kid[0], params=kid[2], genai_call=None, kid=kid)
+                )
             elif len(kid) == 3 and isinstance(kid[0], ast.Expr):
-                return self.nu(ast.FuncCall(target=kid[0], params=None, kid=kid))
+                return self.nu(
+                    ast.FuncCall(target=kid[0], params=None, genai_call=None, kid=kid)
+                )
             else:
                 raise self.ice()
 

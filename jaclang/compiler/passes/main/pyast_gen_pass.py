@@ -2217,6 +2217,7 @@ class PyastGenPass(Pass):
                         items=[node.left], delim=Tok.COMMA, kid=[node.left]
                     )
                 ),
+                genai_call=None,
                 kid=node.kid,
             )
             self.exit_func_call(func_node)
@@ -2253,6 +2254,7 @@ class PyastGenPass(Pass):
                         items=[node.right], delim=Tok.COMMA, kid=[node.right]
                     )
                 ),
+                genai_call=None,
                 kid=node.kid,
             )
             self.exit_func_call(func_node)
