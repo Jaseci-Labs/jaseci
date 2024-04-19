@@ -37,7 +37,7 @@ from jaclang.core.construct import (
     root,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.registry import SemScope
+from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -437,6 +437,110 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def get_semstr_type(
+        file_loc: str, scope: str, attr: str, return_semstr: bool
+    ) -> Optional[str]:
+        """Jac's get_semstr_type feature."""
+        _scope = SemScope.get_scope_from_str(scope)
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
+            ),
+            "rb",
+        ) as f:
+            mod_registry: SemRegistry = pickle.load(f)
+        _, attr_seminfo = mod_registry.lookup(_scope, attr)
+        if attr_seminfo and isinstance(attr_seminfo, SemInfo):
+            return attr_seminfo.semstr if return_semstr else attr_seminfo.type
+        return None
+
+    @staticmethod
+    @hookimpl
+    def obj_scope(file_loc: str, attr: str) -> str:
+        """Jac's gather_scope feature."""
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
+            ),
+            "rb",
+        ) as f:
+            mod_registry: SemRegistry = pickle.load(f)
+
+        attr_scope = None
+        for x in attr.split("."):
+            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
+            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
+                "class",
+                "obj",
+                "node",
+                "edge",
+            ]:
+                attr_scope, attr_sem_info = mod_registry.lookup(
+                    None, attr_sem_info.type
+                )
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
+            else:
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
+        return str(attr_scope)
+
+    @staticmethod
+    @hookimpl
+    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
+        with open(
+            os.path.join(
+                os.path.dirname(file_loc),
+                "__jac_gen__",
+                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
+            ),
+            "rb",
+        ) as f:
+            mod_registry: SemRegistry = pickle.load(f)
+
+        attr_scope = None
+        for x in attr.split("."):
+            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
+            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
+                "class",
+                "obj",
+                "node",
+                "edge",
+            ]:
+                attr_scope, attr_sem_info = mod_registry.lookup(
+                    None, attr_sem_info.type
+                )
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
+            else:
+                if isinstance(attr_sem_info, SemInfo) and isinstance(
+                    attr_sem_info.type, str
+                ):
+                    attr_scope = SemScope(
+                        attr_sem_info.name, attr_sem_info.type, attr_scope
+                    )
+        if isinstance(attr_sem_info, SemInfo) and isinstance(attr_scope, SemScope):
+            return attr_sem_info.semstr, attr_scope.as_type_str
+        return "", ""  #
+
+    @staticmethod
+    @hookimpl
     def with_llm(
         file_loc: str,
         model: Any,  # noqa: ANN401
@@ -444,7 +548,7 @@ class JacFeatureDefaults:
         scope: str,
         incl_info: list[tuple[str, str]],
         excl_info: list[tuple[str, str]],
-        inputs: tuple,
+        inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
     ) -> Any:  # noqa: ANN401
@@ -459,6 +563,7 @@ class JacFeatureDefaults:
         ) as f:
             mod_registry = pickle.load(f)
 
+        outputs = outputs[0] if isinstance(outputs, list) else outputs
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None
 
@@ -469,7 +574,6 @@ class JacFeatureDefaults:
         type_collector: list = []
         information, collected_types = get_info_types(_scope, mod_registry, incl_info)
         type_collector.extend(collected_types)
-
         inputs_information_list = []
         for i in inputs:
             typ_anno = get_type_annotation(i[3])
@@ -479,8 +583,8 @@ class JacFeatureDefaults:
             )
         inputs_information = "\n".join(inputs_information_list)
 
-        output_information = f"{outputs[0]} ({outputs[2]})"
-        type_collector.extend(extract_non_primary_type(outputs[2]))
+        output_information = f"{outputs[0]} ({outputs[1]})"
+        type_collector.extend(extract_non_primary_type(outputs[1]))
 
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
