@@ -942,6 +942,7 @@ class PyastGenPass(Pass):
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
+        self.needs_jac_feature()
         if isinstance(node.body, ast.FuncCall):
             model = node.body.target.gen.py_ast[0]
             extracted_type = (
@@ -2771,6 +2772,7 @@ class PyastGenPass(Pass):
                 else:
                     self.ice("Invalid Parameter")
         if node.genai_call:
+            self.needs_jac_feature()
             model = node.genai_call.target.gen.py_ast[0]
             model_params, include_info, exclude_info = extract_params(node.genai_call)
             action = self.sync(
