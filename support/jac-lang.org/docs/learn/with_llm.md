@@ -103,37 +103,37 @@ Here,
 |    excl_info     |    tuple   \| None         |
 |    context       |    List                    |
 
-
 ## Introducing Semstrings
 
 In the dynamic landscape of programming languages, the advent of Jac introduces a novel concept called "**Semstrings**," offering a powerful and expressive way to interact with LLM. Semstrings, short for semantic strings, serve as a bridge between the traditional code structure and the capabilities of language models.They play a pivotal role in shaping the way we communicate with models and generate prompts.
 
 Utilizing Semstrings in Various Cases
 
-- Architype Declaration
-- Enum and Enum Items Declaration
-- Global variables Declaration
-- Ability/Method Declaration
-- Ability/Method Parameter Declaration
-- Attributes of Architypes
-- Return Type Specification
+- [Architype Declaration](#architype-declaration).
+- [Enum and Enum Items Declaration](#enum-declaration)
+- [Global variables Declaration](#global-variables-declaration)
+- [Ability/Method Declaration](#ability-method-declaration)
+- [Ability/Method Parameter Declaration](#ability-method-parameter-declaration)
+- [Attributes of Architypes](#attributes-of-architypes)
+- [Return Type Specification](#return-type-specification)
 
 
 <span style="color:orange;">
 </span>
 
-**Architype Declaration**
-```
+<h3 id="architype-declaration">Architype Declaration</h3>
 
+```
 obj "A collection of dad jokes with punchlines"
 JokeList {
     has jokes: list[tuple[str, str]];
 }
 ```
+
 In this architype(Object) declaration, the semstring <span style="color:orange;"> "A collection of dad jokes with punchlines"</span> provides a clear and concise description of the purpose of the JokeList architype. It guide the LLM that this JpkeList is designed to store a collection of dad jokes, each consisting of a joke and its corresponding punchline.
 
 
-**Enum and Enum Items Declaration**
+<h3 id="enum-declaration">Enum and Enum Items Declaration</h3>
 
 ```
 enum 'Personality of the Person'
@@ -144,7 +144,8 @@ Personality {
 ```
 In this enum declaration, the semstring <span style="color:orange;">'Personality of the Person'</span> provides a descriptive label for the purpose of the Personality enumeration. Additionally, the semstrings <span style="color:orange;">'Person who is shy and reticent'</span> and <span style="color:orange;"> 'Person who is outgoing and socially confident'</span> serve as meaningful explanations for the INTROVERT and EXTROVERT enum items, respectively.
 
-**Global variables Declaration**
+
+<h3 id="global-variables-declaration">Global variables Declaration</h3>
 
 ```
 glob personality_examples: 'Personality Information of Famous People': dict[str, Personality|None] = {
@@ -154,7 +155,8 @@ glob personality_examples: 'Personality Information of Famous People': dict[str,
 ```
 In this global variable declaration, the semstring <span style="color:orange;">'Personality Information of Famous People'</span> provides a clear and concise description of the purpose and content of the personality_examples variable.
 
-**Ability/Method Declaration**
+
+<h3 id="ability-method-declaration">Ability/Method Declaration</h3>
 
  Semstrings play a pivotal role in method and ability declarations, offering a clear and concise description of their intended purpose—essentially defining the action each ability or method is designed to perform.
 
@@ -166,7 +168,7 @@ translate(english_word: 'English Word': str) -> 'French Word' : str by llm();
 In this instance, the semstring <span style="color:orange;">'Translate English to French'</span> serves as a descriptive label, clarifying the intended action when invoking the function. For example, calling the function with translate("cheese") leverages the semstring to guide the model, ensuring a contextually informed response.
 
 
-**Ability/Method Parameter Declaration**
+<h3 id="ability-method-parameter-declaration">Ability/Method Parameter Declaration</h3>
 
  Semstrings shine prominently in method signatures, serving as guides to define parameters with explicit meanings. By providing meaningful labels, developers ensure that LLM comprehends the purpose and expected inputs clearly. These semstrings also contribute to explaining the input with meaningful context.
 ```
@@ -175,7 +177,7 @@ get_answer(question: 'Question' str, choices: 'Answer Choices': dict) -> 'Answer
 ```
 In this instance, the semstrings for parameters (<span style="color:orange;">'Question'</span> and <span style="color:orange;">'Answer Choices'</span>) act as informative labels, offering a clear understanding of what each parameter represents. The labels provide context to LLM, guiding it to interpret and respond to the function's inputs appropriately.
 
-**Attributes of Architypes**
+<h3 id="attributes-of-architypes">Attributes of Architypes</h3>
 
 Semstrings play a vital role in describing attributes within architypes, providing a succinct and clear explanation of the purpose and nature of each attribute. This practice makes it easier to convey the respective meanings to prompts.
 ```
@@ -188,7 +190,7 @@ Singer {
 ```
 In this architype example, the semstrings associated with attributes (<span style="color:orange;">'Name of the Singer'</span>, <span style="color:orange;">'Age,'</span> and <span style="color:orange;">"His/Her's Top 2 Songs"</span>) serve as concise descriptors. These semstrings effectively communicate the significance of each attribute, facilitating a more straightforward understanding of the architype's structure.
 
-**Return Type Specification**
+<h3 id="return-type-specification">Return Type Specification</h3>
 
 Utilizing Semstring in return type specifications provides a meaningful way to explain the expected outputs of a function.
 ```
@@ -196,3 +198,4 @@ can 'Summarize the Accomplishments'
 summarize (a: 'Accomplishments': list[str]) -> 'Summary of the Accomplishments' : str by llm;
 ```
 In this example, the semstring <span style="color:orange;">'Summary of the Accomplishments' </span> precisely communicates the nature of the expected output. This clarity ensures that developers, as well as LLM, comprehend the type of information that will be returned by invoking the 'Summarize the Accomplishments' function.
+how ?
