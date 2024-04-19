@@ -58,7 +58,8 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
                 )
 
         except Exception as e:
-            self.skipTest(f"Test failed, but skipping instead of failing: {e}")
+            raise e
+            # self.skipTest(f"Test failed, but skipping instead of failing: {e}")
 
 
 JacUnparseTests.self_attach_micro_tests()
