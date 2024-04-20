@@ -270,11 +270,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         body = [self.convert(i) for i in node.body]
-        for i in body:
+        for body_stmt in body:
             if (
-                isinstance(i, ast.Ability)
-                and isinstance(i.name_ref, ast.Name)
-                and i.name_ref.value == "__init__"
+                isinstance(body_stmt, ast.Ability)
+                and isinstance(body_stmt.name_ref, ast.Name)
+                and body_stmt.name_ref.value == "__init__"
             ):
                 tok = ast.Token(
                     file_path=self.mod_path,
@@ -286,15 +286,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_start=0,
                     pos_end=0,
                 )
-                i.name_ref = ast.SpecialVarRef(var=tok, kid=[tok])
+                body_stmt.name_ref = ast.SpecialVarRef(var=tok, kid=[tok])
             if (
-                isinstance(i, ast.Ability)
-                and i.signature
-                and isinstance(i.signature, ast.FuncSignature)
-                and i.signature.params
+                isinstance(body_stmt, ast.Ability)
+                and body_stmt.signature
+                and isinstance(body_stmt.signature, ast.FuncSignature)
+                and body_stmt.signature.params
             ):
-                i.signature.params.items = [
-                    j for j in i.signature.params.items if j.name.value != "self"
+                body_stmt.signature.params.items = [
+                    param
+                    for param in body_stmt.signature.params.items
+                    if param.name.value != "self"
                 ]
         doc = (
             body[0].expr
@@ -350,22 +352,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             arch_type.name = Tok.KW_ENUM
             arch_type.value = "enum"
             valid_enum_body: list[ast.EnumBlockStmt] = []
-            for i in node.body:
-                x = self.convert(i)
-                if isinstance(x, ast.EnumBlockStmt):
-                    if isinstance(x, ast.Assignment):
-                        x.is_enum_stmt = True
-                    valid_enum_body.append(x)
+            for class_body_stmt in node.body:
+                converted_stmt = self.convert(class_body_stmt)
+                if isinstance(converted_stmt, ast.EnumBlockStmt):
+                    if isinstance(converted_stmt, ast.Assignment):
+                        converted_stmt.is_enum_stmt = True
+                    valid_enum_body.append(converted_stmt)
                 else:
-                    if isinstance(x, ast.ExprStmt) and isinstance(x.expr, ast.String):
+                    if isinstance(converted_stmt, ast.ExprStmt) and isinstance(
+                        converted_stmt.expr, ast.String
+                    ):
                         continue
                     tok = ast.Token(
                         file_path=self.mod_path,
                         name=Tok.PYNLINE,
-                        value=py_ast.unparse(i),
+                        value=py_ast.unparse(class_body_stmt),
                         line=node.lineno,
                         col_start=node.col_offset,
-                        col_end=node.col_offset + len(py_ast.unparse(i)),
+                        col_end=node.col_offset + len(py_ast.unparse(class_body_stmt)),
                         pos_start=0,
                         pos_end=0,
                     )
@@ -385,7 +389,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 base_classes=None,
                 body=enum_body,
                 kid=[name, enum_body],
-                doc=doc,  # FIXME: doc,
+                doc=doc,
                 decorators=valid_decorators,
             )
         kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]
