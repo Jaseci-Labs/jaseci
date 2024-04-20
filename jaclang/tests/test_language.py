@@ -472,21 +472,35 @@ class JacLanguageTests(TestCase):
         self.assertEqual("2\n", stdout_value)
 
     def test_needs_import_1(self) -> None:
-        """Test py ast to Jac ast conversion."""
+        """Test py ast to Jac ast conversion output."""
         os.environ["JAC_PROC_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.txt")
-        with open(py_out_path) as f:
-            output = f.read()
         self.assertIn("pyfunc_1 imported", stdout_value)
+        del os.environ["JAC_PROC_DEBUG"]
+
+    def test_pyfunc_1(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        os.environ["JAC_PROC_DEBUG"] = "1"
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.absyntree as ast
+        import ast as py_ast
+
+        os.environ["JAC_PROC_TEST"] = "1"
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.py")
+        with open(py_out_path) as f:
+            output = PyastBuildPass(
+                input_ir=ast.PythonModuleAst(
+                    py_ast.parse(f.read()), mod_path=py_out_path
+                ),
+            ).ir.unparse()
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
-            "Enum for shape types\nenum ShapeType { CIRCLE=Circle,",
+            '"""Enum for shape types"""\nenum ShapeType { CIRCLE=Circle,\n',
             output,
         )
         self.assertIn("\nUNKNOWN=Unknown,\n::py::\nprint('hello')\n::py::\n }", output)
@@ -494,44 +508,72 @@ class JacLanguageTests(TestCase):
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict={x: x ** 2  for x in numbers};", output)
-        self.assertIn("Say hello\n@ my_decorator \n can say_hello()", output)
-        os.remove(py_out_path)
+        self.assertIn('"""Say hello"""\n@ my_decorator', output)
+        del os.environ["JAC_PROC_TEST"]
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_2(self) -> None:
-        """Test py ast to Jac ast conversion."""
+        """Test py ast to Jac ast conversion output."""
         os.environ["JAC_PROC_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.txt")
-        with open(py_out_path) as f:
-            output = f.read()
         self.assertIn("pyfunc_2 imported", stdout_value)
+        self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
+        del os.environ["JAC_PROC_DEBUG"]
+
+    def test_pyfunc_2(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        os.environ["JAC_PROC_DEBUG"] = "1"
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.absyntree as ast
+        import ast as py_ast
+
+        os.environ["JAC_PROC_TEST"] = "1"
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.py")
+        with open(py_out_path) as f:
+            output = PyastBuildPass(
+                input_ir=ast.PythonModuleAst(
+                    py_ast.parse(f.read()), mod_path=py_out_path
+                ),
+            ).ir.unparse()
         self.assertIn("obj X {\n    with entry {\n        a_b=67;", output)
         self.assertIn("br=b'Hello\\\\\\\\nWorld'", output)
-        self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
         self.assertIn("obj Circle {\n    can init(radius: float", output)
-        os.remove(py_out_path)
+        del os.environ["JAC_PROC_TEST"]
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_3(self) -> None:
-        """Test py ast to Jac ast conversion."""
+        """Test py ast to Jac ast conversion output."""
         os.environ["JAC_PROC_DEBUG"] = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.txt")
-        with open(py_out_path) as f:
-            output = f.read()
         self.assertIn("pyfunc_3 imported", stdout_value)
+        del os.environ["JAC_PROC_DEBUG"]
+
+    def test_pyfunc_3(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        os.environ["JAC_PROC_DEBUG"] = "1"
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.absyntree as ast
+        import ast as py_ast
+
+        os.environ["JAC_PROC_TEST"] = "1"
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.py")
+        with open(py_out_path) as f:
+            output = PyastBuildPass(
+                input_ir=ast.PythonModuleAst(
+                    py_ast.parse(f.read()), mod_path=py_out_path
+                ),
+            ).ir.unparse()
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point(x = int(_), y = 0):\n", output)
         self.assertIn("obj Sample {\n    can init", output)
-        os.remove(py_out_path)
+        del os.environ["JAC_PROC_TEST"]
         del os.environ["JAC_PROC_DEBUG"]

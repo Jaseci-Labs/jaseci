@@ -82,6 +82,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     with_entry_body = []
                 extracted.append(i)
             elif isinstance(i, ast.CodeBlockStmt):
+                if isinstance(i, ast.ExprStmt) and isinstance(i.expr, ast.String):
+                    i.expr.value = f'"""{i.expr.value}"""'
                 with_entry_body.append(i)
             else:
                 self.ice("Invalid type for with entry body")
@@ -119,10 +121,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
-        if os.environ.get("JAC_PROC_DEBUG", False):
-            with open(self.mod_path.replace(".py", ".txt"), "w") as f:
-                f.write(ret.unparse())
-        else:
+        if not os.environ.get("JAC_PROC_TEST", False):
             ret.unparse()
         return self.nu(ret)
 
@@ -304,7 +303,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else None
         )
         if doc:
-            doc.value = f'"""{doc.value}"""' 
+            doc.value = f'"""{doc.value}"""'
         body = body[1:] if doc else body
         valid: list[ast.ArchBlockStmt] = self.extract_with_entry(
             body, ast.ArchBlockStmt
