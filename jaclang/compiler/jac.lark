@@ -467,21 +467,6 @@ builtin_type: TYP_TYPE
             | TYP_STRING
 
 // Lexer Tokens
-FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
-DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
-PYNLINE: /::py::(.|\n|\r)*?::py::/
-STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
-BOOL.1: /True|False/
-KW_NIN.1: /\bnot\s+in\b/
-KW_ISN.1: /\bis\s+not\b/
-HEX: /0[xX][0-9a-fA-F_]+/
-BIN: /0[bB][01_]+/
-OCT: /0[oO][0-7_]+/
-INT: /[0-9][0-9_]*/
-NULL.1: /None/
-KWESC_NAME: /<>[a-zA-Z_][a-zA-Z0-9_]*/
-NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
-
 TYP_STRING: "str"
 TYP_INT: "int"
 TYP_FLOAT: "float"
@@ -554,6 +539,20 @@ KW_POST_INIT: "postinit"
 KW_SUPER: "super"
 KW_ROOT: "root"
 
+FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
+DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
+PYNLINE: /::py::(.|\n|\r)*?::py::/
+STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
+BOOL.1: /True|False/
+KW_NIN.1: /\bnot\s+in\b/
+KW_ISN.1: /\bis\s+not\b/
+HEX: /0[xX][0-9a-fA-F_]+/
+BIN: /0[bB][01_]+/
+OCT: /0[oO][0-7_]+/
+INT: /[0-9][0-9_]*/
+NULL.1: /None/
+KWESC_NAME: /<>[a-zA-Z_][a-zA-Z0-9_]*/
+NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 
 ARROW_BI: /<-->/
 ARROW_L: /<--/
@@ -569,8 +568,6 @@ CARROW_L_P1: /<\+\:/
 CARROW_R_P2: /:\+>/
 CARROW_L_P2: /:\+/
 CARROW_R_P1: /\+\:/
-
-
 
 GLOBAL_OP: /:g:|:global:/
 NONLOCAL_OP: /:nl:|:nonlocal:/
@@ -642,7 +639,6 @@ LPAREN: /\(/
 RPAREN: /\)/
 LSQUARE: /\[/
 RSQUARE: /\]/
-
 
 // f-string tokens
 FSTR_START.1: "f\""
