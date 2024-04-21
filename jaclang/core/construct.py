@@ -409,7 +409,7 @@ class JacTestCheck:
 
     def __getattr__(self, name: str) -> Union[bool, Any]:
         """Make convenient check.Equal(...) etc."""
-        return getattr(JacTestCheck.test_case, "assert" + name)
+        return getattr(JacTestCheck.test_case, name)
 
 
 root = Root()
