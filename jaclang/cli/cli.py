@@ -294,7 +294,7 @@ def graph(
 
 
 @cmd_registry.register
-def convert(filename: str, tree: bool = False) -> None:
+def py_to_jac(filename: str, tree: bool = False) -> None:
     """Convert a Python file to Jac.
 
     :param filename: The path to the .py file.
@@ -313,8 +313,7 @@ def convert(filename: str, tree: bool = False) -> None:
                     break
                 ast_ret = i(input_ir=mod, prior=None)
             ast_ret = target(input_ir=mod, prior=None)
-            print("\t\t--- Jac AST ---\n", ast_ret.ir.pp()) if tree else None
-            print("\t\t--- Jac code ---\n", ast_ret.ir.format())
+            print(ast_ret.ir.format())
     else:
         print("Not a .py file.")
 
