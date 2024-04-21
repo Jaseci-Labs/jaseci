@@ -599,3 +599,13 @@ class JacLanguageTests(TestCase):
         """Basic precedence test."""
         prog = jac_str_to_pass("with entry {print.is.not.True(4-5-4);}", "test.jac")
         self.assertIn("Python keyword is used as name", str(prog.errors_had[0].msg))
+
+    def test_double_format_issue(self) -> None:
+        """Basic precedence test."""
+        prog = jac_str_to_pass("with entry {print(hello);}", "test.jac")
+        prog.ir.unparse()
+        before = prog.ir.format()
+        prog.ir.format()
+        prog.ir.format()
+        after = prog.ir.format()
+        self.assertEqual(before, after)
