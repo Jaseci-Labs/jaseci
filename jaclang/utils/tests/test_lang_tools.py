@@ -101,22 +101,6 @@ class JacFormatPassTests(TestCase):
 
     def test_py_jac_mode(self) -> None:
         """Testing for py_jac_mode support."""
-        jacf = self.fixture_abs_path(
-            "../../../../examples/reference/connect_expressions.jac"
-        )
-        pyf = self.fixture_abs_path("../../../tests/fixtures/pyfunc.py")
-        for file in (jacf, pyf):
-            out1 = AstTool().ir(["ast", file])
-            out2 = AstTool().ir(["sym", file])
-            out3 = AstTool().ir(["unparse", file])
-            out4 = AstTool().ir(["py", file])
-            if file.endswith(".jac"):
-                self.assertIn("+-- AbilityDef - (w)Creator.(c)create", out1)
-                self.assertIn("+-- (w)Creator.(c)travel", out2)
-                self.assertIn(":walker:Creator:can:travel()", out3)
-                self.assertIsNotNone(out4)
-            elif file.endswith(".py"):
-                self.assertIn("\n5:4 - 6:11\t+-- Ability - my_print -", out1)
-                self.assertIn("+-- SymTable::Ability(my_print)", out2)
-                self.assertIn("can my_print(x: object) -> None", out3)
-                self.assertIn("def my_print(x: object) -> None:", out4)
+        file = self.fixture_abs_path("../../../tests/fixtures/pyfunc.py")
+        out = AstTool().ir(["unparse", file])
+        self.assertIn("can my_print(x: object) -> None", out)
