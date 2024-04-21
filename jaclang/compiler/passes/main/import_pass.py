@@ -7,6 +7,7 @@ symbols are available for matching.
 
 import ast as py_ast
 import importlib.util
+import os
 import sys
 from os import path
 from typing import Optional
@@ -47,10 +48,12 @@ class ImportPass(Pass):
                     self.annex_impl(mod)
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
-                # elif i.parent.lang.tag.value == "py":
-                #     mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
-                #     i.sub_module = mod
-                #     i.add_kids_right([mod], pos_update=False)
+                elif i.parent.lang.tag.value == "py" and os.environ.get(
+                    "JAC_PROC_DEBUG", False
+                ):
+                    mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
+                    i.sub_module = mod
+                    i.add_kids_right([mod], pos_update=False)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
         self.annex_impl(node)
