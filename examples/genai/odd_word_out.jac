@@ -20,7 +20,7 @@ pick_odd_word_out_v1(options: 'Options to pick from': list[str]) -> 'RESULT': st
 by llm(reason=True, incl_info=(examples));
 
 can 'Pick the Odd word out with reasoning'
-pick_odd_word_out_v2(options: 'Options to pick from': list[str]) -> 'OPTIONS, REASONING & RESULT': dict[str, any] 
+pick_odd_word_out_v2(options: 'Options to pick from': list[str]) -> 'OPTIONS, REASONING & RESULT': dict[str, any]
 by llm(incl_info=(examples));
 
 with entry {
