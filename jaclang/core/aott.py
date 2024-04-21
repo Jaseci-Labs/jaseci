@@ -150,9 +150,10 @@ def get_all_type_explanations(type_list: list, mod_registry: SemRegistry) -> dic
     """Get all type explanations from the input type list."""
     collected_type_explanations = {}
     for type_item in type_list:
-        type_explanation = get_type_explanation(type_item, mod_registry)
-        if type_explanation is not None:
-            type_explanation_str, nested_types = type_explanation
+        type_explanation_str, nested_types = get_type_explanation(
+            type_item, mod_registry
+        )
+        if type_explanation_str is not None:
             if type_item not in collected_type_explanations:
                 collected_type_explanations[type_item] = type_explanation_str
             if nested_types:

@@ -1175,7 +1175,7 @@
 ## Lexer Tokens
 **Grammar Snippet**
 ```yaml linenums="470"
---8<-- "jaclang/compiler/jac.lark:470:645"
+--8<-- "jaclang/compiler/jac.lark:470:641"
 ```
 **Code Example**
 === "Jac"
@@ -1192,8 +1192,8 @@
 
 ## f-string tokens
 **Grammar Snippet**
-```yaml linenums="648"
---8<-- "jaclang/compiler/jac.lark:648:659"
+```yaml linenums="644"
+--8<-- "jaclang/compiler/jac.lark:644:655"
 ```
 **Code Example**
 === "Jac"

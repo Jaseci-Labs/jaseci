@@ -203,7 +203,6 @@ class JacCliTests(TestCase):
             text=True,
         )
         stdout, stderr = process.communicate()
-        print(stderr)
         self.assertIn("...F", stderr)
         self.assertIn("F.F", stderr)
 
@@ -225,5 +224,7 @@ class JacCliTests(TestCase):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        if os.path.exists("connect_expressions.dot"):
+            os.remove("connect_expressions.dot")
         self.assertIn("11\n13\n15\n>>> Graph content saved to", stdout_value)
         self.assertIn("connect_expressions.dot\n", stdout_value)

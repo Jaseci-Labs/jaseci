@@ -120,6 +120,7 @@ class ImportPass(Pass):
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
             mod.is_imported = True
+            mod.body = [x for x in mod.body if not isinstance(x, ast.AstImplOnlyNode)]
             return mod
         else:
             self.error(f"Module {target} is not a valid Jac module.")

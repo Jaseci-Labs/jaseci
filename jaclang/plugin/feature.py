@@ -226,6 +226,25 @@ class JacFeature:
         )
 
     @staticmethod
+    def get_semstr_type(
+        file_loc: str, scope: str, attr: str, return_semstr: bool
+    ) -> Optional[str]:
+        """Jac's get_semstr_type feature."""
+        return pm.hook.get_semstr_type(
+            file_loc=file_loc, scope=scope, attr=attr, return_semstr=return_semstr
+        )
+
+    @staticmethod
+    def obj_scope(file_loc: str, attr: str) -> str:
+        """Jac's get_semstr_type feature."""
+        return pm.hook.obj_scope(file_loc=file_loc, attr=attr)
+
+    @staticmethod
+    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
+        """Jac's get_semstr_type feature."""
+        return pm.hook.get_sem_type(file_loc=file_loc, attr=attr)
+
+    @staticmethod
     def with_llm(
         file_loc: str,
         model: Any,  # noqa: ANN401
@@ -233,7 +252,7 @@ class JacFeature:
         scope: str,
         incl_info: list[tuple[str, str]],
         excl_info: list[tuple[str, str]],
-        inputs: tuple,
+        inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
     ) -> Any:  # noqa: ANN401
