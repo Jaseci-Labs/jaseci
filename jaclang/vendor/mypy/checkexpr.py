@@ -217,6 +217,8 @@ from mypy.typevars import fill_typevars
 from mypy.util import split_module_names
 from mypy.visitor import ExpressionVisitor
 
+from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
+
 # Type of callback user for checking individual function arguments. See
 # check_args() below for details.
 ArgChecker: _TypeAlias = Callable[
@@ -5187,10 +5189,14 @@ class ExpressionChecker(ExpressionVisitor[Type]):
 
     def visit_list_expr(self, e: ListExpr) -> Type:
         """Type check a list expression [...]."""
-        return self.check_lst_expr(e, "builtins.list", "<list>")
+        out = self.check_lst_expr(e, "builtins.list", "<list>")
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
 
     def visit_set_expr(self, e: SetExpr) -> Type:
-        return self.check_lst_expr(e, "builtins.set", "<set>")
+        out = self.check_lst_expr(e, "builtins.set", "<set>")
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
 
     def fast_container_type(
         self, e: ListExpr | SetExpr | TupleExpr, container_fullname: str
@@ -5286,6 +5292,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
     def visit_tuple_expr(self, e: TupleExpr) -> Type:
         """Type check a tuple expression."""
         # Try to determine type context for type inference.
+        print(str(e))
         type_context = get_proper_type(self.type_context[-1])
         type_context_items = None
         if isinstance(type_context, UnionType):
@@ -5353,7 +5360,9 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                         if seen_unpack_in_items:
                             # Multiple unpack items are not allowed in tuples,
                             # fall back to instance type.
-                            return self.check_lst_expr(e, "builtins.tuple", "<tuple>")
+                            out = self.check_lst_expr(e, "builtins.tuple", "<tuple>")
+                            FuseTypeInfoPass.node_type_hash[e] = out
+                            return out
                         else:
                             seen_unpack_in_items = True
                     items.extend(tt.items)
@@ -5377,7 +5386,9 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                             continue
                     # A star expression that's not a Tuple.
                     # Treat the whole thing as a variable-length tuple.
-                    return self.check_lst_expr(e, "builtins.tuple", "<tuple>")
+                    out = self.check_lst_expr(e, "builtins.tuple", "<tuple>")
+                    FuseTypeInfoPass.node_type_hash[e] = out
+                    return out
             else:
                 if not type_context_items or j >= len(type_context_items):
                     tt = self.accept(item)
@@ -5393,6 +5404,8 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         if seen_unpack_in_items:
             # Return already normalized tuple type just in case.
             result = expand_type(result, {})
+
+        FuseTypeInfoPass.node_type_hash[e] = result
         return result
 
     def fast_dict_type(self, e: DictExpr) -> Type | None:
@@ -5482,6 +5495,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         # fast path attempt
         dt = self.fast_dict_type(e)
         if dt:
+            FuseTypeInfoPass.node_type_hash[e] = dt
             return dt
 
         # Define type variables (used in constructors below).
@@ -5539,7 +5553,9 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             name="<dict>",
             variables=[kt, vt],
         )
-        return self.check_call(constructor, args, [nodes.ARG_POS] * len(args), e)[0]
+        out = self.check_call(constructor, args, [nodes.ARG_POS] * len(args), e)[0]
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
 
     def find_typeddict_context(
         self, context: Type | None, dict_expr: DictExpr
@@ -5859,14 +5875,21 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         return self.named_type("builtins.slice")
 
     def visit_list_comprehension(self, e: ListComprehension) -> Type:
-        return self.check_generator_or_comprehension(
+        out = self.check_generator_or_comprehension(
             e.generator, "builtins.list", "<list-comprehension>"
         )
+        FuseTypeInfoPass.node_type_hash[e] = out
+        # import traceback
+        # traceback.print_stack()
+        # exit()
+        return out
 
     def visit_set_comprehension(self, e: SetComprehension) -> Type:
-        return self.check_generator_or_comprehension(
+        out = self.check_generator_or_comprehension(
             e.generator, "builtins.set", "<set-comprehension>"
         )
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
 
     def visit_generator_expr(self, e: GeneratorExpr) -> Type:
         # If any of the comprehensions use async for, the expression will return an async generator
@@ -5879,9 +5902,12 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             typ = "typing.Generator"
             # received type and returned type are None
             additional_args = [NoneType(), NoneType()]
-        return self.check_generator_or_comprehension(
+
+        out = self.check_generator_or_comprehension(
             e, typ, "<generator>", additional_args=additional_args
         )
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
 
     def check_generator_or_comprehension(
         self,
@@ -5951,9 +5977,11 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                 name="<dictionary-comprehension>",
                 variables=[ktdef, vtdef],
             )
-            return self.check_call(
+            out = self.check_call(
                 constructor, [e.key, e.value], [nodes.ARG_POS, nodes.ARG_POS], e
             )[0]
+            FuseTypeInfoPass.node_type_hash[e] = out
+            return out
 
     def check_for_comp(self, e: GeneratorExpr | DictionaryComprehension) -> None:
         """Check the for_comp part of comprehensions. That is the part from 'for':

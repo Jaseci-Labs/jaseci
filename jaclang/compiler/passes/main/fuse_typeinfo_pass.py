@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import traceback
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
@@ -23,6 +23,8 @@ T = TypeVar("T", bound=ast.AstSymbolNode)
 
 class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
+
+    node_type_hash: dict[Any, str] = {}
 
     def __debug_print(self, *argv: object) -> None:
         if "FuseTypeInfoDebug" in os.environ:
@@ -259,32 +261,50 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_list_val(self, node: ast.ListVal) -> None:
         """Pass handler for ListVal nodes."""
-        node.sym_info = ast.SymbolInfo("builtins.list")
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.list"
 
     @__handle_node
     def enter_set_val(self, node: ast.SetVal) -> None:
         """Pass handler for SetVal nodes."""
-        node.sym_info = ast.SymbolInfo("builtins.set")
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.set"
 
     @__handle_node
     def enter_tuple_val(self, node: ast.TupleVal) -> None:
         """Pass handler for TupleVal nodes."""
-        node.sym_info = ast.SymbolInfo("builtins.tuple")
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.tuple"
 
     @__handle_node
     def enter_dict_val(self, node: ast.DictVal) -> None:
         """Pass handler for DictVal nodes."""
-        node.sym_info = ast.SymbolInfo("builtins.dict")
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.dict"
 
     @__handle_node
     def enter_list_compr(self, node: ast.ListCompr) -> None:
         """Pass handler for ListCompr nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        node.sym_info.typ = str(self.node_type_hash[mypy_node])
 
     @__handle_node
     def enter_dict_compr(self, node: ast.DictCompr) -> None:
         """Pass handler for DictCompr nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        node.sym_info.typ = str(self.node_type_hash[mypy_node])
 
     @__handle_node
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
@@ -315,7 +335,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Pass handler for EdgeOpRef nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_filter_compr(self, node: ast.FilterCompr) -> None:
@@ -350,7 +370,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         """Pass handler for BuiltinType nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.__collect_type_from_symbol(node)
 
     def get_type_from_instance(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.Instance
