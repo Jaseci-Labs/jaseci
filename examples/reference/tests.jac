@@ -1,13 +1,13 @@
 test test1   {
-    check.AlmostEqual(4.99999, 4.99999);
+    check.assertAlmostEqual(4.99999, 4.99999);
 }
 
 test test2   {
-    check.Equal(5, 5);
+    check.assertEqual(5, 5);
 }
 
 test test3   {
-    check.In("e", "qwerty");
+    check.assertIn("e", "qwerty");
 }
 
 with entry:__main__ {

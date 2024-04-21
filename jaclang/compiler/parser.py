@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-
+import keyword
 import logging
 import os
 from typing import Callable, TypeAlias
@@ -3832,21 +3832,7 @@ class JacParser(Pass):
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
             ret_type = ast.Token
-            if token.type == Tok.KWESC_NAME:
-                return self.nu(
-                    ast.Name(
-                        file_path=self.parse_ref.mod_path,
-                        name=token.type,
-                        value=token.value[2:],
-                        line=token.line if token.line is not None else 0,
-                        col_start=token.column if token.column is not None else 0,
-                        col_end=token.end_column if token.end_column is not None else 0,
-                        pos_start=token.start_pos if token.start_pos is not None else 0,
-                        pos_end=token.end_pos if token.end_pos is not None else 0,
-                        is_kwesc=True,
-                    )
-                )
-            elif token.type == Tok.NAME:
+            if token.type in [Tok.NAME, Tok.KWESC_NAME]:
                 ret_type = ast.Name
             elif token.type == Tok.SEMI:
                 ret_type = ast.Semi
@@ -3872,15 +3858,22 @@ class JacParser(Pass):
                 ret_type = ast.Bool
             elif token.type == Tok.PYNLINE and isinstance(token.value, str):
                 token.value = token.value.replace("::py::", "")
-            return self.nu(
-                ret_type(
-                    file_path=self.parse_ref.mod_path,
-                    name=token.type,
-                    value=token.value,
-                    line=token.line if token.line is not None else 0,
-                    col_start=token.column if token.column is not None else 0,
-                    col_end=token.end_column if token.end_column is not None else 0,
-                    pos_start=token.start_pos if token.start_pos is not None else 0,
-                    pos_end=token.end_pos if token.end_pos is not None else 0,
-                )
+            ret = ret_type(
+                file_path=self.parse_ref.mod_path,
+                name=token.type,
+                value=token.value[2:] if token.type == Tok.KWESC_NAME else token.value,
+                line=token.line if token.line is not None else 0,
+                col_start=token.column if token.column is not None else 0,
+                col_end=token.end_column if token.end_column is not None else 0,
+                pos_start=token.start_pos if token.start_pos is not None else 0,
+                pos_end=token.end_pos if token.end_pos is not None else 0,
             )
+            if isinstance(ret, ast.Name):
+                if token.type == Tok.KWESC_NAME:
+                    ret.is_kwesc = True
+                if ret.value in keyword.kwlist:
+                    err = jl.UnexpectedInput(f"Python keyword {ret.value} used as name")
+                    err.line = ret.loc.first_line
+                    err.column = ret.loc.col_start
+                    raise err
+            return self.nu(ret)
