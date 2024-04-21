@@ -506,7 +506,6 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
 
-        os.environ["JAC_PROC_TEST"] = "1"
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.py")
         with open(py_out_path) as f:
             output = PyastBuildPass(
@@ -526,7 +525,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict={x: x ** 2  for x in numbers};", output)
         self.assertIn('"""Say hello"""\n@ my_decorator', output)
-        del os.environ["JAC_PROC_TEST"]
+
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_2(self) -> None:
@@ -548,7 +547,6 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
 
-        os.environ["JAC_PROC_TEST"] = "1"
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.py")
         with open(py_out_path) as f:
             output = PyastBuildPass(
@@ -559,7 +557,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("obj X {\n    with entry {\n        a_b=67;", output)
         self.assertIn("br=b'Hello\\\\\\\\nWorld'", output)
         self.assertIn("obj Circle {\n    can init(radius: float", output)
-        del os.environ["JAC_PROC_TEST"]
+
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_3(self) -> None:
@@ -580,7 +578,6 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
 
-        os.environ["JAC_PROC_TEST"] = "1"
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.py")
         with open(py_out_path) as f:
             output = PyastBuildPass(
@@ -592,7 +589,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point(x = int(_), y = 0):\n", output)
         self.assertIn("obj Sample {\n    can init", output)
-        del os.environ["JAC_PROC_TEST"]
+
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_py_kw_as_name_disallowed(self) -> None:

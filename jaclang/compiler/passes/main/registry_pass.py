@@ -68,9 +68,7 @@ class RegistryPass(Pass):
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Save variable information."""
         extracted_type = (
-            "".join(self.extract_type(node.type_tag.kid[1:][0]))
-            if node.type_tag
-            else None
+            "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
         )
         scope = get_sem_scope(node)
         seminfo = SemInfo(
@@ -87,9 +85,7 @@ class RegistryPass(Pass):
             return
 
         extracted_type = (
-            "".join(self.extract_type(node.type_tag.kid[1:][0]))
-            if node.type_tag
-            else None
+            "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
         )
         scope = get_sem_scope(node)
         seminfo = SemInfo(

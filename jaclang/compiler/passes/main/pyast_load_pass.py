@@ -121,8 +121,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
-        if not os.environ.get("JAC_PROC_TEST", False):
-            ret.unparse()
+        ret.unparse()  # TODO: This is a hack and should be deleted
         return self.nu(ret)
 
     def proc_function_def(
@@ -388,7 +387,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 access=None,
                 base_classes=None,
                 body=enum_body,
-                kid=[name, enum_body],
+                kid=[doc, name, enum_body] if doc else [name, enum_body],
                 doc=doc,
                 decorators=valid_decorators,
             )
