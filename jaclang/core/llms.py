@@ -6,6 +6,10 @@ import anthropic
 class Anthropic:
     """Anthropic API client for Large Language Models (LLMs)."""
 
+    MTLLM_PROMPT: str = ""
+    MTLLM_REASON_SUFFIX: str = ""
+    MTLLM_WO_REASON_SUFFIX: str = ""
+
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the Anthropic API client."""
         self.client = anthropic.Anthropic()

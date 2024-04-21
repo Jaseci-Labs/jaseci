@@ -1,6 +1,6 @@
 import:py wikipedia;
 
-import:py jaclang.core.llms, Anthropic;
+import:py from jaclang.core.llms, Anthropic;
 
 glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
@@ -12,37 +12,36 @@ QA {
             "Thoughts and Observations": [
                 {
                     "Thought": "I need to search Colorado orogeny, find the area that the eastern sector of the Colorado ...",
-                    "Action": "Search 'Colorado orogeny'",
+                    "Action": "Search: Colorado orogeny",
                     "Observation": "The Colorado orogeny was an episode of mountain building (an orogeny) ..."
                 },
                 {
                     "Thought": "It does not mention the eastern sector. So I need to look up eastern sector.",
-                    "Action": "Search 'eastern sector of the Colorado orogeny'",
+                    "Action": "Search: eastern sector of the Colorado orogeny",
                     "Observation": "The eastern sector of the Colorado orogeny extends into the High Plains."
                 },
                 {
                     "Thought": "High Plains rise in elevation from around 1,800 to 7,000 ft, so the answer is 1,800 to 7,000 ft.",
-                    "Action": "Finish '1,800 to 7,000 ft'"
+                    "Action": "Finish: 1,800 to 7,000 ft"
                 }
             ]
         }
     ];
 
     can 'Get next Thought and Action. Action should always startswith "Search" or "Finish"'
-    get_throught_and_actions(question: 'Question': str, prev_info: 'Previous Thoughts, Actions, and Observations': list[dict] = [])
+    get_throught_and_actions(question: 'Question': str, 
+        prev_info: 'Previous Thoughts, Actions, and Observations': list[dict] = [])
     -> 'Next Thought and Action': dict by llm(incl_info=(self.qa_example));
 
     can get_answer(question: str) -> str {
-        got_answer = False;
         prev_info = [];
-        while not got_answer and len(prev_info) < 100 {
+        while len(prev_info) < 100 {
             next_info = self.get_throught_and_actions(question, prev_info);
-            if next_info["Action"].startswith("Search") {
-                obs = wikipedia.summary(next_info["Action"].replace("Search ", "").replace("'", ""));
+            if next_info["Action"].startswith("Search:") {
+                obs = wikipedia.summary(next_info["Action"].replace("Search: ", ""));
                 next_info["Observation"] = obs;
-            } elif next_info["Action"].startswith("Finish") {
-                got_answer = True;
-                return next_info["Action"].replace("Finish ", "").replace("'", "");
+            } elif next_info["Action"].startswith("Finish:") {
+                return next_info["Action"].replace("Finish: ", "");
             }
             prev_info.append(next_info);
         }
@@ -54,13 +53,15 @@ with entry {
     qa = QA();
     question = "Where is Apple Headquaters located?";
     answer = qa.get_answer(question);
-    print(f"Question: {question}\nAnswer: {answer}");
+    print("Question: ", question);
+    print("Answer: ", answer);
 
     question = "Who is Jason Mars?";
     answer = qa.get_answer(question);
-    print(f"Question: {question}\nAnswer: {answer}");
+    print("Question: ", question);
+    print("Answer: ", answer);
 
-    question = Input("Ask me a question: ");
+    question = input("Ask me a Question: ");
     answer = qa.get_answer(question);
-    print(f"Question: {question}\nAnswer: {answer}");
+    print("Answer: ", answer);
 }
