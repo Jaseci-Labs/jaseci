@@ -487,3 +487,8 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("2\n", stdout_value)
+
+    def test_py_kw_as_name_disallowed(self) -> None:
+        """Basic precedence test."""
+        prog = jac_str_to_pass("with entry {print.is.not.True(4-5-4);}", "test.jac")
+        self.assertIn("Python keyword is used as name", str(prog.errors_had[0].msg))
