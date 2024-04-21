@@ -21,7 +21,7 @@ glob personality_examples: 'Personality Information of Famous People': dict[str,
 };
 
 can 'Get Person Information use common knowledge'
-get_person_info(name: 'Name of the Person': str) -> 'Person': Person 
+get_person_info(name: 'Name of the Person': str) -> 'Person': Person
 by llm(reason= True, temperature=0.0, incl_info=(personality_examples));
 
 with entry {
