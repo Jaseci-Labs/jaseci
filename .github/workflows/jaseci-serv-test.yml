@@ -40,7 +40,11 @@ jobs:
       - name: Verify installation
         run: |
           jsctl
-
+      - name: Install jaseci_socket
+        run: |
+          pip3 install jaseci_socket/
+          jssocket -p 8002 & sleep 2
+          python -m websockets ws://localhost:8002/ws
       - name: Install jaseci_serv and run tests
         if: always()
         run: |
