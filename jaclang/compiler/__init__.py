@@ -6,14 +6,13 @@ import os
 import sys
 
 
-def generate_static_parser() -> None:
+def generate_static_parser(force: bool = False) -> None:
     """Generate static parser."""
     from jaclang.utils.helpers import auto_generate_refs
     from jaclang.vendor.lark.tools import standalone
 
     cur_dir = os.path.dirname(__file__)
-    if not os.path.exists(os.path.join(cur_dir, "generated", "jac_parser.py")):
-
+    if force or not os.path.exists(os.path.join(cur_dir, "generated", "jac_parser.py")):
         os.makedirs(os.path.join(cur_dir, "generated"), exist_ok=True)
         with open(os.path.join(cur_dir, "generated", "__init__.py"), "w"):
             pass
