@@ -23,27 +23,7 @@
 - This should work on mutiple jaseci instance. Notification from async walker should also work
 ---
 # **`NOTIFICATION FROM JAC`**
-## ws.**`notify_channel`**
-> **`Arguments`:** \
-> **target**: str \
-> **data**: dict
->
-> **`Return`:** \
-> None
->
-> **`Usage`:** \
-> Send notification from jac to target channel
->
-> **`Remarks`:** \
-> if user is logged in, `target` can be master id without `urn:uuid:` \
-> else used thed `session_id` from client connection
-##### **`HOW TO TRIGGER`**
-```js
-ws.notify_channel(target, {"test": 123456});
-```
----
-# **`NOTIFICATION FROM JAC`**
-## ws.**`notify_group`**
+## wb.**`notify`**
 > **`Arguments`:** \
 > **target**: str \
 > **data**: dict
@@ -59,7 +39,7 @@ ws.notify_channel(target, {"test": 123456});
 > else used thed `session_id` from client connection
 ##### **`HOW TO TRIGGER`**
 ```js
-ws.notify_group(target, {"test": 123456});
+wb.notify(target, {"test": 123456});
 ```
 
 # **WEB SETUP**
