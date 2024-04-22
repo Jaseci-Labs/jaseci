@@ -83,7 +83,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 extracted.append(i)
             elif isinstance(i, ast.CodeBlockStmt):
                 if isinstance(i, ast.ExprStmt) and isinstance(i.expr, ast.String):
-                    i.expr.value = f'"""{i.expr.value}"""'
+                    i.expr.value = f'""{i.expr.value}""'
                 with_entry_body.append(i)
             else:
                 self.ice("Invalid type for with entry body")
@@ -111,7 +111,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ) + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
         doc_str = elements[0] if isinstance(elements[0], ast.String) else None
         if doc_str:
-            doc_str.value = f'"""{doc_str.value}"""'
+            doc_str.value = f'""{doc_str.value}""'
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
@@ -159,7 +159,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(valid[0].expr, ast.String)
         ):
             doc = valid[0].expr
-            doc.value = f'"""{doc.value}"""'
+            doc.value = f'""{doc.value}""'
             valid_body = ast.SubNodeList[ast.CodeBlockStmt](
                 items=valid[1:],
                 delim=Tok.WS,
@@ -304,7 +304,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else None
         )
         if doc:
-            doc.value = f'"""{doc.value}"""'
+            doc.value = f'""{doc.value}""'
         body = body[1:] if doc else body
         valid: list[ast.ArchBlockStmt] = self.extract_with_entry(
             body, ast.ArchBlockStmt
@@ -1075,7 +1075,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return type_mapping[value_type](
                 file_path=self.mod_path,
                 name=token_type,
-                value=str(node.value),
+                value=f'"{node.value}"' if value_type == str else str(node.value),
                 line=node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(str(node.value)),
