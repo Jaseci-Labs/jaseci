@@ -342,6 +342,8 @@ class JacFormatPass(Pass):
                 else:
                     self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
+            if isinstance(i, ast.Token) and i.name == Tok.KW_BY:
+                self.emit(node, f"{i.gen.jac} ")
             else:
                 self.emit(node, i.gen.jac)
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
