@@ -20,6 +20,11 @@ class JacFormatPass(Pass):
         self.indent_level = 0
         self.MAX_LINE_LENGTH = 44
 
+    def enter_node(self, node: ast.AstNode) -> None:
+        """Enter node."""
+        node.gen.jac = ""
+        super().enter_node(node)
+
     def indent_str(self) -> str:
         """Return string for indent."""
         return " " * self.indent_size * self.indent_level

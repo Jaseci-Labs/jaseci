@@ -81,6 +81,7 @@ TOKEN_MAP.update(
         "STAR_MUL": "*",
         "FLOOR_DIV": "//",
         "DIV": "/",
+        "PYNLINE": "::py::",
     }
 )
 

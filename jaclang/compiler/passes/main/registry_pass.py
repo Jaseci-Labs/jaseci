@@ -28,10 +28,10 @@ class RegistryPass(Pass):
 
     def exit_module(self, node: ast.Module) -> None:
         """Save registry for each module."""
+        module_name = node.name
         module_dir = os.path.join(
             os.path.abspath(os.path.dirname(node.source.file_path)), Con.JAC_GEN_DIR
         )
-        module_name = node.name
         os.makedirs(module_dir, exist_ok=True)
         with open(os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb") as f:
             pickle.dump(node.registry, f)
@@ -68,9 +68,7 @@ class RegistryPass(Pass):
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Save variable information."""
         extracted_type = (
-            "".join(self.extract_type(node.type_tag.kid[1:][0]))
-            if node.type_tag
-            else None
+            "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
         )
         scope = get_sem_scope(node)
         seminfo = SemInfo(
@@ -87,9 +85,7 @@ class RegistryPass(Pass):
             return
 
         extracted_type = (
-            "".join(self.extract_type(node.type_tag.kid[1:][0]))
-            if node.type_tag
-            else None
+            "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
         )
         scope = get_sem_scope(node)
         seminfo = SemInfo(
