@@ -98,3 +98,9 @@ class JacFormatPassTests(TestCase):
             if file not in created_files
         ]
         self.assertEqual(len(other_reference_files), 0)
+
+    def test_py_jac_mode(self) -> None:
+        """Testing for py_jac_mode support."""
+        file = self.fixture_abs_path("../../../tests/fixtures/pyfunc.py")
+        out = AstTool().ir(["unparse", file])
+        self.assertIn("can my_print(x: object) -> None", out)

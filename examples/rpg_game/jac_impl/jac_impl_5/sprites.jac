@@ -146,7 +146,7 @@ obj Button {
     pygame.sprite.Sprite.init(self, self._groups);
     self.x*=TILESIZE;
     self.y*=TILESIZE;
-    self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height);
+    self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width-5, self.height-5);
     self.rect = self.image.get_rect();
     self.rect.x = self.x;
     self.rect.y = self.y;

@@ -5,6 +5,7 @@ import:py random;
 import:py from pyfunc, my_print;
 
 with entry {
+
     my_print(pyfunc);
     print(random.random());
 }

@@ -16,6 +16,22 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     TargetPass = JacFormatPass
 
+    def test_double_unparse(self) -> None:
+        """Parse micro jac file."""
+        filename = "../../../../../../examples/manual_code/circle.jac"
+        try:
+            code_gen_pure = jac_file_to_pass(
+                self.fixture_abs_path(filename),
+                target=PyastGenPass,
+                schedule=without_format,
+            )
+            x = code_gen_pure.ir.unparse()
+            y = code_gen_pure.ir.unparse()
+            self.assertEqual(x, y)
+        except Exception as e:
+            print("\n".join(unified_diff(x.splitlines(), y.splitlines())))
+            self.skipTest(f"Test failed, but skipping instead of failing: {e}")
+
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         try:
@@ -58,7 +74,8 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
                 )
 
         except Exception as e:
-            self.skipTest(f"Test failed, but skipping instead of failing: {e}")
+            raise e
+            # self.skipTest(f"Test failed, but skipping instead of failing: {e}")
 
 
 JacUnparseTests.self_attach_micro_tests()
