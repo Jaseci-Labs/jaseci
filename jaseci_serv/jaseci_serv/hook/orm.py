@@ -204,5 +204,10 @@ def map_assignment_of_matching_fields(dest, source):
                 )
             except Exception:
                 setattr(dest, i, IdList(parent_obj=dest))
+        elif i.endswith("_ids") and type(getattr(source, i)) == IdList:
+            try:
+                setattr(dest, i, json.dumps(getattr(source, i)))
+            except Exception:
+                setattr(dest, i, "[]")
         elif not callable(getattr(dest, i)):
             setattr(dest, i, getattr(source, i))

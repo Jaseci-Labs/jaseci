@@ -17,6 +17,7 @@ from jaseci.extens.api.jac_api import JacApi
 from jaseci.extens.api.user_api import UserApi
 from jaseci.extens.api.queue_api import QueueApi
 from jaseci.extens.api.webhook_api import WebhookApi
+from jaseci.extens.api.share_api import ShareApi
 from jaseci.extens.api.health_api import HealthApi
 from jaseci.jsorc.jsorc import JsOrc
 
@@ -36,6 +37,7 @@ class Master(
     UserApi,
     QueueApi,
     WebhookApi,
+    ShareApi,
     HealthApi,
 ):
     """Main class for master functions for user"""
@@ -51,6 +53,7 @@ class Master(
         GraphApi.__init__(self)
         WalkerApi.__init__(self)
         SentinelApi.__init__(self)
+        ShareApi.__init__(self)
         Interface.__init__(self)
 
     def destroy(self):
