@@ -606,3 +606,28 @@ class JacLanguageTests(TestCase):
         prog.ir.format()
         after = prog.ir.format()
         self.assertEqual(before, after)
+
+    def test_type_fuse_expr(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.tool(
+            "ir",
+            [
+                "ast",
+                self.fixture_abs_path(
+                    "../../../examples/reference/collection_values.jac"
+                ),
+            ],
+        )
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn(
+            "builtins.dict[builtins.int, builtins.int]",
+            stdout_value,
+        )
+        self.assertIn(
+            "typing.Generator[builtins.int, None, None]",
+            stdout_value,
+        )
