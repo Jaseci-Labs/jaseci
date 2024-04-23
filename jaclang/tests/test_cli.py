@@ -112,9 +112,10 @@ class JacCliTests(TestCase):
         cli.tool("ir", ["ast", f"{self.fixture_abs_path('type_info.jac')}"])
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        print(stdout_value)
         self.assertEqual(stdout_value.count("type_info.Spritesheet"), 13)
         self.assertEqual(stdout_value.count("builtins.int"), 32)
-        self.assertEqual(stdout_value.count("pygame.surface.Surface"), 18)
+        self.assertEqual(stdout_value.count("pygame.surface.Surface"), 22)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""

@@ -487,64 +487,112 @@ class PyastGenPass(Pass):
         sub_module: Optional[Module],
         """
         py_nodes: list[ast3.AST] = []
+
         if node.doc:
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
         py_compat_path_str = []
+        path_alias = {}
         for path in node.paths:
             py_compat_path_str.append(path.path_str.lstrip("."))
-        if node.lang.tag.value == Con.JAC_LANG_IMP:
-            self.needs_jac_import()
-            for p in range(len(py_compat_path_str)):
-                py_nodes.append(
-                    self.sync(
-                        ast3.Expr(
-                            value=self.sync(
-                                ast3.Call(
-                                    func=self.sync(
-                                        ast3.Name(id="__jac_import__", ctx=ast3.Load())
-                                    ),
-                                    args=[],
-                                    keywords=[
-                                        self.sync(
-                                            ast3.keyword(
-                                                arg="target",
-                                                value=self.sync(
-                                                    ast3.Constant(
-                                                        value=node.paths[p].path_str
-                                                    ),
-                                                    node.paths[p],
-                                                ),
-                                            )
-                                        ),
-                                        self.sync(
-                                            ast3.keyword(
-                                                arg="base_path",
-                                                value=self.sync(
-                                                    ast3.Name(
-                                                        id="__file__", ctx=ast3.Load()
-                                                    )
-                                                ),
-                                            )
-                                        ),
-                                        self.sync(
-                                            ast3.keyword(
-                                                arg="mod_bundle",
-                                                value=self.sync(
-                                                    ast3.Name(
-                                                        id="__jac_mod_bundle__",
-                                                        ctx=ast3.Load(),
-                                                    )
-                                                ),
-                                            )
-                                        ),
-                                    ],
-                                )
-                            )
-                        ),
-                    )
+            path_alias[path.path_str] = path.alias.sym_name if path.alias else None
+        imp_from = {}
+        if node.items:
+            for item in node.items.items:
+                imp_from[item.name.sym_name] = (
+                    item.alias.sym_name if item.alias else False
                 )
+
+        keys = []
+        values = []
+        for k in imp_from.keys():
+            keys.append(self.sync(ast3.Constant(value=k)))
+        for v in imp_from.values():
+            values.append(self.sync(ast3.Constant(value=v)))
+
+        self.needs_jac_import()
+        for p, a in path_alias.items():
+            py_nodes.append(
+                self.sync(
+                    ast3.Expr(
+                        value=self.sync(
+                            ast3.Call(
+                                func=self.sync(
+                                    ast3.Name(id="__jac_import__", ctx=ast3.Load())
+                                ),
+                                args=[],
+                                keywords=[
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="target",
+                                            value=self.sync(
+                                                ast3.Constant(value=p),
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="base_path",
+                                            value=self.sync(
+                                                ast3.Name(
+                                                    id="__file__", ctx=ast3.Load()
+                                                )
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="mod_bundle",
+                                            value=self.sync(
+                                                ast3.Name(
+                                                    id="__jac_mod_bundle__",
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="lng",
+                                            value=self.sync(
+                                                ast3.Constant(
+                                                    value=node.lang.tag.value
+                                                ),
+                                                node.lang,
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="absorb",
+                                            value=self.sync(
+                                                ast3.Constant(value=node.is_absorb),
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="mdl_alias",
+                                            value=self.sync(
+                                                ast3.Constant(value=a),
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="items",
+                                            value=self.sync(
+                                                ast3.Dict(keys=keys, values=values),
+                                            ),
+                                        )
+                                    ),
+                                ],
+                            )
+                        )
+                    ),
+                )
+            )
         if node.is_absorb:
             py_nodes.append(
                 self.sync(

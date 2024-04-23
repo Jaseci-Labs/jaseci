@@ -8,7 +8,7 @@ import pickle
 import types
 from dataclasses import field
 from functools import wraps
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
@@ -167,17 +167,25 @@ class JacFeatureDefaults:
     def jac_import(
         target: str,
         base_path: str,
+        absorb: bool,
         cachable: bool,
+        mdl_alias: Optional[str],
         override_name: Optional[str],
         mod_bundle: Optional[Module],
+        lng: Optional[str],
+        items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         result = jac_importer(
             target=target,
             base_path=base_path,
+            absorb=absorb,
             cachable=cachable,
+            mdl_alias=mdl_alias,
             override_name=override_name,
             mod_bundle=mod_bundle,
+            lng=lng,
+            items=items,
         )
         return result
 
