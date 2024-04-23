@@ -11,7 +11,9 @@ from jaclang.plugin.default import (
     WalkerArchitype as WalkerArchitype,
 )
 from jaclang.plugin.spec import DSFunc as DSFunc, JacFeatureSpec as JacFeatureSpec
-from typing import Any, Callable, Optional, Type, TypeAlias
+from typing import Any, Callable, Optional, Type, TypeAlias, Union
+
+from jaclang.compiler.absyntree import Module
 
 class JacFeature:
     pm: Incomplete
@@ -40,8 +42,13 @@ class JacFeature:
     def jac_import(
         target: str,
         base_path: str,
+        absorb: bool = False,
         cachable: bool = True,
+        mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
+        mod_bundle: Optional[Module] = None,
+        lng: Optional[str] = None,
+        items: Optional[dict[str, Union[str, bool]]] = None,
     ) -> Optional[types.ModuleType]: ...
     @staticmethod
     def create_test(test_fun: Callable) -> Callable: ...
