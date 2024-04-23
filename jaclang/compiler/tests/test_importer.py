@@ -1,8 +1,10 @@
 """Tests for Jac Loader."""
 
+import io
 import sys
 
 from jaclang import jac_import
+from jaclang.cli import cli
 from jaclang.utils.test import TestCase
 
 
@@ -24,11 +26,15 @@ class TestLoader(TestCase):
         self.assertIn("module 'hello_world'", str(sys.modules))
         self.assertIn("/tests/fixtures/hello_world.jac", str(sys.modules))
 
-    # def test_jac_py_import(self) -> None:
-    #     """Basic test for pass."""
-    #     captured_output = io.StringIO()
-    #     sys.stdout = captured_output
-    #     cli.run(self.fixture_abs_path("../../../tests/fixtures/jp_importer.jac"))
-    #     sys.stdout = sys.__stdout__
-    #     stdout_value = captured_output.getvalue()
-    #     self.assertIn("Hello World!", stdout_value)
+    def test_jac_py_import(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("../../../tests/fixtures/jp_importer.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Hello World!", stdout_value)
+        self.assertIn(
+            "{SomeObj(a=10): 'check'} [MyObj(apple=5, banana=7), MyObj(apple=5, banana=7)]",
+            stdout_value,
+        )

@@ -497,16 +497,18 @@ class PyastGenPass(Pass):
         for path in node.paths:
             py_compat_path_str.append(path.path_str.lstrip("."))
             path_alias[path.path_str] = path.alias.sym_name if path.alias else None
-        imfrm = {}
+        imp_from = {}
         if node.items:
             for item in node.items.items:
-                imfrm[item.name.sym_name] = item.alias.sym_name if item.alias else False
+                imp_from[item.name.sym_name] = (
+                    item.alias.sym_name if item.alias else False
+                )
 
         keys = []
         values = []
-        for k in imfrm.keys():
+        for k in imp_from.keys():
             keys.append(self.sync(ast3.Constant(value=k)))
-        for v in imfrm.values():
+        for v in imp_from.values():
             values.append(self.sync(ast3.Constant(value=v)))
 
         self.needs_jac_import()
