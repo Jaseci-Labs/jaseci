@@ -28,7 +28,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         try:
             websocket = kwargs["extra"]["websocket"]
             xff = websocket.request_headers.get("X-Forwarded-For")
-        except KeyError:
+        except Exception:
             return msg, kwargs
 
         return f"{websocket.id} {xff} {msg}", kwargs

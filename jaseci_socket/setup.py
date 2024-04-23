@@ -11,7 +11,13 @@ setup(
     name="jaseci_socket",
     version=get_ver(),
     packages=find_packages(),
-    install_requires=["websockets", "redis", "orjson", "rel", "bcrypt"],
+    install_requires=[
+        "redis==5.0.3",
+        "orjson==3.9.10",
+        "rel==0.4.9.1",
+        "websockets==12.0",
+        "bcrypt==4.1.2",
+    ],
     package_data={
         "": ["VERSION"],
     },
