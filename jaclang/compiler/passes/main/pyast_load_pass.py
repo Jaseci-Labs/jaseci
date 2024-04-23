@@ -268,7 +268,65 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_start=0,
             pos_end=0,
         )
+        base_classes = [self.convert(base) for base in node.bases]
+        valid2: list[ast.Expr] = [
+            base for base in base_classes if isinstance(base, ast.Expr)
+        ]
+        if len(valid2) != len(base_classes):
+            raise self.ice("Length mismatch in base classes")
+        valid_bases = (
+            ast.SubNodeList[ast.Expr](items=valid2, delim=Tok.COMMA, kid=base_classes)
+            if len(valid2)
+            else None
+        )
+        decorators = [self.convert(i) for i in node.decorator_list]
+        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
+        if len(valid_dec) != len(decorators):
+            raise self.ice("Length mismatch in decorators in class")
+        valid_decorators = (
+            ast.SubNodeList[ast.Expr](
+                items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
+            )
+            if len(valid_dec)
+            else None
+        )
         body = [self.convert(i) for i in node.body]
+        doc = (
+            body[0].expr
+            if isinstance(body[0], ast.ExprStmt)
+            and isinstance(body[0].expr, ast.String)
+            else None
+        )
+        if doc:
+            doc.value = f'""{doc.value}""'
+        body = body[1:] if doc else body
+        if len(body) == 1 and isinstance(body[0], ast.Semi):
+            valid_body = ast.SubNodeList[ast.ArchBlockStmt](
+                items=[],
+                delim=Tok.WS,
+                kid=[self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")],
+                left_enc=self.operator(Tok.LBRACE, "{"),
+                right_enc=self.operator(Tok.RBRACE, "}"),
+            )
+            kid = (
+                [name, valid_bases, doc]
+                if doc and valid_bases
+                else (
+                    [name, valid_bases]
+                    if valid_bases
+                    else [name, doc] if doc else [name]
+                )
+            )
+            return ast.Architype(
+                arch_type=arch_type,
+                name=name,
+                access=None,
+                base_classes=valid_bases,
+                body=valid_body,
+                kid=kid,
+                doc=doc,
+                decorators=valid_decorators,
+            )
         for body_stmt in body:
             if (
                 isinstance(body_stmt, ast.Ability)
@@ -297,15 +355,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     for param in body_stmt.signature.params.items
                     if param.name.value != "self"
                 ]
-        doc = (
-            body[0].expr
-            if isinstance(body[0], ast.ExprStmt)
-            and isinstance(body[0].expr, ast.String)
-            else None
-        )
-        if doc:
-            doc.value = f'""{doc.value}""'
-        body = body[1:] if doc else body
         valid: list[ast.ArchBlockStmt] = self.extract_with_entry(
             body, ast.ArchBlockStmt
         )
@@ -315,29 +364,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=body,
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
-        )
-
-        base_classes = [self.convert(base) for base in node.bases]
-        valid2: list[ast.Expr] = [
-            base for base in base_classes if isinstance(base, ast.Expr)
-        ]
-        if len(valid2) != len(base_classes):
-            raise self.ice("Length mismatch in base classes")
-        valid_bases = (
-            ast.SubNodeList[ast.Expr](items=valid2, delim=Tok.COMMA, kid=base_classes)
-            if len(valid2)
-            else None
-        )
-        decorators = [self.convert(i) for i in node.decorator_list]
-        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
-        if len(valid_dec) != len(decorators):
-            raise self.ice("Length mismatch in decorators in class")
-        valid_decorators = (
-            ast.SubNodeList[ast.Expr](
-                items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
-            )
-            if len(valid_dec)
-            else None
         )
         if (
             base_classes

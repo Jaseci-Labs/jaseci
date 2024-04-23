@@ -557,6 +557,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(f.read()), mod_path=py_out_path
                 ),
             ).ir.unparse()
+        print(output)
         self.assertIn("obj X {\n    with entry {\n        a_b=67;", output)
         self.assertIn("br=b'Hello\\\\\\\\nWorld'", output)
         self.assertIn("obj Circle {\n    can init(radius: float", output)

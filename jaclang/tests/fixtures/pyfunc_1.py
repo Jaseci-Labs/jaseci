@@ -176,17 +176,17 @@ def foo(cls):
     return cls
 
 
-# class Animal:   # FIXME : ValueError: empty body on ClassDef
-#     pass
+class Animal:  # FIXME : ValueError: empty body on ClassDef
+    pass
 
 
-# class domestic:
-#     pass
+class domestic:
+    pass
 
 
-# @print_base_classes
-# class Mammal(Animal, domestic):
-#     pass
+@print_base_classes
+class Mammal(Animal, domestic):
+    pass
 
 
 s = []
