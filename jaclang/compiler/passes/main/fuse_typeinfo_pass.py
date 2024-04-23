@@ -13,7 +13,7 @@ from typing import Callable, TypeVar
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.utils.helpers import pascal_to_snake
-from jaclang.vendor.mypy.nodes import Node as MyNode
+from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
 
 import mypy.nodes as MypyNodes  # noqa N812
 import mypy.types as MypyTypes  # noqa N812
@@ -26,7 +26,7 @@ T = TypeVar("T", bound=ast.AstSymbolNode)
 class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
-    node_type_hash: dict[MyNode, MyType] = {}
+    node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
 
     def __debug_print(self, *argv: object) -> None:
         if "FuseTypeInfoDebug" in os.environ:
