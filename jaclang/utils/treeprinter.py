@@ -88,14 +88,17 @@ def print_ast_tree(
     from jaclang.compiler.absyntree import AstSymbolNode, Token
 
     def __node_repr_in_tree(node: AstNode) -> str:
+        access = (
+            f"Access: {node.access.tag.value}"
+            if isinstance(node, ast.AstAccessNode) and node.access is not None
+            else ""
+        )
         if isinstance(node, Token) and isinstance(node, AstSymbolNode):
-            return (
-                f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}"
-            )
+            return f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}, {access}"
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}"
         elif isinstance(node, AstSymbolNode):
-            return f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}"
+            return f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}, {access}"
         else:
             return f"{node.__class__.__name__}"
 
