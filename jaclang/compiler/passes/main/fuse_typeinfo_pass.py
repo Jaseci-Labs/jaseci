@@ -16,6 +16,7 @@ from jaclang.utils.helpers import pascal_to_snake
 
 import mypy.nodes as MypyNode  # noqa N812
 import mypy.types as MypyTypes  # noqa N812
+from mypy.checkexpr import Type as MyType
 
 
 T = TypeVar("T", bound=ast.AstSymbolNode)
@@ -24,7 +25,7 @@ T = TypeVar("T", bound=ast.AstSymbolNode)
 class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
-    node_type_hash: dict[Any, str] = {}
+    node_type_hash: dict[Any, MyType] = {}
 
     def __debug_print(self, *argv: object) -> None:
         if "FuseTypeInfoDebug" in os.environ:
