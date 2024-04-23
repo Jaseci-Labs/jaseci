@@ -18,7 +18,7 @@ with entry{
     z=[c(cc=x) for x in range(0,3)];
     x++>y;
     y++>z;
-
+    apple: int;
     # print(x -:aaa:-> );
     print([x-->y-->z]);
     print([x -->]);

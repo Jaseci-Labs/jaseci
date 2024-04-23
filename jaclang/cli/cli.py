@@ -1,5 +1,7 @@
 """Command line interface tool for the Jac language."""
 
+import ast as ast3
+import importlib
 import marshal
 import os
 import pickle
@@ -7,12 +9,15 @@ import shutil
 import types
 from typing import Optional
 
+import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.constant import Constants
+from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.helpers import debugger as db
@@ -230,6 +235,87 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
             print(f"Error while generating bytecode in {filename}.")
     else:
         print("Not a .jac file.")
+
+
+@cmd_registry.register
+def graph(
+    filename: str,
+    initial: str = "",
+    depth: int = -1,
+    traverse: bool = False,
+    connection: list[str] = [],  # noqa: B006
+    bfs: bool = False,
+    edge_limit: int = 512,
+    node_limit: int = 512,
+    saveto: str = "",
+) -> None:
+    """Generate and Visualize a graph based on the specified .jac file contents and parameters.
+
+    :param filename: The name of the file to generate the graph from.
+    :param initial: The initial node for graph traversal (default is root node).
+    :param depth: The maximum depth for graph traversal (-1 for unlimited depth, default is -1).
+    :param traverse: Flag to indicate whether to traverse the graph (default is False).
+    :param connection: List of node connections(edge type) to include in the graph (default is an empty list).
+    :param bfs: Flag to indicate whether to use breadth-first search for traversal (default is False).
+    :param edge_limit: The maximum number of edges allowed in the graph.
+    :param node_limit: The maximum number of nodes allowed in the graph.
+    :param saveto: Path to save the generated graph.
+    """
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
+    if filename.endswith(".jac"):
+        jac_import(
+            target=mod,
+            base_path=base,
+        )
+        module = importlib.import_module(mod)
+        globals().update(vars(module))
+        try:
+            node = globals().get(initial, eval(initial)) if initial else None
+            graph = dotgen(
+                node=node,
+                depth=depth,
+                traverse=traverse,
+                edge_type=connection,
+                bfs=bfs,
+                edge_limit=edge_limit,
+                node_limit=node_limit,
+            )
+        except Exception as e:
+            print(f"Error while generating graph: {e}")
+            return
+        file_name = saveto if saveto else f"{mod}.dot"
+        with open(file_name, "w") as file:
+            file.write(graph)
+        print(f">>> Graph content saved to {os.path.join(os.getcwd(), file_name)}")
+    else:
+        print("Not a .jac file.")
+
+
+@cmd_registry.register
+def py_to_jac(filename: str, tree: bool = False) -> None:
+    """Convert a Python file to Jac.
+
+    :param filename: The path to the .py file.
+    :param tree: Flag to show the AST tree.(Default-False).
+    """
+    if filename.endswith(".py"):
+        with open(filename, "r") as f:
+            mod = PyastBuildPass(
+                input_ir=ast.PythonModuleAst(ast3.parse(f.read()), mod_path=filename),
+            ).ir
+
+            schedule = py_code_gen_typed
+            target = schedule[-1]
+            for i in schedule:
+                if i == target:
+                    break
+                ast_ret = i(input_ir=mod, prior=None)
+            ast_ret = target(input_ir=mod, prior=None)
+            print(ast_ret.ir.format())
+    else:
+        print("Not a .py file.")
 
 
 def start_cli() -> None:

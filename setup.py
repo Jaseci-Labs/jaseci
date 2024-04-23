@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+from jaclang.compiler import generate_static_parser
+
 from setuptools import find_packages, setup  # type: ignore
 
 
-VERSION = "0.5.8"
+generate_static_parser(force=True)
+
+
+VERSION = "0.5.11"
 
 setup(
     name="jaclang",

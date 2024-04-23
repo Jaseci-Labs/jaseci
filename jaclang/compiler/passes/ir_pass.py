@@ -68,6 +68,24 @@ class Pass(Transform[ast.T]):
                     result.extend(Pass.get_all_sub_nodes(i, typ, brute_force))
         return result
 
+    @staticmethod
+    def has_parent_of_type(node: ast.AstNode, typ: Type[ast.T]) -> Optional[ast.T]:
+        """Check if node has parent of type."""
+        while node.parent:
+            if isinstance(node.parent, typ):
+                return node.parent
+            node = node.parent
+        return None
+
+    @staticmethod
+    def has_parent_of_node(node: ast.AstNode, parent: ast.AstNode) -> bool:
+        """Check if node has parent of type."""
+        while node.parent:
+            if node.parent == parent:
+                return True
+            node = node.parent
+        return False
+
     def recalculate_parents(self, node: ast.AstNode) -> None:
         """Recalculate parents."""
         if not node:

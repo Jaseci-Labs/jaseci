@@ -340,7 +340,7 @@ class JacTestResult(unittest.TextTestResult):
     ) -> None:
         """Initialize FailFastTestResult object."""
         super().__init__(stream, descriptions, verbosity)  # noqa
-        self.failures_count = 0
+        self.failures_count = JacTestCheck.failcount
         self.max_failures = max_failures
 
     def addFailure(self, test, err) -> None:  # noqa
@@ -379,6 +379,7 @@ class JacTestCheck:
     test_case = unittest.TestCase()
     test_suite = unittest.TestSuite()
     breaker = False
+    failcount = 0
 
     @staticmethod
     def reset() -> None:
@@ -395,7 +396,11 @@ class JacTestCheck:
         if result.wasSuccessful():
             print("Passed successfully.")
         else:
-            JacTestCheck.breaker = True
+            fails = len(result.failures)
+            JacTestCheck.failcount += fails
+            JacTestCheck.breaker = (
+                (JacTestCheck.failcount >= maxfail) if maxfail else True
+            )
 
     @staticmethod
     def add_test(test_fun: Callable) -> None:
@@ -404,7 +409,7 @@ class JacTestCheck:
 
     def __getattr__(self, name: str) -> Union[bool, Any]:
         """Make convenient check.Equal(...) etc."""
-        return getattr(JacTestCheck.test_case, "assert" + name)
+        return getattr(JacTestCheck.test_case, name)
 
 
 root = Root()

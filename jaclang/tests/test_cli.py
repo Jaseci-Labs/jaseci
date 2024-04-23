@@ -1,12 +1,13 @@
 """Test Jac cli module."""
 
+import inspect
 import io
 import os
 import subprocess
 import sys
 
-
 from jaclang.cli import cli
+from jaclang.plugin.builtin import dotgen
 from jaclang.utils.test import TestCase
 
 
@@ -112,7 +113,7 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("type_info.Spritesheet"), 13)
-        self.assertEqual(stdout_value.count("builtins.int"), 24)
+        self.assertEqual(stdout_value.count("builtins.int"), 32)
         self.assertEqual(stdout_value.count("pygame.surface.Surface"), 18)
 
     def test_build_and_run(self) -> None:
@@ -193,3 +194,46 @@ class JacCliTests(TestCase):
         self.assertIn("circle", stdout)
         self.assertNotIn("circle_purfe.test", stdout)
         self.assertNotIn("circle_pure.impl", stdout)
+
+        process = subprocess.Popen(
+            ["jac", "test", "-f" + "*run_test.jac", "-m 3"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("...F", stderr)
+        self.assertIn("F.F", stderr)
+
+    def test_graph_coverage(self) -> None:
+        """Test for coverage of graph cmd."""
+        graph_params = set(inspect.signature(cli.graph).parameters.keys())
+        dotgen_params = set(inspect.signature(dotgen).parameters.keys())
+        dotgen_params = dotgen_params - {"node", "dot_file", "edge_type"}
+        dotgen_params.update({"initial", "saveto", "connection"})
+        self.assertTrue(dotgen_params.issubset(graph_params))
+        self.assertEqual(len(dotgen_params) + 1, len(graph_params))
+
+    def test_graph(self) -> None:
+        """Test for graph CLI cmd."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.graph(
+            f"{self.fixture_abs_path('../../../examples/reference/connect_expressions.jac')}"
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        if os.path.exists("connect_expressions.dot"):
+            os.remove("connect_expressions.dot")
+        self.assertIn("11\n13\n15\n>>> Graph content saved to", stdout_value)
+        self.assertIn("connect_expressions.dot\n", stdout_value)
+
+    def test_py_to_jac(self) -> None:
+        """Test for graph CLI cmd."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.py_to_jac(f"{self.fixture_abs_path('../../tests/fixtures/pyfunc.py')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("can my_print(x: object) -> None", stdout_value)

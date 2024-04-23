@@ -8,6 +8,7 @@ from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
@@ -198,20 +199,43 @@ class AstTool:
 
     def ir(self, args: List[str]) -> str:
         """Generate a AST, SymbolTable tree for .jac file, or Python AST for .py file."""
+        error = "Usage: ir <choose one of (sym / sym. / ast / ast. / pyast / py / unparse)> <.py or .jac file_path>"
         if len(args) != 2:
-            return "Usage: ir <choose one of (sym / sym. / ast / ast. / pyast / py)> <file_path>"
+            return error
 
         output, file_name = args
 
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
 
-        if file_name.endswith(".jac"):
+        if file_name.endswith((".jac", ".py")):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            ir = jac_file_to_pass(
-                file_name, schedule=py_code_gen_typed
-            ).ir  # Assuming jac_file_to_pass is defined elsewhere
+
+            if file_name.endswith(".py"):
+                with open(file_name, "r") as f:
+                    parsed_ast = py_ast.parse(f.read())
+                if output == "pyast":
+                    return f"\n{py_ast.dump(parsed_ast, indent=2)}"
+                try:
+                    rep = PyastBuildPass(
+                        input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    ).ir
+
+                    schedule = py_code_gen_typed
+                    target = schedule[-1]
+                    for i in schedule:
+                        if i == target:
+                            break
+                        ast_ret = i(input_ir=rep, prior=None)
+                    ast_ret = target(input_ir=rep, prior=None)
+                    ir = ast_ret.ir
+                except Exception as e:
+                    return f"Error While Jac to Py AST conversion: {e}"
+            else:
+                ir = jac_file_to_pass(
+                    file_name, schedule=py_code_gen_typed
+                ).ir  # Assuming jac_file_to_pass is defined elsewhere
 
             match output:
                 case "sym":
@@ -245,14 +269,7 @@ class AstTool:
                         else "Compile failed."
                     )
                 case _:
-                    return "Invalid key: Use one of (sym / sym. / ast / ast. / pyast) followed by file_path."
-        elif file_name.endswith(".py") and output == "pyast":
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-            with open(file_name, "r") as file:
-                code = file.read()
-            parsed_ast = py_ast.parse(code)
-            return f"\n{py_ast.dump(parsed_ast, indent=2)}"
+                    return f"Invalid key: {error}"
         else:
             return "Not a .jac or .py file, or invalid command for file type."
 
@@ -260,3 +277,10 @@ class AstTool:
         """Automate the reference guide generation."""
         auto_generate_refs()
         return "References generated."
+
+    def gen_parser(self) -> str:
+        """Generate static parser."""
+        from jaclang.compiler import generate_static_parser
+
+        generate_static_parser(force=True)
+        return "Parser generated."
