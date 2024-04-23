@@ -121,7 +121,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
-        ret.unparse()  # TODO: This is a hack and should be deleted
+        # ret.unparse()  # TODO: This is a hack and should be deleted
         return self.nu(ret)
 
     def proc_function_def(
@@ -391,7 +391,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 doc=doc,
                 decorators=valid_decorators,
             )
-        kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]
+        kid = (
+            [name, valid_bases, valid_body, doc]
+            if doc and valid_bases
+            else (
+                [name, valid_bases, valid_body]
+                if valid_bases
+                else [name, valid_body, doc] if doc else [name, valid_body]
+            )
+        )
         return ast.Architype(
             arch_type=arch_type,
             name=name,
@@ -513,7 +521,19 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         target = self.convert(node.target)
         annotation = self.convert(node.annotation)
         if isinstance(annotation, ast.Expr):
-            annotation_subtag = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
+            colon = ast.Token(
+                file_path=self.mod_path,
+                name=Tok.COLON,
+                value=":",
+                line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+            )
+            annotation_subtag = ast.SubTag[ast.Expr](
+                tag=annotation, kid=[colon, annotation]
+            )
         else:
             raise self.ice()
         value = self.convert(node.value) if node.value else None
