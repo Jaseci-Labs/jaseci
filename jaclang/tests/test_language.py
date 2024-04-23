@@ -186,7 +186,7 @@ class JacLanguageTests(TestCase):
         construct.root._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("ignore", base_path=self.fixture_abs_path("./"))
+        jac_import("ignore_dup", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0].count("here"), 10)
