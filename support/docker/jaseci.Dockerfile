@@ -5,7 +5,7 @@ ARG JASECI_AI_KIT_PYPI_VERSION
 ARG BUILD_WITH
 WORKDIR /
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt update; apt -y upgrade; apt -y install --no-install-recommends git g++ build-essential pkg-config cmake
+RUN apt update; apt -y upgrade; apt -y install --no-install-recommends git g++ build-essential pkg-config cmake libmagic1
 RUN pip3 install jaseci==$JASECI_PYPI_VERSION --no-cache-dir
 RUN pip3 install jaseci-serv==$JASECI_SERV_PYPI_VERSION --no-cache-dir
 RUN if [ -n "$BUILD_WITH" ]; then pip3 install "$BUILD_WITH"[all]==$JASECI_AI_KIT_PYPI_VERSION --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu; fi
