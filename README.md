@@ -12,7 +12,20 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
-# Jaseci: Build the Next Generation of AI Products at Scale
+# [Maintenance] Jaseci: Build the Next Generation of AI Products at Scale
+
+## Note to our community
+We appreciate all the interests in Jaseci since its launch! We have been hard at work on developing the next evolution of Jaseci and the Jac Programming Language.
+
+This next evolution embodies all the learnings from jaseci1.0 and represents the true form of data spatial programming and a modern programming language that serves the ever changing needs of developing production-grade AI applications.
+
+Learn more:
+* [jaclang (a.k.a jac2.0)](https://github.com/Jaseci-Labs/jaclang)
+* [jaclang-jaseci](https://github.com/Jaseci-Labs/jaclang-jaseci)
+
+This repo is now under maintenance mode, meaning moving forward there will be minimal features introduced. We will continue to resolve issues and push bugfixes as needed.
+
+# The Jaseci Ecosystem
 
 The [Jaseci](https://www.jaseci.org/) ecosystem, is an open-source technology stack composed of three components:
 **Jaseci Core**, the fundamental execution engine,
