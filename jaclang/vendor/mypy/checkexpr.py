@@ -5879,7 +5879,6 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             typ = "typing.Generator"
             # received type and returned type are None
             additional_args = [NoneType(), NoneType()]
-
         return self.check_generator_or_comprehension(
             e, typ, "<generator>", additional_args=additional_args
         )
