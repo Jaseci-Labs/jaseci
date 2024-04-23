@@ -84,7 +84,7 @@ class JsOrc:
     @classmethod
     def run(cls):
         if not cls.__running__:
-            cls.__running__ == True
+            cls.__running__ = True
             cls.configure()
             cls.push_interval(1)
 
@@ -265,6 +265,32 @@ class JsOrc:
         return cls._service_instances[service]
 
     @classmethod
+    def svc_conf_set(
+        cls, service: str, config: dict, hook: None, cast: T = None
+    ) -> Union[T, cs]:
+        from jaseci.extens.svc.kube_svc import KubeService
+
+        if service not in cls._services:
+            raise Exception(f"Service {service} is not existing!")
+
+        if cls.db_check():
+            instance = cls._services[service][0]
+            hook = hook or cls.hook(use_proxy=instance["proxy"])
+            hook.save_glob(instance["config"], dumps(config))
+            hook.commit()
+
+        kube = cls.svc("kube", KubeService)
+        if kube.is_running() and kube.has_replicas():
+            hook.clear_cache(True)
+            return (
+                "Rollout restart commencing..."
+                if not isinstance(kube.restart(), ApiException)
+                else "Attempt to rollout restart failed! Please check the logs for further information!"
+            )
+
+        return cls.svc_reset(service).info()
+
+    @classmethod
     def svc_reset(cls, service, cast: T = None) -> Union[T, cs]:
         """
         Service reset now deletes the actual instance and rebuild it
@@ -333,7 +359,7 @@ class JsOrc:
                 target=cls._services,
                 entry={
                     "type": service,
-                    "config": config or f"{name.upper()}_CONFIG",
+                    "config": (config or f"{name}_CONFIG").upper(),
                     "manifest": manifest,
                     "manifest_type": manifest_type,
                     "priority": priority,

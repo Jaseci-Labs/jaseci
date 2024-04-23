@@ -1,4 +1,5 @@
 """Built in actions for Jaseci"""
+
 import stripe as s
 
 from jaseci.jsorc.jsorc import JsOrc
@@ -65,6 +66,13 @@ def customer_retrieve(customer_id: str, **kwargs):
     """retrieve customer information"""
 
     return stripe().Customer.retrieve(customer_id, **kwargs)
+
+
+@jaseci_action()
+def customer_delete(customer_id: str, **kwargs):
+    """delete customer"""
+
+    return stripe().Customer.delete(customer_id, **kwargs)
 
 
 @jaseci_action()
@@ -185,6 +193,13 @@ def subscription_item_create_usage_record(
     return stripe().SubscriptionItem.create_usage_record(
         subscription_item_id, quantity=quantity, timestamp="now", **kwargs
     )
+
+
+@jaseci_action()
+def subscription_item_retrieve(subscription_item_id: str, **kwargs):
+    """retrieve subscription item"""
+
+    return stripe().SubscriptionItem.retrieve(subscription_item_id, **kwargs)
 
 
 @jaseci_action()

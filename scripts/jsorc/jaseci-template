@@ -207,7 +207,12 @@ $j{env_vars}
               mountPath: /script
             - name: jaseci-logs
               mountPath: /.jaseci_logs/
-
+          readinessProbe:
+            httpGet:
+              path: /js_public/health
+              port: 80
+              scheme: HTTP
+            successThreshold: 3
       volumes:
         - name: prod-script
           configMap:

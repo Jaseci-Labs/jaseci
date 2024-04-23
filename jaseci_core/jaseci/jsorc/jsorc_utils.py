@@ -284,3 +284,15 @@ class CommonService:
         # for build on pickle load
         self.state = State.FAILED
         del self
+
+    # ------------------- COMMON -------------------- #
+
+    def info(self):
+        return {
+            "enabled": self.enabled,
+            "automated": self.automated,
+            "quiet": self.quiet,
+            "state": self.state.name,
+            "config": self.config,
+            "error": str(self.error) if self.error else None,
+        }

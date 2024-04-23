@@ -4,6 +4,7 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
+
 from collections import OrderedDict
 from jaseci.prim.element import Element
 from jaseci.prim.obj_mixins import Anchored
@@ -52,9 +53,12 @@ class Node(Element, Anchored):
         for k in self.fast_edges.keys():
             for v in self.fast_edges[k]:
                 link_order = [v[0], self.jid] if v[1] == FROM else [self.jid, v[0]]
-                edge = self._h.get_obj(self._m_id, v[2])
-                if edge:
-                    v[3] = edge.context
+                if len(v) > 2 and self._h.has_obj(v[2]):
+                    edge = self._h.get_obj(self._m_id, v[2])
+                    if len(v) > 3:
+                        v[3] = edge.context
+                    else:
+                        v.append(edge.context)
                 else:
                     edge = Edge(
                         m_id=self._m_id, h=self._h, kind="edge", name=k, auto_save=False

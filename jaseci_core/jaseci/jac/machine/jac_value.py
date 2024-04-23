@@ -3,6 +3,7 @@ Variable manager for Jac
 
 Representations for all jac runtime variables
 """
+
 from jaseci.prim.element import Element
 from jaseci.prim.obj_mixins import Anchored
 from jaseci.prim.node import Node

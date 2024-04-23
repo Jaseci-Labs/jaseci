@@ -1,6 +1,7 @@
 """
 Alias api as a mixin
 """
+
 from jaseci.extens.api.interface import Interface
 
 

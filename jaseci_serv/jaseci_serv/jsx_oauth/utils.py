@@ -197,7 +197,7 @@ class JSXSocialLoginView(SocialLoginView):
         self.serializer = self.get_serializer(data=self.request.data)
         self.serializer.is_valid(raise_exception=True)
         data = self.serializer.validated_data
-        self.user = data.get("user")
+        self.user = data.pop("user")
 
         expiry = (
             knox_settings.TOKEN_TTL
@@ -214,13 +214,14 @@ class JSXSocialLoginView(SocialLoginView):
         auth_user = authenticate(
             request=self.request, username=self.user.email, password=self.user.password
         )
-        login_type = data.get("type")
+        login_type = data.pop("type")
         resp = {
             "email": auth_user.email if auth_user else self.user.email,
             "token": token,
             "exp": instance.expiry,
             "type": login_type.name,
             "details": login_type.value,
+            "provider": data,
         }
 
         self.response_log(resp)
@@ -244,6 +245,7 @@ class JSXSocialLoginView(SocialLoginView):
         master = self.user.get_master()
         hook = master._h
 
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
         tot_time = time() - request.start_time
         save_count = len(hook.save_obj_list)
         touch_count = len(hook.mem.keys())
@@ -274,6 +276,7 @@ class JSXSocialLoginView(SocialLoginView):
             "objects_saved": save_count,
             "caller_name": master.name,
             "caller_jid": master.jid,
+            "user_agent": user_agent,
         }
         try:
             api_result_str = dumps(resp)[:OBJECT_LOG_LIMIT]

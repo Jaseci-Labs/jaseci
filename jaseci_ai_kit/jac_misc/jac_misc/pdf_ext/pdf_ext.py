@@ -4,7 +4,7 @@ import re
 import uuid
 
 from jaseci.jsorc.live_actions import jaseci_action
-from PyPDF2 import PdfFileReader
+from pypdf import PdfReader
 from fastapi import HTTPException
 
 
@@ -49,14 +49,14 @@ def remove_pdf(filename: str):
 
 def process_pdf(filename, metadata, data):
     with open(filename, "rb") as pdf_file:
-        pdf_reader = PdfFileReader(pdf_file)
+        pdf_reader = PdfReader(pdf_file)
         if metadata:
             data.update({"metadata": {}})
-            md = dict(pdf_reader.documentInfo)
+            md = dict(pdf_reader.metadata)
             for k, v in md.items():
                 data["metadata"][re.sub("[^a-zA-Z0-9]+", "", k)] = v
         data["pages"] = len(pdf_reader.pages)
-        data["content"] = [page.extractText() for page in pdf_reader.pages]
+        data["content"] = [page.extract_text() for page in pdf_reader.pages]
     return data
 
 

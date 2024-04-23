@@ -70,23 +70,24 @@ class ElasticService(JsOrc.CommonService):
                         "elastic",
                         metadata.get("namespace"),
                     )
-                    self.config[
-                        "auth"
-                    ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+                    self.config["auth"] = (
+                        f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+                    )
 
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
 
     def post_run(self):
-        under_test = self.config.get("under_test", False)
-        if not under_test:
-            self.configure_elastic()
-        LOG_QUEUES["core"] = self.add_elastic_log_handler(
-            logger, self.config.get("core_log_index") or "core", under_test
-        )
-        LOG_QUEUES["app"] = self.add_elastic_log_handler(
-            app_logger, self.config.get("app_log_index") or "app", under_test
-        )
+        if multiprocessing.current_process().name == "MainProcess":
+            under_test = self.config.get("under_test", False)
+            if not under_test:
+                self.configure_elastic()
+            LOG_QUEUES["core"] = self.add_elastic_log_handler(
+                logger, self.config.get("core_log_index") or "core", under_test
+            )
+            LOG_QUEUES["app"] = self.add_elastic_log_handler(
+                app_logger, self.config.get("app_log_index") or "app", under_test
+            )
 
     def configure_elastic(self):
         """
@@ -297,14 +298,13 @@ class Elastic:
     # standard methods
     def generate_from_meta(self, meta: dict, override: dict, action: str = None):
         scope = meta["scope"].local_scope
-        interp = meta["interp"]
 
-        node = interp.current_node
         walker = scope["visitor"]
+        node = walker.current_node
 
         override_misc = override.get("misc")
         override["misc"] = {
-            "report": copy(interp.report),
+            "report": copy(walker.report),
             "node": node.serialize(detailed=False),
         }
 
@@ -313,7 +313,7 @@ class Elastic:
 
         master = meta["h"].get_obj(meta["m_id"], meta["m_id"]).master_self(True)
 
-        headers = interp.request_context.get("headers", {})
+        headers = walker.request_context.get("headers", {})
         if headers.get("Authorization"):
             del headers["Authorization"]
 
@@ -326,7 +326,7 @@ class Elastic:
             "node_id": node.jid,
             "master_id": master["jid"],
             "user": master.get("__meta__") or {"email": master["name"]},
-            "request_context": interp.request_context,
+            "request_context": walker.request_context,
             "data": walker.context,
         }
 

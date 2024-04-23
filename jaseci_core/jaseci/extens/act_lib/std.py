@@ -1,4 +1,5 @@
 """Built in actions for Jaseci"""
+
 from operator import itemgetter
 from jaseci.utils.utils import app_logger, json_out
 from datetime import datetime
@@ -111,9 +112,8 @@ def actload_local(filename: str, meta):
     """
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=True):
-        meta["interp"].rt_error(
-            "Only super master can load actions.", meta["interp"]._cur_jac_ast
-        )
+        raise Exception("Only super master can load actions.")
+
     return mast.actions_load_local(file=filename)["success"]
 
 
@@ -229,3 +229,8 @@ def log_activity(
     activity = elastic.generate_from_meta(meta, log, action)
 
     return elastic.doc_activity(activity, query, suffix)
+
+
+@jaseci_action()
+def clear_cache(all: bool = True, meta: dict = {}):
+    meta["h"].clear_cache(all)

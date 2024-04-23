@@ -1,6 +1,7 @@
 """
 Admin Global api functions as a mixin
 """
+
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.sentinel import Sentinel
 import uuid
@@ -50,13 +51,25 @@ class GlobalApi:
         return {"response": f"Global sentinel set to '{snt}'!"}
 
     @Interface.admin_api()
-    def global_sentinel_set_access(self, snt: Sentinel = None):
+    def global_sentinel_setaccess(self, snt: Sentinel = None):
         """
         Make a sentinel globally accessible
         """
         snt.make_read_only()
         snt.propagate_access()
-        return {"response": f"Sentinel '{snt}' is now globally accessible."}
+        return {"response": f"Sentinel '{snt}' is now globally accessible (read-only)."}
+
+    @Interface.admin_api()
+    def global_sentinel_revokeaccess(self, snt: Sentinel = None):
+        """
+        Revoke the global accessibility of a sentinel. Making it private.
+        """
+        if snt.check_write_access(self._m_id):
+            snt.make_private()
+            snt.propagate_access()
+            return {"response": f"Sentinel '{snt}' is now private."}
+        else:
+            return {"response:" "Insufficient permission."}
 
     @Interface.admin_api()
     def global_sentinel_unset(self):

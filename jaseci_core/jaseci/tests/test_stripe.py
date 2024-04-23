@@ -13,9 +13,9 @@ class StripeTests(CoreTest):
     def setUpClass(cls):
         config = JsOrc.settings("STRIPE_CONFIG")
         config["enabled"] = True
-        config[
-            "api_key"
-        ] = "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
+        config["api_key"] = (
+            "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
+        )
         config["webhook_key"] = "test_webhook_key"
 
         JsOrc.svc_reset("stripe")
@@ -26,6 +26,7 @@ class StripeTests(CoreTest):
         stripe.Product.list = Mock()
         stripe.Customer.create = Mock()
         stripe.Customer.retrieve = Mock()
+        stripe.Customer.delete = Mock()
         stripe.PaymentMethod.list = Mock()
         stripe.PaymentMethod.attach = Mock()
         stripe.PaymentMethod.detach = Mock()
@@ -43,6 +44,7 @@ class StripeTests(CoreTest):
         stripe.Invoice.retrieve = Mock()
         stripe.SubscriptionItem.create_usage_record = Mock()
         stripe.SubscriptionItem.list_usage_record_summaries = Mock()
+        stripe.SubscriptionItem.retrieve = Mock()
         stripe.checkout.Session.create = Mock()
         stripe.billing_portal.Session.create = Mock()
 
@@ -77,6 +79,10 @@ class StripeTests(CoreTest):
     @jac_testcase("stripe.jac", "get_customer")
     def test_stripe_get_customer(self, ret):
         stripe.Customer.retrieve.assert_called_once_with("cus_NBsqL1C1GrrHYM")
+
+    @jac_testcase("stripe.jac", "delete_customer")
+    def test_stripe_delete_customer(self, ret):
+        stripe.Customer.delete.assert_called_once_with("cus_NBsqL1C1GrrHYM")
 
     @jac_testcase("stripe.jac", "attach_payment_method")
     def test_stripe_attach_payment_method(self, ret):
@@ -198,6 +204,10 @@ class StripeTests(CoreTest):
     @jac_testcase("stripe.jac", "list_usage_report")
     def test_stripe_list_usage_report(self, ret):
         stripe.SubscriptionItem.list_usage_record_summaries.assert_called()
+
+    @jac_testcase("stripe.jac", "subscription_item_retrieve")
+    def test_stripe_subscription_item_retrieve(self, ret):
+        stripe.SubscriptionItem.retrieve.assert_called()
 
     @jac_testcase("stripe.jac", "create_checkout_session")
     def test_stripe_create_checkout_session(self, ret):

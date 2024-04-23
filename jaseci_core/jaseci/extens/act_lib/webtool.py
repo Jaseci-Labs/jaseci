@@ -1,11 +1,12 @@
 """Built in actions for Jaseci"""
+
 import requests
 from jaseci.jsorc.live_actions import jaseci_action
 from bs4 import BeautifulSoup
 
 
 @jaseci_action()
-def get_page_meta(url: str, timeout: int = 3, parser: str = "lxml"):
+def get_page_meta(url: str, timeout: int = 3, parser: str = "lxml", headers: dict = {}):
     """
     Util to parse metadata out of urls and html documents
     Parser option: lxml (default), html5lib, html.parser
@@ -15,9 +16,7 @@ def get_page_meta(url: str, timeout: int = 3, parser: str = "lxml"):
         webpage = requests.get(
             url,
             timeout=timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
-            },
+            headers=headers,
         )
         soup = BeautifulSoup(webpage.content, features=parser)
         meta = soup.find_all("meta")

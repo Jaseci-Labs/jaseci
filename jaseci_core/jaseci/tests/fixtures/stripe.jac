@@ -32,6 +32,13 @@ walker get_customer {
     stripe.customer_retrieve(customer_id);
 }
 
+walker delete_customer {
+    has customer_id = "cus_NBsqL1C1GrrHYM";
+    can stripe.customer_delete;
+
+    stripe.customer_delete(customer_id);
+}
+
 walker attach_payment_method {
     has payment_method_id = "pm_1MN1iN2xToAoV8chTjvX94hm", customer_id = "cus_NBsqL1C1GrrHYM";
     can stripe.attach_payment_method;
@@ -163,6 +170,13 @@ walker list_usage_report {
     can stripe.subscription_item_list_usage_record_summaries;
 
     stripe.subscription_item_list_usage_record_summaries(subscription_item_id, limit=1);
+}
+
+walker subscription_item_retrieve {
+    has subscription_item_id = "si_1MTgMQCZO78n7fsZqu1dk6nD";
+    can stripe.subscription_item_retrieve;
+
+    stripe.subscription_item_retrieve(subscription_item_id);
 }
 
 walker create_checkout_session {

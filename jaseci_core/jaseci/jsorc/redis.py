@@ -2,6 +2,7 @@
 This module includes code related to hooking Jaseci's Redis to the
 core engine.
 """
+
 import json
 
 import jaseci as core_mod
@@ -131,11 +132,9 @@ class RedisHook(MemoryHook):
     #                     CLEANER                     #
     ###################################################
 
-    def clear_cache(self):
-        if self.redis.is_running():
-            self.redis.app.flushdb()
-
-        MemoryHook.__init__(self)
+    def clear_cache(self, all=False):
+        super().clear_cache(all)
+        self.redis.clear(all)
 
 
 # ----------------------------------------------- #
