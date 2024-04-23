@@ -248,7 +248,7 @@ class JacLanguageTests(TestCase):
         """Test assign_compr."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("assign_compr", base_path=self.fixture_abs_path("./"))
+        jac_import("assign_compr_dup", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
