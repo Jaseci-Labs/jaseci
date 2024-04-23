@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import os
 import traceback
-from typing import Any, Callable, TypeVar
+from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.utils.helpers import pascal_to_snake
+from jaclang.vendor.mypy.nodes import Node as MyNode
 
-import mypy.nodes as MypyNode  # noqa N812
+import mypy.nodes as MypyNodes  # noqa N812
 import mypy.types as MypyTypes  # noqa N812
 from mypy.checkexpr import Type as MyType
 
@@ -25,7 +26,7 @@ T = TypeVar("T", bound=ast.AstSymbolNode)
 class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
-    node_type_hash: dict[Any, MyType] = {}
+    node_type_hash: dict[MyNode, MyType] = {}
 
     def __debug_print(self, *argv: object) -> None:
         if "FuseTypeInfoDebug" in os.environ:
@@ -120,16 +121,16 @@ class FuseTypeInfoPass(Pass):
             # orig_node = mypy_node
             mypy_node = mypy_node.node
 
-            if isinstance(mypy_node, (MypyNode.Var, MypyNode.FuncDef)):
+            if isinstance(mypy_node, (MypyNodes.Var, MypyNodes.FuncDef)):
                 self.__call_type_handler(node, mypy_node.type)
 
-            elif isinstance(mypy_node, MypyNode.MypyFile):
+            elif isinstance(mypy_node, MypyNodes.MypyFile):
                 node.sym_info = ast.SymbolInfo("types.ModuleType")
 
-            elif isinstance(mypy_node, MypyNode.TypeInfo):
+            elif isinstance(mypy_node, MypyNodes.TypeInfo):
                 node.sym_info = ast.SymbolInfo(mypy_node.fullname)
 
-            elif isinstance(mypy_node, MypyNode.OverloadedFuncDef):
+            elif isinstance(mypy_node, MypyNodes.OverloadedFuncDef):
                 self.__call_type_handler(node, mypy_node.items[0].func.type)
 
             elif mypy_node is None:
@@ -142,14 +143,14 @@ class FuseTypeInfoPass(Pass):
                 )
 
         else:
-            if isinstance(mypy_node, MypyNode.ClassDef):
+            if isinstance(mypy_node, MypyNodes.ClassDef):
                 node.sym_info.typ = mypy_node.fullname
                 self.__set_sym_table_link(node)
-            elif isinstance(mypy_node, MypyNode.FuncDef):
+            elif isinstance(mypy_node, MypyNodes.FuncDef):
                 self.__call_type_handler(node, mypy_node.type)
-            elif isinstance(mypy_node, MypyNode.Argument):
+            elif isinstance(mypy_node, MypyNodes.Argument):
                 self.__call_type_handler(node, mypy_node.variable.type)
-            elif isinstance(mypy_node, MypyNode.Decorator):
+            elif isinstance(mypy_node, MypyNodes.Decorator):
                 self.__call_type_handler(node, mypy_node.func.type.ret_type)
             else:
                 self.__debug_print(
@@ -200,7 +201,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_ability(self, node: ast.Ability) -> None:
         """Pass handler for Ability nodes."""
-        if isinstance(node.gen.mypy_ast[0], MypyNode.FuncDef):
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)
         else:
             self.__debug_print(
@@ -211,7 +212,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
         """Pass handler for AbilityDef nodes."""
-        if isinstance(node.gen.mypy_ast[0], MypyNode.FuncDef):
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)
         else:
             self.__debug_print(
@@ -222,8 +223,8 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_param_var(self, node: ast.ParamVar) -> None:
         """Pass handler for ParamVar nodes."""
-        if isinstance(node.gen.mypy_ast[0], MypyNode.Argument):
-            mypy_node: MypyNode.Argument = node.gen.mypy_ast[0]
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.Argument):
+            mypy_node: MypyNodes.Argument = node.gen.mypy_ast[0]
             if mypy_node.variable.type:
                 self.__call_type_handler(node, mypy_node.variable.type)
         else:
@@ -236,9 +237,9 @@ class FuseTypeInfoPass(Pass):
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Pass handler for HasVar nodes."""
         mypy_node = node.gen.mypy_ast[0]
-        if isinstance(mypy_node, MypyNode.AssignmentStmt):
+        if isinstance(mypy_node, MypyNodes.AssignmentStmt):
             n = mypy_node.lvalues[0].node
-            if isinstance(n, (MypyNode.Var, MypyNode.FuncDef)):
+            if isinstance(n, (MypyNodes.Var, MypyNodes.FuncDef)):
                 self.__call_type_handler(node, n.type)
             else:
                 self.__debug_print(
@@ -315,12 +316,12 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Pass handler for ArchRef nodes."""
-        if isinstance(node.gen.mypy_ast[0], MypyNode.ClassDef):
-            mypy_node: MypyNode.ClassDef = node.gen.mypy_ast[0]
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
+            mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]
             node.sym_info.typ = mypy_node.fullname
             self.__set_sym_table_link(node)
-        elif isinstance(node.gen.mypy_ast[0], MypyNode.FuncDef):
-            mypy_node2: MypyNode.FuncDef = node.gen.mypy_ast[0]
+        elif isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
+            mypy_node2: MypyNodes.FuncDef = node.gen.mypy_ast[0]
             self.__call_type_handler(node, mypy_node2.type)
         else:
             self.__debug_print(
