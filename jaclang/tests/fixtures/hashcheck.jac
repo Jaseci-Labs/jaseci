@@ -1,4 +1,4 @@
-obj SomeObj {  
+obj SomeObj {
     has a: int = 5;
 }
 
