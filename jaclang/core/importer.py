@@ -4,7 +4,7 @@ import importlib
 import marshal
 import sys
 import types
-from os import path
+from os import getcwd, path
 from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
@@ -39,6 +39,8 @@ def jac_importer(
         return sys.modules[module_name]
 
     caller_dir = path.dirname(base_path) if not path.isdir(base_path) else base_path
+    if not caller_dir:
+        caller_dir = getcwd()
     chomp_target = target
     if chomp_target.startswith("."):
         chomp_target = chomp_target[1:]
