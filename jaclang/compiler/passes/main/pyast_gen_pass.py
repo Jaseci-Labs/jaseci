@@ -493,9 +493,11 @@ class PyastGenPass(Pass):
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
         py_compat_path_str = []
+        py_compat_level = []
         path_alias = {}
         for path in node.paths:
             py_compat_path_str.append(path.path_str.lstrip("."))
+            py_compat_level.append(path.path_str.count("."))
             path_alias[path.path_str] = path.alias.sym_name if path.alias else None
         imp_from = {}
         if node.items:
@@ -597,9 +599,9 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module=py_compat_path_str[0],
+                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
                         names=[self.sync(ast3.alias(name="*"), node)],
-                        level=0,
+                        level=py_compat_level[0],
                     ),
                     jac_node=node,
                 )
@@ -616,9 +618,9 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(
                     ast3.ImportFrom(
-                        module=py_compat_path_str[0],
+                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
                         names=node.items.gen.py_ast,
-                        level=0,
+                        level=py_compat_level[0],
                     )
                 )
             )

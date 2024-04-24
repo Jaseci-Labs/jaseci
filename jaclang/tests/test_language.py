@@ -310,18 +310,18 @@ class JacLanguageTests(TestCase):
         self.assertIn("one level deeperslHello World!", stdout_value)
         self.assertIn("module 'pyfunc' from ", stdout_value)
 
-    # def test_second_deep_outer_imports(self) -> None:
-    #     """Parse micro jac file."""
-    #     construct.root._jac_.edges.clear()
-    #     captured_output = io.StringIO()
-    #     sys.stdout = captured_output
-    #     jac_import(
-    #         "deep.deeper.deep_outer_import2", base_path=self.fixture_abs_path("./")
-    #     )
-    #     sys.stdout = sys.__stdout__
-    #     stdout_value = captured_output.getvalue()
-    #     self.assertIn("one level deeperslHello World!", stdout_value)
-    #     self.assertIn("module 'pyfunc' from ", stdout_value)
+    def test_second_deep_outer_imports(self) -> None:
+        """Parse micro jac file."""
+        construct.root._jac_.edges.clear()
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import(
+            "deep.deeper.deep_outer_import2", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("one level deeperslHello World!", stdout_value)
+        self.assertIn("module 'pyfunc' from ", stdout_value)
 
     def test_has_lambda_goodness(self) -> None:
         """Test has lambda_goodness."""
