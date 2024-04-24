@@ -1,11 +1,14 @@
+node user_root {}
+walker update_graph {}
 walker cycle {
-    async can cycle with user_root entry {
+    can cycle with user_root entry {
+        self.jaseci_sdk = {};
         res = f"> Processing for {here.name} {here.jid}";
         try {
             user_jid = here.jid;
             day_graph = self.jaseci_sdk.fetch_graph(
                 user_jid=user_jid,
-                date=<self>.today
+                date=self.today
             );
             here spawn update_graph(
                 user_jid=user_jid,

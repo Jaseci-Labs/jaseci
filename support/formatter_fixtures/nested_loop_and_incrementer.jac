@@ -1,9 +1,13 @@
-# find the token to delete
-idx = 0;
-for token_tup in here.expo_push_tokens {
-    if token_tup == self.expo_push_token {
-        break;
+with entry {
+    # find the token to delete
+    tokens = [];
+    token = "xx";
+    idx = 0;
+    for token_tup in tokens {
+        if token_tup == token {
+            break;
+        }
+        idx += 1;
     }
-    idx += 1;
+    tokens.pop(idx);
 }
-here.expo_push_tokens.pop(idx);
