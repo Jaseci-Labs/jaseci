@@ -39,7 +39,12 @@ def jac_importer(
         return sys.modules[module_name]
 
     caller_dir = path.dirname(base_path) if not path.isdir(base_path) else base_path
-    caller_dir = path.dirname(caller_dir) if target.startswith("..") else caller_dir
+    chomp_target = target
+    if chomp_target.startswith("."):
+        chomp_target = chomp_target[1:]
+        while chomp_target.startswith("."):
+            caller_dir = path.dirname(caller_dir)
+            chomp_target = chomp_target[1:]
     caller_dir = path.join(caller_dir, dir_path)
 
     full_target = path.normpath(path.join(caller_dir, file_name))

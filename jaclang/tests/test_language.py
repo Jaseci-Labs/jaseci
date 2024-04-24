@@ -295,7 +295,8 @@ class JacLanguageTests(TestCase):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+        self.assertIn("one level deeperslHello World!", stdout_value)
+        self.assertIn("module 'pyfunc' from ", stdout_value)
 
     def test_has_lambda_goodness(self) -> None:
         """Test has lambda_goodness."""
