@@ -597,7 +597,7 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module=py_compat_path_str[0],
+                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
                         names=[self.sync(ast3.alias(name="*"), node)],
                         level=0,
                     ),
@@ -616,7 +616,7 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(
                     ast3.ImportFrom(
-                        module=py_compat_path_str[0],
+                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
                         names=node.items.gen.py_ast,
                         level=0,
                     )
