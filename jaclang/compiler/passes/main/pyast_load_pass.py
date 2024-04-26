@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, TypeAlias, TypeVar
+from typing import Optional, Sequence, TypeAlias, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
@@ -315,14 +315,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if not (isinstance(body[0], ast.Semi) and len(body) == 1)
             else []
         )
+        empty_block: Sequence[ast.AstNode] = [
+            self.operator(Tok.LBRACE, "{"),
+            self.operator(Tok.RBRACE, "}"),
+        ]
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](
             items=valid,
             delim=Tok.WS,
-            kid=(
-                valid
-                if valid
-                else [self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")]
-            ),
+            kid=(valid if valid else empty_block),
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
