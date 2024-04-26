@@ -83,7 +83,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 extracted.append(i)
             elif isinstance(i, ast.CodeBlockStmt):
                 if isinstance(i, ast.ExprStmt) and isinstance(i.expr, ast.String):
-                    i.expr.value = f'""{i.expr.value}""'
+                    self.convert_to_doc(i.expr)
                 with_entry_body.append(i)
             else:
                 self.ice("Invalid type for with entry body")
@@ -106,16 +106,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(elements[0].expr, ast.String)
             else elements[0]
         )
-        v_1 = [elements[0]] if isinstance(elements[0], ast.String) else []
+        doc_str_list = [elements[0]] if isinstance(elements[0], ast.String) else []
         valid = (
-            (v_1)
+            (doc_str_list)
             + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
-            if v_1
+            if doc_str_list
             else self.extract_with_entry(elements[:], (ast.ElementStmt, ast.EmptyToken))
         )
         doc_str = elements[0] if isinstance(elements[0], ast.String) else None
-        if doc_str:
-            doc_str.value = f'""{doc_str.value}""'
+        self.convert_to_doc(doc_str) if doc_str else None
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
@@ -125,7 +124,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid=valid,
         )
         ret.gen.py_ast = [node]
-        # ret.unparse()  # TODO: This is a hack and should be deleted
         return self.nu(ret)
 
     def proc_function_def(
@@ -163,7 +161,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(valid[0].expr, ast.String)
         ):
             doc = valid[0].expr
-            doc.value = f'""{doc.value}""'
+            self.convert_to_doc(doc)
             valid_body = ast.SubNodeList[ast.CodeBlockStmt](
                 items=valid[1:],
                 delim=Tok.WS,
@@ -307,8 +305,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(body[0].expr, ast.String)
             else None
         )
-        if doc:
-            doc.value = f'""{doc.value}""'
+        self.convert_to_doc(doc) if doc else None
         body = body[1:] if doc else body
         valid: list[ast.ArchBlockStmt] = (
             self.extract_with_entry(body, ast.ArchBlockStmt)
@@ -326,26 +323,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        base_classes = [self.convert(base) for base in node.bases]
-        valid2: list[ast.Expr] = [
-            base for base in base_classes if isinstance(base, ast.Expr)
+        converted_base_classes = [self.convert(base) for base in node.bases]
+        base_classes: list[ast.Expr] = [
+            base for base in converted_base_classes if isinstance(base, ast.Expr)
         ]
-        if len(valid2) != len(base_classes):
-            raise self.ice("Length mismatch in base classes")
         valid_bases = (
-            ast.SubNodeList[ast.Expr](items=valid2, delim=Tok.COMMA, kid=base_classes)
-            if len(valid2)
+            ast.SubNodeList[ast.Expr](
+                items=base_classes, delim=Tok.COMMA, kid=base_classes
+            )
+            if base_classes
             else None
         )
-        decorators = [self.convert(i) for i in node.decorator_list]
-        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
-        if len(valid_dec) != len(decorators):
-            raise self.ice("Length mismatch in decorators in class")
+        converted_decorators_list = [self.convert(i) for i in node.decorator_list]
+        decorators = [i for i in converted_decorators_list if isinstance(i, ast.Expr)]
         valid_decorators = (
             ast.SubNodeList[ast.Expr](
-                items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
+                items=decorators, delim=Tok.DECOR_OP, kid=decorators
             )
-            if len(valid_dec)
+            if decorators
             else None
         )
         if (
@@ -2478,3 +2473,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def proc_type_var_tuple(self, node: py_ast.TypeVarTuple) -> None:
         """Process python node."""
+
+    def convert_to_doc(self, string: ast.String) -> None:
+        """Convert a string to a docstring."""
+        string.value = f'""{string.value}""'

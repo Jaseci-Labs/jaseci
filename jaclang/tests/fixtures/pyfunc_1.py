@@ -91,7 +91,7 @@ numbers = [1, 2, 3, 4, 5]
 squares = [x**2 for x in numbers]
 squares_dict = {x: x**2 for x in numbers}
 squares_generator = (x**2 for x in numbers)
-add = lambda x, y: x + y  # noqa
+add = lambda x, y: x + y
 numbers2 = [1, 2, 3, 3, 4, 5, 5]
 unique_numbers2 = {x for x in numbers2}
 even_numbers = {x for x in range(10) if x % 2 == 0}
@@ -176,7 +176,7 @@ def foo(cls):
     return cls
 
 
-class Animal:  # FIXME : ValueError: empty body on ClassDef
+class Animal:
     pass
 
 
@@ -250,7 +250,7 @@ greet2(name="Alice", age=30)
 
 name = "Alice"
 age = 30
-# print("Name: {}, Age: {}".format(name, age))
+print("Name: {}, Age: {}".format(name, age))
 
 
 x = True
