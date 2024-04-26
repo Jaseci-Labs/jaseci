@@ -6,7 +6,6 @@ import ast as ast3
 from types import EllipsisType
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
-from icecream import ic
 from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
@@ -352,13 +351,10 @@ class SubNodeList(AstNode, Generic[T]):
         self.delim = delim
         self.left_enc = left_enc
         self.right_enc = right_enc
-        # ic(items, delim, left_enc, right_enc,kid)
         AstNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize sub node list node."""
-        ic('yes or noooo')
-        exit()
         res = True
         if deep:
             for i in self.items:
@@ -396,7 +392,6 @@ class Module(AstDocNode):
         registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
-        # ic(body)
         self.name = name
         self.source = source
         self.body = body
@@ -407,7 +402,6 @@ class Module(AstDocNode):
         self.registry = registry
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
-        # ic('i am here')
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module node."""
@@ -425,9 +419,6 @@ class Module(AstDocNode):
 
     def unparse(self) -> str:
         """Unparse module node."""
-        # ic(super().unparse())
-        print('yes i am unarsinng')
-        exit()
         super().unparse()
         return self.format()
 

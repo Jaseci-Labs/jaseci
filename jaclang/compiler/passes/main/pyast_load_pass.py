@@ -5,7 +5,6 @@ from __future__ import annotations
 import ast as py_ast
 import os
 from typing import Optional, TypeAlias, TypeVar
-from icecream import ic
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
@@ -70,15 +69,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return ast.ModuleCode(
                 name=None,
                 body=with_entry_subnodelist,
-                kid=with_entry_body,
+                kid=[with_entry_subnodelist],
                 doc=None,
             )
 
         extracted: list[T | ast.ModuleCode] = []
         with_entry_body: list[ast.CodeBlockStmt] = []
-        # ic(body)
         for i in body:
-            # ic(i)
             if isinstance(i, exclude_types):
                 if len(with_entry_body):
                     extracted.append(gen_mod_code(with_entry_body))
@@ -92,7 +89,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 self.ice("Invalid type for with entry body")
         if len(with_entry_body):
             extracted.append(gen_mod_code(with_entry_body))
-        # ic(extracted)
         return extracted
 
     def proc_module(self, node: py_ast.Module) -> ast.Module:
@@ -110,16 +106,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(elements[0].expr, ast.String)
             else elements[0]
         )
-        # ic(elements)
-        # ic(elements[1:])
-        v_1=[elements[0]] if isinstance(elements[0], ast.String) else []
-        # ic(v_1)
-        # ic(isinstance(elements[0], ast.String))
+        v_1 = [elements[0]] if isinstance(elements[0], ast.String) else []
         valid = (
-            v_1
-        ) + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken)) if v_1 else self.extract_with_entry(elements[:], (ast.ElementStmt, ast.EmptyToken))
+            (v_1)
+            + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
+            if v_1
+            else self.extract_with_entry(elements[:], (ast.ElementStmt, ast.EmptyToken))
+        )
         doc_str = elements[0] if isinstance(elements[0], ast.String) else None
-        # ic(valid)
         if doc_str:
             doc_str.value = f'""{doc_str.value}""'
         ret = ast.Module(
@@ -315,22 +309,23 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         if doc:
             doc.value = f'""{doc.value}""'
-        # ic('before', body,doc)
         body = body[1:] if doc else body
-        # ic('after', body)
-        # ic(not (isinstance(body[0], ast.Semi) and len(body) ==1))
-        valid: list[ast.ArchBlockStmt] = self.extract_with_entry(
-            body, ast.ArchBlockStmt
-        ) if  not (isinstance(body[0], ast.Semi) and len(body) ==1) else []
-        ic(valid)
+        valid: list[ast.ArchBlockStmt] = (
+            self.extract_with_entry(body, ast.ArchBlockStmt)
+            if not (isinstance(body[0], ast.Semi) and len(body) == 1)
+            else []
+        )
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](
             items=valid,
             delim=Tok.WS,
-            kid=valid if valid else [self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")],
+            kid=(
+                valid
+                if valid
+                else [self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")]
+            ),
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        # ic(valid_body.kid)
         base_classes = [self.convert(base) for base in node.bases]
         valid2: list[ast.Expr] = [
             base for base in base_classes if isinstance(base, ast.Expr)
@@ -414,9 +409,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
-        ic(valid_body)
-        ic(valid_body.pp())
-        achi=ast.Architype(
+        achi = ast.Architype(
             arch_type=arch_type,
             name=name,
             access=None,
@@ -426,7 +419,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             doc=doc,
             decorators=valid_decorators,
         )
-        # ic(achi.pp())
         return achi
 
     def proc_return(self, node: py_ast.Return) -> ast.ReturnStmt | None:
@@ -460,13 +452,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         target = ast.SubNodeList[ast.Expr | ast.KWPair](
             items=[*valid_exprs], delim=Tok.COMMA, kid=exprs
         )
+        target_1 = (
+            valid_exprs[0]
+            if len(valid_exprs) > 1
+            else ast.TupleVal(values=target, kid=[target])
+        )
         return ast.DeleteStmt(
-            target=(
-                valid_exprs[0]
-                if len(valid_exprs) > 1
-                else ast.TupleVal(values=target, kid=[target])
-            ),
-            kid=exprs,
+            target=target_1,
+            kid=[target],
         )
 
     def proc_assign(self, node: py_ast.Assign) -> ast.Assignment:
