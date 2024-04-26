@@ -42,7 +42,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             )
 
             if diff:
-                # print(f"Differences found in comparison:\n{diff}")
+                print(f"Differences found in comparison:\n{diff}")
                 # raise AssertionError("Files differ after formatting.")
                 self.skipTest("Test failed, but skipping instead of failing.")
         except FileNotFoundError:
@@ -67,16 +67,12 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def test_jac_file_compr(self) -> None:
         """Tests if the file matches a particular format."""
-        # Testing the simple_walk
         self.compare_files(
-            "simple_walk.jac",
-            "jaclang/compiler/passes/tool/tests/fixtures/simple_walk_fmt.jac",
+            os.path.join(self.fixture_abs_path(""), "simple_walk_fmt.jac"),
         )
 
-        # Testing the core_lib
         self.compare_files(
-            "corelib.jac",
-            "jaclang/compiler/passes/tool/tests/fixtures/corelib_fmt.jac",
+            os.path.join(self.fixture_abs_path(""), "corelib_fmt.jac"),
         )
 
     def test_compare_myca_fixtures(self) -> None:
