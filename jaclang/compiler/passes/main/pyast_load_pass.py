@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as py_ast
 import os
 from typing import Optional, TypeAlias, TypeVar
+from icecream import ic
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
@@ -75,7 +76,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         extracted: list[T | ast.ModuleCode] = []
         with_entry_body: list[ast.CodeBlockStmt] = []
+        # ic(body)
         for i in body:
+            # ic(i)
             if isinstance(i, exclude_types):
                 if len(with_entry_body):
                     extracted.append(gen_mod_code(with_entry_body))
@@ -89,6 +92,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 self.ice("Invalid type for with entry body")
         if len(with_entry_body):
             extracted.append(gen_mod_code(with_entry_body))
+        # ic(extracted)
         return extracted
 
     def proc_module(self, node: py_ast.Module) -> ast.Module:
@@ -106,17 +110,23 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(elements[0].expr, ast.String)
             else elements[0]
         )
+        # ic(elements)
+        # ic(elements[1:])
+        v_1=[elements[0]] if isinstance(elements[0], ast.String) else []
+        # ic(v_1)
+        # ic(isinstance(elements[0], ast.String))
         valid = (
-            [elements[0]] if isinstance(elements[0], ast.String) else []
-        ) + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
+            v_1
+        ) + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken)) if v_1 else self.extract_with_entry(elements[:], (ast.ElementStmt, ast.EmptyToken))
         doc_str = elements[0] if isinstance(elements[0], ast.String) else None
+        # ic(valid)
         if doc_str:
             doc_str.value = f'""{doc_str.value}""'
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
             doc=doc_str,
-            body=valid[1:] if isinstance(valid[0], ast.String) else valid,
+            body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
             is_imported=False,
             kid=valid,
         )
@@ -268,65 +278,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_start=0,
             pos_end=0,
         )
-        base_classes = [self.convert(base) for base in node.bases]
-        valid2: list[ast.Expr] = [
-            base for base in base_classes if isinstance(base, ast.Expr)
-        ]
-        if len(valid2) != len(base_classes):
-            raise self.ice("Length mismatch in base classes")
-        valid_bases = (
-            ast.SubNodeList[ast.Expr](items=valid2, delim=Tok.COMMA, kid=base_classes)
-            if len(valid2)
-            else None
-        )
-        decorators = [self.convert(i) for i in node.decorator_list]
-        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
-        if len(valid_dec) != len(decorators):
-            raise self.ice("Length mismatch in decorators in class")
-        valid_decorators = (
-            ast.SubNodeList[ast.Expr](
-                items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
-            )
-            if len(valid_dec)
-            else None
-        )
         body = [self.convert(i) for i in node.body]
-        doc = (
-            body[0].expr
-            if isinstance(body[0], ast.ExprStmt)
-            and isinstance(body[0].expr, ast.String)
-            else None
-        )
-        if doc:
-            doc.value = f'""{doc.value}""'
-        body = body[1:] if doc else body
-        if len(body) == 1 and isinstance(body[0], ast.Semi):
-            valid_body = ast.SubNodeList[ast.ArchBlockStmt](
-                items=[],
-                delim=Tok.WS,
-                kid=[self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")],
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
-            kid = (
-                [name, valid_bases, doc]
-                if doc and valid_bases
-                else (
-                    [name, valid_bases]
-                    if valid_bases
-                    else [name, doc] if doc else [name]
-                )
-            )
-            return ast.Architype(
-                arch_type=arch_type,
-                name=name,
-                access=None,
-                base_classes=valid_bases,
-                body=valid_body,
-                kid=kid,
-                doc=doc,
-                decorators=valid_decorators,
-            )
         for body_stmt in body:
             if (
                 isinstance(body_stmt, ast.Ability)
@@ -355,15 +307,51 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     for param in body_stmt.signature.params.items
                     if param.name.value != "self"
                 ]
+        doc = (
+            body[0].expr
+            if isinstance(body[0], ast.ExprStmt)
+            and isinstance(body[0].expr, ast.String)
+            else None
+        )
+        if doc:
+            doc.value = f'""{doc.value}""'
+        # ic('before', body,doc)
+        body = body[1:] if doc else body
+        # ic('after', body)
+        # ic(not (isinstance(body[0], ast.Semi) and len(body) ==1))
         valid: list[ast.ArchBlockStmt] = self.extract_with_entry(
             body, ast.ArchBlockStmt
-        )
+        ) if  not (isinstance(body[0], ast.Semi) and len(body) ==1) else []
+        ic(valid)
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](
             items=valid,
             delim=Tok.WS,
-            kid=body,
+            kid=valid if valid else [self.operator(Tok.LBRACE, "{"), self.operator(Tok.RBRACE, "}")],
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
+        )
+        # ic(valid_body.kid)
+        base_classes = [self.convert(base) for base in node.bases]
+        valid2: list[ast.Expr] = [
+            base for base in base_classes if isinstance(base, ast.Expr)
+        ]
+        if len(valid2) != len(base_classes):
+            raise self.ice("Length mismatch in base classes")
+        valid_bases = (
+            ast.SubNodeList[ast.Expr](items=valid2, delim=Tok.COMMA, kid=base_classes)
+            if len(valid2)
+            else None
+        )
+        decorators = [self.convert(i) for i in node.decorator_list]
+        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
+        if len(valid_dec) != len(decorators):
+            raise self.ice("Length mismatch in decorators in class")
+        valid_decorators = (
+            ast.SubNodeList[ast.Expr](
+                items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
+            )
+            if len(valid_dec)
+            else None
         )
         if (
             base_classes
@@ -426,7 +414,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
-        return ast.Architype(
+        ic(valid_body)
+        ic(valid_body.pp())
+        achi=ast.Architype(
             arch_type=arch_type,
             name=name,
             access=None,
@@ -436,6 +426,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             doc=doc,
             decorators=valid_decorators,
         )
+        # ic(achi.pp())
+        return achi
 
     def proc_return(self, node: py_ast.Return) -> ast.ReturnStmt | None:
         """Process python node.
@@ -547,19 +539,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         target = self.convert(node.target)
         annotation = self.convert(node.annotation)
         if isinstance(annotation, ast.Expr):
-            colon = ast.Token(
-                file_path=self.mod_path,
-                name=Tok.COLON,
-                value=":",
-                line=0,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-            )
-            annotation_subtag = ast.SubTag[ast.Expr](
-                tag=annotation, kid=[colon, annotation]
-            )
+            annotation_subtag = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
         else:
             raise self.ice()
         value = self.convert(node.value) if node.value else None

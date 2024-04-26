@@ -4,7 +4,7 @@ import io
 import os
 import pickle
 import sys
-
+from icecream import ic
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
@@ -513,6 +513,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(f.read()), mod_path=py_out_path
                 ),
             ).ir.unparse()
+        print(output)
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
