@@ -409,7 +409,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
-        achi = ast.Architype(
+        return ast.Architype(
             arch_type=arch_type,
             name=name,
             access=None,
@@ -419,7 +419,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             doc=doc,
             decorators=valid_decorators,
         )
-        return achi
 
     def proc_return(self, node: py_ast.Return) -> ast.ReturnStmt | None:
         """Process python node.
@@ -541,10 +540,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(annotation, ast.Expr)
             and isinstance(target, ast.Expr)
         ):
+            target = ast.SubNodeList[ast.Expr](
+                items=[target], delim=Tok.EQ, kid=[target]
+            )
             return ast.Assignment(
-                target=ast.SubNodeList[ast.Expr](
-                    items=[target], delim=Tok.EQ, kid=[target]
-                ),
+                target=target,
                 value=value if isinstance(value, (ast.Expr, ast.YieldExpr)) else None,
                 type_tag=annotation_subtag,
                 kid=(
@@ -1094,7 +1094,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return type_mapping[value_type](
                 file_path=self.mod_path,
                 name=token_type,
-                value=f'"{node.value}"' if value_type == str else str(node.value),
+                value=(
+                    f'"{repr(node.value)[1:-1]}"'
+                    if value_type == str
+                    else str(node.value)
+                ),
                 line=node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(str(node.value)),
