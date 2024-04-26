@@ -12,9 +12,9 @@ walker cycle {
             );
             here spawn update_graph(
                 user_jid=user_jid,
-                date=self.today, 
-                day_graph=day_graph, 
-                buddy_schedule=self.buddy_schedule, 
+                date=self.today,
+                day_graph=day_graph,
+                buddy_schedule=self.buddy_schedule,
                 user_level_buddy_schedule=self.user_level_buddy_schedule
             );
             here spawn push_to_mobile(user_jid=user_jid, date=self.today);
