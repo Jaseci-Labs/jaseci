@@ -6,6 +6,8 @@ import ast as py_ast
 import os
 from typing import Optional, Sequence, TypeAlias, TypeVar
 
+from icecream import ic
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes.ir_pass import Pass
@@ -213,7 +215,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             signature=sig,
             body=valid_body,
             decorators=valid_decorators,
-            doc=doc,
+            doc=None,
             kid=kid,
         )
         return ret
@@ -750,9 +752,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 condition=test,
                 body=body2,
                 else_body=else_body,
-                kid=(
-                    [test, body2, else_body] if else_body is not None else [test, body2]
-                ),
+                kid=([test, body2, else_body] if else_body else [test, body2]),
             )
         else:
             raise self.ice()
@@ -856,12 +856,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             msg: expr | None
         """
         test = self.convert(node.test)
-        msg = self.convert(node.msg) if node.msg is not None else None
+        msg = self.convert(node.msg) if node.msg else None
         if isinstance(test, ast.Expr) and (isinstance(msg, ast.Expr) or msg is None):
             return ast.AssertStmt(
                 condition=test,
                 error_msg=msg,
-                kid=[test, msg] if msg is not None else [test],
+                kid=[test, msg] if msg else [test],
             )
         else:
             raise self.ice()
@@ -1134,11 +1134,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kvp = ast.KVPair(
                 key=key_pluck,
                 value=valid_values[i],
-                kid=(
-                    [key_pluck, valid_values[i]]
-                    if key_pluck is not None
-                    else [valid_values[i]]
-                ),
+                kid=([key_pluck, valid_values[i]] if key_pluck else [valid_values[i]]),
             )
             kvpair.append(kvp)
         return ast.DictVal(
@@ -1182,32 +1178,54 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name: _Identifier | None
             body: list[stmt]
         """
-        type = self.convert(node.type) if node.type is not None else None
-        if not type:
+        type = self.convert(node.type) if node.type else None
+        name: ast.Name | None = None
+        if not type and not node.name:
             type = ast.Name(
                 file_path=self.mod_path,
                 name=Tok.NAME,
-                value="Any",
+                value="Exception",
                 line=node.lineno,
                 col_start=node.col_offset,
-                col_end=node.col_offset + 3,
+                col_end=node.col_offset + 9,
                 pos_start=0,
                 pos_end=0,
             )
-        name = (
-            ast.Name(
+            name = ast.Name(
                 file_path=self.mod_path,
                 name=Tok.NAME,
-                value=node.name,
+                value="e",
                 line=node.lineno,
                 col_start=node.col_offset,
-                col_end=node.col_offset + len(node.name),
+                col_end=node.col_offset + 1,
                 pos_start=0,
                 pos_end=0,
             )
-            if node.name is not None
-            else None
-        )
+        else:
+            # type = ast.Name(
+            #     file_path=self.mod_path,
+            #     name=Tok.NAME,
+            #     value=no,
+            #     line=node.lineno,
+            #     col_start=node.col_offset,
+            #     col_end=node.col_offset + 9,
+            #     pos_start=0,
+            #     pos_end=0,
+            # )
+            name = (
+                ast.Name(
+                    file_path=self.mod_path,
+                    name=Tok.NAME,
+                    value=node.name,
+                    line=node.lineno,
+                    col_start=node.col_offset,
+                    col_end=node.col_offset + len(node.name),
+                    pos_start=0,
+                    pos_end=0,
+                )
+                if node.name
+                else None
+            )
 
         body = [self.convert(i) for i in node.body]
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
@@ -1220,12 +1238,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        kid = []
-        if type:
-            kid.append(type)
-        if name:
-            kid.append(name)
-        kid.append(valid_body)
+        kid = [item for item in [type, name, valid_body] if item]
         if isinstance(type, ast.Expr) and (isinstance(name, ast.Name) or not name):
             return ast.Except(
                 ex_type=type,
@@ -1431,7 +1444,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 valid_names.append(
                     ast.ModuleItem(
                         name=name.expr,
-                        alias=name.alias if name.alias is not None else None,
+                        alias=name.alias if name.alias else None,
                         kid=[i for i in name.kid if i],
                     )
                 )
@@ -1447,6 +1460,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if not items:
             raise self.ice("No valid names in import from")
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
+        # if len(node.names) == 1 and node.names[0].name == "*":
+        #     ret = ast.Import(
+        #         lang=pytag,
+        #         paths=[path],
+        #         items=None,
+        #         is_absorb=True,
+        #         kid=[pytag, path],
+        #     )
+        #     return ret
         ret = ast.Import(
             lang=pytag,
             paths=[path],
@@ -1732,10 +1754,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.name if node.name is not None else "_",
+            value=node.name if node.name else "_",
             line=node.lineno,
             col_start=node.col_offset,
-            col_end=node.col_offset + len(node.name if node.name is not None else "_"),
+            col_end=node.col_offset + len(node.name if node.name else "_"),
             pos_start=0,
             pos_end=0,
         )
@@ -1973,6 +1995,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
             kid.append(excepts)
         else:
+            ic("sikkal")
             excepts = None
 
         if len(node.orelse) != 0:
@@ -2401,10 +2424,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         arg = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.arg if node.arg is not None else "_",
+            value=node.arg if node.arg else "_",
             line=node.lineno,
             col_start=node.col_offset,
-            col_end=node.col_offset + len(node.arg if node.arg is not None else "_"),
+            col_end=node.col_offset + len(node.arg if node.arg else "_"),
             pos_start=0,
             pos_end=0,
         )
@@ -2423,7 +2446,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
         """
         pattern = self.convert(node.pattern)
-        guard = self.convert(node.guard) if node.guard is not None else None
+        guard = self.convert(node.guard) if node.guard else None
         body = [self.convert(i) for i in node.body]
         valid = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
         if isinstance(pattern, ast.MatchPattern) and (
@@ -2433,9 +2456,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pattern=pattern,
                 guard=guard,
                 body=valid,
-                kid=(
-                    [pattern, guard, *valid] if guard is not None else [pattern, *valid]
-                ),
+                kid=([pattern, guard, *valid] if guard else [pattern, *valid]),
             )
         else:
             raise self.ice()
@@ -2448,9 +2469,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             optional_vars: expr | None
         """
         context_expr = self.convert(node.context_expr)
-        optional_vars = (
-            self.convert(node.optional_vars) if node.optional_vars is not None else None
-        )
+        optional_vars = self.convert(node.optional_vars) if node.optional_vars else None
         if isinstance(context_expr, ast.Expr) and (
             isinstance(optional_vars, ast.Expr) or optional_vars is None
         ):

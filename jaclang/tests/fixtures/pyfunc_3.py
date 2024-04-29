@@ -217,6 +217,25 @@ except ValueError as e:
     print("Raised:", e)
 
 
+try:
+    with open("test.txt") as file:
+        print(file.read())
+except:
+    print("File not found")
+
+try:
+    with open("test.txt") as file:
+        print(file.read())
+except FileNotFoundError:
+    print("File not found")
+
+try:
+    with open("test.txt") as file:
+        print(file.read())
+except FileNotFoundError as e:
+    print("File not found")
+
+
 def foo():
     a = 42
     if a > 0:
