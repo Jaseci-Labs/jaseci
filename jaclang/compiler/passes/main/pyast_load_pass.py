@@ -1995,7 +1995,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
             kid.append(excepts)
         else:
-            ic("sikkal")
             excepts = None
 
         if len(node.orelse) != 0:
@@ -2224,8 +2223,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_end=0,
             )
             kwarg.add_kids_left([kwarg.unpack])
-        defaults = [self.convert(expr) for expr in node.defaults if type(expr) is None]
-
+        defaults = [self.convert(expr) for expr in node.defaults]
         params = [*args]
         if vararg:
             params.append(vararg)
@@ -2235,8 +2233,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         params += defaults
 
         valid_params = [param for param in params if isinstance(param, ast.ParamVar)]
-        if len(valid_params) != len(params):
-            raise self.ice("Length mismatch in arguments")
+        for param, default in zip(valid_params[::-1], defaults[::-1]):
+            if isinstance(default, ast.Expr):
+                param.value = default
+                param.add_kids_right([default])
         if valid_params:
             fs_params = ast.SubNodeList[ast.ParamVar](
                 items=valid_params, delim=Tok.COMMA, kid=valid_params
