@@ -11,7 +11,7 @@ from typing import Optional, Sequence
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import Symbol, SymbolTable
+from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable
 
 
 class SymTabPass(Pass):
@@ -33,7 +33,7 @@ class SymTabPass(Pass):
     def def_insert(
         self,
         node: ast.AstSymbolNode,
-        access_spec: Optional[ast.AstAccessNode] = None,
+        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
         single_decl: Optional[str] = None,
         table_override: Optional[SymbolTable] = None,
     ) -> Optional[Symbol]:
@@ -270,7 +270,9 @@ class SymTabBuildPass(SymTabPass):
             and node.sym_tab
         ):
             for v in node.sym_tab.tab.values():
-                self.def_insert(v.decl, table_override=self.cur_scope())
+                self.def_insert(
+                    v.decl, access_spec=v.access, table_override=self.cur_scope()
+                )
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -391,7 +393,9 @@ class SymTabBuildPass(SymTabPass):
                 )
             else:
                 for v in node.paths[0].sub_module.sym_tab.tab.values():
-                    self.def_insert(v.decl, table_override=self.cur_scope())
+                    self.def_insert(
+                        v.decl, access_spec=v.access, table_override=self.cur_scope()
+                    )
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -437,7 +441,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional[ArchBlock],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_decl="architype")
+        self.def_insert(node, access_spec=node, single_decl="architype")
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
@@ -491,7 +495,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional[CodeBlock],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_decl="ability")
+        self.def_insert(node, access_spec=node, single_decl="ability")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
@@ -579,7 +583,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional['EnumBlock'],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_decl="enum")
+        self.def_insert(node, access_spec=node, single_decl="enum")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 

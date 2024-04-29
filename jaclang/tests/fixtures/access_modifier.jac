@@ -27,7 +27,7 @@ obj Dog: Animal: {
         has :pub s: str="22";
     }
 }
-
+glob :priv a=2;
 with entry {
      myDog = Dog(breed= "Golden Retriever");
 
@@ -36,6 +36,7 @@ with entry {
     print( myDog.introduce() );
     print( myDog.bark() );
     b=myDog.Body("33");
-    x=b.s;
+    x=b;
     print(x);
+    print(a);
 }

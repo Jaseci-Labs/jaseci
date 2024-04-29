@@ -101,6 +101,7 @@ class AccessCheckPass(SymTabPass):
         target: AtomType,
         params: Optional[SubNodeList[ExprType | Assignment]],
         """
+        # print(node.kid,node.pp)
 
     def enter_name(self, node: ast.Name) -> None:
         """Sub objects.

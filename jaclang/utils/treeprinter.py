@@ -96,11 +96,11 @@ def print_ast_tree(
         if isinstance(node, Token) and isinstance(node, AstSymbolNode):
             return f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}, {access}"
         elif isinstance(node, Token):
-            return f"{node.__class__.__name__} - {node.value}"
+            return f"{node.__class__.__name__} - {node.value}, {access}"
         elif isinstance(node, AstSymbolNode):
             return f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}, {access}"
         else:
-            return f"{node.__class__.__name__}"
+            return f"{node.__class__.__name__}, {access}"
 
     def __node_repr_in_py_tree(node: ast3.AST) -> str:
         if isinstance(node, ast3.Constant):
