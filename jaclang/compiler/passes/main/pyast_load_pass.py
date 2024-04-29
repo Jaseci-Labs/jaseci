@@ -837,11 +837,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if (isinstance(cause, ast.Expr) or cause is None) and (
             isinstance(exc, ast.Expr) or exc is None
         ):
-            if node.exc and not node.cause:
+            if exc and not node.cause:
                 return ast.RaiseStmt(
-                    cause=None,
+                    cause=exc,
                     from_target=None,
-                    kid=[self.operator(Tok.KW_RAISE, "raise")],
+                    kid=[self.operator(Tok.KW_RAISE, "raise"), exc],
                 )
             else:
                 return ast.RaiseStmt(cause=cause, from_target=exc, kid=kid)
