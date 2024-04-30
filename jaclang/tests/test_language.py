@@ -118,7 +118,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("Emoji Representation (str)", stdout_value)
         self.assertIn('Text Input (input) (str) = "Lets move to paris"', stdout_value)
         self.assertIn(
-            'Examples of Text to Emoji (emoji_examples) (list[dict[(str,str)]]) = [{"input": "I love tp drink pina coladas"',  # noqa E501
+            'Examples of Text to Emoji (emoji_examples) (list[dict[str,str]]) = [{"input": "I love tp drink pina coladas"',  # noqa E501
             stdout_value,
         )
 
