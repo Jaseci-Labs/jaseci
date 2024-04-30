@@ -676,6 +676,8 @@ class JacFormatPass(Pass):
                         self.emit(node, f"{j.gen.jac.strip()} ")
                     else:
                         self.emit(node, f"{j.gen.jac.strip()}")
+            elif isinstance(i, ast.Token) and i.gen.jac == ":":
+                self.emit(node, f"{i.gen.jac} ")
             else:
                 if i.gen.jac == "->":
                     self.emit(node, f" {i.gen.jac} ")
@@ -770,6 +772,8 @@ class JacFormatPass(Pass):
                         if not j.gen.jac.startswith(":")
                         else self.emit(node, f"{j.gen.jac} ")
                     )
+            elif isinstance(i, ast.Token) and i.gen.jac.startswith(":"):
+                self.emit(node, f"{i.gen.jac} ")
             else:
                 self.emit(node, i.gen.jac)
 
