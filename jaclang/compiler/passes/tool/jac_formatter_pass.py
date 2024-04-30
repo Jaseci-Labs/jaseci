@@ -271,7 +271,10 @@ class JacFormatPass(Pass):
                             self.indent_level += 1
                         if prev_token and prev_token.gen.jac.strip() == "{":
                             self.indent_level += 1
-                        self.emit(node, f"{stmt.gen.jac}\n")
+                        if prev_token and isinstance(prev_token, ast.Ability):
+                            self.emit(node, f"{stmt.gen.jac}")
+                        else:
+                            self.emit(node, f"{stmt.gen.jac}\n")
                 elif stmt.gen.jac == ",":
                     self.emit(node, f"{stmt.value} ")
                 elif stmt.value == "=":
@@ -788,8 +791,11 @@ class JacFormatPass(Pass):
         body: Optional[EnumBlock],
         """
         start = True
+        prev_token = None
         for i in node.kid:
             if isinstance(i, ast.String):
+                if prev_token and prev_token.gen.jac.strip() == "enum":
+                    self.emit(node, " ")
                 self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.CommentToken):
                 if i.is_inline:
@@ -800,12 +806,15 @@ class JacFormatPass(Pass):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
                 self.emit_ln(node, i.gen.jac)
+            elif isinstance(i, ast.Token) and i.gen.jac == ":":
+                self.emit(node, f"{i.gen.jac} ")
             else:
-                if start:
+                if start or (prev_token and isinstance(prev_token, ast.String)):
                     self.emit(node, i.gen.jac)
                     start = False
                 else:
                     self.emit(node, f" {i.gen.jac}")
+            prev_token = i
         if isinstance(
             node.kid[-1], (ast.Semi, ast.CommentToken)
         ) and not node.gen.jac.endswith("\n"):
@@ -1303,7 +1312,9 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                     self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Token) and i.name == Tok.KW_LET:
+            elif isinstance(i, ast.Token) and (
+                i.name == Tok.KW_LET or i.gen.jac == ":"
+            ):
                 self.emit(node, f"{i.gen.jac} ")
             elif isinstance(i, ast.Token) and "=" in i.gen.jac:
                 self.emit(node, f" {i.gen.jac} ")
