@@ -671,8 +671,8 @@ class ModulePath(AstSymbolNode):
                     res = res and p.normalize(deep)
             res = res and self.alias.normalize(deep) if self.alias else res
         new_kid: list[AstNode] = []
-        # for _ in range(self.level):
-        #     new_kid.append(self.gen_token(Tok.DOT))
+        for _ in range(self.level):
+            new_kid.append(self.gen_token(Tok.DOT))
         if self.path:
             for p in self.path:
                 res = res and p.normalize(deep)
@@ -681,6 +681,7 @@ class ModulePath(AstSymbolNode):
             new_kid.pop()
         if self.alias:
             res = res and self.alias.normalize(deep)
+            new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.alias)
         self.set_kids(nodes=new_kid)
         return res
