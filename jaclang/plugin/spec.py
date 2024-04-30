@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import (
@@ -73,9 +73,13 @@ class JacFeatureSpec:
     def jac_import(
         target: str,
         base_path: str,
+        absorb: bool,
         cachable: bool,
+        mdl_alias: Optional[str],
         override_name: Optional[str],
         mod_bundle: Optional[Module],
+        lng: Optional[str],
+        items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]:
         """Core Import Process."""
         raise NotImplementedError

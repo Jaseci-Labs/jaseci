@@ -13,9 +13,11 @@ from typing import Callable, TypeVar
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.utils.helpers import pascal_to_snake
+from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
 
-import mypy.nodes as MypyNode  # noqa N812
+import mypy.nodes as MypyNodes  # noqa N812
 import mypy.types as MypyTypes  # noqa N812
+from mypy.checkexpr import Type as MyType
 
 
 T = TypeVar("T", bound=ast.AstSymbolNode)
@@ -23,6 +25,8 @@ T = TypeVar("T", bound=ast.AstSymbolNode)
 
 class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
+
+    node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
 
     def __debug_print(self, *argv: object) -> None:
         if "FuseTypeInfoDebug" in os.environ:
@@ -89,7 +93,9 @@ class FuseTypeInfoPass(Pass):
                             jac_node_str, "has multiple mypy nodes associated to it"
                         )
                     else:
-                        # self.__debug_print(jac_node_str, "has duplicate mypy nodes associated to it")
+                        self.__debug_print(
+                            jac_node_str, "has duplicate mypy nodes associated to it"
+                        )
                         func(self, node)
                         self.__set_sym_table_link(node)
 
@@ -108,31 +114,27 @@ class FuseTypeInfoPass(Pass):
 
         return node_handler
 
-    def enter_import(self, node: ast.Import) -> None:
-        """Pass handler for import nodes."""
-        # Pruning the import nodes
-        self.prune()
-
-    @__handle_node
-    def enter_name(self, node: ast.NameSpec) -> None:
-        """Pass handler for name nodes."""
+    def __collect_type_from_symbol(self, node: ast.AstSymbolNode) -> None:
         mypy_node = node.gen.mypy_ast[0]
 
         if hasattr(mypy_node, "node"):
             # orig_node = mypy_node
             mypy_node = mypy_node.node
 
-            if isinstance(mypy_node, (MypyNode.Var, MypyNode.FuncDef)):
+            if isinstance(mypy_node, (MypyNodes.Var, MypyNodes.FuncDef)):
                 self.__call_type_handler(node, mypy_node.type)
 
-            elif isinstance(mypy_node, MypyNode.MypyFile):
+            elif isinstance(mypy_node, MypyNodes.MypyFile):
                 node.sym_info = ast.SymbolInfo("types.ModuleType")
 
-            elif isinstance(mypy_node, MypyNode.TypeInfo):
+            elif isinstance(mypy_node, MypyNodes.TypeInfo):
                 node.sym_info = ast.SymbolInfo(mypy_node.fullname)
 
-            elif isinstance(mypy_node, MypyNode.OverloadedFuncDef):
+            elif isinstance(mypy_node, MypyNodes.OverloadedFuncDef):
                 self.__call_type_handler(node, mypy_node.items[0].func.type)
+
+            elif mypy_node is None:
+                node.sym_info = ast.SymbolInfo("None")
 
             else:
                 self.__debug_print(
@@ -141,18 +143,30 @@ class FuseTypeInfoPass(Pass):
                 )
 
         else:
-            if isinstance(mypy_node, MypyNode.ClassDef):
+            if isinstance(mypy_node, MypyNodes.ClassDef):
                 node.sym_info.typ = mypy_node.fullname
                 self.__set_sym_table_link(node)
-            elif isinstance(mypy_node, MypyNode.FuncDef):
+            elif isinstance(mypy_node, MypyNodes.FuncDef):
                 self.__call_type_handler(node, mypy_node.type)
-            elif isinstance(mypy_node, MypyNode.Argument):
+            elif isinstance(mypy_node, MypyNodes.Argument):
                 self.__call_type_handler(node, mypy_node.variable.type)
+            elif isinstance(mypy_node, MypyNodes.Decorator):
+                self.__call_type_handler(node, mypy_node.func.type.ret_type)
             else:
                 self.__debug_print(
                     f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported',
                     type(mypy_node),
                 )
+
+    def enter_import(self, node: ast.Import) -> None:
+        """Pass handler for import nodes."""
+        # Pruning the import nodes
+        self.prune()
+
+    @__handle_node
+    def enter_name(self, node: ast.NameSpec) -> None:
+        """Pass handler for name nodes."""
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -167,7 +181,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_architype(self, node: ast.Architype) -> None:
         """Pass handler for Architype nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_arch_def(self, node: ast.ArchDef) -> None:
@@ -177,7 +191,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_enum(self, node: ast.Enum) -> None:
         """Pass handler for Enum nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_enum_def(self, node: ast.EnumDef) -> None:
@@ -187,23 +201,30 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_ability(self, node: ast.Ability) -> None:
         """Pass handler for Ability nodes."""
-        if isinstance(node.gen.mypy_ast[0], MypyNode.FuncDef):
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)
         else:
             self.__debug_print(
-                f"{node.loc}: Can't get type of an ability from mypy node other than Ability."
+                f"{node.loc}: Can't get type of an ability from mypy node other than Ability.",
+                type(node.gen.mypy_ast[0]),
             )
 
     @__handle_node
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
         """Pass handler for AbilityDef nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
+            self.__call_type_handler(node, node.gen.mypy_ast[0].type.ret_type)
+        else:
+            self.__debug_print(
+                f"{node.loc}: Can't get type of an AbilityDef from mypy node other than FuncDef.",
+                type(node.gen.mypy_ast[0]),
+            )
 
     @__handle_node
     def enter_param_var(self, node: ast.ParamVar) -> None:
         """Pass handler for ParamVar nodes."""
-        if isinstance(node.gen.mypy_ast[0], MypyNode.Argument):
-            mypy_node: MypyNode.Argument = node.gen.mypy_ast[0]
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.Argument):
+            mypy_node: MypyNodes.Argument = node.gen.mypy_ast[0]
             if mypy_node.variable.type:
                 self.__call_type_handler(node, mypy_node.variable.type)
         else:
@@ -216,9 +237,9 @@ class FuseTypeInfoPass(Pass):
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Pass handler for HasVar nodes."""
         mypy_node = node.gen.mypy_ast[0]
-        if isinstance(mypy_node, MypyNode.AssignmentStmt):
+        if isinstance(mypy_node, MypyNodes.AssignmentStmt):
             n = mypy_node.lvalues[0].node
-            if isinstance(n, (MypyNode.Var, MypyNode.FuncDef)):
+            if isinstance(n, (MypyNodes.Var, MypyNodes.FuncDef)):
                 self.__call_type_handler(node, n.type)
             else:
                 self.__debug_print(
@@ -242,32 +263,50 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_list_val(self, node: ast.ListVal) -> None:
         """Pass handler for ListVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.list"
 
     @__handle_node
     def enter_set_val(self, node: ast.SetVal) -> None:
         """Pass handler for SetVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.set"
 
     @__handle_node
     def enter_tuple_val(self, node: ast.TupleVal) -> None:
         """Pass handler for TupleVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.tuple"
 
     @__handle_node
     def enter_dict_val(self, node: ast.DictVal) -> None:
         """Pass handler for DictVal nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        if mypy_node in self.node_type_hash:
+            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        else:
+            node.sym_info.typ = "builtins.dict"
 
     @__handle_node
     def enter_list_compr(self, node: ast.ListCompr) -> None:
         """Pass handler for ListCompr nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        node.sym_info.typ = str(self.node_type_hash[mypy_node])
 
     @__handle_node
     def enter_dict_compr(self, node: ast.DictCompr) -> None:
         """Pass handler for DictCompr nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        mypy_node = node.gen.mypy_ast[0]
+        node.sym_info.typ = str(self.node_type_hash[mypy_node])
 
     @__handle_node
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
@@ -277,13 +316,17 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Pass handler for ArchRef nodes."""
-        if isinstance(node.gen.mypy_ast[0], MypyNode.ClassDef):
-            mypy_node: MypyNode.ClassDef = node.gen.mypy_ast[0]
+        if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
+            mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]
             node.sym_info.typ = mypy_node.fullname
             self.__set_sym_table_link(node)
+        elif isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
+            mypy_node2: MypyNodes.FuncDef = node.gen.mypy_ast[0]
+            self.__call_type_handler(node, mypy_node2.type)
         else:
             self.__debug_print(
-                f"{node.loc}: Can't get ArchRef value from mypyNode other than ClassDef"
+                f"{node.loc}: Can't get ArchRef value from mypyNode other than ClassDef",
+                type(node.gen.mypy_ast[0]),
             )
 
     @__handle_node
@@ -294,7 +337,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Pass handler for EdgeOpRef nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_filter_compr(self, node: ast.FilterCompr) -> None:
@@ -329,7 +372,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         """Pass handler for BuiltinType nodes."""
-        self.__debug_print("Getting type not supported in", type(node))
+        self.__collect_type_from_symbol(node)
 
     def get_type_from_instance(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.Instance
@@ -355,3 +398,15 @@ class FuseTypeInfoPass(Pass):
     ) -> None:
         """Get type info from mypy type NoneType."""
         node.sym_info = ast.SymbolInfo("None")
+
+    def get_type_from_any_type(
+        self, node: ast.AstSymbolNode, mypy_type: MypyTypes.AnyType
+    ) -> None:
+        """Get type info from mypy type NoneType."""
+        node.sym_info = ast.SymbolInfo("Any")
+
+    def get_type_from_tuple_type(
+        self, node: ast.AstSymbolNode, mypy_type: MypyTypes.TupleType
+    ) -> None:
+        """Get type info from mypy type TupleType."""
+        node.sym_info = ast.SymbolInfo("builtins.tuple")

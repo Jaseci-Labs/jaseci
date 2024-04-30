@@ -38,12 +38,15 @@ class JacCliTests(TestCase):
     def test_circle_jac_test(self) -> None:
         """Basic test for pass."""
         captured_output = io.StringIO()
+        stdout_block = io.StringIO()
         sys.stderr = captured_output
+        sys.stdout = stdout_block
 
         # Execute the function
         cli.test(self.fixture_abs_path("../../../examples/manual_code/circle.jac"))  # type: ignore
 
         sys.stderr = sys.__stderr__
+        sys.stdout = sys.__stdout__
         stderr_value = captured_output.getvalue()
         # Assertions or verifications
         self.assertIn("Ran 3 tests", stderr_value)
@@ -106,12 +109,15 @@ class JacCliTests(TestCase):
     def test_clean_circle_jac_test(self) -> None:
         """Basic test for pass."""
         captured_output = io.StringIO()
+        stdio_block = io.StringIO()
         sys.stderr = captured_output
+        sys.stdout = stdio_block
 
         # Execute the function
         cli.test(self.fixture_abs_path("../../../examples/manual_code/circle_clean_tests.jac"))  # type: ignore
 
         sys.stderr = sys.__stderr__
+        sys.stdout = sys.__stdout__
         stderr_value = captured_output.getvalue()
         # Assertions or verifications
         self.assertIn("Ran 3 tests", stderr_value)
