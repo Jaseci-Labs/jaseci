@@ -555,13 +555,13 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
-            '"""Enum for shape types"""\nenum ShapeType { CIRCLE = Circle,\n',
+            '"""Enum for shape types"""\nenum ShapeType { CIRCLE = "Circle",\n',
             output,
         )
         self.assertIn(
-            "\nUNKNOWN = Unknown,\n::py::\nprint('hello')\n::py::\n }", output
+            "UNKNOWN = \"Unknown\",\n::py::\nprint('hello')\n::py::\n }", output
         )
-        self.assertIn("assert x == 5 , x should be equal to 5 ; ", output)
+        self.assertIn('assert x == 5 , "x should be equal to 5" ;', output)
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: x ** 2  for x in numbers};", output)
