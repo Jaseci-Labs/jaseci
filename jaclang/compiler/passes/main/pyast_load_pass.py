@@ -37,9 +37,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def convert(self, node: py_ast.AST) -> ast.AstNode:
         """Get python node type."""
-        print(
-            f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
-        )
+        # print(
+        #     f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
+        # )
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
@@ -145,7 +145,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.name if node.name != "root" else "root_", # root is a reserved keyword
+            value=(
+                node.name if node.name != "root" else "root_"
+            ),  # root is a reserved keyword
             line=node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.name),
@@ -880,13 +882,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         attr: _Identifier
         ctx: expr_context
         """
-        print(node.value, node.attr)
         value = self.convert(node.value)
 
         attribute = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.attr if node.attr != "init" else ("<>"+node.attr),
+            value=node.attr if node.attr != "init" else ("<>" + node.attr),
             line=node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.attr),
@@ -1465,15 +1466,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if not items:
             raise self.ice("No valid names in import from")
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
-        # if len(node.names) == 1 and node.names[0].name == "*":
-        #     ret = ast.Import(
-        #         lang=pytag,
-        #         paths=[path],
-        #         items=None,
-        #         is_absorb=True,
-        #         kid=[pytag, path],
-        #     )
-        #     return ret
+        if len(node.names) == 1 and node.names[0].name == "*":
+            ret = ast.Import(
+                lang=pytag,
+                paths=[path],
+                items=None,
+                is_absorb=True,
+                kid=[pytag, path],
+            )
+            return ret
         ret = ast.Import(
             lang=pytag,
             paths=[path],
@@ -2149,7 +2150,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.arg if node.arg != "root" else "root_", # reserved word
+            value=node.arg if node.arg != "root" else "root_",  # reserved word
             line=node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.arg),
