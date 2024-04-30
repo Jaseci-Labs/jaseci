@@ -673,7 +673,7 @@ class JacLanguageTests(TestCase):
             "typing.Generator[builtins.int, None, None]",
             stdout_value,
         )
-    
+
     def test_tuple_unpack(self) -> None:
         """Test tuple unpack."""
         captured_output = io.StringIO()
@@ -683,7 +683,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("1", stdout_value[0])
         self.assertIn("[2, 3, 4]", stdout_value[1])
-        
+
     def test_try_finally(self) -> None:
         """Test try finally."""
         captured_output = io.StringIO()
@@ -696,3 +696,12 @@ class JacLanguageTests(TestCase):
         self.assertIn("try block", stdout_value[2])
         self.assertIn("else block", stdout_value[3])
         self.assertIn("finally block", stdout_value[4])
+
+    def test_arithmetic_bug(self) -> None:
+        """Test arithmetic bug."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("arithmetic_bug", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("0.0625", stdout_value)

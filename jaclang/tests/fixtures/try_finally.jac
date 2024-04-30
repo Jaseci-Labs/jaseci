@@ -13,14 +13,14 @@ with entry{
     try{
         print("try block");
     }
-    # except{      
+    # except{
     #     print("except block");
     # }
-    
+
     # except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
-    # is there any intention why here we compulsorily need to write type of exception in  
-    
-    except exception{                
+    # is there any intention why here we compulsorily need to write type of exception in
+
+    except exception{
         print("except block");
     }
     else{
