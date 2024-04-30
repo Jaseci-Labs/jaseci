@@ -1373,7 +1373,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
-            lang=pytag,
+            hint=pytag,
             paths=paths,
             items=None,
             is_absorb=False,
@@ -1448,7 +1448,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice("No valid names in import from")
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
-            lang=pytag,
+            hint=pytag,
             paths=[path],
             items=items,
             is_absorb=False,

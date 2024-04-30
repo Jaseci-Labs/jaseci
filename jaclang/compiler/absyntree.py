@@ -591,7 +591,7 @@ class Import(ElementStmt, CodeBlockStmt):
 
     def __init__(
         self,
-        lang: SubTag[Name],
+        hint: SubTag[Name],
         paths: list[ModulePath],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
@@ -599,7 +599,7 @@ class Import(ElementStmt, CodeBlockStmt):
         doc: Optional[String] = None,
     ) -> None:
         """Initialize import node."""
-        self.lang = lang
+        self.hint = hint
         self.paths = paths
         self.items = items
         self.is_absorb = is_absorb
@@ -610,7 +610,7 @@ class Import(ElementStmt, CodeBlockStmt):
         """Normalize import node."""
         res = True
         if deep:
-            res = self.lang.normalize(deep)
+            res = self.hint.normalize(deep)
             for p in self.paths:
                 res = res and p.normalize(deep)
             res = res and self.items.normalize(deep) if self.items else res
@@ -622,7 +622,7 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_INCLUDE))
         else:
             new_kid.append(self.gen_token(Tok.KW_IMPORT))
-        new_kid.append(self.lang)
+        new_kid.append(self.hint)
         if self.items:
             new_kid.append(self.gen_token(Tok.KW_FROM))
         for p in self.paths:
