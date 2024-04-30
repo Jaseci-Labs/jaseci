@@ -167,7 +167,6 @@ class JacParser(Pass):
             """Grammar rule.
 
             element: py_code_block
-                | include_stmt
                 | import_stmt
                 | ability
                 | architype
@@ -283,7 +282,10 @@ class JacParser(Pass):
 
             import_stmt: KW_IMPORT sub_name KW_FROM from_path COMMA import_items SEMI
                     | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
+                    | include_stmt
             """
+            if len(kid) == 1 and isinstance(kid[0], ast.Import):
+                return self.nu(kid[0])
             lang = kid[1]
             paths = [i for i in kid if isinstance(i, ast.ModulePath)]
 

@@ -2,7 +2,6 @@
 
 import inspect
 import os
-from abc import ABC, abstractmethod
 from typing import Callable, Optional
 from unittest import TestCase as _TestCase
 
@@ -54,7 +53,7 @@ class TestCase(_TestCase):
         return os.path.abspath(file_path)
 
 
-class TestCaseMicroSuite(ABC, TestCase):
+class TestCaseMicroSuite(TestCase):
     """Base test case for Jaseci."""
 
     test_micro_jac_files_fully_tested: Optional[Callable[[TestCase], None]] = None
@@ -86,7 +85,6 @@ class TestCaseMicroSuite(ABC, TestCase):
 
         cls.test_micro_jac_files_fully_tested = test_micro_jac_files_fully_tested
 
-    @abstractmethod
     def micro_suite_test(self, filename: str) -> None:
         """Test micro jac file."""
         pass
