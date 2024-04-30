@@ -33,7 +33,10 @@ class JacTypeCheckPass(Pass):
 
     def after_pass(self) -> None:
         """Call mypy api after traversing all the modules."""
-        self.api()
+        try:
+            self.api()
+        except Exception as e:
+            self.error(f"Unable to run type checking: {e}")
         return super().after_pass()
 
     def default_message_cb(

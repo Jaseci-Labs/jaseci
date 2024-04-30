@@ -98,7 +98,7 @@ class ImportPass(Pass):
         """Import a module."""
         self.cur_node = node  # impacts error reporting
         target = import_target_to_relative_path(
-            node.path_str, path.dirname(node.loc.mod_path)
+            node.level, node.path_str, path.dirname(node.loc.mod_path)
         )
         return self.import_mod_from_file(target)
 
