@@ -9,8 +9,12 @@ import pathlib
 import jaclang
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes.main.fuse_typeinfo_pass import (
+    FuseTypeInfoPass,
+)  # TODO: Put in better place
 
 import mypy.build as myb
+import mypy.checkexpr as mycke
 import mypy.errors as mye
 import mypy.fastparse as myfp
 from mypy.build import BuildSource
@@ -75,6 +79,70 @@ class BuildManager(myb.BuildManager):
 
         self.errors.set_file_ignored_lines(path, tree.ignored_lines, ignore_errors)
         return tree
+
+
+class ExpressionChecker(mycke.ExpressionChecker):
+    """Overrides to mypy expression checker for direct AST pass through."""
+
+    def __init__(
+        self,
+        tc: mycke.mypy.checker.TypeChecker,
+        msg: mycke.MessageBuilder,
+        plugin: mycke.Plugin,
+        per_line_checking_time_ns: dict[int, int],
+    ) -> None:
+        """Override to mypy expression checker for direct AST pass through."""
+        super().__init__(tc, msg, plugin, per_line_checking_time_ns)
+
+    def visit_list_expr(self, e: mycke.ListExpr) -> mycke.Type:
+        """Type check a list expression [...]."""
+        out = super().visit_list_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_set_expr(self, e: mycke.SetExpr) -> mycke.Type:
+        """Type check a set expression {...}."""
+        out = super().visit_set_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_tuple_expr(self, e: myfp.TupleExpr) -> myb.Type:
+        """Type check a tuple expression (...)."""
+        out = super().visit_tuple_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_dict_expr(self, e: myfp.DictExpr) -> myb.Type:
+        """Type check a dictionary expression {...}."""
+        out = super().visit_dict_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_list_comprehension(self, e: myfp.ListComprehension) -> myb.Type:
+        """Type check a list comprehension."""
+        out = super().visit_list_comprehension(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_set_comprehension(self, e: myfp.SetComprehension) -> myb.Type:
+        """Type check a set comprehension."""
+        out = super().visit_set_comprehension(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_generator_expr(self, e: myfp.GeneratorExpr) -> myb.Type:
+        """Type check a generator expression."""
+        out = super().visit_generator_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_dictionary_comprehension(
+        self, e: myfp.DictionaryComprehension
+    ) -> myb.Type:
+        """Type check a dict comprehension."""
+        out = super().visit_dictionary_comprehension(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
 
 
 class State(myb.State):
@@ -200,6 +268,31 @@ class State(myb.State):
             # Parse the file (and then some) to get the dependencies.
             self.parse_file(temporary=temporary, ast_override=ast_override)
             self.compute_dependencies()
+
+    def type_checker(self) -> myb.TypeChecker:
+        """Return the type checker for this state."""
+        if not self._type_checker:
+            assert (
+                self.tree is not None
+            ), "Internal error: must be called on parsed file only"
+            manager = self.manager
+            self._type_checker = myb.TypeChecker(
+                manager.errors,
+                manager.modules,
+                self.options,
+                self.tree,
+                self.xpath,
+                manager.plugin,
+                self.per_line_checking_time_ns,
+            )
+            self._type_checker.expr_checker = ExpressionChecker(
+                self._type_checker,
+                self._type_checker.msg,
+                self._type_checker.plugin,
+                self.per_line_checking_time_ns,
+            )
+
+        return self._type_checker
 
     def parse_file(
         self, *, temporary: bool = False, ast_override: myb.MypyFile | None = None

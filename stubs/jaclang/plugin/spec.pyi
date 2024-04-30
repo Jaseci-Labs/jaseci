@@ -9,7 +9,9 @@ from jaclang.plugin.default import (
     T as T,
     WalkerArchitype as WalkerArchitype,
 )
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, TypeVar, Union
+
+from jaclang.compiler.absyntree import Module
 
 hookspec: Incomplete
 
@@ -32,7 +34,15 @@ class JacFeatureSpec:
     ) -> Callable[[type], type]: ...
     @staticmethod
     def jac_import(
-        target: str, base_path: str, cachable: bool, override_name: Optional[str]
+        target: str,
+        base_path: str,
+        absorb: bool,
+        cachable: bool,
+        mdl_alias: Optional[str],
+        override_name: Optional[str],
+        mod_bundle: Optional[Module],
+        lng: Optional[str],
+        items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]: ...
     @staticmethod
     def create_test(test_fun: Callable) -> Callable: ...
