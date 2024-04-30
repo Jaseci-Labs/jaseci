@@ -493,8 +493,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             op: operator
             value: expr
         """
+        from jaclang.compiler import TOKEN_MAP
+
         target = self.convert(node.target)
         op = self.convert(node.op)
+        if isinstance(op, ast.Token):
+            op.name = self.aug_op_map(TOKEN_MAP, op)
         value = self.convert(node.value)
         if (
             isinstance(value, ast.Expr)
@@ -2496,3 +2500,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def convert_to_doc(self, string: ast.String) -> None:
         """Convert a string to a docstring."""
         string.value = f'""{string.value}""'
+
+    def aug_op_map(self, tok_dict: dict, op: ast.Token) -> str:
+        """aug_mapper."""
+        op.value += "="
+        for _key, value in tok_dict.items():
+            if value == op.value:
+                break
+        return _key
