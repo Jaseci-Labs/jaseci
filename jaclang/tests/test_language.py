@@ -703,5 +703,9 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
         jac_import("arithmetic_bug", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertEqual("0.0625", stdout_value)
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("0.0625", stdout_value[0])
+        self.assertEqual("1e-06", stdout_value[1])
+        self.assertEqual("1000.000001", stdout_value[2])
+        self.assertEqual("78", stdout_value[3])
+        self.assertEqual("12", stdout_value[4])
