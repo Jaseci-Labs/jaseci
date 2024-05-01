@@ -208,7 +208,7 @@ class JacCliTests(TestCase):
 
     def test_graph_coverage(self) -> None:
         """Test for coverage of graph cmd."""
-        graph_params = set(inspect.signature(cli.graph).parameters.keys())
+        graph_params = set(inspect.signature(cli.dot).parameters.keys())
         dotgen_params = set(inspect.signature(dotgen).parameters.keys())
         dotgen_params = dotgen_params - {"node", "dot_file", "edge_type"}
         dotgen_params.update({"initial", "saveto", "connection"})
@@ -219,7 +219,7 @@ class JacCliTests(TestCase):
         """Test for graph CLI cmd."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.graph(
+        cli.dot(
             f"{self.fixture_abs_path('../../../examples/reference/connect_expressions.jac')}"
         )
         sys.stdout = sys.__stdout__
