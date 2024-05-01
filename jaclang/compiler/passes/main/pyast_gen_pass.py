@@ -494,7 +494,7 @@ class PyastGenPass(Pass):
             )
         py_compat_path_str = []
         path_alias = {}
-        for path in node.paths:
+        for path in node.from_loc:
             py_compat_path_str.append(path.path_str.lstrip("."))
             path_alias[path.path_str] = path.alias.sym_name if path.alias else None
         imp_from = {}
@@ -610,7 +610,7 @@ class PyastGenPass(Pass):
                 )
         if not node.items:
             py_nodes.append(
-                self.sync(ast3.Import(names=[i.gen.py_ast[0] for i in node.paths]))
+                self.sync(ast3.Import(names=[i.gen.py_ast[0] for i in node.from_loc]))
             )
         else:
             py_nodes.append(

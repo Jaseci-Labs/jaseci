@@ -1374,7 +1374,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
             hint=pytag,
-            paths=paths,
+            from_loc=paths,
             items=None,
             is_absorb=False,
             kid=[pytag, *paths],
@@ -1449,7 +1449,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
             hint=pytag,
-            paths=[path],
+            from_loc=[path],
             items=items,
             is_absorb=False,
             kid=[pytag, path, items],
