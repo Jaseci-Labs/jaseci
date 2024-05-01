@@ -296,7 +296,7 @@ class JacParser(Pass):
             ):
                 return self.nu(
                     ast.Import(
-                        lang=lang,
+                        hint=lang,
                         paths=paths,
                         items=items,
                         is_absorb=is_absorb,
@@ -347,7 +347,7 @@ class JacParser(Pass):
             if isinstance(lang, ast.SubTag):
                 return self.nu(
                     ast.Import(
-                        lang=lang,
+                        hint=lang,
                         paths=paths,
                         items=None,
                         is_absorb=is_absorb,
