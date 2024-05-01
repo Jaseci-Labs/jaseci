@@ -1378,7 +1378,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             from_loc=None,
             items=items,
             is_absorb=False,
-            kid=[pytag, *paths],
+            kid=[pytag, items],
         )
         return ret
 
