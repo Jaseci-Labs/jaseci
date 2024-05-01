@@ -220,6 +220,7 @@ class JacFeature:
     @staticmethod
     def get_root() -> Architype:
         """Jac's assign comprehension feature."""
+        print("in get root of feature.py")
         return pm.hook.get_root()
 
     @staticmethod

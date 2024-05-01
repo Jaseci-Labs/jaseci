@@ -20,6 +20,7 @@ from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.plugin.shelve_storage import Storage
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -63,8 +64,16 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 
 @cmd_registry.register
-def run(filename: str, main: bool = True, cache: bool = True) -> None:
+def run(
+    filename: str,
+    main: bool = True,
+    cache: bool = True,
+    session: str = "jaclang.session",
+) -> None:
     """Run the specified .jac file."""
+
+    Storage.load(session)
+
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]

@@ -11,9 +11,13 @@ from jaclang.plugin.default import (
     DSFunc,
     EdgeArchitype,
     EdgeDir,
-    NodeArchitype,
+    # NodeArchitype,
     WalkerArchitype,
 )
+
+# TODO: not sure if this is right
+# to solve circular dependency
+from jaclang.core.construct import NodeArchitype
 
 import pluggy
 

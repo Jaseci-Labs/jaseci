@@ -29,18 +29,23 @@ from jaclang.core.construct import (
     GenericEdge,
     JacTestCheck,
     NodeAnchor,
-    NodeArchitype,
+    # NodeArchitype,
     ObjectAnchor,
     Root,
     WalkerAnchor,
     WalkerArchitype,
-    root,
+    Root,
 )
 from jaclang.core.importer import jac_importer
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
+from jaclang.plugin.architype import (
+    PersistentRoot as Root,
+    PersistentNodeArchitype as NodeArchitype,
+)
+from jaclang.plugin.shelve_storage import Storage
 
 
 import pluggy
@@ -133,6 +138,7 @@ class JacFeatureDefaults:
             cls = Jac.make_architype(
                 cls=cls, arch_base=NodeArchitype, on_entry=on_entry, on_exit=on_exit
             )
+            print("I AM IN DECORATOR OF MAKE_NODE YALL")
             return cls
 
         return decorator
@@ -425,7 +431,9 @@ class JacFeatureDefaults:
     @hookimpl
     def get_root() -> Architype:
         """Jac's assign comprehension feature."""
-        return root
+        print("IN GET_ROOT OF DEFAULT.PY")
+        root = Root()
+        print("WTF", root._test_id_)
 
     @staticmethod
     @hookimpl

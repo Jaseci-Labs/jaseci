@@ -8,6 +8,7 @@ import unittest
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, Union
 
+from uuid import UUID, uuid4
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.core.utils import collect_node_connections
@@ -18,6 +19,16 @@ class ElementAnchor:
     """Element Anchor."""
 
     obj: Architype
+    id: UUID = field(default_factory=uuid4)
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize the object."""
+        return {"id": self.id}
+
+    def deserialize(self, data: dict[str, Any], obj: Architype) -> None:
+        """Deserialize the object."""
+        self.id = data["id"]
+        self.obj = obj
 
 
 @dataclass(eq=False)
@@ -268,17 +279,36 @@ class Architype:
         """Create default architype."""
         self._jac_: ObjectAnchor = ObjectAnchor(obj=self)
 
+    def serialize(self) -> dict[str, Any]:
+        """Serialize the object."""
+        return self.__getstate__()
+
+    def deserialize(self, data: dict[str, Any]) -> None:
+        """Deserialize the object."""
+        self.__setstate__(data)
+
+    @classmethod
+    def deserialize_architype(cls, data: dict[str, Any]) -> None:
+        """Deserialize the object."""
+
+        pass
+
 
 class NodeArchitype(Architype):
     """Node Architype Protocol."""
 
+    _jac_: NodeAnchor
+
     def __init__(self) -> None:
         """Create node architype."""
+        print("i am in default make_node")
         self._jac_: NodeAnchor = NodeAnchor(obj=self)
 
 
 class EdgeArchitype(Architype):
     """Edge Architype Protocol."""
+
+    _jac_: EdgeAnchor
 
     def __init__(self) -> None:
         """Create edge architype."""
@@ -287,6 +317,8 @@ class EdgeArchitype(Architype):
 
 class WalkerArchitype(Architype):
     """Walker Architype Protocol."""
+
+    _jac_: WalkerAnchor
 
     def __init__(self) -> None:
         """Create walker architype."""
@@ -300,6 +332,7 @@ class Root(NodeArchitype):
     _jac_exit_funcs_ = []
     reachable_nodes: list[NodeArchitype] = []
     connections: set[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = set()
+    _test_id_ = ""
 
     def reset(self) -> None:
         """Reset the root."""
@@ -412,4 +445,4 @@ class JacTestCheck:
         return getattr(JacTestCheck.test_case, name)
 
 
-root = Root()
+# root = Root()
