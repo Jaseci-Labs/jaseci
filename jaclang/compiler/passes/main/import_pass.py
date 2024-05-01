@@ -36,7 +36,7 @@ class ImportPass(Pass):
             self.run_again = False
             all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
             for i in all_imports:
-                lang = i.has_parent_of_type(ast.Import).hint.tag.value
+                lang = i.parent_of_type(ast.Import).hint.tag.value
                 if lang == "jac" and not i.sub_module:
                     self.run_again = True
                     mod = self.import_module(

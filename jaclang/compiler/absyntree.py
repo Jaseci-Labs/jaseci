@@ -110,11 +110,15 @@ class AstNode:
 
         return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
-    def has_parent_of_type(self, typ: Type[T]) -> Optional[T]:
+    def parent_of_type(self, typ: Type[T]) -> T:
         """Get parent of type."""
         from jaclang.compiler.passes import Pass
 
-        return Pass.has_parent_of_type(node=self, typ=typ)
+        ret = Pass.has_parent_of_type(node=self, typ=typ)
+        if isinstance(ret, typ):
+            return ret
+        else:
+            raise ValueError(f"Parent of type {typ} not found.")
 
     def format(self) -> str:
         """Get all sub nodes of type."""
