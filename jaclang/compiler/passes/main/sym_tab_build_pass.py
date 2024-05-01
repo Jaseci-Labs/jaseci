@@ -381,16 +381,22 @@ class SymTabBuildPass(SymTabPass):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        if node.items:
+        if not node.is_absorb:
             for i in node.items.items:
                 self.def_insert(i, single_decl="import item")
         elif node.is_absorb and node.hint.tag.value == "jac":
-            if not node.paths[0].sub_module or not node.paths[0].sub_module.sym_tab:
+            source = node.items.items[0]
+            if (
+                not isinstance(source, ast.ModulePath)
+                or not source.sub_module
+                or not source.sub_module.sym_tab
+            ):
                 self.error(
-                    f"Module {node.paths[0].path_str} not found to include *, or ICE occurred!"
+                    f"Module {node.from_loc.path_str if node.from_loc else 'from location'}"
+                    f" not found to include *, or ICE occurred!"
                 )
             else:
-                for v in node.paths[0].sub_module.sym_tab.tab.values():
+                for v in source.sub_module.sym_tab.tab.values():
                     self.def_insert(v.decl, table_override=self.cur_scope())
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
