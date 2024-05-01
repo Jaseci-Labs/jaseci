@@ -597,14 +597,13 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_absorb:
+            source = node.items.items[0]
+            if not isinstance(source, ast.ModulePath):
+                raise self.ice()
             py_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module=(
-                            node.from_loc.path_str.lstrip(".")
-                            if node.from_loc
-                            else None
-                        ),
+                        module=(source.path_str.lstrip(".") if source else None),
                         names=[self.sync(ast3.alias(name="*"), node)],
                         level=0,
                     ),
