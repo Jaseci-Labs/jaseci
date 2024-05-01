@@ -492,7 +492,9 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
-        path_alias = {}
+        path_alias: dict[str, Optional[str]] = (
+            {node.from_loc.path_str: None} if node.from_loc else {}
+        )
         imp_from = {}
         if node.items:
             for item in node.items.items:
