@@ -384,7 +384,7 @@ class SymTabBuildPass(SymTabPass):
         if node.items:
             for i in node.items.items:
                 self.def_insert(i, single_decl="import item")
-        elif node.is_absorb and node.lang.tag.value == "jac":
+        elif node.is_absorb and node.hint.tag.value == "jac":
             if not node.paths[0].sub_module or not node.paths[0].sub_module.sym_tab:
                 self.error(
                     f"Module {node.paths[0].path_str} not found to include *, or ICE occurred!"

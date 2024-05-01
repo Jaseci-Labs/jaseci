@@ -557,9 +557,9 @@ class PyastGenPass(Pass):
                                             arg="lng",
                                             value=self.sync(
                                                 ast3.Constant(
-                                                    value=node.lang.tag.value
+                                                    value=node.hint.tag.value
                                                 ),
-                                                node.lang,
+                                                node.hint,
                                             ),
                                         )
                                     ),

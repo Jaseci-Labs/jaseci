@@ -591,7 +591,7 @@ class Import(ElementStmt, CodeBlockStmt):
 
     def __init__(
         self,
-        lang: SubTag[Name],
+        hint: SubTag[Name],
         paths: list[ModulePath],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
@@ -599,7 +599,7 @@ class Import(ElementStmt, CodeBlockStmt):
         doc: Optional[String] = None,
     ) -> None:
         """Initialize import node."""
-        self.lang = lang
+        self.hint = hint
         self.paths = paths
         self.items = items
         self.is_absorb = is_absorb
@@ -610,7 +610,7 @@ class Import(ElementStmt, CodeBlockStmt):
         """Normalize import node."""
         res = True
         if deep:
-            res = self.lang.normalize(deep)
+            res = self.hint.normalize(deep)
             for p in self.paths:
                 res = res and p.normalize(deep)
             res = res and self.items.normalize(deep) if self.items else res
@@ -622,7 +622,7 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_INCLUDE))
         else:
             new_kid.append(self.gen_token(Tok.KW_IMPORT))
-        new_kid.append(self.lang)
+        new_kid.append(self.hint)
         if self.items:
             new_kid.append(self.gen_token(Tok.KW_FROM))
         for p in self.paths:
@@ -671,8 +671,8 @@ class ModulePath(AstSymbolNode):
                     res = res and p.normalize(deep)
             res = res and self.alias.normalize(deep) if self.alias else res
         new_kid: list[AstNode] = []
-        # for _ in range(self.level):
-        #     new_kid.append(self.gen_token(Tok.DOT))
+        for _ in range(self.level):
+            new_kid.append(self.gen_token(Tok.DOT))
         if self.path:
             for p in self.path:
                 res = res and p.normalize(deep)
@@ -681,6 +681,7 @@ class ModulePath(AstSymbolNode):
             new_kid.pop()
         if self.alias:
             res = res and self.alias.normalize(deep)
+            new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.alias)
         self.set_kids(nodes=new_kid)
         return res

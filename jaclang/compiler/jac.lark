@@ -8,7 +8,6 @@ doc_tag: STRING | DOC_STRING
 element_with_doc: doc_tag element
 
 element: import_stmt
-       | include_stmt
        | architype
        | ability
        | global_var
@@ -19,6 +18,7 @@ element: import_stmt
 // Import/Include Statements
 import_stmt: KW_IMPORT sub_name KW_FROM from_path COMMA import_items SEMI
            | KW_IMPORT sub_name import_path (COMMA import_path)* SEMI
+           | include_stmt
 
 from_path: (DOT | ELLIPSIS)* import_path
          | (DOT | ELLIPSIS)+

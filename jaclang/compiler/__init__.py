@@ -3,6 +3,7 @@
 import contextlib
 import logging
 import os
+import shutil
 import sys
 
 
@@ -13,6 +14,8 @@ def generate_static_parser(force: bool = False) -> None:
 
     cur_dir = os.path.dirname(__file__)
     if force or not os.path.exists(os.path.join(cur_dir, "generated", "jac_parser.py")):
+        if os.path.exists(os.path.join(cur_dir, "generated")):
+            shutil.rmtree(os.path.join(cur_dir, "generated"))
         os.makedirs(os.path.join(cur_dir, "generated"), exist_ok=True)
         with open(os.path.join(cur_dir, "generated", "__init__.py"), "w"):
             pass
@@ -26,14 +29,22 @@ def generate_static_parser(force: bool = False) -> None:
         ]
         standalone.main()  # type: ignore
         sys.argv = save_argv
-        auto_generate_refs()
+        try:
+            auto_generate_refs()
+        except Exception as e:
+            print(f"Error generating reference files: {e}")
 
 
 generate_static_parser()
-from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
+try:
+    from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
 
+    jac_lark.logger.setLevel(logging.DEBUG)
+except AttributeError:
+    generate_static_parser(force=True)
+    from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
 
-jac_lark.logger.setLevel(logging.DEBUG)
+    jac_lark.logger.setLevel(logging.DEBUG)
 contextlib.suppress(AttributeError)
 TOKEN_MAP = {
     x.name: x.pattern.value

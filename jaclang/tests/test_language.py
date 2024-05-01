@@ -551,14 +551,18 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(f.read()), mod_path=py_out_path
                 ),
             ).ir.unparse()
+        # print(output)
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
-            '"""Enum for shape types"""\nenum ShapeType { CIRCLE=Circle,\n',
+            '"""Enum for shape types"""\nenum ShapeType { CIRCLE="Circle",\n',
             output,
         )
-        self.assertIn("\nUNKNOWN=Unknown,\n::py::\nprint('hello')\n::py::\n }", output)
-        self.assertIn("assert x == 5 , x should be equal to 5 ; ", output)
+        self.assertIn(
+            ",\nUNKNOWN=\"Unknown\",\n::py::\nprint('hello')\n::py::\n }\n\nwith ",
+            output,
+        )
+        self.assertIn('assert x == 5 , "x should be equal to 5" ;', output)
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict={x: x ** 2  for x in numbers};", output)
@@ -669,3 +673,12 @@ class JacLanguageTests(TestCase):
             "typing.Generator[builtins.int, None, None]",
             stdout_value,
         )
+
+    def test_inherit_check(self) -> None:
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("inherit_check", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("I am in b\nI am in b\nwww is also in b\n", stdout_value)

@@ -304,16 +304,8 @@ def py_to_jac(filename: str, tree: bool = False) -> None:
         with open(filename, "r") as f:
             mod = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(ast3.parse(f.read()), mod_path=filename),
-            ).ir
-
-            schedule = py_code_gen_typed
-            target = schedule[-1]
-            for i in schedule:
-                if i == target:
-                    break
-                ast_ret = i(input_ir=mod, prior=None)
-            ast_ret = target(input_ir=mod, prior=None)
-            print(ast_ret.ir.format())
+            ).ir.unparse()
+        print(mod)
     else:
         print("Not a .py file.")
 
