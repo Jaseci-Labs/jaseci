@@ -493,14 +493,17 @@ class PyastGenPass(Pass):
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
         path_alias = {}
-        for path in node.from_loc:
-            path_alias[path.path_str] = path.alias.sym_name if path.alias else None
         imp_from = {}
         if node.items:
             for item in node.items.items:
-                imp_from[item.name.sym_name] = (
-                    item.alias.sym_name if item.alias else False
-                )
+                if isinstance(item, ast.ModuleItem):
+                    imp_from[item.name.sym_name] = (
+                        item.alias.sym_name if item.alias else False
+                    )
+                elif isinstance(item, ast.ModulePath):
+                    path_alias[item.path_str] = (
+                        item.alias.sym_name if item.alias else None
+                    )
 
         keys = []
         values = []
