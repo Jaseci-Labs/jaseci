@@ -4,10 +4,10 @@ This is a pass for formatting Jac code.
 """
 
 import re
-from typing import Any, Optional
+from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.absyntree import AstNode, SubNodeList
+from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
 
@@ -342,7 +342,7 @@ class JacFormatPass(Pass):
         target: AtomType,
         params: Optional[ParamList],
         """
-        prev_token: Optional[AstNode | SubNodeList[Any]] = None
+        prev_token: Optional[AstNode] = None
         line_break_needed = False
         indented = False
         test_str = ""
