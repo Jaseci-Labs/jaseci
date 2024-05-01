@@ -62,7 +62,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         for directory in directories_to_clean:
             if os.path.exists(directory):
                 shutil.rmtree(directory)
-                print(f"Removed directory: {directory}")
         return super().setUp()
 
     def test_jac_file_compr(self) -> None:
