@@ -7,7 +7,6 @@ symbols are available for matching.
 
 import ast as py_ast
 import importlib.util
-import os
 import sys
 from os import path
 from typing import Optional
@@ -16,6 +15,7 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
+from jaclang.settings import settings
 from jaclang.utils.helpers import import_target_to_relative_path
 
 
@@ -48,9 +48,7 @@ class ImportPass(Pass):
                     self.annex_impl(mod)
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
-                elif i.parent.hint.tag.value == "py" and os.environ.get(
-                    "JAC_PROC_DEBUG", False
-                ):
+                elif i.parent.hint.tag.value == "py" and settings.jac_proc_debug:
                     mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)

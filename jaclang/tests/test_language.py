@@ -571,7 +571,6 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: x ** 2  for x in numbers};", output)
         self.assertIn('"""Say hello"""\n@ my_decorator', output)
-
         del os.environ["JAC_PROC_DEBUG"]
 
     def test_needs_import_2(self) -> None:
