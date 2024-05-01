@@ -41,15 +41,15 @@ walker test_extract_entity{
 
 walker test_ent_ext_set_config{
     can ent_ext.set_config;
-    report ent_ext.set_config(ner_model="prajjwal1/bert-tiny",model_type="TRFMODEL");
+    report ent_ext.set_config(ner_model="tars-ner",model_type="TARS");
 }
 
 walker test_ent_ext_load_model{
     can ent_ext.load_model;
-    report ent_ext.load_model(model_path="modeloutput");
+    report ent_ext.load_model();
 }
 
 walker test_ent_ext_save_model{
     can ent_ext.save_model;
-    report ent_ext.save_model(model_path="modeloutput");
+    report ent_ext.save_model();
 }

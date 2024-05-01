@@ -43,9 +43,11 @@ def load_dataset(train_path, test_path, tokenizer):
     return train_dataset, test_dataset, data_collator
 
 
-def get_trainer(model, train_dataset, test_dataset, data_collator, epochs=1):
+def get_trainer(
+    model, train_dataset, test_dataset, data_collator, epochs=1, model_path=None
+):
     training_args = TrainingArguments(
-        output_dir="./gpt2-trained",  # The output directory
+        output_dir=model_path,  # The output directory
         overwrite_output_dir=True,  # overwrite the content of the output directory
         num_train_epochs=epochs,  # number of training epochs
         per_device_train_batch_size=32,  # batch size for training

@@ -32,10 +32,10 @@ walker test_tfm_ner_set_model_config{
 
 walker test_tfm_ner_load_model{
     can tfm_ner.load_model;
-    report tfm_ner.load_model("modeloutput");
+    report tfm_ner.load_model();
 }
 
 walker test_tfm_ner_save_model{
     can tfm_ner.save_model;
-    report tfm_ner.save_model("modeloutput");
+    report tfm_ner.save_model();
 }

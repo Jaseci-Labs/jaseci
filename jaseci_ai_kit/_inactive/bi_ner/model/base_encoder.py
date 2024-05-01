@@ -1,7 +1,6 @@
 import os
 import torch
 import shutil
-from pathlib import Path
 from functools import partial
 from torch.nn import Module, Parameter
 from torch.nn import Linear, Embedding
@@ -19,7 +18,7 @@ from transformers import (
 from .metric import CosSimilarity
 from .loss import ContrastiveThresholdLoss
 from ..datamodel.example import Example, strided_split, TypedSpan, collate_examples
-
+from fastapi import HTTPException
 
 _Model = TypeVar("_Model", bound="BI_Enc_NER")
 
@@ -33,6 +32,15 @@ class Base_BI_enc(Module):
         self._candidate_encoder: PreTrainedModel = AutoModel.from_pretrained(
             param.get("candidate_bert_model")
         )
+        if (
+            not self._context_encoder.config.hidden_size
+            == self._candidate_encoder.config.hidden_size
+        ):
+            raise HTTPException(
+                500,
+                """Context and Candidate model needs to be same or
+                 have equal hidden dimension size""",
+            )
         self._dummy_param = Parameter(torch.empty(0))
 
     @property
@@ -105,6 +113,8 @@ class BI_Enc_NER(Base_BI_enc):
         self._token_end_projection = Linear(self._encoder_hidden, self._hidden_size)
         self._entity_start_projection = Linear(self._encoder_hidden, self._hidden_size)
         self._entity_end_projection = Linear(self._encoder_hidden, self._hidden_size)
+        self.m_config_path = param.get("m_config_path")
+        self.t_config_path = param.get("t_config_path")
 
     def freeze_descriptions(self):
         if self._frozen_entity_representations is not None:
@@ -354,20 +364,17 @@ class BI_Enc_NER(Base_BI_enc):
         self._context_encoder.save_pretrained(cand_bert_path)
         self._descriptions_tokenizer.save_vocabulary(cand_bert_path)
         self._token_tokenizer.save_vocabulary(cont_bert_path)
-        print(f"Saving non-shared model to : {save_path}")
+        config_path = os.path.join(save_path, "config")
+        os.makedirs(config_path, exist_ok=True)
         shutil.copyfile(
-            os.path.join(
-                Path(os.path.dirname(__file__)).parent, "config/t_config.json"
-            ),
-            os.path.join(save_path, "t_config.json"),
+            self.t_config_path,
+            os.path.join(config_path, "t_config.json"),
         )
         shutil.copyfile(
-            os.path.join(
-                Path(os.path.dirname(__file__)).parent, "config/m_config.json"
-            ),
-            os.path.join(save_path, "m_config.json"),
+            os.path.join(self.m_config_path),
+            os.path.join(config_path, "m_config.json"),
         )
-        return f"[Saved model at] : {save_path}"
+        return save_path
 
     def load(self, load_path) -> _Model:
         super().load(load_path)

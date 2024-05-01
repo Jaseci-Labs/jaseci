@@ -276,3 +276,10 @@ def predict_text(sentence):
             )
         return ents
     return "Model not trained"
+
+
+def reset_model():
+    global model, tokenizer, data_collator
+    model = None
+    tokenizer = None
+    data_collator = None

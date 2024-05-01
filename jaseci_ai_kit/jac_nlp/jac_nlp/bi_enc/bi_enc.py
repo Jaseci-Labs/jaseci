@@ -1,6 +1,6 @@
 import os
 import torch
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 import traceback
@@ -14,6 +14,7 @@ import shutil
 from .utils.evaluate import get_embeddings  # noqa
 from .utils.models import BiEncoder  # noqa
 from .utils.train import train_model  # noqa
+from jaseci.utils.model_manager import ModelManager
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -34,24 +35,34 @@ def setup():
     initialize tokenizer and model
     """
     global model, tokenizer, model_config, train_config, t_config_fname, m_config_fname
-    dirname = os.path.dirname(__file__)
-    m_config_fname = os.path.join(dirname, "utils/model_config.json")
-    t_config_fname = os.path.join(dirname, "utils/train_config.json")
+    global model_manager, active_model_path
+    model_manager = ModelManager(MODEL_BASE_PATH)
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
+    else:
+        active_model_path = model_manager.create_version_path()
+        shutil.copyfile(
+            os.path.join(os.path.dirname(__file__), "utils/train_config.json"),
+            os.path.join(active_model_path, "train_config.json"),
+        )
+        shutil.copyfile(
+            os.path.join(os.path.dirname(__file__), "utils/model_config.json"),
+            os.path.join(active_model_path, "model_config.json"),
+        )
+        m_config_fname = os.path.join(active_model_path, "model_config.json")
+        with open(m_config_fname, "r") as jsonfile:
+            model_config = json.load(jsonfile)
+        trf_config = AutoConfig.from_pretrained(model_config["model_name"])
+        model = AutoModel.from_config(trf_config)
+        model.save_pretrained(active_model_path)
+        del model
+    m_config_fname = os.path.join(active_model_path, "model_config.json")
+    t_config_fname = os.path.join(active_model_path, "train_config.json")
     with open(m_config_fname, "r") as jsonfile:
         model_config = json.load(jsonfile)
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
-    os.makedirs(MODEL_BASE_PATH, exist_ok=True)
-    if all(
-        os.path.isfile(os.path.join(MODEL_BASE_PATH, file))
-        for file in ["config.json", "pytorch_model.bin"]
-    ):
-        trf_config = AutoConfig.from_pretrained(MODEL_BASE_PATH)
-    else:
-        trf_config = AutoConfig.from_pretrained(model_config["model_name"])
-        model = AutoModel.from_config(trf_config)
-        model.save_pretrained(MODEL_BASE_PATH)
-        del model
+    trf_config = AutoConfig.from_pretrained(model_config["model_name"])
     train_config.update({"device": device.type})
     tokenizer = AutoTokenizer.from_pretrained(
         model_config["model_name"], do_lower_case=True, clean_text=False
@@ -206,7 +217,7 @@ def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = 
             labels=train_data["labels"],
             train_config=train_config,
         )
-        return "Model Training is complete."
+        return save_model()
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -265,7 +276,7 @@ def get_train_config():
 
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def set_train_config(training_parameters: Dict = None):
-    global train_config
+    global train_config, t_config_fname
     try:
         with open(t_config_fname, "w+") as jsonfile:
             train_config.update(training_parameters)
@@ -287,43 +298,37 @@ def get_model_config():
 
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def set_model_config(model_parameters: Dict = None):
-    global model_config
+    global model_config, active_model_path, m_config_fname
     try:
-        save_model(model_config["model_save_path"])
+        # save_model(str(active_model_path))
+        active_model_path = os.path.dirname(__file__)
+        m_config_fname = os.path.join(active_model_path, "model_config.json")
+        print(m_config_fname)
         with open(m_config_fname, "w+") as jsonfile:
             model_config.update(model_parameters)
             json.dump(model_config, jsonfile, indent=4)
-
+        model_manager.set_latest_version()
         setup()
         return "Config setup is complete."
-
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
-def save_model(model_path: str):
+def save_model(version_id: Optional[str] = None):
     """
     saves the model to the provided model_path
     """
     try:
-        if not model_path.replace("_", "").isalnum():
-            raise HTTPException(
-                status_code=400,
-                detail="""
-                Invalid model name. Model Name can only have Alphanumeric
-                 and '_' characters.""",
-            )
-        if not os.path.isabs(model_path):
-            model_path = os.path.join(MODEL_BASE_PATH, model_path)
-        os.makedirs(model_path, exist_ok=True)
+        version_path = str(model_manager.create_version_path(version_id))
         if model_config["shared"] is True:
-            model.cont_bert.save_pretrained(model_path)
-            tokenizer.save_vocabulary(model_path)
-            print(f"Saving shared model to : {model_path}")
+            model.cont_bert.save_pretrained(version_path)
+            tokenizer.save_vocabulary(version_path)
+            print(f"Saving shared model to : {version_path}")
         else:
-            cand_bert_path = os.path.join(model_path + "/cand_bert")
-            cont_bert_path = os.path.join(model_path + "/cont_bert")
+            cand_bert_path = os.path.join(version_path + "/cand_bert")
+            cont_bert_path = os.path.join(version_path + "/cont_bert")
             if not os.path.exists(cand_bert_path):
                 os.makedirs(cand_bert_path)
             if not os.path.exists(cont_bert_path):
@@ -332,46 +337,51 @@ def save_model(model_path: str):
             tokenizer.save_vocabulary(cont_bert_path)
             model.cont_bert.save_pretrained(cont_bert_path)
             model.cand_bert.save_pretrained(cand_bert_path)
-            print(f"Saving non-shared model to : {model_path}")
+            print(f"Saving non-shared model to : {version_path}")
         shutil.copyfile(
             os.path.join(os.path.dirname(__file__), "utils/train_config.json"),
-            os.path.join(model_path, "train_config.json"),
+            os.path.join(version_path, "train_config.json"),
         )
         shutil.copyfile(
             os.path.join(os.path.dirname(__file__), "utils/model_config.json"),
-            os.path.join(model_path, "model_config.json"),
+            os.path.join(version_path, "model_config.json"),
         )
-        return f"[Saved model at] : {model_path}"
+        return f"[Saved model at] : {version_path}"
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
-def load_model(model_path):
+def load_model(version_id: Optional[str] = None):
     """
     loads the model from the provided model_path
     """
-    global model, tokenizer
-    if not os.path.isabs(model_path):
-        model_path = os.path.join(MODEL_BASE_PATH, model_path)
-    if not os.path.exists(model_path):
-        raise HTTPException(status_code=404, detail="Model path is not available")
+    global model, tokenizer, active_model_path
+    if version_id in model_manager.get_version_ids().keys():
+        active_model_path = str(model_manager.get_version_path(version_id))
+    else:
+        raise HTTPException(status_code=500, detail=f"{version_id} doesn't exist.")
     try:
+        m_config_fname = os.path.join(active_model_path, "model_config.json")
         with open(m_config_fname, "r") as jsonfile:
             model_config_data = json.load(jsonfile)
         if model_config_data["shared"] is True:
-            trf_config = AutoConfig.from_pretrained(model_path, local_files_only=True)
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path, do_lower_case=True, clean_text=False
+            trf_config = AutoConfig.from_pretrained(
+                active_model_path, local_files_only=True
             )
-            cont_bert = AutoModel.from_pretrained(model_path, local_files_only=True)
+            tokenizer = AutoTokenizer.from_pretrained(
+                active_model_path, do_lower_case=True, clean_text=False
+            )
+            cont_bert = AutoModel.from_pretrained(
+                active_model_path, local_files_only=True
+            )
             cand_bert = cont_bert
-            print(f"Loading shared model from : {model_path}")
+            print(f"Loading shared model from : {active_model_path}")
         else:
-            cand_bert_path = os.path.join(model_path, "cand_bert")
-            cont_bert_path = os.path.join(model_path, "cont_bert")
-            print(f"Loading non-shared model from : {model_path}")
+            cand_bert_path = os.path.join(active_model_path, "cand_bert")
+            cont_bert_path = os.path.join(active_model_path, "cont_bert")
+            print(f"Loading non-shared model from : {active_model_path}")
             cont_bert = AutoModel.from_pretrained(cont_bert_path, local_files_only=True)
             cand_bert = AutoModel.from_pretrained(cand_bert_path, local_files_only=True)
             trf_config = AutoConfig.from_pretrained(
@@ -389,7 +399,7 @@ def load_model(model_path):
             loss_function=model_config["loss_function"],
         )
         model.to(train_config["device"])
-        return f"[loaded model from] : {model_path}"
+        return f"[loaded model from] : {active_model_path}"
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

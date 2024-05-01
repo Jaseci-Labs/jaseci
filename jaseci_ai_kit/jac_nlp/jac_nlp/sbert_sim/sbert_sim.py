@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from sentence_transformers import InputExample, losses
 from sentence_transformers import SentenceTransformer, models
 from sentence_transformers.util import cos_sim, dot_score, semantic_search
@@ -11,6 +11,7 @@ import numpy as np
 from fastapi import HTTPException
 from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import model_base_path
+from jaseci.utils.model_manager import ModelManager
 import os
 
 """
@@ -25,20 +26,19 @@ training_config: Dict = {
     "model_name": "bert-base-uncased",
 }
 MODEL_BASE_PATH = str(model_base_path("jac_nlp/sbert_sim"))
+model_manager = ModelManager(MODEL_BASE_PATH)
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def setup(model_name="all-mpnet-base-v2"):
-    global model
-    os.makedirs(MODEL_BASE_PATH, exist_ok=True)
-    if all(
-        os.path.isfile(os.path.join(MODEL_BASE_PATH, f_name))
-        for f_name in ["pytorch_model.bin"]
-    ):
-        model = SentenceTransformer(MODEL_BASE_PATH)
-    else:
+    global model, active_model_path
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
         model = SentenceTransformer(model_name)
-        model.save(MODEL_BASE_PATH)
+    else:
+        active_model_path = str(model_manager.create_version_path())
+        model = SentenceTransformer(model_name)
+        model.save(active_model_path)
 
 
 def create_model(model_name="bert-base-uncased", max_seq_length=256):
@@ -72,7 +72,7 @@ def train(dataset: List, training_parameters: Dict = None):
     manipulate the training
     Returns :- confirmations when training is completed
     """
-    global model, training_config
+    global model, training_config, active_model_path
     try:
         training_config.update(training_parameters)
         gold_samples = []
@@ -89,11 +89,12 @@ def train(dataset: List, training_parameters: Dict = None):
         )
         print("Warmup-steps: {}".format(warmup_steps))
         # Tune the model
+        active_model_path = str(model_manager.create_version_path())
         model.fit(
             train_objectives=[(train_dataloader, train_loss)],
             epochs=training_config["num_epochs"],
             warmup_steps=warmup_steps,
-            output_path=training_config["model_save_path"],
+            output_path=active_model_path,
         )
         return "Model Training is completed"
     except Exception as e:
@@ -173,7 +174,11 @@ def get_dot_score(vec_a: list, vec_b: list):
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
-def load_model(model_name="all-mpnet-base-v2", model_type="default"):
+def load_model(
+    model_name="all-mpnet-base-v2",
+    model_type="default",
+    version_id: Optional[str] = None,
+):
     """
     Load models load in the memory for similarty scoring
     model_type : can be default or tfm_model
@@ -182,8 +187,12 @@ def load_model(model_name="all-mpnet-base-v2", model_type="default"):
     model_name : this is name of the model to be loaded
     Returns: confirmation if the model is loaded
     """
-    global model
-    if model_type == "tfm_model":
+    global model, active_model_path
+    if version_id is not None:
+        active_model_path = str(model_manager.get_version_path(version_id))
+        model = SentenceTransformer(active_model_path)
+        return f"{active_model_path.name} - loaded from SBERT library"
+    elif model_type == "tfm_model":
         model = create_model(model_name=model_name, max_seq_length=512)
         return f"{model_name} - loaded from huggingface hub"
     elif model_type == "default":
@@ -197,6 +206,20 @@ def load_model(model_name="all-mpnet-base-v2", model_type="default"):
                                             2) 'default' for Sbert models"""
             ),
         )
+
+
+@jaseci_action(act_group=["sbert_sim"], allow_remote=True)
+def save_model(version_id: Optional[str] = None):
+    """
+    saves the model to the provided model_path
+    """
+    global active_model_path
+    try:
+        active_model_path = str(model_manager.create_version_path(version_id))
+        model.save(active_model_path)
+        return f"Saving model to : {active_model_path.name}"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
