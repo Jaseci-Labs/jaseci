@@ -281,8 +281,8 @@ class JacFormatPass(Pass):
                     self.emit(node, f" {stmt.value} ")
                 else:
                     self.emit(node, f"{stmt.value}")
-                    prev_token = stmt
-                    continue
+                prev_token = stmt
+                continue
             elif isinstance(stmt, ast.Semi):
                 self.emit(node, stmt.gen.jac)
             elif isinstance(prev_token, (ast.HasVar, ast.ArchHas)) and not isinstance(
@@ -809,7 +809,9 @@ class JacFormatPass(Pass):
             elif isinstance(i, ast.Token) and i.gen.jac == ":":
                 self.emit(node, f"{i.gen.jac} ")
             else:
-                if start or (prev_token and isinstance(prev_token, ast.String)):
+                if start or (
+                    prev_token and isinstance(prev_token, (ast.String, ast.Name))
+                ):
                     self.emit(node, i.gen.jac)
                     start = False
                 else:
@@ -972,6 +974,8 @@ class JacFormatPass(Pass):
                         if not j.gen.jac.startswith(":")
                         else self.emit(node, f"{j.gen.jac} ")
                     )
+            elif isinstance(i, ast.Token) and i.gen.jac == ":":
+                self.emit(node, i.gen.jac)
             else:
                 self.emit(node, f" {i.gen.jac}")
         if isinstance(node.kid[-1], ast.CommentToken) and not node.gen.jac.endswith(
@@ -1521,14 +1525,29 @@ class JacFormatPass(Pass):
 
         values: Optional[SubNodeList[ExprType]],
         """
-        if node.values is not None:
-            self.comma_sep_node_list(node.values)
-            self.emit(
-                node,
-                f"[{node.values.gen.jac}]",
-            )
-        else:
-            self.emit(node, "[]")
+        line_break_needed = False
+        indented = False
+        for i in node.kid:
+            if isinstance(i, ast.SubNodeList):
+                line_break_needed = self.is_line_break_needed(i.gen.jac, 88)
+                if line_break_needed:
+                    self.emit_ln(node, "")
+                    self.indent_level += 1
+                    indented = True
+                    for j in i.kid:
+                        if j.gen.jac == (","):
+                            self.indent_level -= 1
+                            self.emit(node, f"{j.gen.jac}\n")
+                            self.indent_level += 1
+                        else:
+                            self.emit(node, f"{j.gen.jac}")
+                else:
+                    self.emit(node, f"{i.gen.jac}")
+                if indented:
+                    self.indent_level -= 1
+                    self.emit(node, "\n")
+            else:
+                self.emit(node, i.gen.jac)
 
     def exit_set_val(self, node: ast.ListVal) -> None:
         """Sub objects.

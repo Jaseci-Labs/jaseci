@@ -7,5 +7,7 @@ translate(input: 'English Representation': str, lang: 'Desired Language': str="F
 
 with entry {
     print(translate("I am a student", "French"));
-    print(translate("I am a student", "Language used in Somalia"));
+    print(
+        translate("I am a student", "Language used in Somalia")
+    );
 }

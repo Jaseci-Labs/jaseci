@@ -12,5 +12,7 @@ with entry {
     question = "What are Large Language Models?";
     expert = get_expert(question);
     answer = get_answer(question, expert);
-    print(f"For instance, {expert} would answer '{answer}' for the question '{question}'");
+    print(
+        f"For instance, {expert} would answer '{answer}' for the question '{question}'"
+    );
 }

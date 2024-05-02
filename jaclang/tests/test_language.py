@@ -560,7 +560,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
-            '"""Enum for shape types"""\nenum ShapeType { CIRCLE = "Circle",\n',
+            '"""Enum for shape types"""\nenum ShapeType{ CIRCLE = "Circle",\n',
             output,
         )
         self.assertIn(
