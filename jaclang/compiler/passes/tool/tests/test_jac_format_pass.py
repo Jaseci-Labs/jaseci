@@ -56,7 +56,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Set up test."""
         root_dir = self.fixture_abs_path("")
         directories_to_clean = [
-            os.path.join(root_dir, "myca_formatted_code", "__jac_gen__")
+            os.path.join(root_dir, "myca_formatted_code", "__jac_gen__"),
+            os.path.join(root_dir, "genai", "__jac_gen__"),
         ]
 
         for directory in directories_to_clean:
