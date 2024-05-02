@@ -1,15 +1,18 @@
 node node_a {}
+ #class class_a {}
 with entry {
+    #print(class_a.__module__);
     # print("creating n");
     # n = node_a();
     print("IN ENTRY");
-    print(root._jac_);
-    print("============");
-    print("============");
-    print("============");
-    print("============");
-    print("============");
-    print(root._jac_);
+    a = node_a();
+    print(a);
+    root ++> a;
+    # print(root._jac_);
+    # print("============");
+    # print("============");
+    # print("============");
+    # print(root._jac_);
     # print("IN ENTRY");
     # print("============", root._jac_);
     # print(type(root));

@@ -31,11 +31,11 @@ class Memory:
     def has_obj_in_store(self, obj_id: UUID | str) -> bool:
         return obj_id in self.mem
 
-    def save_obj(self, item: Architype) -> None:
-        print("saving object", item)
+    def save_obj(self, item: Architype, persistent: bool) -> None:
         self.mem[item._jac_.id] = item
-        self.save_obj_list.add(item)
-        self.commit()
+        if persistent:
+            self.save_obj_list.add(item)
+            self.commit()
 
     def commit(self) -> None:
         pass

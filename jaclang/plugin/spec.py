@@ -9,7 +9,7 @@ from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import (
     Architype,
     DSFunc,
-    EdgeArchitype,
+    # EdgeArchitype,
     EdgeDir,
     # NodeArchitype,
     WalkerArchitype,
@@ -17,7 +17,7 @@ from jaclang.plugin.default import (
 
 # TODO: not sure if this is right
 # to solve circular dependency
-from jaclang.core.construct import NodeArchitype
+from jaclang.core.construct import NodeArchitype, EdgeArchitype
 
 import pluggy
 

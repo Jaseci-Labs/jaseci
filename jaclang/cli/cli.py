@@ -72,7 +72,7 @@ def run(
 ) -> None:
     """Run the specified .jac file."""
 
-    Storage.load(session)
+    # Storage.load(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"

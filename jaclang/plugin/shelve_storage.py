@@ -22,9 +22,6 @@ class ShelveStorage(Memory):
             print("in get_obj_from_store")
             print(obj)
             if obj is not None:
-                print(obj._test_id_)
-                print(obj._jac_)
-                print(type(obj))
                 self.mem[obj_id] = obj
                 return obj
 
@@ -45,3 +42,4 @@ class ShelveStorage(Memory):
 
 
 Storage = ShelveStorage()
+Storage.load("jaclang.session")

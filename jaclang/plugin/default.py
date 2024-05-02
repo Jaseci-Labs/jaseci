@@ -25,8 +25,8 @@ from jaclang.core.construct import (
     Architype,
     DSFunc,
     EdgeAnchor,
-    EdgeArchitype,
-    GenericEdge,
+    # EdgeArchitype,
+    # GenericEdge,
     JacTestCheck,
     NodeAnchor,
     # NodeArchitype,
@@ -44,6 +44,8 @@ from jaclang.plugin.spec import T
 from jaclang.plugin.architype import (
     PersistentRoot as Root,
     PersistentNodeArchitype as NodeArchitype,
+    PersistentEdgeArchitype as EdgeArchitype,
+    PersistentGenericEdge as GenericEdge,
 )
 from jaclang.plugin.shelve_storage import Storage
 
@@ -90,7 +92,11 @@ class JacFeatureDefaults:
         for i in on_entry + on_exit:
             i.resolve(cls)
         if not issubclass(cls, arch_base):
+            cur_module = cls.__module__
             cls = type(cls.__name__, (cls, arch_base), {})
+            cls.__module__ = cur_module
+
+            # sys.modules[__name__].__dict__[cls.__name__] = cls
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:
@@ -379,6 +385,15 @@ class JacFeatureDefaults:
                 conn_edge = edge_spec()
                 edges.append(conn_edge)
                 i._jac_.connect_node(j, conn_edge)
+
+                if i.persistent:
+                    conn_edge.save()
+                    j.save()
+
+                if j.persistent:
+                    conn_edge.save()
+                    i.save()
+
         return right if not edges_only else edges
 
     @staticmethod
