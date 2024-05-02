@@ -157,6 +157,7 @@ class CommandShell(cmd.Cmd):
 
     def do_exit(self, arg: list) -> bool:
         """Exit the command shell."""
+        # flush here
         return True
 
     def default(self, line: str) -> None:
@@ -171,6 +172,8 @@ class CommandShell(cmd.Cmd):
                     self.stdout.write(ret + "\n")
         except Exception as e:
             print(e)
+        # finally:
+        #     # flush here
 
     def do_help(self, arg: str) -> None:
         """Jac CLI 'help' implementaion."""
