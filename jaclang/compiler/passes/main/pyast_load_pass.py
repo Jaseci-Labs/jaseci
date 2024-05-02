@@ -1372,12 +1372,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
+        items = ast.SubNodeList[ast.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = ast.Import(
             hint=pytag,
-            paths=paths,
-            items=None,
+            from_loc=None,
+            items=items,
             is_absorb=False,
-            kid=[pytag, *paths],
+            kid=[pytag, items],
         )
         return ret
 
@@ -1449,7 +1450,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         ret = ast.Import(
             hint=pytag,
-            paths=[path],
+            from_loc=path,
             items=items,
             is_absorb=False,
             kid=[pytag, path, items],

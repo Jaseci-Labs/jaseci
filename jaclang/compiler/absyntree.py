@@ -110,11 +110,15 @@ class AstNode:
 
         return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
-    def has_parent_of_type(self, typ: Type[T]) -> Optional[T]:
+    def parent_of_type(self, typ: Type[T]) -> T:
         """Get parent of type."""
         from jaclang.compiler.passes import Pass
 
-        return Pass.has_parent_of_type(node=self, typ=typ)
+        ret = Pass.has_parent_of_type(node=self, typ=typ)
+        if isinstance(ret, typ):
+            return ret
+        else:
+            raise ValueError(f"Parent of type {typ} not found.")
 
     def format(self) -> str:
         """Get all sub nodes of type."""
@@ -592,15 +596,15 @@ class Import(ElementStmt, CodeBlockStmt):
     def __init__(
         self,
         hint: SubTag[Name],
-        paths: list[ModulePath],
-        items: Optional[SubNodeList[ModuleItem]],
+        from_loc: Optional[ModulePath],
+        items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
         """Initialize import node."""
         self.hint = hint
-        self.paths = paths
+        self.from_loc = from_loc
         self.items = items
         self.is_absorb = is_absorb
         AstNode.__init__(self, kid=kid)
@@ -611,9 +615,8 @@ class Import(ElementStmt, CodeBlockStmt):
         res = True
         if deep:
             res = self.hint.normalize(deep)
-            for p in self.paths:
-                res = res and p.normalize(deep)
-            res = res and self.items.normalize(deep) if self.items else res
+            res = res and self.from_loc.normalize(deep) if self.from_loc else res
+            res = res and self.items.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -623,15 +626,11 @@ class Import(ElementStmt, CodeBlockStmt):
         else:
             new_kid.append(self.gen_token(Tok.KW_IMPORT))
         new_kid.append(self.hint)
-        if self.items:
+        if self.from_loc:
             new_kid.append(self.gen_token(Tok.KW_FROM))
-        for p in self.paths:
-            new_kid.append(p)
+            new_kid.append(self.from_loc)
             new_kid.append(self.gen_token(Tok.COMMA))
-        new_kid.pop()
-        if self.items:
-            new_kid.append(self.gen_token(Tok.COMMA))
-            new_kid.append(self.items)
+        new_kid.append(self.items)
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
