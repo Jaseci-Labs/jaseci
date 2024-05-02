@@ -17,7 +17,7 @@ class PersistentNodeArchitype(NodeArchitype):
         Storage.save_obj(self)
 
 
-class PersistentRoot(Root, PersistentNodeArchitype):
+class PersistentRoot(Root):
     """Root architype override"""
 
     def __init__(self):

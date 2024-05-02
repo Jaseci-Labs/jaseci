@@ -332,7 +332,6 @@ class Root(NodeArchitype):
     _jac_exit_funcs_ = []
     reachable_nodes: list[NodeArchitype] = []
     connections: set[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = set()
-    _test_id_ = ""
 
     def reset(self) -> None:
         """Reset the root."""
@@ -445,4 +444,4 @@ class JacTestCheck:
         return getattr(JacTestCheck.test_case, name)
 
 
-# root = Root()
+root = Root()

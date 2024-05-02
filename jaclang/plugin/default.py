@@ -34,7 +34,8 @@ from jaclang.core.construct import (
     Root,
     WalkerAnchor,
     WalkerArchitype,
-    Root,
+    # Root,
+    root,
 )
 from jaclang.core.importer import jac_importer
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
@@ -42,7 +43,7 @@ from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
 from jaclang.plugin.architype import (
-    PersistentRoot as Root,
+    #    PersistentRoot as Root,
     PersistentNodeArchitype as NodeArchitype,
 )
 from jaclang.plugin.shelve_storage import Storage
@@ -433,7 +434,8 @@ class JacFeatureDefaults:
         """Jac's assign comprehension feature."""
         print("IN GET_ROOT OF DEFAULT.PY")
         root = Root()
-        print("WTF", root._test_id_)
+        # return root
+        # print("WTF", root._test_id_)
 
     @staticmethod
     @hookimpl

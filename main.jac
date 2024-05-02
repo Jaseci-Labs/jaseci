@@ -3,9 +3,9 @@ with entry {
     # print("creating n");
     # n = node_a();
     print("IN ENTRY");
-    print(root);
-    print("IN ENTRY");
-    print("============", root._test_id_);
+    print(root._jac_);
+    # print("IN ENTRY");
+    # print("============", root._jac_);
     # print(type(root));
     # print("creating n2");
     # n2 = node_a();
