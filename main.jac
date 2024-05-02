@@ -4,6 +4,12 @@ with entry {
     # n = node_a();
     print("IN ENTRY");
     print(root._jac_);
+    print("============");
+    print("============");
+    print("============");
+    print("============");
+    print("============");
+    print(root._jac_);
     # print("IN ENTRY");
     # print("============", root._jac_);
     # print(type(root));

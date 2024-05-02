@@ -16,7 +16,7 @@ class Memory:
         pass
 
     def get_obj(self, obj_id: UUID | str) -> Architype:
-        print(self.mem)
+        print("memory.py:get_obj", obj_id)
         return self.get_obj_from_store(obj_id)
 
     def get_obj_from_store(self, obj_id: UUID | str) -> Architype:

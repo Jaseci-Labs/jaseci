@@ -14,7 +14,9 @@ class ShelveStorage(Memory):
         super().__init__()
 
     def get_obj_from_store(self, obj_id: UUID | str) -> Architype:
+        print("in shelve_storage.py:get_obj_from_store")
         obj = super().get_obj_from_store(obj_id)
+        print("got obj as", obj)
         if obj is None:
             obj = self.shelve.get(str(obj_id), None)
             print("in get_obj_from_store")
@@ -34,9 +36,9 @@ class ShelveStorage(Memory):
     def commit(self) -> None:
         for obj in self.save_obj_list:
             print("writing to storage", obj._jac_.id, obj)
-            print(obj._jac_)
             self.shelve[str(obj._jac_.id)] = obj
         self.save_obj_list.clear()
+        print("currently in self.mem:", self.mem)
 
     def load(self, session: str) -> None:
         self.shelve = shelve.open(session)

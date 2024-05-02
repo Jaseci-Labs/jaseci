@@ -20,21 +20,19 @@ class PersistentNodeArchitype(NodeArchitype):
 class PersistentRoot(Root):
     """Root architype override"""
 
-    def __init__(self):
-        # check if a root node already exist
-        # This should probably be part of a user/master object instead of a special key
+    @classmethod
+    def make_root(cls):
         print("I am in PersistentRoot")
         root = Storage.get_obj("root")
         if root is None:
-            print("calling root init")
-            NodeArchitype.__init__(self)
-            Root.__init__(self)
-            self._jac_.id = "root"
-            self._test_id_ = uuid4()
-            print("setting root test id to be", self._test_id_)
-            Storage.save_obj(self)
-        else:
-            self = root
-            print("root already exists")
-            print(self._test_id_)
-            print("root already exists")
+            root = cls()
+
+        return root
+
+    def __init__(self):
+        # check if a root node already exist
+        # This should probably be part of a user/master object instead of a special key
+        print("calling root init")
+        Root.__init__(self)
+        self._jac_.id = "root"
+        Storage.save_obj(self)
