@@ -492,17 +492,20 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
-        py_compat_path_str = []
-        path_alias = {}
-        for path in node.paths:
-            py_compat_path_str.append(path.path_str.lstrip("."))
-            path_alias[path.path_str] = path.alias.sym_name if path.alias else None
+        path_alias: dict[str, Optional[str]] = (
+            {node.from_loc.path_str: None} if node.from_loc else {}
+        )
         imp_from = {}
         if node.items:
             for item in node.items.items:
-                imp_from[item.name.sym_name] = (
-                    item.alias.sym_name if item.alias else False
-                )
+                if isinstance(item, ast.ModuleItem):
+                    imp_from[item.name.sym_name] = (
+                        item.alias.sym_name if item.alias else False
+                    )
+                elif isinstance(item, ast.ModulePath):
+                    path_alias[item.path_str] = (
+                        item.alias.sym_name if item.alias else None
+                    )
 
         keys = []
         values = []
@@ -557,9 +560,9 @@ class PyastGenPass(Pass):
                                             arg="lng",
                                             value=self.sync(
                                                 ast3.Constant(
-                                                    value=node.lang.tag.value
+                                                    value=node.hint.tag.value
                                                 ),
-                                                node.lang,
+                                                node.hint,
                                             ),
                                         )
                                     ),
@@ -594,10 +597,13 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_absorb:
+            source = node.items.items[0]
+            if not isinstance(source, ast.ModulePath):
+                raise self.ice()
             py_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
+                        module=(source.path_str.lstrip(".") if source else None),
                         names=[self.sync(ast3.alias(name="*"), node)],
                         level=0,
                     ),
@@ -608,15 +614,17 @@ class PyastGenPass(Pass):
                 self.warning(
                     "Includes import * in target module into current namespace."
                 )
-        if not node.items:
-            py_nodes.append(
-                self.sync(ast3.Import(names=[i.gen.py_ast[0] for i in node.paths]))
-            )
+        if not node.from_loc:
+            py_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
         else:
             py_nodes.append(
                 self.sync(
                     ast3.ImportFrom(
-                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
+                        module=(
+                            node.from_loc.path_str.lstrip(".")
+                            if node.from_loc
+                            else None
+                        ),
                         names=node.items.gen.py_ast,
                         level=0,
                     )

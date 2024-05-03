@@ -6,14 +6,15 @@ mypy apis into Jac and use jac py ast in it.
 
 from __future__ import annotations
 
-import os
 import traceback
 from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
+from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
+
 
 import mypy.nodes as MypyNodes  # noqa N812
 import mypy.types as MypyTypes  # noqa N812
@@ -29,7 +30,7 @@ class FuseTypeInfoPass(Pass):
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
 
     def __debug_print(self, *argv: object) -> None:
-        if "FuseTypeInfoDebug" in os.environ:
+        if settings.fuse_type_info_debug:
             print("FuseTypeInfo::", *argv)
 
     def __call_type_handler(

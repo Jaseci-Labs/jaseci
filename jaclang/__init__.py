@@ -17,13 +17,9 @@ from jaclang.vendor import pluggy  # noqa: E402
 
 jac_import = JacFeature.jac_import
 
-__all__ = [
-    "jac_import",
-    "lark",
-    "mypy",
-    "pluggy",
-]
 pm.register(JacFeatureDefaults)
 pm.register(JacBuiltin)
 pm.register(JacCmdDefaults)
 pm.load_setuptools_entrypoints("jac")
+
+__all__ = ["jac_import", "lark", "mypy", "pluggy"]

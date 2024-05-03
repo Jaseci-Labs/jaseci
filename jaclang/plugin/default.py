@@ -85,9 +85,20 @@ class JacFeatureDefaults:
         for i in on_entry + on_exit:
             i.resolve(cls)
         if not issubclass(cls, arch_base):
+            # Saving the module path and reassign it after creating cls
+            # So the jac modules are part of the correct module
+            cur_module = cls.__module__
             cls = type(cls.__name__, (cls, arch_base), {})
-        cls._jac_entry_funcs_ = on_entry  # type: ignore
-        cls._jac_exit_funcs_ = on_exit  # type: ignore
+            cls.__module__ = cur_module
+            cls._jac_entry_funcs_ = on_entry  # type: ignore
+            cls._jac_exit_funcs_ = on_exit  # type: ignore
+        else:
+            cls._jac_entry_funcs_ = cls._jac_entry_funcs_ + [
+                x for x in on_entry if x not in cls._jac_entry_funcs_
+            ]
+            cls._jac_exit_funcs_ = cls._jac_exit_funcs_ + [
+                x for x in on_exit if x not in cls._jac_exit_funcs_
+            ]
         inner_init = cls.__init__  # type: ignore
 
         @wraps(inner_init)
