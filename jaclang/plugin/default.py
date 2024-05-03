@@ -114,6 +114,7 @@ class JacFeatureDefaults:
             arch_base.__init__(self)
 
         cls.__init__ = new_init  # type: ignore
+        print(cls)
         return cls
 
     @staticmethod
@@ -144,7 +145,6 @@ class JacFeatureDefaults:
             cls = Jac.make_architype(
                 cls=cls, arch_base=NodeArchitype, on_entry=on_entry, on_exit=on_exit
             )
-            print("I AM IN DECORATOR OF MAKE_NODE YALL")
             return cls
 
         return decorator
@@ -446,11 +446,7 @@ class JacFeatureDefaults:
     @hookimpl
     def get_root() -> Architype:
         """Jac's assign comprehension feature."""
-        print("IN GET_ROOT OF DEFAULT.PY")
-        # return root
         return Root.make_root()
-        # return root
-        # print("WTF", root._test_id_)
 
     @staticmethod
     @hookimpl

@@ -10,17 +10,15 @@ from jaclang.plugin.memory import Memory
 
 
 class ShelveStorage(Memory):
+    storage: shelve.Shelf | None = None
+
     def __init__(self):
         super().__init__()
 
     def get_obj_from_store(self, obj_id: UUID | str) -> Architype:
-        print("in shelve_storage.py:get_obj_from_store")
         obj = super().get_obj_from_store(obj_id)
-        print("got obj as", obj)
-        if obj is None:
-            obj = self.shelve.get(str(obj_id), None)
-            print("in get_obj_from_store")
-            print(obj)
+        if obj is None and self.storage:
+            obj = self.storage.get(str(obj_id), None)
             if obj is not None:
                 self.mem[obj_id] = obj
                 return obj
@@ -28,18 +26,19 @@ class ShelveStorage(Memory):
         return obj
 
     def has_obj_in_store(self, obj_id: UUID | str) -> bool:
-        return obj_id in self.mem or str(obj_id) in self.shelve
+        return obj_id in self.mem or (
+            str(obj_id) in self.storage if self.storage else False
+        )
 
     def commit(self) -> None:
-        for obj in self.save_obj_list:
-            print("writing to storage", obj._jac_.id, obj)
-            self.shelve[str(obj._jac_.id)] = obj
+        if self.storage:
+            for obj in self.save_obj_list:
+                self.storage[str(obj._jac_.id)] = obj
         self.save_obj_list.clear()
-        print("currently in self.mem:", self.mem)
 
     def load(self, session: str) -> None:
-        self.shelve = shelve.open(session)
+        self.storage = shelve.open(session)
 
 
 Storage = ShelveStorage()
-Storage.load("jaclang.session")
+# Storage.load("jaclang.session")

@@ -47,7 +47,6 @@ class PersistentRoot(Root, PersistentNodeArchitype):
 
     @classmethod
     def make_root(cls):
-        print("I am in PersistentRoot")
         root = Storage.get_obj("root")
         if root is None:
             root = cls()
@@ -57,7 +56,6 @@ class PersistentRoot(Root, PersistentNodeArchitype):
     def __init__(self):
         # check if a root node already exist
         # This should probably be part of a user/master object instead of a special key
-        print("calling root init")
         Root.__init__(self)
         self._jac_.id = "root"
-        Storage.save_obj(self, persistent=True)
+        Storage.save_obj(self, persistent=self.persistent)

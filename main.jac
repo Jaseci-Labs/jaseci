@@ -1,13 +1,22 @@
 node node_a {}
+
+walker traverse {
+    can go with `root entry {
+        visit [-->];
+    }
+    can goa with node_a entry {
+        print("visiting node_a");
+    }
+}
+
  #class class_a {}
 with entry {
     #print(class_a.__module__);
     # print("creating n");
     # n = node_a();
-    print("IN ENTRY");
-    a = node_a();
-    print(a);
-    root ++> a;
+    # a = node_a();
+    # root ++> a;
+    root spawn traverse();
     # print(root._jac_);
     # print("============");
     # print("============");

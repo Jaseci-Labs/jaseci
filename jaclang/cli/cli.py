@@ -7,6 +7,7 @@ import os
 import pickle
 import shutil
 import types
+import sys, inspect
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
@@ -66,23 +67,27 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 @cmd_registry.register
 def run(
     filename: str,
+    session: str = "",
     main: bool = True,
     cache: bool = True,
-    session: str = "jaclang.session",
+    walker: str = "",
+    node: str = "",
 ) -> None:
     """Run the specified .jac file."""
 
-    # Storage.load(session)
+    if session:
+        Storage.load(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    override_name = "__main__" if main else None
     if filename.endswith(".jac"):
         jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
-            override_name="__main__" if main else None,
+            override_name=override_name,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
@@ -91,11 +96,33 @@ def run(
                 target=mod,
                 base_path=base,
                 cachable=cache,
-                override_name="__main__" if main else None,
+                override_name=override_name,
                 mod_bundle=ir,
             )
     else:
         print("Not a .jac file.")
+
+    node = "root" if not node else node
+    # TODO: get entry node based on id
+
+    # TODO: handle no override name
+    if walker:
+        walker_module = dict(inspect.getmembers(sys.modules["__main__"])).get(
+            walker, None
+        )
+        if walker_module:
+            Jac.spawn_call(Jac.get_root(), walker_module())
+        else:
+            print(f"Walker {walker} not found.")
+
+    # import sys, inspect
+
+    # print(sys.modules["__main__"].__dict__.keys())
+    # print("wtf")
+    # for name, obj in inspect.getmembers(sys.modules["__main__"]):
+    #     if inspect.isclass(obj):
+    #         print(name, obj)
+    # print("wtf")
 
 
 @cmd_registry.register
