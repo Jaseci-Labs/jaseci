@@ -3648,7 +3648,27 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = [self.sync(ast3.Constant(value=int(node.value)))]
+
+        def handle_node_value(value: str) -> int | float:
+            try:
+                if value.startswith(("0x", "0X")):
+                    return int(value, 16)
+                elif value.startswith(("0b", "0B")):
+                    return int(value, 2)
+                elif value.startswith(("0o", "0O")):
+                    return int(value, 8)
+                else:
+                    return int(value)
+            except ValueError:
+                try:
+                    return float(value)
+                except ValueError:
+                    raise ValueError(f"Invalid literal: {value}")
+
+        value = str(node.value)
+        node.gen.py_ast = [
+            self.sync(ast3.Constant(value=handle_node_value(value), kind=None))
+        ]
 
     def exit_string(self, node: ast.String) -> None:
         """Sub objects.
