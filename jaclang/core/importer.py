@@ -101,12 +101,6 @@ def jac_importer(
             sys.modules[f"{package_path}.{module_name}"] = module
         sys.modules[module_name] = module
 
-        print("------------sys.modules-----------")
-        print(module_name)
-        print(module)
-        print(module.__dict__)
-        print("------------sys.modules-----------")
-
         if not codeobj:
             raise ImportError(f"No bytecode found for {full_target}")
         exec(codeobj, module.__dict__)
@@ -116,8 +110,6 @@ def jac_importer(
         if lng == "py" or lng == "jac"
         else None
     )
-
-    print(globals().keys())
 
     if path_added:
         sys.path.remove(caller_dir)

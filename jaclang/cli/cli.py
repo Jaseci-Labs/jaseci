@@ -115,6 +115,8 @@ def run(
         else:
             print(f"Walker {walker} not found.")
 
+    Storage.close()
+
     # import sys, inspect
 
     # print(sys.modules["__main__"].__dict__.keys())

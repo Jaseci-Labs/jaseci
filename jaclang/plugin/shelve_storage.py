@@ -39,6 +39,11 @@ class ShelveStorage(Memory):
     def load(self, session: str) -> None:
         self.storage = shelve.open(session)
 
+    def close(self) -> None:
+        if self.storage:
+            self.storage.close()
+        self.storage = None
+
 
 Storage = ShelveStorage()
 # Storage.load("jaclang.session")

@@ -114,7 +114,6 @@ class JacFeatureDefaults:
             arch_base.__init__(self)
 
         cls.__init__ = new_init  # type: ignore
-        print(cls)
         return cls
 
     @staticmethod
