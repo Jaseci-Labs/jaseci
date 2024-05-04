@@ -41,14 +41,14 @@ from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
+from jaclang.plugin.memory import Memory
+from jaclang.plugin.shelve_storage import Storage
 from jaclang.plugin.architype import (
     PersistentRoot as Root,
     PersistentNodeArchitype as NodeArchitype,
     PersistentEdgeArchitype as EdgeArchitype,
     PersistentGenericEdge as GenericEdge,
 )
-from jaclang.plugin.shelve_storage import Storage
-
 
 import pluggy
 
@@ -79,6 +79,12 @@ class JacFeatureDefaults:
     """Jac Feature."""
 
     pm = pluggy.PluginManager("jac")
+
+    @staticmethod
+    @hookimpl
+    def memory_hook() -> Memory:
+        """Default jac memory abstraction, persistent backed by shelve"""
+        return Storage
 
     @staticmethod
     @hookimpl

@@ -3,7 +3,7 @@ Architypes override
 """
 
 from jaclang.core.construct import NodeArchitype, EdgeArchitype, Root, GenericEdge
-from jaclang.plugin.shelve_storage import Storage
+from jaclang.plugin.feature import JacFeature as Jac
 
 from uuid import uuid4
 
@@ -15,11 +15,11 @@ class PersistentNodeArchitype(NodeArchitype):
 
     def __init__(self):
         super().__init__()
-        Storage.save_obj(self, persistent=self.persistent)
+        Jac.memory_hook().save_obj(self, persistent=self.persistent)
 
     def save(self):
         self.persistent = True
-        Storage.save_obj(self, persistent=True)
+        Jac.memory_hook().save_obj(self, persistent=True)
 
 
 class PersistentEdgeArchitype(EdgeArchitype):
@@ -29,11 +29,11 @@ class PersistentEdgeArchitype(EdgeArchitype):
 
     def __init__(self):
         super().__init__()
-        Storage.save_obj(self, persistent=self.persistent)
+        Jac.memory_hook().save_obj(self, persistent=self.persistent)
 
     def save(self):
         self.persistent = True
-        Storage.save_obj(self, persistent=True)
+        Jac.memory_hook().save_obj(self, persistent=True)
 
 
 class PersistentGenericEdge(GenericEdge, PersistentEdgeArchitype):
@@ -47,7 +47,7 @@ class PersistentRoot(Root, PersistentNodeArchitype):
 
     @classmethod
     def make_root(cls):
-        root = Storage.get_obj("root")
+        root = Jac.memory_hook().get_obj("root")
         if root is None:
             root = cls()
 
@@ -58,4 +58,4 @@ class PersistentRoot(Root, PersistentNodeArchitype):
         # This should probably be part of a user/master object instead of a special key
         Root.__init__(self)
         self._jac_.id = "root"
-        Storage.save_obj(self, persistent=self.persistent)
+        Jac.memory_hook().save_obj(self, persistent=self.persistent)

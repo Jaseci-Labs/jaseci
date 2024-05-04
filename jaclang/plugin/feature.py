@@ -14,6 +14,7 @@ from jaclang.core.construct import (
     WalkerArchitype,
 )
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+from jaclang.plugin.memory import Memory
 
 
 import pluggy
@@ -32,6 +33,11 @@ class JacFeature:
     from jaclang.compiler.constant import EdgeDir
 
     RootType: TypeAlias = Root
+
+    @staticmethod
+    def memory_hook() -> Memory:
+        """Create memory abstraction."""
+        return pm.hook.memory_hook()
 
     @staticmethod
     def make_architype(

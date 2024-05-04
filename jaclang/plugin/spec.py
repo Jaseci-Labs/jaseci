@@ -18,6 +18,7 @@ from jaclang.plugin.default import (
 # TODO: not sure if this is right
 # to solve circular dependency
 from jaclang.core.construct import NodeArchitype, EdgeArchitype
+from jaclang.plugin.memory import Memory
 
 import pluggy
 
@@ -28,6 +29,12 @@ T = TypeVar("T")
 
 class JacFeatureSpec:
     """Jac Feature."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def memory_hook() -> Memory:
+        """Create memory abstraction"""
+        raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)

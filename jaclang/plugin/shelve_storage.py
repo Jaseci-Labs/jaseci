@@ -36,7 +36,7 @@ class ShelveStorage(Memory):
                 self.storage[str(obj._jac_.id)] = obj
         self.save_obj_list.clear()
 
-    def load(self, session: str) -> None:
+    def connect(self, session: str) -> None:
         self.storage = shelve.open(session)
 
     def close(self) -> None:

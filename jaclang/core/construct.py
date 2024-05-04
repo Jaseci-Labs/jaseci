@@ -21,15 +21,6 @@ class ElementAnchor:
     obj: Architype
     id: UUID = field(default_factory=uuid4)
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the object."""
-        return {"id": self.id}
-
-    def deserialize(self, data: dict[str, Any], obj: Architype) -> None:
-        """Deserialize the object."""
-        self.id = data["id"]
-        self.obj = obj
-
 
 @dataclass(eq=False)
 class ObjectAnchor(ElementAnchor):

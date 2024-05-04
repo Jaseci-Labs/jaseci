@@ -76,7 +76,7 @@ def run(
     """Run the specified .jac file."""
 
     if session:
-        Storage.load(session)
+        Jac.memory_hook().connect(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"

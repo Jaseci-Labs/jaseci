@@ -35,4 +35,13 @@ class Memory:
             self.commit()
 
     def commit(self) -> None:
+        """Commit changes to persistent storage, if applicable"""
+        pass
+
+    def close(self) -> None:
+        """Close any connection, if applicable"""
+        pass
+
+    def connect(self) -> None:
+        """Establish connection with storage, if applicable"""
         pass
