@@ -12,8 +12,10 @@ from jaclang.plugin.memory import Memory
 class ShelveStorage(Memory):
     storage: shelve.Shelf | None = None
 
-    def __init__(self):
+    def __init__(self, session: str = ""):
         super().__init__()
+        if session:
+            self.connect(session)
 
     def get_obj_from_store(self, obj_id: UUID | str) -> Architype:
         obj = super().get_obj_from_store(obj_id)
@@ -21,7 +23,6 @@ class ShelveStorage(Memory):
             obj = self.storage.get(str(obj_id), None)
             if obj is not None:
                 self.mem[obj_id] = obj
-                return obj
 
         return obj
 
@@ -31,12 +32,13 @@ class ShelveStorage(Memory):
         )
 
     def commit(self) -> None:
-        if self.storage:
+        if self.storage is not None:
             for obj in self.save_obj_list:
                 self.storage[str(obj._jac_.id)] = obj
         self.save_obj_list.clear()
 
     def connect(self, session: str) -> None:
+        self.session = session
         self.storage = shelve.open(session)
 
     def close(self) -> None:
@@ -45,5 +47,5 @@ class ShelveStorage(Memory):
         self.storage = None
 
 
-Storage = ShelveStorage()
+# Storage = ShelveStorage()
 # Storage.load("jaclang.session")

@@ -15,11 +15,11 @@ class PersistentNodeArchitype(NodeArchitype):
 
     def __init__(self):
         super().__init__()
-        Jac.memory_hook().save_obj(self, persistent=self.persistent)
+        Jac.context().save_obj(self, persistent=self.persistent)
 
     def save(self):
         self.persistent = True
-        Jac.memory_hook().save_obj(self, persistent=True)
+        Jac.context().save_obj(self, persistent=True)
 
 
 class PersistentEdgeArchitype(EdgeArchitype):
@@ -29,11 +29,11 @@ class PersistentEdgeArchitype(EdgeArchitype):
 
     def __init__(self):
         super().__init__()
-        Jac.memory_hook().save_obj(self, persistent=self.persistent)
+        Jac.context().save_obj(self, persistent=self.persistent)
 
     def save(self):
         self.persistent = True
-        Jac.memory_hook().save_obj(self, persistent=True)
+        Jac.context().save_obj(self, persistent=True)
 
 
 class PersistentGenericEdge(GenericEdge, PersistentEdgeArchitype):
@@ -45,17 +45,17 @@ class PersistentRoot(Root, PersistentNodeArchitype):
 
     persistent: bool = True
 
-    @classmethod
-    def make_root(cls):
-        root = Jac.memory_hook().get_obj("root")
-        if root is None:
-            root = cls()
+    #  @classmethod
+    #  def make_root(cls):
+    #      root = Jac.context().get("root")
+    #      if root is None:
+    #          root = cls()
 
-        return root
+    #      return root
 
     def __init__(self):
         # check if a root node already exist
         # This should probably be part of a user/master object instead of a special key
         Root.__init__(self)
         self._jac_.id = "root"
-        Jac.memory_hook().save_obj(self, persistent=self.persistent)
+        # Jac.context().set(self, persistent=self.persistent)

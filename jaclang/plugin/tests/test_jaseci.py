@@ -36,4 +36,6 @@ class TestJaseciPlugin(TestCase):
             walker="traverse",
         )
         output = self.capturedOutput.getvalue().strip()
+        sys.stdout = sys.__stdout__
+        print(output)
         self.assertEqual(output, "node a\nnode b")

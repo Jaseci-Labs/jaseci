@@ -40,9 +40,9 @@ from jaclang.core.importer import jac_importer
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.plugin.spec import T
+from jaclang.plugin.spec import T, ExecutionContext
 from jaclang.plugin.memory import Memory
-from jaclang.plugin.shelve_storage import Storage
+from jaclang.plugin.shelve_storage import ShelveStorage
 from jaclang.plugin.architype import (
     PersistentRoot as Root,
     PersistentNodeArchitype as NodeArchitype,
@@ -51,6 +51,7 @@ from jaclang.plugin.architype import (
 )
 
 import pluggy
+from contextvars import ContextVar
 
 
 __all__ = [
@@ -75,6 +76,27 @@ __all__ = [
 hookimpl = pluggy.HookimplMarker("jac")
 
 
+class DefaultExecutionContext(ExecutionContext):
+    """Default Execution Context implementation."""
+
+    def __init__(self) -> None:
+        self.mem = ShelveStorage()
+
+    def init_memory(self, session) -> None:
+        self.mem.connect(session)
+
+    def get_root(self) -> Root:
+        if not self.root:
+            self.root = self.mem.get_obj("root")
+            if not self.root:
+                self.root = Root()
+                self.save_obj(self.root, persistent=self.root.persistent)
+        return self.root
+
+
+ExecContext = ContextVar("ExecutionContext", default=None)
+
+
 class JacFeatureDefaults:
     """Jac Feature."""
 
@@ -82,9 +104,26 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def context(session: str = "") -> ExecutionContext:
+        """Get the execution context."""
+        ctx = ExecContext.get()
+        if ctx is None:
+            ExecContext.set(DefaultExecutionContext())
+            return ExecContext.get()
+        else:
+            return ctx
+
+    @staticmethod
+    @hookimpl
+    def reset_context() -> None:
+        """Reset the execution context"""
+        ExecContext.set(None)
+
+    @staticmethod
+    @hookimpl
     def memory_hook() -> Memory:
         """Default jac memory abstraction, persistent backed by shelve"""
-        return Storage
+        return Jac.context().get_memory()
 
     @staticmethod
     @hookimpl
@@ -451,7 +490,7 @@ class JacFeatureDefaults:
     @hookimpl
     def get_root() -> Architype:
         """Jac's assign comprehension feature."""
-        return Root.make_root()
+        return Jac.context().get_root()
 
     @staticmethod
     @hookimpl

@@ -13,7 +13,13 @@ from jaclang.core.construct import (
     Root,
     WalkerArchitype,
 )
-from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+from jaclang.plugin.spec import (
+    JacBuiltin,
+    JacCmdSpec,
+    JacFeatureSpec,
+    T,
+    ExecutionContext,
+)
 from jaclang.plugin.memory import Memory
 
 
@@ -33,6 +39,16 @@ class JacFeature:
     from jaclang.compiler.constant import EdgeDir
 
     RootType: TypeAlias = Root
+
+    @staticmethod
+    def context() -> ExecutionContext:
+        """Create execution context."""
+        return pm.hook.context()
+
+    @staticmethod
+    def reset_context() -> None:
+        """Reset execution context."""
+        return pm.hook.reset_context()
 
     @staticmethod
     def memory_hook() -> Memory:

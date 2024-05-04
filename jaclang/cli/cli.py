@@ -21,7 +21,6 @@ from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.plugin.shelve_storage import Storage
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -67,7 +66,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 @cmd_registry.register
 def run(
     filename: str,
-    session: str = "",
+    session: str = "jaclang.session",
     main: bool = True,
     cache: bool = True,
     walker: str = "",
@@ -75,8 +74,7 @@ def run(
 ) -> None:
     """Run the specified .jac file."""
 
-    if session:
-        Jac.memory_hook().connect(session)
+    Jac.context().init_memory(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"
@@ -115,8 +113,7 @@ def run(
         else:
             print(f"Walker {walker} not found.")
 
-    Storage.close()
-
+    Jac.reset_context()
     # import sys, inspect
 
     # print(sys.modules["__main__"].__dict__.keys())

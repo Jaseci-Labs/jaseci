@@ -34,6 +34,6 @@ walker traverse {
     }
 }
 
-with entry {
-    root spawn create();
-}
+# with entry {
+#     root spawn create();
+# }

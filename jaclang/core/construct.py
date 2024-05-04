@@ -329,6 +329,10 @@ class Root(NodeArchitype):
         self.connections = set()
         self._jac_.edges = []
 
+    @classmethod
+    def make_root(cls):
+        return cls()
+
 
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import types
 from typing import Any, Callable, Optional, Type, TypeVar, Union
+from uuid import UUID
 
 from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import (
@@ -17,18 +18,61 @@ from jaclang.plugin.default import (
 
 # TODO: not sure if this is right
 # to solve circular dependency
-from jaclang.core.construct import NodeArchitype, EdgeArchitype
+from jaclang.core.construct import NodeArchitype, EdgeArchitype, Root
 from jaclang.plugin.memory import Memory
 
 import pluggy
+from contextvars import ContextVar
 
 hookspec = pluggy.HookspecMarker("jac")
 
 T = TypeVar("T")
 
 
+class ExecutionContext:
+    """Execution Context"""
+
+    mem: Optional[Memory] = None
+    root: Optional[Root] = None
+
+    def __init___(self) -> None:
+        self.mem = Memory()
+        # TODO: add entry node
+
+    def get_root(self) -> Root:
+        if not self.root:
+            self.root = Root.make_root()
+        return self.root
+
+    def get_memory(self) -> Memory:
+        return self.mem
+
+    def get_obj(self, id: UUID) -> Architype:
+        return self.mem.get_obj(id)
+
+    def save_obj(self, obj: Architype, persistent: bool) -> None:
+        return self.mem.save_obj(item=obj, persistent=persistent)
+
+    def reset(self) -> None:
+        self.mem.close()
+        self.mem = None
+        self.root = None
+
+
 class JacFeatureSpec:
     """Jac Feature."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def context() -> ExecutionContext:
+        """Get the execution context."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def reset_context() -> None:
+        """Reset the execution context."""
+        raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
