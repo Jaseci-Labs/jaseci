@@ -25,16 +25,11 @@ from jaclang.core.construct import (
     Architype,
     DSFunc,
     EdgeAnchor,
-    # EdgeArchitype,
-    # GenericEdge,
     JacTestCheck,
     NodeAnchor,
-    # NodeArchitype,
     ObjectAnchor,
     WalkerAnchor,
     WalkerArchitype,
-    # Root,
-    # root,
 )
 from jaclang.core.importer import jac_importer
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
@@ -86,12 +81,9 @@ class DefaultExecutionContext(ExecutionContext):
         self.mem.connect(session)
 
     def get_root(self) -> Root:
-        print("get_root")
         if not self.root:
-            print("look up in memory")
             self.root = self.mem.get_obj("root")
             if not self.root:
-                print("creating new root")
                 self.root = Root()
                 self.save_obj(self.root, persistent=self.root._jac_.persistent)
         return self.root
@@ -430,7 +422,6 @@ class JacFeatureDefaults:
         edges = []
         for i in left:
             for j in right:
-                print("connectiong", i, j)
                 conn_edge = edge_spec()
                 edges.append(conn_edge)
                 i._jac_.connect_node(j, conn_edge)

@@ -326,10 +326,6 @@ class Root(NodeArchitype):
         self.connections = set()
         self._jac_.edges = []
 
-    @classmethod
-    def make_root(cls):
-        return cls()
-
 
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
@@ -433,6 +429,3 @@ class JacTestCheck:
     def __getattr__(self, name: str) -> Union[bool, Any]:
         """Make convenient check.Equal(...) etc."""
         return getattr(JacTestCheck.test_case, name)
-
-
-# root = Root()

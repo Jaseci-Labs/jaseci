@@ -10,19 +10,14 @@ from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import (
     Architype,
     DSFunc,
-    # EdgeArchitype,
     EdgeDir,
-    # NodeArchitype,
     WalkerArchitype,
 )
 
-# TODO: not sure if this is right
-# to solve circular dependency
 from jaclang.core.construct import NodeArchitype, EdgeArchitype, Root
 from jaclang.plugin.memory import Memory
 
 import pluggy
-from contextvars import ContextVar
 
 hookspec = pluggy.HookspecMarker("jac")
 
@@ -54,8 +49,6 @@ class ExecutionContext:
         return self.mem.save_obj(item=obj, persistent=persistent)
 
     def reset(self) -> None:
-        print("reset ExecutionContext")
-        print(self.mem)
         self.mem.close()
         self.mem = None
         self.root = None

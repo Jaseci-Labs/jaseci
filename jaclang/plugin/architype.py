@@ -26,16 +26,13 @@ class PersistentNodeAnchor(NodeAnchor):
         state.pop("obj")
         edges = state.pop("edges")
         state["edges_id"] = [e._jac_.id for e in edges]
-        print("PersistentNodeAnchor.__getstate__", self, state)
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
-        print("PersistentNodeAnchor.__setstate__", self, state)
         self.__dict__.update(state)
         self.edges_id = state.pop("edges_id")
 
     def populate_edges(self) -> None:
-        print("PersistentNodeAnchor.populate_edges", self, self.edges, self.edges_id)
         if len(self.edges) == 0 and len(self.edges_id) > 0:
             for e_id in self.edges_id:
                 edge = Jac.context().get_obj(e_id)
@@ -89,19 +86,15 @@ class PersistentNodeArchitype(NodeArchitype):
         Jac.context().save_obj(self, persistent=self._jac_.persistent)
 
     def save(self):
-        print("PersistentNodeArchitype.save", self)
         self._jac_.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        print(type(self._jac_))
         state["_jac_"] = self._jac_.__getstate__()
-        print("PersistentNodeArchitype.__getstate__", self, state)
         return state
 
     def __setstate__(self, state):
-        print("PersistentNodeArchitype.__setstate__", state)
         self.__dict__.update(state)
         self._jac_ = PersistentNodeAnchor(obj=self)
         self._jac_.__setstate__(state["_jac_"])
@@ -117,18 +110,15 @@ class PersistentEdgeArchitype(EdgeArchitype):
         Jac.context().save_obj(self, persistent=self.persistent)
 
     def save(self):
-        print("PersistentEdgeArchitype.save", self)
         self.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
     def __getstate__(self):
         state = self.__dict__.copy()
         state["_jac_"] = self._jac_.__getstate__()
-        print("PersistentEdgeArchitype.__getstate__", self, state)
         return state
 
     def __setstate__(self, state):
-        print("PersistentEdgeArchitype.__setstate__", self, state)
         self.__dict__.update(state)
         self._jac_ = PersistentEdgeAnchor(obj=self)
         self._jac_.__setstate__(state["_jac_"])
@@ -147,21 +137,10 @@ class PersistentGenericEdge(GenericEdge, PersistentEdgeArchitype):
 class PersistentRoot(Root, PersistentNodeArchitype):
     """Root architype override"""
 
-    #  @classmethod
-    #  def make_root(cls):
-    #      root = Jac.context().get("root")
-    #      if root is None:
-    #          root = cls()
-
-    #      return root
-
     def __init__(self):
-        # check if a root node already exist
-        # This should probably be part of a user/master object instead of a special key
         PersistentNodeArchitype.__init__(self)
         self._jac_.id = "root"
         self._jac_.persistent = True
-        # Jac.context().set(self, persistent=self.persistent)
 
     def __getstate__(self):
         return PersistentNodeArchitype.__getstate__(self)

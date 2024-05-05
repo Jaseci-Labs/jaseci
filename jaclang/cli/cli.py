@@ -74,19 +74,17 @@ def run(
 ) -> None:
     """Run the specified .jac file."""
 
-    print("Start of clirun")
     Jac.context().init_memory(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    override_name = "__main__" if main else None
     if filename.endswith(".jac"):
         jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
-            override_name=override_name,
+            override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
@@ -95,14 +93,14 @@ def run(
                 target=mod,
                 base_path=base,
                 cachable=cache,
-                override_name=override_name,
+                override_name="__main__" if main else None,
                 mod_bundle=ir,
             )
     else:
         print("Not a .jac file.")
 
-    node = "root" if not node else node
     # TODO: get entry node based on id
+    node = "root" if not node else node
 
     # TODO: handle no override name
     if walker:
@@ -115,15 +113,6 @@ def run(
             print(f"Walker {walker} not found.")
 
     Jac.reset_context()
-    print("end of clirun")
-    # import sys, inspect
-
-    # print(sys.modules["__main__"].__dict__.keys())
-    # print("wtf")
-    # for name, obj in inspect.getmembers(sys.modules["__main__"]):
-    #     if inspect.isclass(obj):
-    #         print(name, obj)
-    # print("wtf")
 
 
 @cmd_registry.register

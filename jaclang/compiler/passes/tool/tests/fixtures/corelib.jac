@@ -63,7 +63,7 @@ obj ObjectAnchor :ElementAnchor, ArchitypeProtocol: {
 }
 
 obj NodeAnchor :ObjectAnchor: {
-    has edges: dict[EdgeDir, list[Edge]] = {EdgeDir.IN:[], EdgeDir.OUT:[] };
+    has edges: dict[EdgeDir, list[Edge]] = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
     can connect_node(nd: Node, edg: Edge) -> Node;
     can edges_to_nodes(dir: EdgeDir) -> list[Node];
@@ -173,7 +173,7 @@ obj JacPlugin {
     for i in |> self.index.keys {
         t = self.index[i] |> type;
         if t in dist {
-            dist[t]+=1;
+            dist[t] += 1;
         } else {
             dist[t] = 1;
         }
@@ -260,7 +260,9 @@ obj JacPlugin {
 :obj:ObjectAnchor:can:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        cls.ds_entry_funcs.append({'types':triggers, 'func':func });
+        cls.ds_entry_funcs.append(
+            {'types': triggers, 'func': func}
+        );
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
@@ -272,7 +274,9 @@ obj JacPlugin {
 :obj:ObjectAnchor:can:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        cls.ds_exit_funcs.append({'types':triggers, 'func':func });
+        cls.ds_exit_funcs.append(
+            {'types': triggers, 'func': func}
+        );
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
@@ -418,13 +422,29 @@ obj JacPlugin {
 (arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
-            arch._jac_ = ObjectAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
+            arch._jac_ = ObjectAnchor(
+                ob=arch,
+                ds_entry_funcs=on_entry,
+                ds_exit_funcs=on_exit
+            );
         case 'node':
-            arch._jac_ = NodeAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
+            arch._jac_ = NodeAnchor(
+                ob=arch,
+                ds_entry_funcs=on_entry,
+                ds_exit_funcs=on_exit
+            );
         case 'edge':
-            arch._jac_ = EdgeAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
+            arch._jac_ = EdgeAnchor(
+                ob=arch,
+                ds_entry_funcs=on_entry,
+                ds_exit_funcs=on_exit
+            );
         case 'walker':
-            arch._jac_ = WalkerAnchor(ob=arch, ds_entry_funcs=on_entry, ds_exit_funcs=on_exit);
+            arch._jac_ = WalkerAnchor(
+                ob=arch,
+                ds_entry_funcs=on_entry,
+                ds_exit_funcs=on_exit
+            );
         case _:
             raise ("Invalid archetype type") :> TypeError;
     }
