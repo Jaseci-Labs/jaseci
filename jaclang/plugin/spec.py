@@ -55,6 +55,7 @@ class ExecutionContext:
 
     def reset(self) -> None:
         print("reset ExecutionContext")
+        print(self.mem)
         self.mem.close()
         self.mem = None
         self.root = None

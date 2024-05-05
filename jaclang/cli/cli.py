@@ -74,6 +74,7 @@ def run(
 ) -> None:
     """Run the specified .jac file."""
 
+    print("Start of clirun")
     Jac.context().init_memory(session)
 
     base, mod = os.path.split(filename)
@@ -114,6 +115,7 @@ def run(
             print(f"Walker {walker} not found.")
 
     Jac.reset_context()
+    print("end of clirun")
     # import sys, inspect
 
     # print(sys.modules["__main__"].__dict__.keys())

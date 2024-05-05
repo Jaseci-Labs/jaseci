@@ -35,6 +35,7 @@ class PersistentNodeAnchor(NodeAnchor):
         self.edges_id = state.pop("edges_id")
 
     def populate_edges(self) -> None:
+        print("PersistentNodeAnchor.populate_edges", self, self.edges, self.edges_id)
         if len(self.edges) == 0 and len(self.edges_id) > 0:
             for e_id in self.edges_id:
                 edge = Jac.context().get_obj(e_id)

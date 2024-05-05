@@ -47,6 +47,7 @@ class ShelveStorage(Memory):
         self.storage = shelve.open(session)
 
     def close(self) -> None:
+        super().close()
         print("closing shelve")
         self.commit()
         self.storage.close()

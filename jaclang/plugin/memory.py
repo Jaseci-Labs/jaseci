@@ -20,7 +20,9 @@ class Memory:
         return self.get_obj_from_store(obj_id)
 
     def get_obj_from_store(self, obj_id: UUID | str) -> Architype:
+        print("Memory.get_obj_from_store", self.mem)
         ret = self.mem.get(obj_id, None)
+        print("memory.get_obj_from_store", obj_id, ret)
         return ret
 
     def has_obj(self, obj_id: UUID | str) -> bool:
@@ -43,7 +45,10 @@ class Memory:
 
     def close(self) -> None:
         """Close any connection, if applicable"""
-        pass
+        print("((((((((((((((((reseting self.mem))))))))))))))))")
+        print("before reseting self.mem", self.mem)
+        self.mem.clear()
+        print("after reseting self.mem", self.mem)
 
     def connect(self) -> None:
         """Establish connection with storage, if applicable"""

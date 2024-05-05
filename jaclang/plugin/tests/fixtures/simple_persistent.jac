@@ -21,10 +21,14 @@ walker create {
 
 walker traverse {
     can at_root with `root entry {
+        print("=======TRAVERSE walker at root");
+        print([-->]);
         visit [-->];
     }
 
     can at_a with a entry {
+        print("=======TRAVERSE walker at a");
+        print([-->]);
         print(here.name);
         visit [-->];
     }
