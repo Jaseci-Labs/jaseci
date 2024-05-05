@@ -54,6 +54,7 @@ class ExecutionContext:
         return self.mem.save_obj(item=obj, persistent=persistent)
 
     def reset(self) -> None:
+        print("reset ExecutionContext")
         self.mem.close()
         self.mem = None
         self.root = None

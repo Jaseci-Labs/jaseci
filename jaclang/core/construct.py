@@ -270,19 +270,16 @@ class Architype:
         """Create default architype."""
         self._jac_: ObjectAnchor = ObjectAnchor(obj=self)
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the object."""
-        return self.__getstate__()
+    def __hash__(self) -> int:
+        return hash(self._jac_.id)
 
-    def deserialize(self, data: dict[str, Any]) -> None:
-        """Deserialize the object."""
-        self.__setstate__(data)
+    def __eq__(self, other: Architype) -> bool:
+        if isinstance(other, Architype):
+            return self._jac_.id == other._jac_.id
+        return False
 
-    @classmethod
-    def deserialize_architype(cls, data: dict[str, Any]) -> None:
-        """Deserialize the object."""
-
-        pass
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}"
 
 
 class NodeArchitype(Architype):

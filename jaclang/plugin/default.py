@@ -86,11 +86,14 @@ class DefaultExecutionContext(ExecutionContext):
         self.mem.connect(session)
 
     def get_root(self) -> Root:
+        print("get_root")
         if not self.root:
+            print("look up in memory")
             self.root = self.mem.get_obj("root")
             if not self.root:
+                print("creating new root")
                 self.root = Root()
-                self.save_obj(self.root, persistent=self.root.persistent)
+                self.save_obj(self.root, persistent=self.root._jac_.persistent)
         return self.root
 
 
@@ -117,6 +120,7 @@ class JacFeatureDefaults:
     @hookimpl
     def reset_context() -> None:
         """Reset the execution context"""
+        ExecContext.get().reset()
         ExecContext.set(None)
 
     @staticmethod
@@ -426,15 +430,16 @@ class JacFeatureDefaults:
         edges = []
         for i in left:
             for j in right:
+                print("connectiong", i, j)
                 conn_edge = edge_spec()
                 edges.append(conn_edge)
                 i._jac_.connect_node(j, conn_edge)
 
-                if i.persistent:
+                if i._jac_.persistent:
                     conn_edge.save()
                     j.save()
 
-                if j.persistent:
+                if j._jac_.persistent:
                     conn_edge.save()
                     i.save()
 
