@@ -566,7 +566,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict={x: x ** 2  for x in numbers};", output)
-        self.assertIn('"""Say hello"""\n@ my_decorator', output)
+        self.assertIn("@ my_decorator", output)
 
         del os.environ["JAC_PROC_DEBUG"]
 

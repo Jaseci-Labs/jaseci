@@ -6,7 +6,7 @@ import ast as py_ast
 import os
 from typing import Optional, Sequence, TypeAlias, TypeVar
 
-from icecream import ic
+# from icecream import ic
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
@@ -46,6 +46,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice(f"Unknown node type {type(node).__name__}")
         # print(f"finshed {type(node).__name__} ---------------------")
         # print("normalizing", ret.__class__.__name__)
+        # ic("normalizing", ret.__class__.__name__)
         # print(ret.unparse())
         # ret.unparse()
         return ret
@@ -883,11 +884,31 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ctx: expr_context
         """
         value = self.convert(node.value)
-
+        if (
+            isinstance(value, ast.FuncCall)
+            and isinstance(value.target, ast.Name)
+            and value.target.value == "super"
+        ):
+            tok = ast.Token(
+                file_path=self.mod_path,
+                name=Tok.KW_SUPER,
+                value="super",
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + len("super"),
+                pos_start=0,
+                pos_end=0,
+            )
+            value = ast.SpecialVarRef(var=tok, kid=[tok])
+            # exit()
         attribute = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.attr if node.attr != "init" else ("<>" + node.attr),
+            value=(
+                ("<>" + node.attr)
+                if node.attr == "init"
+                else "init" if node.attr == "__init__" else node.attr
+            ),
             line=node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.attr),
@@ -917,7 +938,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             raise self.ice()
 
-    def proc_bin_op(self, node: py_ast.BinOp) -> ast.BinaryExpr:
+    def proc_bin_op(self, node: py_ast.BinOp) -> ast.AtomUnit:
         """Process python node.
 
         class BinOp(expr):
@@ -935,11 +956,19 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(op, ast.Token)
             and isinstance(right, ast.Expr)
         ):
-            return ast.BinaryExpr(
+            value = ast.BinaryExpr(
                 left=left,
                 op=op,
                 right=right,
                 kid=[left, op, right],
+            )
+            return ast.AtomUnit(
+                value=value,
+                kid=[
+                    self.operator(Tok.RPAREN, "("),
+                    value,
+                    self.operator(Tok.LPAREN, ")"),
+                ],
             )
         else:
             raise self.ice()
