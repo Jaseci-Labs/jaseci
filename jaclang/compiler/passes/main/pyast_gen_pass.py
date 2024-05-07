@@ -1682,7 +1682,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.Try(
                     body=self.resolve_stmt_block(node.body),
-                    handlers=node.excepts.gen.py_ast if node.excepts else None,
+                    handlers=node.excepts.gen.py_ast if node.excepts else [],
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                     finalbody=node.finally_body.gen.py_ast if node.finally_body else [],
                 )
@@ -2384,7 +2384,19 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Lambda(
-                    args=node.signature.gen.py_ast[0],
+                    args=(
+                        node.signature.gen.py_ast[0]
+                        if node.signature
+                        else self.sync(
+                            ast3.arguments(
+                                posonlyargs=[],
+                                args=[],
+                                kwonlyargs=[],
+                                kw_defaults=[],
+                                defaults=[],
+                            )
+                        )
+                    ),
                     body=node.body.gen.py_ast[0],
                 )
             )

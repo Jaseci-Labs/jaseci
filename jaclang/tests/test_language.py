@@ -721,3 +721,13 @@ class JacLanguageTests(TestCase):
         self.assertEqual("1000.000001", stdout_value[2])
         self.assertEqual("78", stdout_value[3])
         self.assertEqual("12", stdout_value[4])
+
+    def test_lambda_expr(self) -> None:
+        """Test lambda expr."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("lambda", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("9", stdout_value[0])
+        self.assertEqual("567", stdout_value[1])
