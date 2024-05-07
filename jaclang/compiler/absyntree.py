@@ -2393,7 +2393,7 @@ class LambdaExpr(Expr):
         signature: Optional[FuncSignature] = None,
     ) -> None:
         """Initialize lambda expression node."""
-        self.signature = signature if signature else None
+        self.signature = signature
         self.body = body
         AstNode.__init__(self, kid=kid)
 
