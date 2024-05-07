@@ -287,17 +287,22 @@ class JacParser(Pass):
             if len(kid) == 1 and isinstance(kid[0], ast.Import):
                 return self.nu(kid[0])
             lang = kid[1]
-            paths = [i for i in kid if isinstance(i, ast.ModulePath)]
+            from_path = kid[3] if isinstance(kid[3], ast.ModulePath) else None
+            if from_path:
+                items = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
+            else:
+                paths = [i for i in kid if isinstance(i, ast.ModulePath)]
+                items = ast.SubNodeList[ast.ModulePath](
+                    items=paths, delim=Tok.COMMA, kid=kid[2:-1]
+                )
+                kid = kid[:2] + [items] + kid[-1:]
 
-            items = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             is_absorb = False
-            if isinstance(lang, ast.SubTag) and (
-                isinstance(items, ast.SubNodeList) or items is None
-            ):
+            if isinstance(lang, ast.SubTag) and (isinstance(items, ast.SubNodeList)):
                 return self.nu(
                     ast.Import(
-                        lang=lang,
-                        paths=paths,
+                        hint=lang,
+                        from_loc=from_path,
                         items=items,
                         is_absorb=is_absorb,
                         kid=kid,
@@ -342,14 +347,20 @@ class JacParser(Pass):
             include_stmt: KW_INCLUDE sub_name import_path SEMI
             """
             lang = kid[1]
-            paths = [i for i in kid if isinstance(i, ast.ModulePath)]
+            from_path = kid[2]
+            if not isinstance(from_path, ast.ModulePath):
+                raise self.ice()
+            items = ast.SubNodeList[ast.ModulePath](
+                items=[from_path], delim=Tok.COMMA, kid=[from_path]
+            )
+            kid = kid[:2] + [items] + kid[3:]
             is_absorb = True
             if isinstance(lang, ast.SubTag):
                 return self.nu(
                     ast.Import(
-                        lang=lang,
-                        paths=paths,
-                        items=None,
+                        hint=lang,
+                        from_loc=None,
+                        items=items,
                         is_absorb=is_absorb,
                         kid=kid,
                     )
@@ -1919,13 +1930,17 @@ class JacParser(Pass):
                 sig_kid.append(params)
             if return_type:
                 sig_kid.append(return_type)
-            signature = ast.FuncSignature(
-                params=params,
-                return_type=return_type,
-                kid=sig_kid,
+            signature = (
+                ast.FuncSignature(
+                    params=params,
+                    return_type=return_type,
+                    kid=sig_kid,
+                )
+                if params or return_type
+                else None
             )
             new_kid = [i for i in kid if i != params and i != return_type]
-            new_kid.insert(1, signature)
+            new_kid.insert(1, signature) if signature else None
             if isinstance(chomp[0], ast.Expr):
                 return self.nu(
                     ast.LambdaExpr(

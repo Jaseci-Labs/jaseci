@@ -29,7 +29,10 @@ def generate_static_parser(force: bool = False) -> None:
         ]
         standalone.main()  # type: ignore
         sys.argv = save_argv
-        auto_generate_refs()
+        try:
+            auto_generate_refs()
+        except Exception as e:
+            print(f"Error generating reference files: {e}")
 
 
 generate_static_parser()

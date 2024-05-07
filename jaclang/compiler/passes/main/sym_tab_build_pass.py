@@ -61,14 +61,21 @@ class SymTabPass(Pass):
             node.sym_name_node.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
 
-            def fix(item: ast.TupleVal | ast.ListVal) -> None:
-                for i in item.values.items if item.values else []:
-                    if isinstance(i, ast.AstSymbolNode):
-                        i.py_ctx_func = ast3.Store
-                    elif isinstance(i, ast.AtomTrailer):
-                        self.chain_def_insert(self.unwind_atom_trailer(i))
-                    if isinstance(i, (ast.TupleVal, ast.ListVal)):
-                        fix(i)
+            # Handling of UnaryExpr case for item is only necessary for
+            # the generation of Starred nodes in the AST for examples
+            # like `(a, *b) = (1, 2, 3, 4)`.
+            def fix(item: ast.TupleVal | ast.ListVal | ast.UnaryExpr) -> None:
+                if isinstance(item, ast.UnaryExpr):
+                    if isinstance(item.operand, ast.AstSymbolNode):
+                        item.operand.py_ctx_func = ast3.Store
+                elif isinstance(item, (ast.TupleVal, ast.ListVal)):
+                    for i in item.values.items if item.values else []:
+                        if isinstance(i, ast.AstSymbolNode):
+                            i.py_ctx_func = ast3.Store
+                        elif isinstance(i, ast.AtomTrailer):
+                            self.chain_def_insert(self.unwind_atom_trailer(i))
+                        if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
+                            fix(i)
 
             fix(node)
         self.handle_hit_outcome(node)
@@ -381,16 +388,22 @@ class SymTabBuildPass(SymTabPass):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        if node.items:
+        if not node.is_absorb:
             for i in node.items.items:
                 self.def_insert(i, single_decl="import item")
-        elif node.is_absorb and node.lang.tag.value == "jac":
-            if not node.paths[0].sub_module or not node.paths[0].sub_module.sym_tab:
+        elif node.is_absorb and node.hint.tag.value == "jac":
+            source = node.items.items[0]
+            if (
+                not isinstance(source, ast.ModulePath)
+                or not source.sub_module
+                or not source.sub_module.sym_tab
+            ):
                 self.error(
-                    f"Module {node.paths[0].path_str} not found to include *, or ICE occurred!"
+                    f"Module {node.from_loc.path_str if node.from_loc else 'from location'}"
+                    f" not found to include *, or ICE occurred!"
                 )
             else:
-                for v in node.paths[0].sub_module.sym_tab.tab.values():
+                for v in source.sub_module.sym_tab.tab.values():
                     self.def_insert(v.decl, table_override=self.cur_scope())
 
     def enter_module_path(self, node: ast.ModulePath) -> None:

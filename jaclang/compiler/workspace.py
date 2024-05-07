@@ -171,9 +171,7 @@ class Workspace:
                 [
                     i
                     for i in mod_ir.get_all_sub_nodes(ast.ModulePath)
-                    if i.parent
-                    and isinstance(i.parent, ast.Import)
-                    and i.parent.lang.tag.value == "jac"
+                    if i.parent_of_type(ast.Import).hint.tag.value == "jac"
                 ]
                 if mod_ir
                 else []
@@ -184,9 +182,7 @@ class Workspace:
                     i
                     for i in mod_ir.get_all_sub_nodes(ast.ModulePath)
                     if i.loc.mod_path == file_path
-                    and i.parent
-                    and isinstance(i.parent, ast.Import)
-                    and i.parent.lang.tag.value == "jac"
+                    and i.parent_of_type(ast.Import).hint.tag.value == "jac"
                 ]
                 if mod_ir
                 else []

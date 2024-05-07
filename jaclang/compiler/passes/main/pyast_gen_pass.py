@@ -492,17 +492,20 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
             )
-        py_compat_path_str = []
-        path_alias = {}
-        for path in node.paths:
-            py_compat_path_str.append(path.path_str.lstrip("."))
-            path_alias[path.path_str] = path.alias.sym_name if path.alias else None
+        path_alias: dict[str, Optional[str]] = (
+            {node.from_loc.path_str: None} if node.from_loc else {}
+        )
         imp_from = {}
         if node.items:
             for item in node.items.items:
-                imp_from[item.name.sym_name] = (
-                    item.alias.sym_name if item.alias else False
-                )
+                if isinstance(item, ast.ModuleItem):
+                    imp_from[item.name.sym_name] = (
+                        item.alias.sym_name if item.alias else False
+                    )
+                elif isinstance(item, ast.ModulePath):
+                    path_alias[item.path_str] = (
+                        item.alias.sym_name if item.alias else None
+                    )
 
         keys = []
         values = []
@@ -557,9 +560,9 @@ class PyastGenPass(Pass):
                                             arg="lng",
                                             value=self.sync(
                                                 ast3.Constant(
-                                                    value=node.lang.tag.value
+                                                    value=node.hint.tag.value
                                                 ),
-                                                node.lang,
+                                                node.hint,
                                             ),
                                         )
                                     ),
@@ -594,10 +597,13 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_absorb:
+            source = node.items.items[0]
+            if not isinstance(source, ast.ModulePath):
+                raise self.ice()
             py_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
+                        module=(source.path_str.lstrip(".") if source else None),
                         names=[self.sync(ast3.alias(name="*"), node)],
                         level=0,
                     ),
@@ -608,15 +614,17 @@ class PyastGenPass(Pass):
                 self.warning(
                     "Includes import * in target module into current namespace."
                 )
-        if not node.items:
-            py_nodes.append(
-                self.sync(ast3.Import(names=[i.gen.py_ast[0] for i in node.paths]))
-            )
+        if not node.from_loc:
+            py_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
         else:
             py_nodes.append(
                 self.sync(
                     ast3.ImportFrom(
-                        module=py_compat_path_str[0] if py_compat_path_str[0] else None,
+                        module=(
+                            node.from_loc.path_str.lstrip(".")
+                            if node.from_loc
+                            else None
+                        ),
                         names=node.items.gen.py_ast,
                         level=0,
                     )
@@ -1674,7 +1682,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.Try(
                     body=self.resolve_stmt_block(node.body),
-                    handlers=node.excepts.gen.py_ast if node.excepts else None,
+                    handlers=node.excepts.gen.py_ast if node.excepts else [],
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                     finalbody=node.finally_body.gen.py_ast if node.finally_body else [],
                 )
@@ -2376,7 +2384,19 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Lambda(
-                    args=node.signature.gen.py_ast[0],
+                    args=(
+                        node.signature.gen.py_ast[0]
+                        if node.signature
+                        else self.sync(
+                            ast3.arguments(
+                                posonlyargs=[],
+                                args=[],
+                                kwonlyargs=[],
+                                kw_defaults=[],
+                                defaults=[],
+                            )
+                        )
+                    ),
                     body=node.body.gen.py_ast[0],
                 )
             )
@@ -2435,11 +2455,16 @@ class PyastGenPass(Pass):
                 )
             ]
         elif node.op.name in [Tok.STAR_MUL]:
+            ctx_val = (
+                node.operand.py_ctx_func()
+                if isinstance(node.operand, ast.AstSymbolNode)
+                else ast3.Load()
+            )
             node.gen.py_ast = [
                 self.sync(
                     ast3.Starred(
                         value=node.operand.gen.py_ast[0],
-                        ctx=ast3.Load(),
+                        ctx=ctx_val,
                     )
                 )
             ]
@@ -3648,7 +3673,22 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = [self.sync(ast3.Constant(value=int(node.value)))]
+
+        def handle_node_value(value: str) -> int:
+            if value.startswith(("0x", "0X")):
+                return int(value, 16)
+            elif value.startswith(("0b", "0B")):
+                return int(value, 2)
+            elif value.startswith(("0o", "0O")):
+                return int(value, 8)
+            else:
+                return int(value)
+
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Constant(value=handle_node_value(str(node.value)), kind=None)
+            )
+        ]
 
     def exit_string(self, node: ast.String) -> None:
         """Sub objects.

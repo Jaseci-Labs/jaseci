@@ -238,7 +238,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
 
 
 @cmd_registry.register
-def graph(
+def dot(
     filename: str,
     initial: str = "",
     depth: int = -1,
