@@ -5,7 +5,7 @@
 ## Base Module structure
 **Grammar Snippet**
 ```yaml linenums="2"
---8<-- "jaclang/compiler/jac.lark:2:17"
+--8<-- "jaclang/compiler/jac.lark:2:16"
 ```
 **Code Example**
 === "Jac"
@@ -22,8 +22,8 @@
 
 ## Import/Include Statements
 **Grammar Snippet**
-```yaml linenums="20"
---8<-- "jaclang/compiler/jac.lark:20:30"
+```yaml linenums="19"
+--8<-- "jaclang/compiler/jac.lark:19:30"
 ```
 **Code Example**
 === "Jac"

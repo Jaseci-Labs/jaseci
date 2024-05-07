@@ -128,19 +128,16 @@ def auto_generate_refs() -> None:
 
 
 def import_target_to_relative_path(
-    import_target: str, base_path: Optional[str] = None, file_extension: str = ".jac"
+    import_level: int,
+    import_target: str,
+    base_path: Optional[str] = None,
+    file_extension: str = ".jac",
 ) -> str:
     """Convert an import target string into a relative file path."""
     if not base_path:
         base_path = os.getcwd()
     parts = import_target.split(".")
-    traversal_levels = 0
-    for part in parts:
-        if part == "":
-            traversal_levels += 1
-        else:
-            break  # Stop at the first non-empty part
-    traversal_levels = traversal_levels - 1 if traversal_levels > 0 else 0
+    traversal_levels = import_level - 1 if import_level > 0 else 0
     actual_parts = parts[traversal_levels:]
     for _ in range(traversal_levels):
         base_path = os.path.dirname(base_path)

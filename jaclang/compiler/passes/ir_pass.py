@@ -1,16 +1,18 @@
 """Abstract class for IR Passes for Jac."""
 
-from typing import Optional, Type
+from typing import Optional, Type, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.transform import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
+T = TypeVar("T", bound=ast.AstNode)
 
-class Pass(Transform[ast.T]):
+
+class Pass(Transform[T]):
     """Abstract class for IR passes."""
 
-    def __init__(self, input_ir: ast.T, prior: Optional[Transform]) -> None:
+    def __init__(self, input_ir: T, prior: Optional[Transform]) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
@@ -45,10 +47,10 @@ class Pass(Transform[ast.T]):
 
     @staticmethod
     def get_all_sub_nodes(
-        node: ast.AstNode, typ: Type[ast.T], brute_force: bool = False
-    ) -> list[ast.T]:
+        node: ast.AstNode, typ: Type[T], brute_force: bool = False
+    ) -> list[T]:
         """Get all sub nodes of type."""
-        result: list[ast.T] = []
+        result: list[T] = []
         # Assumes pass built the sub node table
         if not node:
             return result
@@ -69,7 +71,7 @@ class Pass(Transform[ast.T]):
         return result
 
     @staticmethod
-    def has_parent_of_type(node: ast.AstNode, typ: Type[ast.T]) -> Optional[ast.T]:
+    def has_parent_of_type(node: ast.AstNode, typ: Type[T]) -> Optional[T]:
         """Check if node has parent of type."""
         while node.parent:
             if isinstance(node.parent, typ):
@@ -97,7 +99,7 @@ class Pass(Transform[ast.T]):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: ast.T) -> ast.AstNode:
+    def transform(self, ir: T) -> ast.AstNode:
         """Run pass."""
         # Only performs passes on proper ASTs
         if not isinstance(ir, ast.AstNode):
