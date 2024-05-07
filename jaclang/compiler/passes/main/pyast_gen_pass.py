@@ -2443,11 +2443,16 @@ class PyastGenPass(Pass):
                 )
             ]
         elif node.op.name in [Tok.STAR_MUL]:
+            ctx_val = (
+                node.operand.py_ctx_func()
+                if isinstance(node.operand, ast.AstSymbolNode)
+                else ast3.Load()
+            )
             node.gen.py_ast = [
                 self.sync(
                     ast3.Starred(
                         value=node.operand.gen.py_ast[0],
-                        ctx=ast3.Load(),
+                        ctx=ctx_val,
                     )
                 )
             ]
