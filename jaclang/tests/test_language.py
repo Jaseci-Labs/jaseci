@@ -9,6 +9,7 @@ from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.core import construct
+from jaclang.settings import settings
 from jaclang.utils.test import TestCase
 
 
@@ -533,18 +534,17 @@ class JacLanguageTests(TestCase):
 
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        os.environ["JAC_PROC_DEBUG"] = "1"
+        settings.jac_proc_debug = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_1 imported", stdout_value)
-        del os.environ["JAC_PROC_DEBUG"]
+        settings.jac_proc_debug = "False"
 
     def test_pyfunc_1(self) -> None:
         """Test py ast to Jac ast conversion."""
-        os.environ["JAC_PROC_DEBUG"] = "1"
         from jaclang.compiler.passes.main import PyastBuildPass
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
@@ -569,13 +569,14 @@ class JacLanguageTests(TestCase):
         self.assertIn('assert x == 5 , "x should be equal to 5" ;', output)
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
-        self.assertIn("squares_dict = {x: x ** 2  for x in numbers};", output)
-        self.assertIn('"""Say hello"""\n@ my_decorator', output)
-        del os.environ["JAC_PROC_DEBUG"]
+        self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
+        self.assertIn(
+            '\n\n@ my_decorator \n can say_hello() {\n    """Say hello""" ; ', output
+        )
 
     def test_needs_import_2(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        os.environ["JAC_PROC_DEBUG"] = "1"
+        settings.jac_proc_debug = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
@@ -583,11 +584,10 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_2 imported", stdout_value)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
-        del os.environ["JAC_PROC_DEBUG"]
+        settings.jac_proc_debug = "False"
 
     def test_pyfunc_2(self) -> None:
         """Test py ast to Jac ast conversion."""
-        os.environ["JAC_PROC_DEBUG"] = "1"
         from jaclang.compiler.passes.main import PyastBuildPass
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
@@ -599,26 +599,23 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(f.read()), mod_path=py_out_path
                 ),
             ).ir.unparse()
-        self.assertIn("obj X {\n    with entry {\n        a_b = 67;", output)
+        self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
-        self.assertIn("obj Circle {\n    can init(radius: float", output)
-
-        del os.environ["JAC_PROC_DEBUG"]
+        self.assertIn("class Circle {\n    can init(radius: float", output)
 
     def test_needs_import_3(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        os.environ["JAC_PROC_DEBUG"] = "1"
+        settings.jac_proc_debug = "1"
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_3 imported", stdout_value)
-        del os.environ["JAC_PROC_DEBUG"]
+        settings.jac_proc_debug = "False"
 
     def test_pyfunc_3(self) -> None:
         """Test py ast to Jac ast conversion."""
-        os.environ["JAC_PROC_DEBUG"] = "1"
         from jaclang.compiler.passes.main import PyastBuildPass
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
@@ -633,9 +630,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point(x = int(_), y = 0):\n", output)
-        self.assertIn("obj Sample {\n    can init", output)
-
-        del os.environ["JAC_PROC_DEBUG"]
+        self.assertIn("class Sample {\n    can init", output)
 
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""

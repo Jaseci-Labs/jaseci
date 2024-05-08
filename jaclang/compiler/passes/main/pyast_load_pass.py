@@ -143,6 +143,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
+        # ic("----")
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -165,12 +166,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(valid[0], ast.ExprStmt)
             and isinstance(valid[0].expr, ast.String)
         ):
-            doc = valid[0].expr
-            self.convert_to_doc(doc)
+            self.convert_to_doc(valid[0].expr)
+            doc = valid[0]
             valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-                items=valid[1:],
+                items=[doc] + valid[1:],
                 delim=Tok.WS,
-                kid=valid[1:],
+                kid=valid[1:] + [doc],
                 left_enc=self.operator(Tok.LBRACE, "{"),
                 right_enc=self.operator(Tok.RBRACE, "}"),
             )
@@ -267,8 +268,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         arch_type = ast.Token(
             file_path=self.mod_path,
-            name=Tok.KW_OBJECT,
-            value="obj",
+            name=Tok.KW_CLASS,
+            value="class",
             line=node.lineno,
             col_start=0,
             col_end=0,
@@ -1497,10 +1498,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             raise self.ice("No valid names in import from")
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         if len(node.names) == 1 and node.names[0].name == "*":
+            path_in = ast.SubNodeList[ast.ModulePath](
+                items=[path], delim=Tok.COMMA, kid=[path]
+            )
             ret = ast.Import(
-                lang=pytag,
-                paths=[path],
-                items=None,
+                hint=pytag,
+                from_loc=None,
+                items=path_in,
                 is_absorb=True,
                 kid=[pytag, path],
             )
