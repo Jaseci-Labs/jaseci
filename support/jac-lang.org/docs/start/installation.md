@@ -1,4 +1,4 @@
-# Installing Jac~Lang
+# **Installing Jac~Lang**
 
 - Firstly make sure that this prerequisite is fulfilled.
     - Python 3.12 or higher
