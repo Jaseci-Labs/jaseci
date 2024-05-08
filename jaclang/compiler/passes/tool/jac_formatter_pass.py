@@ -1443,10 +1443,10 @@ class JacFormatPass(Pass):
         body: Expr,
         """
         out = ""
-        if node.signature.params:
+        if node.signature and node.signature.params:
             self.comma_sep_node_list(node.signature.params)
             out += node.signature.params.gen.jac
-        if node.signature.return_type:
+        if node.signature and node.signature.return_type:
             out += f" -> {node.signature.return_type.gen.jac}"
         self.emit(node, f"with {out} can {node.body.gen.jac}")
 

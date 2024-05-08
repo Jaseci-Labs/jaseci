@@ -1682,7 +1682,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.Try(
                     body=self.resolve_stmt_block(node.body),
-                    handlers=node.excepts.gen.py_ast if node.excepts else None,
+                    handlers=node.excepts.gen.py_ast if node.excepts else [],
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                     finalbody=node.finally_body.gen.py_ast if node.finally_body else [],
                 )
@@ -2384,7 +2384,19 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Lambda(
-                    args=node.signature.gen.py_ast[0],
+                    args=(
+                        node.signature.gen.py_ast[0]
+                        if node.signature
+                        else self.sync(
+                            ast3.arguments(
+                                posonlyargs=[],
+                                args=[],
+                                kwonlyargs=[],
+                                kw_defaults=[],
+                                defaults=[],
+                            )
+                        )
+                    ),
                     body=node.body.gen.py_ast[0],
                 )
             )
@@ -2443,11 +2455,16 @@ class PyastGenPass(Pass):
                 )
             ]
         elif node.op.name in [Tok.STAR_MUL]:
+            ctx_val = (
+                node.operand.py_ctx_func()
+                if isinstance(node.operand, ast.AstSymbolNode)
+                else ast3.Load()
+            )
             node.gen.py_ast = [
                 self.sync(
                     ast3.Starred(
                         value=node.operand.gen.py_ast[0],
-                        ctx=ast3.Load(),
+                        ctx=ctx_val,
                     )
                 )
             ]
@@ -3656,7 +3673,22 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = [self.sync(ast3.Constant(value=int(node.value)))]
+
+        def handle_node_value(value: str) -> int:
+            if value.startswith(("0x", "0X")):
+                return int(value, 16)
+            elif value.startswith(("0b", "0B")):
+                return int(value, 2)
+            elif value.startswith(("0o", "0O")):
+                return int(value, 8)
+            else:
+                return int(value)
+
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Constant(value=handle_node_value(str(node.value)), kind=None)
+            )
+        ]
 
     def exit_string(self, node: ast.String) -> None:
         """Sub objects.
