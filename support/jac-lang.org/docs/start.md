@@ -4,6 +4,28 @@ Welcome to JacLang, a unique and powerful programming language that runs on top 
 
 ## Installation
 
+<div class="grid cards" markdown>
+
+-   :material-clock-fast:{ .lg .middle } __Setup in a nutshell__
+
+    ---
+
+    *To get you started working with Jac Lang, this guide will walk you through the process of installation, running Jac files, and importing Jac into existing Python modules.*
+
+    <!-- [:octicons-arrow-right-24: Getting started](#) -->
+
+    [Setup Now](#){ .md-button }
+
+-   __Jac in a FLASH__
+
+    ---
+
+    *If you are already a fluent pythonista jump into learning by going through a step-by-step transformation from python to jac-lang and BEYOND : into the bowels of data-spatial programming!*
+
+    [Get Started](#){ .md-button .md-button--primary }
+
+</div>
+
 Firstly, you'll need to install JacLang. You can do this easily through Python's package manager, pip. Run the following command:
 
 ```bash
@@ -93,49 +115,3 @@ That's all you need to get started with JacLang. As you delve into this new lang
 In addition to setting up JacLang itself, you may also want to take advantage of the JacLang language extension for Visual Studio Code (VSCode). This will give you enhanced code highlighting, autocomplete, and other useful language features within your VSCode environment.
 
 Here's a step-by-step guide on how to package and install the JacLang VSCode extension.
-
-### Setting Up VSCE
-
-To create the VSIX file for the extension, you'll need `vsce`, a command-line tool for packaging VSCode extensions. If you don't have it installed already, follow these steps:
-
-1. Ensure that you have Node.js (>= 0.10.x) and npm installed on your machine.
-
-2. Open a terminal (or command prompt) and install `vsce` globally by running the following command:
-
-    ```bash
-    npm install -g vsce
-    ```
-
-### Packaging the Extension
-
-Once you have `vsce` set up, navigate to the JacLang extension directory in your local JacLang repository by running:
-
-```bash
-cd /path/to/repo/jaclang/support/vscode_ext/jac
-```
-
-In the `jac` directory, package the extension into a VSIX file by running:
-
-```bash
-vsce package
-```
-
-This will create a `.vsix` file, which is the packaged extension.
-
-### Installing the VSIX File in VSCode
-
-To install the packaged JacLang extension in VSCode:
-
-1. Open Visual Studio Code.
-
-2. Click on the Extensions view icon on the Sidebar (or press `Ctrl+Shift+X`).
-
-3. Click on the three-dot menu (`...`) in the top-right corner of the Extensions view.
-
-4. Select `Install from VSIX...` from the dropdown menu.
-
-5. In the file picker, find and select the `.vsix` file you created earlier and click `Open`.
-
-6. After a brief moment, the extension will be installed. You might have to reload VSCode for the changes to take effect.
-
-Now, you're all set to use the JacLang language extension in your VSCode editor! Enjoy your enhanced JacLang development experience.
