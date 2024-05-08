@@ -21,12 +21,12 @@ def jac_importer(
     mdl_alias: Optional[str] = None,
     override_name: Optional[str] = None,
     mod_bundle: Optional[Module] = None,
-    lng: Optional[str] = None,
+    lng: Optional[str] = "jac",
     items: Optional[dict[str, Union[str, bool]]] = None,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     dir_path, file_name = path.split(
-        path.join(*(target.split("."))) + (".jac" if lng != "py" else ".py")
+        path.join(*(target.split("."))) + (".jac" if lng == "jac" else ".py")
     )
 
     module_name = path.splitext(file_name)[0]
