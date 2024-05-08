@@ -105,11 +105,8 @@ def jac_importer(
             raise ImportError(f"No bytecode found for {full_target}")
         exec(codeobj, module.__dict__)
 
-    (
+    if lng == "py" or lng == "jac":
         py_import(target=target, items=items, absorb=absorb, mdl_alias=mdl_alias)
-        if lng == "py" or lng == "jac"
-        else None
-    )
 
     if path_added:
         sys.path.remove(caller_dir)
