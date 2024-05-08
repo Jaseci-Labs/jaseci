@@ -6,7 +6,7 @@ Welcome to JacLang, a unique and powerful programming language that runs on top 
 
 <div class="grid cards" markdown>
 
--   :material-clock-fast:{ .lg .middle } __Setup in a nutshell__
+-   __Setup in a nutshell__
 
     ---
 
