@@ -5,8 +5,8 @@ import:py random;
 """
 A generic Game base class.
 
-Inside the Game class, we define a can play method that raises a NotImplementedError. 
-This is way in jaclang to define abstract methods in base classes that must be implemented by subclasses. 
+Inside the Game class, we define a can play method that raises a NotImplementedError.
+This is way in jaclang to define abstract methods in base classes that must be implemented by subclasses.
 In this case it ensure that any subclass of Game must implement a play method.
 """
 obj Game {

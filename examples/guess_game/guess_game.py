@@ -21,9 +21,9 @@ class GuessTheNumberGame(Game):
     """
     A number guessing game. The player must guess a number between 1 and 100.
 
-    This class inherits from Game. 
-    Represents a number guessing game where the player tries to guess a randomly chosen number between 1 and 100. 
-    The __init__ method initializes the number of attempts and generates a random number between 1 and 100. 
+    This class inherits from Game.
+    Represents a number guessing game where the player tries to guess a randomly chosen number between 1 and 100.
+    The __init__ method initializes the number of attempts and generates a random number between 1 and 100.
     """
 
     def __init__(self, attempts=10):
@@ -37,7 +37,7 @@ class GuessTheNumberGame(Game):
         """
         Play the game.
 
-        This method contains the main game loop. It prompts the player to input a guess and then calls the process_guess method to evaluate the guess. 
+        This method contains the main game loop. It prompts the player to input a guess and then calls the process_guess method to evaluate the guess.
         The loop continues until the player runs out of attempts.
         """
         while self.attempts > 0:
@@ -51,9 +51,9 @@ class GuessTheNumberGame(Game):
 
     def process_guess(self, guess):
         """
-        Compares the player's guess with the correct number. 
-        If the guess is too high or too low, gives feedback to the player. 
-        If the guess is correct, it congratulates the player and ends the game by setting the remaining attempts to 0. 
+        Compares the player's guess with the correct number.
+        If the guess is too high or too low, gives feedback to the player.
+        If the guess is correct, it congratulates the player and ends the game by setting the remaining attempts to 0.
         After each guess, decrements the number of attempts and prints how many attempts are left.
         """
         if guess > self.correct_number:
