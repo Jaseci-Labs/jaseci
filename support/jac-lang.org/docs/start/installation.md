@@ -19,7 +19,7 @@
     ```
 > **Note:**
 >
-> If you have installed Jac Lang a while back, it may be outdated due to frequent updates. Ensure you have the latest Jac Lang version by executing the same command. 
+> If you have installed Jac Lang a while back, it may be outdated due to frequent updates. Ensure you have the latest Jac Lang version by executing the same command.
 
 Once you've got Jaclang installed, just give the Jac CLI a try to make sure everything's up and running smoothly.
 
@@ -27,7 +27,7 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
     ```bash
     jac
     ```
-- Run a .jac file 
+- Run a .jac file
     ```bash
     jac run <file_name>.jac
 - To test run a 'Hello World'Program
@@ -38,11 +38,11 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
     ```
 > **Note**
 >
-> If these commands prints ```hello world``` you are good to go. 
+> If these commands prints ```hello world``` you are good to go.
 
 ## Supportive Jac CLI commands
 
-- Clean cached files (recommended after each run): 
+- Clean cached files (recommended after each run):
     ```bash
     jac clean
     ```
