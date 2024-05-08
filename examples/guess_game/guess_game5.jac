@@ -2,6 +2,9 @@
 
 import:py random;
 
+"""
+
+"""
 walker GuessGame {
     has correct_number: int = (1, 100) |> random.randint;
 

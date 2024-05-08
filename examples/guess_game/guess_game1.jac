@@ -4,6 +4,10 @@ import:py random;
 
 """
 A generic Game base class.
+
+The obj keyword is used to define the class. 
+The can keyword is used to define methods (functions) within the class. The self keyword is used to refer to the current instance of the class.
+Constructors are defined using the init method with parameters.
 """
 obj Game {
     can init(attempts: int) {
@@ -18,6 +22,8 @@ obj Game {
 
 """
 A number guessing game. The player must guess a number between 1 and 100.
+
+This class inherits from Game. The super() function is used to call the parent class constructor.
 """
 obj GuessTheNumberGame :Game: {
     can init(attempts: int=10) {
@@ -56,6 +62,9 @@ obj GuessTheNumberGame :Game: {
 }
 # Run the game
 
+"""
+Object instantiation and method invocation occur within the with entry { ... } block.
+"""
 with entry {
     game = GuessTheNumberGame();
     game.play();
