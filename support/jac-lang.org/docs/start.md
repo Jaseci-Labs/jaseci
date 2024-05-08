@@ -14,15 +14,15 @@ Welcome to JacLang, a unique and powerful programming language that runs on top 
 
     <!-- [:octicons-arrow-right-24: Getting started](#) -->
 
-    [Setup Now](#){ .md-button }
+    [Setup Now](start/installation.md){ .md-button }
 
 -   __Jac in a FLASH__
 
     ---
 
-    *If you are already a fluent pythonista jump into learning by going through a step-by-step transformation from python to jac-lang and BEYOND : into the bowels of data-spatial programming!*
+    *If you are already a fluent pythonista jump into learning by going through a step-by-step transformation from python to jac-lang and BEYOND!*
 
-    [Get Started](#){ .md-button .md-button--primary }
+    [Get Started](start/jac_in_a_flash.md){ .md-button .md-button--primary }
 
 </div>
 

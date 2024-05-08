@@ -2,7 +2,10 @@ site_name: The Jac Programming Language
 site_url: https://jac-lang.org
 nav:
     - ~$: 'index.md'
-    - ~/start$: 'start.md'
+    - ~/start$:
+      - 'start.md'
+      - 'start/installation.md'
+      - 'start/jac_in_a_flash.md'
     - ~/learn$:
       - ~/for_coders:
         - 'learn/guide.md'
