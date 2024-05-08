@@ -25,11 +25,10 @@ def jac_importer(
     items: Optional[dict[str, Union[str, bool]]] = None,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
-    dir_path, file_name = (
-        path.split(path.join(*(target.split("."))) + ".py")
-        if lng == "py"
-        else path.split(path.join(*(target.split("."))) + ".jac")
+    dir_path, file_name = path.split(
+        path.join(*(target.split("."))) + (".jac" if lng != "py" else ".py")
     )
+
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
 
@@ -60,7 +59,9 @@ def jac_importer(
     module.__file__ = full_target
     module.__name__ = module_name
     module.__dict__["__jac_mod_bundle__"] = mod_bundle
-    if lng != "py":
+    if lng == "py":
+        py_import(target=target, items=items, absorb=absorb, mdl_alias=mdl_alias)
+    else:
         if mod_bundle:
             codeobj = (
                 mod_bundle.gen.py_bytecode
@@ -104,9 +105,6 @@ def jac_importer(
         if not codeobj:
             raise ImportError(f"No bytecode found for {full_target}")
         exec(codeobj, module.__dict__)
-
-    if lng == "py" or lng == "jac":
-        py_import(target=target, items=items, absorb=absorb, mdl_alias=mdl_alias)
 
     if path_added:
         sys.path.remove(caller_dir)
