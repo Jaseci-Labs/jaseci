@@ -3,7 +3,7 @@
 import:py random;
 
 """
-
+In this code example, we implement a simple number guessing game using graph travesel.
 """
 walker GuessGame {
     has correct_number: int = (1, 100) |> random.randint;
