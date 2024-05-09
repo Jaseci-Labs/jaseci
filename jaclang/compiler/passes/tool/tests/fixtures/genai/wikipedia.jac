@@ -29,10 +29,8 @@ QA {
 
     can 'Get next Thought and Action. Action should always startswith "Search" or "Finish"'
     get_throught_and_actions(question: 'Question': str, prev_info: 'Previous Thoughts, Actions, and Observations': list[dict]=[]) -> 'Next Thought and Action': dict by llm(incl_info=(self.qa_example));
-
     can get_answer(question: str) -> str {
         prev_info = [];
-        
         while len(prev_info) < 100 {
             next_info = self.get_throught_and_actions(question, prev_info);
             if next_info["Action"].startswith("Search:") {

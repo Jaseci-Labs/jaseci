@@ -9,7 +9,6 @@ walker get_last_active_day {
         self.last_active_day: day | None = None;
     }
     # has last_active_day: day | None by postinit;
-
     can go_back with day entry {
         items = [-:parent:->];
         if items == [] {
