@@ -2388,9 +2388,9 @@ class LambdaExpr(Expr):
 
     def __init__(
         self,
-        signature: FuncSignature,
         body: Expr,
         kid: Sequence[AstNode],
+        signature: Optional[FuncSignature] = None,
     ) -> None:
         """Initialize lambda expression node."""
         self.signature = signature
@@ -2401,11 +2401,12 @@ class LambdaExpr(Expr):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.signature.normalize(deep)
+            res = self.signature.normalize(deep) if self.signature else res
             res = res and self.body.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.KW_WITH),
-            self.signature,
+        new_kid: list[AstNode] = [self.gen_token(Tok.KW_WITH)]
+        if self.signature:
+            new_kid.append(self.signature)
+        new_kid += [
             self.gen_token(Tok.KW_CAN),
             self.body,
             self.gen_token(Tok.SEMI),

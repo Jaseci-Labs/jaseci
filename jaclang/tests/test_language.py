@@ -685,3 +685,49 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("I am in b\nI am in b\nwww is also in b\n", stdout_value)
+
+    def test_tuple_unpack(self) -> None:
+        """Test tuple unpack."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("tupleunpack", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("1", stdout_value[0])
+        self.assertIn("[2, 3, 4]", stdout_value[1])
+
+    def test_try_finally(self) -> None:
+        """Test try finally."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("try_finally", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("try block", stdout_value[0])
+        self.assertIn("finally block", stdout_value[1])
+        self.assertIn("try block", stdout_value[2])
+        self.assertIn("else block", stdout_value[3])
+        self.assertIn("finally block", stdout_value[4])
+
+    def test_arithmetic_bug(self) -> None:
+        """Test arithmetic bug."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("arithmetic_bug", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("0.0625", stdout_value[0])
+        self.assertEqual("1e-06", stdout_value[1])
+        self.assertEqual("1000.000001", stdout_value[2])
+        self.assertEqual("78", stdout_value[3])
+        self.assertEqual("12", stdout_value[4])
+
+    def test_lambda_expr(self) -> None:
+        """Test lambda expr."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("lambda", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("9", stdout_value[0])
+        self.assertEqual("567", stdout_value[1])

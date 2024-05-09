@@ -61,14 +61,21 @@ class SymTabPass(Pass):
             node.sym_name_node.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
 
-            def fix(item: ast.TupleVal | ast.ListVal) -> None:
-                for i in item.values.items if item.values else []:
-                    if isinstance(i, ast.AstSymbolNode):
-                        i.py_ctx_func = ast3.Store
-                    elif isinstance(i, ast.AtomTrailer):
-                        self.chain_def_insert(self.unwind_atom_trailer(i))
-                    if isinstance(i, (ast.TupleVal, ast.ListVal)):
-                        fix(i)
+            # Handling of UnaryExpr case for item is only necessary for
+            # the generation of Starred nodes in the AST for examples
+            # like `(a, *b) = (1, 2, 3, 4)`.
+            def fix(item: ast.TupleVal | ast.ListVal | ast.UnaryExpr) -> None:
+                if isinstance(item, ast.UnaryExpr):
+                    if isinstance(item.operand, ast.AstSymbolNode):
+                        item.operand.py_ctx_func = ast3.Store
+                elif isinstance(item, (ast.TupleVal, ast.ListVal)):
+                    for i in item.values.items if item.values else []:
+                        if isinstance(i, ast.AstSymbolNode):
+                            i.py_ctx_func = ast3.Store
+                        elif isinstance(i, ast.AtomTrailer):
+                            self.chain_def_insert(self.unwind_atom_trailer(i))
+                        if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
+                            fix(i)
 
             fix(node)
         self.handle_hit_outcome(node)
