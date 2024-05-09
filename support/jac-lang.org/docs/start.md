@@ -31,8 +31,11 @@ While Python is widely regarded for its simplicity and versatility, jac lang off
 <!-- - Full-stack programming language
     - Jaclang empowers developers to create both front-end and back-end components of their applications using a single language. This eliminates the need to switch between different programming languages and frameworks, resulting in a more cohesive and efficient development experience. -->
 
+- Supersets Python
+    - As TypeScript supersets JavaScript, Jac-Lang is a language which was built on top of python which all pythony goodness available to all jac-lang programmers while including the entire python ecosystem, available to use.
+
 - Offers more readable code
-    - By adopting a clean and intuitive syntax, Jac Lang makes it easier for developers and coders to write code that is easy to understand and maintain. 
+    - By adopting a clean and intuitive syntax, Jac Lang makes it easier for developers and coders to write code that is easy to understand and maintain.
 
 - More flexible than python, in terms of styling the code
     - As jac lang uses syntax where multiline comments, multiline function declerations and more, which allows the user to arrange arguments, lists, dictionaties and other list-like objects in a readable format.
@@ -42,6 +45,9 @@ While Python is widely regarded for its simplicity and versatility, jac lang off
 
 - Data Spatial Programming
     - Jac Lang's programming approach focuses on data-spatial constructs, enhancing the handling and visualization of data in ways traditional programming paradigms might not support.
+
+- Programming with Large Language Models
+    - Jac-lang has an up & coming feature which allows programmers to integrate LLMs into their programming pipeline seamlessly without the need for learning extensive libraries and complicated new syntaxes.
 <!-- ## Integrating Jac into Python Modules
 
 JacLang also provides a seamless way to import Jac into existing Python modules through library functions. Here's an example:
