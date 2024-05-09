@@ -4,13 +4,13 @@ import importlib
 import marshal
 import sys
 import types
-from contextlib import contextmanager
 from os import getcwd, path
-from typing import Iterator, Optional, Union
+from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
+from jaclang.core.utils import sys_path_context
 from jaclang.utils.log import logging
 
 
@@ -46,24 +46,12 @@ def jac_importer(
         )
     else:
         module_name = override_name if override_name else module_name
-        module = types.ModuleType(module_name)
-        module.__file__ = full_target
-        module.__name__ = module_name
-        module.__dict__["__jac_mod_bundle__"] = mod_bundle
-        if package_path:
-            parts = package_path.split(".")
-            for i in range(len(parts)):
-                package_name = ".".join(parts[: i + 1])
-                if package_name not in sys.modules:
-                    sys.modules[package_name] = types.ModuleType(package_name)
-
-            setattr(sys.modules[package_path], module_name, module)
-            sys.modules[f"{package_path}.{module_name}"] = module
-        sys.modules[module_name] = module
+        module = create_jac_py_module(
+            mod_bundle, module_name, package_path, full_target
+        )
         if mod_bundle:
             codeobj = mod_bundle.mod_deps[full_target].gen.py_bytecode
-            if isinstance(codeobj, bytes):
-                codeobj = marshal.loads(codeobj)
+            codeobj = marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
         else:
             gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
             pyc_file_path = path.join(gen_dir, module_name + ".jbc")
@@ -83,7 +71,6 @@ def jac_importer(
                     return None
                 else:
                     codeobj = marshal.loads(result.ir.gen.py_bytecode)
-
         if not codeobj:
             raise ImportError(f"No bytecode found for {full_target}")
         with sys_path_context(caller_dir):
@@ -92,17 +79,25 @@ def jac_importer(
     return module
 
 
-@contextmanager
-def sys_path_context(path: str) -> Iterator[None]:
-    """Add a path to sys.path temporarily."""
-    novel_path = path not in sys.path
-    try:
-        if novel_path:
-            sys.path.append(path)
-        yield
-    finally:
-        if novel_path:
-            sys.path.remove(path)
+def create_jac_py_module(
+    mod_bundle: Optional[Module], module_name: str, package_path: str, full_target: str
+) -> types.ModuleType:
+    """Create a module."""
+    module = types.ModuleType(module_name)
+    module.__file__ = full_target
+    module.__name__ = module_name
+    module.__dict__["__jac_mod_bundle__"] = mod_bundle
+    if package_path:
+        parts = package_path.split(".")
+        for i in range(len(parts)):
+            package_name = ".".join(parts[: i + 1])
+            if package_name not in sys.modules:
+                sys.modules[package_name] = types.ModuleType(package_name)
+
+        setattr(sys.modules[package_path], module_name, module)
+        sys.modules[f"{package_path}.{module_name}"] = module
+    sys.modules[module_name] = module
+    return module
 
 
 def get_caller_dir(target: str, base_path: str, dir_path: str) -> str:
