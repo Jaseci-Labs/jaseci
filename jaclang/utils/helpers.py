@@ -131,7 +131,6 @@ def import_target_to_relative_path(
     import_level: int,
     import_target: str,
     base_path: Optional[str] = None,
-    file_extension: str = ".jac",
 ) -> str:
     """Convert an import target string into a relative file path."""
     if not base_path:
@@ -141,7 +140,12 @@ def import_target_to_relative_path(
     actual_parts = parts[traversal_levels:]
     for _ in range(traversal_levels):
         base_path = os.path.dirname(base_path)
-    relative_path = os.path.join(base_path, *actual_parts) + file_extension
+    relative_path = os.path.join(base_path, *actual_parts)
+    relative_path = (
+        relative_path + ".jac"
+        if os.path.exists(relative_path + ".jac")
+        else relative_path
+    )
     return relative_path
 
 
