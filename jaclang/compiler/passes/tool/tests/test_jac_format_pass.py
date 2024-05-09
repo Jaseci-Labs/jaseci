@@ -2,7 +2,6 @@
 
 import ast as ast3
 import os
-import shutil
 from difflib import unified_diff
 
 import jaclang.compiler.absyntree as ast

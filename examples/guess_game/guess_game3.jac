@@ -4,6 +4,10 @@ import:py random;
 
 """
 A generic Game base class.
+
+In the following code |> is pipe forward operator, it assigns the lefthand side values
+as arguments of the right hand side function.
+i.e, "Hello" |> print is equivalent to print("Hello")
 """
 obj Game {
     has attempts: int,

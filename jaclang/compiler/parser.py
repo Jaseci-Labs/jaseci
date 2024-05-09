@@ -1930,13 +1930,17 @@ class JacParser(Pass):
                 sig_kid.append(params)
             if return_type:
                 sig_kid.append(return_type)
-            signature = ast.FuncSignature(
-                params=params,
-                return_type=return_type,
-                kid=sig_kid,
+            signature = (
+                ast.FuncSignature(
+                    params=params,
+                    return_type=return_type,
+                    kid=sig_kid,
+                )
+                if params or return_type
+                else None
             )
             new_kid = [i for i in kid if i != params and i != return_type]
-            new_kid.insert(1, signature)
+            new_kid.insert(1, signature) if signature else None
             if isinstance(chomp[0], ast.Expr):
                 return self.nu(
                     ast.LambdaExpr(
