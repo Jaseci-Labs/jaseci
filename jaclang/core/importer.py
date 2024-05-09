@@ -123,9 +123,8 @@ def py_import(
     """Import a Python module."""
     try:
         target = target.lstrip(".") if target.startswith("..") else target
-        imported_module = importlib.import_module(target)
+        imported_module = importlib.import_module(name=target)
         main_module = __import__("__main__")
-        # importer = importlib.import_module(caller)
         if absorb:
             for name in dir(imported_module):
                 if not name.startswith("_"):
