@@ -1,6 +1,6 @@
-# **Getting Started with JacLang**
+# **Getting Started with Jac-Lang**
 
-Welcome to JacLang, a unique and powerful programming language that runs on top of Python. To get you started, this guide will walk you through the process of installation, running Jac files, and importing Jac into existing Python modules.
+Welcome to Jac-Lang, a unique and powerful programming language that runs on top of Python. To get you started, this guide will walk you through the process of installation, running Jac files, and importing Jac into existing Python modules.
 
 <div class="grid cards" markdown>
 
@@ -24,8 +24,24 @@ Welcome to JacLang, a unique and powerful programming language that runs on top 
 
 </div>
 
-## Features
+## Features in Jac-Lang
 
+While Python is widely regarded for its simplicity and versatility, jac lang offers several advantages, particularly in terms of readability, flexibility, and type safety. By addressing some of the shortcomings of Python, jac lang provides developers with a more robust and scalable alternative for building modern applications.
+
+<!-- - Full-stack programming language
+    - Jaclang empowers developers to create both front-end and back-end components of their applications using a single language. This eliminates the need to switch between different programming languages and frameworks, resulting in a more cohesive and efficient development experience. -->
+
+- Offers more readable code
+    - By adopting a clean and intuitive syntax, Jac Lang makes it easier for developers and coders to write code that is easy to understand and maintain. 
+
+- More flexible than python, in terms of styling the code
+    - As jac lang uses syntax where multiline comments, multiline function declerations and more, which allows the user to arrange arguments, lists, dictionaties and other list-like objects in a readable format.
+
+- Type safe to support large codebases
+    - Jac lang prioritizes type safety to support the development of large-scale applications. By enforcing strict type checking, jac lang helps identify potential errors at compile time, rather than runtime, leading to more robust and reliable code.
+
+- Data Spatial Programming
+    - Jac Lang's programming approach focuses on data-spatial constructs, enhancing the handling and visualization of data in ways traditional programming paradigms might not support.
 <!-- ## Integrating Jac into Python Modules
 
 JacLang also provides a seamless way to import Jac into existing Python modules through library functions. Here's an example:
