@@ -6,7 +6,8 @@ import:py random;
 A generic Game base class.
 
 The obj keyword is used to define the class.
-The can keyword is used to define methods (functions) within the class. The self keyword is used to refer to the current instance of the class.
+The can keyword is used to define methods (functions) within the class.
+The self keyword is used to refer to the current instance of the class.
 Constructors are defined using the init method with parameters.
 """
 obj Game {
