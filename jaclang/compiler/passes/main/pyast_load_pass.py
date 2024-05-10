@@ -102,6 +102,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
+        # if not node.body:
+        #         ret = ast.Module(
+        #             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
+        # source=ast.JacSource("", mod_path=self.mod_path), #FIXME
+        #             doc=None,
+        #             body=[],
+        #             is_imported=False,
+        #             kid=[ast.EmptyToken()]
+        #         )
+        #         ic(ret.name,ret.source)
+        #         ret.gen.py_ast = [node]
+        #         return self.nu(ret)
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
         elements[0] = (
             elements[0].expr
@@ -1506,7 +1518,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 from_loc=None,
                 items=path_in,
                 is_absorb=True,
-                kid=[pytag, path],
+                kid=[pytag, path_in],
             )
             return ret
         ret = ast.Import(
@@ -2049,6 +2061,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 left_enc=self.operator(Tok.LBRACE, "{"),
                 right_enc=self.operator(Tok.RBRACE, "}"),
             )
+            elsestmt = ast.ElseStmt(body=else_body, kid=[else_body])
             kid.append(else_body)
         else:
             else_body = None
@@ -2067,23 +2080,19 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 left_enc=self.operator(Tok.LBRACE, "{"),
                 right_enc=self.operator(Tok.RBRACE, "}"),
             )
-            kid.append(finally_body)
+            finally_stmt = ast.FinallyStmt(body=finally_body, kid=[finally_body])
+
+            kid.append(finally_stmt)
         else:
             finally_body = None
-
-        return ast.TryStmt(
+        ret = ast.TryStmt(
             body=valid_body,
             excepts=excepts,
-            else_body=(
-                ast.ElseStmt(body=else_body, kid=[else_body]) if else_body else None
-            ),
-            finally_body=(
-                ast.FinallyStmt(body=finally_body, kid=[finally_body])
-                if finally_body
-                else None
-            ),
+            else_body=elsestmt if else_body else None,
+            finally_body=finally_stmt if finally_body else None,
             kid=kid,
         )
+        return ret
 
     def proc_try_star(self, node: py_ast.TryStar) -> ast.TryStmt:
         """Process python node.
@@ -2265,6 +2274,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kwarg.add_kids_left([kwarg.unpack])
         defaults = [self.convert(expr) for expr in node.defaults]
         params = [*args]
+        for param, default in zip(params[::-1], defaults[::-1]):
+            if isinstance(default, ast.Expr) and isinstance(param, ast.ParamVar):
+                param.value = default
+                param.add_kids_right([default])
         if vararg:
             params.append(vararg)
         params += kwonlyargs
@@ -2273,10 +2286,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         params += defaults
 
         valid_params = [param for param in params if isinstance(param, ast.ParamVar)]
-        for param, default in zip(valid_params[::-1], defaults[::-1]):
-            if isinstance(default, ast.Expr):
-                param.value = default
-                param.add_kids_right([default])
         if valid_params:
             fs_params = ast.SubNodeList[ast.ParamVar](
                 items=valid_params, delim=Tok.COMMA, kid=valid_params
