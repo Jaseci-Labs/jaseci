@@ -157,6 +157,7 @@ class ElasticService(JsOrc.CommonService):
                     except Exception as e:
                         print("=================ERROR IN ELASTIC LOG HANDLER==========")
                         print(e)
+                        raise e
 
             # if under test, don't spawn the log worker process. Tests will validate two things:
             # 1. logs are added to the log queue
