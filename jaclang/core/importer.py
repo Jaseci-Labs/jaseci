@@ -132,11 +132,21 @@ def py_import(
 
         elif items:
             for name, alias in items.items():
-                setattr(
-                    main_module,
-                    alias if isinstance(alias, str) else name,
-                    getattr(imported_module, name),
-                )
+                try:
+                    setattr(
+                        main_module,
+                        alias if isinstance(alias, str) else name,
+                        getattr(imported_module, name),
+                    )
+                except AttributeError as e:
+                    if hasattr(imported_module, "__path__"):
+                        setattr(
+                            main_module,
+                            alias if isinstance(alias, str) else name,
+                            importlib.import_module(f"{target}.{name}"),
+                        )
+                    else:
+                        raise e
 
         else:
             setattr(

@@ -2,7 +2,10 @@ site_name: The Jac Programming Language
 site_url: https://jac-lang.org
 nav:
     - ~$: 'index.md'
-    - ~/start$: 'start.md'
+    - ~/start$:
+      - 'start.md'
+      - 'start/installation.md'
+      - 'start/jac_in_a_flash.md'
     - ~/learn$:
       - ~/for_coders:
         - 'learn/guide.md'
@@ -55,6 +58,12 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           # format: !!python/name:pymdownx.superfences.fence_code_format
+  - attr_list
+  - md_in_html
+  - attr_list
+  # - pymdownx.emoji:
+  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
+  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra_css:
   - extra.css
