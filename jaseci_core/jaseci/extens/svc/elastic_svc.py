@@ -70,9 +70,9 @@ class ElasticService(JsOrc.CommonService):
                         "elastic",
                         metadata.get("namespace"),
                     )
-                    self.config[
-                        "auth"
-                    ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+                    self.config["auth"] = (
+                        f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+                    )
 
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
@@ -154,8 +154,9 @@ class ElasticService(JsOrc.CommonService):
                             break
                         elastic_record = format_elastic_record(record)
                         self.app.doc(log=elastic_record, index=elastic_index)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print("=================ERROR IN ELASTIC LOG HANDLER==========")
+                        print(e)
 
             # if under test, don't spawn the log worker process. Tests will validate two things:
             # 1. logs are added to the log queue
