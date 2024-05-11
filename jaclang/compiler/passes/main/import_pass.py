@@ -29,6 +29,7 @@ class ImportPass(Pass):
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
         self.cur_node = node
+        self.import_table[node.loc.mod_path] = node
         self.annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True

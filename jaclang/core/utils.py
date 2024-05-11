@@ -3,13 +3,28 @@
 from __future__ import annotations
 
 import ast as ast3
-from typing import Callable, TYPE_CHECKING
+import sys
+from contextlib import contextmanager
+from typing import Callable, Iterator, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
 from jaclang.core.registry import SemScope
 
 if TYPE_CHECKING:
     from jaclang.core.construct import NodeAnchor, NodeArchitype
+
+
+@contextmanager
+def sys_path_context(path: str) -> Iterator[None]:
+    """Add a path to sys.path temporarily."""
+    novel_path = path not in sys.path
+    try:
+        if novel_path:
+            sys.path.append(path)
+        yield
+    finally:
+        if novel_path:
+            sys.path.remove(path)
 
 
 def collect_node_connections(
