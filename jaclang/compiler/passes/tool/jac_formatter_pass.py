@@ -121,6 +121,11 @@ class JacFormatPass(Pass):
                         isinstance(i, ast.Ability)
                         and isinstance(node.body[counter], ast.Ability)
                         and i.gen.jac.endswith(";")
+                        or (
+                            isinstance(i, ast.Architype)
+                            and len(node.body[counter].kid[-1].kid) == 2
+                            and len(node.body[counter - 1].kid[-1].kid) == 2
+                        )
                     ):
                         self.emit(node, "")
                     else:
