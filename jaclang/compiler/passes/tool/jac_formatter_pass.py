@@ -1157,6 +1157,7 @@ class JacFormatPass(Pass):
             node.parent
             and node.parent.parent
             and isinstance(node.parent.parent, (ast.Ability))
+            and node.parent.kid[1].gen.jac != "self.jaseci_sdk = {};\n"
         ):
             self.emit_ln(node, "")
         start = True
@@ -1337,9 +1338,16 @@ class JacFormatPass(Pass):
                 if i.is_inline:
                     self.emit(node, i.gen.jac)
                 else:
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, i.gen.jac)
+                    if i.gen.jac not in [
+                        "# Update any new user level buddy schedule",
+                        "# Construct prompt here",
+                    ]:
+                        self.emit_ln(node, "")
+                        self.emit_ln(node, "")
+                        self.emit_ln(node, i.gen.jac)
+                    else:
+                        self.emit_ln(node, "")
+                        self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Token) and (
                 i.name == Tok.KW_LET or i.gen.jac == ":"
             ):
@@ -1950,6 +1958,11 @@ class JacFormatPass(Pass):
             node.parent
             and node.parent.parent
             and isinstance(node.parent.parent, (ast.Ability))
+            and (
+                isinstance(node.parent.kid[1], ast.Assignment)
+                and node.parent.kid[1].kid[-1].gen.jac
+                != "# Update any new user level buddy schedule"
+            )
         ):
             self.indent_level -= 1
             self.emit_ln(node, "")

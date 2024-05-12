@@ -1,6 +1,5 @@
 with entry {
     context_str = "woooo";
-    
     # Construct prompt here
     prompt = (f"Myca is a personal productivity platform that helps people manage many aspects of their life better and become better versions of themselves. "
         f"It is morning time right now and I am starting my day."
