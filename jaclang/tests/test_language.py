@@ -535,6 +535,12 @@ class JacLanguageTests(TestCase):
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.jac_proc_debug = "1"
+        file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_1.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        import jaclang.compiler.absyntree as ast
+
+        ir = jac_file_to_pass(file_name, schedule=py_code_gen_typed).ir
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 7)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
@@ -577,6 +583,12 @@ class JacLanguageTests(TestCase):
     def test_needs_import_2(self) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.jac_proc_debug = "1"
+        file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_2.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        import jaclang.compiler.absyntree as ast
+
+        ir = jac_file_to_pass(file_name, schedule=py_code_gen_typed).ir
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 5)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
@@ -606,6 +618,12 @@ class JacLanguageTests(TestCase):
     def test_needs_import_3(self) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.jac_proc_debug = "1"
+        file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_3.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        import jaclang.compiler.absyntree as ast
+
+        ir = jac_file_to_pass(file_name, schedule=py_code_gen_typed).ir
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 6)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
@@ -726,3 +744,26 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertEqual("9", stdout_value[0])
         self.assertEqual("567", stdout_value[1])
+
+    def test_random_check(self) -> None:
+        """Test py ast to Jac ast conversion output."""
+        settings.jac_proc_debug = "1"
+        file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+
+        ir = jac_file_to_pass(file_name, schedule=py_code_gen_typed).ir
+        gen_ast = ir.pp()
+        self.assertIn("ModulePath - statistics -", gen_ast)
+        self.assertIn("+-- Name - TclError - Type: No", gen_ast)
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("random_check", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Hello World", stdout_value)
+        self.assertIn("81", stdout_value)
+        self.assertIn("['yellow', 'red', 'blue', 'orange', 'green']", stdout_value)
+        self.assertIn("0.21863", stdout_value)
+        self.assertIn("<class 'tkinter.Button'>", stdout_value)
+        self.assertNotIn("Error", stdout_value)
+        settings.jac_proc_debug = False
