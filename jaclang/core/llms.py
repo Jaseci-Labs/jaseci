@@ -10,7 +10,7 @@ class Anthropic:
 
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the Anthropic API client."""
-        import anthropic
+        import anthropic  # type: ignore
 
         self.client = anthropic.Anthropic()
         self.model_name = kwargs.get("model_name", "claude-3-sonnet-20240229")
@@ -38,8 +38,8 @@ class Huggingface:
 
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the Huggingface API client."""
-        import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+        import torch  # type: ignore
+        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline  # type: ignore
 
         torch.random.manual_seed(0)
         model = AutoModelForCausalLM.from_pretrained(
@@ -76,7 +76,7 @@ class Ollama:
 
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the Ollama API client."""
-        import ollama
+        import ollama  # type: ignore
 
         self.client = ollama.Client(host=kwargs.get("host", "http://localhost:11434"))
         self.model_name = kwargs.get("model_name", "phi3")
