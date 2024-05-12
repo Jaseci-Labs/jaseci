@@ -541,7 +541,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_1 imported", stdout_value)
-        settings.jac_proc_debug = "False"
+        settings.jac_proc_debug = False
 
     def test_pyfunc_1(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -584,7 +584,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_2 imported", stdout_value)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
-        settings.jac_proc_debug = "False"
+        settings.jac_proc_debug = False
 
     def test_pyfunc_2(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -612,7 +612,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_3 imported", stdout_value)
-        settings.jac_proc_debug = "False"
+        settings.jac_proc_debug = False
 
     def test_pyfunc_3(self) -> None:
         """Test py ast to Jac ast conversion."""
