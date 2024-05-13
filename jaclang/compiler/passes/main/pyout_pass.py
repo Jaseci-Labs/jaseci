@@ -5,7 +5,6 @@ also creates bytecode files from the Python code, and manages the caching of
 relevant files.
 """
 
-import ast as ast3
 import os
 
 
@@ -43,18 +42,17 @@ class PyOutPass(Pass):
                 out_path_pyc
             ) > os.path.getmtime(mod_path):
                 continue
-            self.gen_python(mod, out_path=out_path_py)
-            self.dump_bytecode(mod, mod_path=mod_path, out_path=out_path_pyc)
+            try:
+                self.gen_python(mod, out_path=out_path_py)
+                self.dump_bytecode(mod, mod_path=mod_path, out_path=out_path_pyc)
+            except Exception as e:
+                self.warning(f"Error in generating Python code: {e}", node)
         self.terminate()
 
     def gen_python(self, node: ast.Module, out_path: str) -> None:
         """Generate Python."""
-        try:
-            with open(out_path, "w") as f:
-                f.write(node.gen.py)
-        except Exception as e:
-            print(ast3.dump(node.gen.py_ast[0], indent=2))
-            raise e
+        with open(out_path, "w") as f:
+            f.write(node.gen.py)
 
     def dump_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""
@@ -70,14 +68,17 @@ class PyOutPass(Pass):
         """Get output targets."""
         base_path, file_name = os.path.split(node.loc.mod_path)
         gen_path = os.path.join(base_path, Con.JAC_GEN_DIR)
-        os.makedirs(gen_path, exist_ok=True)
-        with open(os.path.join(gen_path, "__init__.py"), "w"):
-            pass
         mod_dir, file_name = os.path.split(node.loc.mod_path)
         mod_dir = mod_dir.replace(base_path, "").lstrip(os.sep)
         base_name, _ = os.path.splitext(file_name)
         out_dir = os.path.join(gen_path, mod_dir)
-        os.makedirs(out_dir, exist_ok=True)
+        try:
+            os.makedirs(gen_path, exist_ok=True)
+            with open(os.path.join(gen_path, "__init__.py"), "w"):
+                pass
+            os.makedirs(out_dir, exist_ok=True)
+        except Exception as e:
+            self.warning(f"Can't create directory {out_dir}: {e}", node)
         out_path_py = os.path.join(out_dir, f"{base_name}.py")
         out_path_pyc = os.path.join(out_dir, f"{base_name}.jbc")
         return node.loc.mod_path, out_path_py, out_path_pyc
