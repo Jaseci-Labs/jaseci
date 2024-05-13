@@ -747,7 +747,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual("567", stdout_value[1])
 
     @patch("tkinter.Tk")
-    def test_random_check(self) -> None:
+    def test_random_check(self, mockme: object) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.jac_proc_debug = True
         file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
