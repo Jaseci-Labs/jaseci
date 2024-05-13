@@ -1,3 +1,5 @@
+include:jac access_checker;
+
 obj Animal {
     has :pub species: str;
 
@@ -39,4 +41,7 @@ with entry {
     x=b;
     print(x);
     print(a);
+    account = BankAccount(3333);
+    privmethod();
+    print(b);
 }

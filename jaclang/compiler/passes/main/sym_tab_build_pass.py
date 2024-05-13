@@ -406,7 +406,9 @@ class SymTabBuildPass(SymTabPass):
                 )
             else:
                 for v in source.sub_module.sym_tab.tab.values():
-                    self.def_insert(v.decl, table_override=self.cur_scope())
+                    self.def_insert(
+                        v.decl, access_spec=v.access, table_override=self.cur_scope()
+                    )
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.

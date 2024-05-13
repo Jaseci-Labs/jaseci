@@ -4,7 +4,7 @@ This pass checks for access to attributes in the Jac language.
 """
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes.main.sym_tab_build_pass import SymTabPass
+from jaclang.compiler.passes.main.sym_tab_build_pass import SymTabPass, SymbolAccess
 
 
 class AccessCheckPass(SymTabPass):
@@ -13,6 +13,24 @@ class AccessCheckPass(SymTabPass):
     def after_pass(self) -> None:
         """After pass."""
         pass
+
+    def access_check(self, node: ast.Name) -> None:
+        """Access check."""
+        node_info = (
+            node.sym_tab.lookup(node.sym_name)
+            if isinstance(node.sym_tab, ast.SymbolTable)
+            else None
+        )
+        if (
+            node_info
+            and node.sym_link
+            and node_info.access == SymbolAccess.PRIVATE
+            and node.sym_link.decl.loc.mod_path != node.loc.mod_path
+        ):
+            return self.error(
+                f'Can not access private variable "{node.sym_name}" from {node.sym_link.decl.loc.mod_path}'
+                f" to {node.loc.mod_path}."
+            )
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -98,10 +116,12 @@ class AccessCheckPass(SymTabPass):
     def enter_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 
-        target: AtomType,
-        params: Optional[SubNodeList[ExprType | Assignment]],
+        target: Expr,
+        params: Optional[SubNodeList[Expr | KWPair]],
+        genai_call: Optional[FuncCall],
+        kid: Sequence[AstNode],
         """
-        # print(node.kid,node.pp)
+        self.access_check(node.kid[0]) if isinstance(node.kid[0], ast.Name) else None
 
     def enter_name(self, node: ast.Name) -> None:
         """Sub objects.
@@ -113,4 +133,3 @@ class AccessCheckPass(SymTabPass):
         pos_start: int,
         pos_end: int,
         """
-        pass
