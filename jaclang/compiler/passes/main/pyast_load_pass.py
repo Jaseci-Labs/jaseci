@@ -315,7 +315,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         body = body[1:] if doc else body
         valid: list[ast.ArchBlockStmt] = (
             self.extract_with_entry(body, ast.ArchBlockStmt)
-            if not (isinstance(body[0], ast.Semi) and len(body) == 1)
+            if body and not (isinstance(body[0], ast.Semi) and len(body) == 1)
             else []
         )
         empty_block: Sequence[ast.AstNode] = [
