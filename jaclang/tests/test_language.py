@@ -534,7 +534,7 @@ class JacLanguageTests(TestCase):
 
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.jac_proc_debug = "1"
+        settings.jac_proc_debug = True
         file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_1.jac")
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         import jaclang.compiler.absyntree as ast
@@ -582,7 +582,7 @@ class JacLanguageTests(TestCase):
 
     def test_needs_import_2(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.jac_proc_debug = "1"
+        settings.jac_proc_debug = True
         file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_2.jac")
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         import jaclang.compiler.absyntree as ast
@@ -617,7 +617,7 @@ class JacLanguageTests(TestCase):
 
     def test_needs_import_3(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.jac_proc_debug = "1"
+        settings.jac_proc_debug = True
         file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_3.jac")
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         import jaclang.compiler.absyntree as ast
@@ -747,11 +747,11 @@ class JacLanguageTests(TestCase):
 
     def test_random_check(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.jac_proc_debug = "1"
+        settings.jac_proc_debug = True
         file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        from jaclang.compiler.passes.main.schedules import py_code_gen
 
-        ir = jac_file_to_pass(file_name, schedule=py_code_gen_typed).ir
+        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
         gen_ast = ir.pp()
         self.assertIn("ModulePath - statistics -", gen_ast)
         self.assertIn("+-- Name - TclError - Type: No", gen_ast)
