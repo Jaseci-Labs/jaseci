@@ -1,9 +1,11 @@
 """Huggingface client for MTLLM."""
+
 import re
 
 PROMPT_TEMPLATE = """
 [System Prompt]
-This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.
+This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the
+code are not needed.
 Input/Type formatting: Explanation of the Input (variable_name) (type) = value
 
 [Type Explanations]
@@ -25,13 +27,15 @@ Input/Type formatting: Explanation of the Input (variable_name) (type) = value
 """  # noqa E501
 
 WITH_REASON_SUFFIX = """
-Reason and return the output results(s) only such that <Output> should be eval(<Output>) Compatible and reflects the expected output type, Follow the format below to provide the reasoning for the output result(s).
+Reason and return the output results(s) only such that <Output> should be eval(<Output>) Compatible and reflects the
+expected output type, Follow the format below to provide the reasoning for the output result(s).
 
 [Reasoning] <Reasoning>
 [Output] <Output>
 """
 
-WITHOUT_REASON_SUFFIX = """Return the output result(s) only such that <Output> should be eval(<Output>) Compatible and reflects the expected output type, Follow the format below to provide the output result(s).
+WITHOUT_REASON_SUFFIX = """Return the output result(s) only such that <Output> should be eval(<Output>) Compatible and
+reflects the expected output type, Follow the format below to provide the output result(s).
 
 [Output] <Output>
 """  # noqa E501
@@ -73,11 +77,19 @@ class Huggingface:
             **kwargs
         )
         return output[0]["generated_text"][-1]["content"]
-    
-    def resolve_output(self, meaning_out: str, did_reason:bool) -> dict:
+
+    def __call__(self, input_text: str, **kwargs: dict) -> str:
+        """Infer a response from the input text."""
+        return self.__infer__(input_text, **kwargs)
+
+    def resolve_output(self, meaning_out: str, did_reason: bool) -> dict:
         """Resolve the output string to return the reasoning and output."""
         print(meaning_out)
-        reasoning_match = re.search(r"\[Reasoning\](.*)\[Output\]", meaning_out)if did_reason else None
+        reasoning_match = (
+            re.search(r"\[Reasoning\](.*)\[Output\]", meaning_out)
+            if did_reason
+            else None
+        )
         output_match = re.search(r"\[Output\](.*)", meaning_out)
         reasoning_match = reasoning_match.group(1).strip() if reasoning_match else None
         output_match = output_match.group(1).strip() if output_match else None

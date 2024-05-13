@@ -1,4 +1,5 @@
 """Anthropic API client for MTLLM."""
+
 import re
 
 PROMPT_TEMPLATE = """
@@ -63,10 +64,18 @@ class Anthropic:
             messages=messages,
         )
         return output.content[0].text
-    
-    def resolve_output(self, meaning_out: str, did_reason:bool) -> dict:
+
+    def __call__(self, input_text: str, **kwargs: dict) -> str:
+        """Infer a response from the input text."""
+        return self.__infer__(input_text, **kwargs)
+
+    def resolve_output(self, meaning_out: str, did_reason: bool) -> dict:
         """Resolve the output string to return the reasoning and output."""
-        reasoning_match = re.search(r"\[Reasoning\](.*)\[Output\]", meaning_out)if did_reason else None
+        reasoning_match = (
+            re.search(r"\[Reasoning\](.*)\[Output\]", meaning_out)
+            if did_reason
+            else None
+        )
         output_match = re.search(r"\[Output\](.*)", meaning_out)
         reasoning_match = reasoning_match.group(1).strip() if reasoning_match else None
         output_match = output_match.group(1).strip() if output_match else None
