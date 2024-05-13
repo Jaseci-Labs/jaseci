@@ -4,6 +4,7 @@ import io
 import os
 import pickle
 import sys
+from unittest.mock import patch
 
 from jaclang import jac_import
 from jaclang.cli import cli
@@ -745,6 +746,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual("9", stdout_value[0])
         self.assertEqual("567", stdout_value[1])
 
+    @patch("tkinter.Tk")
     def test_random_check(self) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.jac_proc_debug = True
