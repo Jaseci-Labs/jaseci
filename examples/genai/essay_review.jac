@@ -1,6 +1,7 @@
-import:py from jaclang.core.llms, Anthropic;
+import:py from jaclang.core.llms, Anthropic, Ollama;
 
-glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
+# glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
+glob llm = Ollama(host="http://localhost:11434", model_name="phi3");
 
 obj Essay {
     has essay: 'Essay': str;

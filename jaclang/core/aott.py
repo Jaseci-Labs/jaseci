@@ -11,43 +11,8 @@ from typing import Any
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 
 
-PROMPT_TEMPLATE = """
-[System Prompt]
-This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.
-Input/Type formatting: Explanation of the Input (variable_name) (type) = value
-
-[Information]
-{information}
-
-[Inputs Information]
-{inputs_information}
-
-[Output Information]
-{output_information}
-
-[Type Explanations]
-{type_explanations}
-
-[Action]
-{action}
-
-{reason_suffix}
-"""  # noqa E501
-
-WITH_REASON_SUFFIX = """
-Reason and return the output result(s) only, adhering to the provided Type in the following format
-
-[Reasoning] <Reason>
-[Output] <Result>
-"""
-
-WITHOUT_REASON_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
-
-[Output] <result>
-"""  # noqa E501
-
-
 def aott_raise(
+    model: Any,  # noqa: ANN401
     information: str,
     inputs_information: str,
     output_information: str,
@@ -56,30 +21,16 @@ def aott_raise(
     reason: bool,
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
-    return PROMPT_TEMPLATE.format(
+    return model.MTLLM_PROMPT.format(
         information=information,
         inputs_information=inputs_information,
         output_information=output_information,
         type_explanations=type_explanations,
         action=action,
-        reason_suffix=WITH_REASON_SUFFIX if reason else WITHOUT_REASON_SUFFIX,
+        reason_suffix=(
+            model.MTLLM_REASON_SUFFIX if reason else model.MTLLM_WO_REASON_SUFFIX
+        ),
     )
-
-
-def get_reasoning_output(s: str) -> tuple:
-    """Get the reasoning and output from the meaning out string."""
-    reasoning_match = re.search(r"\[Reasoning\](.*)\[Output\]", s)
-    output_match = re.search(r"\[Output\](.*)", s)
-
-    if reasoning_match and output_match:
-        reasoning = reasoning_match.group(1)
-        output = output_match.group(1)
-        return (reasoning.strip(), output.strip())
-    elif output_match:
-        output = output_match.group(1)
-        return (None, output.strip())
-    else:
-        return (None, None)
 
 
 def get_info_types(
