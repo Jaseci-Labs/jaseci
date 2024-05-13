@@ -102,18 +102,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
-        # if not node.body:
-        #         ret = ast.Module(
-        #             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
-        # source=ast.JacSource("", mod_path=self.mod_path), #FIXME
-        #             doc=None,
-        #             body=[],
-        #             is_imported=False,
-        #             kid=[ast.EmptyToken()]
-        #         )
-        #         ic(ret.name,ret.source)
-        #         ret.gen.py_ast = [node]
-        #         return self.nu(ret)
         elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
         elements[0] = (
             elements[0].expr
