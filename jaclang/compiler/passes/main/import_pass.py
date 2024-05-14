@@ -39,21 +39,21 @@ class ImportPass(Pass):
             for i in all_imports:
                 lang = i.parent_of_type(ast.Import).hint.tag.value
                 if lang == "jac" and not i.sub_module:
-                    self.run_again = True
                     mod = self.import_module(
                         node=i,
                         mod_path=node.loc.mod_path,
                     )
-                    if not mod:
-                        self.run_again = False
-                        continue
-                    self.annex_impl(mod)
-                    i.sub_module = mod
-                    i.add_kids_right([mod], pos_update=False)
-                elif lang == "py" and settings.jac_proc_debug:
+                    if mod:
+                        self.run_again = True
+                        self.annex_impl(mod)
+                        i.sub_module = mod
+                        i.add_kids_right([mod], pos_update=False)
+                elif lang == "py" and settings.py_raise:
                     mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
-                    i.sub_module = mod
-                    i.add_kids_right([mod], pos_update=False)
+                    if mod:
+                        # self.run_again = True
+                        i.sub_module = mod
+                        i.add_kids_right([mod], pos_update=False)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
         self.annex_impl(node)

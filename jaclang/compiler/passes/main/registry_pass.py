@@ -32,9 +32,14 @@ class RegistryPass(Pass):
         module_dir = os.path.join(
             os.path.abspath(os.path.dirname(node.source.file_path)), Con.JAC_GEN_DIR
         )
-        os.makedirs(module_dir, exist_ok=True)
-        with open(os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb") as f:
-            pickle.dump(node.registry, f)
+        try:
+            os.makedirs(module_dir, exist_ok=True)
+            with open(
+                os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb"
+            ) as f:
+                pickle.dump(node.registry, f)
+        except Exception as e:
+            self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
 
     def exit_architype(self, node: ast.Architype) -> None:
