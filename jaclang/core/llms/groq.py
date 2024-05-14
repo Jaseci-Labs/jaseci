@@ -49,7 +49,7 @@ WITH_REASON_OUTPUT_FIX = """
 
 Provide the given Output as dict with "output" and "reasoning" keys. Such that the "output"'s value should be
 eval("output"'s value) Compatible. Important: Only provide the dict object.
-""" # noqa E501
+"""  # noqa E501
 
 WITHOUT_REASON_OUTPUT_FIX = """
 [Output]
@@ -86,7 +86,11 @@ class Groq:
         """Infer a response from the input meaning."""
         # print("Meaning In\n", meaning_in)
         messages = [{"role": "user", "content": meaning_in}]
-        model_params = {k: v for k, v in kwargs.items() if k not in ["model_name", "temperature", "max_tokens"]}
+        model_params = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["model_name", "temperature", "max_tokens"]
+        }
         output = self.client.chat.completions.create(
             model=kwargs.get("model_name", self.model_name),
             temperature=kwargs.get("temperature", self.temperature),
@@ -108,22 +112,37 @@ class Groq:
             else None
         )
         output_match = re.search(r"\[Output\](.*)", meaning_out)
-        reasoning_match = reasoning_match.group(1).strip() if reasoning_match else None
-        output_match = output_match.group(1).strip() if output_match else None
+        reasoning = reasoning_match.group(1).strip() if reasoning_match else None
+        output = output_match.group(1).strip() if output_match else None
         if not output_match:
             reasoning, output = self._extract_output(meaning_out, did_reason)
             return {"reasoning": reasoning, "output": output}
-        return {"reasoning": reasoning_match, "output": output_match}
+        return {"reasoning": reasoning, "output": output}
 
-    def _extract_output(self, meaning_out: str, did_reason: bool, previous_output: str= "None", error: str = "None", max_tries: int = 10) -> tuple[str, str]:
+    def _extract_output(
+        self,
+        meaning_out: str,
+        did_reason: bool,
+        previous_output: str = "None",
+        error: str = "None",
+        max_tries: int = 10,
+    ) -> tuple[str, str]:
         """Extract the output from the meaning out string."""
         if max_tries == 0:
-            raise ValueError("Failed to extract output. Try Changing the Semstrings and provide examples.")
-        OUTPUT_FIX_PROMPT_TEMPLATE = WITH_REASON_OUTPUT_FIX if did_reason else WITHOUT_REASON_OUTPUT_FIX
-        output_fix_prompt = OUTPUT_FIX_PROMPT_TEMPLATE.format(model_output=meaning_out, previous_output=previous_output, error=error)
+            raise ValueError(
+                "Failed to extract output. Try Changing the Semstrings and provide examples."
+            )
+        output_fix_prompt_template = (
+            WITH_REASON_OUTPUT_FIX if did_reason else WITHOUT_REASON_OUTPUT_FIX
+        )
+        output_fix_prompt = output_fix_prompt_template.format(
+            model_output=meaning_out, previous_output=previous_output, error=error
+        )
         llm_output = self.__infer__(output_fix_prompt)
         try:
             eval_output = eval(llm_output)
             return eval_output.get("reasoning", ""), eval_output["output"]
         except Exception as e:
-            return self._extract_output(meaning_out, did_reason, llm_output, str(e), max_tries - 1)
+            return self._extract_output(
+                meaning_out, did_reason, llm_output, str(e), max_tries - 1
+            )
