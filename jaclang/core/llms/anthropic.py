@@ -77,6 +77,6 @@ class Anthropic:
             else None
         )
         output_match = re.search(r"\[Output\](.*)", meaning_out)
-        reasoning_match = reasoning_match.group(1).strip() if reasoning_match else None
-        output_match = output_match.group(1).strip() if output_match else None
-        return {"reasoning": reasoning_match, "output": output_match}
+        reasoning = reasoning_match.group(1).strip() if reasoning_match else None
+        output = output_match.group(1).strip() if output_match else None
+        return {"reasoning": reasoning, "output": output}

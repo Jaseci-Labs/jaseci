@@ -90,15 +90,14 @@ class Ollama:
 
     def resolve_output(self, meaning_out: str, did_reason: bool) -> dict:
         """Resolve the output string to return the reasoning and output."""
-        print(meaning_out)
         reasoning_match = (
             re.search(r"\[Reasoning\](.*)\[Output\]", meaning_out)
             if did_reason
             else None
         )
         output_match = re.search(r"\[Output\](.*)", meaning_out)
-        reasoning_match = reasoning_match.group(1).strip() if reasoning_match else None
-        output_match = output_match.group(1).strip() if output_match else None
-        if not output_match and not reasoning_match:
-            output_match = meaning_out.strip()
-        return {"reasoning": reasoning_match, "output": output_match}
+        reasoning = reasoning_match.group(1).strip() if reasoning_match else None
+        output = output_match.group(1).strip() if output_match else None
+        if not output and not reasoning:
+            output = meaning_out.strip()
+        return {"reasoning": reasoning, "output": output}
