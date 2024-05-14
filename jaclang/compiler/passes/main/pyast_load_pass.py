@@ -387,8 +387,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             valid_enum_body2: list[ast.EnumBlockStmt] = [
                 i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)
             ]
-            enum_body = ast.SubNodeList[ast.EnumBlockStmt](
-                items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
+            enum_body = (
+                ast.SubNodeList[ast.EnumBlockStmt](
+                    items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
+                )
+                if valid_enum_body2
+                else None
             )
             if doc:
                 doc.line_no = name.line_no
@@ -397,7 +401,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 access=None,
                 base_classes=None,
                 body=enum_body,
-                kid=[doc, name, enum_body] if doc else [name, enum_body],
+                kid=(
+                    [doc, name, enum_body]
+                    if doc and enum_body
+                    else (
+                        [doc, name]
+                        if doc
+                        else [name, enum_body] if enum_body else [name]
+                    )
+                ),
                 doc=doc,
                 decorators=valid_decorators,
             )
