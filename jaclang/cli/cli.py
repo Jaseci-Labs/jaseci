@@ -199,14 +199,14 @@ def tool(tool: str, args: Optional[list] = None) -> None:
 
 @cmd_registry.register
 def clean() -> None:
-    """Remove the __jac_gen__ , __pycache__ folders.
+    """Remove the __jac_gen__ , __pycache__ , __jac_streamlit__ folders.
 
     from the current directory recursively.
     """
     current_dir = os.getcwd()
     for root, dirs, _files in os.walk(current_dir, topdown=True):
         for folder_name in dirs[:]:
-            if folder_name == Constants.JAC_GEN_DIR:
+            if folder_name in (Constants.JAC_GEN_DIR, Constants.JAC_STEAMLIT):
                 folder_to_remove = os.path.join(root, folder_name)
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")

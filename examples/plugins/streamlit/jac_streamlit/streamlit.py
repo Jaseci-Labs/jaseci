@@ -1,9 +1,10 @@
 import os
-import subprocess
+import streamlit.web.bootstrap as bootstrap
 
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.plugin.default import hookimpl
 from jaclang.compiler.compile import jac_str_to_pass
+from jaclang.compiler.constant import Constants as Con
 
 
 class JacCmd:
@@ -28,11 +29,11 @@ class JacCmd:
                     with open(filename, "r") as f:
                         prog = jac_str_to_pass(f.read(), f"{mod}")
                 py_code = prog.ir.gen.py
-                py_filename = os.path.join(base, f"{mod}.py")
+                strimlit_dir = os.path.join(base, Con.JAC_STEAMLIT)
+                os.makedirs(strimlit_dir, exist_ok=True)
+                py_filename = os.path.join(strimlit_dir, f"{mod}.py")
                 with open(py_filename, "w") as py_file:
                     py_file.write(py_code)
-                command = ["streamlit", "run", f"{py_filename}"]
-                subprocess.run(command)
-                print(f"Python code written to {py_filename}")
+                bootstrap.run(py_filename, is_hello=True, args=[], flag_options=None)
             else:
                 print("Not a .jac file.")

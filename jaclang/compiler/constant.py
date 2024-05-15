@@ -28,6 +28,7 @@ class Constants(str, Enum):
 
     PYNLINE = "::py::"
     JAC_GEN_DIR = "__jac_gen__"
+    JAC_STEAMLIT = "__jac_streamlit__"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""

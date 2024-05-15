@@ -9,6 +9,7 @@ setup(
     name="jac-streamlit",
     version=VERSION,
     packages=find_packages(include=["jac_streamlit", "streamlit.*"]),
+    install_requires=["streamlit"],
     package_data={
         "": ["*.ini"],
     },
