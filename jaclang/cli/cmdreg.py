@@ -30,11 +30,15 @@ class CommandRegistry:
     registry: dict[str, Command]
     sub_parsers: argparse._SubParsersAction
     parser: argparse.ArgumentParser
+    args: argparse.Namespace
 
     def __init__(self) -> None:
         """Initialize a CommandRegistry instance."""
         self.registry = {}
         self.parser = argparse.ArgumentParser(prog="CLI")
+        self.parser.add_argument(
+            "--session", help="Session file path", nargs="?", default=""
+        )
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
 
     def register(self, func: Callable) -> Callable:
@@ -157,7 +161,6 @@ class CommandShell(cmd.Cmd):
 
     def do_exit(self, arg: list) -> bool:
         """Exit the command shell."""
-        # flush here
         return True
 
     def default(self, line: str) -> None:
@@ -172,8 +175,6 @@ class CommandShell(cmd.Cmd):
                     self.stdout.write(ret + "\n")
         except Exception as e:
             print(e)
-        # finally:
-        #     # flush here
 
     def do_help(self, arg: str) -> None:
         """Jac CLI 'help' implementaion."""

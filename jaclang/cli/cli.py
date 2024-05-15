@@ -2,12 +2,13 @@
 
 import ast as ast3
 import importlib
+import inspect
 import marshal
 import os
 import pickle
 import shutil
+import sys
 import types
-import sys, inspect
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
@@ -66,13 +67,21 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 @cmd_registry.register
 def run(
     filename: str,
-    session: str = "jaclang.session",
+    session: str = "",
     main: bool = True,
     cache: bool = True,
     walker: str = "",
     node: str = "",
 ) -> None:
     """Run the specified .jac file."""
+    # if no session specified, check if it was defined when starting the command shell
+    # otherwise default to jaclang.session
+    if session == "":
+        session = (
+            cmd_registry.args.session
+            if cmd_registry.args.session
+            else "jaclang.session"
+        )
 
     Jac.context().init_memory(session)
 
@@ -100,17 +109,33 @@ def run(
         print("Not a .jac file.")
 
     # TODO: get entry node based on id
-    node = "root" if not node else node
+    node = node if node else "root"
 
     # TODO: handle no override name
     if walker:
-        walker_module = dict(inspect.getmembers(sys.modules["__main__"])).get(
-            walker, None
-        )
+        walker_module = dict(inspect.getmembers(sys.modules["__main__"])).get(walker)
         if walker_module:
             Jac.spawn_call(Jac.get_root(), walker_module())
         else:
             print(f"Walker {walker} not found.")
+
+    Jac.reset_context()
+
+
+@cmd_registry.register
+def get_object(id: str, session: str = "") -> None:
+    """Print the object with the specified id."""
+    if session == "":
+        session = (
+            cmd_registry.args.session
+            if cmd_registry.args.session
+            else "jaclang.session"
+        )
+
+    Jac.context().init_memory(session)
+
+    obj = Jac.memory_hook().get_obj(id)
+    print(obj)
 
     Jac.reset_context()
 
@@ -345,6 +370,7 @@ def start_cli() -> None:
     """
     parser = cmd_registry.parser
     args = parser.parse_args()
+    cmd_registry.args = args
     command = cmd_registry.get(args.command)
     if command:
         args_dict = vars(args)

@@ -6,6 +6,7 @@ import fnmatch
 import os
 import pickle
 import types
+from contextvars import ContextVar
 from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Optional, Type, Union
@@ -34,19 +35,19 @@ from jaclang.core.construct import (
 from jaclang.core.importer import jac_importer
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
-from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.plugin.spec import T, ExecutionContext
-from jaclang.plugin.memory import Memory
-from jaclang.plugin.shelve_storage import ShelveStorage
 from jaclang.plugin.architype import (
-    PersistentRoot as Root,
-    PersistentNodeArchitype as NodeArchitype,
     PersistentEdgeArchitype as EdgeArchitype,
     PersistentGenericEdge as GenericEdge,
+    PersistentNodeArchitype as NodeArchitype,
+    PersistentRoot as Root,
 )
+from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.plugin.memory import Memory
+from jaclang.plugin.shelve_storage import ShelveStorage
+from jaclang.plugin.spec import ExecutionContext, T
+
 
 import pluggy
-from contextvars import ContextVar
 
 
 __all__ = [
@@ -61,7 +62,6 @@ __all__ = [
     "WalkerArchitype",
     "Architype",
     "DSFunc",
-    "root",
     "Root",
     "jac_importer",
     "T",
@@ -77,7 +77,7 @@ class DefaultExecutionContext(ExecutionContext):
     def __init__(self) -> None:
         self.mem = ShelveStorage()
 
-    def init_memory(self, session) -> None:
+    def init_memory(self, session: str = "") -> None:
         self.mem.connect(session)
 
     def get_root(self) -> Root:
@@ -111,14 +111,14 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def reset_context() -> None:
-        """Reset the execution context"""
+        """Reset the execution context."""
         ExecContext.get().reset()
         ExecContext.set(None)
 
     @staticmethod
     @hookimpl
     def memory_hook() -> Memory:
-        """Default jac memory abstraction, persistent backed by shelve"""
+        """Return the memory hook."""
         return Jac.context().get_memory()
 
     @staticmethod
@@ -135,7 +135,6 @@ class JacFeatureDefaults:
         if not issubclass(cls, arch_base):
             # Saving the module path and reassign it after creating cls
             # So the jac modules are part of the correct module
-            cur_module = cls.__module__
             cls = type(cls.__name__, (cls, arch_base), {})
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore

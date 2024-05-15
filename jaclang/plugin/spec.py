@@ -7,14 +7,13 @@ from typing import Any, Callable, Optional, Type, TypeVar, Union
 from uuid import UUID
 
 from jaclang.compiler.absyntree import Module
+from jaclang.core.construct import EdgeArchitype, NodeArchitype, Root
 from jaclang.plugin.default import (
     Architype,
     DSFunc,
     EdgeDir,
     WalkerArchitype,
 )
-
-from jaclang.core.construct import NodeArchitype, EdgeArchitype, Root
 from jaclang.plugin.memory import Memory
 
 import pluggy
@@ -25,33 +24,33 @@ T = TypeVar("T")
 
 
 class ExecutionContext:
-    """Execution Context"""
+    """Execution Context."""
 
-    mem: Optional[Memory] = None
-    root: Optional[Root] = None
+    mem: Memory
+    root: Root
 
     def __init___(self) -> None:
+        """Initialize execution context."""
         self.mem = Memory()
         # TODO: add entry node
 
-    def get_root(self) -> Root:
-        if not self.root:
-            self.root = Root.make_root()
-        return self.root
-
-    def get_memory(self) -> Memory:
-        return self.mem
+    def init_memory(self) -> None:
+        """Initialize memory."""
+        raise NotImplementedError
 
     def get_obj(self, id: UUID) -> Architype:
+        """Get object from memory."""
         return self.mem.get_obj(id)
 
     def save_obj(self, obj: Architype, persistent: bool) -> None:
-        return self.mem.save_obj(item=obj, persistent=persistent)
+        """Save object to memory."""
+        self.mem.save_obj(item=obj, persistent=persistent)
 
     def reset(self) -> None:
+        """Reset the execution context."""
         self.mem.close()
-        self.mem = None
-        self.root = None
+        self.mem = None  # type: ignore
+        self.root = None  # type: ignore
 
 
 class JacFeatureSpec:
@@ -72,7 +71,7 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def memory_hook() -> Memory:
-        """Create memory abstraction"""
+        """Create memory abstraction."""
         raise NotImplementedError
 
     @staticmethod
