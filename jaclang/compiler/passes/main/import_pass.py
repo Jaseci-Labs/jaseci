@@ -48,10 +48,10 @@ class ImportPass(Pass):
                         self.annex_impl(mod)
                         i.sub_module = mod
                         i.add_kids_right([mod], pos_update=False)
-                elif lang == "py" and settings.py_raise:
+                elif lang == "py" and not i.sub_module and settings.py_raise:
                     mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
                     if mod:
-                        # self.run_again = True
+                        self.run_again = True
                         i.sub_module = mod
                         i.add_kids_right([mod], pos_update=False)
                 self.enter_module_path(i)

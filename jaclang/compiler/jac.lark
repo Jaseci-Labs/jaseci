@@ -218,7 +218,7 @@ typed_ctx_block: RETURN_HINT expression code_block
 return_stmt: KW_RETURN expression?
 
 // Yield statements
-yield_expr: KW_YIELD KW_FROM? expression
+yield_expr: KW_YIELD KW_FROM? expression?
 
 // Raise statements
 raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?

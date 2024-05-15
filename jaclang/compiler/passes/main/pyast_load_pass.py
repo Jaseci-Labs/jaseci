@@ -1148,6 +1148,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
+        elif node.value == Ellipsis:
+            return ast.Ellipsis(
+                file_path=self.mod_path,
+                name=Tok.ELLIPSIS,
+                value="...",
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + 3,
+                pos_start=0,
+                pos_end=0,
+            )
         else:
             raise self.ice("Invalid type for constant")
 
@@ -2137,6 +2148,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         value = self.convert(node.value) if node.value else None
         if isinstance(value, ast.Expr):
             return ast.YieldExpr(expr=value, with_from=False, kid=[value])
+        elif not value:
+            return ast.YieldExpr(
+                expr=None, with_from=False, kid=[self.operator(Tok.KW_YIELD, "yield")]
+            )
         else:
             raise self.ice()
 
