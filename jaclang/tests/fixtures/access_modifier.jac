@@ -1,5 +1,4 @@
 include:jac access_checker;
-
 obj Animal {
     has :pub species: str;
 
@@ -29,19 +28,22 @@ obj Dog: Animal: {
         has :pub s: str="22";
     }
 }
-glob :priv a=2;
+can :priv overide_check() {
+    return "inside access_modifier";
+}
+glob :priv a=2, c=7, m="hi";
 with entry {
-     myDog = Dog(breed= "Golden Retriever");
+     myDog  = Dog(breed= "Golden Retriever");
 
     print( " Name: " + myDog.species );
     print( " Breed: " + myDog.breed );
     print( myDog.introduce() );
     print( myDog.bark() );
     b=myDog.Body("33");
-    x=b;
-    print(x);
     print(a);
     account = BankAccount(3333);
-    privmethod();
+    print(privmethod());
+    print(overide_check());
     print(b);
+    print(p);
 }

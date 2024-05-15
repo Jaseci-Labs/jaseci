@@ -46,9 +46,12 @@ class SymbolType(Enum):
 class SymbolInfo:
     """Symbol Info."""
 
-    def __init__(self, typ: str = "NoType") -> None:  # noqa: ANN401
+    def __init__(
+        self, typ: str = "NoType", acc_tag: Optional[SymbolAccess] = None
+    ) -> None:  # noqa: ANN401
         """Initialize."""
         self.typ = typ
+        self.acc_tag: Optional[SymbolAccess] = acc_tag
         self.typ_sym_table: Optional[SymbolTable] = None
 
 
