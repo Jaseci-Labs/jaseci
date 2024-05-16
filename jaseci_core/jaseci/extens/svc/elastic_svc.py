@@ -246,10 +246,13 @@ class ElasticService(JsOrc.CommonService):
             # 1. logs are added to the log queue
             # 2. format_elastic_record process the log properly and create the record for elastic
             if not under_test:
+                import threading
+
                 logger.info("-----------creating worker process")
-                worker_proc = multiprocessing.Process(
-                    target=elastic_log_worker, args=(index,)
-                )
+                # worker_proc = multiprocessing.Process(
+                #     target=elastic_log_worker, args=(index,)
+                # )
+                worker_proc = threading.Thread(target=elastic_log_worker, args=(index,))
                 logger.info("-----------start worker process")
                 worker_proc.start()
                 logger.info("-----------started worker process")
