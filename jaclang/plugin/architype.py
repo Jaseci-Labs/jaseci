@@ -57,6 +57,8 @@ class PersistentNodeAnchor(NodeAnchor):
         target_obj: Optional[list[NodeArchitype]],
     ) -> list[NodeArchitype]:
         self.populate_edges()
+        for edge in self.edges:
+            edge.populate_nodes()
         return super().edges_to_nodes(dir, filter_func, target_obj)
 
 
@@ -71,9 +73,11 @@ class PersistentEdgeAnchor(EdgeAnchor):
 
         if self.source:
             state["source_id"] = self.source._jac_.id
+            state.pop("source")
 
         if self.target:
             state["target_id"] = self.target._jac_.id
+            state.pop("target")
 
         return state
 

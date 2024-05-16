@@ -81,7 +81,7 @@ class TestJaseciPlugin(TestCase):
             cli.get_object(session=self.session, id=e_id)
             for e_id in obj["_jac_"]["edge_ids"]
         ]
-        node_ids = [obj["_jac_"]["target"] for obj in edge_objs]
+        node_ids = [obj["_jac_"]["target_id"] for obj in edge_objs]
         node_objs = [cli.get_object(session=self.session, id=n_id) for n_id in node_ids]
         self.assertEqual(len(node_objs), 2)
         self.assertEqual({obj["tag"] for obj in node_objs}, {"first", "second"})
