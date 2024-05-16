@@ -44,6 +44,9 @@ class ElasticService(JsOrc.CommonService):
     ###################################################
 
     def run(self):
+        logger.error(
+            "=======================================ELASTIC RUN==================="
+        )
         kube = JsOrc.svc("kube", KubeService)
         if kube.is_running():
             elasticsearches = kube.resolve_manifest(
@@ -76,17 +79,27 @@ class ElasticService(JsOrc.CommonService):
 
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
+        logger.error(
+            "=======================================ELASTIC RUN==================="
+        )
 
     def post_run(self):
+        logger.error("===========================================================")
+        logger.error("I AM IN POST RUN")
         under_test = self.config.get("under_test", False)
+        logger.error(f"UNDER TEST: {under_test}")
         if not under_test:
+            logger.error("configure elastic")
             self.configure_elastic()
         LOG_QUEUES["core"] = self.add_elastic_log_handler(
             logger, self.config.get("core_log_index") or "core", under_test
         )
+        logger.error(LOG_QUEUES["core"])
         LOG_QUEUES["app"] = self.add_elastic_log_handler(
             app_logger, self.config.get("app_log_index") or "app", under_test
         )
+        logger.error(LOG_QUEUES["app"])
+        logger.error("===========================================================")
 
     def configure_elastic(self):
         """
