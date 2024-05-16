@@ -1,45 +1,54 @@
-# Getting Started with JacLang
+# **Getting Started with Jac-Lang**
 
-Welcome to JacLang, a unique and powerful programming language that runs on top of Python. To get you started, this guide will walk you through the process of installation, running Jac files, and importing Jac into existing Python modules.
+Embark on a Graph-Based programming Journey: Explore the World of Data Spatial Programming with Jac Lang - Where Elegance Meets Innovation.
 
-## Installation
+<div class="grid cards" markdown>
 
-Firstly, you'll need to install JacLang. You can do this easily through Python's package manager, pip. Run the following command:
+-   __Setup in a nutshell__
 
-```bash
-pip install jaclang
-```
+    ---
 
-And from source simply use,
+    *To get you started working with Jac Lang, this guide will walk you through the process of installation, running Jac files, and importing Jac into existing Python modules.*
 
-```bash
-pip install -e .
-```
+    <!-- [:octicons-arrow-right-24: Getting started](#) -->
 
-Upon successful installation, you'll have a script named `jac` at your disposal. This script is used to load and run `.jac` files.
+    [Setup Now](start/installation.md){ .md-button }
 
-## Running Jac Files
+-   __Jac in a FLASH__
 
-Here's how you can use `jac`:
+    ---
 
-- To simply run a Jac program file, run:
-    ```bash
-    jac run sample.jac
-    ```
+    *If you are already a fluent pythonista jump into learning by going through a step-by-step transformation from python to jac-lang and BEYOND!*
 
-- To load a Jac module and execute a particular function (considered the entrypoint for execution in Jac), run:
-    ```bash
-    jac enter sample.jac -e my_func
-    ```
+    [Get Started](start/jac_in_a_flash.md){ .md-button .md-button--primary }
 
-Now Try it with this example jac program:
+</div>
 
-=== "guess_game.jac"
-    ```jac linenums="1"
-    --8<-- "examples/guess_game/guess_game4.jac"
-    ```
+## Features in Jac-Lang
 
-## Integrating Jac into Python Modules
+While Python is widely regarded for its simplicity and versatility, jac lang offers several advantages, particularly in terms of readability, flexibility, and type safety. By addressing some of the shortcomings of Python, jac lang provides developers with a more robust and scalable alternative for building modern applications.
+
+<!-- - Full-stack programming language
+    - Jaclang empowers developers to create both front-end and back-end components of their applications using a single language. This eliminates the need to switch between different programming languages and frameworks, resulting in a more cohesive and efficient development experience. -->
+
+- Supersets Python
+    - As TypeScript supersets JavaScript, Jac-Lang is a language which was built on top of python which all pythony goodness available to all jac-lang programmers while including the entire python ecosystem, available to use.
+
+- Offers more readable code
+    - By adopting a clean and intuitive syntax, Jac Lang makes it easier for developers and coders to write code that is easy to understand and maintain.
+
+- More flexible than python, in terms of styling the code
+    - As jac lang uses syntax where multiline comments, multiline function declerations and more, which allows the user to arrange arguments, lists, dictionaties and other list-like objects in a readable format.
+
+- Type safe to support large codebases
+    - Jac lang prioritizes type safety to support the development of large-scale applications. By enforcing strict type checking, jac lang helps identify potential errors at compile time, rather than runtime, leading to more robust and reliable code.
+
+- Data Spatial Programming
+    - Jac Lang's programming approach focuses on data-spatial constructs, enhancing the handling and visualization of data in ways traditional programming paradigms might not support.
+
+- Programming with Large Language Models
+    - Jac-lang has an up & coming feature which allows programmers to integrate LLMs into their programming pipeline seamlessly without the need for learning extensive libraries and complicated new syntaxes.
+<!-- ## Integrating Jac into Python Modules
 
 JacLang also provides a seamless way to import Jac into existing Python modules through library functions. Here's an example:
 
@@ -66,56 +75,4 @@ Below is the actual implementation for Jac's CLI (`cli.jac`) to provide some ins
     --8<-- "jaclang/cli/cli_impl.jac"
     ```
 
-That's all you need to get started with JacLang. As you delve into this new language, you'll discover how it beautifully combines the power of Python with a modern and intuitive syntax. Happy coding!
-
-## Installing JacLang Extension in Visual Studio Code (VSCode)
-
-In addition to setting up JacLang itself, you may also want to take advantage of the JacLang language extension for Visual Studio Code (VSCode). This will give you enhanced code highlighting, autocomplete, and other useful language features within your VSCode environment.
-
-Here's a step-by-step guide on how to package and install the JacLang VSCode extension.
-
-### Setting Up VSCE
-
-To create the VSIX file for the extension, you'll need `vsce`, a command-line tool for packaging VSCode extensions. If you don't have it installed already, follow these steps:
-
-1. Ensure that you have Node.js (>= 0.10.x) and npm installed on your machine.
-
-2. Open a terminal (or command prompt) and install `vsce` globally by running the following command:
-
-    ```bash
-    npm install -g vsce
-    ```
-
-### Packaging the Extension
-
-Once you have `vsce` set up, navigate to the JacLang extension directory in your local JacLang repository by running:
-
-```bash
-cd /path/to/repo/jaclang/support/vscode_ext/jac
-```
-
-In the `jac` directory, package the extension into a VSIX file by running:
-
-```bash
-vsce package
-```
-
-This will create a `.vsix` file, which is the packaged extension.
-
-### Installing the VSIX File in VSCode
-
-To install the packaged JacLang extension in VSCode:
-
-1. Open Visual Studio Code.
-
-2. Click on the Extensions view icon on the Sidebar (or press `Ctrl+Shift+X`).
-
-3. Click on the three-dot menu (`...`) in the top-right corner of the Extensions view.
-
-4. Select `Install from VSIX...` from the dropdown menu.
-
-5. In the file picker, find and select the `.vsix` file you created earlier and click `Open`.
-
-6. After a brief moment, the extension will be installed. You might have to reload VSCode for the changes to take effect.
-
-Now, you're all set to use the JacLang language extension in your VSCode editor! Enjoy your enhanced JacLang development experience.
+That's all you need to get started with JacLang. As you delve into this new language, you'll discover how it beautifully combines the power of Python with a modern and intuitive syntax. Happy coding! -->

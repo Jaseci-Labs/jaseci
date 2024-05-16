@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fnmatch
+import html
 import os
 import pickle
 import types
@@ -753,13 +754,16 @@ class JacBuiltin:
         for source, target, edge in connections:
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
-                f' [label="{edge._jac_.obj.__class__.__name__} "];\n'
+                f' [label="{html.escape(str(edge._jac_.obj.__class__.__name__))} "];\n'
             )
         for node_ in visited_nodes:
             color = (
                 colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
             )
-            dot_content += f'{visited_nodes.index(node_)} [label="{node_._jac_.obj}" fillcolor="{color}"];\n'
+            dot_content += (
+                f'{visited_nodes.index(node_)} [label="{html.escape(str(node_._jac_.obj))}"'
+                f'fillcolor="{color}"];\n'
+            )
         if dot_file:
             with open(dot_file, "w") as f:
                 f.write(dot_content + "}")

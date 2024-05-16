@@ -217,6 +217,29 @@ except ValueError as e:
     print("Raised:", e)
 
 
+try:
+    with open("test.txt") as file:
+        print(file.read())
+except:
+    print("File not found")
+
+try:
+    with open("test.txt") as file:
+        print(file.read())
+except FileNotFoundError:
+    print("File not found")
+
+if 5 < 0:
+    raise ValueError("A value error occurred")
+elif 3 < 1:
+    try:
+        x = 1 / 0
+    except ZeroDivisionError as e:
+        raise ValueError("Error occurred") from e
+else:
+    print("No error occurred")
+
+
 def foo():
     a = 42
     if a > 0:

@@ -4,6 +4,12 @@ import:py random;
 
 """
 A generic Game base class.
+
+Variables are initialized directly within the class definition using the has keyword, e.g., has attempts: int = 10.
+Default values are assigned directly within the class definition, e.g., has won: bool = False.
+
+Can keyword is used to define methods within the class definition, e.g., can play { ... }.
+But not like the guess_game1.jac, the play method is defined without parenthesis.
 """
 obj Game {
     has attempts: int,
@@ -52,6 +58,9 @@ obj GuessTheNumberGame :Game: {
 }
 # Run the game
 
+"""
+Object instantiation and method invocation occur within the with entry { ... } block.
+"""
 with entry {
     game = GuessTheNumberGame();
     game.play();

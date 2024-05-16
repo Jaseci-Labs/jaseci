@@ -10,7 +10,7 @@ class Settings:
     """Main settings of Jac lang."""
 
     fuse_type_info_debug: bool = False
-    jac_proc_debug: bool = False
+    py_raise: bool = False
 
     def __post_init__(self) -> None:
         """Initialize settings."""

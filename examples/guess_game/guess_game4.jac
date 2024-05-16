@@ -4,6 +4,10 @@ import:py random;
 
 """
 A generic Game base class.
+
+Inside the Game class, we define a can play method that raises a NotImplementedError.
+This is way in jaclang to define abstract methods in base classes that must be implemented by subclasses.
+In this case it ensure that any subclass of Game must implement a play method.
 """
 obj Game {
     has attempts: int,
@@ -14,6 +18,7 @@ obj Game {
 
 """
 A number guessing game. The player must guess a number between 1 and 100.
+
 """
 obj GuessTheNumberGame :Game: {
     has correct_number: int = (1, 100) |> random.randint;
@@ -22,6 +27,11 @@ obj GuessTheNumberGame :Game: {
     can play;
     can process_guess(guess: int);
 }
+
+"""
+The init method sets the number of attempts to 10.
+:ob:Game:can:play method is implemented to run the game. This another way in jaclang to add methods to a existing class.
+"""
 
 :obj:Game:can:play {
     raise "Subclasses must implement this method." |> NotImplementedError;
