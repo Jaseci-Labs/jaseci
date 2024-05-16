@@ -148,10 +148,11 @@ class ElasticService(JsOrc.CommonService):
             def elastic_log_worker(elastic_index):
                 import sys
 
-                sub_logger = logging.getLogger(f"{elastic_index}_worker")
-                sub_logger.setLevel(logging.INFO)
-                sub_handler = logging.StreamHandler(sys.stdout)
-                sub_logger.addHandler(sub_handler)
+                sub_logger = logger
+                # sub_logger = logging.getLogger(f"{elastic_index}_worker")
+                # sub_logger.setLevel(logging.INFO)
+                # sub_handler = logging.StreamHandler(sys.stdout)
+                # sub_logger.addHandler(sub_handler)
                 sub_logger.error(
                     "+++++++at the top of elastic_ log handler, before while true"
                 )
