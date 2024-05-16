@@ -24,7 +24,7 @@ class PersistentNodeAnchor(NodeAnchor):
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
         state.pop("obj")
-        if self.edges:
+        if self.edges and "edges" in state:
             edges = state.pop("edges")
             state["edge_ids"] = [e._jac_.id for e in edges]
 
@@ -32,7 +32,8 @@ class PersistentNodeAnchor(NodeAnchor):
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         self.__dict__.update(state)
-        self.edge_ids = state.pop("edge_ids")
+        if "edge_ids" in state:
+            self.edge_ids = state.pop("edge_ids")
 
     def populate_edges(self) -> None:
         if len(self.edges) == 0 and len(self.edge_ids) > 0:

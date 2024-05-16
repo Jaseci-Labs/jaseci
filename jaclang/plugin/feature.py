@@ -41,9 +41,9 @@ class JacFeature:
     RootType: TypeAlias = Root
 
     @staticmethod
-    def context() -> ExecutionContext:
+    def context(session: str = "") -> ExecutionContext:
         """Create execution context."""
-        return pm.hook.context()
+        return pm.hook.context(session=session)
 
     @staticmethod
     def reset_context() -> None:

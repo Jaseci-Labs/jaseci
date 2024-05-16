@@ -66,7 +66,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def context() -> ExecutionContext:
+    def context(session: str = "") -> ExecutionContext:
         """Get the execution context."""
         raise NotImplementedError
 

@@ -80,7 +80,7 @@ def run(
     if session == "":
         session = (
             cmd_registry.args.session
-            if cmd_registry.args.session
+            if hasattr(cmd_registry, "args") and cmd_registry.args.session
             else "jaclang.session"
         )
 
@@ -382,6 +382,8 @@ def start_cli() -> None:
     if command:
         args_dict = vars(args)
         args_dict.pop("command")
+        if command not in ["run"]:
+            args_dict.pop("session")
         ret = command.call(**args_dict)
         if ret:
             print(ret)

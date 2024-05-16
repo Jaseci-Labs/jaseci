@@ -1,9 +1,9 @@
 node a {
-    has name:str;
+    has name: str;
 }
 
 node b {
-    has name:str;
+    has name: str;
 }
 
 walker create {
@@ -15,9 +15,7 @@ walker create {
     can ata with a entry {
         here ++> b(name="node b");
     }
-
 }
-
 
 walker traverse {
     can at_root with `root entry {
@@ -37,8 +35,7 @@ walker traverse {
 walker indirect_ref {
     can at_root with `root entry {
         node_as = [-->];
-        print([node_as -->]);
-        print(:e:[node_as -->]);
+        print([node_as-->]);
+        print(:e:[node_as-->]);
     }
-
 }
