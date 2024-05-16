@@ -69,6 +69,26 @@ class TestJaseciPlugin(TestCase):
         output = self.capturedOutput.getvalue().strip()
         self.assertEqual(output, "node a\nnode b")
 
+    def test_entrypoint_non_root(self) -> None:
+        """Test entrypoint being non root node."""
+        cli.run(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            session=self.session,
+            walker="create",
+        )
+        obj = cli.get_object(session=self.session, id="root")
+        edge_obj = cli.get_object(session=self.session, id=obj["_jac_"]["edge_ids"][0])
+        a_obj = cli.get_object(session=self.session, id=edge_obj["_jac_"]["target_id"])
+        self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            session=self.session,
+            node=a_obj["_jac_"]["id"],
+            walker="traverse",
+        )
+        output = self.capturedOutput.getvalue().strip()
+        self.assertEqual(output, "node a\nnode b")
+
     def test_get_edge(self) -> None:
         """Test get an edge object."""
         cli.run(
