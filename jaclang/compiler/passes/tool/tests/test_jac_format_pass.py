@@ -78,15 +78,19 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         fixtures_dir = os.path.join(self.fixture_abs_path(""), "myca_formatted_code")
         fixture_files = os.listdir(fixtures_dir)
         for file_name in fixture_files:
+            if file_name == "__jac_gen__":
+                continue
             with self.subTest(file=file_name):
                 file_path = os.path.join(fixtures_dir, file_name)
                 self.compare_files(file_path)
 
-    def test_compare_genia_fixtures(self) -> None:
+    def test_compare_genai_fixtures(self) -> None:
         """Tests if files in the genai fixtures directory do not change after being formatted."""
         fixtures_dir = os.path.join(self.fixture_abs_path(""), "genai")
         fixture_files = os.listdir(fixtures_dir)
         for file_name in fixture_files:
+            if file_name == "__jac_gen__":
+                continue
             with self.subTest(file=file_name):
                 file_path = os.path.join(fixtures_dir, file_name)
                 self.compare_files(file_path)
