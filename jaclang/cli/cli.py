@@ -6,6 +6,7 @@ import inspect
 import marshal
 import os
 import pickle
+import pprint
 import shutil
 import sys
 import types
@@ -108,14 +109,19 @@ def run(
     else:
         print("Not a .jac file.")
 
-    # TODO: get entry node based on id
-    node = node if node else "root"
+    if node:
+        entrypoint = Jac.memory_hook().get_obj(node)
+        if not entrypoint:
+            print(f"Node {node} not found.")
+            return
+    else:
+        entrypoint = Jac.get_root()
 
     # TODO: handle no override name
     if walker:
         walker_module = dict(inspect.getmembers(sys.modules["__main__"])).get(walker)
         if walker_module:
-            Jac.spawn_call(Jac.get_root(), walker_module())
+            Jac.spawn_call(entrypoint, walker_module())
         else:
             print(f"Walker {walker} not found.")
 
@@ -123,8 +129,8 @@ def run(
 
 
 @cmd_registry.register
-def get_object(id: str, session: str = "") -> None:
-    """Print the object with the specified id."""
+def get_object(id: str, session: str = "") -> dict:
+    """Get the object with the specified id."""
     if session == "":
         session = (
             cmd_registry.args.session
@@ -135,9 +141,11 @@ def get_object(id: str, session: str = "") -> None:
     Jac.context().init_memory(session)
 
     obj = Jac.memory_hook().get_obj(id)
-    print(obj)
+    pprint.pprint(obj.__getstate__(), indent=2)
 
     Jac.reset_context()
+
+    return obj.__getstate__()
 
 
 @cmd_registry.register

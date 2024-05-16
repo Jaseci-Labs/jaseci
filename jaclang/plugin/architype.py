@@ -18,25 +18,28 @@ from typing import Any, Optional, Callable
 
 
 class PersistentNodeAnchor(NodeAnchor):
-    edges_id: list[UUID] = []
+    edge_ids: list[UUID] = []
     persistent: bool = False
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
         state.pop("obj")
-        edges = state.pop("edges")
-        state["edges_id"] = [e._jac_.id for e in edges]
+        if self.edges:
+            edges = state.pop("edges")
+            state["edge_ids"] = [e._jac_.id for e in edges]
+
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         self.__dict__.update(state)
-        self.edges_id = state.pop("edges_id")
+        self.edge_ids = state.pop("edge_ids")
 
     def populate_edges(self) -> None:
-        if len(self.edges) == 0 and len(self.edges_id) > 0:
-            for e_id in self.edges_id:
+        if len(self.edges) == 0 and len(self.edge_ids) > 0:
+            for e_id in self.edge_ids:
                 edge = Jac.context().get_obj(e_id)
                 self.edges.append(edge)
+            self.edge_ids.clear()
 
     def get_edges(
         self,
@@ -126,8 +129,10 @@ class PersistentEdgeArchitype(EdgeArchitype):
     def populate_nodes(self):
         if self._jac_.source_id:
             self._jac_.source = Jac.context().get_obj(self._jac_.source_id)
+            self._jac_.source_id = None
         if self._jac_.target_id:
             self._jac_.target = Jac.context().get_obj(self._jac_.target_id)
+            self._jac_.target_id = None
 
 
 class PersistentGenericEdge(GenericEdge, PersistentEdgeArchitype):

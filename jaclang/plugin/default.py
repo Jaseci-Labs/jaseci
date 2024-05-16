@@ -75,6 +75,7 @@ class DefaultExecutionContext(ExecutionContext):
     """Default Execution Context implementation."""
 
     def __init__(self) -> None:
+        super().__init__()
         self.mem = ShelveStorage()
 
     def init_memory(self, session: str = "") -> None:
@@ -135,7 +136,9 @@ class JacFeatureDefaults:
         if not issubclass(cls, arch_base):
             # Saving the module path and reassign it after creating cls
             # So the jac modules are part of the correct module
+            cur_module = cls.__module__
             cls = type(cls.__name__, (cls, arch_base), {})
+            cls.__module__ = cur_module
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:

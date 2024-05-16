@@ -27,7 +27,7 @@ class ExecutionContext:
     """Execution Context."""
 
     mem: Memory
-    root: Root
+    root: Optional[Root] = None
 
     def __init___(self) -> None:
         """Initialize execution context."""
@@ -37,6 +37,14 @@ class ExecutionContext:
     def init_memory(self) -> None:
         """Initialize memory."""
         raise NotImplementedError
+
+    def get_root(self) -> Root:
+        """Get root."""
+        return self.root
+
+    def get_memory(self) -> Memory:
+        """Get memory."""
+        return self.mem
 
     def get_obj(self, id: UUID) -> Architype:
         """Get object from memory."""
