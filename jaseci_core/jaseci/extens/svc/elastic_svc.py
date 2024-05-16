@@ -103,10 +103,18 @@ class ElasticService(JsOrc.CommonService):
         self.app.doc(
             {
                 "@timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-                "message": f"I AM DIRECLTY LOGGING TO ELASTIC IN post_run",
+                "message": "I AM DIRECLTY LOGGING TO ELASTIC IN post_run",
                 "level": "SYSTEM",
             },
             index=self.config.get("core_log_index") or "core",
+        )
+        self.app.doc(
+            {
+                "@timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                "message": "I AM DIRECLTY LOGGING TO ELASTIC IN post_run",
+                "level": "SYSTEM",
+            },
+            index=self.config.get("app_log_index") or "app",
         )
 
     def configure_elastic(self):
