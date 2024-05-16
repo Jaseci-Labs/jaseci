@@ -174,12 +174,15 @@ class ElasticService(JsOrc.CommonService):
                 sub_logger.error(
                     "+++++++at the top of elastic_ log handler, before while true"
                 )
+                f.flush()
                 while True:
                     sub_logger.error("+++++++i am in while true")
                     f.write("+++++++i am in while true")
+                    f.flush()
                     try:
                         sub_logger.error("----waiting on stuff from log_queue")
                         f.write("----waiting on stuff from log_queue")
+                        f.flush()
                         record = log_queue.get()
                         sub_logger.error("----got record from log_queueu")
                         f.write("----got record from log_queueu")
