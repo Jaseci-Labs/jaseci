@@ -1067,7 +1067,11 @@ class PyastGenPass(Pass):
                 if isinstance(node.signature, ast.FuncSignature)
                 else []
             )
-            action = node.semstr.gen.py_ast[0] if node.semstr else None
+            action = (
+                node.semstr.gen.py_ast[0]
+                if node.semstr
+                else self.sync(ast3.Constant(value=None))
+            )
             return [
                 self.sync(
                     ast3.Assign(
