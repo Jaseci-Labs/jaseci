@@ -100,6 +100,14 @@ class ElasticService(JsOrc.CommonService):
         )
         logger.error(LOG_QUEUES["app"])
         logger.error("===========================================================")
+        self.app.doc(
+            {
+                "@timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                "message": f"I AM DIRECLTY LOGGING TO ELASTIC IN post_run",
+                "level": "SYSTEM",
+            },
+            index=self.config.get("core_log_index") or "core",
+        )
 
     def configure_elastic(self):
         """
@@ -149,22 +157,29 @@ class ElasticService(JsOrc.CommonService):
                 import sys
 
                 sub_logger = logger
+                f = open("/ELASTIC_HANDLER_LOG.txt", "w")
                 # sub_logger = logging.getLogger(f"{elastic_index}_worker")
                 # sub_logger.setLevel(logging.INFO)
                 # sub_handler = logging.StreamHandler(sys.stdout)
                 # sub_logger.addHandler(sub_handler)
+                f.write("+++++++at the top of elastic_ log handler, before while true")
                 sub_logger.error(
                     "+++++++at the top of elastic_ log handler, before while true"
                 )
                 while True:
                     sub_logger.error("+++++++i am in while true")
+                    f.write("+++++++i am in while true")
                     try:
                         sub_logger.error("----waiting on stuff from log_queue")
+                        f.write("----waiting on stuff from log_queue")
                         record = log_queue.get()
                         sub_logger.error("----got record from log_queueu")
+                        f.write("----got record from log_queueu")
                         sub_logger.error(record)
+                        f.write(str(record))
                         if record is None:
                             sub_logger.error("----breaking out of while true")
+                            f.write("----breaking out of while true")
                             # This is temporary
                             # for debugging purposes
                             from datetime import datetime
@@ -183,6 +198,15 @@ class ElasticService(JsOrc.CommonService):
                             break
                         elastic_record = format_elastic_record(record)
                         resp = self.app.doc(log=elastic_record, index=elastic_index)
+                        f.write(
+                            "==========================================================="
+                        )
+
+                        f.write(elastic_record)
+                        f.write(resp)
+                        f.write(
+                            "==========================================================="
+                        )
                         sub_logger.error(
                             "==========================================================="
                         )
@@ -191,7 +215,11 @@ class ElasticService(JsOrc.CommonService):
                         sub_logger.error(
                             "==========================================================="
                         )
+
                     except Exception as e:
+                        f.write("===============Error in elastic handler============")
+                        f.write(str(e))
+                        f.write("===============Error in elastic handler============")
                         sub_logger.error(
                             "===============Error in elastic handler============"
                         )
@@ -200,6 +228,8 @@ class ElasticService(JsOrc.CommonService):
                             "===============Error in elastic handler============"
                         )
                         pass
+                    finally:
+                        f.flush()
 
             # if under test, don't spawn the log worker process. Tests will validate two things:
             # 1. logs are added to the log queue
