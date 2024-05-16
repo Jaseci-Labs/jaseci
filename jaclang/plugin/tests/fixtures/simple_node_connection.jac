@@ -1,8 +1,48 @@
 node simple {
     has tag: str;
 }
+edge simple_edge {
+    has index: int;
+}
 with entry {
-    root ++> simple(tag="first");
-    root ++> simple(tag="second");
-    print([root -->]);
+    if (not [root -->]) {
+        root +:simple_edge:index=0:+> simple(tag="first");
+        root +:simple_edge:index=1:+> simple(tag="second");
+    }
+}
+
+walker filter_on_edge_get_edge {
+    can filter with `root entry {
+        print(:e:[-:simple_edge:index==1:->]);
+    }
+}
+
+walker filter_on_edge_get_node {
+    can filter with `root entry {
+        print([-:simpled_edge:index==1:->]);
+    }
+}
+
+walker filter_on_node_get_node {
+    can filter with `root entry {
+        print([-->](?tag=="second"));
+    }
+}
+
+walker filter_on_node_get_edge {
+    can filter with `root entry {
+        print(:e:[-->](?tag=="second"));
+    }
+}
+
+walker filter_on_edge_visit {
+    can filter with `root entry {
+        visit ([-:simple_edge:index==0:->]);
+    }
+}
+
+walker filter_on_node_visit {
+    can filter with `root entry {
+        visit ([-->](?tag=="first"));
+    }
 }

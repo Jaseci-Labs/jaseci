@@ -106,8 +106,18 @@ class TestJaseciPlugin(TestCase):
         self.assertEqual(len(node_objs), 2)
         self.assertEqual({obj["tag"] for obj in node_objs}, {"first", "second"})
 
-    # def test_filtering_on_edge(self) -> None:
-    # """test filtering on edge"
+    def test_filter_on_edge_get_edge(self) -> None:
+        """Test filtering on edge."""
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+        )
+        # self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+            walker="filter_on_edge_get_edge",
+        )
 
     # def test_filtering_on_node(self) -> None:
     # """test filtering on node"

@@ -141,7 +141,6 @@ def get_object(id: str, session: str = "") -> dict:
     Jac.context().init_memory(session)
 
     obj = Jac.memory_hook().get_obj(id)
-    pprint.pprint(obj.__getstate__(), indent=2)
 
     Jac.reset_context()
 
