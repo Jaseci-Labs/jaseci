@@ -153,11 +153,24 @@ class ElasticService(JsOrc.CommonService):
                             # end of temporary code
                             break
                         elastic_record = format_elastic_record(record)
-                        self.app.doc(log=elastic_record, index=elastic_index)
+                        resp = self.app.doc(log=elastic_record, index=elastic_index)
+                        logging.error(
+                            "==========================================================="
+                        )
+                        logging.error(elastic_record)
+                        logging.error(resp)
+                        logging.error(
+                            "==========================================================="
+                        )
                     except Exception as e:
-                        print("=================ERROR IN ELASTIC LOG HANDLER==========")
-                        print(e)
-                        raise e
+                        logging.error(
+                            "===============Error in elastic handler============"
+                        )
+                        logging.error(e)
+                        logging.error(
+                            "===============Error in elastic handler============"
+                        )
+                        pass
 
             # if under test, don't spawn the log worker process. Tests will validate two things:
             # 1. logs are added to the log queue
