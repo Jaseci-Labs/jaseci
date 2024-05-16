@@ -5,21 +5,15 @@ current module. This pass is run before the def/decl pass to ensure that all
 symbols are available for matching.
 """
 
-import ast as py_ast
-import importlib.util
-import sys
 from os import path
-from typing import Optional
-
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
-from jaclang.settings import settings
 from jaclang.utils.helpers import import_target_to_relative_path
 
 
-class ImportPass(Pass):
+class JacImportPass(Pass):
     """Jac statically imports all modules."""
 
     def before_pass(self) -> None:
@@ -46,12 +40,6 @@ class ImportPass(Pass):
                     if mod:
                         self.run_again = True
                         self.annex_impl(mod)
-                        i.sub_module = mod
-                        i.add_kids_right([mod], pos_update=False)
-                elif lang == "py" and settings.py_raise:
-                    mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
-                    if mod:
-                        # self.run_again = True
                         i.sub_module = mod
                         i.add_kids_right([mod], pos_update=False)
                 self.enter_module_path(i)
@@ -128,41 +116,3 @@ class ImportPass(Pass):
         else:
             self.error(f"Module {target} is not a valid Jac module.")
             return None
-
-    def import_py_module(
-        self, node: ast.ModulePath, mod_path: str
-    ) -> Optional[ast.Module]:
-        """Import a module."""
-        from jaclang.compiler.passes.main import PyastBuildPass
-
-        base_dir = path.dirname(mod_path)
-        sys.path.append(base_dir)
-
-        try:
-            # Dynamically import the module
-            spec = importlib.util.find_spec(node.path_str)
-            sys.path.remove(base_dir)
-            if spec and spec.origin and spec.origin not in {None, "built-in", "frozen"}:
-                if spec.origin in self.import_table:
-                    return self.import_table[spec.origin]
-                with open(spec.origin, "r", encoding="utf-8") as f:
-                    # print(f"\nImporting python module {node.path_str}")
-                    mod = PyastBuildPass(
-                        input_ir=ast.PythonModuleAst(
-                            py_ast.parse(f.read()), mod_path=spec.origin
-                        ),
-                    ).ir
-                if mod:
-                    self.import_table[spec.origin] = mod
-                    return mod
-                else:
-                    raise self.ice(
-                        f"Failed to import python module {node.path_str}: {spec.origin}"
-                    )
-        except Exception as e:
-            self.error(
-                f"Failed to import python module {node.path_str}: {e}",
-                node_override=node,
-            )
-            raise e
-        return None
