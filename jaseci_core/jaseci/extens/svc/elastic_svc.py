@@ -249,10 +249,10 @@ class ElasticService(JsOrc.CommonService):
                 import threading
 
                 logger.info("-----------creating worker process")
-                # worker_proc = multiprocessing.Process(
-                #     target=elastic_log_worker, args=(index,)
-                # )
-                worker_proc = threading.Thread(target=elastic_log_worker, args=(index,))
+                worker_proc = multiprocessing.Process(
+                    target=elastic_log_worker, args=(index,)
+                )
+                # worker_proc = threading.Thread(target=elastic_log_worker, args=(index,))
                 logger.info("-----------start worker process")
                 worker_proc.start()
                 logger.info("-----------started worker process")
