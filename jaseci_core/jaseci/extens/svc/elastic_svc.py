@@ -132,6 +132,12 @@ class ElasticService(JsOrc.CommonService):
             logger_instance.addHandler(queue_handler)
 
             def elastic_log_worker(elastic_index):
+                import sys
+
+                sub_logger = logging.getLogger(f"{elastic_index}_worker")
+                sub_logger.setLevel(logging.INFO)
+                sub_handler = logging.StreamHandler(sys.stdout)
+                sub_logger.addHandler(sub_handler)
                 while True:
                     try:
                         record = log_queue.get()
@@ -154,20 +160,20 @@ class ElasticService(JsOrc.CommonService):
                             break
                         elastic_record = format_elastic_record(record)
                         resp = self.app.doc(log=elastic_record, index=elastic_index)
-                        logging.error(
+                        sub_logger.error(
                             "==========================================================="
                         )
-                        logging.error(elastic_record)
-                        logging.error(resp)
-                        logging.error(
+                        sub_logger.error(elastic_record)
+                        sub_logger.error(resp)
+                        sub_logger.error(
                             "==========================================================="
                         )
                     except Exception as e:
-                        logging.error(
+                        sub_logger.error(
                             "===============Error in elastic handler============"
                         )
-                        logging.error(e)
-                        logging.error(
+                        sub_logger.error(e)
+                        sub_logger.error(
                             "===============Error in elastic handler============"
                         )
                         pass
