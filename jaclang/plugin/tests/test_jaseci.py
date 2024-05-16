@@ -112,26 +112,108 @@ class TestJaseciPlugin(TestCase):
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=self.session,
         )
-        # self._output2buffer()
+        self._output2buffer()
         cli.run(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=self.session,
             walker="filter_on_edge_get_edge",
         )
+        self.assertEqual(
+            self.capturedOutput.getvalue().strip(), "[simple_edge(index=1)]"
+        )
 
-    # def test_filtering_on_node(self) -> None:
-    # """test filtering on node"
+    def test_filter_on_edge_get_node(self) -> None:
+        """Test filtering on edge, then get node."""
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+        )
+        self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+            walker="filter_on_edge_get_node",
+        )
+        self.assertEqual(
+            self.capturedOutput.getvalue().strip(), "[simple(tag='second')]"
+        )
 
-    # def test_traverse_backwards(self) -> None:
-    # """test traversing backwards"
+    def test_filter_on_node_get_edge(self) -> None:
+        """Test filtering on node, then get edge."""
+        self.skipTest("Not sure if this is supported by the language")
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+        )
+        self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+            walker="filter_on_node_get_edge",
+        )
+        self.assertEqual(
+            self.capturedOutput.getvalue().strip(), "[simple_edge(index=1)]"
+        )
 
-    # def test_direct_reference_edge(self)
-    # def test_direct_referece_node(self)
-    # def test_entrypoint_node(self) -> None:
-    #     """Test entrypoint being non root node."""
+    def test_filter_on_node_get_node(self) -> None:
+        """Test filtering on node, then get edge."""
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+        )
+        self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+            walker="filter_on_node_get_node",
+        )
+        self.assertEqual(
+            self.capturedOutput.getvalue().strip(), "[simple(tag='second')]"
+        )
 
-    # def test_get_object(self) -> None:
-    #     """Test get object cli."""
+    def test_filter_on_edge_visit(self) -> None:
+        """Test filtering on edge, then visit."""
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+        )
+        self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+            walker="filter_on_edge_visit",
+        )
+        self.assertEqual(self.capturedOutput.getvalue().strip(), "simple(tag='first')")
 
-    # def test_persistent_root(self):
-    #    """"Test that root and its connecting nodes are persistent"""
+    def test_filter_on_node_visit(self) -> None:
+        """Test filtering on node, then visit."""
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+        )
+        self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=self.session,
+            walker="filter_on_node_visit",
+        )
+        self.assertEqual(self.capturedOutput.getvalue().strip(), "simple(tag='first')")
+
+    # def test_indirect_reference_edge(self) -> None:
+    def test_indirect_reference_node(self) -> None:
+        """Test reference node indirectly without visiting."""
+        cli.run(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            session=self.session,
+            walker="create",
+        )
+        self._output2buffer()
+        cli.run(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            session=self.session,
+            walker="indirect_ref",
+        )
+        self.assertEqual(
+            self.capturedOutput.getvalue().strip(),
+            "[b(name='node b')]\n[PersistentGenericEdge]",
+        )
