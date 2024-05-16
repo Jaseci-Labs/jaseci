@@ -135,6 +135,7 @@ class ElasticService(JsOrc.CommonService):
         )
 
     def add_elastic_log_handler(self, logger_instance, index, under_test=False):
+        logger.info(f"=====Adding elastic log handler {index}====")
         has_queue_handler = any(
             isinstance(h, logging.handlers.QueueHandler)
             for h in logger_instance.handlers
@@ -151,10 +152,18 @@ class ElasticService(JsOrc.CommonService):
                 sub_logger.setLevel(logging.INFO)
                 sub_handler = logging.StreamHandler(sys.stdout)
                 sub_logger.addHandler(sub_handler)
+                sub_logger.error(
+                    "+++++++at the top of elastic_ log handler, before while true"
+                )
                 while True:
+                    sub_logger.error("+++++++i am in while true")
                     try:
+                        sub_logger.error("----waiting on stuff from log_queue")
                         record = log_queue.get()
+                        sub_logger.error("----got record from log_queueu")
+                        sub_logger.error(record)
                         if record is None:
+                            sub_logger.error("----breaking out of while true")
                             # This is temporary
                             # for debugging purposes
                             from datetime import datetime
@@ -195,10 +204,13 @@ class ElasticService(JsOrc.CommonService):
             # 1. logs are added to the log queue
             # 2. format_elastic_record process the log properly and create the record for elastic
             if not under_test:
+                logger.info("-----------creating worker process")
                 worker_proc = multiprocessing.Process(
                     target=elastic_log_worker, args=(index,)
                 )
+                logger.info("-----------start worker process")
                 worker_proc.start()
+                logger.info("-----------started worker process")
 
             return log_queue
 
