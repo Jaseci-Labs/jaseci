@@ -1,5 +1,7 @@
-obj Point {
-    has x: flaot, y: float;
+obj Outer {
+    obj Point {
+        has x: flaot, y: float;
+    }
 }
 
 can match_example(data: dict) {
@@ -28,7 +30,7 @@ can match_example(data: dict) {
             print(f"Matched a mapping with key1 and key2. Rest: {rest}");
 
         # MatchClass
-        case Point(int(a), y=0):
+        case Outer.Point(int(a), y=0):
             print(f"Point with x={a} and y=0");
 
         # MatchAs
