@@ -24,7 +24,7 @@ class JacPlugins(TestCase):
         command = "jac streamlit -h"
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
         self.assertIn(
-            "Successfully uninstalled jac-streamlit-0.0.1", install_result.stdout
+            "Successfully installed jac-streamlit-0.0.1", install_result.stdout
         )
         self.assertIn("Streamlit the specified .jac file", result.stdout)
         self.assertIn(
