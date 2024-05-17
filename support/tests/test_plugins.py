@@ -14,7 +14,7 @@ class JacPlugins(TestCase):
         return super().setUp()
 
     def test_streamlit(self) -> None:
-        """Basic test for pass."""
+        """Test for streamilt plugin."""
         directory = self.fixture_abs_path("../../../support/streamlit")
         os.chdir(directory)
         install_command = "pip install -e ."
@@ -31,3 +31,16 @@ class JacPlugins(TestCase):
             ":param filename: The path to the .jac file.\n\npositional arguments:\n",
             result.stdout,
         )
+
+        file_name = os.path.join(self.fixture_abs_path("./"), "streamlit.jac")
+        command = f"jac streamlit {file_name}"
+        result = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            text=True,
+        )
+        out = [result.stdout.readline() for i in range(7)] if result.stdout else []
+        self.assertIn("  You can now view your Streamlit app in your browser.\n", out)
