@@ -44,3 +44,4 @@ class JacPlugins(TestCase):
         )
         out = [result.stdout.readline() for i in range(7)] if result.stdout else []
         self.assertIn("  You can now view your Streamlit app in your browser.\n", out)
+        result.terminate()
