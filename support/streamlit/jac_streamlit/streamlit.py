@@ -1,10 +1,13 @@
+"""Module for registering Streamlit plugin."""
+
 import os
-import streamlit.web.bootstrap as bootstrap
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.plugin.default import hookimpl
 from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.constant import Constants as Con
+from jaclang.plugin.default import hookimpl
+
+import streamlit.web.bootstrap as bootstrap
 
 
 class JacCmd:
@@ -13,7 +16,7 @@ class JacCmd:
     @staticmethod
     @hookimpl
     def create_cmd() -> None:
-        """Creating Jac CLI cmds."""
+        """Create Jac CLI cmds."""
 
         @cmd_registry.register
         def streamlit(filename: str) -> None:
