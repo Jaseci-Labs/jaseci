@@ -24,6 +24,7 @@ jobs:
         pip install -e .
         pip install pytest
         pip install pygame
+        pip install streamlit
 
     - name: Run tests
       run: pytest
