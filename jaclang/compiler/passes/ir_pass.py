@@ -17,6 +17,7 @@ class Pass(Transform[T]):
         self.term_signal = False
         self.prune_signal = False
         self.ir: ast.AstNode = input_ir
+        self.touch: list[ast.AstNode] = []
         Transform.__init__(self, input_ir, prior)
 
     def before_pass(self) -> None:
@@ -104,6 +105,7 @@ class Pass(Transform[T]):
         # Only performs passes on proper ASTs
         if not isinstance(ir, ast.AstNode):
             return ir
+        self.touch = []
         self.before_pass()
         if not isinstance(ir, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
@@ -119,7 +121,8 @@ class Pass(Transform[T]):
         self.enter_node(node)
         if not self.prune_signal:
             for i in node.kid:
-                if i:
+                if i and i not in self.touch:
+                    self.touch.append(i)
                     self.traverse(i)
         else:
             self.prune_signal = False

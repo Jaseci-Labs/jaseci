@@ -160,6 +160,8 @@ class ImportPass(Pass):
                         f"Failed to import python module {node.path_str}: {spec.origin}"
                     )
         except Exception as e:
+            if "Empty kid for Token ModulePath" in str(e) or "utf-8" in str(e):
+                return None
             self.error(
                 f"Failed to import python module {node.path_str}: {e}",
                 node_override=node,
