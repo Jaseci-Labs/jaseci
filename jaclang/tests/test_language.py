@@ -774,8 +774,8 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         settings.py_raise = True
         file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen, ImportPass
+        from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
-        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=ImportPass)
+        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
         self.assertEqual(len(imp.import_table), 3)
         settings.py_raise = False
