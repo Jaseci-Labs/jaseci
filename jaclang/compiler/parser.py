@@ -3739,12 +3739,36 @@ class JacParser(Pass):
         def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchArch:
             """Grammar rule.
 
-            class_pattern: NAME LPAREN kw_pattern_list? RPAREN
-                        | NAME LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
+            class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
+                        | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
             """
-            name = kid[0]
-            first = kid[2]
-            second = kid[4] if len(kid) > 4 else None
+            chomp = [*kid]
+            cur_element = chomp[0]
+            chomp = chomp[1:]
+            while not (isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.LPAREN):
+                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.DOT:
+                    target_ = cur_element
+                    right_ = chomp[1]
+                    if isinstance(right_, (ast.Expr, ast.AtomExpr)) and isinstance(
+                        target_, ast.Expr
+                    ):
+                        cur_element = ast.AtomTrailer(
+                            target=target_,
+                            right=right_,
+                            is_attr=True,
+                            is_null_ok=False,
+                            kid=[target_, right_],
+                        )
+                        chomp = chomp[2:]
+                    else:
+                        raise self.ice()
+                elif isinstance(cur_element, ast.NameSpec):
+                    chomp = chomp[1:]
+                else:
+                    break
+            name = cur_element
+            first = chomp[1]
+            second = chomp[3] if len(chomp) > 4 else None
             arg = (
                 first
                 if isinstance(first, ast.SubNodeList)
@@ -3762,13 +3786,17 @@ class JacParser(Pass):
                     else None
                 )
             )
-            if isinstance(name, ast.NameSpec):
+            if isinstance(name, (ast.NameSpec, ast.AtomTrailer)):
                 return self.nu(
                     ast.MatchArch(
                         name=name,
                         arg_patterns=arg,
                         kw_patterns=kw,
-                        kid=kid,
+                        kid=(
+                            [name, arg, kw]
+                            if kw and arg
+                            else [name, arg] if arg else [name, kw] if kw else [name]
+                        ),
                     )
                 )
             else:
