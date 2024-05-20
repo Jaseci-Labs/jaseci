@@ -784,7 +784,7 @@ class JacLanguageTests(TestCase):
         """Test for access tags working."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.run(self.fixture_abs_path("../../tests/fixtures/access_modifier.jac"))
+        cli.check(self.fixture_abs_path("../../tests/fixtures/access_modifier.jac"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn('Can not access private variable "p"', stdout_value)
