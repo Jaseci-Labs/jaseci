@@ -46,26 +46,20 @@ class SymTabPass(Pass):
         table = table_override if table_override else node.sym_tab
         if self.seen(node) and node.sym_link and table == node.sym_link.parent_tab:
             return node.sym_link
-        if (
-            table
-            and (
-                table.insert(
-                    node=node, single=single_decl is not None, access_spec=access_spec
-                )
+        if table:
+            table.insert(
+                node=node, single=single_decl is not None, access_spec=access_spec
             )
-            and single_decl
-        ):
-            # self.already_declared_err(
-            #     name=node.sym_name,
-            #     typ=single_decl if single_decl else "ICE",
-            #     original=collide,
-            # )
-            pass  # TODO: Sort this out at some point
+        self.update_py_ctx_for_def(node)
+        self.handle_hit_outcome(node)
+        return node.sym_link
+
+    def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
+        """Update python context for definition."""
         node.py_ctx_func = ast3.Store
         if isinstance(node.sym_name_node, ast.AstSymbolNode):
             node.sym_name_node.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
-
             # Handling of UnaryExpr case for item is only necessary for
             # the generation of Starred nodes in the AST for examples
             # like `(a, *b) = (1, 2, 3, 4)`.
@@ -83,8 +77,6 @@ class SymTabPass(Pass):
                             fix(i)
 
             fix(node)
-        self.handle_hit_outcome(node)
-        return node.sym_link
 
     def use_lookup(
         self,
