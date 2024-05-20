@@ -611,9 +611,10 @@ class PyastGenPass(Pass):
                 )
             )
             if node.items:
-                self.warning(
-                    "Includes import * in target module into current namespace."
-                )
+                pass
+                # self.warning(
+                #     "Includes import * in target module into current namespace."
+                # )
         if not node.from_loc:
             py_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
         else:
