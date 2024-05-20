@@ -138,7 +138,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("[Reasoning] <Reason>", stdout_value)
         self.assertIn(
-            "Personality Index of a Person (class) (PersonalityIndex) = Personality Index (int) (index)",
+            "Personality Index of a Person (PersonalityIndex) (class) = Personality Index (index) (int)",
             stdout_value,
         )
         self.assertIn(
@@ -163,7 +163,7 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            "Person (obj) (Person) = Fullname of the Person (str) (full_name), Year of Death (int) (yod), Personality of the Person (Personality) (personality)",  # noqa E501
+            "Person (Person) (obj) = Fullname of the Person (full_name) (str), Year of Death (yod) (int), Personality of the Person (personality) (Personality)",  # noqa E501
             stdout_value,
         )
         self.assertIn(

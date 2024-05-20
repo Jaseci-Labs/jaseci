@@ -1,4 +1,6 @@
-obj model {
+import:py from jaclang.core.llms, BaseLLM;
+
+obj model:BaseLLM: {
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
         return '[Reasoning] J. Robert Oppenheimer, also known as the "father of the atomic bomb," was a brilliant '

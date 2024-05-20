@@ -1,8 +1,11 @@
 import:py wikipedia;
 
-import:py from jaclang.core.llms, Anthropic;
+import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
 
-glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
+# glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
+# glob llm = Ollama(model_name="phi3");
+glob llm = Groq();
+
 
 obj 'Question Answering'
 QA {
@@ -28,7 +31,7 @@ QA {
         }
     ];
 
-    can 'Get next Thought and Action. Action should always startswith "Search" or "Finish"'
+    can 'Get next Thought and Action. Action should always startswith "Search:" or "Finish:" followed by the search term or the answer'
     get_throught_and_actions(question: 'Question': str,
         prev_info: 'Previous Thoughts, Actions, and Observations': list[dict] = [])
     -> 'Next Thought and Action': dict by llm(incl_info=(self.qa_example));
