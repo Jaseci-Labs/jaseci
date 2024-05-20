@@ -30,6 +30,11 @@ class SymTabPass(Pass):
             return True
         return result
 
+    def inherit_sym_tab(self, scope: SymbolTable, sym_tab: SymbolTable) -> None:
+        """Inherit symbol table."""
+        for i in sym_tab.tab.values():
+            self.def_insert(i.decl, access_spec=i.access, table_override=scope)
+
     def def_insert(
         self,
         node: ast.AstSymbolNode,
@@ -276,10 +281,7 @@ class SymTabBuildPass(SymTabPass):
             ]
             and node.sym_tab
         ):
-            for v in node.sym_tab.tab.values():
-                self.def_insert(
-                    v.decl, access_spec=v.access, table_override=self.cur_scope()
-                )
+            self.inherit_sym_tab(scope=self.cur_scope(), sym_tab=node.sym_tab)
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -405,10 +407,9 @@ class SymTabBuildPass(SymTabPass):
                     f" not found to include *, or ICE occurred!"
                 )
             else:
-                for v in source.sub_module.sym_tab.tab.values():
-                    self.def_insert(
-                        v.decl, access_spec=v.access, table_override=self.cur_scope()
-                    )
+                self.inherit_sym_tab(
+                    scope=self.cur_scope(), sym_tab=source.sub_module.sym_tab
+                )
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
