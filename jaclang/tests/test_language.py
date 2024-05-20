@@ -138,7 +138,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("[Reasoning] <Reason>", stdout_value)
         self.assertIn(
-            "Personality Index of a Person (class) (PersonalityIndex) = Personality Index (int) (index)",
+            "Personality Index of a Person (PersonalityIndex) (class) = Personality Index (index) (int)",
             stdout_value,
         )
         self.assertIn(
@@ -163,7 +163,7 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            "Person (obj) (Person) = Fullname of the Person (str) (full_name), Year of Death (int) (yod), Personality of the Person (Personality) (personality)",  # noqa E501
+            "Person (Person) (obj) = Fullname of the Person (full_name) (str), Year of Death (yod) (int), Personality of the Person (personality) (Personality)",  # noqa E501
             stdout_value,
         )
         self.assertIn(
@@ -774,9 +774,9 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         settings.py_raise = True
         file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen, ImportPass
+        from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
-        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=ImportPass)
+        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
         self.assertEqual(len(imp.import_table), 3)
         settings.py_raise = False
 
