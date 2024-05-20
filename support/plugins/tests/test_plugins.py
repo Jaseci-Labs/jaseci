@@ -15,7 +15,7 @@ class JacPlugins(TestCase):
 
     def test_streamlit(self) -> None:
         """Test for streamilt plugin."""
-        directory = self.fixture_abs_path("../../../support/streamlit")
+        directory = self.fixture_abs_path("../../../plugins/streamlit")
         os.chdir(directory)
         install_command = "pip install -e ."
         install_result = subprocess.run(
