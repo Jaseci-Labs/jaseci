@@ -8,7 +8,6 @@ media
 migrations
 venv
 __jac_gen__/
-__jac_streamlit__/
 *.jir
 
 # Distribution / packaging
