@@ -19,7 +19,6 @@ from jaclang.core.aott import (
     get_all_type_explanations,
     get_info_types,
     get_object_string,
-    get_reasoning_output,
     get_type_annotation,
 )
 from jaclang.core.construct import (
@@ -612,6 +611,7 @@ class JacFeatureDefaults:
         type_explanations = "\n".join(type_explanations_list)
 
         meaning_in = aott_raise(
+            model,
             information,
             inputs_information,
             output_information,
@@ -620,8 +620,8 @@ class JacFeatureDefaults:
             reason,
         )
         meaning_out = model.__infer__(meaning_in, **model_params)
-        reasoning, output = get_reasoning_output(meaning_out)
-        return output
+        output = model.resolve_output(meaning_out, reason)
+        return output["output"]
 
 
 class JacBuiltin:

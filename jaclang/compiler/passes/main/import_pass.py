@@ -19,8 +19,8 @@ from jaclang.settings import settings
 from jaclang.utils.helpers import import_target_to_relative_path
 
 
-class ImportPass(Pass):
-    """Jac statically imports all modules."""
+class JacImportPass(Pass):
+    """Jac statically imports Jac modules."""
 
     def before_pass(self) -> None:
         """Run once before pass."""
@@ -37,27 +37,25 @@ class ImportPass(Pass):
             self.run_again = False
             all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
             for i in all_imports:
-                lang = i.parent_of_type(ast.Import).hint.tag.value
-                if lang == "jac" and not i.sub_module:
-                    self.run_again = True
-                    mod = self.import_module(
-                        node=i,
-                        mod_path=node.loc.mod_path,
-                    )
-                    if not mod:
-                        self.run_again = False
-                        continue
-                    self.annex_impl(mod)
-                    i.sub_module = mod
-                    i.add_kids_right([mod], pos_update=False)
-                elif lang == "py" and settings.jac_proc_debug:
-                    mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
-                    i.sub_module = mod
-                    i.add_kids_right([mod], pos_update=False)
+                self.process_import(node, i)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
         self.annex_impl(node)
         node.mod_deps = self.import_table
+
+    def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
+        """Process an import."""
+        lang = i.parent_of_type(ast.Import).hint.tag.value
+        if lang == "jac" and not i.sub_module:
+            mod = self.import_module(
+                node=i,
+                mod_path=node.loc.mod_path,
+            )
+            if mod:
+                self.run_again = True
+                self.annex_impl(mod)
+                i.sub_module = mod
+                i.add_kids_right([mod], pos_update=False)
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
@@ -166,3 +164,17 @@ class ImportPass(Pass):
             )
             raise e
         return None
+
+
+class PyImportPass(JacImportPass):
+    """Jac statically imports Python modules."""
+
+    def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
+        """Process an import."""
+        lang = i.parent_of_type(ast.Import).hint.tag.value
+        if lang == "py" and not i.sub_module and settings.py_raise:
+            mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
+            if mod:
+                # self.run_again = True
+                i.sub_module = mod
+                i.add_kids_right([mod], pos_update=False)

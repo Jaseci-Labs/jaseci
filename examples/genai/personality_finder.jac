@@ -1,6 +1,9 @@
-import:py from jaclang.core.llms, Anthropic;
+import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
 
-glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
+# glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
+# glob llm = Groq();
+glob llm = Ollama(model_name="phi3");
+
 
 enum 'Personality of the Person'
 Personality {

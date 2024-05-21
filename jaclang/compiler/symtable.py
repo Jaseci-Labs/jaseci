@@ -46,9 +46,12 @@ class SymbolType(Enum):
 class SymbolInfo:
     """Symbol Info."""
 
-    def __init__(self, typ: str = "NoType") -> None:  # noqa: ANN401
+    def __init__(
+        self, typ: str = "NoType", acc_tag: Optional[SymbolAccess] = None
+    ) -> None:  # noqa: ANN401
         """Initialize."""
         self.typ = typ
+        self.acc_tag: Optional[SymbolAccess] = acc_tag
         self.typ_sym_table: Optional[SymbolTable] = None
 
 
@@ -146,7 +149,7 @@ class SymbolTable:
     def insert(
         self,
         node: ast.AstSymbolNode,
-        access_spec: Optional[ast.AstAccessNode] = None,
+        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
         single: bool = False,
     ) -> Optional[ast.AstNode]:
         """Set a variable in the symbol table.
@@ -162,7 +165,11 @@ class SymbolTable:
         if node.sym_name not in self.tab:
             self.tab[node.sym_name] = Symbol(
                 defn=node,
-                access=access_spec.access_type if access_spec else SymbolAccess.PUBLIC,
+                access=(
+                    access_spec
+                    if isinstance(access_spec, SymbolAccess)
+                    else access_spec.access_type if access_spec else SymbolAccess.PUBLIC
+                ),
                 parent_tab=self,
             )
         else:

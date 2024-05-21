@@ -1,7 +1,7 @@
 """Collection of passes for Jac IR."""
 
 from .sub_node_tab_pass import SubNodeTabPass
-from .import_pass import ImportPass  # noqa: I100
+from .import_pass import JacImportPass, PyImportPass  # noqa: I100
 from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100
 from .def_impl_match_pass import DeclDefMatchPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
@@ -17,7 +17,8 @@ pass_schedule = py_code_gen
 
 __all__ = [
     "SubNodeTabPass",
-    "ImportPass",
+    "JacImportPass",
+    "PyImportPass",
     "SymTabBuildPass",
     "DeclDefMatchPass",
     "DefUsePass",
