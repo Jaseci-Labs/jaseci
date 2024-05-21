@@ -33,10 +33,14 @@ class JacCmd:
                         prog = jac_str_to_pass(f.read(), f"{mod}")
                 py_code = prog.ir.gen.py
                 lines = py_code.split("\n")
-                lines.insert(1, "__jac_mod_bundle__=\"__jac_mod_bundle__\"\n")
+                lines.insert(1, '__jac_mod_bundle__="__jac_mod_bundle__"\n')
                 py_code = "\n".join(lines)
                 strimlit_dir = os.path.join(base, Con.JAC_GEN_DIR)
-                os.makedirs(strimlit_dir, exist_ok=True) if not os.path.exists(strimlit_dir) else None
+                (
+                    os.makedirs(strimlit_dir, exist_ok=True)
+                    if not os.path.exists(strimlit_dir)
+                    else None
+                )
                 py_filename = os.path.join(strimlit_dir, f"{mod}.py")
                 with open(py_filename, "w") as py_file:
                     py_file.write(py_code)
