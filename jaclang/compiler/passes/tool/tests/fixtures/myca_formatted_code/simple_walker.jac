@@ -1,6 +1,7 @@
 node day {}
 edge future {}
 edge parent {}
+
 walker get_last_active_day {
     can post_init() {
         self.last_active_day: day | None = None;
@@ -22,5 +23,3 @@ walker get_last_active_day {
         }
     }
 }
-
-
