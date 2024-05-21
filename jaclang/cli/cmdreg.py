@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import cmd
 import inspect
+import pprint
 from typing import Callable, Optional
 
 
@@ -172,7 +173,8 @@ class CommandShell(cmd.Cmd):
                 args.pop("command")
                 ret = command.call(**args)
                 if ret:
-                    self.stdout.write(ret + "\n")
+                    ret_str = pprint.pformat(ret, indent=2)
+                    self.stdout.write(f"{ret_str}\n")
         except Exception as e:
             print(e)
 
