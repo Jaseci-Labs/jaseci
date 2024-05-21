@@ -8,7 +8,6 @@ from typing import Optional, Sequence
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.passes.main import DefUsePass
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
 
@@ -118,7 +117,7 @@ class Workspace:
         build = jac_str_to_pass(
             jac_str=source,
             file_path=file_path,
-            schedule=py_code_gen_typed,
+            target=DefUsePass,
         )
         if not isinstance(build.ir, ast.Module):
             src = ast.JacSource(source, mod_path=file_path)
