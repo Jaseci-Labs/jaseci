@@ -62,7 +62,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         ]
 
         for directory in directories_to_clean:
-            with suppress(FileNotFoundError):
+            with suppress(Exception):
                 if os.path.exists(directory):
                     shutil.rmtree(directory)
         return super().setUp()
