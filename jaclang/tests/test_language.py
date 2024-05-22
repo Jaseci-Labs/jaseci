@@ -9,7 +9,6 @@ from unittest.mock import patch
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
-from jaclang.core import construct
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -441,7 +440,6 @@ class JacLanguageTests(TestCase):
         jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
         self.assertEqual(stdout_value.count("True"), 14)
 
     def test_with_contexts(self) -> None:
