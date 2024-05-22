@@ -1,4 +1,6 @@
-obj model {
+import:py from jaclang.core.llms, BaseLLM;
+
+obj model:BaseLLM: {
     can init(output_str: str) {
         self.output_str = output_str;
     }

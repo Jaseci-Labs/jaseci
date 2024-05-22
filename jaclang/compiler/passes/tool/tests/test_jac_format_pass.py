@@ -2,6 +2,8 @@
 
 import ast as ast3
 import os
+import shutil
+from contextlib import suppress
 from difflib import unified_diff
 
 import jaclang.compiler.absyntree as ast
@@ -53,14 +55,16 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def setUp(self) -> None:
         """Set up test."""
-        # root_dir = self.fixture_abs_path("")
-        # directories_to_clean = [
-        #     os.path.join(root_dir, "myca_formatted_code", "__jac_gen__")
-        # ]
+        root_dir = self.fixture_abs_path("")
+        directories_to_clean = [
+            os.path.join(root_dir, "myca_formatted_code", "__jac_gen__"),
+            os.path.join(root_dir, "genai", "__jac_gen__"),
+        ]
 
-        # for directory in directories_to_clean:
-        #     if os.path.exists(directory):
-        #         shutil.rmtree(directory)
+        for directory in directories_to_clean:
+            with suppress(Exception):
+                if os.path.exists(directory):
+                    shutil.rmtree(directory)
         return super().setUp()
 
     def test_jac_file_compr(self) -> None:

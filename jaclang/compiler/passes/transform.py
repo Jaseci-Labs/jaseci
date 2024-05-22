@@ -54,10 +54,12 @@ class Transform(ABC, Generic[T]):
         """Pass Error."""
         alrt = Alert(msg, self.cur_node.loc if not node_override else node_override.loc)
         self.errors_had.append(alrt)
+        # print("Error:", str(alrt))
         self.logger.error(str(alrt))
 
     def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
         """Pass Error."""
         alrt = Alert(msg, self.cur_node.loc if not node_override else node_override.loc)
         self.warnings_had.append(alrt)
+        # print("Warning:", str(alrt))
         self.logger.warning(str(alrt))
