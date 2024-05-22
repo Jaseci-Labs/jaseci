@@ -6,7 +6,7 @@ from __future__ import annotations
 import types
 import unittest
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, TypeVar
 
 from uuid import UUID, uuid4
 
@@ -429,3 +429,9 @@ class JacTestCheck:
     def __getattr__(self, name: str) -> Union[bool, Any]:
         """Make convenient check.Equal(...) etc."""
         return getattr(JacTestCheck.test_case, name)
+
+
+# NodeArchitypeT = TypeVar("NodeArchitypeT", bound=NodeArchitype)
+# EdgeArchitypeT = TypeVar("EdgeArchitypeT", bound=EdgeArchitype)
+# ArchitypeT = TypeVar("ArchitypeT", bound=Architype)
+# ElementAnchorT = TypeVar("ElementAnchorT", bound=ElementAnchor)

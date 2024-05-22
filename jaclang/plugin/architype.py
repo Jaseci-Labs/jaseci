@@ -90,7 +90,7 @@ class PersistentNodeArchitype(NodeArchitype):
     """Node architype override"""
 
     def __init__(self):
-        self._jac_ = PersistentNodeAnchor(obj=self)
+        self._jac_: PersistentNodeAnchor = PersistentNodeAnchor(obj=self)
         Jac.context().save_obj(self, persistent=self._jac_.persistent)
 
     def save(self):

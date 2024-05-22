@@ -1,35 +1,32 @@
 """Memory abstraction for jaseci plugin."""
 
-from uuid import UUID
-
-
 from jaclang.core.construct import Architype
 
 
 class Memory:
     """Memory module interface."""
 
-    mem: dict = {}
-    save_obj_list: set = set()
+    mem: dict[str, Architype] = {}
+    save_obj_list: set[Architype] = set()
 
     def __init__(self) -> None:
         """init."""
         pass
 
-    def get_obj(self, obj_id: UUID | str) -> Architype | None:
+    def get_obj(self, obj_id: str) -> Architype | None:
         """Get object from memory."""
         return self.get_obj_from_store(obj_id)
 
-    def get_obj_from_store(self, obj_id: UUID | str) -> Architype | None:
+    def get_obj_from_store(self, obj_id: str) -> Architype | None:
         """Get object from the underlying store."""
         ret = self.mem.get(obj_id)
         return ret
 
-    def has_obj(self, obj_id: UUID | str) -> bool:
+    def has_obj(self, obj_id: str) -> bool:
         """Check if the object exists."""
         return self.has_obj_in_store(obj_id)
 
-    def has_obj_in_store(self, obj_id: UUID | str) -> bool:
+    def has_obj_in_store(self, obj_id: str) -> bool:
         """Check if the object exists in the underlying store."""
         return obj_id in self.mem
 
@@ -47,7 +44,3 @@ class Memory:
     def close(self) -> None:
         """Close any connection, if applicable."""
         self.mem.clear()
-
-    def connect(self) -> None:
-        """Establish connection with storage, if applicable."""
-        pass

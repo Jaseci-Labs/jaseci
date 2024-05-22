@@ -27,18 +27,20 @@ class ExecutionContext:
     """Execution Context."""
 
     mem: Memory
-    root: Optional[Root] = None
+    root: Optional[NodeArchitype]
 
     def __init___(self) -> None:
         """Initialize execution context."""
         self.mem = Memory()
+        self.root = None
+
         # TODO: add entry node
 
     def init_memory(self) -> None:
         """Initialize memory."""
         raise NotImplementedError
 
-    def get_root(self) -> Root:
+    def get_root(self) -> NodeArchitype | None:
         """Get root."""
         return self.root
 
@@ -46,7 +48,7 @@ class ExecutionContext:
         """Get memory."""
         return self.mem
 
-    def get_obj(self, id: UUID) -> Architype:
+    def get_obj(self, id: UUID) -> Architype | None:
         """Get object from memory."""
         return self.mem.get_obj(id)
 
