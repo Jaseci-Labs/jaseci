@@ -6,8 +6,8 @@ from contextlib import redirect_stdout
 from typing import Callable, Optional
 
 import jaclang
-import jaclang.core.construct as jcon
 from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.test import TestCase
 
 
@@ -52,7 +52,7 @@ class JacReferenceTests(TestCase):
         """Test file."""
 
         def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
-            jcon.root.reset()
+            Jac.get_root().reset()
             f = io.StringIO()
             with redirect_stdout(f):
                 exec(

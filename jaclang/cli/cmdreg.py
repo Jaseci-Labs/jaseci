@@ -53,6 +53,11 @@ class CommandRegistry:
         first = True
         for param_name, param in cmd.sig.parameters.items():
             arg_msg = f"type: {param.annotation.__name__}"
+            # shorthand is first character by default,
+            # If already taken, use the first 2 characters
+            shorthand = param_name[:1]
+            if f"-{shorthand}" in cmd_parser._option_string_actions:
+                shorthand = param_name[:2]
             if param_name == "args":
                 cmd_parser.add_argument("args", nargs=argparse.REMAINDER, help=arg_msg)
             elif param_name == "filepath":
@@ -81,7 +86,7 @@ class CommandRegistry:
                     )
                 else:
                     cmd_parser.add_argument(
-                        f"-{param_name[:1]}",
+                        f"-{shorthand}",
                         f"--{param_name}",
                         required=True,
                         type=(
@@ -104,14 +109,14 @@ class CommandRegistry:
                 arg_msg += f", default: {param.default}"
                 if param.annotation == bool:
                     cmd_parser.add_argument(
-                        f"-{param_name[:1]}",
+                        f"-{shorthand}",
                         f"--{param_name}",
                         default=param.default,
                         action="store_true",
                         help=arg_msg,
                     )
                     cmd_parser.add_argument(
-                        f"-n{param_name[:1]}",
+                        f"-n{shorthand}",
                         f"--no-{param_name}",
                         dest=param_name,
                         action="store_false",
@@ -119,7 +124,7 @@ class CommandRegistry:
                     )
                 else:
                     cmd_parser.add_argument(
-                        f"-{param_name[:1]}",
+                        f"-{shorthand}",
                         f"--{param_name}",
                         default=param.default,
                         help=arg_msg,

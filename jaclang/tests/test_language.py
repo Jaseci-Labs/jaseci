@@ -10,6 +10,7 @@ from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.core import construct
+from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
 
@@ -190,7 +191,7 @@ class JacLanguageTests(TestCase):
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("ignore_dup", base_path=self.fixture_abs_path("./"))
@@ -284,7 +285,7 @@ class JacLanguageTests(TestCase):
 
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_import", base_path=self.fixture_abs_path("./"))
@@ -294,7 +295,7 @@ class JacLanguageTests(TestCase):
 
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import(
@@ -307,7 +308,7 @@ class JacLanguageTests(TestCase):
 
     def test_deep_outer_imports_from_loc(self) -> None:
         """Parse micro jac file."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         os.chdir(self.fixture_abs_path("./deep/deeper/"))
@@ -319,7 +320,7 @@ class JacLanguageTests(TestCase):
 
     # def test_second_deep_outer_imports(self) -> None:
     #     """Parse micro jac file."""
-    #     construct.root._jac_.edges.clear()
+    #     Jac.get_root()._jac_.edges.clear()
     #     captured_output = io.StringIO()
     #     sys.stdout = captured_output
     #     jac_import(
@@ -332,7 +333,7 @@ class JacLanguageTests(TestCase):
 
     def test_has_lambda_goodness(self) -> None:
         """Test has lambda_goodness."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("has_goodness", base_path=self.fixture_abs_path("./"))
@@ -343,7 +344,7 @@ class JacLanguageTests(TestCase):
 
     def test_conn_assign_on_edges(self) -> None:
         """Test conn assign on edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("edge_ops", base_path=self.fixture_abs_path("./"))
@@ -355,7 +356,7 @@ class JacLanguageTests(TestCase):
 
     def test_disconnect(self) -> None:
         """Test conn assign on edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("disconn", base_path=self.fixture_abs_path("./"))
@@ -366,11 +367,14 @@ class JacLanguageTests(TestCase):
         self.assertIn("c(cc=2)", stdout_value[0])
         self.assertIn("True", stdout_value[2])
         self.assertIn("[]", stdout_value[3])
-        self.assertIn("['GenericEdge', 'GenericEdge', 'GenericEdge']", stdout_value[5])
+        self.assertIn(
+            "['PersistentGenericEdge', 'PersistentGenericEdge', 'PersistentGenericEdge']",
+            stdout_value[5],
+        )
 
     def test_simple_archs(self) -> None:
         """Test conn assign on edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("simple_archs", base_path=self.fixture_abs_path("./"))
@@ -381,7 +385,7 @@ class JacLanguageTests(TestCase):
 
     def test_edge_walk(self) -> None:
         """Test walking through edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("edges_walk", base_path=self.fixture_abs_path("./"))
@@ -395,7 +399,7 @@ class JacLanguageTests(TestCase):
 
     def test_impl_grab(self) -> None:
         """Test walking through edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("impl_grab", base_path=self.fixture_abs_path("./"))
@@ -405,7 +409,7 @@ class JacLanguageTests(TestCase):
 
     def test_tuple_of_tuple_assign(self) -> None:
         """Test walking through edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("tuplytuples", base_path=self.fixture_abs_path("./"))
@@ -418,7 +422,7 @@ class JacLanguageTests(TestCase):
 
     def test_deferred_field(self) -> None:
         """Test walking through edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deferred_field", base_path=self.fixture_abs_path("./"))
@@ -431,17 +435,18 @@ class JacLanguageTests(TestCase):
 
     def test_gen_dot_builtin(self) -> None:
         """Test the dot gen of nodes and edges as a builtin."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        print(stdout_value)
         self.assertEqual(stdout_value.count("True"), 14)
 
     def test_with_contexts(self) -> None:
         """Test walking through edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("with_context", base_path=self.fixture_abs_path("./"))
@@ -474,7 +479,7 @@ class JacLanguageTests(TestCase):
 
     def test_edge_node_walk(self) -> None:
         """Test walking through edges and nodes."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("edge_node_walk", base_path=self.fixture_abs_path("./"))
@@ -488,14 +493,14 @@ class JacLanguageTests(TestCase):
 
     def test_annotation_tuple_issue(self) -> None:
         """Test conn assign on edges."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(self.fixture_abs_path("./slice_vals.jac"))
         self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir.gen.py)
         self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.ir.gen.py)
 
     def test_impl_decl_resolution_fix(self) -> None:
         """Test walking through edges and nodes."""
-        construct.root._jac_.edges.clear()
+        Jac.get_root()._jac_.edges.clear()
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("mtest", base_path=self.fixture_abs_path("./"))

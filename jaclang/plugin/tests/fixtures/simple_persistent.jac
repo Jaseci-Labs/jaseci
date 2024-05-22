@@ -32,6 +32,7 @@ walker traverse {
     }
 }
 
+
 walker indirect_ref {
     can at_root with `root entry {
         node_as = [-->];

@@ -80,7 +80,9 @@ def run(
     if session == "":
         session = (
             cmd_registry.args.session
-            if hasattr(cmd_registry, "args") and cmd_registry.args.session
+            if hasattr(cmd_registry, "args")
+            and hasattr(cmd_registry.args, "session")
+            and cmd_registry.args.session
             else "jaclang.session"
         )
 
@@ -298,6 +300,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
 @cmd_registry.register
 def dot(
     filename: str,
+    session: str = "",
     initial: str = "",
     depth: int = -1,
     traverse: bool = False,
@@ -319,6 +322,17 @@ def dot(
     :param node_limit: The maximum number of nodes allowed in the graph.
     :param saveto: Path to save the generated graph.
     """
+    if session == "":
+        session = (
+            cmd_registry.args.session
+            if hasattr(cmd_registry, "args")
+            and hasattr(cmd_registry.args, "session")
+            and cmd_registry.args.session
+            else "jaclang.session"
+        )
+
+    Jac.context().init_memory(session)
+
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
@@ -342,6 +356,10 @@ def dot(
             )
         except Exception as e:
             print(f"Error while generating graph: {e}")
+            import traceback
+
+            traceback.print_exc()
+            Jac.reset_context()
             return
         file_name = saveto if saveto else f"{mod}.dot"
         with open(file_name, "w") as file:
@@ -349,6 +367,8 @@ def dot(
         print(f">>> Graph content saved to {os.path.join(os.getcwd(), file_name)}")
     else:
         print("Not a .jac file.")
+
+    Jac.reset_context()
 
 
 @cmd_registry.register
