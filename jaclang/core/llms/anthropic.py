@@ -10,6 +10,9 @@ Input/Type formatting: Explanation of the Input (variable_name) (type) = value
 [Information]
 {information}
 
+[Context]
+{context}
+
 [Inputs Information]
 {inputs_information}
 
