@@ -74,7 +74,6 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
                 )
 
         except Exception as e:
-            print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
             raise e
             # self.skipTest(f"Test failed, but skipping instead of failing: {e}")
 
