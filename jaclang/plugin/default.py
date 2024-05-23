@@ -11,6 +11,7 @@ from contextvars import ContextVar
 from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Optional, Type, Union
+from uuid import UUID
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
@@ -99,6 +100,20 @@ class ExecutionContext:
             else:
                 self.root = root
         return self.root
+
+    def get_obj(self, obj_id: UUID) -> Architype | None:
+        """Get object from memory."""
+        if self.mem is None:
+            raise ValueError("Memory not initialized")
+
+        return self.mem.get_obj(obj_id)
+
+    def save_obj(self, item: Architype, persistent: bool) -> None:
+        """Save object to memory."""
+        if self.mem is None:
+            raise ValueError("Memory not initialized")
+
+        self.mem.save_obj(item, persistent)
 
     def reset(self) -> None:
         """Reset the execution context."""

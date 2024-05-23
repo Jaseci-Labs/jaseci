@@ -447,7 +447,7 @@ class Root(NodeArchitype):
     def __init__(self) -> None:
         """Create root node."""
         super().__init__()
-        # TODO: Need to alias thsi somehow
+        # TODO: Need to alias this
         self._jac_.id = "root"
         self._jac_.persistent = True
 

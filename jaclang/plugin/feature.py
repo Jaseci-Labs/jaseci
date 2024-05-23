@@ -3,24 +3,25 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, TypeAlias, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.core.construct import (
-    Architype,
-    EdgeArchitype,
-    NodeArchitype,
-    Root,
-    WalkerArchitype,
-)
 from jaclang.plugin.spec import (
     JacBuiltin,
     JacCmdSpec,
     JacFeatureSpec,
     T,
-    ExecutionContext,
 )
-from jaclang.plugin.memory import Memory
+
+if TYPE_CHECKING:
+    from jaclang.core.construct import (
+        Architype,
+        EdgeArchitype,
+        NodeArchitype,
+        WalkerArchitype,
+    )
+    from jaclang.plugin.default import ExecutionContext, DSFunc
+    from jaclang.plugin.memory import Memory
 
 
 import pluggy
@@ -35,8 +36,8 @@ class JacFeature:
     """Jac Feature."""
 
     import abc
-    from jaclang.plugin.spec import DSFunc
     from jaclang.compiler.constant import EdgeDir
+    from jaclang.core.construct import Root
 
     RootType: TypeAlias = Root
 
