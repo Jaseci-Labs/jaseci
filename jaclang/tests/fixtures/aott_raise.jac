@@ -1,4 +1,6 @@
-obj model {
+import:py from jaclang.core.llms, BaseLLM;
+
+obj model:BaseLLM: {
     can __infer__(meaning_in: str, **kwargs: dict) {
         return "The calculated age is 145";
     }

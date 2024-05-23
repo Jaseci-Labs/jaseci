@@ -11,7 +11,7 @@ from typing import Optional, Sequence
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import Symbol, SymbolTable
+from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable
 
 
 class SymTabPass(Pass):
@@ -30,10 +30,15 @@ class SymTabPass(Pass):
             return True
         return result
 
+    def inherit_sym_tab(self, scope: SymbolTable, sym_tab: SymbolTable) -> None:
+        """Inherit symbol table."""
+        for i in sym_tab.tab.values():
+            self.def_insert(i.decl, access_spec=i.access, table_override=scope)
+
     def def_insert(
         self,
         node: ast.AstSymbolNode,
-        access_spec: Optional[ast.AstAccessNode] = None,
+        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
         single_decl: Optional[str] = None,
         table_override: Optional[SymbolTable] = None,
     ) -> Optional[Symbol]:
@@ -41,26 +46,20 @@ class SymTabPass(Pass):
         table = table_override if table_override else node.sym_tab
         if self.seen(node) and node.sym_link and table == node.sym_link.parent_tab:
             return node.sym_link
-        if (
-            table
-            and (
-                table.insert(
-                    node=node, single=single_decl is not None, access_spec=access_spec
-                )
+        if table:
+            table.insert(
+                node=node, single=single_decl is not None, access_spec=access_spec
             )
-            and single_decl
-        ):
-            # self.already_declared_err(
-            #     name=node.sym_name,
-            #     typ=single_decl if single_decl else "ICE",
-            #     original=collide,
-            # )
-            pass  # TODO: Sort this out at some point
+        self.update_py_ctx_for_def(node)
+        self.handle_hit_outcome(node)
+        return node.sym_link
+
+    def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
+        """Update python context for definition."""
         node.py_ctx_func = ast3.Store
         if isinstance(node.sym_name_node, ast.AstSymbolNode):
             node.sym_name_node.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
-
             # Handling of UnaryExpr case for item is only necessary for
             # the generation of Starred nodes in the AST for examples
             # like `(a, *b) = (1, 2, 3, 4)`.
@@ -78,8 +77,6 @@ class SymTabPass(Pass):
                             fix(i)
 
             fix(node)
-        self.handle_hit_outcome(node)
-        return node.sym_link
 
     def use_lookup(
         self,
@@ -276,8 +273,7 @@ class SymTabBuildPass(SymTabPass):
             ]
             and node.sym_tab
         ):
-            for v in node.sym_tab.tab.values():
-                self.def_insert(v.decl, table_override=self.cur_scope())
+            self.inherit_sym_tab(scope=self.cur_scope(), sym_tab=node.sym_tab)
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -403,8 +399,9 @@ class SymTabBuildPass(SymTabPass):
                     f" not found to include *, or ICE occurred!"
                 )
             else:
-                for v in source.sub_module.sym_tab.tab.values():
-                    self.def_insert(v.decl, table_override=self.cur_scope())
+                self.inherit_sym_tab(
+                    scope=self.cur_scope(), sym_tab=source.sub_module.sym_tab
+                )
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -450,7 +447,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional[ArchBlock],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_decl="architype")
+        self.def_insert(node, access_spec=node, single_decl="architype")
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
@@ -504,7 +501,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional[CodeBlock],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_decl="ability")
+        self.def_insert(node, access_spec=node, single_decl="ability")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
@@ -592,7 +589,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional['EnumBlock'],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_decl="enum")
+        self.def_insert(node, access_spec=node, single_decl="enum")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
