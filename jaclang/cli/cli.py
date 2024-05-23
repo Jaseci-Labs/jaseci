@@ -149,9 +149,6 @@ def get_object(id: str, session: str = "") -> Dict[Any, Any]:
     if id == "root":
         id_uuid = UUID(int=0)
     else:
-        print("convert id to uuid")
-        print(id)
-        print("convert id to uuid")
         id_uuid = UUID(id)
 
     obj = Jac.context().get_obj(id_uuid)
