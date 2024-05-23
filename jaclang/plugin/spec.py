@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import types
 from typing import Any, Callable, Optional, Type, TypeVar, Union
-from uuid import UUID
 
 from jaclang.compiler.absyntree import Module
-from jaclang.core.construct import EdgeArchitype, NodeArchitype, Root
+from jaclang.core.construct import EdgeArchitype, NodeArchitype
 from jaclang.plugin.default import (
     Architype,
     DSFunc,
     EdgeDir,
+    ExecutionContext,
     WalkerArchitype,
 )
 from jaclang.plugin.memory import Memory
@@ -21,46 +21,6 @@ import pluggy
 hookspec = pluggy.HookspecMarker("jac")
 
 T = TypeVar("T")
-
-
-class ExecutionContext:
-    """Execution Context."""
-
-    mem: Memory
-    root: Optional[NodeArchitype]
-
-    def __init___(self) -> None:
-        """Initialize execution context."""
-        self.mem = Memory()
-        self.root = None
-
-        # TODO: add entry node
-
-    def init_memory(self) -> None:
-        """Initialize memory."""
-        raise NotImplementedError
-
-    def get_root(self) -> NodeArchitype | None:
-        """Get root."""
-        return self.root
-
-    def get_memory(self) -> Memory:
-        """Get memory."""
-        return self.mem
-
-    def get_obj(self, id: UUID) -> Architype | None:
-        """Get object from memory."""
-        return self.mem.get_obj(id)
-
-    def save_obj(self, obj: Architype, persistent: bool) -> None:
-        """Save object to memory."""
-        self.mem.save_obj(item=obj, persistent=persistent)
-
-    def reset(self) -> None:
-        """Reset the execution context."""
-        self.mem.close()
-        self.mem = None  # type: ignore
-        self.root = None  # type: ignore
 
 
 class JacFeatureSpec:

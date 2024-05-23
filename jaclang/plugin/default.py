@@ -26,33 +26,23 @@ from jaclang.core.construct import (
     Architype,
     DSFunc,
     EdgeAnchor,
+    EdgeArchitype,
+    GenericEdge,
     JacTestCheck,
     NodeAnchor,
+    NodeArchitype,
     ObjectAnchor,
+    Root,
     WalkerAnchor,
     WalkerArchitype,
-    NodeArchitype,
-    EdgeArchitype,
 )
 from jaclang.core.importer import jac_importer
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
-
-# from jaclang.plugin.architype import (
-#     PersistentEdgeArchitype as EdgeArchitype,
-#     PersistentGenericEdge as GenericEdge,
-#     PersistentNodeArchitype as NodeArchitype,
-#     PersistentRoot,
-# )
-
-from jaclang.plugin.architype import (
-    GenericEdge,
-    PersistentRoot,
-)
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.memory import Memory
 from jaclang.plugin.shelve_storage import ShelveStorage
-from jaclang.plugin.spec import ExecutionContext, T
+from jaclang.plugin.spec import T
 
 
 import pluggy
@@ -67,10 +57,10 @@ __all__ = [
     "WalkerAnchor",
     "NodeArchitype",
     "EdgeArchitype",
+    "Root",
     "WalkerArchitype",
     "Architype",
     "DSFunc",
-    "PersistentRoot",
     "jac_importer",
     "T",
 ]
@@ -79,26 +69,43 @@ __all__ = [
 hookimpl = pluggy.HookimplMarker("jac")
 
 
-class DefaultExecutionContext(ExecutionContext):
+class ExecutionContext:
     """Default Execution Context implementation."""
+
+    mem: Optional[ShelveStorage]
+    root: Optional[Root]
 
     def __init__(self) -> None:
         super().__init__()
-        self.mem: ShelveStorage = ShelveStorage()
-        self.root: Optional[NodeArchitype] = None
+        self.mem = ShelveStorage()
+        self.root: Optional[Root] = None
 
     def init_memory(self, session: str = "") -> None:
+        if self.mem is None:
+            self.mem = ShelveStorage()
         self.mem.connect(session)
 
-    def get_root(self) -> PersistentRoot:
+    def get_root(self) -> Root:
+        if self.mem is None:
+            raise ValueError("Memory not initialized")
+
         if not self.root:
             root = self.mem.get_obj("root")
-            if not root:
-                self.root = PersistentRoot()
-                self.save_obj(self.root, persistent=self.root._jac_.persistent)
+            if root is None:
+                self.root = Root()
+                self.mem.save_obj(self.root, persistent=self.root._jac_.persistent)
+            elif not isinstance(root, Root):
+                raise ValueError(f"Invalid root object: {root}")
             else:
                 self.root = root
         return self.root
+
+    def reset(self) -> None:
+        """Reset the execution context."""
+        if self.mem:
+            self.mem.close()
+        self.mem = None
+        self.root = None
 
 
 ExecContext: ContextVar[ExecutionContext | None] = ContextVar(
@@ -117,10 +124,9 @@ class JacFeatureDefaults:
         """Get the execution context."""
         ctx = ExecContext.get()
         if ctx is None:
-            ExecContext.set(DefaultExecutionContext())
-            return ExecContext.get()
-        else:
-            return ctx
+            ctx = ExecutionContext()
+            ExecContext.set(ctx)
+        return ctx
 
     @staticmethod
     @hookimpl
@@ -133,9 +139,9 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def memory_hook() -> Memory:
+    def memory_hook() -> Memory | None:
         """Return the memory hook."""
-        return Jac.context().get_memory()
+        return Jac.context().mem
 
     @staticmethod
     @hookimpl
@@ -500,7 +506,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def get_root() -> Architype:
+    def get_root() -> Root:
         """Jac's assign comprehension feature."""
         return Jac.context().get_root()
 

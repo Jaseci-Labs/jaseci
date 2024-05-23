@@ -1,4 +1,4 @@
-"""Test for jaseci plugin (default)"""
+"""Test for jaseci plugin."""
 
 import io
 import os
@@ -215,5 +215,5 @@ class TestJaseciPlugin(TestCase):
         )
         self.assertEqual(
             self.capturedOutput.getvalue().strip(),
-            "[b(name='node b')]\n[PersistentGenericEdge]",
+            "[b(name='node b')]\n[GenericEdge]",
         )

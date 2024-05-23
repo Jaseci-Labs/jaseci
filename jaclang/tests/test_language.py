@@ -367,7 +367,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("True", stdout_value[2])
         self.assertIn("[]", stdout_value[3])
         self.assertIn(
-            "['PersistentGenericEdge', 'PersistentGenericEdge', 'PersistentGenericEdge']",
+            "['GenericEdge', 'GenericEdge', 'GenericEdge']",
             stdout_value[5],
         )
 
