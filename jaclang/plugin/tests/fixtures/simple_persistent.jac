@@ -15,6 +15,7 @@ walker create {
     can ata with a entry {
         here ++> b(name="node b");
     }
+
 }
 
 walker traverse {
@@ -31,7 +32,6 @@ walker traverse {
         print(here.name);
     }
 }
-
 
 walker indirect_ref {
     can at_root with `root entry {

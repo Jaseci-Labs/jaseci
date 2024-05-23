@@ -31,8 +31,8 @@ from jaclang.core.construct import (
     ObjectAnchor,
     WalkerAnchor,
     WalkerArchitype,
-    NodeArchitypeT,
-    EdgeArchitypeT,
+    NodeArchitype,
+    EdgeArchitype,
 )
 from jaclang.core.importer import jac_importer
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
@@ -46,9 +46,7 @@ from jaclang.core.utils import traverse_graph
 # )
 
 from jaclang.plugin.architype import (
-    EdgeArchitype,
     GenericEdge,
-    NodeArchitype,
     PersistentRoot,
 )
 from jaclang.plugin.feature import JacFeature as Jac
@@ -376,7 +374,7 @@ class JacFeatureDefaults:
     @hookimpl
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitypeT | EdgeArchitypeT] | NodeArchitypeT | EdgeArchitypeT,
+        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
     ) -> bool:
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchitype):
@@ -394,16 +392,16 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def edge_ref(
-        node_obj: NodeArchitypeT | list[NodeArchitypeT],
-        target_obj: Optional[NodeArchitypeT | list[NodeArchitypeT]],
+        node_obj: NodeArchitype | list[NodeArchitype],
+        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitypeT]], list[EdgeArchitypeT]]],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
-    ) -> list[NodeArchitypeT] | list[EdgeArchitypeT]:
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
             node_obj = [node_obj]
-        targ_obj_set: Optional[list[NodeArchitypeT]] = (
+        targ_obj_set: Optional[list[NodeArchitype]] = (
             [target_obj]
             if isinstance(target_obj, NodeArchitype)
             else target_obj if target_obj else None
@@ -416,7 +414,7 @@ class JacFeatureDefaults:
                 )
             return list(set(connected_edges))
         else:
-            connected_nodes: list[NodeArchitypeT] = []
+            connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
                     node._jac_.edges_to_nodes(dir, filter_func, target_obj=targ_obj_set)
@@ -426,11 +424,11 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def connect(
-        left: NodeArchitypeT | list[NodeArchitypeT],
-        right: NodeArchitypeT | list[NodeArchitypeT],
-        edge_spec: Callable[[], EdgeArchitypeT],
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
+        edge_spec: Callable[[], EdgeArchitype],
         edges_only: bool,
-    ) -> list[NodeArchitypeT] | list[EdgeArchitypeT]:
+    ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
@@ -457,10 +455,10 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def disconnect(
-        left: NodeArchitypeT | list[NodeArchitypeT],
-        right: NodeArchitypeT | list[NodeArchitypeT],
+        left: NodeArchitype | list[NodeArchitype],
+        right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitypeT]], list[EdgeArchitypeT]]],
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
         disconnect_occurred = False
@@ -468,7 +466,7 @@ class JacFeatureDefaults:
         right = [right] if isinstance(right, NodeArchitype) else right
         for i in left:
             for j in right:
-                edge_list: list[EdgeArchitypeT] = [*i._jac_.edges]
+                edge_list: list[EdgeArchitype] = [*i._jac_.edges]
                 edge_list = filter_func(edge_list) if filter_func else edge_list
                 for e in edge_list:
                     if e._jac_.target and e._jac_.source:
@@ -707,7 +705,7 @@ class JacBuiltin:
     @staticmethod
     @hookimpl
     def dotgen(
-        node: NodeArchitypeT,
+        node: NodeArchitype,
         depth: int,
         traverse: bool,
         edge_type: list[str],
@@ -718,12 +716,12 @@ class JacBuiltin:
     ) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         edge_type = edge_type if edge_type else []
-        visited_nodes: list[NodeArchitypeT] = []
-        node_depths: dict[NodeArchitypeT, int] = {node: 0}
+        visited_nodes: list[NodeArchitype] = []
+        node_depths: dict[NodeArchitype, int] = {node: 0}
         queue: list = [[node, 0]]
-        connections: list[tuple[NodeArchitypeT, NodeArchitypeT, EdgeArchitypeT]] = []
+        connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
 
-        def dfs(node: NodeArchitypeT, cur_depth: int) -> None:
+        def dfs(node: NodeArchitype, cur_depth: int) -> None:
             """Depth first search."""
             if node not in visited_nodes:
                 visited_nodes.append(node)
