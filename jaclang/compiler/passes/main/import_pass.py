@@ -177,6 +177,6 @@ class PyImportPass(JacImportPass):
         if lang == "py" and not i.sub_module and settings.py_raise:
             mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
             if mod:
-                # self.run_again = True
+                self.run_again = True
                 i.sub_module = mod
                 i.add_kids_right([mod], pos_update=False)
