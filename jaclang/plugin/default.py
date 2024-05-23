@@ -427,9 +427,15 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def get_root() -> Architype:
+    def get_root() -> Root:
         """Jac's assign comprehension feature."""
         return root
+
+    @staticmethod
+    @hookimpl
+    def get_root_type() -> Type[Root]:
+        """Jac's root getter."""
+        return Root
 
     @staticmethod
     @hookimpl
