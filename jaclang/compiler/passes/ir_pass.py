@@ -121,7 +121,7 @@ class Pass(Transform[T]):
         self.enter_node(node)
         if not self.prune_signal:
             for i in node.kid:
-                if i and i not in self.touch:
+                if i and (i not in self.touch or isinstance(i, ast.AbilityDef)):
                     self.touch.append(i)
                     self.traverse(i)
         else:
