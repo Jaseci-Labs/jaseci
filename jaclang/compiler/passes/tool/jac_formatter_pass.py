@@ -1801,6 +1801,7 @@ class JacFormatPass(Pass):
                     ast.ElseStmt,
                     ast.SpecialVarRef,
                     ast.ListCompr,
+                    ast.Name,
                 ),
             ):
                 self.emit(node, f" {i.gen.jac}")
