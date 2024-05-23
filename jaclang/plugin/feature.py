@@ -46,7 +46,7 @@ class JacFeature:
         return pm.hook.reset_context()
 
     @staticmethod
-    def memory_hook() -> Memory:
+    def memory_hook() -> Memory | None:
         """Create memory abstraction."""
         return pm.hook.memory_hook()
 

@@ -56,7 +56,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def memory_hook() -> Memory:
+    def memory_hook() -> Memory | None:
         """Create memory abstraction."""
         raise NotImplementedError
 

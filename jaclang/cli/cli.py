@@ -84,7 +84,7 @@ def run(
             if hasattr(cmd_registry, "args")
             and hasattr(cmd_registry.args, "session")
             and cmd_registry.args.session
-            else "jaclang.session"
+            else ""
         )
 
     Jac.context().init_memory(session)
@@ -115,7 +115,7 @@ def run(
     if not node or node == "root":
         entrypoint: Architype = Jac.get_root()
     else:
-        obj = Jac.memory_hook().get_obj(UUID(node))
+        obj = Jac.context().get_obj(UUID(node))
         if obj is None:
             print(f"Entrypoint {node} not found.")
             return
@@ -138,8 +138,10 @@ def get_object(id: str, session: str = "") -> Dict[Any, Any]:
     if session == "":
         session = (
             cmd_registry.args.session
-            if cmd_registry.args.session
-            else "jaclang.session"
+            if hasattr(cmd_registry, "args")
+            and hasattr(cmd_registry.args, "session")
+            and cmd_registry.args.session
+            else ""
         )
 
     Jac.context().init_memory(session)
@@ -343,7 +345,7 @@ def dot(
             if hasattr(cmd_registry, "args")
             and hasattr(cmd_registry.args, "session")
             and cmd_registry.args.session
-            else "jaclang.session"
+            else ""
         )
 
     Jac.context().init_memory(session)

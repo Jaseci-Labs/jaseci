@@ -73,7 +73,7 @@ hookimpl = pluggy.HookimplMarker("jac")
 class ExecutionContext:
     """Default Execution Context implementation."""
 
-    mem: Optional[ShelveStorage]
+    mem: Optional[Memory]
     root: Optional[Root]
 
     def __init__(self) -> None:
@@ -82,9 +82,10 @@ class ExecutionContext:
         self.root = None
 
     def init_memory(self, session: str = "") -> None:
-        if self.mem is None:
-            self.mem = ShelveStorage()
-        self.mem.connect(session)
+        if session:
+            self.mem = ShelveStorage(session)
+        else:
+            self.mem = Memory()
 
     def get_root(self) -> Root:
         if self.mem is None:
