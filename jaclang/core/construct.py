@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-# import shelve
-import types
 import unittest
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Optional, Union
@@ -12,6 +10,7 @@ from uuid import UUID, uuid4
 from jaclang.compiler.constant import EdgeDir
 from jaclang.core.utils import collect_node_connections
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.plugin.spec import DSFunc
 
 
 @dataclass(eq=False)
@@ -451,8 +450,7 @@ class Root(NodeArchitype):
     def __init__(self) -> None:
         """Create root node."""
         super().__init__()
-        # TODO: Need to alias this
-        self._jac_.id = "root"
+        self._jac_.id = UUID(int=0)
         self._jac_.persistent = True
 
     def reset(self) -> None:
@@ -467,19 +465,6 @@ class GenericEdge(EdgeArchitype):
 
     _jac_entry_funcs_ = []
     _jac_exit_funcs_ = []
-
-
-@dataclass(eq=False)
-class DSFunc:
-    """Data Spatial Function."""
-
-    name: str
-    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
-    func: Callable[[Any, Any], Any] | None = None
-
-    def resolve(self, cls: type) -> None:
-        """Resolve the function."""
-        self.func = getattr(cls, self.name)
 
 
 class JacTestResult(unittest.TextTestResult):

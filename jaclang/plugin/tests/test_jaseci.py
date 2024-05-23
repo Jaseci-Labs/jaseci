@@ -63,7 +63,7 @@ class TestJaseciPlugin(TestCase):
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=self.session,
-            node=obj["_jac_"]["id"],
+            node=str(obj["_jac_"]["id"]),
             walker="traverse",
         )
         output = self.capturedOutput.getvalue().strip()
@@ -77,13 +77,17 @@ class TestJaseciPlugin(TestCase):
             walker="create",
         )
         obj = cli.get_object(session=self.session, id="root")
-        edge_obj = cli.get_object(session=self.session, id=obj["_jac_"]["edge_ids"][0])
-        a_obj = cli.get_object(session=self.session, id=edge_obj["_jac_"]["target_id"])
+        edge_obj = cli.get_object(
+            session=self.session, id=str(obj["_jac_"]["edge_ids"][0])
+        )
+        a_obj = cli.get_object(
+            session=self.session, id=str(edge_obj["_jac_"]["target_id"])
+        )
         self._output2buffer()
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=self.session,
-            node=a_obj["_jac_"]["id"],
+            node=str(a_obj["_jac_"]["id"]),
             walker="traverse",
         )
         output = self.capturedOutput.getvalue().strip()
@@ -98,11 +102,13 @@ class TestJaseciPlugin(TestCase):
         obj = cli.get_object(session=self.session, id="root")
         self.assertEqual(len(obj["_jac_"]["edge_ids"]), 2)
         edge_objs = [
-            cli.get_object(session=self.session, id=e_id)
+            cli.get_object(session=self.session, id=str(e_id))
             for e_id in obj["_jac_"]["edge_ids"]
         ]
         node_ids = [obj["_jac_"]["target_id"] for obj in edge_objs]
-        node_objs = [cli.get_object(session=self.session, id=n_id) for n_id in node_ids]
+        node_objs = [
+            cli.get_object(session=self.session, id=str(n_id)) for n_id in node_ids
+        ]
         self.assertEqual(len(node_objs), 2)
         self.assertEqual({obj["tag"] for obj in node_objs}, {"first", "second"})
 

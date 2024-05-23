@@ -79,7 +79,7 @@ class ExecutionContext:
     def __init__(self) -> None:
         super().__init__()
         self.mem = ShelveStorage()
-        self.root: Optional[Root] = None
+        self.root = None
 
     def init_memory(self, session: str = "") -> None:
         if self.mem is None:
@@ -91,7 +91,7 @@ class ExecutionContext:
             raise ValueError("Memory not initialized")
 
         if not self.root:
-            root = self.mem.get_obj("root")
+            root = self.mem.get_obj(UUID(int=0))
             if root is None:
                 self.root = Root()
                 self.mem.save_obj(self.root, persistent=self.root._jac_.persistent)

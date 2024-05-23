@@ -6,12 +6,7 @@ import types
 from typing import Any, Callable, Optional, TYPE_CHECKING, Type, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.plugin.spec import (
-    JacBuiltin,
-    JacCmdSpec,
-    JacFeatureSpec,
-    T,
-)
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
 
 if TYPE_CHECKING:
     from jaclang.core.construct import (
@@ -19,8 +14,9 @@ if TYPE_CHECKING:
         EdgeArchitype,
         NodeArchitype,
         WalkerArchitype,
+        Root,
     )
-    from jaclang.plugin.default import ExecutionContext, DSFunc
+    from jaclang.plugin.default import ExecutionContext
     from jaclang.plugin.memory import Memory
 
 
@@ -37,7 +33,7 @@ class JacFeature:
 
     import abc
     from jaclang.compiler.constant import EdgeDir
-    from jaclang.core.construct import Root
+    from jaclang.plugin.spec import DSFunc
 
     @staticmethod
     def context(session: str = "") -> ExecutionContext:

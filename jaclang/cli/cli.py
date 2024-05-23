@@ -20,6 +20,7 @@ from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.core.construct import Architype
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
@@ -111,13 +112,14 @@ def run(
     else:
         print("Not a .jac file.")
 
-    if node:
-        entrypoint = Jac.memory_hook().get_obj(UUID(node))
-        if not entrypoint:
-            print(f"Node {node} not found.")
-            return
+    if not node or node == "root":
+        entrypoint: Architype = Jac.get_root()
     else:
-        entrypoint = Jac.get_root()
+        obj = Jac.memory_hook().get_obj(UUID(node))
+        if obj is None:
+            print(f"Entrypoint {node} not found.")
+            return
+        entrypoint = obj
 
     # TODO: handle no override name
     if walker:
@@ -142,7 +144,15 @@ def get_object(id: str, session: str = "") -> Dict[Any, Any]:
 
     Jac.context().init_memory(session)
 
-    obj = Jac.context().get_obj(UUID(id))
+    if id == "root":
+        id_uuid = UUID(int=0)
+    else:
+        print("convert id to uuid")
+        print(id)
+        print("convert id to uuid")
+        id_uuid = UUID(id)
+
+    obj = Jac.context().get_obj(id_uuid)
     if obj is None:
         print(f"Object with id {id} not found.")
         Jac.reset_context()
