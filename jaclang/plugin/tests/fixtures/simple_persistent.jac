@@ -15,7 +15,6 @@ walker create {
     can ata with a entry {
         here ++> b(name="node b");
     }
-
 }
 
 walker traverse {
