@@ -527,6 +527,12 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def get_root_type() -> Type[Root]:
+        """Jac's root getter."""
+        return Root
+
+    @staticmethod
+    @hookimpl
     def build_edge(
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype]],

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         EdgeDir,
         ExecutionContext,
         WalkerArchitype,
+        Root,
     )
     from jaclang.plugin.memory import Memory
 
@@ -219,7 +220,13 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def get_root() -> Architype:
+    def get_root() -> Root:
+        """Jac's root getter."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_root_type() -> Type[Root]:
         """Jac's root getter."""
         raise NotImplementedError
 
