@@ -334,7 +334,7 @@ class Architype:
     def __eq__(self, other: object) -> bool:
         """Override equality for architype."""
         if not isinstance(other, Architype):
-            raise NotImplementedError
+            return False
         else:
             return self._jac_.id == other._jac_.id
 
