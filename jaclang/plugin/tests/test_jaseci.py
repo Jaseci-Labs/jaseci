@@ -35,7 +35,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_walker_simple_persistent(self) -> None:
         """Test simple persistent object."""
-        session = "test_walker_simple_persistent.session"
+        session = self.fixture_abs_path("test_walker_simple_persistent.session")
         self._output2buffer()
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
@@ -53,7 +53,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_entrypoint_root(self) -> None:
         """Test entrypoint being root."""
-        session = "test_entrypoint_root.session"
+        session = self.fixture_abs_path("test_entrypoint_root.session")
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
@@ -73,7 +73,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_entrypoint_non_root(self) -> None:
         """Test entrypoint being non root node."""
-        session = "test_entrypoint_non_root.session"
+        session = self.fixture_abs_path("test_entrypoint_non_root.session")
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
@@ -95,7 +95,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_get_edge(self) -> None:
         """Test get an edge object."""
-        session = "test_get_edge.session"
+        session = self.fixture_abs_path("test_get_edge.session")
         cli.run(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
@@ -114,7 +114,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_filter_on_edge_get_edge(self) -> None:
         """Test filtering on edge."""
-        session = "test_filter_on_edge_get_edge.session"
+        session = self.fixture_abs_path("test_filter_on_edge_get_edge.session")
         cli.run(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
@@ -132,7 +132,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_filter_on_edge_get_node(self) -> None:
         """Test filtering on edge, then get node."""
-        session = "test_filter_on_edge_get_node.session"
+        session = self.fixture_abs_path("test_filter_on_edge_get_node.session")
         cli.run(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
@@ -150,7 +150,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_filter_on_node_get_node(self) -> None:
         """Test filtering on node, then get edge."""
-        session = "test_filter_on_node_get_node.session"
+        session = self.fixture_abs_path("test_filter_on_node_get_node.session")
         cli.run(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
@@ -168,7 +168,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_filter_on_edge_visit(self) -> None:
         """Test filtering on edge, then visit."""
-        session = "test_filter_on_edge_visit.session"
+        session = self.fixture_abs_path("test_filter_on_edge_visit.session")
         cli.run(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
@@ -184,7 +184,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_filter_on_node_visit(self) -> None:
         """Test filtering on node, then visit."""
-        session = "test_filter_on_node_visit.session"
+        session = self.fixture_abs_path("test_filter_on_node_visit.session")
         cli.run(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
@@ -200,7 +200,7 @@ class TestJaseciPlugin(TestCase):
 
     def test_indirect_reference_node(self) -> None:
         """Test reference node indirectly without visiting."""
-        session = "test_indirect_reference_node.session"
+        session = self.fixture_abs_path("test_indirect_reference_node.session")
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,

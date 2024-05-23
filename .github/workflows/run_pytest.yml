@@ -26,4 +26,4 @@ jobs:
         pip install pygame
 
     - name: Run tests
-      run: pytest -k test_jaseci
+      run: pytest
