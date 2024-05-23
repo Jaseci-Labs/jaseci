@@ -6,11 +6,11 @@ import inspect
 import marshal
 import os
 import pickle
-import pprint
 import shutil
 import sys
 import types
-from typing import Optional
+from typing import Any, Dict, Optional
+from uuid import UUID
 
 import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
@@ -112,7 +112,7 @@ def run(
         print("Not a .jac file.")
 
     if node:
-        entrypoint = Jac.memory_hook().get_obj(node)
+        entrypoint = Jac.memory_hook().get_obj(UUID(node))
         if not entrypoint:
             print(f"Node {node} not found.")
             return
@@ -131,7 +131,7 @@ def run(
 
 
 @cmd_registry.register
-def get_object(id: str, session: str = "") -> dict:
+def get_object(id: str, session: str = "") -> Dict[Any, Any]:
     """Get the object with the specified id."""
     if session == "":
         session = (
@@ -142,11 +142,14 @@ def get_object(id: str, session: str = "") -> dict:
 
     Jac.context().init_memory(session)
 
-    obj = Jac.memory_hook().get_obj(id)
-
-    Jac.reset_context()
-
-    return obj.__getstate__()
+    obj = Jac.context().get_obj(UUID(id))
+    if obj is None:
+        print(f"Object with id {id} not found.")
+        Jac.reset_context()
+        return {}
+    else:
+        Jac.reset_context()
+        return obj.__getstate__()
 
 
 @cmd_registry.register

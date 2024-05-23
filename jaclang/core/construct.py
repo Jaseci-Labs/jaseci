@@ -6,7 +6,7 @@ from __future__ import annotations
 import types
 import unittest
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 from uuid import UUID, uuid4
 
 from jaclang.compiler.constant import EdgeDir
@@ -40,7 +40,7 @@ class NodeAnchor(ObjectAnchor):
     edge_ids: list[UUID] = field(default_factory=lambda: [])
     persistent: bool = False
 
-    def __getstate__(self) -> dict[str, Any]:
+    def __getstate__(self) -> Dict[Any, Any]:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state.pop("obj")
@@ -169,7 +169,7 @@ class EdgeAnchor(ObjectAnchor):
     is_undirected: bool = False
     persistent: bool = False
 
-    def __getstate__(self) -> dict[str, Any]:
+    def __getstate__(self) -> Dict[Any, Any]:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state.pop("obj")
@@ -343,6 +343,10 @@ class Architype:
         """Override repr for architype."""
         return f"{self.__class__.__name__}"
 
+    def __getstate__(self) -> Dict[Any, Any]:
+        """Override getstate for pickle and shelve."""
+        raise NotImplementedError
+
 
 class NodeArchitype(Architype):
     """Node Architype Protocol."""
@@ -359,7 +363,7 @@ class NodeArchitype(Architype):
         self._jac_.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> Dict[Any, Any]:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state["_jac_"] = self._jac_.__getstate__()
@@ -388,7 +392,7 @@ class EdgeArchitype(Architype):
         self.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> Dict[Any, Any]:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state["_jac_"] = self._jac_.__getstate__()
