@@ -199,7 +199,6 @@ class TestJaseciPlugin(TestCase):
         )
         self.assertEqual(self.capturedOutput.getvalue().strip(), "simple(tag='first')")
 
-    # def test_indirect_reference_edge(self) -> None:
     def test_indirect_reference_node(self) -> None:
         """Test reference node indirectly without visiting."""
         cli.run(
