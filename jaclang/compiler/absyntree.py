@@ -3716,7 +3716,7 @@ class MatchArch(MatchPattern):
 
     def __init__(
         self,
-        name: NameSpec,
+        name: AtomTrailer | NameSpec,
         arg_patterns: Optional[SubNodeList[MatchPattern]],
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         kid: Sequence[AstNode],
