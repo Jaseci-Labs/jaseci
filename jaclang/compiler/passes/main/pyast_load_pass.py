@@ -126,6 +126,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_imported=False,
             kid=valid,
         )
+        print("vanakkam from load pass ==> ", ret.name)
         ret.gen.py_ast = [node]
         return self.nu(ret)
 
@@ -1719,7 +1720,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid.append(kw_patterns)
         else:
             kw_patterns = None
-        if isinstance(cls, (ast.NameSpec,ast.AtomTrailer)):
+        if isinstance(cls, (ast.NameSpec, ast.AtomTrailer)):
             return ast.MatchArch(
                 name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
             )

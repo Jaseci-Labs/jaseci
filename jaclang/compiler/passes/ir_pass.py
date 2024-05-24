@@ -109,8 +109,13 @@ class Pass(Transform[T]):
         self.before_pass()
         if not isinstance(ir, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
+        from jaclang.settings import settings
+
+        print("..") if settings.py_raise else None
         self.traverse(ir)
+        print(".|.") if settings.py_raise else None
         self.after_pass()
+        print(".|;;|.") if settings.py_raise else None
         return self.ir
 
     def traverse(self, node: ast.AstNode) -> ast.AstNode:
