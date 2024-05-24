@@ -3757,7 +3757,8 @@ class JacParser(Pass):
                             right=right_,
                             is_attr=True,
                             is_null_ok=False,
-                            kid=[target_, right_],
+                            # kid=[target_,right_],
+                            kid=[target_, chomp[0], right_],
                         )
                         chomp = chomp[2:]
                     else:
@@ -3767,8 +3768,15 @@ class JacParser(Pass):
                 else:
                     break
             name = cur_element
+            lparen = chomp[0]
+            rapren = chomp[-1]
             first = chomp[1]
-            second = chomp[3] if len(chomp) > 4 else None
+            if len(chomp) > 4:
+                second = chomp[3]
+                comma = chomp[2]
+            else:
+                second = None
+                comma = None
             arg = (
                 first
                 if isinstance(first, ast.SubNodeList)
@@ -3787,16 +3795,21 @@ class JacParser(Pass):
                 )
             )
             if isinstance(name, (ast.NameSpec, ast.AtomTrailer)):
+                kid_nodes = [name, lparen]
+                if arg:
+                    kid_nodes.append(arg)
+                    if kw:
+                        kid_nodes.extend([comma, kw]) if comma else kid_nodes.append(kw)
+                elif kw:
+                    kid_nodes.append(kw)
+                kid_nodes.append(rapren)
+
                 return self.nu(
                     ast.MatchArch(
                         name=name,
                         arg_patterns=arg,
                         kw_patterns=kw,
-                        kid=(
-                            [name, arg, kw]
-                            if kw and arg
-                            else [name, arg] if arg else [name, kw] if kw else [name]
-                        ),
+                        kid=kid_nodes,
                     )
                 )
             else:
