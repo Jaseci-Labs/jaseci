@@ -37,8 +37,8 @@ class ShelveStorage(Memory):
     def commit(self) -> None:
         """Commit changes to persistent storage."""
         if self.storage is not None:
-            for obj in self.save_obj_list:
-                self.storage[str(obj._jac_.id)] = obj
+            for obj_id, obj in self.save_obj_list.items():
+                self.storage[str(obj_id)] = obj
         self.save_obj_list.clear()
 
     def connect(self, session: str) -> None:

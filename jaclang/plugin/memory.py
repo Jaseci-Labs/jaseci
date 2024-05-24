@@ -9,7 +9,7 @@ class Memory:
     """Memory module interface."""
 
     mem: dict[UUID, Architype] = {}
-    save_obj_list: set[Architype] = set()
+    save_obj_list: dict[UUID, Architype] = {}
 
     def __init__(self) -> None:
         """init."""
@@ -37,7 +37,7 @@ class Memory:
         self.mem[item._jac_.id] = item
         if persistent:
             # TODO: check if it needs to be saved, i.e. dirty or not
-            self.save_obj_list.add(item)
+            self.save_obj_list[item._jac_.id] = item
 
     def commit(self) -> None:
         """Commit changes to persistent storage, if applicable."""

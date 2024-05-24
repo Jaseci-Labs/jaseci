@@ -464,12 +464,9 @@ class JacFeatureDefaults:
                 edges.append(conn_edge)
                 i._jac_.connect_node(j, conn_edge)
 
-                if i._jac_.persistent:
+                if i._jac_.persistent or j._jac_.persistent:
                     conn_edge.save()
                     j.save()
-
-                if j._jac_.persistent:
-                    conn_edge.save()
                     i.save()
 
         return right if not edges_only else edges
