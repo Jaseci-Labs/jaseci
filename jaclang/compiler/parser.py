@@ -3757,7 +3757,6 @@ class JacParser(Pass):
                             right=right_,
                             is_attr=True,
                             is_null_ok=False,
-                            # kid=[target_,right_],
                             kid=[target_, chomp[0], right_],
                         )
                         chomp = chomp[2:]
