@@ -30,7 +30,7 @@ setup(
             "groq",
             "openai",
             "together",
-            "loguru"
+            "loguru",
         ]
     },
     entry_points={

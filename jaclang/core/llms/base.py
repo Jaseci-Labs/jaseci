@@ -1,3 +1,5 @@
+"""Base Large Language Model (LLM) class."""
+
 import re
 
 from .utils import logger
@@ -69,6 +71,7 @@ Provide the given Output as dict with "output" key. Such that the "output"'s val
 eval("output"'s value) Compatible. Important: Only provide the dict object.
 """  # noqa E501
 
+
 class BaseLLM:
     """Base Large Language Model (LLM) class."""
 
@@ -76,7 +79,7 @@ class BaseLLM:
     MTLLM_REASON_SUFFIX: str = WITH_REASON_SUFFIX
     MTLLM_WO_REASON_SUFFIX: str = WITHOUT_REASON_SUFFIX
 
-    def __init__(self, verbose:bool = False, **kwargs: dict) -> None:
+    def __init__(self, verbose: bool = False, **kwargs: dict) -> None:
         """Initialize the Large Language Model (LLM) client."""
         self.verbose = verbose
         raise NotImplementedError
@@ -108,7 +111,6 @@ class BaseLLM:
             return {"reasoning": reasoning, "output": output}
         return {"reasoning": reasoning, "output": output}
 
-    
     def _extract_output(
         self,
         meaning_out: str,
@@ -132,15 +134,21 @@ class BaseLLM:
         llm_output = self.__infer__(output_fix_prompt)
         if self.verbose:
             if error != "None":
-                logger.info(f"Ran into an error: {error}. Trying to extract output again. Max tries left: {max_tries}")
+                logger.info(
+                    f"Ran into an error: {error}. Trying to extract output again. Max tries left: {max_tries}"
+                )
             else:
-                logger.info(f"Trying to extract output again. Max tries left: {max_tries}")
+                logger.info(
+                    f"Trying to extract output again. Max tries left: {max_tries}"
+                )
         try:
             eval_output = eval(llm_output)
             return eval_output.get("reasoning", ""), eval_output["output"]
         except Exception as e:
             if self.verbose:
-                logger.error(f"Failed to extract output. Error: {e}. Trying again. Given Output: {llm_output}")
+                logger.error(
+                    f"Failed to extract output. Error: {e}. Trying again. Given Output: {llm_output}"
+                )
             return self._extract_output(
                 meaning_out, did_reason, llm_output, str(e), max_tries - 1
             )
