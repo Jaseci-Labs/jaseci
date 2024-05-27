@@ -125,10 +125,15 @@ class Pass(Transform[T]):
         self.cur_node = node
         self.enter_node(node)
         if not self.prune_signal:
+            # try:
             for i in node.kid:
                 if i and (i not in self.touch or isinstance(i, ast.AbilityDef)):
                     self.touch.append(i)
                     self.traverse(i)
+            # except:
+            #     print(node)
+            #     self.ice(f"Error in {self.__class__.__name__} pass.")
+            #     exit()
         else:
             self.prune_signal = False
         self.cur_node = node
