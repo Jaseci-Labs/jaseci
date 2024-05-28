@@ -2,6 +2,7 @@ import:py from jaclang.core.llms, BaseLLM;
 
 obj model:BaseLLM: {
     can init(output_str: str) {
+        self.verbose = False;
         self.output_str = output_str;
     }
     can __infer__(meaning_in: str, **kwargs: dict) {
