@@ -26,22 +26,23 @@ def aott_raise(
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
     if method != "ReAct":
-        system_prompt = model.SYSTEM_PROMPT
-        mtllm_prompt =  model.MTLLM_PROMPT.format(
+        system_prompt = model.MTLLM_SYSTEM_PROMPT
+        mtllm_prompt = model.MTLLM_PROMPT.format(
             information=information,
             inputs_information=inputs_information,
             output_information=output_information,
             type_explanations=type_explanations,
             action=action,
-            context=context
+            context=context,
         )
         method_prompt = model.MTLLM_METHOD_PROMPTS[method]
         meaning_in = f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}"
         return model.__infer__(meaning_in, **model_params)
     else:
         assert tools, "Tools must be provided for the ReAct method."
-        #TODO: Implement ReAct method
+        # TODO: Implement ReAct method
         return ""
+
 
 def get_info_types(
     scope: SemScope, mod_registry: SemRegistry, incl_info: list[tuple[str, str]]
@@ -199,5 +200,6 @@ class Tool:
     """Tool class for the AOTT operations."""
 
     def __init__(self) -> None:
+        """Initialize the Tool class."""
         # TODO: Implement the Tool class
         pass

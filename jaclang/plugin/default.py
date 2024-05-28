@@ -611,6 +611,13 @@ class JacFeatureDefaults:
 
         output_information = f"{outputs[0]} ({outputs[1]})"
         type_collector.extend(extract_non_primary_type(outputs[1]))
+        output_type_explanations = "\n".join(
+            list(
+                get_all_type_explanations(
+                    extract_non_primary_type(outputs[1]), mod_registry
+                ).values()
+            )
+        )
 
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
@@ -629,7 +636,9 @@ class JacFeatureDefaults:
             tools=[],
             model_params=model_params,
         )
-        output = model.resolve_output(meaning_out, method)
+        output = model.resolve_output(
+            meaning_out, output_information, output_type_explanations
+        )
         return output["output"]
 
 
