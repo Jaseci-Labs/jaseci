@@ -598,6 +598,7 @@ class JacFeatureDefaults:
         )
 
         type_collector: list = []
+        incl_info = [x for x in incl_info if not isinstance(x[1], type)]
         information, collected_types = get_info_types(_scope, mod_registry, incl_info)
         type_collector.extend(collected_types)
         inputs_information_list = []
