@@ -592,7 +592,7 @@ class JacFeatureDefaults:
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None
 
-        reason = model_params.pop("reason") if "reason" in model_params else False
+        method = model_params.pop("method") if "method" in model_params else "normal"
         context = (
             ",".join(model_params.pop("context")) if "context" in model_params else ""
         )
@@ -617,18 +617,19 @@ class JacFeatureDefaults:
         )
         type_explanations = "\n".join(type_explanations_list)
 
-        meaning_in = aott_raise(
-            model,
-            information,
-            inputs_information,
-            output_information,
-            type_explanations,
-            action,
-            context,
-            reason,
+        meaning_out = aott_raise(
+            model=model,
+            information=information,
+            inputs_information=inputs_information,
+            output_information=output_information,
+            type_explanations=type_explanations,
+            action=action,
+            context=context,
+            method=method,
+            tools=[],
+            model_params=model_params,
         )
-        meaning_out = model.__infer__(meaning_in, **model_params)
-        output = model.resolve_output(meaning_out, reason)
+        output = model.resolve_output(meaning_out, method)
         return output["output"]
 
 
