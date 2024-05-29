@@ -1,7 +1,6 @@
 """Ollama client for MTLLM."""
 
 from .base import BaseLLM
-from .utils import logger
 
 REASON_SUFFIX = """
 Reason and return the output results(s) only such that <Output> should be eval(<Output>) Compatible and reflects the
@@ -38,7 +37,9 @@ class Ollama(BaseLLM):
         "ReAct": REACT_SUFFIX,
     }
 
-    def __init__(self, verbose: bool = False, max_tries: int = 10, **kwargs: dict) -> None:
+    def __init__(
+        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+    ) -> None:
         """Initialize the Ollama API client."""
         import ollama  # type: ignore
 

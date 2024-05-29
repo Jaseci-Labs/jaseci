@@ -1,8 +1,6 @@
 """Anthropic API client for MTLLM."""
 
 from .base import BaseLLM
-from .utils import logger
-
 
 REASON_SUFFIX = """
 Reason and return the output result(s) only, adhering to the provided Type in the following format
@@ -37,7 +35,9 @@ class TogetherAI(BaseLLM):
         "ReAct": REACT_SUFFIX,
     }
 
-    def __init__(self, verbose: bool = False, max_tries: int = 10, **kwargs: dict) -> None:
+    def __init__(
+        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+    ) -> None:
         """Initialize the Anthropic API client."""
         import together  # type: ignore
 

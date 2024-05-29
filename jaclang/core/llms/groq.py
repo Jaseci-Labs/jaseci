@@ -1,7 +1,6 @@
 """Groq API client for MTLLM."""
 
 from .base import BaseLLM
-from .utils import logger
 
 
 REASON_SUFFIX = """
@@ -37,7 +36,9 @@ class Groq(BaseLLM):
         "ReAct": REACT_SUFFIX,
     }
 
-    def __init__(self, verbose: bool = False, max_tries: int = 10, **kwargs: dict) -> None:
+    def __init__(
+        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+    ) -> None:
         """Initialize the Groq API client."""
         import groq  # type: ignore
 

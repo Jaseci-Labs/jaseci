@@ -1,7 +1,7 @@
 """Base Large Language Model (LLM) class."""
 
-import re
 import logging
+import re
 
 from .utils import logger
 
@@ -89,6 +89,7 @@ OUTPUT_CHECK_PROMPT = """
 Check if the output is exactly in the desired Output Type. Important: Just say 'Yes' or 'No'.
 """  # noqa E501
 
+
 class BaseLLM:
     """Base Large Language Model (LLM) class."""
 
@@ -122,7 +123,11 @@ class BaseLLM:
         return self.__infer__(input_text, **kwargs)
 
     def resolve_output(
-        self, meaning_out: str, output_semstr: str, output_type: str, output_type_info: str
+        self,
+        meaning_out: str,
+        output_semstr: str,
+        output_type: str,
+        output_type_info: str,
     ) -> str:
         """Resolve the output string to return the reasoning and output."""
         if self.verbose:
@@ -131,10 +136,14 @@ class BaseLLM:
         output = output_match.group(1).strip() if output_match else None
         if not output_match:
             output = self._extract_output(
-                meaning_out, output_semstr, output_type, output_type_info, self.max_tries
+                meaning_out,
+                output_semstr,
+                output_type,
+                output_type_info,
+                self.max_tries,
             )
-        return output
-    
+        return str(output)
+
     def _check_output(
         self, output: str, output_type: str, output_type_info: str
     ) -> bool:
@@ -150,10 +159,11 @@ class BaseLLM:
     def _extract_output(
         self,
         meaning_out: str,
-        output_semstr: str, output_type: str,
+        output_semstr: str,
+        output_type: str,
         output_type_info: str,
         max_tries: int,
-        previous_output: str = "None"
+        previous_output: str = "None",
     ) -> str:
         """Extract the output from the meaning out string."""
         if max_tries == 0:
@@ -174,12 +184,16 @@ class BaseLLM:
             model_output=meaning_out,
             previous_output=previous_output,
             output_info=f"{output_semstr} ({output_type})",
-            output_type_info=output_type_info
+            output_type_info=output_type_info,
         )
         llm_output = self.__infer__(output_fix_prompt)
-        is_in_desired_format = self._check_output(llm_output, output_type, output_type_info)
+        is_in_desired_format = self._check_output(
+            llm_output, output_type, output_type_info
+        )
         if self.verbose:
-            logger.info(f"Extracted Output: {llm_output}. Is in Desired Format: {is_in_desired_format}")
+            logger.info(
+                f"Extracted Output: {llm_output}. Is in Desired Format: {is_in_desired_format}"
+            )
         if is_in_desired_format:
             return llm_output
         return self._extract_output(
@@ -188,5 +202,5 @@ class BaseLLM:
             output_type,
             output_type_info,
             max_tries - 1,
-            llm_output
+            llm_output,
         )

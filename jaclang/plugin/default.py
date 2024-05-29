@@ -594,7 +594,9 @@ class JacFeatureDefaults:
 
         method = model_params.pop("method") if "method" in model_params else "Normal"
         available_methods = model.MTLLM_METHOD_PROMPTS.keys()
-        assert method in available_methods, f"Invalid method: {method}. Select from {available_methods}"
+        assert (
+            method in available_methods
+        ), f"Invalid method: {method}. Select from {available_methods}"
 
         context = (
             "\n".join(model_params.pop("context")) if "context" in model_params else ""
