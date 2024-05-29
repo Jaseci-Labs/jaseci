@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+import builtins
 import html
 from typing import Optional, TYPE_CHECKING
 
@@ -268,6 +269,8 @@ def get_symtab_tree_str(
     """Recursively print symbol table tree."""
     if root is None or depth == 0:
         return ""
+    if root.name in dir(builtins):
+        return ""
 
     level_markers = level_markers or []
     markers = "".join(
@@ -320,6 +323,8 @@ def dotgen_symtab_tree(node: SymbolTable) -> str:
         dot_lines.append(f"{gen_node_id(node)} {gen_node_parameters(node)};")
         for kid_node in node.kid:
             if kid_node:
+                if kid_node.name in dir(builtins):
+                    continue
                 dot_lines.append(f"{gen_node_id(node)}  -> {gen_node_id(kid_node)};")
                 gen_dot_graph(kid_node)
 
