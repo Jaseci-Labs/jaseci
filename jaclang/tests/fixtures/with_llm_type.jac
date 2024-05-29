@@ -7,6 +7,7 @@ obj model:BaseLLM: {
         self.output_str = output_str;
     }
     can __infer__(meaning_in: str, **kwargs: dict) {
+        print("Meaning in: ", meaning_in);
         return f"[Output] {self.output_str}";
     }
 }

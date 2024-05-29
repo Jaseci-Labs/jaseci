@@ -179,14 +179,14 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("14/03/1879", stdout_value)
-        self.assertEqual(
-            "Person(name='Jason Mars', dob='1994-01-01', age=30)",
-            stdout_value.split("\n")[1],
+        self.assertNotIn(
+            'University (University) (obj) = type(__module__="with_llm_type", __doc__=None, _jac_entry_funcs_=[], _jac_exit_funcs_=[], __init__=function(__wrapped__=function()))',  # noqa E501
+            stdout_value,
         )
-        self.assertIn(
-            "Person(name='Jason Mars', dob='1994-01-01', age=30)",
-            stdout_value.split("\n")[2],
+        desired_output_count = stdout_value.count(
+            "Person(name='Jason Mars', dob='1994-01-01', age=30)"
         )
+        self.assertEqual(desired_output_count, 2)
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
