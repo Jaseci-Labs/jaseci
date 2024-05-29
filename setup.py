@@ -20,7 +20,19 @@ setup(
     package_data={
         "": ["*.ini", "*.lark"],
     },
-    extras_require={"llms": ["transformers", "torch", "ollama", "anthropic", "groq"]},
+    extras_require={
+        "llms": [
+            "transformers",
+            "accelerator",
+            "torch",
+            "ollama",
+            "anthropic",
+            "groq",
+            "openai",
+            "together",
+            "loguru",
+        ]
+    },
     entry_points={
         "console_scripts": [
             "jac = jaclang.cli.cli:start_cli",

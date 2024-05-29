@@ -1,8 +1,8 @@
 node n {}
+
 walker test {
     can c with n entry {
         self.user_level_buddy_schedule = {};
-
         # Update any new user level buddy schedule
         for (k, v) in self.user_level_buddy_schedule.items() {
             if k not in here.user_level_buddy_schedule {

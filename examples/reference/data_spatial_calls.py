@@ -3,11 +3,11 @@ from jaclang.plugin.feature import JacFeature as Jac
 from dataclasses import dataclass
 
 
-@Jac.make_walker(on_entry=[Jac.DSFunc("func2", Jac.RootType)], on_exit=[])
+@Jac.make_walker(on_entry=[Jac.DSFunc("func2", Jac.get_root_type())], on_exit=[])
 @dataclass(eq=False)
 class Creator:
 
-    def func2(self, here: Jac.RootType) -> None:
+    def func2(self, here: Jac.get_root_type()) -> None:
         end = here
         i = 0
         while i < 5:

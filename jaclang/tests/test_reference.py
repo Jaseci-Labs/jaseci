@@ -87,8 +87,8 @@ class JacReferenceTests(TestCase):
             self.assertGreater(len(output_py), 0)
             self.assertEqual(output_py, output_jac)
         except Exception as e:
-            print(f"\nJAC Output:\n{output_jac}")
-            print(f"\nPython Output:\n{output_py}")
+            # print(f"\nJAC Output:\n{output_jac}")
+            # print(f"\nPython Output:\n{output_py}")
             raise e
 
 

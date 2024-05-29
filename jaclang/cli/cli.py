@@ -106,7 +106,7 @@ def build(filename: str) -> None:
 
 
 @cmd_registry.register
-def check(filename: str) -> None:
+def check(filename: str, print_errs: bool = True) -> None:
     """Run type checker for a specified .jac file.
 
     :param filename: The path to the .jac file.
@@ -119,7 +119,9 @@ def check(filename: str) -> None:
 
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
-
+        if print_errs:
+            for e in out.errors_had:
+                print("Error:", e)
         print(f"Errors: {errs}, Warnings: {warnings}")
     else:
         print("Not a .jac file.")

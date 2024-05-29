@@ -611,9 +611,10 @@ class PyastGenPass(Pass):
                 )
             )
             if node.items:
-                self.warning(
-                    "Includes import * in target module into current namespace."
-                )
+                pass
+                # self.warning(
+                #     "Includes import * in target module into current namespace."
+                # )
         if not node.from_loc:
             py_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
         else:
@@ -1067,7 +1068,11 @@ class PyastGenPass(Pass):
                 if isinstance(node.signature, ast.FuncSignature)
                 else []
             )
-            action = node.semstr.gen.py_ast[0] if node.semstr else None
+            action = (
+                node.semstr.gen.py_ast[0]
+                if node.semstr
+                else self.sync(ast3.Constant(value=None))
+            )
             return [
                 self.sync(
                     ast3.Assign(
@@ -1387,12 +1392,20 @@ class PyastGenPass(Pass):
             ):
                 node.gen.py_ast = [
                     self.sync(
-                        ast3.Attribute(
-                            value=self.sync(
-                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
+                                        )
+                                    ),
+                                    attr="get_root_type",
+                                    ctx=ast3.Load(),
+                                )
                             ),
-                            attr="RootType",
-                            ctx=ast3.Load(),
+                            args=[],
+                            keywords=[],
                         )
                     )
                 ]

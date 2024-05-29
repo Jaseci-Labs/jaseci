@@ -16,7 +16,7 @@ from jaclang.core.construct import (
     root as root,
 )
 from jaclang.core.importer import jac_importer as jac_importer
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Optional, Type, Union, TypeVar
 
 from jaclang.compiler.absyntree import Module
 import pluggy
@@ -125,7 +125,9 @@ class JacFeatureDefaults:
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
     ) -> list[T]: ...
     @staticmethod
-    def get_root() -> Architype: ...
+    def get_root() -> Root: ...
+    @staticmethod
+    def get_root_type() -> Type[Root]: ...
     @staticmethod
     def build_edge(
         is_undirected: bool,

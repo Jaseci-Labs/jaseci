@@ -1,7 +1,8 @@
 node user_root {}
 
 walker create_user {
-    has user_info:dict = {};
+    has user_info: dict = {};
+
     can spawn_user_root;
 }
 
@@ -13,7 +14,7 @@ walker create_user {
             "name": "Yiping Kang"
         };
     }
-    visit [-->(`?user_root)](?jid==self.user_info["jid"]) else {
+    visit [-->(`?user_root)](?jid == self.user_info["jid"]) else {
         n = here ++> user_root(
             jid=self.user_info["jid"],
             email=self.user_info["user"],

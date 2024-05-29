@@ -2,9 +2,9 @@ from __future__ import annotations
 from jaclang.plugin.feature import JacFeature as _Jac
 
 
-@_Jac.make_walker(on_entry=[_Jac.DSFunc("travel", _Jac.RootType)], on_exit=[])
+@_Jac.make_walker(on_entry=[_Jac.DSFunc("travel", _Jac.get_root_type())], on_exit=[])
 class Visitor:
-    def travel(self, _jac_here_: _Jac.RootType) -> None:
+    def travel(self, _jac_here_: _Jac.get_root_type()) -> None:
         if _Jac.visit_node(
             self, _Jac.edge_ref(_jac_here_, None, _Jac.EdgeDir.OUT, None, None)
         ):
