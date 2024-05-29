@@ -1,8 +1,13 @@
 """Base Large Language Model (LLM) class."""
 
 import re
+import logging
 
 from .utils import logger
+
+
+httpx_logger = logging.getLogger("httpx")
+httpx_logger.setLevel(logging.WARNING)
 
 SYSTEM_PROMPT = """
 [System Prompt]
@@ -66,13 +71,23 @@ MTLLM_OUTPUT_FIX_PROMPT = """
 [Type Explanations]
 {output_type_info}
 
-[Error Encountered]
-{error}
-
-Provide the given Output as dict with "output" key. Such that the "output"'s value is in the desired output type and should be
-eval("output"'s value) Compatible. Important: Only provide the dict object. Do not include any other information.
+Above output is not in the desired Output Format/Type. Please provide the output in the desired type. Do not repeat the previously provided output.
+Important: Do not provide the code or the methodology. Only provide
+the output in the desired format.
 """  # noqa E501
 
+OUTPUT_CHECK_PROMPT = """
+[Output]
+{model_output}
+
+[Desired Output Type]
+{output_type}
+
+[Type Explanations]
+{output_type_info}
+
+Check if the output is exactly in the desired Output Type. Important: Just say 'Yes' or 'No'.
+"""  # noqa E501
 
 class BaseLLM:
     """Base Large Language Model (LLM) class."""
@@ -86,6 +101,7 @@ class BaseLLM:
         "ReAct": REACT_SUFFIX,
     }
     OUTPUT_FIX_PROMPT: str = MTLLM_OUTPUT_FIX_PROMPT
+    OUTPUT_CHECK_PROMPT: str = OUTPUT_CHECK_PROMPT
 
     def __init__(
         self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
@@ -97,72 +113,80 @@ class BaseLLM:
 
     def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
-        if self.verbose:
-            logger.info(f"Meaning In\n{meaning_in}")
         raise NotImplementedError
 
     def __call__(self, input_text: str, **kwargs: dict) -> str:
         """Infer a response from the input text."""
+        if self.verbose:
+            logger.info(f"Meaning In\n{input_text}")
         return self.__infer__(input_text, **kwargs)
 
     def resolve_output(
-        self, meaning_out: str, output_info: str, output_type_info: str
+        self, meaning_out: str, output_semstr: str, output_type: str, output_type_info: str
     ) -> str:
         """Resolve the output string to return the reasoning and output."""
+        if self.verbose:
+            logger.opt(colors=True).info(f"Meaning Out\n<green>{meaning_out}</green>")
         output_match = re.search(r"\[Output\](.*)", meaning_out)
         output = output_match.group(1).strip() if output_match else None
         if not output_match:
             output = self._extract_output(
-                meaning_out, output_info, output_type_info, self.max_tries
+                meaning_out, output_semstr, output_type, output_type_info, self.max_tries
             )
         return output
+    
+    def _check_output(
+        self, output: str, output_type: str, output_type_info: str
+    ) -> bool:
+        """Check if the output is in the desired format."""
+        output_check_prompt = self.OUTPUT_CHECK_PROMPT.format(
+            model_output=output,
+            output_type=output_type,
+            output_type_info=output_type_info,
+        )
+        llm_output = self.__infer__(output_check_prompt)
+        return "yes" in llm_output.lower()
 
     def _extract_output(
         self,
         meaning_out: str,
-        output_info: str,
+        output_semstr: str, output_type: str,
         output_type_info: str,
         max_tries: int,
-        previous_output: str = "None",
-        error: str = "None",
+        previous_output: str = "None"
     ) -> str:
         """Extract the output from the meaning out string."""
         if max_tries == 0:
             logger.error("Failed to extract output. Max tries reached.")
             raise ValueError(
-                "Failed to extract output. Try Changing the Semstrings and provide examples."
+                "Failed to extract output. Try Changing the Semstrings, provide examples or change the method."
             )
 
         if self.verbose:
-            if error != "None":
+            if max_tries < self.max_tries:
                 logger.info(
-                    f"Ran into an error: {error}. Trying to extract output again. Max tries left: {max_tries}"
+                    f"Failed to extract output. Trying to extract output again. Max tries left: {max_tries}"
                 )
             else:
-                logger.info(
-                    f"Trying to extract output again. Max tries left: {max_tries}"
-                )
+                logger.info("Extracting output from the meaning out string.")
+
         output_fix_prompt = self.OUTPUT_FIX_PROMPT.format(
             model_output=meaning_out,
             previous_output=previous_output,
-            output_info=output_info,
-            output_type_info=output_type_info,
-            error=error,
+            output_info=f"{output_semstr} ({output_type})",
+            output_type_info=output_type_info
         )
         llm_output = self.__infer__(output_fix_prompt)
-        try:
-            eval_output = eval(llm_output)
-            return eval_output["output"]
-        except Exception as e:
-            if self.verbose:
-                logger.error(
-                    f"Failed to extract output. Error: {e}. Trying again. Given Output: {llm_output}"
-                )
-            return self._extract_output(
-                meaning_out,
-                output_info,
-                output_type_info,
-                max_tries - 1,
-                llm_output,
-                str(e),
-            )
+        is_in_desired_format = self._check_output(llm_output, output_type, output_type_info)
+        if self.verbose:
+            logger.info(f"Extracted Output: {llm_output}. Is in Desired Format: {is_in_desired_format}")
+        if is_in_desired_format:
+            return llm_output
+        return self._extract_output(
+            meaning_out,
+            output_semstr,
+            output_type,
+            output_type_info,
+            max_tries - 1,
+            llm_output
+        )

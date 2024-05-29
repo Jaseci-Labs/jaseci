@@ -37,7 +37,7 @@ def aott_raise(
         )
         method_prompt = model.MTLLM_METHOD_PROMPTS[method]
         meaning_in = f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}"
-        return model.__infer__(meaning_in, **model_params)
+        return model(meaning_in, **model_params)
     else:
         assert tools, "Tools must be provided for the ReAct method."
         # TODO: Implement ReAct method

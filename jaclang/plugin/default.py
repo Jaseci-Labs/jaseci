@@ -592,9 +592,12 @@ class JacFeatureDefaults:
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None
 
-        method = model_params.pop("method") if "method" in model_params else "normal"
+        method = model_params.pop("method") if "method" in model_params else "Normal"
+        available_methods = model.MTLLM_METHOD_PROMPTS.keys()
+        assert method in available_methods, f"Invalid method: {method}. Select from {available_methods}"
+
         context = (
-            ",".join(model_params.pop("context")) if "context" in model_params else ""
+            "\n".join(model_params.pop("context")) if "context" in model_params else ""
         )
 
         type_collector: list = []
@@ -637,9 +640,9 @@ class JacFeatureDefaults:
             model_params=model_params,
         )
         output = model.resolve_output(
-            meaning_out, output_information, output_type_explanations
+            meaning_out, outputs[0], outputs[1], output_type_explanations
         )
-        return output["output"]
+        return output
 
 
 class JacBuiltin:
