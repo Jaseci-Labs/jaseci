@@ -8,31 +8,40 @@ import re
 from enum import Enum
 from typing import Any
 
+from jaclang.core.llms.base import BaseLLM
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 
 
 def aott_raise(
-    model: Any,  # noqa: ANN401
+    model: BaseLLM,
     information: str,
     inputs_information: str,
     output_information: str,
     type_explanations: str,
     action: str,
     context: str,
-    reason: bool,
+    method: str,
+    tools: list["Tool"],
+    model_params: dict,
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
-    return model.MTLLM_PROMPT.format(
-        information=information,
-        inputs_information=inputs_information,
-        output_information=output_information,
-        type_explanations=type_explanations,
-        action=action,
-        context=context,
-        reason_suffix=(
-            model.MTLLM_REASON_SUFFIX if reason else model.MTLLM_WO_REASON_SUFFIX
-        ),
-    )
+    if method != "ReAct":
+        system_prompt = model.MTLLM_SYSTEM_PROMPT
+        mtllm_prompt = model.MTLLM_PROMPT.format(
+            information=information,
+            inputs_information=inputs_information,
+            output_information=output_information,
+            type_explanations=type_explanations,
+            action=action,
+            context=context,
+        )
+        method_prompt = model.MTLLM_METHOD_PROMPTS[method]
+        meaning_in = f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}"
+        return model(meaning_in, **model_params)
+    else:
+        assert tools, "Tools must be provided for the ReAct method."
+        # TODO: Implement ReAct method
+        return ""
 
 
 def get_info_types(
@@ -185,3 +194,12 @@ def get_type_annotation(data: Any) -> str:  # noqa: ANN401
             return "dict[str, Any]"
     else:
         return str(type(data).__name__)
+
+
+class Tool:
+    """Tool class for the AOTT operations."""
+
+    def __init__(self) -> None:
+        """Initialize the Tool class."""
+        # TODO: Implement the Tool class
+        pass

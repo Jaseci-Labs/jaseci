@@ -1,68 +1,56 @@
 """Groq API client for MTLLM."""
 
 from .base import BaseLLM
-from .utils import logger
 
-PROMPT_TEMPLATE = """
-[System Prompt]
-This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.
-Input/Type formatting: Explanation of the Input (variable_name) (type) = value
 
-[Information]
-{information}
-
-[Context]
-{context}
-
-[Inputs Information]
-{inputs_information}
-
-[Output Information]
-{output_information}
-
-[Type Explanations]
-{type_explanations}
-
-[Action]
-{action}
-
-{reason_suffix}
-"""  # noqa E501
-
-WITH_REASON_SUFFIX = """
+REASON_SUFFIX = """
 Reason and return the output result(s) only, adhering to the provided Type in the following format
 
 [Reasoning] <Reason>
 [Output] <Result>
 """
 
-WITHOUT_REASON_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
+NORMAL_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
 
 [Output] <result>
+"""  # noqa E501
+
+CHAIN_OF_THOUGHT_SUFFIX = """
+Generate and return the output result(s) only, adhering to the provided Type in the following format. Perform the operation in a chain of thoughts.(Think Step by Step)
+
+[Chain of Thoughts] <Chain of Thoughts>
+[Output] <Result>
+"""  # noqa E501
+
+REACT_SUFFIX = """
 """  # noqa E501
 
 
 class Groq(BaseLLM):
     """Groq API client for MTLLM."""
 
-    MTLLM_PROMPT: str = PROMPT_TEMPLATE
-    MTLLM_REASON_SUFFIX: str = WITH_REASON_SUFFIX
-    MTLLM_WO_REASON_SUFFIX: str = WITHOUT_REASON_SUFFIX
+    MTLLM_METHOD_PROMPTS: dict[str, str] = {
+        "Normal": NORMAL_SUFFIX,
+        "Reason": REASON_SUFFIX,
+        "Chain-of-Thoughts": CHAIN_OF_THOUGHT_SUFFIX,
+        "ReAct": REACT_SUFFIX,
+    }
 
-    def __init__(self, verbose: bool = False, **kwargs: dict) -> None:
+    def __init__(
+        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+    ) -> None:
         """Initialize the Groq API client."""
         import groq  # type: ignore
 
         self.client = groq.Groq()
         self.verbose = verbose
+        self.max_tries = max_tries
         self.model_name = kwargs.get("model_name", "mixtral-8x7b-32768")
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)
 
     def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
-        if self.verbose:
-            logger.info(f"Meaning In\n{meaning_in}")
         messages = [{"role": "user", "content": meaning_in}]
         model_params = {
             k: v
@@ -77,7 +65,3 @@ class Groq(BaseLLM):
             **model_params,
         )
         return output.choices[0].message.content
-
-    def __call__(self, input_text: str, **kwargs: dict) -> str:
-        """Infer a response from the input text."""
-        return self.__infer__(input_text, **kwargs)
