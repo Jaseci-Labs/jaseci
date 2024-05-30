@@ -32,9 +32,13 @@ def jac_importer(
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
 
-    if package_path and f"{package_path}.{module_name}" in sys.modules:
+    if (
+        not override_name
+        and package_path
+        and f"{package_path}.{module_name}" in sys.modules
+    ):
         return sys.modules[f"{package_path}.{module_name}"]
-    elif not package_path and module_name in sys.modules:
+    elif not override_name and not package_path and module_name in sys.modules:
         return sys.modules[module_name]
 
     caller_dir = get_caller_dir(target, base_path, dir_path)
