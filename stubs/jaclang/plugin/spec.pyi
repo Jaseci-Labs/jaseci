@@ -7,6 +7,7 @@ from jaclang.plugin.default import (
     EdgeDir as EdgeDir,
     NodeArchitype as NodeArchitype,
     T as T,
+    Root,
     WalkerArchitype as WalkerArchitype,
 )
 from typing import Any, Callable, Optional, Type, TypeVar, Union
@@ -96,7 +97,9 @@ class JacFeatureSpec:
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
     ) -> list[T]: ...
     @staticmethod
-    def get_root() -> Architype: ...
+    def get_root() -> Root: ...
+    @staticmethod
+    def get_root_type() -> Type[Root]: ...
     @staticmethod
     def build_edge(
         is_undirected: bool,

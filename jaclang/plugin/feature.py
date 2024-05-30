@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, TypeAlias, Union
+from typing import Any, Callable, Optional, Type, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
@@ -30,8 +30,6 @@ class JacFeature:
     import abc
     from jaclang.plugin.spec import DSFunc
     from jaclang.compiler.constant import EdgeDir
-
-    RootType: TypeAlias = Root
 
     @staticmethod
     def make_architype(
@@ -218,9 +216,14 @@ class JacFeature:
         return pm.hook.assign_compr(target=target, attr_val=attr_val)
 
     @staticmethod
-    def get_root() -> Architype:
-        """Jac's assign comprehension feature."""
+    def get_root() -> Root:
+        """Jac's root getter."""
         return pm.hook.get_root()
+
+    @staticmethod
+    def get_root_type() -> Type[Root]:
+        """Jac's root type getter."""
+        return pm.hook.get_root_type()
 
     @staticmethod
     def build_edge(

@@ -195,8 +195,8 @@ list_inner_pattern: (pattern_seq | STAR_MUL NAME)
 dict_inner_pattern: (literal_pattern COLON pattern_seq | STAR_POW NAME)
 
 // Match class patterns
-class_pattern: NAME LPAREN kw_pattern_list? RPAREN
-             | NAME LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
+class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
+             | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
 
 pattern_list: (pattern_list COMMA)? pattern_seq
 kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
