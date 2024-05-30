@@ -4,10 +4,9 @@ GenAI Ability is a powerful feature that enhances interaction with Large Languag
 [Semstrings](#introducing-semstrings).
  This new feature eliminates the need for explicit prompting and allows for a more streamlined coding experience.
 
+### Model Initialization
 
-**Model Initialization**
-
-To incorporate a Large Language Model (LLM) into code, initialize it by importing from the ```jaclang.core.llms``` module built into the langauge. 
+To incorporate a Large Language Model (LLM) into code, initialize it by importing from the ```jaclang.core.llms``` module built into the langauge.
 
 To download jac-lang with all required python dependencies to use llms:
     ```bash
@@ -22,7 +21,8 @@ _Cloud Hosted LLMs (API Clients)_
  - [Anthropic (Claud models)](https://www.anthropic.com/)
  - [Groq](https://groq.com/)
  - [Together AI](https://www.together.ai/)
-> Note: 
+
+> Note:
 >
 > - Theses LLMs require an API Key and the relevent python libraries to be installed.
 
@@ -46,14 +46,14 @@ _Cloud Hosted LLMs (API Clients)_
 _Running Local LLMs_
 
  - [Ollama](https://ollama.com/library)
- 
+
     Downlad Ollama from their website, install and run the server by running ```ollama serve```. Pull and install your model of choice by bashing ```ollama run <model_name>``` on a new terminal.
 
- - [Hugging Face](https://huggingface.co/) 
+ - [Hugging Face](https://huggingface.co/)
 
     Download and run opensource LLMs from the plethora of models available on the Hugging Face website.
 
-> Note: 
+> Note:
 >
 > - Running Local LLMs would be demanding for your PC setup where it will either simply not run the model or inference performance will take a hit. Check whether you have sufficient system requirements to run local LLMs.
 
@@ -64,20 +64,20 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, OpenAI;
 
     glob llm = OpenAI(
-                    model_name = "gpt-4", 
+                    model_name = "gpt-4",
                     temperature =  0.7,
                     max_tokens = 1024
-                    ); 
+                    );
     ```
 === "Anthropic"
     ```jac linenums="1"
     import:py from jaclang.core.llms, Anthropic;
 
     glob llm = Anthropic(
-                    model_name = "claude-3-sonnet-20240229", 
+                    model_name = "claude-3-sonnet-20240229",
                     temperature =  0.7,
                     max_tokens = 1024
-                    ); 
+                    );
     ```
 === "Groq"
     ```jac linenums="1"
@@ -87,7 +87,7 @@ In the jac program that you require to inference an LLM, please code as followin
                 model_name = "llama3-8b-8192", # Go through available models in website
                 temperature =  0.7,
                 max_tokens = 1024
-                ); 
+                );
     ```
 === "Together AI"
     ```jac linenums="1"
@@ -97,7 +97,7 @@ In the jac program that you require to inference an LLM, please code as followin
                 model_name = "meta-llama/Llama-2-70b-chat-hf", # Go through available models in website
                 temperature =  0.7,
                 max_tokens = 1024
-                ); 
+                );
     ```
 === "Ollama"
     ```jac linenums="1"
@@ -107,7 +107,7 @@ In the jac program that you require to inference an LLM, please code as followin
                 model_name = "llama3:8b", # Will pull model if does not exists
                 temperature =  0.7,
                 max_tokens = 1024
-                ); 
+                );
     ```
 === "Hugging Face"
     ```jac linenums="1"
@@ -117,7 +117,7 @@ In the jac program that you require to inference an LLM, please code as followin
                 model_name = "mistralai/Mistral-7B-v0.3", # Will pull model if does not exists
                 temperature =  0.7,
                 max_tokens = 1024
-                ); 
+                );
     ```
 
 The llm model is defined in these examples with specific attributes, such as utilizing the relevent model, setting a temperature of 0.7 for sampling, and enabling text sampling.
