@@ -7,14 +7,14 @@ GenAI Ability is a powerful feature that enhances interaction with Large Languag
 
 **Model Initialization**
 
-To incorporate a Large Language Model (LLM) into code, initialize it by importing from the ```jaclang.core.llms``` module built into langauge. 
+To incorporate a Large Language Model (LLM) into code, initialize it by importing from the ```jaclang.core.llms``` module built into the langauge. 
 
-To download jaclang with all required python dependencies to use llms,
+To download jac-lang with all required python dependencies to use llms:
     ```bash
     pip install jaclang[llms]
     ```
 
-Here are the list of available models/model providers which are available to use out of the box with Jac-lang.
+Here are the list of models/ model providers which are available to use out of the box with jac-lang.
 
 _Cloud Hosted LLMs (API Clients)_
 
@@ -47,7 +47,7 @@ _Running Local LLMs_
 
  - [Ollama](https://ollama.com/library)
  
-    Downlad Ollama from their website and install and run the server by running ```ollama serve```. Pull and installed your model of choice by bashing ```ollama run <model_name>``` on a new terminal.
+    Downlad Ollama from their website, install and run the server by running ```ollama serve```. Pull and install your model of choice by bashing ```ollama run <model_name>``` on a new terminal.
 
  - [Hugging Face](https://huggingface.co/) 
 
@@ -57,7 +57,7 @@ _Running Local LLMs_
 >
 > - Running Local LLMs would be demanding for your PC setup where it will either simply not run the model or inference performance will take a hit. Check whether you have sufficient system requirements to run local LLMs.
 
-In the jac program that you require to infenerce an LLM please code as following template code snippets.
+In the jac program that you require to inference an LLM, please code as following template code snippets.
 
 === "OpenAI"
     ```jac linenums="1"
