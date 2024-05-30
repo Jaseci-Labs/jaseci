@@ -3,6 +3,7 @@ import:py from jaclang.core.llms, BaseLLM;
 obj model:BaseLLM: {
     can init {
         self.verbose = False;
+        self.max_tries = 1;
     }
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
@@ -36,7 +37,7 @@ glob personality_examples: 'Personality Information of Famous People': dict[str,
 };
 
 can 'Get Person Information use common knowledge'
-get_person_info(name: 'Name of the Person': str) -> 'Person': Person by llm(reason= True);
+get_person_info(name: 'Name of the Person': str) -> 'Person': Person by llm(method="Reason");
 
 with entry {
     person_obj = get_person_info('Oppenheimer');

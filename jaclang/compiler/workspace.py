@@ -7,8 +7,7 @@ from typing import Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
-from jaclang.compiler.passes.main import DefUsePass
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main import DefUsePass, schedules
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
 
@@ -46,11 +45,14 @@ class ModuleInfo:
 class Workspace:
     """Class for managing workspace."""
 
-    def __init__(self, path: str, lazy_parse: bool = False) -> None:
+    def __init__(
+        self, path: str, lazy_parse: bool = False, type_check: bool = False
+    ) -> None:
         """Initialize workspace."""
         self.path = path
         self.modules: dict[str, ModuleInfo] = {}
         self.lazy_parse = lazy_parse
+        self.type_check = type_check
         self.rebuild_workspace()
 
     def rebuild_workspace(self) -> None:
@@ -78,7 +80,12 @@ class Workspace:
             build = jac_str_to_pass(
                 jac_str=source,
                 file_path=file,
-                target=DefUsePass,
+                schedule=(
+                    schedules.py_code_gen_typed
+                    if self.type_check
+                    else schedules.py_code_gen
+                ),
+                target=DefUsePass if not self.type_check else None,
             )
             if not isinstance(build.ir, ast.Module):
                 src = ast.JacSource(source, mod_path=file)
@@ -118,7 +125,12 @@ class Workspace:
         build = jac_str_to_pass(
             jac_str=source,
             file_path=file_path,
-            schedule=py_code_gen_typed,
+            schedule=(
+                schedules.py_code_gen_typed
+                if self.type_check
+                else schedules.py_code_gen
+            ),
+            target=DefUsePass if not self.type_check else None,
         )
         if not isinstance(build.ir, ast.Module):
             src = ast.JacSource(source, mod_path=file_path)

@@ -592,12 +592,18 @@ class JacFeatureDefaults:
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None
 
-        reason = model_params.pop("reason") if "reason" in model_params else False
+        method = model_params.pop("method") if "method" in model_params else "Normal"
+        available_methods = model.MTLLM_METHOD_PROMPTS.keys()
+        assert (
+            method in available_methods
+        ), f"Invalid method: {method}. Select from {available_methods}"
+
         context = (
-            ",".join(model_params.pop("context")) if "context" in model_params else ""
+            "\n".join(model_params.pop("context")) if "context" in model_params else ""
         )
 
         type_collector: list = []
+        incl_info = [x for x in incl_info if not isinstance(x[1], type)]
         information, collected_types = get_info_types(_scope, mod_registry, incl_info)
         type_collector.extend(collected_types)
         inputs_information_list = []
@@ -611,25 +617,35 @@ class JacFeatureDefaults:
 
         output_information = f"{outputs[0]} ({outputs[1]})"
         type_collector.extend(extract_non_primary_type(outputs[1]))
+        output_type_explanations = "\n".join(
+            list(
+                get_all_type_explanations(
+                    extract_non_primary_type(outputs[1]), mod_registry
+                ).values()
+            )
+        )
 
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
         )
         type_explanations = "\n".join(type_explanations_list)
 
-        meaning_in = aott_raise(
-            model,
-            information,
-            inputs_information,
-            output_information,
-            type_explanations,
-            action,
-            context,
-            reason,
+        meaning_out = aott_raise(
+            model=model,
+            information=information,
+            inputs_information=inputs_information,
+            output_information=output_information,
+            type_explanations=type_explanations,
+            action=action,
+            context=context,
+            method=method,
+            tools=[],
+            model_params=model_params,
         )
-        meaning_out = model.__infer__(meaning_in, **model_params)
-        output = model.resolve_output(meaning_out, reason)
-        return output["output"]
+        output = model.resolve_output(
+            meaning_out, outputs[0], outputs[1], output_type_explanations
+        )
+        return output
 
 
 class JacBuiltin:
