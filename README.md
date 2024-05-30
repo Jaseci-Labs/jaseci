@@ -23,10 +23,11 @@ pip install mtllm
 
 The full API of this library can be found [here](docs/api.md).
 
-```jac
-import:py from mtllm, OpenAI;
+### Using Different LLMs
+```py
+import:py from mtllm.llms, OpenAI;
 
-llm = OpenAI();
+glob llm = OpenAI();
 
 can "Translate English to French"
 translate(word: "English Word": str) -> "French Word": str by llm();
@@ -37,8 +38,17 @@ Based on your LLM of choice, make sure to set the `API Key` in the environment v
 ```sh
 export OPENAI_API_KEY="your-api-key"
 ```
+### Using Tools
+```py
+import:py from mtllm.llms, OpenAI;
+import:py from mtllm.tools, wikipedia;
 
-## Supported APIs and LLMs
+glob llm = OpenAI();
+
+can "Answer History Questions"
+history_qa(question: "History Question": str) -> "Detailed Answer": str by llm(tools=[wikipedia]);
+```
+## Supported LLMs and Tools
 TBA
 
 ## Contributing

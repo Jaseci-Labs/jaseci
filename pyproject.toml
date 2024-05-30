@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "mtllm"
-version = "0.1.1"
+version = "0.1.2"
 description = "MTLLM Provides Easy to use APIs for different LLM Providers to be used with Jaseci's Jaclang Programming Language."
 authors = ["Chandra Irugalbandara <irugalbandara@ascii.ai>", "Kugesan Sivasothynathan <kugesan.sivasothynathan@jaseci.org>"]
 license = "MIT"
+readme = "README.md"
+keywords = ["llm", "jaclang", "jaseci", "mtllm"]
 
 [tool.poetry.dependencies]
 python = "^3.12.0"
