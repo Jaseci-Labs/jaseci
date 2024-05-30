@@ -53,7 +53,7 @@ _Running Local LLMs_
 
     Download and run opensource LLMs from the plethora of models available on the Hugging Face website.
 
-> Note:
+> **Note:**
 >
 > - Running Local LLMs would be demanding for your PC setup where it will either simply not run the model or inference performance will take a hit. Check whether you have sufficient system requirements to run local LLMs.
 
@@ -64,8 +64,7 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, OpenAI;
 
     glob llm = OpenAI(
-                model_name = "gpt-4",
-                verbose = False
+                model_name = "gpt-4"
                 );
     ```
 === "Anthropic"
@@ -73,8 +72,7 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, Anthropic;
 
     glob llm = Anthropic(
-                model_name = "claude-3-sonnet-20240229",
-                verbose = False
+                model_name = "claude-3-sonnet-20240229"
                 );
     ```
 === "Groq"
@@ -82,8 +80,7 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, Groq;
 
     glob llm = Groq(
-                model_name = "llama3-8b-8192", # Go through available models in website,
-                verbose = False
+                model_name = "llama3-8b-8192", # Go through available models in website
                 );
     ```
 === "Together AI"
@@ -91,8 +88,7 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, TogetherAI;
 
     glob llm = TogetherAI(
-                model_name = "meta-llama/Llama-2-70b-chat-hf", # Go through available models in website
-                verbose = False
+                model_name = "meta-llama/Llama-2-70b-chat-hf" # Go through available models in website
                 );
     ```
 === "Ollama"
@@ -100,8 +96,7 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, Ollama;
 
     glob llm = Ollama(
-                model_name = "llama3:8b", # Will pull model if does not exists
-                verbose = False
+                model_name = "llama3:8b" # Will pull model if does not exists
                 );
     ```
 === "Hugging Face"
@@ -109,12 +104,15 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, Huggingface;
 
     glob llm = Ollama(
-                model_name = "mistralai/Mistral-7B-v0.3", # Will pull model if does not exists
-                verbose = False
+                model_name = "mistralai/Mistral-7B-v0.3" # Will pull model if does not exists
                 );
     ```
 
-The llm model is defined in these examples with specific attributes, such as utilizing the relevent model and disabling verbose. If the coder wants to visualize the prompts during inference, enable verbose by ```verbose = True```.
+The llm model is defined in these examples which can be intialized with specific attributes.
+
+> **Note:**
+>
+> - If the coder wants to visualize the prompts during inference, enable verbose by adding ```verbose = True``` as an argument when defining the LLM.
 
 This approach allows for the initialization of the desired model as a model code construct with a specific name (in this case, `llm`), facilitating its integration into code.
 
