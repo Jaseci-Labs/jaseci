@@ -64,20 +64,22 @@ In the jac program that you require to inference an LLM, please code as followin
     import:py from jaclang.core.llms, OpenAI;
 
     glob llm = OpenAI(
-                    model_name = "gpt-4",
-                    temperature =  0.7,
-                    max_tokens = 1024
-                    );
+                model_name = "gpt-4",
+                temperature =  0.7,
+                max_tokens = 1024,
+                verbose = True
+                );
     ```
 === "Anthropic"
     ```jac linenums="1"
     import:py from jaclang.core.llms, Anthropic;
 
     glob llm = Anthropic(
-                    model_name = "claude-3-sonnet-20240229",
-                    temperature =  0.7,
-                    max_tokens = 1024
-                    );
+                model_name = "claude-3-sonnet-20240229",
+                temperature =  0.7,
+                max_tokens = 1024,
+                verbose = True
+                );
     ```
 === "Groq"
     ```jac linenums="1"
@@ -86,7 +88,8 @@ In the jac program that you require to inference an LLM, please code as followin
     glob llm = Groq(
                 model_name = "llama3-8b-8192", # Go through available models in website
                 temperature =  0.7,
-                max_tokens = 1024
+                max_tokens = 1024,
+                verbose = True
                 );
     ```
 === "Together AI"
@@ -96,7 +99,8 @@ In the jac program that you require to inference an LLM, please code as followin
     glob llm = TogetherAI(
                 model_name = "meta-llama/Llama-2-70b-chat-hf", # Go through available models in website
                 temperature =  0.7,
-                max_tokens = 1024
+                max_tokens = 1024,
+                verbose = True
                 );
     ```
 === "Ollama"
@@ -106,7 +110,8 @@ In the jac program that you require to inference an LLM, please code as followin
     glob llm = Ollama(
                 model_name = "llama3:8b", # Will pull model if does not exists
                 temperature =  0.7,
-                max_tokens = 1024
+                max_tokens = 1024,
+                verbose = True
                 );
     ```
 === "Hugging Face"
@@ -116,14 +121,14 @@ In the jac program that you require to inference an LLM, please code as followin
     glob llm = Ollama(
                 model_name = "mistralai/Mistral-7B-v0.3", # Will pull model if does not exists
                 temperature =  0.7,
-                max_tokens = 1024
+                max_tokens = 1024,
+                verbose = True
                 );
     ```
 
-The llm model is defined in these examples with specific attributes, such as utilizing the relevent model, setting a temperature of 0.7 for sampling, and enabling text sampling.
+The llm model is defined in these examples with specific attributes, such as utilizing the relevent model, setting a temperature of 0.7 for sampling, enabling text sampling and enabling reasoning capabilities.
 
 This approach allows for the initialization of the desired model as a model code construct with a specific name (in this case, `llm`), facilitating its integration into code.
-
 
 **Example Usage**
 
