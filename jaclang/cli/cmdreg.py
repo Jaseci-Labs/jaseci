@@ -36,7 +36,7 @@ class CommandRegistry:
     def __init__(self) -> None:
         """Initialize a CommandRegistry instance."""
         self.registry = {}
-        self.parser = argparse.ArgumentParser(prog="CLI")
+        self.parser = argparse.ArgumentParser(prog="jac")
         self.parser.add_argument(
             "--session", help="Session file path", nargs="?", default=""
         )
