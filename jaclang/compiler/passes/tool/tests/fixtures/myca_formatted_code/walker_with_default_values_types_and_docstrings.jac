@@ -1,6 +1,7 @@
 """
 The cycle walker
 """
+
 walker cycle {
     has buddy_schedule: dict = {};
     has user_level_buddy_schedule: dict = {

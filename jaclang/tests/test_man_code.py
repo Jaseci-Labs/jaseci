@@ -20,7 +20,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -43,7 +43,7 @@ class JacCliTests(TestCase):
         sys.stdout = stdout_block
 
         # Execute the function
-        cli.test(self.fixture_abs_path("../../../examples/manual_code/circle.jac"))  # type: ignore
+        cli.test(self.fixture_abs_path("../../../examples/manual_code/circle.jac"))
 
         sys.stderr = sys.__stderr__
         sys.stdout = sys.__stdout__
@@ -57,7 +57,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle_clean.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle_clean.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -75,7 +75,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -114,10 +114,35 @@ class JacCliTests(TestCase):
         sys.stdout = stdio_block
 
         # Execute the function
-        cli.test(self.fixture_abs_path("../../../examples/manual_code/circle_clean_tests.jac"))  # type: ignore
+        cli.test(
+            self.fixture_abs_path(
+                "../../../examples/manual_code/circle_clean_tests.jac"
+            )
+        )
 
         sys.stderr = sys.__stderr__
         sys.stdout = sys.__stdout__
         stderr_value = captured_output.getvalue()
         # Assertions or verifications
         self.assertIn("Ran 3 tests", stderr_value)
+
+    def test_jac_name_in_sys_mods(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        # Execute the function
+        cli.run(self.fixture_abs_path("../../../jaclang/tests/fixtures/abc.jac"))
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        # Assertions or verifications
+        self.assertIn(
+            "Area of a circle with radius 5 using function: 78",
+            stdout_value,
+        )
+        self.assertIn(
+            "Area of a Circle with radius 5 using class: 78",
+            stdout_value,
+        )

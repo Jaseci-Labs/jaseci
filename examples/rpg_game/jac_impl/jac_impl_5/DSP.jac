@@ -8,7 +8,9 @@ import:py sys;
 import:py os;
 import:py random;
 import:py time;
-import:py from openai, OpenAI;
+import:py from jaclang.core.llms, Anthropic;
+
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 # Importing Jac codebase
 include:jac sprites;
@@ -16,40 +18,17 @@ include:jac config;
 include:jac map;
 include:jac main;
 
-obj model {
-    has model_name:str = "gpt-4";
-    has api_key:str = os.getenv('OPENAI_API_KEY');
-    has model:OpenAI = None;
-
-    can postinit {
-        self.model = OpenAI(api_key=self.api_key);
-    }
-
-    can __infer__(meaning_in: str, **kwargs: dict) {
-
-        x = self.model.chat.completions.create(
-            model=self.model_name,
-            temperature=0.8,
-            max_tokens=1024,
-            messages=[{"role": "user", "content": meaning_in}]
-        ).choices[0];
-        return x.message.content;
-    }
-}
-glob llm = model();
-
 glob context:str =  "# These rules must be strictly adhered to while creating a maps."
-                    "- Must have only one Player (P) in map at the middle of the map ."
+                    "- Must have only single Player (P) in map at the middle of the map ."
                     "- Two consecutive maps should not look alike."
                     "- Hardness should be slightly increased between consecutive maps."
                     "- All enemies should be accessible to the player (should not be enclosed with blocks)."
-                    "- Blocks can be added inside the map to increase map complexity."
                     "- Hardnes of a level can be determined by the time taken to complete a level and number of retry attempts.";
 
-obj 'Consists of level configuration data of a certain level'
+obj 'Consists of the level configuration data of a certain level'
 Map {
-    has Level_no:'Level number':int = 1;
-    has time_to_win_level:'time taken to complete the level in seconds':float = 60.0;
+    has Level_no:int = 1;
+    has time_to_win_level:'in seconds':float = 60.0;
     has nos_retry:'How many retry attempts before completing the level':int = 0;
     has map:
     'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space. All outer characters are B. Only one single player character (P) can be in the map.'
@@ -81,19 +60,12 @@ walker game{
         fwd_dir:bool = True,
         map_directory:
         'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game.'
-        :dict={},
-        context:str = "Must have one Player (P) in map."
-                    "Two consecutive maps should not look alike."
-                    "Hardness should be slightly increased."
-                    "All enemies should be accessible to the player (should not be enclosed with blocks)."
-                    "The previous level maps are included in [Infomation]. Difficulty can be assesed by the time taken to finish the map."
-                    "Blocks can be added inside the map to increase map complexity."
-                    "Block (B) layout in two consecutive maps should be different.";
+        :dict={};
 
     can start_game with `root entry;
 
     can 'Return the map of the next level which is different and incrementally challenging than previous levels. '
-    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.8, context=(context));
+    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.5, incl_info=(context));
 }
 
 edge play{

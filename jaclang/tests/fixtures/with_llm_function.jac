@@ -1,4 +1,10 @@
-obj model {
+import:py from jaclang.core.llms, BaseLLM;
+
+obj model:BaseLLM: {
+    can init {
+        self.verbose = False;
+        self.max_tries = 1;
+    }
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(kwargs);
         print(meaning_in);

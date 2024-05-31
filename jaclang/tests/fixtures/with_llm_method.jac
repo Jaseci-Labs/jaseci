@@ -1,4 +1,10 @@
-obj model {
+import:py from jaclang.core.llms, BaseLLM;
+
+obj model:BaseLLM: {
+    can init {
+        self.verbose = False;
+        self.max_tries = 1;
+    }
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
         return "[Output] Something";
@@ -34,7 +40,7 @@ outer{
     inner {
         has diary_entries :'Diary Entries': list[str];
         can 'Get Personality of the Person'
-        get_personality (person: 'Person Object': list[Person]) -> 'Personality of the Person': dict[Personality, PersonalityIndex] by llm(reason=True, incl_info=(personality_examples, self.diary_entries));
+        get_personality (person: 'Person Object': list[Person]) -> 'Personality of the Person': dict[Personality, PersonalityIndex] by llm(method="Reason", incl_info=(personality_examples, self.diary_entries));
     }
 }
 

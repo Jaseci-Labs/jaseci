@@ -10,7 +10,7 @@ from setuptools import find_packages, setup  # type: ignore
 generate_static_parser(force=True)
 
 
-VERSION = "0.5.18"
+VERSION = "0.6.0"
 
 setup(
     name="jaclang",
@@ -20,7 +20,19 @@ setup(
     package_data={
         "": ["*.ini", "*.lark"],
     },
-    extra_require={"llms": ["transformers", "torch", "ollama", "anthropic"]},
+    extras_require={
+        "llms": [
+            "transformers",
+            "accelerator",
+            "torch",
+            "ollama",
+            "anthropic",
+            "groq",
+            "openai",
+            "together",
+            "loguru",
+        ]
+    },
     entry_points={
         "console_scripts": [
             "jac = jaclang.cli.cli:start_cli",

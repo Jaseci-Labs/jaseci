@@ -1696,7 +1696,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid.append(kw_patterns)
         else:
             kw_patterns = None
-        if isinstance(cls, ast.NameSpec):
+        if isinstance(cls, (ast.NameSpec, ast.AtomTrailer)):
             return ast.MatchArch(
                 name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
             )

@@ -8,78 +8,40 @@ import re
 from enum import Enum
 from typing import Any
 
+from jaclang.core.llms.base import BaseLLM
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 
 
-PROMPT_TEMPLATE = """
-[System Prompt]
-This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.
-Input/Type formatting: Explanation of the Input (variable_name) (type) = value
-
-[Information]
-{information}
-
-[Inputs Information]
-{inputs_information}
-
-[Output Information]
-{output_information}
-
-[Type Explanations]
-{type_explanations}
-
-[Action]
-{action}
-
-{reason_suffix}
-"""  # noqa E501
-
-WITH_REASON_SUFFIX = """
-Reason and return the output result(s) only, adhering to the provided Type in the following format
-
-[Reasoning] <Reason>
-[Output] <Result>
-"""
-
-WITHOUT_REASON_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
-
-[Output] <result>
-"""  # noqa E501
-
-
 def aott_raise(
+    model: BaseLLM,
     information: str,
     inputs_information: str,
     output_information: str,
     type_explanations: str,
     action: str,
-    reason: bool,
+    context: str,
+    method: str,
+    tools: list["Tool"],
+    model_params: dict,
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
-    return PROMPT_TEMPLATE.format(
-        information=information,
-        inputs_information=inputs_information,
-        output_information=output_information,
-        type_explanations=type_explanations,
-        action=action,
-        reason_suffix=WITH_REASON_SUFFIX if reason else WITHOUT_REASON_SUFFIX,
-    )
-
-
-def get_reasoning_output(s: str) -> tuple:
-    """Get the reasoning and output from the meaning out string."""
-    reasoning_match = re.search(r"\[Reasoning\](.*)\[Output\]", s)
-    output_match = re.search(r"\[Output\](.*)", s)
-
-    if reasoning_match and output_match:
-        reasoning = reasoning_match.group(1)
-        output = output_match.group(1)
-        return (reasoning.strip(), output.strip())
-    elif output_match:
-        output = output_match.group(1)
-        return (None, output.strip())
+    if method != "ReAct":
+        system_prompt = model.MTLLM_SYSTEM_PROMPT
+        mtllm_prompt = model.MTLLM_PROMPT.format(
+            information=information,
+            inputs_information=inputs_information,
+            output_information=output_information,
+            type_explanations=type_explanations,
+            action=action,
+            context=context,
+        )
+        method_prompt = model.MTLLM_METHOD_PROMPTS[method]
+        meaning_in = f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}"
+        return model(meaning_in, **model_params)
     else:
-        return (None, None)
+        assert tools, "Tools must be provided for the ReAct method."
+        # TODO: Implement ReAct method
+        return ""
 
 
 def get_info_types(
@@ -176,22 +138,30 @@ def get_type_explanation(
         _, type_info = mod_registry.lookup(scope=sem_info_scope)
         type_info_str = []
         type_info_types = []
+        type_example = [f"{sem_info.name}("]
         if sem_info.type == "Enum" and isinstance(type_info, list):
             for enum_item in type_info:
                 type_info_str.append(
-                    f"{enum_item.semstr} (EnumItem) ({enum_item.name})"
+                    f"{enum_item.semstr} ({enum_item.name}) (EnumItem)"
                 )
         elif sem_info.type in ["obj", "class", "node", "edge"] and isinstance(
             type_info, list
         ):
             for arch_item in type_info:
+                if arch_item.type in ["obj", "class", "node", "edge"]:
+                    continue
                 type_info_str.append(
-                    f"{arch_item.semstr} ({arch_item.type}) ({arch_item.name})"
+                    f"{arch_item.semstr} ({arch_item.name}) ({arch_item.type})"
                 )
+                type_example.append(f"{arch_item.name}={arch_item.type}, ")
                 if arch_item.type and extract_non_primary_type(arch_item.type):
                     type_info_types.extend(extract_non_primary_type(arch_item.type))
+            if len(type_example) > 1:
+                type_example[-1] = type_example[-1].replace(", ", ")")
+            else:
+                type_example.append(")")
         return (
-            f"{sem_info.semstr} ({sem_info.type}) ({sem_info.name}) = {', '.join(type_info_str)}",
+            f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {''.join(type_example)} -> {', '.join(type_info_str)}",  # noqa: E501
             set(type_info_types),
         )
     return None, None
@@ -232,3 +202,12 @@ def get_type_annotation(data: Any) -> str:  # noqa: ANN401
             return "dict[str, Any]"
     else:
         return str(type(data).__name__)
+
+
+class Tool:
+    """Tool class for the AOTT operations."""
+
+    def __init__(self) -> None:
+        """Initialize the Tool class."""
+        # TODO: Implement the Tool class
+        pass

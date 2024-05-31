@@ -194,10 +194,10 @@ class AstAccessNode(AstNode):
         """Get access spec."""
         return (
             SymbolAccess.PRIVATE
-            if self.access and self.access.tag.value == Tok.KW_PRIV
+            if self.access and self.access.tag.name == Tok.KW_PRIV
             else (
                 SymbolAccess.PROTECTED
-                if self.access and self.access.tag.value == Tok.KW_PROT
+                if self.access and self.access.tag.name == Tok.KW_PROT
                 else SymbolAccess.PUBLIC
             )
         )
@@ -3716,7 +3716,7 @@ class MatchArch(MatchPattern):
 
     def __init__(
         self,
-        name: NameSpec,
+        name: AtomTrailer | NameSpec,
         arg_patterns: Optional[SubNodeList[MatchPattern]],
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         kid: Sequence[AstNode],

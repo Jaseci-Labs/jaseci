@@ -1,9 +1,9 @@
 from jaclang.plugin.feature import JacFeature as jac
 
 
-@jac.make_walker(on_entry=[jac.DSFunc("do", jac.RootType)], on_exit=[])
+@jac.make_walker(on_entry=[jac.DSFunc("do", jac.get_root_type())], on_exit=[])
 class Adder:
-    def do(self, jac_here_: jac.RootType) -> None:
+    def do(self, jac_here_: jac.get_root_type()) -> None:
         jac.connect(jac_here_, node_a(), jac.build_edge(jac.EdgeDir.OUT, None, None))
         if jac.visit_node(
             self, jac.edge_ref(jac_here_, None, jac.EdgeDir.OUT, None, None)

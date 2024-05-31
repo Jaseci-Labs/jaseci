@@ -16,6 +16,7 @@ obj Memory {
     can save_obj(caller_id: UUID, item: Element);
     can del_obj(caller_id: UUID, item: Element);
     #* Utility Functions *#
+
     can get_object_distribution -> dict;
     can get_mem_size -> float;
 }
