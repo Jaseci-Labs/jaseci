@@ -776,15 +776,15 @@ class JacLanguageTests(TestCase):
         # self.assertNotIn("Error", stdout_value) TODO: Ask kugesan about this error
         settings.py_raise = False
 
-    # def test_deep_py_load_imports(self) -> None:
-    #     """Test py ast to Jac ast conversion output."""
-    #     settings.py_raise = True
-    #     file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-    #     from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
+    def test_deep_py_load_imports(self) -> None:
+        """Test py ast to Jac ast conversion output."""
+        settings.py_raise = True
+        file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
-    #     imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-    #     self.assertEqual(len(imp.import_table), 3)
-    #     settings.py_raise = False
+        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
+        self.assertEqual(len(imp.import_table), 3)
+        settings.py_raise = False
 
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
