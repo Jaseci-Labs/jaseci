@@ -109,13 +109,8 @@ class Pass(Transform[T]):
         self.before_pass()
         if not isinstance(ir, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
-        from jaclang.settings import settings
-
-        print("\n\n.traversing .....",self.__class__.__name__) if settings.py_raise else None
         self.traverse(ir)
-        print(".after passss .....") if settings.py_raise else None
         self.after_pass()
-        print(".returnignin ir  ..|.") if settings.py_raise else None
         return self.ir
 
     def traverse(self, node: ast.AstNode) -> ast.AstNode:
@@ -125,15 +120,10 @@ class Pass(Transform[T]):
         self.cur_node = node
         self.enter_node(node)
         if not self.prune_signal:
-            # try:
             for i in node.kid:
                 if i and (i not in self.touch or isinstance(i, ast.AbilityDef)):
                     self.touch.append(i)
                     self.traverse(i)
-            # except:
-            #     print(node)
-            #     self.ice(f"Error in {self.__class__.__name__} pass.")
-            #     exit()
         else:
             self.prune_signal = False
         self.cur_node = node

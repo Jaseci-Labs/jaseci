@@ -776,15 +776,15 @@ class JacLanguageTests(TestCase):
         # self.assertNotIn("Error", stdout_value) TODO: Ask kugesan about this error
         settings.py_raise = False
 
-    def test_deep_py_load_imports(self) -> None:
-        """Test py ast to Jac ast conversion output."""
-        settings.py_raise = True
-        file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
+    # def test_deep_py_load_imports(self) -> None:
+    #     """Test py ast to Jac ast conversion output."""
+    #     settings.py_raise = True
+    #     file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
+    #     from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
-        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-        self.assertEqual(len(imp.import_table), 3)
-        settings.py_raise = False
+    #     imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
+    #     self.assertEqual(len(imp.import_table), 3)
+    #     settings.py_raise = False
 
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
@@ -800,3 +800,22 @@ class JacLanguageTests(TestCase):
         self.assertIn('Can not access private variable "privmethod"', stdout_value)
         self.assertIn('Can not access private variable "BankAccount"', stdout_value)
         self.assertNotIn(" Name: ", stdout_value)
+
+    def test_deep_convert(self) -> None:
+        """Test py ast to Jac ast conversion output."""
+        settings.py_raise = settings.deep_convert = True
+        file_name = os.path.join(self.fixture_abs_path("./"), "deep_convert.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen
+        import jaclang.compiler.absyntree as ast
+
+        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
+        jac_ast = ir.pp()
+        self.assertIn("Name - html -", jac_ast)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.Module)), 3)
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Deep convo is imported", stdout_value)
+        settings.py_raise = False

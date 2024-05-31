@@ -22,7 +22,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def __init__(self, input_ir: ast.PythonModuleAst) -> None:
         """Initialize parser."""
         self.mod_path = input_ir.loc.mod_path
-        self.mod_imports: list[ast.ModulePath] = []
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
     def nu(self, node: T) -> T:
@@ -90,7 +89,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     self.convert_to_doc(i.expr)
                 with_entry_body.append(i)
             else:
-                continue  #FIXME: check this
+                continue  # FIXME: check this
                 # self.ice("Invalid type for with entry body")
         if len(with_entry_body):
             extracted.append(gen_mod_code(with_entry_body))
@@ -128,7 +127,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_imported=False,
             kid=valid,
         )
-        print("vanakkam from load pass ==> ", ret.name)
         ret.gen.py_ast = [node]
         return self.nu(ret)
 
@@ -146,7 +144,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
-        # ic("----")
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -1436,7 +1433,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             # Need to unravel atom trailers
             else:
                 raise self.ice()
-        self.mod_imports.extend(paths)
         lang = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -1497,7 +1493,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             alias=None,
             kid=modpaths,
         )
-        self.mod_imports.append(path)
         names = [self.convert(name) for name in node.names]
         valid_names = []
         for name in names:
