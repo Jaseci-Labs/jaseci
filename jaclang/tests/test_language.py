@@ -818,4 +818,4 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Deep convo is imported", stdout_value)
-        settings.py_raise = False
+        settings.py_raise = settings.deep_convert = False
