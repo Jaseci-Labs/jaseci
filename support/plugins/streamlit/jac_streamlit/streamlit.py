@@ -1,10 +1,10 @@
 """Module for registering Streamlit plugin."""
 
 import os
+import sys
+import tempfile
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.compiler.compile import jac_str_to_pass
-from jaclang.compiler.constant import Constants as Con
 from jaclang.plugin.default import hookimpl
 
 import streamlit.web.bootstrap as bootstrap
@@ -25,25 +25,20 @@ class JacCmd:
             :param filename: The path to the .jac file.
             """
             if filename.endswith(".jac"):
-                base, mod = os.path.split(filename)
-                base = base if base else "./"
-                mod = mod[:-4]
-                if filename.endswith(".jac"):
-                    with open(filename, "r") as f:
-                        prog = jac_str_to_pass(f.read(), f"{mod}")
-                py_code = prog.ir.gen.py
-                lines = py_code.split("\n")
-                lines.insert(1, '__jac_mod_bundle__="__jac_mod_bundle__"\n')
-                py_code = "\n".join(lines)
-                strimlit_dir = os.path.join(base, Con.JAC_GEN_DIR)
-                (
-                    os.makedirs(strimlit_dir, exist_ok=True)
-                    if not os.path.exists(strimlit_dir)
-                    else None
-                )
-                py_filename = os.path.join(strimlit_dir, f"{mod}.py")
-                with open(py_filename, "w") as py_file:
-                    py_file.write(py_code)
-                bootstrap.run(py_filename, is_hello=True, args=[], flag_options=None)
+                abs_path = os.path.abspath(filename)
+                dirname, basename = os.path.split(abs_path)
+                basename = basename.replace(".jac", "")
+                assert (
+                    basename not in sys.modules
+                ), "Please use another name for the .jac file. It conflicts with a Python package."
+                py_lines = [
+                    "from jaclang import jac_import",
+                    f"st_app = jac_import('{basename}', base_path='{dirname}')",
+                    "st_app.main()",
+                ]
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".py") as temp_file:
+                    file_name = temp_file.name
+                    temp_file.write("\n".join(py_lines))
+                    bootstrap.run(file_name, is_hello=False, args=[], flag_options={})
             else:
                 print("Not a .jac file.")
