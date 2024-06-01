@@ -16,7 +16,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.settings import settings
-from jaclang.utils.helpers import import_target_to_relative_path
+from jaclang.utils.helpers import import_target_to_relative_path, is_standard_lib_module
 
 
 class JacImportPass(Pass):
@@ -133,13 +133,18 @@ class PyImportPass(JacImportPass):
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
         lang = i.parent_of_type(ast.Import).hint.tag.value
-        if lang == "py" and not i.sub_module and settings.py_raise:
+        if (
+            lang == "py"
+            and not i.sub_module
+            and settings.py_raise
+            and not is_standard_lib_module(i.path_str)
+        ):
             mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
             if mod:
-                if settings.deep_convert:
-                    self.run_again = True
                 i.sub_module = mod
                 i.add_kids_right([mod], pos_update=False)
+                if settings.deep_convert:
+                    self.run_again = True
 
     def import_py_module(
         self, node: ast.ModulePath, mod_path: str

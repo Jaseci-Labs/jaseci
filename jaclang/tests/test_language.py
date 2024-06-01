@@ -756,13 +756,6 @@ class JacLanguageTests(TestCase):
     def test_random_check(self, mockme: object) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.py_raise = True
-        file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen
-
-        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
-        gen_ast = ir.pp()
-        self.assertIn("ModulePath - statistics -", gen_ast)
-        self.assertIn("+-- Name - TclError - Type: No", gen_ast)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("random_check", base_path=self.fixture_abs_path("./"))
@@ -776,14 +769,14 @@ class JacLanguageTests(TestCase):
         # self.assertNotIn("Error", stdout_value) TODO: Ask kugesan about this error
         settings.py_raise = False
 
-    def test_deep_py_load_imports(self) -> None:
+    def test_deep_py_load_imports(self) -> None:  # we can get rid of this, isn't?
         """Test py ast to Jac ast conversion output."""
         settings.py_raise = True
         file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
         from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
         imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-        self.assertEqual(len(imp.import_table), 3)
+        self.assertEqual(len(imp.import_table), 1)
         settings.py_raise = False
 
     def test_access_modifier(self) -> None:
@@ -810,8 +803,8 @@ class JacLanguageTests(TestCase):
 
         ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
         jac_ast = ir.pp()
-        self.assertIn("Name - html -", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.Module)), 3)
+        self.assertIn(' |   +-- String - "Loop compl', jac_ast)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 272)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
