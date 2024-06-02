@@ -4,11 +4,11 @@ import io
 import os
 import pickle
 import sys
-from unittest.mock import patch
+import sysconfig
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
+from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
 from jaclang.core import construct
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -752,21 +752,33 @@ class JacLanguageTests(TestCase):
         self.assertEqual("9", stdout_value[0])
         self.assertEqual("567", stdout_value[1])
 
-    @patch("tkinter.Tk")
-    def test_random_check(self, mockme: object) -> None:
+    def test_random_check(self) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.py_raise = True
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        jac_import("random_check", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("Hello World", stdout_value)
-        self.assertIn("81", stdout_value)
-        self.assertIn("['yellow', 'red', 'blue', 'orange', 'green']", stdout_value)
-        self.assertIn("0.21863", stdout_value)
-        self.assertIn("<class 'tkinter.Button'>", stdout_value)
-        # self.assertNotIn("Error", stdout_value) TODO: Ask kugesan about this error
+
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.absyntree as ast
+        import ast as py_ast
+
+        module_paths = ["random", "tkinter"]
+        for module_path in module_paths:
+            stdlib_dir = sysconfig.get_paths()["stdlib"]
+            file_path = os.path.join(
+                stdlib_dir,
+                module_path + (".py" if module_path == "random" else "/__init__.py"),
+            )
+            with open(file_path) as f:
+                jac_ast = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(
+                        py_ast.parse(f.read()), mod_path=file_path
+                    )
+                )
+            ir = jac_pass_to_pass(jac_ast).ir
+            gen_ast = ir.pp()
+            if module_path == "random":
+                self.assertIn("ModulePath - statistics -", gen_ast)
+            else:
+                self.assertIn("+-- Name - TclError - Type: No", gen_ast)
         settings.py_raise = False
 
     def test_deep_py_load_imports(self) -> None:  # we can get rid of this, isn't?
