@@ -2454,8 +2454,8 @@ class JacParser(Pass):
             """Grammar rule.
 
             yield_expr:
-                | KW_YIELD KW_FROM expression
-                | KW_YIELD expression
+                | KW_YIELD KW_FROM? expression
+                | KW_YIELD
             """
             if isinstance(kid[-1], ast.Expr):
                 return self.nu(
