@@ -48,8 +48,16 @@ class FuseTypeInfoPass(Pass):
     def __set_sym_table_link(self, node: ast.AstSymbolNode) -> None:
         typ = node.sym_info.typ.split(".")
         typ_sym_table = self.ir.sym_tab
-        if typ_sym_table and typ[0] == typ_sym_table.name:
-            for i in typ[1:]:
+
+        if typ[0] == "builtins":
+            return
+
+        assert isinstance(self.ir, ast.Module)
+
+        if typ_sym_table:
+            for i in typ:
+                if i == self.ir.name:
+                    continue
                 f = typ_sym_table.find_scope(i)
                 if f:
                     typ_sym_table = f
@@ -158,11 +166,6 @@ class FuseTypeInfoPass(Pass):
                     f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported',
                     type(mypy_node),
                 )
-
-    def enter_import(self, node: ast.Import) -> None:
-        """Pass handler for import nodes."""
-        # Pruning the import nodes
-        self.prune()
 
     @__handle_node
     def enter_name(self, node: ast.NameSpec) -> None:
