@@ -126,7 +126,13 @@ class FuseTypeInfoPass(Pass):
     def __collect_type_from_symbol(self, node: ast.AstSymbolNode) -> None:
         mypy_node = node.gen.mypy_ast[0]
 
-        if hasattr(mypy_node, "node"):
+        if isinstance(mypy_node, MypyNodes.MemberExpr):
+            if mypy_node in self.node_type_hash:
+                node.sym_info.typ = str(self.node_type_hash[mypy_node])
+            else:
+                self.__debug_print(f"{node.loc} MemberExpr type is not found")
+
+        elif hasattr(mypy_node, "node"):
             # orig_node = mypy_node
             mypy_node = mypy_node.node
 
