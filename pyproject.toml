@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "jaclang-unofficial"
+name = "jaclang"
 version = "0.6.0"
 description = "Jaclang is a unique and powerful programming language that runs on top of Python, offering an unprecedented level of intelligence and intuitive understanding."
 authors = ["Jason Mars <jason@jaseci.org>"]
