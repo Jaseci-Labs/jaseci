@@ -23,8 +23,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry install
-        pip install pytest
-        pip install pygame
+        pip install pytest pygame coverage pytest-cov
 
     - name: Run tests and collect coverage
       run: pytest --cov app ${{ env.CODECOV_ATS_TESTS }}
