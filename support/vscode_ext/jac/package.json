@@ -1,6 +1,6 @@
 {
   "name": "jac",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "displayName": "Jac",
   "description": "Jac Language",
   "engines": {
@@ -9,6 +9,10 @@
   "categories": [
     "Programming Languages"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jaseci-Labs/jaclang.git"
+  },
   "contributes": {
     "languages": [
       {
@@ -30,5 +34,21 @@
         "path": "./syntaxes/jac.tmLanguage.json"
       }
     ]
+  },
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "build": "vsce",
+    "watch": "tsc -b -w",
+    "deploy": "vsce publish --yarn"
+  },
+  "dependencies": {
+    "@types/vscode": "^1.89.0",
+    "@vscode/vsce": "^2.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.1",
+    "vscode-languageclient": "^9.0.1"
   }
 }
