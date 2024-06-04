@@ -41,4 +41,13 @@ setup(
     author="Jason Mars",
     author_email="jason@jaseci.org",
     url="https://github.com/Jaseci-Labs/jaclang",
+    long_description=open("README.md").read(),  # noqa
+    long_description_content_type="text/markdown",
+    license="MIT",
+    classifiers=[
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.12",
+    ],
+    description="Jaclang is a unique and powerful programming language that runs on top of Python, offering an unprecedented level of intelligence and intuitive understanding.",  # noqa
 )
