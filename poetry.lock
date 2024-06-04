@@ -68,7 +68,10 @@ pluggy = ">=1.5,<2.0"
 [package.extras]
 dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
+[extras]
+llm = []
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12.0"
-content-hash = "44a7dc88084695af7d589f2d53a8d2605917cb02ddcd1e3bc2884eb66d7a04f5"
+content-hash = "d147e6d7398b9bba903f622a1aa53eb5c0dcd07804d2f009922fede590b35b6f"
