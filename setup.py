@@ -50,5 +50,5 @@ setup(
         "Programming Language :: Python :: 3.12",
     ],
     description="Jaclang is a unique and powerful programming language that runs on top of Python, offering an unprecedented level of intelligence and intuitive understanding.",  # noqa
-    keywords=["programming", "language", "ai", "jaseci", "jaclang"]
+    keywords=["programming", "language", "ai", "jaseci", "jaclang"],
 )
