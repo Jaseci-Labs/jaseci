@@ -128,7 +128,10 @@ class FuseTypeInfoPass(Pass):
 
         if isinstance(mypy_node, MypyNodes.MemberExpr):
             if mypy_node in self.node_type_hash:
-                node.sym_info.typ = str(self.node_type_hash[mypy_node])
+                t = str(self.node_type_hash[mypy_node])
+                if "->" in t:
+                    t = t.split("->")[1].strip()
+                node.sym_info.typ = t
             else:
                 self.__debug_print(f"{node.loc} MemberExpr type is not found")
 
