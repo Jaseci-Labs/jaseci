@@ -21,7 +21,7 @@ standard library, and documentation.
 [Getting Started]: https://www.jac-lang.org//start/
 [Learn]: https://www.jac-lang.org//learn
 [Documentation]: https://www.jac-lang.org//learn/guide/
-[Contributing]: CONTRIBUTING.md
+[Contributing]: .github/CONTRIBUTING.md
 
 ## Why Jaclang?
 
@@ -51,7 +51,7 @@ See https://www.jaclang-lang.org/community for a list of chat platforms and foru
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## License
 
@@ -59,7 +59,7 @@ Jaclang is primarily distributed under the terms of both the MIT license and the
 Apache License (Version 2.0), with portions covered by various BSD-like
 licenses.
 
-See [LICENSE-APACHE](LICENSE-APACHE), [LICENSE-MIT](LICENSE), and
+See [LICENSE-MIT](.guthub/LICENSE), and
 [COPYRIGHT](COPYRIGHT) for details.
 
 ## Trademark
