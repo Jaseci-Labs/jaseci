@@ -36,7 +36,6 @@ MANIFEST
 .session
 .DS_Store
 build
-.vscode
 *Zone.Identifier
 .DS_Store
 parser.out

@@ -12,7 +12,7 @@ i.e, "Hello" |> print is equivalent to print("Hello")
 obj Game {
 
     has attempts: int,
-        won: bool = False; 
+        won: bool = False;
     can play {
         raise "Subclasses must implement this method." |> NotImplementedError;
     }
