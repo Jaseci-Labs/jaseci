@@ -25,25 +25,42 @@ standard library, and documentation.
 
 ## Why Jaclang?
 
-- **Performance:** Fast and memory-efficient, suitable for critical services, embedded devices, and easily integrate with other languages.
+- **Easy:** Jaclang is designed to be easy to learn and use, while also being powerful.
 
-- **Reliability:** Our rich type system and ownership model ensure memory and thread safety, reducing bugs at compile-time.
+- **Reliability:** Our rich type system and runtime checks ensure your code is correct.
 
-- **Productivity:** editor support ([jac-analyzer]).
+- **AI Ready:** Jaclang provide easy to use Abstractions specially designed for LLMs.
+
+- **Data Spatial Programming:** Jaclang provides easy to use Abstractions for Data Spatial Programming.
+
+- **Support:** Jaclang compiles to Python, which is widely used and has a large ecosystem. Making it easy to integrate with existing code.
+
+- **Dev Friendly:** Highly Refactorable, Jaclang is designed to be easy to refactor and maintain. VSCode Editor support through [jac-analyzer].
+
+- **Cloud-native:** Jaclang is designed to be cloud-native, making it easy to deploy and scale.
+
+
 
 [jac-analyzer]: https://github.com/Jaseci-Labs/jac-analyzer
 
 ## Quick Start
 
-Read ["Installation"] from [The Book].
+To install Jaclang, run:
 
-["Installation"]: https://doc.rust-lang.org/book/ch01-01-installation.html
-[The Book]: https://doc.rust-lang.org/book/index.html
+```bash
+pip install jaclang
+```
+Run `jac` in the terminal to see whether it is installed correctly.
+
+Read ["Getting Started"] from [Docs] for more information.
+
+["Getting Started"]:https://www.jac-lang.org//start/
+[Docs]: https://www.jac-lang.org//learn/guide/
 
 ## Installing from Source
 
 If you really want to install from source (though this is not recommended), see
-[INSTALL.md](INSTALL.md).
+[INSTALL.md](support/INSTALL.md).
 
 ## Getting Help
 
@@ -64,15 +81,12 @@ See [LICENSE-MIT](.guthub/LICENSE), and
 
 ## Trademark
 
-[Jaseci][jaseci] owns and protects the Jaclang
-trademarks and logos (the "Jaclang Trademarks").
+[Jaseci][jaseci] owns and protects the Jaclang trademarks and logos (the "Jaclang Trademarks").
 
-If you want to use these names or brands, please read the
-[media guide][media-guide].
+If you want to use these names or brands, please read the [media guide][media-guide].
 
-Third-party logos may be subject to third-party copyrights and trademarks. See
-[Licenses][policies-licenses] for details.
+Third-party logos may be subject to third-party copyrights and trademarks. See [Licenses][policies-licenses] for details.
 
 [jaseci]: https://jaseci.org/
-[media-guide]: https://foundation.rust-lang.org/policies/logo-policy-and-media-guide/
-[policies-licenses]: https://www.rust-lang.org/policies/licenses
+[media-guide]: https://jaseci.org/policies/logo-policy-and-media-guide/
+[policies-licenses]: https://www.jaseci.org/policies/licenses
