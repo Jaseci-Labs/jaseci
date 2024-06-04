@@ -10,18 +10,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.12'
-
       - name: Install Poetry
         run: |
           pip install poetry
-
       - name: Build and publish package
         run: |
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry build
           poetry publish
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: npm install -g semantic-release
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
