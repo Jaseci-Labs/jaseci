@@ -10,7 +10,7 @@ with open("pyproject.toml", "rb") as f:
 version = data["tool"]["poetry"]["version"]
 
 gh_release_create(
-    "chandralegend/mttlm ",
+    "chandralegend/mtllm",
     version,
     publish=True,
     name=f"MTLLM {version}",
