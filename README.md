@@ -8,10 +8,14 @@
   </picture>
 
 [Website][Jaclang] | [Getting started] | [Learn] | [Documentation] | [Contributing]
+
+  [![PyPI version](https://img.shields.io/pypi/v/jaclang.svg)](https://pypi.org/project/jaclang/) [![Tests](https://github.com/chandralegend/jaclang/actions/workflows/run_pytest.yml/badge.svg?branch=main)](https://github.com/chandralegend/jaclang/actions/workflows/run_pytest.yml) [![codecov](https://codecov.io/github/chandralegend/jaclang/graph/badge.svg?token=OAX26B0FE4)](https://codecov.io/github/chandralegend/jaclang)
 </div>
 
 This is the main source code repository for [Jaclang]. It contains the compiler,
 standard library, and documentation.
+
+
 
 [Jaclang]: https://www.jac-lang.org/
 [Getting Started]: https://www.jac-lang.org//start/
