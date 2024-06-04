@@ -24,4 +24,4 @@ jobs:
       - run: pip install githubrelease 
       - run: python scripts/gh_release.py
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
