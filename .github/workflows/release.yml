@@ -21,11 +21,7 @@ jobs:
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry build
           poetry publish
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-      - run: npm install -g semantic-release
-      - run: npm install @semantic-release/github @semantic-release/git
-      - run: npx semantic-release
+      - run: pip install githubrelease 
+      - run: python scripts/gh_release.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
