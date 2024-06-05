@@ -23,4 +23,5 @@ def completions(params: CompletionParams):
 
 
 print("Starting server")
-server.start_tcp(host="localhost", port=8080)
+# server.start_tcp(host="localhost", port=8080)
+server.start_io()
