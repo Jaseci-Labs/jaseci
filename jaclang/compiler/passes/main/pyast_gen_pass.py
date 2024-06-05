@@ -212,11 +212,13 @@ class PyastGenPass(Pass):
                 i.end_lineno = (
                     jac_node.loc.last_line
                     if jac_node.loc.last_line
+                    and (jac_node.loc.last_line > jac_node.loc.first_line)
                     else jac_node.loc.first_line
                 )
                 i.end_col_offset = (
                     jac_node.loc.col_end
                     if jac_node.loc.col_end
+                    and (jac_node.loc.col_end > jac_node.loc.col_start)
                     else jac_node.loc.col_start
                 )
                 i.jac_link: list[ast3.AST] = [jac_node]  # type: ignore
