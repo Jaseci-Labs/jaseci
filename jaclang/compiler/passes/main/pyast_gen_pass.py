@@ -998,7 +998,6 @@ class PyastGenPass(Pass):
         self.link_jac_py_nodes(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
         if isinstance(node.body, ast.AbilityDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
-            self.exit_ability_def(node.body)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
