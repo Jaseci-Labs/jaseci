@@ -998,6 +998,7 @@ class PyastGenPass(Pass):
         self.link_jac_py_nodes(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
         if isinstance(node.body, ast.AbilityDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
+            self.exit_ability_def(node.body)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate llm body."""
@@ -1321,8 +1322,6 @@ class PyastGenPass(Pass):
                     jac_node=node.signature.return_type,
                     py_nodes=node.parent.signature.return_type.gen.py_ast,
                 )
-            # TODO: Here we need to do a link for each subnode to the original parent signature
-            pass
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
