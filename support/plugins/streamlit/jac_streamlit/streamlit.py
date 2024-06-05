@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 
-from jaclang.cli.cli import dot
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.plugin.default import hookimpl
 
@@ -56,6 +55,8 @@ class JacCmd:
 
             :param filename: The path to the DOT file that wants to be shown.
             """
+            from jaclang.cli.cli import dot
+
             dot(filename)
             _, filename = os.path.split(filename)
             dot_file = os.path.abspath(f"{filename.replace('.jac', '.dot')}")

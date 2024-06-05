@@ -8,7 +8,7 @@ VERSION = "0.0.1"
 setup(
     name="jac-streamlit",
     version=VERSION,
-    packages=find_packages(include=["jac_streamlit", "streamlit.*"]),
+    packages=find_packages(include=["jac_streamlit", "jac_streamlit.*"]),
     install_requires=["streamlit", "pydot", "streamlit-agraph"],
     package_data={
         "": ["*.ini"],
