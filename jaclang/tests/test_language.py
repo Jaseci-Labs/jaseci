@@ -138,6 +138,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("[Reasoning] <Reason>", stdout_value)
+        self.assertIn("(Enum) eg:- Personality.EXTROVERT ->", stdout_value)
         self.assertIn(
             "Personality Index of a Person (PersonalityIndex) (class) eg:- "
             "PersonalityIndex(index=int) -> Personality Index (index) (int)",
