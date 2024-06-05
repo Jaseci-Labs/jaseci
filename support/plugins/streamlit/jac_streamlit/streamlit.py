@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 
-
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.plugin.default import hookimpl
 
