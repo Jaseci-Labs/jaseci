@@ -12,26 +12,6 @@
                 "${workspaceFolder}/out/**/*.js"
             ],
             "preLaunchTask": "npm: compile"
-        },
-        {
-            "name": "Launch Server",
-            "type": "debugpy",
-            "request": "attach",
-            "processId": "${command:pickProcess}",
-            "justMyCode": false,
-            "presentation": {
-                "hidden": false,
-                "group": ""
-            }
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Server + Client",
-            "configurations": [
-                "Launch Server",
-                "Run Extension"
-            ]
         }
     ]
 }

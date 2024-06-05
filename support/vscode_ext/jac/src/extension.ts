@@ -10,7 +10,6 @@ import {
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-    vscode.window.showInformationMessage('Starting Extension');
     let serverModule = context.asAbsolutePath(
         path.join('src', 'server.py')
     );
@@ -31,7 +30,14 @@ export function activate(context: vscode.ExtensionContext) {
         clientOptions
     );
 
-    client.start();
+    client.start().then(() => {
+        vscode.window.showInformationMessage('Jac Language Server has started successfully!');
+        console.log('Jac Language Server has started successfully!');
+    }).catch((error) => {
+        vscode.window.showErrorMessage('Failed to start Jac Language Server: ' + error.message);
+        console.error('Failed to start Jac Language Server: ', error);
+    });
+
 }
 
 export function deactivate(): Thenable<void> | undefined {

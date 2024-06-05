@@ -35,6 +35,7 @@ MANIFEST
 .coverage
 .session
 .DS_Store
+.vscode
 build
 *Zone.Identifier
 .DS_Store
