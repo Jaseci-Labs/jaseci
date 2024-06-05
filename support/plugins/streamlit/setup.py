@@ -14,7 +14,7 @@ setup(
         "": ["*.ini"],
     },
     entry_points={
-        "jac": ["dot_view = jac_streamlit.streamlit:JacCmd"],
+        "jac": ["streamlit = jac_streamlit.streamlit:JacCmd"],
     },
     url="https://github.com/Jaseci-Labs/jaclang",
 )
