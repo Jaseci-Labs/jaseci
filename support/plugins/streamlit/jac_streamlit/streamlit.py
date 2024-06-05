@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 
+from jaclang.cli.cli import dot
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.plugin.default import hookimpl
 
@@ -48,3 +49,22 @@ class JacCmd:
                 bootstrap.run(file_name, is_hello=False, args=[], flag_options={})
             else:
                 print("Not a .jac file.")
+
+        @cmd_registry.register
+        def dot_view(filename: str) -> None:
+            """View the content of a DOT file. in Streamlit Application.
+
+            :param filename: The path to the DOT file that wants to be shown.
+            """
+            dot(filename)
+            _, filename = os.path.split(filename)
+            dot_file = os.path.abspath(f"{filename.replace('.jac', '.dot')}")
+            dot_streamlit_view_file = os.path.join(
+                os.path.dirname(__file__), "dot_viewer.py"
+            )
+            bootstrap.run(
+                dot_streamlit_view_file,
+                is_hello=False,
+                args=[dot_file],
+                flag_options={},
+            )

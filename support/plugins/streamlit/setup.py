@@ -9,12 +9,12 @@ setup(
     name="jac-streamlit",
     version=VERSION,
     packages=find_packages(include=["jac_streamlit", "streamlit.*"]),
-    install_requires=["streamlit"],
+    install_requires=["streamlit", "pydot", "streamlit-agraph"],
     package_data={
         "": ["*.ini"],
     },
     entry_points={
-        "jac": ["streamlit = jac_streamlit.streamlit:JacCmd"],
+        "jac": ["dot_view = jac_streamlit.streamlit:JacCmd"],
     },
     url="https://github.com/Jaseci-Labs/jaclang",
 )
