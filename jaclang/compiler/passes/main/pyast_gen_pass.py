@@ -1297,7 +1297,30 @@ class PyastGenPass(Pass):
                 self.link_jac_py_nodes(
                     jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
                 )
+
         if isinstance(node.parent, ast.Ability) and node.parent.signature:
+            if isinstance(node.signature, ast.FuncSignature) and node.signature.params:
+                for src_prm in node.signature.params.items:
+                    if (
+                        isinstance(node.parent.signature, ast.FuncSignature)
+                        and node.parent.signature.params
+                    ):
+                        for trg_prm in node.parent.signature.params.items:
+                            if src_prm.name.sym_name == trg_prm.name.sym_name:
+                                self.link_jac_py_nodes(
+                                    jac_node=trg_prm, py_nodes=src_prm.gen.py_ast
+                                )
+            if (
+                isinstance(node.signature, ast.FuncSignature)
+                and node.signature.return_type
+            ) and (
+                isinstance(node.parent.signature, ast.FuncSignature)
+                and node.parent.signature.return_type
+            ):
+                self.link_jac_py_nodes(
+                    jac_node=node.signature.return_type,
+                    py_nodes=node.parent.signature.return_type.gen.py_ast,
+                )
             # TODO: Here we need to do a link for each subnode to the original parent signature
             pass
 
