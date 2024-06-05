@@ -21,15 +21,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install poetry
-        poetry install
-        pip install pytest pygame coverage pytest-cov
+        pip install -e .
+        pip install pytest
+        pip install pygame
 
-    - name: Run tests and collect coverage
-      run: pytest --cov app ${{ env.CODECOV_ATS_TESTS }}
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        verbose: true
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - name: Run tests
+      run: pytest
