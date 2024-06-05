@@ -144,6 +144,7 @@ def get_type_explanation(
                 type_info_str.append(
                     f"{enum_item.semstr} ({enum_item.name}) (EnumItem)"
                 )
+            type_example[0] = type_example[0].replace("(", f".{enum_item.name}")
         elif sem_info.type in ["obj", "class", "node", "edge"] and isinstance(
             type_info, list
         ):

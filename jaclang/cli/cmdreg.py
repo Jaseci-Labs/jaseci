@@ -34,7 +34,7 @@ class CommandRegistry:
     def __init__(self) -> None:
         """Initialize a CommandRegistry instance."""
         self.registry = {}
-        self.parser = argparse.ArgumentParser(prog="CLI")
+        self.parser = argparse.ArgumentParser(prog="jac")
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
 
     def register(self, func: Callable) -> Callable:
