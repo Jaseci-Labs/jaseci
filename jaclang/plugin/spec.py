@@ -26,6 +26,7 @@ hookspec = pluggy.HookspecMarker("jac")
 T = TypeVar("T")
 
 
+# TODO: DSFunc should be moved into jaclang/core
 @dataclass(eq=False)
 class DSFunc:
     """Data Spatial Function."""
