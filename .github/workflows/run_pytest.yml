@@ -26,6 +26,7 @@ jobs:
         pip install pygame
         pip install streamlit
         pip install pydot
+        pip install streamlit-agraph
 
     - name: Run tests
       run: pytest
