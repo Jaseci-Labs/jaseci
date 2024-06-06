@@ -11,7 +11,7 @@ obj Spritesheet {
 }
 
 :obj:Spritesheet:can:get_sprite
-(x: int, y: int, width: int, height: int) {
+(x: int, y: int, width: int, height: int) -> pygame.Surface {
     sprite = pygame.Surface([width, height]);
     sprite.blit(self.sheet, (0, 0), (x, y, width, height));
     sprite.set_colorkey(BLACK);

@@ -217,9 +217,9 @@ class SymTabBuildPass(SymTabPass):
         else:
             self.cur_sym_tab.append(self.cur_scope().push_scope(name, key_node))
 
-    def pop_scope(self) -> None:
+    def pop_scope(self) -> SymbolTable:
         """Pop scope."""
-        self.cur_sym_tab.pop()
+        return self.cur_sym_tab.pop()
 
     def cur_scope(self) -> SymbolTable:
         """Return current scope."""
@@ -263,7 +263,13 @@ class SymTabBuildPass(SymTabPass):
         mod_path: str,
         is_imported: bool,
         """
-        self.pop_scope()
+        s = self.pop_scope()
+        # If not the main module add all the other modules symbol table
+        # as a child to the current symbol table
+        if node != self.ir:
+            self.cur_scope().kid.append(s)
+            s.parent = self.cur_scope()
+
         if (
             isinstance(node.parent, ast.Module)
             and node
