@@ -121,7 +121,8 @@ class JacLanguageTests(TestCase):
         self.assertIn('Text Input (input) (str) = "Lets move to paris"', stdout_value)
         try:
             self.assertIn(
-                'Examples of Text to Emoji (emoji_examples) (list[dict[str,str]]) = [{"input": "I love tp drink pina coladas"',  # noqa E501
+                "Examples of Text to Emoji (emoji_examples) (list[dict[str,str]])"
+                ' = [{"input": "I love tp drink pina coladas"',
                 stdout_value,
             )
         except AssertionError:
@@ -137,8 +138,10 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("[Reasoning] <Reason>", stdout_value)
+        self.assertIn("(Enum) eg:- Personality.EXTROVERT ->", stdout_value)
         self.assertIn(
-            "Personality Index of a Person (PersonalityIndex) (class) = Personality Index (index) (int)",
+            "Personality Index of a Person (PersonalityIndex) (class) eg:- "
+            "PersonalityIndex(index=int) -> Personality Index (index) (int)",
             stdout_value,
         )
         self.assertIn(
@@ -146,7 +149,8 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            'Diary Entries (diary_entries) (list[str]) = ["I won noble prize in Physics", "I am popular for my theory of relativity"]',  # noqa E501
+            'Diary Entries (diary_entries) (list[str]) = ["I won noble prize in '
+            'Physics", "I am popular for my theory of relativity"]',
             stdout_value,
         )
 
@@ -163,7 +167,9 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            "Person (Person) (obj) = Fullname of the Person (full_name) (str), Year of Death (yod) (int), Personality of the Person (personality) (Personality)",  # noqa E501
+            "Person (Person) (obj) eg:- Person(full_name=str, yod=int, personality"
+            "=Personality) -> Fullname of the Person (full_name) (str), Year of Death"
+            " (yod) (int), Personality of the Person (personality) (Personality)",
             stdout_value,
         )
         self.assertIn(
@@ -179,14 +185,15 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("14/03/1879", stdout_value)
-        self.assertEqual(
-            "Person(name='Jason Mars', dob='1994-01-01', age=30)",
-            stdout_value.split("\n")[1],
+        self.assertNotIn(
+            'University (University) (obj) = type(__module__="with_llm_type", __doc__=None, '
+            "_jac_entry_funcs_=[], _jac_exit_funcs_=[], __init__=function(__wrapped__=function()))",
+            stdout_value,
         )
-        self.assertIn(
-            "Person(name='Jason Mars', dob='1994-01-01', age=30)",
-            stdout_value.split("\n")[2],
+        desired_output_count = stdout_value.count(
+            "Person(name='Jason Mars', dob='1994-01-01', age=30)"
         )
+        self.assertEqual(desired_output_count, 2)
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""

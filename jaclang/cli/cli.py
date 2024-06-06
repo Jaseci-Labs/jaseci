@@ -7,9 +7,8 @@ import marshal
 import os
 import pickle
 import shutil
-import sys
 import types
-from typing import Any, Dict, Optional
+from typing import Optional
 from uuid import UUID
 
 import jaclang.compiler.absyntree as ast
@@ -93,7 +92,7 @@ def run(
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        jac_import(
+        loaded_mod = jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
@@ -102,7 +101,7 @@ def run(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             ir = pickle.load(f)
-            jac_import(
+            loaded_mod = jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -111,6 +110,7 @@ def run(
             )
     else:
         print("Not a .jac file.")
+        return
 
     if not node or node == "root":
         entrypoint: Architype = Jac.get_root()
@@ -123,7 +123,7 @@ def run(
 
     # TODO: handle no override name
     if walker:
-        walker_module = dict(inspect.getmembers(sys.modules["__main__"])).get(walker)
+        walker_module = dict(inspect.getmembers(loaded_mod)).get(walker)
         if walker_module:
             Jac.spawn_call(entrypoint, walker_module())
         else:
@@ -133,16 +133,10 @@ def run(
 
 
 @cmd_registry.register
-def get_object(id: str, session: str = "") -> Dict[Any, Any]:
+def get_object(id: str, session: str = "") -> dict:
     """Get the object with the specified id."""
     if session == "":
-        session = (
-            cmd_registry.args.session
-            if hasattr(cmd_registry, "args")
-            and hasattr(cmd_registry.args, "session")
-            and cmd_registry.args.session
-            else ""
-        )
+        session = cmd_registry.args.session if "session" in cmd_registry.args else ""
 
     Jac.context().init_memory(session)
 

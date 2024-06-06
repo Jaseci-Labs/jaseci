@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 from jaclang.compiler.constant import EdgeDir
@@ -39,7 +39,7 @@ class NodeAnchor(ObjectAnchor):
     edge_ids: list[UUID] = field(default_factory=lambda: [])
     persistent: bool = False
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state.pop("obj")
@@ -49,7 +49,7 @@ class NodeAnchor(ObjectAnchor):
 
         return state
 
-    def __setstate__(self, state: dict[str, Any]) -> None:
+    def __setstate__(self, state: dict) -> None:
         """Override setstate for pickle and shelve."""
         self.__dict__.update(state)
         if "edge_ids" in state:
@@ -168,7 +168,7 @@ class EdgeAnchor(ObjectAnchor):
     is_undirected: bool = False
     persistent: bool = False
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state.pop("obj")
@@ -183,7 +183,7 @@ class EdgeAnchor(ObjectAnchor):
 
         return state
 
-    def __setstate__(self, state: dict[str, Any]) -> None:
+    def __setstate__(self, state: dict) -> None:
         """Override setstate for pickle and shelve."""
         self.__dict__.update(state)
 
@@ -342,7 +342,7 @@ class Architype:
         """Override repr for architype."""
         return f"{self.__class__.__name__}"
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict:
         """Override getstate for pickle and shelve."""
         raise NotImplementedError
 
@@ -362,7 +362,7 @@ class NodeArchitype(Architype):
         self._jac_.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state["_jac_"] = self._jac_.__getstate__()
@@ -391,7 +391,7 @@ class EdgeArchitype(Architype):
         self.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict:
         """Override getstate for pickle and shelve."""
         state = self.__dict__.copy()
         state["_jac_"] = self._jac_.__getstate__()
@@ -546,6 +546,6 @@ class JacTestCheck:
         """Create a new test."""
         JacTestCheck.test_suite.addTest(unittest.FunctionTestCase(test_fun))
 
-    def __getattr__(self, name: str) -> Union[bool, Any]:
+    def __getattr__(self, name: str) -> object:
         """Make convenient check.Equal(...) etc."""
         return getattr(JacTestCheck.test_case, name)

@@ -36,11 +36,12 @@ class CommandRegistry:
     def __init__(self) -> None:
         """Initialize a CommandRegistry instance."""
         self.registry = {}
-        self.parser = argparse.ArgumentParser(prog="CLI")
+        self.parser = argparse.ArgumentParser(prog="jac")
         self.parser.add_argument(
             "--session", help="Session file path", nargs="?", default=""
         )
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
+        self.args = argparse.Namespace()
 
     def register(self, func: Callable) -> Callable:
         """Register a command in the registry."""
