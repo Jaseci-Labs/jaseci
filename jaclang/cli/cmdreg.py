@@ -41,6 +41,7 @@ class CommandRegistry:
             "--session", help="Session file path", nargs="?", default=""
         )
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
+        self.args = argparse.Namespace()
 
     def register(self, func: Callable) -> Callable:
         """Register a command in the registry."""
