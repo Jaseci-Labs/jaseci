@@ -25,6 +25,7 @@ jobs:
         pip install pytest
         pip install pygame
         pip install streamlit
+        pip install pydot
 
     - name: Run tests
       run: pytest
