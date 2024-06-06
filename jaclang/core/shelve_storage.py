@@ -4,7 +4,7 @@ import shelve
 from uuid import UUID
 
 from jaclang.core.construct import Architype
-from jaclang.plugin.memory import Memory
+from jaclang.core.memory import Memory
 
 
 class ShelveStorage(Memory):

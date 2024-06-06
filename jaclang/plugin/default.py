@@ -38,11 +38,11 @@ from jaclang.core.construct import (
     WalkerArchitype,
 )
 from jaclang.core.importer import jac_importer
+from jaclang.core.memory import Memory
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
+from jaclang.core.shelve_storage import ShelveStorage
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.plugin.memory import Memory
-from jaclang.plugin.shelve_storage import ShelveStorage
 from jaclang.plugin.spec import T
 
 

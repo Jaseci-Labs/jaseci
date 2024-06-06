@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         WalkerArchitype,
         Root,
     )
-    from jaclang.plugin.memory import Memory
+    from jaclang.core.memory import Memory
 
 import pluggy
 

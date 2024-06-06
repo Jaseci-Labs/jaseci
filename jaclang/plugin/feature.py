@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         Root,
     )
     from jaclang.plugin.default import ExecutionContext
-    from jaclang.plugin.memory import Memory
+    from jaclang.core.memory import Memory
 
 
 import pluggy
