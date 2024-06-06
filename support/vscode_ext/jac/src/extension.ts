@@ -11,12 +11,12 @@ let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
     let serverModule = context.asAbsolutePath(
-        path.join('src', 'server.py')
+        path.join('src', 'server.jac')
     );
 
     let serverOptions: ServerOptions = {
-        run: { command: 'python3', args: [serverModule] },
-        debug: { command: 'python3', args: [serverModule] }
+        run: { command: 'jac', args: ["run", serverModule] },
+        debug: { command: 'jac', args: ["run", serverModule] }
     };
 
     let clientOptions: LanguageClientOptions = {
