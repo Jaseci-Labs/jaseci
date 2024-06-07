@@ -10,7 +10,7 @@ from setuptools import find_packages, setup  # type: ignore
 generate_static_parser(force=True)
 
 
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 
 setup(
     name="jaclang",
