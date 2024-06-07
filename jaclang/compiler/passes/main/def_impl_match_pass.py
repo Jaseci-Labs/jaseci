@@ -43,6 +43,10 @@ class DeclDefMatchPass(Pass):
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
                 lookup = sym_tab.lookup(arch_refs[0])
+                # Below may need to be a while instead of if to skip over local
+                # import name collisions (see test: test_impl_decl_resolution_fix)
+                if lookup and not isinstance(lookup.decl, ast.AstImplNeedingNode):
+                    lookup = sym_tab.parent.lookup(arch_refs[0])
                 decl_node = (
                     self.defn_lookup(lookup)
                     if len(arch_refs) == 1 and lookup

@@ -79,7 +79,8 @@ class JacImportPass(Pass):
             if node.loc.mod_path.endswith(impl_file):
                 continue
             if (
-                impl_file.startswith(f"{base_path}.") or impl_folder in impl_file
+                impl_file.startswith(f"{base_path}.")
+                or impl_folder == os.path.dirname(impl_file)
             ) and impl_file.endswith(".impl.jac"):
                 mod = self.import_mod_from_file(impl_file)
                 if mod:
@@ -87,7 +88,8 @@ class JacImportPass(Pass):
                     node.add_kids_left([mod], pos_update=False)
                     mod.parent = node
             if (
-                impl_file.startswith(f"{base_path}.") or impl_folder in impl_file
+                impl_file.startswith(f"{base_path}.")
+                or impl_folder == os.path.dirname(impl_file)
             ) and impl_file.endswith(".test.jac"):
                 mod = self.import_mod_from_file(impl_file)
                 if mod:
