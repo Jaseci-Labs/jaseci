@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     client = new LanguageClient(
-        'myLanguageServer',
+        'JacLanguageServer',
         'Jac Language Server',
         serverOptions,
         clientOptions
