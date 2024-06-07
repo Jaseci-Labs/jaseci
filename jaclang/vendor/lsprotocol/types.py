@@ -112,14 +112,14 @@ class LSPErrorCodes(int, enum.Enum):
     method name was known and the parameters were valid. The error
     message should contain human readable information about why
     the request failed.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
     ServerCancelled = -32802
     """The server cancelled the request. This error code should
     only be used for requests that explicitly support being
     server cancellable.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
     ContentModified = -32801
@@ -128,7 +128,7 @@ class LSPErrorCodes(int, enum.Enum):
     NOT send this error code if it detects a content change
     in it unprocessed messages. The result even computed
     on an older state might still be useful for the client.
-    
+
     If a client decides that a result is not of any use anymore
     the client should cancel the request."""
     RequestCancelled = -32800
@@ -253,7 +253,7 @@ class MessageType(int, enum.Enum):
     """A log message."""
     Debug = 5
     """A debug message.
-    
+
     @since 3.18.0"""
     # Since: 3.18.0
 
@@ -339,12 +339,12 @@ class InsertTextFormat(int, enum.Enum):
     """The primary text to be inserted is treated as a plain string."""
     Snippet = 2
     """The primary text to be inserted is treated as a snippet.
-    
+
     A snippet can define tab stops and placeholders with `$1`, `$2`
     and `${3:foo}`. `$0` defines the final tab stop, it defaults to
     the end of the snippet. Placeholders with equal identifiers are linked,
     that is typing in one will update others too.
-    
+
     See also: https://microsoft.github.io/language-server-protocol/specifications/specification-current/#snippet_syntax"""
 
 
@@ -366,7 +366,7 @@ class InsertTextMode(int, enum.Enum):
     """The editor adjusts leading whitespace of new lines so that
     they match the indentation up to the cursor of the line for
     which the item is accepted.
-    
+
     Consider a line like this: <2tabs><cursor><3tabs>foo. Accepting a
     multi line completion item is indented using 2 tabs and all
     following lines inserted will be indented using 2 tabs as well."""
@@ -396,9 +396,9 @@ class CodeActionKind(str, enum.Enum):
     """Base kind for refactoring actions: 'refactor'"""
     RefactorExtract = "refactor.extract"
     """Base kind for refactoring extraction actions: 'refactor.extract'
-    
+
     Example extract actions:
-    
+
     - Extract method
     - Extract function
     - Extract variable
@@ -406,18 +406,18 @@ class CodeActionKind(str, enum.Enum):
     - ..."""
     RefactorInline = "refactor.inline"
     """Base kind for refactoring inline actions: 'refactor.inline'
-    
+
     Example inline actions:
-    
+
     - Inline function
     - Inline variable
     - Inline constant
     - ..."""
     RefactorRewrite = "refactor.rewrite"
     """Base kind for refactoring rewrite actions: 'refactor.rewrite'
-    
+
     Example rewrite actions:
-    
+
     - Convert JavaScript function to class
     - Add or remove parameter
     - Encapsulate field
@@ -426,16 +426,16 @@ class CodeActionKind(str, enum.Enum):
     - ..."""
     Source = "source"
     """Base kind for source actions: `source`
-    
+
     Source code actions apply to the entire file."""
     SourceOrganizeImports = "source.organizeImports"
     """Base kind for an organize imports source action: `source.organizeImports`"""
     SourceFixAll = "source.fixAll"
     """Base kind for auto-fix source actions: `source.fixAll`.
-    
+
     Fix all actions automatically fix errors that have a clear fix that do not require user input.
     They should not suppress errors or perform unsafe fixes such as generating new types or classes.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -490,12 +490,12 @@ class PositionEncodingKind(str, enum.Enum):
     """Character offsets count UTF-8 code units (e.g. bytes)."""
     Utf16 = "utf-16"
     """Character offsets count UTF-16 code units.
-    
+
     This is the default and must always be supported
     by servers"""
     Utf32 = "utf-32"
     """Character offsets count UTF-32 code units.
-    
+
     Implementation note: these are the same as Unicode codepoints,
     so this `PositionEncodingKind` may also be used for an
     encoding-agnostic representation of character offsets."""
@@ -546,12 +546,12 @@ class DiagnosticTag(int, enum.Enum):
     # Since: 3.15.0
     Unnecessary = 1
     """Unused or unnecessary code.
-    
+
     Clients are allowed to render diagnostics with this tag faded out instead of having
     an error squiggle."""
     Deprecated = 2
     """Deprecated or obsolete code.
-    
+
     Clients are allowed to rendered diagnostics with this tag strike through."""
 
 
@@ -595,7 +595,7 @@ class CodeActionTriggerKind(int, enum.Enum):
     """Code actions were explicitly requested by the user or by an extension."""
     Automatic = 2
     """Code actions were requested automatically.
-    
+
     This typically happens when current selection in a file changes, but can
     also be triggered when file content changes."""
 
@@ -801,7 +801,7 @@ class TextDocumentContentChangeEvent_Type1:
         validator=attrs.validators.optional(validators.uinteger_validator), default=None
     )
     """The optional length of the range that got replaced.
-    
+
     @deprecated use range instead."""
 
 
@@ -1347,7 +1347,7 @@ class FoldingRange:
     """The text that the client should show when the specified range is
     collapsed. If not defined or not supported by the client, a default
     will be chosen by the client.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -2000,10 +2000,10 @@ class WorkspaceEdit:
     are either an array of `TextDocumentEdit`s to express changes to n different text documents
     where each text document edit addresses a specific version of a text document. Or it can contain
     above `TextDocumentEdit`s mixed with create, rename and delete file / folder operations.
-    
+
     Whether a client supports versioned document edits is expressed via
     `workspace.workspaceEdit.documentChanges` client capability.
-    
+
     If a client neither supports `documentChanges` nor `workspace.workspaceEdit.resourceOperations` then
     only plain `TextEdit`s using the `changes` property are supported."""
 
@@ -2012,9 +2012,9 @@ class WorkspaceEdit:
     ] = attrs.field(default=None)
     """A map of change annotations that can be referenced in `AnnotatedTextEdit`s or create, rename and
     delete file / folder operations.
-    
+
     Whether clients honor this property depends on the client capability `workspace.changeAnnotationSupport`.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -2348,7 +2348,7 @@ class InlayHint:
     label: Union[str, List["InlayHintLabelPart"]] = attrs.field()
     """The label of this hint. A human readable string or an array of
     InlayHintLabelPart label parts.
-    
+
     *Note* that neither the string nor the label part can be empty."""
 
     kind: Optional[InlayHintKind] = attrs.field(default=None)
@@ -2357,7 +2357,7 @@ class InlayHint:
 
     text_edits: Optional[List["TextEdit"]] = attrs.field(default=None)
     """Optional text edits that are performed when accepting this inlay hint.
-    
+
     *Note* that edits are expected to change the document so that the inlay
     hint (or its nearest variant) is now part of the document and the inlay
     hint itself is now obsolete."""
@@ -2370,7 +2370,7 @@ class InlayHint:
         default=None,
     )
     """Render padding before the hint.
-    
+
     Note: Padding should use the editor's background color, not the
     background color of the hint itself. That means padding can be used
     to visually align/separate an inlay hint."""
@@ -2380,7 +2380,7 @@ class InlayHint:
         default=None,
     )
     """Render padding after the hint.
-    
+
     Note: Padding should use the editor's background color, not the
     background color of the hint itself. That means padding can be used
     to visually align/separate an inlay hint."""
@@ -2661,13 +2661,13 @@ class DidChangeNotebookDocumentParams:
 
     change: "NotebookDocumentChangeEvent" = attrs.field()
     """The actual changes to the notebook document.
-    
+
     The changes describe single state changes to the notebook document.
     So if there are two changes c1 (at array index 0) and c2 (at array
     index 1) for a notebook in state S then c1 moves the notebook from
     S to S' and c2 from S' to S''. So c1 is computed on the state S and
     c2 is computed on the state S'.
-    
+
     To mirror the content of a notebook using change events use the following approach:
     - start with the same initial content
     - apply the 'notebookDocument/didChange' notifications in the order you receive them.
@@ -2844,13 +2844,13 @@ class _InitializeParams:
     process_id: Optional[Union[int, None]] = attrs.field(default=None)
     """The process Id of the parent process that started
     the server.
-    
+
     Is `null` if the process has not been started by another process.
     If the parent process is not alive then the server should exit."""
 
     client_info: Optional["InitializeParamsClientInfoType"] = attrs.field(default=None)
     """Information about the client
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -2861,24 +2861,24 @@ class _InitializeParams:
     """The locale the client is currently showing the user interface
     in. This must not necessarily be the locale of the operating
     system.
-    
+
     Uses IETF language tags as the value's syntax
     (See https://en.wikipedia.org/wiki/IETF_language_tag)
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
     root_path: Optional[Union[str, None]] = attrs.field(default=None)
     """The rootPath of the workspace. Is null
     if no folder is open.
-    
+
     @deprecated in favour of rootUri."""
 
     root_uri: Optional[Union[str, None]] = attrs.field(default=None)
     """The rootUri of the workspace. Is null if no
     folder is open. If both `rootPath` and `rootUri` are set
     `rootUri` wins.
-    
+
     @deprecated in favour of workspaceFolders."""
 
     initialization_options: Optional[LSPAny] = attrs.field(default=None)
@@ -2897,11 +2897,11 @@ class WorkspaceFoldersInitializeParams:
         default=None
     )
     """The workspace folders configured in the client when the server starts.
-    
+
     This property is only available if the client supports workspace folders.
     It can be `null` if the client supports workspace folders but none are
     configured.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
@@ -2914,13 +2914,13 @@ class InitializeParams:
     process_id: Optional[Union[int, None]] = attrs.field(default=None)
     """The process Id of the parent process that started
     the server.
-    
+
     Is `null` if the process has not been started by another process.
     If the parent process is not alive then the server should exit."""
 
     client_info: Optional["InitializeParamsClientInfoType"] = attrs.field(default=None)
     """Information about the client
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -2931,24 +2931,24 @@ class InitializeParams:
     """The locale the client is currently showing the user interface
     in. This must not necessarily be the locale of the operating
     system.
-    
+
     Uses IETF language tags as the value's syntax
     (See https://en.wikipedia.org/wiki/IETF_language_tag)
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
     root_path: Optional[Union[str, None]] = attrs.field(default=None)
     """The rootPath of the workspace. Is null
     if no folder is open.
-    
+
     @deprecated in favour of rootUri."""
 
     root_uri: Optional[Union[str, None]] = attrs.field(default=None)
     """The rootUri of the workspace. Is null if no
     folder is open. If both `rootPath` and `rootUri` are set
     `rootUri` wins.
-    
+
     @deprecated in favour of workspaceFolders."""
 
     initialization_options: Optional[LSPAny] = attrs.field(default=None)
@@ -2964,11 +2964,11 @@ class InitializeParams:
         default=None
     )
     """The workspace folders configured in the client when the server starts.
-    
+
     This property is only available if the client supports workspace folders.
     It can be `null` if the client supports workspace folders but none are
     configured.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
@@ -2994,7 +2994,7 @@ class InitializeResult:
 
     server_info: Optional["InitializeResultServerInfoType"] = attrs.field(default=None)
     """Information about the server.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -3092,7 +3092,7 @@ class DidChangeTextDocumentParams:
     c2 (at array index 1) for a document in state S then c1 moves the document from
     S to S' and c2 from S' to S''. So c1 is computed on the state S and c2 is computed
     on the state S'.
-    
+
     To mirror the content of a document using change events use the following approach:
     - start with the same initial content
     - apply the 'textDocument/didChange' notifications in the order you receive them.
@@ -3219,7 +3219,7 @@ class PublishDiagnosticsParams:
         validator=attrs.validators.optional(validators.integer_validator), default=None
     )
     """Optional the version number of the document the diagnostics are published for.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -3253,16 +3253,16 @@ class CompletionItem:
 
     label: str = attrs.field(validator=attrs.validators.instance_of(str))
     """The label of this completion item.
-    
+
     The label property is also by default the text that
     is inserted when selecting this completion.
-    
+
     If label details are provided the label itself should
     be an unqualified name of the completion item."""
 
     label_details: Optional["CompletionItemLabelDetails"] = attrs.field(default=None)
     """Additional details for the label
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3272,7 +3272,7 @@ class CompletionItem:
 
     tags: Optional[List[CompletionItemTag]] = attrs.field(default=None)
     """Tags for this completion item.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -3298,7 +3298,7 @@ class CompletionItem:
         default=None,
     )
     """Select this item when showing.
-    
+
     *Note* that only one completion item can be selected and that the
     tool / client decides which item that is. The rule is that the *first*
     item of those that match best is selected."""
@@ -3326,7 +3326,7 @@ class CompletionItem:
     """A string that should be inserted into a document when selecting
     this completion. When `falsy` the {@link CompletionItem.label label}
     is used.
-    
+
     The `insertText` is subject to interpretation by the client side.
     Some tools might not take the string literally. For example
     VS Code when code complete is requested in this example
@@ -3339,7 +3339,7 @@ class CompletionItem:
     """The format of the insert text. The format applies to both the
     `insertText` property and the `newText` property of a provided
     `textEdit`. If omitted defaults to `InsertTextFormat.PlainText`.
-    
+
     Please note that the insertTextFormat doesn't apply to
     `additionalTextEdits`."""
 
@@ -3347,7 +3347,7 @@ class CompletionItem:
     """How whitespace and indentation is handled during completion
     item insertion. If not provided the clients default value depends on
     the `textDocument.completion.insertTextMode` client capability.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -3357,7 +3357,7 @@ class CompletionItem:
     """An {@link TextEdit edit} which is applied to a document when selecting
     this completion. When an edit is provided the value of
     {@link CompletionItem.insertText insertText} is ignored.
-    
+
     Most editors support two different operations when accepting a completion
     item. One is to insert a completion text and the other is to replace an
     existing text with a completion text. Since this can usually not be
@@ -3365,14 +3365,14 @@ class CompletionItem:
     signal support for `InsertReplaceEdits` via the
     `textDocument.completion.insertReplaceSupport` client capability
     property.
-    
+
     *Note 1:* The text edit's range as well as both ranges from an insert
     replace edit must be a [single line] and they must contain the position
     at which completion has been requested.
     *Note 2:* If an `InsertReplaceEdit` is returned the edit's insert range
     must be a prefix of the edit's replace range, that means it must be
     contained and starting at the same position.
-    
+
     @since 3.16.0 additional type `InsertReplaceEdit`"""
     # Since: 3.16.0 additional type `InsertReplaceEdit`
 
@@ -3382,13 +3382,13 @@ class CompletionItem:
     )
     """The edit text used if the completion item is part of a CompletionList and
     CompletionList defines an item default for the text edit range.
-    
+
     Clients will only honor this property if they opt into completion list
     item defaults using the capability `completionList.itemDefaults`.
-    
+
     If not provided and a list's default range is provided the label
     property is used as a text.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3396,7 +3396,7 @@ class CompletionItem:
     """An optional array of additional {@link TextEdit text edits} that are applied when
     selecting this completion. Edits must not overlap (including the same insert position)
     with the main {@link CompletionItem.textEdit edit} nor with themselves.
-    
+
     Additional text edits should be used to change text unrelated to the current cursor position
     (for example adding an import statement at the top of the file if the completion item will
     insert an unqualified type)."""
@@ -3427,7 +3427,7 @@ class CompletionListItemDefaultsTypeEditRangeType1:
 class CompletionListItemDefaultsType:
     commit_characters: Optional[List[str]] = attrs.field(default=None)
     """A default commit character set.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3435,25 +3435,25 @@ class CompletionListItemDefaultsType:
         Union["Range", "CompletionListItemDefaultsTypeEditRangeType1"]
     ] = attrs.field(default=None)
     """A default edit range.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
     insert_text_format: Optional[InsertTextFormat] = attrs.field(default=None)
     """A default insert text format.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
     insert_text_mode: Optional[InsertTextMode] = attrs.field(default=None)
     """A default insert text mode.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
     data: Optional[LSPAny] = attrs.field(default=None)
     """A default data value.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3465,7 +3465,7 @@ class CompletionList:
 
     is_incomplete: bool = attrs.field(validator=attrs.validators.instance_of(bool))
     """This list it not complete. Further typing results in recomputing this list.
-    
+
     Recomputed lists have all their items replaced (not appended) in the
     incomplete completion sessions."""
 
@@ -3479,14 +3479,14 @@ class CompletionList:
     value for properties like `commitCharacters` or the range of a text
     edit. A completion list can therefore define item defaults which will
     be used if a completion item itself doesn't specify the value.
-    
+
     If a completion list specifies a default value and a completion item
     also specifies a corresponding value the one from the item is used.
-    
+
     Servers are only allowed to return default values if the client
     signals support for this via the `completionList.itemDefaults`
     capability.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3500,7 +3500,7 @@ class CompletionOptionsCompletionItemType:
     """The server has support for completion item label
     details (see also `CompletionItemLabelDetails`) when
     receiving a completion item in a resolve call.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3515,7 +3515,7 @@ class CompletionOptions:
     starts to type an identifier. For example if the user types `c` in a JavaScript file
     code complete will automatically pop up present `console` besides others as a
     completion item. Characters that make up identifiers don't need to be listed here.
-    
+
     If code complete should automatically be trigger on characters not being valid inside
     an identifier (for example `.` in JavaScript) list them in `triggerCharacters`."""
 
@@ -3523,10 +3523,10 @@ class CompletionOptions:
     """The list of all possible characters that commit a completion. This field can be used
     if clients don't support individual commit characters per completion item. See
     `ClientCapabilities.textDocument.completion.completionItem.commitCharactersSupport`
-    
+
     If a server provides both `allCommitCharacters` and commit characters on an individual
     completion item the ones on the completion item win.
-    
+
     @since 3.2.0"""
     # Since: 3.2.0
 
@@ -3542,7 +3542,7 @@ class CompletionOptions:
     )
     """The server supports the following `CompletionItem` specific
     capabilities.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3561,7 +3561,7 @@ class CompletionRegistrationOptionsCompletionItemType:
     """The server has support for completion item label
     details (see also `CompletionItemLabelDetails`) when
     receiving a completion item in a resolve call.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3582,7 +3582,7 @@ class CompletionRegistrationOptions:
     starts to type an identifier. For example if the user types `c` in a JavaScript file
     code complete will automatically pop up present `console` besides others as a
     completion item. Characters that make up identifiers don't need to be listed here.
-    
+
     If code complete should automatically be trigger on characters not being valid inside
     an identifier (for example `.` in JavaScript) list them in `triggerCharacters`."""
 
@@ -3590,10 +3590,10 @@ class CompletionRegistrationOptions:
     """The list of all possible characters that commit a completion. This field can be used
     if clients don't support individual commit characters per completion item. See
     `ClientCapabilities.textDocument.completion.completionItem.commitCharactersSupport`
-    
+
     If a server provides both `allCommitCharacters` and commit characters on an individual
     completion item the ones on the completion item win.
-    
+
     @since 3.2.0"""
     # Since: 3.2.0
 
@@ -3609,7 +3609,7 @@ class CompletionRegistrationOptions:
     ] = attrs.field(default=None)
     """The server supports the following `CompletionItem` specific
     capabilities.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -3684,7 +3684,7 @@ class SignatureHelpParams:
     context: Optional["SignatureHelpContext"] = attrs.field(default=None)
     """The signature help context. This is only available if the client specifies
     to send this using the client capability `textDocument.signatureHelp.contextSupport === true`
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -3707,10 +3707,10 @@ class SignatureHelp:
     """The active signature. If omitted or the value lies outside the
     range of `signatures` the value defaults to zero or is ignored if
     the `SignatureHelp` has no signatures.
-    
+
     Whenever possible implementors should make an active decision about
     the active signature and shouldn't rely on a default value.
-    
+
     In future version of the protocol this property might become
     mandatory to better express this."""
 
@@ -3735,10 +3735,10 @@ class SignatureHelpOptions:
 
     retrigger_characters: Optional[List[str]] = attrs.field(default=None)
     """List of characters that re-trigger signature help.
-    
+
     These trigger characters are only active when signature help is already showing. All trigger characters
     are also counted as re-trigger characters.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -3763,10 +3763,10 @@ class SignatureHelpRegistrationOptions:
 
     retrigger_characters: Optional[List[str]] = attrs.field(default=None)
     """List of characters that re-trigger signature help.
-    
+
     These trigger characters are only active when signature help is already showing. All trigger characters
     are also counted as re-trigger characters.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -3950,7 +3950,7 @@ class BaseSymbolInformation:
 
     tags: Optional[List[SymbolTag]] = attrs.field(default=None)
     """Tags for this symbol.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -3975,7 +3975,7 @@ class SymbolInformation:
     tool the range's start information is used to position the cursor. So
     the range usually spans more than the actual symbol's name and does
     normally include things like visibility modifiers.
-    
+
     The range doesn't have to denote a node range in the sense of an abstract
     syntax tree. It can therefore not be used to re-construct a hierarchy of
     the symbols."""
@@ -3991,12 +3991,12 @@ class SymbolInformation:
         default=None,
     )
     """Indicates if this symbol is deprecated.
-    
+
     @deprecated Use tags instead"""
 
     tags: Optional[List[SymbolTag]] = attrs.field(default=None)
     """Tags for this symbol.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4041,7 +4041,7 @@ class DocumentSymbol:
 
     tags: Optional[List[SymbolTag]] = attrs.field(default=None)
     """Tags for this document symbol.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4050,7 +4050,7 @@ class DocumentSymbol:
         default=None,
     )
     """Indicates if this symbol is deprecated.
-    
+
     @deprecated Use tags instead"""
 
     children: Optional[List["DocumentSymbol"]] = attrs.field(default=None)
@@ -4067,7 +4067,7 @@ class DocumentSymbolOptions:
     )
     """A human-readable string that is shown when multiple outlines trees
     are shown for the same document.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4093,7 +4093,7 @@ class DocumentSymbolRegistrationOptions:
     )
     """A human-readable string that is shown when multiple outlines trees
     are shown for the same document.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4146,7 +4146,7 @@ class Command:
 class CodeActionDisabledType:
     reason: str = attrs.field(validator=attrs.validators.instance_of(str))
     """Human readable description of why the code action is currently disabled.
-    
+
     This is displayed in the code actions UI."""
 
 
@@ -4163,7 +4163,7 @@ class CodeAction:
 
     kind: Optional[Union[CodeActionKind, str]] = attrs.field(default=None)
     """The kind of the code action.
-    
+
     Used to filter code actions."""
 
     diagnostics: Optional[List["Diagnostic"]] = attrs.field(default=None)
@@ -4175,28 +4175,28 @@ class CodeAction:
     )
     """Marks this as a preferred action. Preferred actions are used by the `auto fix` command and can be targeted
     by keybindings.
-    
+
     A quick fix should be marked preferred if it properly addresses the underlying error.
     A refactoring should be marked preferred if it is the most reasonable choice of actions to take.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
     disabled: Optional["CodeActionDisabledType"] = attrs.field(default=None)
     """Marks that the code action cannot currently be applied.
-    
+
     Clients should follow the following guidelines regarding disabled code actions:
-    
+
       - Disabled code actions are not shown in automatic [lightbulbs](https://code.visualstudio.com/docs/editor/editingevolved#_code-action)
         code action menus.
-    
+
       - Disabled actions are shown as faded out in the code action menu when the user requests a more specific type
         of code action, such as refactorings.
-    
+
       - If the user has a [keybinding](https://code.visualstudio.com/docs/editor/refactoring#_keybindings-for-code-actions)
         that auto applies a code action and only disabled code actions are returned, the client should show the user an
         error message with `reason` in the editor.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4211,7 +4211,7 @@ class CodeAction:
     data: Optional[LSPAny] = attrs.field(default=None)
     """A data entry field that is preserved on a code action between
     a `textDocument/codeAction` and a `codeAction/resolve` request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4224,7 +4224,7 @@ class CodeActionOptions:
         default=None
     )
     """CodeActionKinds that this server may return.
-    
+
     The list of kinds may be generic, such as `CodeActionKind.Refactor`, or the server
     may list out every specific kind they provide."""
 
@@ -4234,7 +4234,7 @@ class CodeActionOptions:
     )
     """The server provides support to resolve additional
     information for a code action.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4258,7 +4258,7 @@ class CodeActionRegistrationOptions:
         default=None
     )
     """CodeActionKinds that this server may return.
-    
+
     The list of kinds may be generic, such as `CodeActionKind.Refactor`, or the server
     may list out every specific kind they provide."""
 
@@ -4268,7 +4268,7 @@ class CodeActionRegistrationOptions:
     )
     """The server provides support to resolve additional
     information for a code action.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4313,7 +4313,7 @@ class WorkspaceSymbol:
     """The location of the symbol. Whether a server is allowed to
     return a location without a range depends on the client
     capability `workspace.symbol.resolveSupport`.
-    
+
     See SymbolInformation#location for more details."""
 
     name: str = attrs.field(validator=attrs.validators.instance_of(str))
@@ -4328,7 +4328,7 @@ class WorkspaceSymbol:
 
     tags: Optional[List[SymbolTag]] = attrs.field(default=None)
     """Tags for this symbol.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -4352,7 +4352,7 @@ class WorkspaceSymbolOptions:
     )
     """The server provides support to resolve additional
     information for a workspace symbol.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -4372,7 +4372,7 @@ class WorkspaceSymbolRegistrationOptions:
     )
     """The server provides support to resolve additional
     information for a workspace symbol.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -4488,11 +4488,11 @@ class DocumentLink:
         default=None,
     )
     """The tooltip text when you hover over this link.
-    
+
     If a tooltip is provided, is will be displayed in a string that includes instructions on how to
     trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary depending on OS,
     user settings, and localization.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -4605,7 +4605,7 @@ class DocumentRangeFormattingOptions:
         default=None,
     )
     """Whether the server supports formatting multiple ranges at once.
-    
+
     @since 3.18.0
     @proposed"""
     # Since: 3.18.0
@@ -4632,7 +4632,7 @@ class DocumentRangeFormattingRegistrationOptions:
         default=None,
     )
     """Whether the server supports formatting multiple ranges at once.
-    
+
     @since 3.18.0
     @proposed"""
     # Since: 3.18.0
@@ -4749,7 +4749,7 @@ class RenameOptions:
         default=None,
     )
     """Renames should be checked and tested before being executed.
-    
+
     @since version 3.12.0"""
     # Since: version 3.12.0
 
@@ -4774,7 +4774,7 @@ class RenameRegistrationOptions:
         default=None,
     )
     """Renames should be checked and tested before being executed.
-    
+
     @since version 3.12.0"""
     # Since: version 3.12.0
 
@@ -4884,7 +4884,7 @@ class WorkDoneProgressBegin:
     title: str = attrs.field(validator=attrs.validators.instance_of(str))
     """Mandatory title of the progress operation. Used to briefly inform about
     the kind of operation being performed.
-    
+
     Examples: "Indexing" or "Linking dependencies"."""
 
     kind: str = attrs.field(validator=attrs.validators.in_(["begin"]), default="begin")
@@ -4903,7 +4903,7 @@ class WorkDoneProgressBegin:
     )
     """Optional, more detailed associated progress message. Contains
     complementary information to the `title`.
-    
+
     Examples: "3/25 files", "project/src/module2", "node_modules/some_dep".
     If unset, the previous progress message (if any) is still valid."""
 
@@ -4913,7 +4913,7 @@ class WorkDoneProgressBegin:
     """Optional progress percentage to display (value 100 is considered 100%).
     If not provided infinite progress is assumed and clients are allowed
     to ignore the `percentage` value in subsequent in report notifications.
-    
+
     The value should be steadily rising. Clients are free to ignore values
     that are not following this rule. The value range is [0, 100]."""
 
@@ -4929,7 +4929,7 @@ class WorkDoneProgressReport:
         default=None,
     )
     """Controls enablement state of a cancel button.
-    
+
     Clients that don't support cancellation or don't support controlling the button's
     enablement state are allowed to ignore the property."""
 
@@ -4939,7 +4939,7 @@ class WorkDoneProgressReport:
     )
     """Optional, more detailed associated progress message. Contains
     complementary information to the `title`.
-    
+
     Examples: "3/25 files", "project/src/module2", "node_modules/some_dep".
     If unset, the previous progress message (if any) is still valid."""
 
@@ -4949,7 +4949,7 @@ class WorkDoneProgressReport:
     """Optional progress percentage to display (value 100 is considered 100%).
     If not provided infinite progress is assumed and clients are allowed
     to ignore the `percentage` value in subsequent in report notifications.
-    
+
     The value should be steadily rising. Clients are free to ignore values
     that are not following this rule. The value range is [0, 100]"""
 
@@ -5015,7 +5015,7 @@ class LocationLink:
 
     origin_selection_range: Optional["Range"] = attrs.field(default=None)
     """Span of the origin of this link.
-    
+
     Used as the underlined span for mouse interaction. Defaults to the word range at
     the definition position."""
 
@@ -5135,16 +5135,16 @@ class Position:
 
     line: int = attrs.field(validator=validators.uinteger_validator)
     """Line position in a document (zero-based).
-    
+
     If a line number is greater than the number of lines in a document, it defaults back to the number of lines in the document.
     If a line number is negative, it defaults to 0."""
 
     character: int = attrs.field(validator=validators.uinteger_validator)
     """Character offset on a line in a document (zero-based).
-    
+
     The meaning of this offset is determined by the negotiated
     `PositionEncodingKind`.
-    
+
     If the character value is greater than the line length it defaults back to the
     line length."""
 
@@ -5202,7 +5202,7 @@ class TextDocumentEdit:
 
     edits: List[Union[TextEdit, "AnnotatedTextEdit"]] = attrs.field()
     """The edits to be applied.
-    
+
     @since 3.16.0 - support for AnnotatedTextEdit. This is guarded using a
     client capability."""
     # Since: 3.16.0 - support for AnnotatedTextEdit. This is guarded using aclient capability.
@@ -5217,7 +5217,7 @@ class ResourceOperation:
 
     annotation_id: Optional[ChangeAnnotationIdentifier] = attrs.field(default=None)
     """An optional annotation identifier describing the operation.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -5239,7 +5239,7 @@ class CreateFile:
 
     annotation_id: Optional[ChangeAnnotationIdentifier] = attrs.field(default=None)
     """An optional annotation identifier describing the operation.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -5264,7 +5264,7 @@ class RenameFile:
 
     annotation_id: Optional[ChangeAnnotationIdentifier] = attrs.field(default=None)
     """An optional annotation identifier describing the operation.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -5286,7 +5286,7 @@ class DeleteFile:
 
     annotation_id: Optional[ChangeAnnotationIdentifier] = attrs.field(default=None)
     """An optional annotation identifier describing the operation.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -5460,19 +5460,19 @@ class InlayHintLabelPart:
     location: Optional[Location] = attrs.field(default=None)
     """An optional source code location that represents this
     label part.
-    
+
     The editor will use this location for the hover and for code navigation
     features: This part will become a clickable link that resolves to the
     definition of the symbol at the given location (not necessarily the
     location itself), it shows the hover that shows at the given location,
     and it shows a context menu with further code navigation commands.
-    
+
     Depending on the client capability `inlayHint.resolveSupport` clients
     might resolve this property late using the resolve request."""
 
     command: Optional[Command] = attrs.field(default=None)
     """An optional command for this label part.
-    
+
     Depending on the client capability `inlayHint.resolveSupport` clients
     might resolve this property late using the resolve request."""
 
@@ -5554,7 +5554,7 @@ class RelatedFullDocumentDiagnosticReport:
     diagnostics in a file B which A depends on. An example of
     such a language is C/C++ where marco definitions in a file
     a.cpp and result in errors in a header file b.hpp.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -5614,7 +5614,7 @@ class RelatedUnchangedDocumentDiagnosticReport:
     diagnostics in a file B which A depends on. An example of
     such a language is C/C++ where marco definitions in a file
     a.cpp and result in errors in a header file b.hpp.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -5667,7 +5667,7 @@ class NotebookDocument:
     metadata: Optional[LSPObject] = attrs.field(default=None)
     """Additional metadata stored with the notebook
     document.
-    
+
     Note: should always be an object literal (e.g. LSPObject)"""
 
 
@@ -5752,7 +5752,7 @@ class NotebookDocumentChangeEvent:
 
     metadata: Optional[LSPObject] = attrs.field(default=None)
     """The changed meta data if any.
-    
+
     Note: should always be an object literal (e.g. LSPObject)"""
 
     cells: Optional["NotebookDocumentChangeEventCellsType"] = attrs.field(default=None)
@@ -5848,13 +5848,13 @@ class ServerCapabilitiesWorkspaceType:
         default=None
     )
     """The server supports workspace folder.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
     file_operations: Optional["FileOperationOptions"] = attrs.field(default=None)
     """The server is interested in notifications/requests for operations on files.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -5869,12 +5869,12 @@ class ServerCapabilities:
     )
     """The position encoding the server picked from the encodings offered
     by the client via the client capability `general.positionEncodings`.
-    
+
     If the client didn't provide any position encodings the only valid
     value that a server can return is 'utf-16'.
-    
+
     If omitted it defaults to 'utf-16'.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -5889,7 +5889,7 @@ class ServerCapabilities:
         Union["NotebookDocumentSyncOptions", "NotebookDocumentSyncRegistrationOptions"]
     ] = attrs.field(default=None)
     """Defines how notebook documents are synced.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -5999,7 +5999,7 @@ class ServerCapabilities:
         Union[bool, CallHierarchyOptions, CallHierarchyRegistrationOptions]
     ] = attrs.field(default=None)
     """The server provides call hierarchy support.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6007,7 +6007,7 @@ class ServerCapabilities:
         Union[bool, LinkedEditingRangeOptions, LinkedEditingRangeRegistrationOptions]
     ] = attrs.field(default=None)
     """The server provides linked editing range support.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6015,7 +6015,7 @@ class ServerCapabilities:
         Union[SemanticTokensOptions, SemanticTokensRegistrationOptions]
     ] = attrs.field(default=None)
     """The server provides semantic tokens support.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6023,7 +6023,7 @@ class ServerCapabilities:
         Union[bool, MonikerOptions, MonikerRegistrationOptions]
     ] = attrs.field(default=None)
     """The server provides moniker support.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6031,7 +6031,7 @@ class ServerCapabilities:
         Union[bool, TypeHierarchyOptions, TypeHierarchyRegistrationOptions]
     ] = attrs.field(default=None)
     """The server provides type hierarchy support.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -6039,7 +6039,7 @@ class ServerCapabilities:
         Union[bool, InlineValueOptions, InlineValueRegistrationOptions]
     ] = attrs.field(default=None)
     """The server provides inline values.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -6047,7 +6047,7 @@ class ServerCapabilities:
         Union[bool, InlayHintOptions, InlayHintRegistrationOptions]
     ] = attrs.field(default=None)
     """The server provides inlay hints.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -6055,7 +6055,7 @@ class ServerCapabilities:
         Union[DiagnosticOptions, DiagnosticRegistrationOptions]
     ] = attrs.field(default=None)
     """The server has support for pull model diagnostics.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -6063,7 +6063,7 @@ class ServerCapabilities:
         Union[bool, InlineCompletionOptions]
     ] = attrs.field(default=None)
     """Inline completion options used during static registration.
-    
+
     @since 3.18.0
     @proposed"""
     # Since: 3.18.0
@@ -6102,7 +6102,7 @@ class FileEvent:
 class FileSystemWatcher:
     glob_pattern: GlobPattern = attrs.field()
     """The glob pattern to watch. See {@link GlobPattern glob pattern} for more detail.
-    
+
     @since 3.17.0 support for relative patterns."""
     # Since: 3.17.0 support for relative patterns.
 
@@ -6133,7 +6133,7 @@ class Diagnostic:
     code_description: Optional["CodeDescription"] = attrs.field(default=None)
     """An optional property to describe the error code.
     Requires the code field (above) to be present/not null.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6147,7 +6147,7 @@ class Diagnostic:
 
     tags: Optional[List[DiagnosticTag]] = attrs.field(default=None)
     """Additional metadata about the diagnostic.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -6160,7 +6160,7 @@ class Diagnostic:
     data: Optional[LSPAny] = attrs.field(default=None)
     """A data entry field that is preserved between a `textDocument/publishDiagnostics`
     notification and `textDocument/codeAction` request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6234,7 +6234,7 @@ class SignatureHelpContext:
 
     is_retrigger: bool = attrs.field(validator=attrs.validators.instance_of(bool))
     """`true` if signature help was already showing when it was triggered.
-    
+
     Retriggers occurs when the signature help is already active and can be caused by actions such as
     typing a trigger character, a cursor move, or document content changes."""
 
@@ -6243,12 +6243,12 @@ class SignatureHelpContext:
         default=None,
     )
     """Character that caused signature help to be triggered.
-    
+
     This is undefined when `triggerKind !== SignatureHelpTriggerKind.TriggerCharacter`"""
 
     active_signature_help: Optional[SignatureHelp] = attrs.field(default=None)
     """The currently active `SignatureHelp`.
-    
+
     The `activeSignatureHelp` has its `SignatureHelp.activeSignature` field updated based on
     the user navigating through available signatures."""
 
@@ -6274,9 +6274,9 @@ class SignatureInformation:
         validator=attrs.validators.optional(validators.uinteger_validator), default=None
     )
     """The index of the active parameter.
-    
+
     If provided, this is used in place of `SignatureHelp.activeParameter`.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6306,13 +6306,13 @@ class CodeActionContext:
 
     only: Optional[List[Union[CodeActionKind, str]]] = attrs.field(default=None)
     """Requested kind of actions to return.
-    
+
     Actions not of this kind are filtered out by the client before being shown. So servers
     can omit computing them."""
 
     trigger_kind: Optional[CodeActionTriggerKind] = attrs.field(default=None)
     """The reason why code actions were requested.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -6332,7 +6332,7 @@ class FormattingOptions:
         default=None,
     )
     """Trim trailing whitespace on a line.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -6341,7 +6341,7 @@ class FormattingOptions:
         default=None,
     )
     """Insert a newline character at the end of the file if one does not exist.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -6350,7 +6350,7 @@ class FormattingOptions:
         default=None,
     )
     """Trim all newlines after the final newline at the end of the file.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -6474,7 +6474,7 @@ class FileOperationPattern:
 
     matches: Optional[FileOperationPatternKind] = attrs.field(default=None)
     """Whether to match files or folders with this pattern.
-    
+
     Matches both if undefined."""
 
     options: Optional["FileOperationPatternOptions"] = attrs.field(default=None)
@@ -6560,7 +6560,7 @@ class NotebookCell:
 
     metadata: Optional[LSPObject] = attrs.field(default=None)
     """Additional metadata stored with the cell.
-    
+
     Note: should always be an object literal (e.g. LSPObject)"""
 
     execution_summary: Optional["ExecutionSummary"] = attrs.field(default=None)
@@ -6620,7 +6620,7 @@ class ClientCapabilities:
         default=None
     )
     """Capabilities specific to the notebook document support.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -6629,7 +6629,7 @@ class ClientCapabilities:
 
     general: Optional["GeneralClientCapabilities"] = attrs.field(default=None)
     """General client capabilities.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -6817,7 +6817,7 @@ class WorkspaceFoldersServerCapabilities:
     change_notifications: Optional[Union[str, bool]] = attrs.field(default=None)
     """Whether the server wants to receive workspace folder
     change notifications.
-    
+
     If a string is provided the string is treated as an ID
     under which the notification is registered on the client
     side. The ID can be used to unregister for these events
@@ -6883,11 +6883,11 @@ class ParameterInformation:
 
     label: Union[str, Tuple[int, int]] = attrs.field()
     """The label of this parameter information.
-    
+
     Either a string or an inclusive start and exclusive end offsets within its containing
     signature label. (see SignatureInformation.label). The offsets are based on a UTF-16
     string representation as `Position` and `Range` does.
-    
+
     *Note*: a label of type string should be a substring of its containing signature label.
     Its intended use case is to highlight the parameter label part in the `SignatureInformation.label`."""
 
@@ -6916,7 +6916,7 @@ class NotebookCellTextDocumentFilter:
         default=None,
     )
     """A language id like `python`.
-    
+
     Will be matched against the language id of the
     notebook cell document. '*' matches every language."""
 
@@ -6991,7 +6991,7 @@ class WorkspaceClientCapabilities:
         default=None,
     )
     """The client has support for workspace folders.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
@@ -7000,7 +7000,7 @@ class WorkspaceClientCapabilities:
         default=None,
     )
     """The client supports `workspace/configuration` requests.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
@@ -7009,7 +7009,7 @@ class WorkspaceClientCapabilities:
     ] = attrs.field(default=None)
     """Capabilities specific to the semantic token requests scoped to the
     workspace.
-    
+
     @since 3.16.0."""
     # Since: 3.16.0.
 
@@ -7018,7 +7018,7 @@ class WorkspaceClientCapabilities:
     )
     """Capabilities specific to the code lens requests scoped to the
     workspace.
-    
+
     @since 3.16.0."""
     # Since: 3.16.0.
 
@@ -7026,7 +7026,7 @@ class WorkspaceClientCapabilities:
         default=None
     )
     """The client has support for file notifications/requests for user operations on files.
-    
+
     Since 3.16.0"""
 
     inline_value: Optional["InlineValueWorkspaceClientCapabilities"] = attrs.field(
@@ -7034,7 +7034,7 @@ class WorkspaceClientCapabilities:
     )
     """Capabilities specific to the inline values requests scoped to the
     workspace.
-    
+
     @since 3.17.0."""
     # Since: 3.17.0.
 
@@ -7043,7 +7043,7 @@ class WorkspaceClientCapabilities:
     )
     """Capabilities specific to the inlay hint requests scoped to the
     workspace.
-    
+
     @since 3.17.0."""
     # Since: 3.17.0.
 
@@ -7052,7 +7052,7 @@ class WorkspaceClientCapabilities:
     )
     """Capabilities specific to the diagnostic requests scoped to the
     workspace.
-    
+
     @since 3.17.0."""
     # Since: 3.17.0.
 
@@ -7060,7 +7060,7 @@ class WorkspaceClientCapabilities:
         default=None
     )
     """Capabilities specific to the folding range requests scoped to the workspace.
-    
+
     @since 3.18.0
     @proposed"""
     # Since: 3.18.0
@@ -7089,7 +7089,7 @@ class TextDocumentClientCapabilities:
 
     declaration: Optional["DeclarationClientCapabilities"] = attrs.field(default=None)
     """Capabilities specific to the `textDocument/declaration` request.
-    
+
     @since 3.14.0"""
     # Since: 3.14.0
 
@@ -7100,7 +7100,7 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Capabilities specific to the `textDocument/typeDefinition` request.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
@@ -7108,7 +7108,7 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Capabilities specific to the `textDocument/implementation` request.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
@@ -7141,7 +7141,7 @@ class TextDocumentClientCapabilities:
     )
     """Capabilities specific to the `textDocument/documentColor` and the
     `textDocument/colorPresentation` request.
-    
+
     @since 3.6.0"""
     # Since: 3.6.0
 
@@ -7167,7 +7167,7 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Capabilities specific to the `textDocument/foldingRange` request.
-    
+
     @since 3.10.0"""
     # Since: 3.10.0
 
@@ -7175,7 +7175,7 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Capabilities specific to the `textDocument/selectionRange` request.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -7188,7 +7188,7 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Capabilities specific to the various call hierarchy requests.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7196,7 +7196,7 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Capabilities specific to the various semantic token request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7204,13 +7204,13 @@ class TextDocumentClientCapabilities:
         "LinkedEditingRangeClientCapabilities"
     ] = attrs.field(default=None)
     """Capabilities specific to the `textDocument/linkedEditingRange` request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
     moniker: Optional["MonikerClientCapabilities"] = attrs.field(default=None)
     """Client capabilities specific to the `textDocument/moniker` request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7218,25 +7218,25 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Capabilities specific to the various type hierarchy requests.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
     inline_value: Optional["InlineValueClientCapabilities"] = attrs.field(default=None)
     """Capabilities specific to the `textDocument/inlineValue` request.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
     inlay_hint: Optional["InlayHintClientCapabilities"] = attrs.field(default=None)
     """Capabilities specific to the `textDocument/inlayHint` request.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
     diagnostic: Optional["DiagnosticClientCapabilities"] = attrs.field(default=None)
     """Capabilities specific to the diagnostic pull model.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7244,7 +7244,7 @@ class TextDocumentClientCapabilities:
         default=None
     )
     """Client capabilities specific to inline completions.
-    
+
     @since 3.18.0
     @proposed"""
     # Since: 3.18.0
@@ -7261,7 +7261,7 @@ class NotebookDocumentClientCapabilities:
 
     synchronization: "NotebookDocumentSyncClientCapabilities" = attrs.field()
     """Capabilities specific to notebook document synchronization
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7274,12 +7274,12 @@ class WindowClientCapabilities:
     )
     """It indicates whether the client supports server initiated
     progress using the `window/workDoneProgress/create` request.
-    
+
     The capability also controls Whether client supports handling
     of progress notifications. If set servers are allowed to report a
     `workDoneProgress` property in the request specific server
     capabilities.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -7287,7 +7287,7 @@ class WindowClientCapabilities:
         default=None
     )
     """Capabilities specific to the showMessage request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7295,7 +7295,7 @@ class WindowClientCapabilities:
         default=None
     )
     """Capabilities specific to the showDocument request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7326,7 +7326,7 @@ class GeneralClientCapabilities:
     handles stale requests (e.g. a request
     for which the client will not process the response
     anymore since the information is outdated).
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7334,13 +7334,13 @@ class GeneralClientCapabilities:
         default=None
     )
     """Client capabilities specific to regular expressions.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
     markdown: Optional["MarkdownClientCapabilities"] = attrs.field(default=None)
     """Client capabilities specific to the client's markdown parser.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7351,19 +7351,19 @@ class GeneralClientCapabilities:
     have to agree on the same position encoding to ensure that offsets
     (e.g. character position in a line) are interpreted the same on both
     sides.
-    
+
     To keep the protocol backwards compatible the following applies: if
     the value 'utf-16' is missing from the array of position encodings
     servers can assume that the client supports UTF-16. UTF-16 is
     therefore a mandatory encoding.
-    
+
     If omitted it defaults to ['utf-16'].
-    
+
     Implementation considerations: since the conversion from one encoding
     into another requires the content of the file / line the conversion
     is best done where the file is read which is usually on the server
     side.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7410,14 +7410,14 @@ class WorkspaceEditClientCapabilities:
     )
     """The resource operations the client supports. Clients should at least
     support 'create', 'rename' and 'delete' files and folders.
-    
+
     @since 3.13.0"""
     # Since: 3.13.0
 
     failure_handling: Optional[FailureHandlingKind] = attrs.field(default=None)
     """The failure handling strategy of a client if applying the workspace edit
     fails.
-    
+
     @since 3.13.0"""
     # Since: 3.13.0
 
@@ -7430,7 +7430,7 @@ class WorkspaceEditClientCapabilities:
     If set to `true` the client will normalize line ending characters
     in a workspace edit to the client-specified new line
     character.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7439,7 +7439,7 @@ class WorkspaceEditClientCapabilities:
     ] = attrs.field(default=None)
     """Whether the client in general supports change annotations on text edits,
     create file, rename file and delete file changes.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7469,7 +7469,7 @@ class DidChangeWatchedFilesClientCapabilities:
     )
     """Whether the client has support for {@link  RelativePattern relative pattern}
     or not.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7481,7 +7481,7 @@ class WorkspaceSymbolClientCapabilitiesSymbolKindType:
     property exists the client also guarantees that it will
     handle values outside its set gracefully and falls back
     to a default value when unknown.
-    
+
     If this property is not present the client only supports
     the symbol kinds from `File` to `Array` as defined in
     the initial version of the protocol."""
@@ -7520,7 +7520,7 @@ class WorkspaceSymbolClientCapabilities:
     ] = attrs.field(default=None)
     """The client supports tags on `SymbolInformation`.
     Clients supporting tags have to handle unknown tags gracefully.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7530,7 +7530,7 @@ class WorkspaceSymbolClientCapabilities:
     """The client support partial workspace symbols. The client will send the
     request `workspaceSymbol/resolve` to the server to resolve additional
     properties.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7558,7 +7558,7 @@ class SemanticTokensWorkspaceClientCapabilities:
     )
     """Whether the client implementation supports a refresh request sent from
     the server to the client.
-    
+
     Note that this event is global and will force the client to refresh all
     semantic tokens currently shown. It should be used with absolute care
     and is useful for situation where a server for example detects a project
@@ -7577,7 +7577,7 @@ class CodeLensWorkspaceClientCapabilities:
     )
     """Whether the client implementation supports a refresh request sent from the
     server to the client.
-    
+
     Note that this event is global and will force the client to refresh all
     code lenses currently shown. It should be used with absolute care and is
     useful for situation where a server for example detect a project wide
@@ -7652,7 +7652,7 @@ class InlineValueWorkspaceClientCapabilities:
     )
     """Whether the client implementation supports a refresh request sent from the
     server to the client.
-    
+
     Note that this event is global and will force the client to refresh all
     inline values currently shown. It should be used with absolute care and is
     useful for situation where a server for example detects a project wide
@@ -7673,7 +7673,7 @@ class InlayHintWorkspaceClientCapabilities:
     )
     """Whether the client implementation supports a refresh request sent from
     the server to the client.
-    
+
     Note that this event is global and will force the client to refresh all
     inlay hints currently shown. It should be used with absolute care and
     is useful for situation where a server for example detects a project wide
@@ -7694,7 +7694,7 @@ class DiagnosticWorkspaceClientCapabilities:
     )
     """Whether the client implementation supports a refresh request sent from
     the server to the client.
-    
+
     Note that this event is global and will force the client to refresh all
     pulled diagnostics currently shown. It should be used with absolute care and
     is useful for situation where a server for example detects a project wide
@@ -7717,12 +7717,12 @@ class FoldingRangeWorkspaceClientCapabilities:
     )
     """Whether the client implementation supports a refresh request sent from the
     server to the client.
-    
+
     Note that this event is global and will force the client to refresh all
     folding ranges currently shown. It should be used with absolute care and is
     useful for situation where a server for example detects a project wide
     change that requires such a calculation.
-    
+
     @since 3.18.0
     @proposed"""
     # Since: 3.18.0
@@ -7782,7 +7782,7 @@ class CompletionClientCapabilitiesCompletionItemType:
         default=None,
     )
     """Client supports snippets as insert text.
-    
+
     A snippet can define tab stops and placeholders with `$1`, `$2`
     and `${3:foo}`. `$0` defines the final tab stop, it defaults to
     the end of the snippet. Placeholders with equal identifiers are linked,
@@ -7817,7 +7817,7 @@ class CompletionClientCapabilitiesCompletionItemType:
     tags have to handle unknown tags gracefully. Clients especially need to
     preserve unknown tags when sending a completion item back to the server in
     a resolve call.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -7827,7 +7827,7 @@ class CompletionClientCapabilitiesCompletionItemType:
     )
     """Client support insert replace edit to control different behavior if a
     completion item is inserted in the text or should replace text.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7837,7 +7837,7 @@ class CompletionClientCapabilitiesCompletionItemType:
     """Indicates which properties a client can resolve lazily on a completion
     item. Before version 3.16.0 only the predefined properties `documentation`
     and `details` could be resolved lazily.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7847,7 +7847,7 @@ class CompletionClientCapabilitiesCompletionItemType:
     """The client supports the `insertTextMode` property on
     a completion item to override the whitespace handling mode
     as defined by the client (see `insertTextMode`).
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -7857,7 +7857,7 @@ class CompletionClientCapabilitiesCompletionItemType:
     )
     """The client has support for completion item label
     details (see also `CompletionItemLabelDetails`).
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7869,7 +7869,7 @@ class CompletionClientCapabilitiesCompletionItemKindType:
     property exists the client also guarantees that it will
     handle values outside its set gracefully and falls back
     to a default value when unknown.
-    
+
     If this property is not present the client only supports
     the completion items kinds from `Text` to `Reference` as defined in
     the initial version of the protocol."""
@@ -7880,11 +7880,11 @@ class CompletionClientCapabilitiesCompletionListType:
     item_defaults: Optional[List[str]] = attrs.field(default=None)
     """The client supports the following itemDefaults on
     a completion list.
-    
+
     The value lists the supported property names of the
     `CompletionList.itemDefaults` object. If omitted
     no properties are supported.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7913,7 +7913,7 @@ class CompletionClientCapabilities:
     """Defines how the client handles whitespace and indentation
     when accepting a completion item that uses multi line
     text in either `insertText` or `textEdit`.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7929,7 +7929,7 @@ class CompletionClientCapabilities:
     ] = attrs.field(default=None)
     """The client supports the following `CompletionList` specific
     capabilities.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -7955,7 +7955,7 @@ class SignatureHelpClientCapabilitiesSignatureInformationTypeParameterInformatio
     )
     """The client supports processing label offsets instead of a
     simple label string.
-    
+
     @since 3.14.0"""
     # Since: 3.14.0
 
@@ -7977,7 +7977,7 @@ class SignatureHelpClientCapabilitiesSignatureInformationType:
     )
     """The client supports the `activeParameter` property on `SignatureInformation`
     literal.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8006,7 +8006,7 @@ class SignatureHelpClientCapabilities:
     `textDocument/signatureHelp` request. A client that opts into
     contextSupport will also support the `retriggerCharacters` on
     `SignatureHelpOptions`.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -8047,7 +8047,7 @@ class DefinitionClientCapabilities:
         default=None,
     )
     """The client supports additional metadata in the form of definition links.
-    
+
     @since 3.14.0"""
     # Since: 3.14.0
 
@@ -8069,7 +8069,7 @@ class TypeDefinitionClientCapabilities:
         default=None,
     )
     """The client supports additional metadata in the form of definition links.
-    
+
     Since 3.14.0"""
 
 
@@ -8092,7 +8092,7 @@ class ImplementationClientCapabilities:
         default=None,
     )
     """The client supports additional metadata in the form of definition links.
-    
+
     @since 3.14.0"""
     # Since: 3.14.0
 
@@ -8126,7 +8126,7 @@ class DocumentSymbolClientCapabilitiesSymbolKindType:
     property exists the client also guarantees that it will
     handle values outside its set gracefully and falls back
     to a default value when unknown.
-    
+
     If this property is not present the client only supports
     the symbol kinds from `File` to `Array` as defined in
     the initial version of the protocol."""
@@ -8166,7 +8166,7 @@ class DocumentSymbolClientCapabilities:
     """The client supports tags on `SymbolInformation`. Tags are supported on
     `DocumentSymbol` if `hierarchicalDocumentSymbolSupport` is set to true.
     Clients supporting tags have to handle unknown tags gracefully.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8176,7 +8176,7 @@ class DocumentSymbolClientCapabilities:
     )
     """The client supports an additional label presented in the UI when
     registering a document symbol provider.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8221,7 +8221,7 @@ class CodeActionClientCapabilities:
     """The client support code action literals of type `CodeAction` as a valid
     response of the `textDocument/codeAction` request. If the property is not
     set the request can only return `Command` literals.
-    
+
     @since 3.8.0"""
     # Since: 3.8.0
 
@@ -8230,7 +8230,7 @@ class CodeActionClientCapabilities:
         default=None,
     )
     """Whether code action supports the `isPreferred` property.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -8239,7 +8239,7 @@ class CodeActionClientCapabilities:
         default=None,
     )
     """Whether code action supports the `disabled` property.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8250,7 +8250,7 @@ class CodeActionClientCapabilities:
     """Whether code action supports the `data` property which is
     preserved between a `textDocument/codeAction` and a
     `codeAction/resolve` request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8259,7 +8259,7 @@ class CodeActionClientCapabilities:
     ] = attrs.field(default=None)
     """Whether the client supports resolving additional code action
     properties via a separate `codeAction/resolve` request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8272,7 +8272,7 @@ class CodeActionClientCapabilities:
     `CodeAction#edit` property by for example presenting
     the workspace edit in the user interface and asking
     for confirmation.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8303,7 +8303,7 @@ class DocumentLinkClientCapabilities:
         default=None,
     )
     """Whether the client supports the `tooltip` property on `DocumentLink`.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -8345,7 +8345,7 @@ class DocumentRangeFormattingClientCapabilities:
         default=None,
     )
     """Whether the client supports formatting multiple ranges at once.
-    
+
     @since 3.18.0
     @proposed"""
     # Since: 3.18.0
@@ -8377,7 +8377,7 @@ class RenameClientCapabilities:
     )
     """Client supports testing for validity of rename operations
     before execution.
-    
+
     @since 3.12.0"""
     # Since: 3.12.0
 
@@ -8385,10 +8385,10 @@ class RenameClientCapabilities:
         PrepareSupportDefaultBehavior
     ] = attrs.field(default=None)
     """Client supports the default behavior result.
-    
+
     The value indicates the default behavior used by the
     client.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8401,7 +8401,7 @@ class RenameClientCapabilities:
     rename request's workspace edit by for example presenting
     the workspace edit in the user interface and asking
     for confirmation.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8423,7 +8423,7 @@ class FoldingRangeClientCapabilitiesFoldingRangeType:
     )
     """If set, the client signals that it supports setting collapsedText on
     folding ranges to display custom labels instead of the default text.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -8458,7 +8458,7 @@ class FoldingRangeClientCapabilities:
         "FoldingRangeClientCapabilitiesFoldingRangeKindType"
     ] = attrs.field(default=None)
     """Specific options for the folding range kind.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -8466,7 +8466,7 @@ class FoldingRangeClientCapabilities:
         "FoldingRangeClientCapabilitiesFoldingRangeType"
     ] = attrs.field(default=None)
     """Specific options for the folding range.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -8503,7 +8503,7 @@ class PublishDiagnosticsClientCapabilities:
     ] = attrs.field(default=None)
     """Client supports the tag property to provide meta data about a diagnostic.
     Clients supporting tags have to handle unknown tags gracefully.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -8513,7 +8513,7 @@ class PublishDiagnosticsClientCapabilities:
     )
     """Whether the client interprets the version property of the
     `textDocument/publishDiagnostics` notification's parameter.
-    
+
     @since 3.15.0"""
     # Since: 3.15.0
 
@@ -8522,7 +8522,7 @@ class PublishDiagnosticsClientCapabilities:
         default=None,
     )
     """Client supports a codeDescription property
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8533,7 +8533,7 @@ class PublishDiagnosticsClientCapabilities:
     """Whether code action supports the `data` property which is
     preserved between a `textDocument/publishDiagnostics` and
     `textDocument/codeAction` request.
-    
+
     @since 3.16.0"""
     # Since: 3.16.0
 
@@ -8629,7 +8629,7 @@ class SemanticTokensClientCapabilities:
     semantic token request, e.g. supports returning
     LSPErrorCodes.ServerCancelled. If a server does the client
     needs to retrigger the request.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -8642,10 +8642,10 @@ class SemanticTokensClientCapabilities:
     tokens and semantic tokens are both used for colorization. If
     set to `false` the client only uses the returned semantic tokens
     for colorization.
-    
+
     If the value is `undefined` then the client behavior is not
     specified.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
@@ -8877,7 +8877,7 @@ class MarkdownClientCapabilities:
     allowed_tags: Optional[List[str]] = attrs.field(default=None)
     """A list of HTML tags that the client allows / supports in
     Markdown.
-    
+
     @since 3.17.0"""
     # Since: 3.17.0
 
