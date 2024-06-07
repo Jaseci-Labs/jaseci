@@ -320,7 +320,10 @@ class PyastGenPass(Pass):
         is_imported: bool,
         """
         clean_body = [i for i in node.body if not isinstance(i, ast.AstImplOnlyNode)]
-        pre_body = [*node.impl_mod.body, *clean_body] if node.impl_mod else clean_body
+        pre_body: list[ast.AstNode] = []
+        for pbody in node.impl_mod:
+            pre_body = [*pre_body, *pbody.body]
+        pre_body = [*pre_body, *clean_body]
         pre_body = [*pre_body, *node.test_mod.body] if node.test_mod else pre_body
         body = (
             [

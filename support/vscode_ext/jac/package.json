@@ -45,9 +45,7 @@
   },
   "dependencies": {
     "@types/vscode": "^1.89.0",
-    "@vscode/vsce": "^2.27.0"
-  },
-  "devDependencies": {
+    "@vscode/vsce": "^2.27.0",
     "@types/node": "^20.14.1",
     "vscode-languageclient": "^9.0.1"
   }

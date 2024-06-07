@@ -10,6 +10,8 @@ import {
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
+    vscode.window.showInformationMessage('Jac Language Extension is activated!');
+    console.log('Jac Language Extension is activated!');
     let serverModule = context.asAbsolutePath(
         path.join('src', 'server.jac')
     );
