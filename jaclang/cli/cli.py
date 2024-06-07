@@ -11,6 +11,7 @@ import types
 from typing import Optional
 from uuid import UUID
 
+import jaclang
 import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
@@ -191,6 +192,15 @@ def check(filename: str, print_errs: bool = True) -> None:
         print(f"Errors: {errs}, Warnings: {warnings}")
     else:
         print("Not a .jac file.")
+
+
+@cmd_registry.register
+def lsp() -> None:
+    """Run Jac Language Server Protocol."""
+    base, mod_name = os.path.split(
+        os.path.join(os.path.dirname(jaclang.__file__), "langserve", "server.jac")
+    )
+    jac_import(target=mod_name[:-4], base_path=base)
 
 
 @cmd_registry.register

@@ -1,24 +1,16 @@
-import * as path from 'path';
 import * as vscode from 'vscode';
 import {
     LanguageClient,
     LanguageClientOptions,
-    ServerOptions,
-    TransportKind
+    ServerOptions
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-    vscode.window.showInformationMessage('Jac Language Extension is activated!');
-    console.log('Jac Language Extension is activated!');
-    let serverModule = context.asAbsolutePath(
-        path.join('src', 'server.jac')
-    );
-
     let serverOptions: ServerOptions = {
-        run: { command: 'jac', args: ["run", serverModule] },
-        debug: { command: 'jac', args: ["run", serverModule] }
+        run: { command: 'jac', args: ["lsp"] },
+        debug: { command: 'jac', args: ["lsp"] }
     };
 
     let clientOptions: LanguageClientOptions = {
