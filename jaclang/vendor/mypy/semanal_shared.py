@@ -108,9 +108,7 @@ class SemanticAnalyzerCoreInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def defer(
-        self, debug_context: Context | None = None, force_progress: bool = False
-    ) -> None:
+    def defer(self, debug_context: Context | None = None, force_progress: bool = False) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -168,9 +166,7 @@ class SemanticAnalyzerInterface(SemanticAnalyzerCoreInterface):
         raise NotImplementedError
 
     @abstractmethod
-    def named_type_or_none(
-        self, fullname: str, args: list[Type] | None = None
-    ) -> Instance | None:
+    def named_type_or_none(self, fullname: str, args: list[Type] | None = None) -> Instance | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -193,15 +189,11 @@ class SemanticAnalyzerInterface(SemanticAnalyzerCoreInterface):
         raise NotImplementedError
 
     @abstractmethod
-    def get_and_bind_all_tvars(
-        self, type_exprs: list[Expression]
-    ) -> list[TypeVarLikeType]:
+    def get_and_bind_all_tvars(self, type_exprs: list[Expression]) -> list[TypeVarLikeType]:
         raise NotImplementedError
 
     @abstractmethod
-    def basic_new_typeinfo(
-        self, name: str, basetype_or_fallback: Instance, line: int
-    ) -> TypeInfo:
+    def basic_new_typeinfo(self, name: str, basetype_or_fallback: Instance, line: int) -> TypeInfo:
         raise NotImplementedError
 
     @abstractmethod
@@ -316,9 +308,7 @@ def calculate_tuple_fallback(typ: TupleType) -> None:
 
 
 class _NamedTypeCallback(Protocol):
-    def __call__(
-        self, fully_qualified_name: str, args: list[Type] | None = None
-    ) -> Instance: ...
+    def __call__(self, fully_qualified_name: str, args: list[Type] | None = None) -> Instance: ...
 
 
 def paramspec_args(
@@ -336,9 +326,7 @@ def paramspec_args(
         fullname,
         id,
         flavor=ParamSpecFlavor.ARGS,
-        upper_bound=named_type_func(
-            "builtins.tuple", [named_type_func("builtins.object")]
-        ),
+        upper_bound=named_type_func("builtins.tuple", [named_type_func("builtins.object")]),
         default=AnyType(TypeOfAny.from_omitted_generics),
         line=line,
         column=column,
@@ -362,8 +350,7 @@ def paramspec_kwargs(
         id,
         flavor=ParamSpecFlavor.KWARGS,
         upper_bound=named_type_func(
-            "builtins.dict",
-            [named_type_func("builtins.str"), named_type_func("builtins.object")],
+            "builtins.dict", [named_type_func("builtins.str"), named_type_func("builtins.object")]
         ),
         default=AnyType(TypeOfAny.from_omitted_generics),
         line=line,
@@ -452,10 +439,7 @@ def find_dataclass_transform_spec(node: Node | None) -> DataclassTransformSpec |
         # The wording doesn't make this entirely explicit, but Pyright (the reference
         # implementation for this PEP) only handles directly-decorated metaclasses.
         metaclass_type = node.metaclass_type
-        if (
-            metaclass_type is not None
-            and metaclass_type.type.dataclass_transform_spec is not None
-        ):
+        if metaclass_type is not None and metaclass_type.type.dataclass_transform_spec is not None:
             return metaclass_type.type.dataclass_transform_spec
 
     return None
@@ -490,9 +474,7 @@ def require_bool_literal_argument(
     value = parse_bool(expression)
     if value is None:
         api.fail(
-            f'"{name}" argument must be a True or False literal',
-            expression,
-            code=LITERAL_REQ,
+            f'"{name}" argument must be a True or False literal', expression, code=LITERAL_REQ
         )
         return default
 

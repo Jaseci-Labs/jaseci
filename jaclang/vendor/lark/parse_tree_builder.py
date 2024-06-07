@@ -24,6 +24,7 @@ class ExpandSingleChild:
             return self.node_builder(children)
 
 
+
 class PropagatePositions:
     def __init__(self, node_builder, node_filter=None):
         self.node_builder = node_builder
@@ -42,52 +43,28 @@ class PropagatePositions:
 
             first_meta = self._pp_get_meta(children)
             if first_meta is not None:
-                if not hasattr(res_meta, "line"):
+                if not hasattr(res_meta, 'line'):
                     # meta was already set, probably because the rule has been inlined (e.g. `?rule`)
-                    res_meta.line = getattr(
-                        first_meta, "container_line", first_meta.line
-                    )
-                    res_meta.column = getattr(
-                        first_meta, "container_column", first_meta.column
-                    )
-                    res_meta.start_pos = getattr(
-                        first_meta, "container_start_pos", first_meta.start_pos
-                    )
+                    res_meta.line = getattr(first_meta, 'container_line', first_meta.line)
+                    res_meta.column = getattr(first_meta, 'container_column', first_meta.column)
+                    res_meta.start_pos = getattr(first_meta, 'container_start_pos', first_meta.start_pos)
                     res_meta.empty = False
 
-                res_meta.container_line = getattr(
-                    first_meta, "container_line", first_meta.line
-                )
-                res_meta.container_column = getattr(
-                    first_meta, "container_column", first_meta.column
-                )
-                res_meta.container_start_pos = getattr(
-                    first_meta, "container_start_pos", first_meta.start_pos
-                )
+                res_meta.container_line = getattr(first_meta, 'container_line', first_meta.line)
+                res_meta.container_column = getattr(first_meta, 'container_column', first_meta.column)
+                res_meta.container_start_pos = getattr(first_meta, 'container_start_pos', first_meta.start_pos)
 
             last_meta = self._pp_get_meta(reversed(children))
             if last_meta is not None:
-                if not hasattr(res_meta, "end_line"):
-                    res_meta.end_line = getattr(
-                        last_meta, "container_end_line", last_meta.end_line
-                    )
-                    res_meta.end_column = getattr(
-                        last_meta, "container_end_column", last_meta.end_column
-                    )
-                    res_meta.end_pos = getattr(
-                        last_meta, "container_end_pos", last_meta.end_pos
-                    )
+                if not hasattr(res_meta, 'end_line'):
+                    res_meta.end_line = getattr(last_meta, 'container_end_line', last_meta.end_line)
+                    res_meta.end_column = getattr(last_meta, 'container_end_column', last_meta.end_column)
+                    res_meta.end_pos = getattr(last_meta, 'container_end_pos', last_meta.end_pos)
                     res_meta.empty = False
 
-                res_meta.container_end_line = getattr(
-                    last_meta, "container_end_line", last_meta.end_line
-                )
-                res_meta.container_end_column = getattr(
-                    last_meta, "container_end_column", last_meta.end_column
-                )
-                res_meta.container_end_pos = getattr(
-                    last_meta, "container_end_pos", last_meta.end_pos
-                )
+                res_meta.container_end_line = getattr(last_meta, 'container_end_line', last_meta.end_line)
+                res_meta.container_end_column = getattr(last_meta, 'container_end_column', last_meta.end_column)
+                res_meta.container_end_pos = getattr(last_meta, 'container_end_pos', last_meta.end_pos)
 
         return res
 
@@ -100,9 +77,8 @@ class PropagatePositions:
                     return c.meta
             elif isinstance(c, Token):
                 return c
-            elif hasattr(c, "__lark_meta__"):
+            elif hasattr(c, '__lark_meta__'):
                 return c.__lark_meta__()
-
 
 def make_propagate_positions(option):
     if callable(option):
@@ -112,7 +88,7 @@ def make_propagate_positions(option):
     elif option is False:
         return None
 
-    raise ConfigurationError("Invalid option for propagate_positions: %r" % option)
+    raise ConfigurationError('Invalid option for propagate_positions: %r' % option)
 
 
 class ChildFilter:
@@ -149,7 +125,7 @@ class ChildFilterLALR(ChildFilter):
             if to_expand:
                 if filtered:
                     filtered += children[i].children
-                else:  # Optimize for left-recursion
+                else:   # Optimize for left-recursion
                     filtered = children[i].children
             else:
                 filtered.append(children[i])
@@ -162,7 +138,6 @@ class ChildFilterLALR(ChildFilter):
 
 class ChildFilterLALR_NoPlaceholders(ChildFilter):
     "Optimized childfilter for LALR (assumes no duplication in parse tree, so it's safe to change it)"
-
     def __init__(self, to_include, node_builder):
         self.node_builder = node_builder
         self.to_include = to_include
@@ -173,7 +148,7 @@ class ChildFilterLALR_NoPlaceholders(ChildFilter):
             if to_expand:
                 if filtered:
                     filtered += children[i].children
-                else:  # Optimize for left-recursion
+                else:   # Optimize for left-recursion
                     filtered = children[i].children
             else:
                 filtered.append(children[i])
@@ -181,20 +156,18 @@ class ChildFilterLALR_NoPlaceholders(ChildFilter):
 
 
 def _should_expand(sym):
-    return not sym.is_term and sym.name.startswith("_")
+    return not sym.is_term and sym.name.startswith('_')
 
 
-def maybe_create_child_filter(
-    expansion, keep_all_tokens, ambiguous, _empty_indices: List[bool]
-):
+def maybe_create_child_filter(expansion, keep_all_tokens, ambiguous, _empty_indices: List[bool]):
     # Prepare empty_indices as: How many Nones to insert at each index?
     if _empty_indices:
         assert _empty_indices.count(False) == len(expansion)
-        s = "".join(str(int(b)) for b in _empty_indices)
-        empty_indices = [len(ones) for ones in s.split("0")]
-        assert len(empty_indices) == len(expansion) + 1, (empty_indices, len(expansion))
+        s = ''.join(str(int(b)) for b in _empty_indices)
+        empty_indices = [len(ones) for ones in s.split('0')]
+        assert len(empty_indices) == len(expansion)+1, (empty_indices, len(expansion))
     else:
-        empty_indices = [0] * (len(expansion) + 1)
+        empty_indices = [0] * (len(expansion)+1)
 
     to_include = []
     nones_to_add = 0
@@ -206,29 +179,19 @@ def maybe_create_child_filter(
 
     nones_to_add += empty_indices[len(expansion)]
 
-    if (
-        _empty_indices
-        or len(to_include) < len(expansion)
-        or any(to_expand for i, to_expand, _ in to_include)
-    ):
+    if _empty_indices or len(to_include) < len(expansion) or any(to_expand for i, to_expand,_ in to_include):
         if _empty_indices or ambiguous:
-            return partial(
-                ChildFilter if ambiguous else ChildFilterLALR, to_include, nones_to_add
-            )
+            return partial(ChildFilter if ambiguous else ChildFilterLALR, to_include, nones_to_add)
         else:
             # LALR without placeholders
-            return partial(
-                ChildFilterLALR_NoPlaceholders, [(i, x) for i, x, _ in to_include]
-            )
+            return partial(ChildFilterLALR_NoPlaceholders, [(i, x) for i,x,_ in to_include])
 
 
 class AmbiguousExpander:
     """Deal with the case where we're expanding children ('_rule') into a parent but the children
-    are ambiguous. i.e. (parent->_ambig->_expand_this_rule). In this case, make the parent itself
-    ambiguous with as many copies as there are ambiguous children, and then copy the ambiguous children
-    into the right parents in the right places, essentially shifting the ambiguity up the tree.
-    """
-
+       are ambiguous. i.e. (parent->_ambig->_expand_this_rule). In this case, make the parent itself
+       ambiguous with as many copies as there are ambiguous children, and then copy the ambiguous children
+       into the right parents in the right places, essentially shifting the ambiguity up the tree."""
     def __init__(self, to_expand, tree_class, node_builder):
         self.node_builder = node_builder
         self.tree_class = tree_class
@@ -236,7 +199,7 @@ class AmbiguousExpander:
 
     def __call__(self, children):
         def _is_ambig_tree(t):
-            return hasattr(t, "data") and t.data == "_ambig"
+            return hasattr(t, 'data') and t.data == '_ambig'
 
         # -- When we're repeatedly expanding ambiguities we can end up with nested ambiguities.
         #    All children of an _ambig node should be a derivation of that ambig node, hence
@@ -248,27 +211,18 @@ class AmbiguousExpander:
                 if i in self.to_expand:
                     ambiguous.append(i)
 
-                child.expand_kids_by_data("_ambig")
+                child.expand_kids_by_data('_ambig')
 
         if not ambiguous:
             return self.node_builder(children)
 
-        expand = [
-            child.children if i in ambiguous else (child,)
-            for i, child in enumerate(children)
-        ]
-        return self.tree_class(
-            "_ambig", [self.node_builder(list(f)) for f in product(*expand)]
-        )
+        expand = [child.children if i in ambiguous else (child,) for i, child in enumerate(children)]
+        return self.tree_class('_ambig', [self.node_builder(list(f)) for f in product(*expand)])
 
 
 def maybe_create_ambiguous_expander(tree_class, expansion, keep_all_tokens):
-    to_expand = [
-        i
-        for i, sym in enumerate(expansion)
-        if keep_all_tokens
-        or ((not (sym.is_term and sym.filter_out)) and _should_expand(sym))
-    ]
+    to_expand = [i for i, sym in enumerate(expansion)
+                 if keep_all_tokens or ((not (sym.is_term and sym.filter_out)) and _should_expand(sym))]
     if to_expand:
         return partial(AmbiguousExpander, to_expand, tree_class)
 
@@ -320,7 +274,7 @@ class AmbiguousIntermediateExpander:
 
     def __call__(self, children):
         def _is_iambig_tree(child):
-            return hasattr(child, "data") and child.data == "_iambig"
+            return hasattr(child, 'data') and child.data == '_iambig'
 
         def _collapse_iambig(children):
             """
@@ -342,18 +296,17 @@ class AmbiguousIntermediateExpander:
                             child.children += children[1:]
                         result += collapsed
                     else:
-                        new_tree = self.tree_class(
-                            "_inter", grandchild.children + children[1:]
-                        )
+                        new_tree = self.tree_class('_inter', grandchild.children + children[1:])
                         result.append(new_tree)
                 return result
 
         collapsed = _collapse_iambig(children)
         if collapsed:
             processed_nodes = [self.node_builder(c.children) for c in collapsed]
-            return self.tree_class("_ambig", processed_nodes)
+            return self.tree_class('_ambig', processed_nodes)
 
         return self.node_builder(children)
+
 
 
 def inplace_transformer(func):
@@ -362,7 +315,6 @@ def inplace_transformer(func):
         # function name in a Transformer is a rule name.
         tree = Tree(func.__name__, children)
         return func(tree)
-
     return f
 
 
@@ -373,19 +325,11 @@ def apply_visit_wrapper(func, name, wrapper):
     @wraps(func)
     def f(children):
         return wrapper(func, name, children, None)
-
     return f
 
 
 class ParseTreeBuilder:
-    def __init__(
-        self,
-        rules,
-        tree_class,
-        propagate_positions=False,
-        ambiguous=False,
-        maybe_placeholders=False,
-    ):
+    def __init__(self, rules, tree_class, propagate_positions=False, ambiguous=False, maybe_placeholders=False):
         self.tree_class = tree_class
         self.propagate_positions = propagate_positions
         self.ambiguous = ambiguous
@@ -401,50 +345,32 @@ class ParseTreeBuilder:
             keep_all_tokens = options.keep_all_tokens
             expand_single_child = options.expand1
 
-            wrapper_chain = list(
-                filter(
-                    None,
-                    [
-                        (expand_single_child and not rule.alias) and ExpandSingleChild,
-                        maybe_create_child_filter(
-                            rule.expansion,
-                            keep_all_tokens,
-                            self.ambiguous,
-                            options.empty_indices if self.maybe_placeholders else None,
-                        ),
-                        propagate_positions,
-                        self.ambiguous
-                        and maybe_create_ambiguous_expander(
-                            self.tree_class, rule.expansion, keep_all_tokens
-                        ),
-                        self.ambiguous
-                        and partial(AmbiguousIntermediateExpander, self.tree_class),
-                    ],
-                )
-            )
+            wrapper_chain = list(filter(None, [
+                (expand_single_child and not rule.alias) and ExpandSingleChild,
+                maybe_create_child_filter(rule.expansion, keep_all_tokens, self.ambiguous, options.empty_indices if self.maybe_placeholders else None),
+                propagate_positions,
+                self.ambiguous and maybe_create_ambiguous_expander(self.tree_class, rule.expansion, keep_all_tokens),
+                self.ambiguous and partial(AmbiguousIntermediateExpander, self.tree_class)
+            ]))
 
             yield rule, wrapper_chain
 
     def create_callback(self, transformer=None):
         callbacks = {}
 
-        default_handler = getattr(transformer, "__default__", None)
+        default_handler = getattr(transformer, '__default__', None)
         if default_handler:
-
             def default_callback(data, children):
                 return default_handler(data, children, None)
-
         else:
             default_callback = self.tree_class
 
         for rule, wrapper_chain in self.rule_builders:
 
-            user_callback_name = (
-                rule.alias or rule.options.template_source or rule.origin.name
-            )
+            user_callback_name = rule.alias or rule.options.template_source or rule.origin.name
             try:
                 f = getattr(transformer, user_callback_name)
-                wrapper = getattr(f, "visit_wrapper", None)
+                wrapper = getattr(f, 'visit_wrapper', None)
                 if wrapper is not None:
                     f = apply_visit_wrapper(f, user_callback_name, wrapper)
                 elif isinstance(transformer, Transformer_InPlace):
@@ -461,6 +387,5 @@ class ParseTreeBuilder:
             callbacks[rule] = f
 
         return callbacks
-
 
 ###}

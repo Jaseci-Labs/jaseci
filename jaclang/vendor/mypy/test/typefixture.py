@@ -110,13 +110,9 @@ class TypeFixture:
 
         # Generic class TypeInfos
         # G[T]
-        self.gi = self.make_type_info(
-            "G", mro=[self.oi], typevars=["T"], variances=[variance]
-        )
+        self.gi = self.make_type_info("G", mro=[self.oi], typevars=["T"], variances=[variance])
         # G2[T]
-        self.g2i = self.make_type_info(
-            "G2", mro=[self.oi], typevars=["T"], variances=[variance]
-        )
+        self.g2i = self.make_type_info("G2", mro=[self.oi], typevars=["T"], variances=[variance])
         # H[S, T]
         self.hi = self.make_type_info(
             "H", mro=[self.oi], typevars=["S", "T"], variances=[variance, variance]
@@ -206,15 +202,9 @@ class TypeFixture:
         self.lit_str1 = LiteralType("x", self.str_type)
         self.lit_str2 = LiteralType("y", self.str_type)
         self.lit_str3 = LiteralType("z", self.str_type)
-        self.lit_str1_inst = Instance(
-            self.str_type_info, [], last_known_value=self.lit_str1
-        )
-        self.lit_str2_inst = Instance(
-            self.str_type_info, [], last_known_value=self.lit_str2
-        )
-        self.lit_str3_inst = Instance(
-            self.str_type_info, [], last_known_value=self.lit_str3
-        )
+        self.lit_str1_inst = Instance(self.str_type_info, [], last_known_value=self.lit_str1)
+        self.lit_str2_inst = Instance(self.str_type_info, [], last_known_value=self.lit_str2)
+        self.lit_str3_inst = Instance(self.str_type_info, [], last_known_value=self.lit_str3)
 
         self.lit_false = LiteralType(False, self.bool_type)
         self.lit_true = LiteralType(True, self.bool_type)
@@ -233,9 +223,7 @@ class TypeFixture:
         self.ub = make_type_var("UB", 5, [], self.b, variance)  # UB`5 (type variable)
         self.uc = make_type_var("UC", 6, [], self.c, variance)  # UC`6 (type variable)
 
-        def make_type_var_tuple(
-            name: str, id: int, upper_bound: Type
-        ) -> TypeVarTupleType:
+        def make_type_var_tuple(name: str, id: int, upper_bound: Type) -> TypeVarTupleType:
             return TypeVarTupleType(
                 name,
                 name,
@@ -250,17 +238,13 @@ class TypeFixture:
         self.ss = make_type_var_tuple("Ss", 2, obj_tuple)  # Ss`2 (type var tuple)
         self.us = make_type_var_tuple("Us", 3, obj_tuple)  # Us`3 (type var tuple)
 
-        self.gvi = self.make_type_info(
-            "GV", mro=[self.oi], typevars=["Ts"], typevar_tuple_index=0
-        )
+        self.gvi = self.make_type_info("GV", mro=[self.oi], typevars=["Ts"], typevar_tuple_index=0)
         self.gv2i = self.make_type_info(
             "GV2", mro=[self.oi], typevars=["T", "Ts", "S"], typevar_tuple_index=1
         )
 
     def _add_bool_dunder(self, type_info: TypeInfo) -> None:
-        signature = CallableType(
-            [], [], [], Instance(self.bool_type_info, []), self.function
-        )
+        signature = CallableType([], [], [], Instance(self.bool_type_info, []), self.function)
         bool_func = FuncDef("__bool__", [], Block([]))
         bool_func.type = set_callable_name(signature, bool_func)
         type_info.names[bool_func.name] = SymbolTableNode(MDEF, bool_func)
@@ -272,11 +256,7 @@ class TypeFixture:
         a1, ... an and return type r.
         """
         return CallableType(
-            list(a[:-1]),
-            [ARG_POS] * (len(a) - 1),
-            [None] * (len(a) - 1),
-            a[-1],
-            self.function,
+            list(a[:-1]), [ARG_POS] * (len(a) - 1), [None] * (len(a) - 1), a[-1], self.function
         )
 
     def callable_type(self, *a: Type) -> CallableType:
@@ -285,11 +265,7 @@ class TypeFixture:
         represents a type.
         """
         return CallableType(
-            list(a[:-1]),
-            [ARG_POS] * (len(a) - 1),
-            [None] * (len(a) - 1),
-            a[-1],
-            self.type_type,
+            list(a[:-1]), [ARG_POS] * (len(a) - 1), [None] * (len(a) - 1), a[-1], self.type_type
         )
 
     def callable_default(self, min_args: int, *a: Type) -> CallableType:
@@ -430,10 +406,7 @@ class InterfaceTypeFixture(TypeFixture):
 
         # M1 <: GF[A]
         self.m1i = self.make_type_info(
-            "M1",
-            is_abstract=True,
-            mro=[self.gfi, self.oi],
-            bases=[Instance(self.gfi, [self.a])],
+            "M1", is_abstract=True, mro=[self.gfi, self.oi], bases=[Instance(self.gfi, [self.a])]
         )
 
         self.gfa = Instance(self.gfi, [self.a])  # GF[A]

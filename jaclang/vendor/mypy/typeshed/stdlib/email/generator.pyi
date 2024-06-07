@@ -16,9 +16,7 @@ class Generator:
         *,
         policy: Policy | None = None,
     ) -> None: ...
-    def flatten(
-        self, msg: Message, unixfrom: bool = False, linesep: str | None = None
-    ) -> None: ...
+    def flatten(self, msg: Message, unixfrom: bool = False, linesep: str | None = None) -> None: ...
 
 class BytesGenerator(Generator):
     def __init__(

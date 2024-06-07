@@ -41,10 +41,7 @@ class TestLiterals(unittest.TestCase):
             bytes([1, 70]) + b"x" * 70,
             b"",
         ]
-        assert _encode_bytes_values({b"y" * 100: 0}) == [
-            bytes([1, 100]) + b"y" * 100,
-            b"",
-        ]
+        assert _encode_bytes_values({b"y" * 100: 0}) == [bytes([1, 100]) + b"y" * 100, b""]
 
     def test_encode_int_values(self) -> None:
         assert _encode_int_values({}) == [b""]

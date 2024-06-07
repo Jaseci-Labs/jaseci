@@ -12,10 +12,7 @@ class addbase(tempfile._TemporaryFileWrapper[bytes]):
     fp: IO[bytes]
     def __init__(self, fp: IO[bytes]) -> None: ...
     def __exit__(
-        self,
-        type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
+        self, type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
     # These methods don't actually exist, but the class inherits at runtime from
     # tempfile._TemporaryFileWrapper, which uses __getattr__ to delegate to the
@@ -27,9 +24,7 @@ class addbase(tempfile._TemporaryFileWrapper[bytes]):
 class addclosehook(addbase):
     closehook: Callable[..., object]
     hookargs: tuple[Any, ...]
-    def __init__(
-        self, fp: IO[bytes], closehook: Callable[..., object], *hookargs: Any
-    ) -> None: ...
+    def __init__(self, fp: IO[bytes], closehook: Callable[..., object], *hookargs: Any) -> None: ...
 
 class addinfo(addbase):
     headers: Message
@@ -43,8 +38,6 @@ class addinfourl(addinfo):
         @property
         def status(self) -> int | None: ...
 
-    def __init__(
-        self, fp: IO[bytes], headers: Message, url: str, code: int | None = None
-    ) -> None: ...
+    def __init__(self, fp: IO[bytes], headers: Message, url: str, code: int | None = None) -> None: ...
     def geturl(self) -> str: ...
     def getcode(self) -> int | None: ...

@@ -64,9 +64,7 @@ class RefInfoVisitor(TraverserVisitor):
             if not fullname:
                 fullname = f"*.{expr.name}"
         if fullname is not None:
-            self.data.append(
-                {"line": expr.line, "column": expr.column, "target": fullname}
-            )
+            self.data.append({"line": expr.line, "column": expr.column, "target": fullname})
 
 
 def type_fullname(typ: Type, node: SymbolNode | None = None) -> str | None:

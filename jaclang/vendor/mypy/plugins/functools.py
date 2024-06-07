@@ -7,14 +7,7 @@ from typing import Final, NamedTuple
 import mypy.plugin
 from mypy.nodes import ARG_POS, ARG_STAR2, Argument, FuncItem, Var
 from mypy.plugins.common import add_method_to_class
-from mypy.types import (
-    AnyType,
-    CallableType,
-    Type,
-    TypeOfAny,
-    UnboundType,
-    get_proper_type,
-)
+from mypy.types import AnyType, CallableType, Type, TypeOfAny, UnboundType, get_proper_type
 
 functools_total_ordering_makers: Final = {"functools.total_ordering"}
 
@@ -103,9 +96,7 @@ def _analyze_class(ctx: mypy.plugin.ClassDefContext) -> dict[str, _MethodInfo | 
                 if isinstance(node, Var):
                     proper_type = get_proper_type(node.type)
                     if isinstance(proper_type, CallableType):
-                        comparison_methods[name] = _MethodInfo(
-                            node.is_staticmethod, proper_type
-                        )
+                        comparison_methods[name] = _MethodInfo(node.is_staticmethod, proper_type)
                         continue
 
                 comparison_methods[name] = None

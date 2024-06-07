@@ -9,13 +9,11 @@ from lark.lexer import Token, LexerThread
 
 ###{standalone
 
-
 class InteractiveParser:
     """InteractiveParser gives you advanced control over parsing and error handling when parsing with LALR.
 
     For a simpler interface, see the ``on_error`` argument to ``Lark.parse()``.
     """
-
     def __init__(self, parser, parser_state, lexer_thread: LexerThread):
         self.parser = parser
         self.parser_state = parser_state
@@ -24,10 +22,7 @@ class InteractiveParser:
 
     @property
     def lexer_state(self) -> LexerThread:
-        warnings.warn(
-            "lexer_state will be removed in subsequent releases. Use lexer_thread instead.",
-            DeprecationWarning,
-        )
+        warnings.warn("lexer_state will be removed in subsequent releases. Use lexer_thread instead.", DeprecationWarning)
         return self.lexer_thread
 
     def feed_token(self, token: Token):
@@ -35,7 +30,7 @@ class InteractiveParser:
 
         Note that ``token`` has to be an instance of ``Token``.
         """
-        return self.parser_state.feed_token(token, token.type == "$END")
+        return self.parser_state.feed_token(token, token.type == '$END')
 
     def iter_parse(self) -> Iterator[Token]:
         """Step through the different stages of the parse, by reading tokens from the lexer
@@ -56,14 +51,12 @@ class InteractiveParser:
         """
         return list(self.iter_parse())
 
+
     def feed_eof(self, last_token=None):
         """Feed a '$END' Token. Borrows from 'last_token' if given."""
-        eof = (
-            Token.new_borrow_pos("$END", "", last_token)
-            if last_token is not None
-            else self.lexer_thread._Token("$END", "", 0, 1, 1)
-        )
+        eof = Token.new_borrow_pos('$END', '', last_token) if last_token is not None else self.lexer_thread._Token('$END', '', 0, 1, 1)
         return self.feed_token(eof)
+
 
     def __copy__(self):
         """Create a new interactive parser with a separate state.
@@ -83,10 +76,7 @@ class InteractiveParser:
         if not isinstance(other, InteractiveParser):
             return False
 
-        return (
-            self.parser_state == other.parser_state
-            and self.lexer_thread == other.lexer_thread
-        )
+        return self.parser_state == other.parser_state and self.lexer_thread == other.lexer_thread
 
     def as_immutable(self):
         """Convert to an ``ImmutableInteractiveParser``."""
@@ -97,9 +87,9 @@ class InteractiveParser:
         """Print the output of ``choices()`` in a way that's easier to read."""
         out = ["Parser choices:"]
         for k, v in self.choices().items():
-            out.append("\t- %s -> %r" % (k, v))
-        out.append("stack size: %s" % len(self.parser_state.state_stack))
-        return "\n".join(out)
+            out.append('\t- %s -> %r' % (k, v))
+        out.append('stack size: %s' % len(self.parser_state.state_stack))
+        return '\n'.join(out)
 
     def choices(self):
         """Returns a dictionary of token types, matched to their action in the parser.
@@ -108,9 +98,7 @@ class InteractiveParser:
 
         Updated by ``feed_token()``.
         """
-        return self.parser_state.parse_conf.parse_table.states[
-            self.parser_state.position
-        ]
+        return self.parser_state.parse_conf.parse_table.states[self.parser_state.position]
 
     def accepts(self):
         """Returns the set of possible tokens that will advance the parser into a new valid state."""
@@ -120,11 +108,11 @@ class InteractiveParser:
         # and are unnecessarily slow.
         conf_no_callbacks.callbacks = {}
         for t in self.choices():
-            if t.isupper():  # is terminal?
+            if t.isupper(): # is terminal?
                 new_cursor = copy(self)
                 new_cursor.parser_state.parse_conf = conf_no_callbacks
                 try:
-                    new_cursor.feed_token(self.lexer_thread._Token(t, ""))
+                    new_cursor.feed_token(self.lexer_thread._Token(t, ''))
                 except UnexpectedToken:
                     pass
                 else:
@@ -132,10 +120,10 @@ class InteractiveParser:
         return accepts
 
     def resume_parse(self):
-        """Resume automated parsing from the current state."""
-        return self.parser.parse_from_state(
-            self.parser_state, last_token=self.lexer_thread.state.last_token
-        )
+        """Resume automated parsing from the current state.
+        """
+        return self.parser.parse_from_state(self.parser_state, last_token=self.lexer_thread.state.last_token)
+
 
 
 class ImmutableInteractiveParser(InteractiveParser):
@@ -156,8 +144,7 @@ class ImmutableInteractiveParser(InteractiveParser):
     def exhaust_lexer(self):
         """Try to feed the rest of the lexer state into the parser.
 
-        Note that this returns a new ImmutableInteractiveParser and does not feed an '$END' Token
-        """
+        Note that this returns a new ImmutableInteractiveParser and does not feed an '$END' Token"""
         cursor = self.as_mutable()
         cursor.exhaust_lexer()
         return cursor.as_immutable()
@@ -166,6 +153,5 @@ class ImmutableInteractiveParser(InteractiveParser):
         """Convert to an ``InteractiveParser``."""
         p = copy(self)
         return InteractiveParser(p.parser, p.parser_state, p.lexer_thread)
-
 
 ###}

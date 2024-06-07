@@ -3,18 +3,11 @@ import sys
 from collections.abc import Callable, Iterable, Sequence
 from ctypes import _CData
 from logging import Logger, _Level as _LoggingLevel
-from multiprocessing import (
-    popen_fork,
-    popen_forkserver,
-    popen_spawn_posix,
-    popen_spawn_win32,
-    queues,
-    synchronize,
-)
+from multiprocessing import popen_fork, popen_forkserver, popen_spawn_posix, popen_spawn_win32, queues, synchronize
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import Pool as _Pool
 from multiprocessing.process import BaseProcess
-from multiprocessing.sharedctypes import SynchronizedArray, SynchronizedBase
+from multiprocessing.sharedctypes import Synchronized, SynchronizedArray
 from typing import Any, ClassVar, Literal, TypeVar, overload
 from typing_extensions import TypeAlias
 
@@ -56,15 +49,10 @@ class BaseContext:
     if sys.platform != "win32":
         def Pipe(self, duplex: bool = True) -> tuple[Connection, Connection]: ...
     else:
-        def Pipe(
-            self, duplex: bool = True
-        ) -> tuple[PipeConnection, PipeConnection]: ...
+        def Pipe(self, duplex: bool = True) -> tuple[PipeConnection, PipeConnection]: ...
 
     def Barrier(
-        self,
-        parties: int,
-        action: Callable[..., object] | None = None,
-        timeout: float | None = None,
+        self, parties: int, action: Callable[..., object] | None = None, timeout: float | None = None
     ) -> synchronize.Barrier: ...
     def BoundedSemaphore(self, value: int = 1) -> synchronize.BoundedSemaphore: ...
     def Condition(self, lock: _LockLike | None = None) -> synchronize.Condition: ...
@@ -87,66 +75,32 @@ class BaseContext:
     @overload
     def RawValue(self, typecode_or_type: str, *args: Any) -> Any: ...
     @overload
-    def RawArray(
-        self, typecode_or_type: type[_CT], size_or_initializer: int | Sequence[Any]
-    ) -> ctypes.Array[_CT]: ...
+    def RawArray(self, typecode_or_type: type[_CT], size_or_initializer: int | Sequence[Any]) -> ctypes.Array[_CT]: ...
     @overload
-    def RawArray(
-        self, typecode_or_type: str, size_or_initializer: int | Sequence[Any]
-    ) -> Any: ...
+    def RawArray(self, typecode_or_type: str, size_or_initializer: int | Sequence[Any]) -> Any: ...
     @overload
-    def Value(
-        self, typecode_or_type: type[_CT], *args: Any, lock: Literal[False]
-    ) -> _CT: ...
+    def Value(self, typecode_or_type: type[_CT], *args: Any, lock: Literal[False]) -> Synchronized[_CT]: ...
     @overload
-    def Value(
-        self,
-        typecode_or_type: type[_CT],
-        *args: Any,
-        lock: Literal[True] | _LockLike = True
-    ) -> SynchronizedBase[_CT]: ...
+    def Value(self, typecode_or_type: type[_CT], *args: Any, lock: Literal[True] | _LockLike = True) -> Synchronized[_CT]: ...
     @overload
-    def Value(
-        self, typecode_or_type: str, *args: Any, lock: Literal[True] | _LockLike = True
-    ) -> SynchronizedBase[Any]: ...
+    def Value(self, typecode_or_type: str, *args: Any, lock: Literal[True] | _LockLike = True) -> Synchronized[Any]: ...
     @overload
-    def Value(
-        self,
-        typecode_or_type: str | type[_CData],
-        *args: Any,
-        lock: bool | _LockLike = True
-    ) -> Any: ...
+    def Value(self, typecode_or_type: str | type[_CData], *args: Any, lock: bool | _LockLike = True) -> Any: ...
     @overload
     def Array(
-        self,
-        typecode_or_type: type[_CT],
-        size_or_initializer: int | Sequence[Any],
-        *,
-        lock: Literal[False]
-    ) -> _CT: ...
-    @overload
-    def Array(
-        self,
-        typecode_or_type: type[_CT],
-        size_or_initializer: int | Sequence[Any],
-        *,
-        lock: Literal[True] | _LockLike = True
+        self, typecode_or_type: type[_CT], size_or_initializer: int | Sequence[Any], *, lock: Literal[False]
     ) -> SynchronizedArray[_CT]: ...
     @overload
     def Array(
-        self,
-        typecode_or_type: str,
-        size_or_initializer: int | Sequence[Any],
-        *,
-        lock: Literal[True] | _LockLike = True
+        self, typecode_or_type: type[_CT], size_or_initializer: int | Sequence[Any], *, lock: Literal[True] | _LockLike = True
+    ) -> SynchronizedArray[_CT]: ...
+    @overload
+    def Array(
+        self, typecode_or_type: str, size_or_initializer: int | Sequence[Any], *, lock: Literal[True] | _LockLike = True
     ) -> SynchronizedArray[Any]: ...
     @overload
     def Array(
-        self,
-        typecode_or_type: str | type[_CData],
-        size_or_initializer: int | Sequence[Any],
-        *,
-        lock: bool | _LockLike = True
+        self, typecode_or_type: str | type[_CData], size_or_initializer: int | Sequence[Any], *, lock: bool | _LockLike = True
     ) -> Any: ...
     def freeze_support(self) -> None: ...
     def get_logger(self) -> Logger: ...

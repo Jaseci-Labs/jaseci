@@ -40,9 +40,7 @@ class StrConv(NodeVisitor[str]):
     def stringify_type(self, t: mypy.types.Type) -> str:
         import mypy.types
 
-        return t.accept(
-            mypy.types.TypeStrVisitor(id_mapper=self.id_mapper, options=self.options)
-        )
+        return t.accept(mypy.types.TypeStrVisitor(id_mapper=self.id_mapper, options=self.options))
 
     def get_id(self, o: object) -> int | None:
         if self.id_mapper:
@@ -113,10 +111,7 @@ class StrConv(NodeVisitor[str]):
             # case# output in all platforms.
             a.insert(0, o.path.replace(os.sep, "/"))
         if o.ignored_lines:
-            a.append(
-                "IgnoredLines(%s)"
-                % ", ".join(str(line) for line in sorted(o.ignored_lines))
-            )
+            a.append("IgnoredLines(%s)" % ", ".join(str(line) for line in sorted(o.ignored_lines)))
         return self.dump(a, o)
 
     def visit_import(self, o: mypy.nodes.Import) -> str:
@@ -148,10 +143,7 @@ class StrConv(NodeVisitor[str]):
         arg_kinds = {arg.kind for arg in o.arguments}
         if len(arg_kinds & {mypy.nodes.ARG_NAMED, mypy.nodes.ARG_NAMED_OPT}) > 0:
             a.insert(1, f"MaxPos({o.max_pos})")
-        if o.abstract_status in (
-            mypy.nodes.IS_ABSTRACT,
-            mypy.nodes.IMPLICITLY_ABSTRACT,
-        ):
+        if o.abstract_status in (mypy.nodes.IS_ABSTRACT, mypy.nodes.IMPLICITLY_ABSTRACT):
             a.insert(-1, "Abstract")
         if o.is_static:
             a.insert(-1, "Static")
@@ -179,10 +171,7 @@ class StrConv(NodeVisitor[str]):
         # (in this case base_type_exprs is empty).
         if o.base_type_exprs:
             if o.info and o.info.bases:
-                if (
-                    len(o.info.bases) != 1
-                    or o.info.bases[0].type.fullname != "builtins.object"
-                ):
+                if len(o.info.bases) != 1 or o.info.bases[0].type.fullname != "builtins.object":
                     a.insert(1, ("BaseType", o.info.bases))
             else:
                 a.insert(1, ("BaseTypeExpr", o.base_type_exprs))
@@ -193,10 +182,7 @@ class StrConv(NodeVisitor[str]):
         if o.decorators:
             a.insert(1, ("Decorators", o.decorators))
         if o.info and o.info._promote:
-            a.insert(
-                1,
-                f"Promote([{','.join(self.stringify_type(p) for p in o.info._promote)}])",
-            )
+            a.insert(1, f"Promote([{','.join(self.stringify_type(p) for p in o.info._promote)}])")
         if o.info and o.info.tuple_type:
             a.insert(1, ("TupleType", [o.info.tuple_type]))
         if o.info and o.info.fallback_to_any:
@@ -239,9 +225,7 @@ class StrConv(NodeVisitor[str]):
             a.append(o.type)
         return self.dump(a, o)
 
-    def visit_operator_assignment_stmt(
-        self, o: mypy.nodes.OperatorAssignmentStmt
-    ) -> str:
+    def visit_operator_assignment_stmt(self, o: mypy.nodes.OperatorAssignmentStmt) -> str:
         return self.dump([o.op, o.lvalue, o.rvalue], o)
 
     def visit_while_stmt(self, o: mypy.nodes.WhileStmt) -> str:
@@ -558,9 +542,7 @@ class StrConv(NodeVisitor[str]):
     def visit_set_comprehension(self, o: mypy.nodes.SetComprehension) -> str:
         return self.dump([o.generator], o)
 
-    def visit_dictionary_comprehension(
-        self, o: mypy.nodes.DictionaryComprehension
-    ) -> str:
+    def visit_dictionary_comprehension(self, o: mypy.nodes.DictionaryComprehension) -> str:
         condlists = o.condlists if any(o.condlists) else None
         return self.dump([o.key, o.value, o.indices, o.sequences, condlists], o)
 
@@ -643,12 +625,7 @@ def dump_tagged(nodes: Sequence[object], tag: str | None, str_conv: StrConv) -> 
             a.append(indent(n.accept(str_conv), 2))
         elif isinstance(n, Type):
             a.append(
-                indent(
-                    n.accept(
-                        TypeStrVisitor(str_conv.id_mapper, options=str_conv.options)
-                    ),
-                    2,
-                )
+                indent(n.accept(TypeStrVisitor(str_conv.id_mapper, options=str_conv.options)), 2)
             )
         elif n is not None:
             a.append(indent(str(n), 2))

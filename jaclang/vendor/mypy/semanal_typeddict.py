@@ -62,9 +62,7 @@ class TypedDictAnalyzer:
         self.api = api
         self.msg = msg
 
-    def analyze_typeddict_classdef(
-        self, defn: ClassDef
-    ) -> tuple[bool, TypeInfo | None]:
+    def analyze_typeddict_classdef(self, defn: ClassDef) -> tuple[bool, TypeInfo | None]:
         """Analyze a class that may define a TypedDict.
 
         Assume that base classes have been analyzed already.
@@ -91,9 +89,7 @@ class TypedDictAnalyzer:
                     possible = True
                     if isinstance(base_expr.node, TypeInfo) and base_expr.node.is_final:
                         err = message_registry.CANNOT_INHERIT_FROM_FINAL
-                        self.fail(
-                            err.format(base_expr.node.name).value, defn, code=err.code
-                        )
+                        self.fail(err.format(base_expr.node.name).value, defn, code=err.code)
         if not possible:
             return False, None
         existing_info = None
@@ -105,12 +101,7 @@ class TypedDictAnalyzer:
             and defn.base_type_exprs[0].fullname in TPDICT_NAMES
         ):
             # Building a new TypedDict
-            (
-                fields,
-                types,
-                statements,
-                required_keys,
-            ) = self.analyze_typeddict_classdef_fields(defn)
+            fields, types, statements, required_keys = self.analyze_typeddict_classdef_fields(defn)
             if fields is None:
                 return True, None  # Defer
             if self.api.is_func_scope() and "@" not in defn.name:
@@ -165,12 +156,9 @@ class TypedDictAnalyzer:
         # Iterate over bases in reverse order so that leftmost base class' keys take precedence
         for base in reversed(typeddict_bases):
             self.add_keys_and_types_from_base(base, keys, types, required_keys, defn)
-        (
-            new_keys,
-            new_types,
-            new_statements,
-            new_required_keys,
-        ) = self.analyze_typeddict_classdef_fields(defn, keys)
+        (new_keys, new_types, new_statements, new_required_keys) = (
+            self.analyze_typeddict_classdef_fields(defn, keys)
+        )
         if new_keys is None:
             return True, None  # Defer
         keys.extend(new_keys)
@@ -247,16 +235,12 @@ class TypedDictAnalyzer:
 
         for arg_expr in args:
             try:
-                type = expr_to_unanalyzed_type(
-                    arg_expr, self.options, self.api.is_stub_file
-                )
+                type = expr_to_unanalyzed_type(arg_expr, self.options, self.api.is_stub_file)
             except TypeTranslationError:
                 self.fail("Invalid TypedDict type argument", ctx)
                 return None
             analyzed = self.api.anal_type(
-                type,
-                allow_required=True,
-                allow_placeholder=not self.api.is_func_scope(),
+                type, allow_required=True, allow_placeholder=not self.api.is_func_scope()
             )
             if analyzed is None:
                 return None
@@ -264,10 +248,7 @@ class TypedDictAnalyzer:
         return base_args
 
     def map_items_to_base(
-        self,
-        valid_items: dict[str, Type],
-        tvars: list[TypeVarLikeType],
-        base_args: list[Type],
+        self, valid_items: dict[str, Type], tvars: list[TypeVarLikeType], base_args: list[Type]
     ) -> dict[str, Type]:
         """Map item types to how they would look in their base with type arguments applied.
 
@@ -322,9 +303,7 @@ class TypedDictAnalyzer:
             else:
                 name = stmt.lvalues[0].name
                 if name in (oldfields or []):
-                    self.fail(
-                        f'Overwriting TypedDict field "{name}" while extending', stmt
-                    )
+                    self.fail(f'Overwriting TypedDict field "{name}" while extending', stmt)
                 if name in fields:
                     self.fail(f'Duplicate TypedDict key "{name}"', stmt)
                     continue
@@ -344,30 +323,20 @@ class TypedDictAnalyzer:
                         return None, [], [], set()  # Need to defer
                     types.append(analyzed)
                 # ...despite possible minor failures that allow further analysis.
-                if (
-                    stmt.type is None
-                    or hasattr(stmt, "new_syntax")
-                    and not stmt.new_syntax
-                ):
+                if stmt.type is None or hasattr(stmt, "new_syntax") and not stmt.new_syntax:
                     self.fail(TPDICT_CLASS_ERROR, stmt)
                 elif not isinstance(stmt.rvalue, TempNode):
                     # x: int assigns rvalue to TempNode(AnyType())
-                    self.fail(
-                        "Right hand side values are not supported in TypedDict", stmt
-                    )
+                    self.fail("Right hand side values are not supported in TypedDict", stmt)
         total: bool | None = True
         if "total" in defn.keywords:
-            total = require_bool_literal_argument(
-                self.api, defn.keywords["total"], "total", True
-            )
+            total = require_bool_literal_argument(self.api, defn.keywords["total"], "total", True)
         if defn.keywords and defn.keywords.keys() != {"total"}:
             for_function = ' for "__init_subclass__" of "TypedDict"'
             for key in defn.keywords:
                 if key == "total":
                     continue
-                self.msg.unexpected_keyword_argument_for_function(
-                    for_function, key, defn
-                )
+                self.msg.unexpected_keyword_argument_for_function(for_function, key, defn)
         required_keys = {
             field
             for (field, t) in zip(fields, types)
@@ -443,18 +412,12 @@ class TypedDictAnalyzer:
             # Perform various validations after unwrapping.
             for t in types:
                 check_for_explicit_any(
-                    t,
-                    self.options,
-                    self.api.is_typeshed_stub_file,
-                    self.msg,
-                    context=call,
+                    t, self.options, self.api.is_typeshed_stub_file, self.msg, context=call
                 )
             if self.options.disallow_any_unimported:
                 for t in types:
                     if has_any_from_unimported_type(t):
-                        self.msg.unimported_type_becomes_any(
-                            "Type of a TypedDict key", t, call
-                        )
+                        self.msg.unimported_type_becomes_any("Type of a TypedDict key", t, call)
 
             existing_info = None
             if isinstance(node.analyzed, TypedDictExpr):
@@ -491,8 +454,7 @@ class TypedDictAnalyzer:
             return self.fail_typeddict_arg("Unexpected arguments to TypedDict()", call)
         if len(args) == 3 and call.arg_names[2] != "total":
             return self.fail_typeddict_arg(
-                f'Unexpected keyword argument "{call.arg_names[2]}" for "TypedDict"',
-                call,
+                f'Unexpected keyword argument "{call.arg_names[2]}" for "TypedDict"', call
             )
         if not isinstance(args[0], StrExpr):
             return self.fail_typeddict_arg(
@@ -592,10 +554,7 @@ class TypedDictAnalyzer:
         typeddict_type = TypedDictType(dict(zip(items, types)), required_keys, fallback)
         if info.special_alias and has_placeholder(info.special_alias.target):
             self.api.process_placeholder(
-                None,
-                "TypedDict item",
-                info,
-                force_progress=typeddict_type != info.typeddict_type,
+                None, "TypedDict item", info, force_progress=typeddict_type != info.typeddict_type
             )
         info.update_typeddict_type(typeddict_type)
         return info

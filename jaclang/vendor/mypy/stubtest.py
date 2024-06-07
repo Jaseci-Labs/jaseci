@@ -121,9 +121,7 @@ class Error:
                 self.runtime_desc = _truncate(repr(runtime_object), 100)
             else:
                 runtime_is_async = inspect.iscoroutinefunction(runtime_object)
-                description = describe_runtime_callable(
-                    runtime_sig, is_async=runtime_is_async
-                )
+                description = describe_runtime_callable(runtime_sig, is_async=runtime_is_async)
                 self.runtime_desc = _truncate(description, 100)
         else:
             self.runtime_desc = runtime_desc
@@ -203,9 +201,7 @@ class Error:
 
 def silent_import_module(module_name: str) -> types.ModuleType:
     with open(os.devnull, "w") as devnull:
-        with warnings.catch_warnings(), redirect_stdout(devnull), redirect_stderr(
-            devnull
-        ):
+        with warnings.catch_warnings(), redirect_stdout(devnull), redirect_stderr(devnull):
             warnings.simplefilter("ignore")
             runtime = importlib.import_module(module_name)
             # Also run the equivalent of `from module import *`
@@ -226,15 +222,9 @@ def test_module(module_name: str) -> Iterator[Error]:
     stub = get_stub(module_name)
     if stub is None:
         if not is_probably_private(module_name.split(".")[-1]):
-            runtime_desc = (
-                repr(sys.modules[module_name]) if module_name in sys.modules else "N/A"
-            )
+            runtime_desc = repr(sys.modules[module_name]) if module_name in sys.modules else "N/A"
             yield Error(
-                [module_name],
-                "failed to find stubs",
-                MISSING,
-                None,
-                runtime_desc=runtime_desc,
+                [module_name], "failed to find stubs", MISSING, None, runtime_desc=runtime_desc
             )
         return
 
@@ -247,10 +237,7 @@ def test_module(module_name: str) -> Iterator[Error]:
         if isinstance(e, ModuleNotFoundError):
             note = " Maybe install the runtime package or alter PYTHONPATH?"
         yield Error(
-            [module_name],
-            f"failed to import.{note} {type(e).__name__}: {e}",
-            stub,
-            MISSING,
+            [module_name], f"failed to import.{note} {type(e).__name__}: {e}", stub, MISSING
         )
         return
 
@@ -317,9 +304,7 @@ def _verify_exported_names(
         # desirable in at least the `names_in_runtime_not_stub` case
         stub_object=MISSING,
         runtime_object=MISSING,
-        stub_desc=(
-            f"Names exported in the stub but not at runtime: {names_in_stub_not_runtime}"
-        ),
+        stub_desc=(f"Names exported in the stub but not at runtime: {names_in_stub_not_runtime}"),
         runtime_desc=(
             f"Names exported at runtime but not in the stub: {names_in_runtime_not_stub}"
         ),
@@ -346,9 +331,7 @@ def _module_symbol_table(runtime: types.ModuleType) -> symtable.SymbolTable | No
 
 @verify.register(nodes.MypyFile)
 def verify_mypyfile(
-    stub: nodes.MypyFile,
-    runtime: MaybeMissing[types.ModuleType],
-    object_path: list[str],
+    stub: nodes.MypyFile, runtime: MaybeMissing[types.ModuleType], object_path: list[str]
 ) -> Iterator[Error]:
     if isinstance(runtime, Missing):
         yield Error(object_path, "is not present at runtime", stub, runtime)
@@ -480,11 +463,7 @@ def _verify_final(
 
 
 def _verify_metaclass(
-    stub: nodes.TypeInfo,
-    runtime: type[Any],
-    object_path: list[str],
-    *,
-    is_runtime_typeddict: bool,
+    stub: nodes.TypeInfo, runtime: type[Any], object_path: list[str], *, is_runtime_typeddict: bool
 ) -> Iterator[Error]:
     # We exclude protocols, because of how complex their implementation is in different versions of
     # python. Enums are also hard, as are runtime TypedDicts; ignoring.
@@ -539,13 +518,7 @@ def verify_typeinfo(
         return
 
     if isinstance(runtime, Missing):
-        yield Error(
-            object_path,
-            "is not present at runtime",
-            stub,
-            runtime,
-            stub_desc=repr(stub),
-        )
+        yield Error(object_path, "is not present at runtime", stub, runtime, stub_desc=repr(stub))
         return
     if not isinstance(runtime, type):
         yield Error(object_path, "is not a type", stub, runtime, stub_desc=repr(stub))
@@ -565,9 +538,7 @@ def verify_typeinfo(
     to_check = {name for name in stub.names if name.isidentifier()}
     # Check all public things on the runtime class
     to_check.update(
-        m
-        for m in vars(runtime)
-        if not is_probably_private(m) and m not in IGNORABLE_CLASS_DUNDERS
+        m for m in vars(runtime) if not is_probably_private(m) and m not in IGNORABLE_CLASS_DUNDERS
     )
     # Special-case the __init__ method for Protocols and the __new__ method for TypedDicts
     #
@@ -584,9 +555,7 @@ def verify_typeinfo(
         mangled_entry = entry
         if entry.startswith("__") and not entry.endswith("__"):
             mangled_entry = f"_{stub.name.lstrip('_')}{entry}"
-        stub_to_verify = next(
-            (t.names[entry].node for t in stub.mro if entry in t.names), MISSING
-        )
+        stub_to_verify = next((t.names[entry].node for t in stub.mro if entry in t.names), MISSING)
         assert stub_to_verify is not None
         try:
             try:
@@ -623,10 +592,7 @@ def _static_lookup_runtime(object_path: list[str]) -> MaybeMissing[Any]:
 
 
 def _verify_static_class_methods(
-    stub: nodes.FuncBase,
-    runtime: Any,
-    static_runtime: MaybeMissing[Any],
-    object_path: list[str],
+    stub: nodes.FuncBase, runtime: Any, static_runtime: MaybeMissing[Any], object_path: list[str]
 ) -> Iterator[str]:
     if stub.name in ("__new__", "__init_subclass__", "__class_getitem__"):
         # Special cased by Python, so don't bother checking
@@ -730,8 +696,7 @@ def _verify_arg_default_value(
                         stub_default != runtime_arg.default
                         # We want the types to match exactly, e.g. in case the stub has
                         # True and the runtime has 1 (or vice versa).
-                        or type(stub_default)
-                        is not type(runtime_arg.default)  # noqa: E721
+                        or type(stub_default) is not type(runtime_arg.default)  # noqa: E721
                     )
                 ):
                     yield (
@@ -793,17 +758,11 @@ class Signature(Generic[T]):
                 + (" = ..." if has_default(arg) else "")
             )
 
-        kw_only = sorted(
-            self.kwonly.values(), key=lambda a: (has_default(a), get_name(a))
-        )
+        kw_only = sorted(self.kwonly.values(), key=lambda a: (has_default(a), get_name(a)))
         ret = "def ("
         ret += ", ".join(
             [get_desc(arg) for arg in self.pos]
-            + (
-                ["*" + get_name(self.varpos)]
-                if self.varpos
-                else (["*"] if self.kwonly else [])
-            )
+            + (["*" + get_name(self.varpos)] if self.varpos else (["*"] if self.kwonly else []))
             + [get_desc(arg) for arg in kw_only]
             + (["**" + get_name(self.varkw)] if self.varkw else [])
         )
@@ -828,9 +787,7 @@ class Signature(Generic[T]):
         return stub_sig
 
     @staticmethod
-    def from_inspect_signature(
-        signature: inspect.Signature,
-    ) -> Signature[inspect.Parameter]:
+    def from_inspect_signature(signature: inspect.Signature) -> Signature[inspect.Parameter]:
         runtime_sig: Signature[inspect.Parameter] = Signature()
         for runtime_arg in signature.parameters.values():
             if runtime_arg.kind in (
@@ -849,9 +806,7 @@ class Signature(Generic[T]):
         return runtime_sig
 
     @staticmethod
-    def from_overloadedfuncdef(
-        stub: nodes.OverloadedFuncDef,
-    ) -> Signature[nodes.Argument]:
+    def from_overloadedfuncdef(stub: nodes.OverloadedFuncDef) -> Signature[nodes.Argument]:
         """Returns a Signature from an OverloadedFuncDef.
 
         If life were simple, to verify_overloadedfuncdef, we'd just verify_funcitem for each of its
@@ -887,8 +842,7 @@ class Signature(Generic[T]):
         def get_type(arg_name: str) -> mypy.types.ProperType:
             with mypy.state.state.strict_optional_set(True):
                 all_types = [
-                    arg.variable.type or arg.type_annotation
-                    for arg, _ in all_args[arg_name]
+                    arg.variable.type or arg.type_annotation for arg, _ in all_args[arg_name]
                 ]
                 return mypy.typeops.make_simplified_union([t for t in all_types if t])
 
@@ -936,9 +890,7 @@ class Signature(Generic[T]):
 
 
 def _verify_signature(
-    stub: Signature[nodes.Argument],
-    runtime: Signature[inspect.Parameter],
-    function_name: str,
+    stub: Signature[nodes.Argument], runtime: Signature[inspect.Parameter], function_name: str
 ) -> Iterator[str]:
     # Check positional arguments match up
     for stub_arg, runtime_arg in zip(stub.pos, runtime.pos):
@@ -949,9 +901,7 @@ def _verify_signature(
             and not stub_arg.pos_only
             and not stub_arg.variable.name.startswith("__")
             and stub_arg.variable.name.strip("_") != "self"
-            and not is_dunder(
-                function_name, exclude_special=True
-            )  # noisy for dunder methods
+            and not is_dunder(function_name, exclude_special=True)  # noisy for dunder methods
         ):
             yield (
                 f'stub argument "{stub_arg.variable.name}" should be positional-only '
@@ -961,9 +911,7 @@ def _verify_signature(
             runtime_arg.kind != inspect.Parameter.POSITIONAL_ONLY
             and (stub_arg.pos_only or stub_arg.variable.name.startswith("__"))
             and stub_arg.variable.name.strip("_") != "self"
-            and not is_dunder(
-                function_name, exclude_special=True
-            )  # noisy for dunder methods
+            and not is_dunder(function_name, exclude_special=True)  # noisy for dunder methods
         ):
             yield (
                 f'stub argument "{stub_arg.variable.name}" should be positional or keyword '
@@ -992,7 +940,8 @@ def _verify_signature(
     elif len(stub.pos) < len(runtime.pos):
         for runtime_arg in runtime.pos[len(stub.pos) :]:
             if runtime_arg.name not in stub.kwonly:
-                yield f'stub does not have argument "{runtime_arg.name}"'
+                if not _is_private_parameter(runtime_arg):
+                    yield f'stub does not have argument "{runtime_arg.name}"'
             else:
                 yield f'runtime argument "{runtime_arg.name}" is not keyword-only'
 
@@ -1019,9 +968,7 @@ def _verify_signature(
         for arg in sorted(set(stub.kwonly) - set(runtime.kwonly)):
             if arg in {runtime_arg.name for runtime_arg in runtime.pos}:
                 # Don't report this if we've reported it before
-                if arg not in {
-                    runtime_arg.name for runtime_arg in runtime.pos[len(stub.pos) :]
-                }:
+                if arg not in {runtime_arg.name for runtime_arg in runtime.pos[len(stub.pos) :]}:
                     yield f'runtime argument "{arg}" is not keyword-only'
             else:
                 yield f'runtime does not have argument "{arg}"'
@@ -1030,12 +977,12 @@ def _verify_signature(
             # Don't report this if we've reported it before
             if not (
                 runtime.varpos is None
-                and arg
-                in {stub_arg.variable.name for stub_arg in stub.pos[len(runtime.pos) :]}
+                and arg in {stub_arg.variable.name for stub_arg in stub.pos[len(runtime.pos) :]}
             ):
                 yield f'stub argument "{arg}" is not keyword-only'
         else:
-            yield f'stub does not have argument "{arg}"'
+            if not _is_private_parameter(runtime.kwonly[arg]):
+                yield f'stub does not have argument "{arg}"'
 
     # Checks involving **kwargs
     if stub.varkw is None and runtime.varkw is not None:
@@ -1048,6 +995,14 @@ def _verify_signature(
             yield f'stub does not have **kwargs argument "{runtime.varkw.name}"'
     if stub.varkw is not None and runtime.varkw is None:
         yield f'runtime does not have **kwargs argument "{stub.varkw.variable.name}"'
+
+
+def _is_private_parameter(arg: inspect.Parameter) -> bool:
+    return (
+        arg.name.startswith("_")
+        and not arg.name.startswith("__")
+        and arg.default is not inspect.Parameter.empty
+    )
 
 
 @verify.register(nodes.FuncItem)
@@ -1072,9 +1027,7 @@ def verify_funcitem(
         for error_text in _verify_final_method(stub, runtime, static_runtime):
             yield Error(object_path, error_text, stub, runtime)
 
-    for message in _verify_static_class_methods(
-        stub, runtime, static_runtime, object_path
-    ):
+    for message in _verify_static_class_methods(stub, runtime, static_runtime, object_path):
         yield Error(object_path, "is inconsistent, " + message, stub, runtime)
 
     signature = safe_inspect_signature(runtime)
@@ -1083,9 +1036,7 @@ def verify_funcitem(
     if signature:
         stub_sig = Signature.from_funcitem(stub)
         runtime_sig = Signature.from_inspect_signature(signature)
-        runtime_sig_desc = describe_runtime_callable(
-            signature, is_async=runtime_is_coroutine
-        )
+        runtime_sig_desc = describe_runtime_callable(signature, is_async=runtime_is_coroutine)
         stub_desc = str(stub_sig)
     else:
         runtime_sig_desc, stub_desc = None, None
@@ -1138,9 +1089,7 @@ def verify_var(
         and is_read_only_property(runtime)
         and (stub.is_settable_property or not stub.is_property)
     ):
-        yield Error(
-            object_path, "is read-only at runtime but not in the stub", stub, runtime
-        )
+        yield Error(object_path, "is read-only at runtime but not in the stub", stub, runtime)
 
     runtime_type = get_mypy_type_of_runtime_value(runtime)
     if (
@@ -1165,10 +1114,7 @@ def verify_var(
 
         if should_error:
             yield Error(
-                object_path,
-                f"variable differs from runtime type {runtime_type}",
-                stub,
-                runtime,
+                object_path, f"variable differs from runtime type {runtime_type}", stub, runtime
             )
 
 
@@ -1184,12 +1130,7 @@ def verify_overloadedfuncdef(
     if stub.is_property:
         # Any property with a setter is represented as an OverloadedFuncDef
         if is_read_only_property(runtime):
-            yield Error(
-                object_path,
-                "is read-only at runtime but not in the stub",
-                stub,
-                runtime,
-            )
+            yield Error(object_path, "is read-only at runtime but not in the stub", stub, runtime)
         return
 
     if not is_probably_a_function(runtime):
@@ -1211,9 +1152,7 @@ def verify_overloadedfuncdef(
     # Look the object up statically, to avoid binding by the descriptor protocol
     static_runtime = _static_lookup_runtime(object_path)
 
-    for message in _verify_static_class_methods(
-        stub, runtime, static_runtime, object_path
-    ):
+    for message in _verify_static_class_methods(stub, runtime, static_runtime, object_path):
         yield Error(object_path, "is inconsistent, " + message, stub, runtime)
 
     # TODO: Should call _verify_final_method here,
@@ -1288,9 +1227,7 @@ def _verify_readonly_property(stub: nodes.Decorator, runtime: Any) -> Iterator[s
     # are read only. So allowlist if runtime_type matches the return type of stub.
     runtime_type = get_mypy_type_of_runtime_value(runtime)
     func_type = (
-        stub.func.type.ret_type
-        if isinstance(stub.func.type, mypy.types.CallableType)
-        else None
+        stub.func.type.ret_type if isinstance(stub.func.type, mypy.types.CallableType) else None
     )
     if (
         runtime_type is not None
@@ -1415,9 +1352,7 @@ def verify_typealias(
     stub_target = mypy.types.get_proper_type(stub.target)
     stub_desc = f"Type alias for {stub_target}"
     if isinstance(runtime, Missing):
-        yield Error(
-            object_path, "is not present at runtime", stub, runtime, stub_desc=stub_desc
-        )
+        yield Error(object_path, "is not present at runtime", stub, runtime, stub_desc=stub_desc)
         return
     runtime_origin = get_origin(runtime) or runtime
     if isinstance(stub_target, mypy.types.Instance):
@@ -1446,9 +1381,7 @@ def verify_typealias(
                 ):
                     runtime_module = "typing"
                 runtime_fullname = f"{runtime_module}.{runtime_name}"
-                if re.fullmatch(
-                    rf"_?{re.escape(stub_origin.fullname)}", runtime_fullname
-                ):
+                if re.fullmatch(rf"_?{re.escape(stub_origin.fullname)}", runtime_fullname):
                     # Okay, we're probably fine.
                     return
 
@@ -1462,42 +1395,26 @@ def verify_typealias(
         if runtime_origin is not Union and (
             not (sys.version_info >= (3, 10) and isinstance(runtime, types.UnionType))
         ):
-            yield Error(
-                object_path, "is not a Union", stub, runtime, stub_desc=str(stub_target)
-            )
+            yield Error(object_path, "is not a Union", stub, runtime, stub_desc=str(stub_target))
         # could check Union contents here...
         return
     if isinstance(stub_target, mypy.types.TupleType):
         if tuple not in getattr(runtime_origin, "__mro__", ()):
             yield Error(
-                object_path,
-                "is not a subclass of tuple",
-                stub,
-                runtime,
-                stub_desc=stub_desc,
+                object_path, "is not a subclass of tuple", stub, runtime, stub_desc=stub_desc
             )
         # could check Tuple contents here...
         return
     if isinstance(stub_target, mypy.types.CallableType):
         if runtime_origin is not collections.abc.Callable:
             yield Error(
-                object_path,
-                "is not a type alias for Callable",
-                stub,
-                runtime,
-                stub_desc=stub_desc,
+                object_path, "is not a type alias for Callable", stub, runtime, stub_desc=stub_desc
             )
         # could check Callable contents here...
         return
     if isinstance(stub_target, mypy.types.AnyType):
         return
-    yield Error(
-        object_path,
-        "is not a recognised type alias",
-        stub,
-        runtime,
-        stub_desc=stub_desc,
-    )
+    yield Error(object_path, "is not a recognised type alias", stub, runtime, stub_desc=stub_desc)
 
 
 # ====================
@@ -1569,6 +1486,7 @@ IGNORABLE_CLASS_DUNDERS: typing_extensions.Final = frozenset(
         # Added to all protocol classes on 3.12+ (or if using typing_extensions.Protocol)
         "__protocol_attrs__",
         "__callable_proto_members_only__",
+        "__non_callable_proto_members__",
         # typing implementation details, consider removing some of these:
         "__parameters__",
         "__origin__",
@@ -1674,12 +1592,7 @@ def get_mypy_type_of_runtime_value(runtime: Any) -> mypy.types.Type | None:
 
     if isinstance(
         runtime,
-        (
-            types.FunctionType,
-            types.BuiltinFunctionType,
-            types.MethodType,
-            types.BuiltinMethodType,
-        ),
+        (types.FunctionType, types.BuiltinFunctionType, types.MethodType, types.BuiltinMethodType),
     ):
         builtins = get_stub("builtins")
         assert builtins is not None
@@ -1702,9 +1615,7 @@ def get_mypy_type_of_runtime_value(runtime: Any) -> mypy.types.Type | None:
                 elif arg.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
                     arg_kinds.append(nodes.ARG_POS if has_default else nodes.ARG_OPT)
                 elif arg.kind == inspect.Parameter.KEYWORD_ONLY:
-                    arg_kinds.append(
-                        nodes.ARG_NAMED if has_default else nodes.ARG_NAMED_OPT
-                    )
+                    arg_kinds.append(nodes.ARG_NAMED if has_default else nodes.ARG_NAMED_OPT)
                 elif arg.kind == inspect.Parameter.VAR_POSITIONAL:
                     arg_kinds.append(nodes.ARG_STAR)
                 elif arg.kind == inspect.Parameter.VAR_KEYWORD:
@@ -1768,9 +1679,7 @@ def get_mypy_type_of_runtime_value(runtime: Any) -> mypy.types.Type | None:
 _all_stubs: dict[str, nodes.MypyFile] = {}
 
 
-def build_stubs(
-    modules: list[str], options: Options, find_submodules: bool = False
-) -> list[str]:
+def build_stubs(modules: list[str], options: Options, find_submodules: bool = False) -> list[str]:
     """Uses mypy to construct stub objects for the given modules.
 
     This sets global state that ``get_stub`` can access.
@@ -1803,17 +1712,13 @@ def build_stubs(
             found_sources = find_module_cache.find_modules_recursive(module)
             sources.extend(found_sources)
             # find submodules via mypy
-            all_modules.extend(
-                s.module for s in found_sources if s.module not in all_modules
-            )
+            all_modules.extend(s.module for s in found_sources if s.module not in all_modules)
             # find submodules via pkgutil
             try:
                 runtime = silent_import_module(module)
                 all_modules.extend(
                     m.name
-                    for m in pkgutil.walk_packages(
-                        runtime.__path__, runtime.__name__ + "."
-                    )
+                    for m in pkgutil.walk_packages(runtime.__path__, runtime.__name__ + ".")
                     if m.name not in all_modules
                 )
             except KeyboardInterrupt:
@@ -1855,9 +1760,7 @@ def get_typeshed_stdlib_modules(
             current_module = ".".join(parts[:i])
             if current_module in stdlib_py_versions:
                 minver, maxver = stdlib_py_versions[current_module]
-                return version_info >= minver and (
-                    maxver is None or version_info <= maxver
-                )
+                return version_info >= minver and (maxver is None or version_info <= maxver)
         return False
 
     if custom_typeshed_dir:
@@ -1883,9 +1786,7 @@ def get_importable_stdlib_modules() -> set[str]:
         all_stdlib_modules = sys.stdlib_module_names
     else:
         all_stdlib_modules = set(sys.builtin_module_names)
-        modules_by_finder: defaultdict[importlib.machinery.FileFinder, set[str]] = (
-            defaultdict(set)
-        )
+        modules_by_finder: defaultdict[importlib.machinery.FileFinder, set[str]] = defaultdict(set)
         for m in pkgutil.iter_modules():
             if isinstance(m.module_finder, importlib.machinery.FileFinder):
                 modules_by_finder[m.module_finder].add(m.name)
@@ -1977,16 +1878,14 @@ class _Arguments:
     allowlist: list[str]
     generate_allowlist: bool
     ignore_unused_allowlist: bool
-    mypy_config_file: str
-    custom_typeshed_dir: str
+    mypy_config_file: str | None
+    custom_typeshed_dir: str | None
     check_typeshed: bool
     version: str
 
 
 # typeshed added a stub for __main__, but that causes stubtest to check itself
-ANNOYING_STDLIB_MODULES: typing_extensions.Final = frozenset(
-    {"antigravity", "this", "__main__"}
-)
+ANNOYING_STDLIB_MODULES: typing_extensions.Final = frozenset({"antigravity", "this", "__main__"})
 
 
 def test_stubs(args: _Arguments, use_builtins_fixtures: bool = False) -> int:
@@ -2023,7 +1922,7 @@ def test_stubs(args: _Arguments, use_builtins_fixtures: bool = False) -> int:
     options.incremental = False
     options.custom_typeshed_dir = args.custom_typeshed_dir
     if options.custom_typeshed_dir:
-        options.abs_custom_typeshed_dir = os.path.abspath(args.custom_typeshed_dir)
+        options.abs_custom_typeshed_dir = os.path.abspath(options.custom_typeshed_dir)
     options.config_file = args.mypy_config_file
     options.use_builtins_fixtures = use_builtins_fixtures
 
@@ -2032,9 +1931,7 @@ def test_stubs(args: _Arguments, use_builtins_fixtures: bool = False) -> int:
         def set_strict_flags() -> None:  # not needed yet
             return
 
-        parse_config_file(
-            options, set_strict_flags, options.config_file, sys.stdout, sys.stderr
-        )
+        parse_config_file(options, set_strict_flags, options.config_file, sys.stdout, sys.stderr)
 
     try:
         modules = build_stubs(modules, options, find_submodules=not args.check_typeshed)
@@ -2164,9 +2061,7 @@ def parse_options(args: list[str]) -> _Arguments:
         "--custom-typeshed-dir", metavar="DIR", help="Use the custom typeshed in DIR"
     )
     parser.add_argument(
-        "--check-typeshed",
-        action="store_true",
-        help="Check all stdlib modules in typeshed",
+        "--check-typeshed", action="store_true", help="Check all stdlib modules in typeshed"
     )
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + mypy.version.__version__

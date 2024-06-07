@@ -67,12 +67,7 @@ class DOMEventStream:
     stream: SupportsRead[bytes] | SupportsRead[str]
     parser: XMLReader
     bufsize: int
-    def __init__(
-        self,
-        stream: SupportsRead[bytes] | SupportsRead[str],
-        parser: XMLReader,
-        bufsize: int,
-    ) -> None: ...
+    def __init__(self, stream: SupportsRead[bytes] | SupportsRead[str], parser: XMLReader, bufsize: int) -> None: ...
     pulldom: Incomplete
     if sys.version_info < (3, 11):
         def __getitem__(self, pos): ...
@@ -94,8 +89,6 @@ class SAX2DOM(PullDOM):
 default_bufsize: int
 
 def parse(
-    stream_or_string: str | SupportsRead[bytes] | SupportsRead[str],
-    parser: XMLReader | None = None,
-    bufsize: int | None = None,
+    stream_or_string: str | SupportsRead[bytes] | SupportsRead[str], parser: XMLReader | None = None, bufsize: int | None = None
 ) -> DOMEventStream: ...
 def parseString(string: str, parser: XMLReader | None = None) -> DOMEventStream: ...

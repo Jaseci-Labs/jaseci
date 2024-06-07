@@ -6,6 +6,10 @@ PyCF_ONLY_AST: Literal[1024]
 PyCF_TYPE_COMMENTS: Literal[4096]
 PyCF_ALLOW_TOP_LEVEL_AWAIT: Literal[8192]
 
+# Alias used for fields that must always be valid identifiers
+# A string `x` counts as a valid identifier if both the following are True
+# (1) `x.isidentifier()` evaluates to `True`
+# (2) `keyword.iskeyword(x)` evaluates to `False`
 _Identifier: typing_extensions.TypeAlias = str
 
 class AST:
@@ -55,24 +59,9 @@ class stmt(AST): ...
 
 class FunctionDef(stmt):
     if sys.version_info >= (3, 12):
-        __match_args__ = (
-            "name",
-            "args",
-            "body",
-            "decorator_list",
-            "returns",
-            "type_comment",
-            "type_params",
-        )
+        __match_args__ = ("name", "args", "body", "decorator_list", "returns", "type_comment", "type_params")
     elif sys.version_info >= (3, 10):
-        __match_args__ = (
-            "name",
-            "args",
-            "body",
-            "decorator_list",
-            "returns",
-            "type_comment",
-        )
+        __match_args__ = ("name", "args", "body", "decorator_list", "returns", "type_comment")
     name: _Identifier
     args: arguments
     body: list[stmt]
@@ -83,24 +72,9 @@ class FunctionDef(stmt):
 
 class AsyncFunctionDef(stmt):
     if sys.version_info >= (3, 12):
-        __match_args__ = (
-            "name",
-            "args",
-            "body",
-            "decorator_list",
-            "returns",
-            "type_comment",
-            "type_params",
-        )
+        __match_args__ = ("name", "args", "body", "decorator_list", "returns", "type_comment", "type_params")
     elif sys.version_info >= (3, 10):
-        __match_args__ = (
-            "name",
-            "args",
-            "body",
-            "decorator_list",
-            "returns",
-            "type_comment",
-        )
+        __match_args__ = ("name", "args", "body", "decorator_list", "returns", "type_comment")
     name: _Identifier
     args: arguments
     body: list[stmt]
@@ -111,14 +85,7 @@ class AsyncFunctionDef(stmt):
 
 class ClassDef(stmt):
     if sys.version_info >= (3, 12):
-        __match_args__ = (
-            "name",
-            "bases",
-            "keywords",
-            "body",
-            "decorator_list",
-            "type_params",
-        )
+        __match_args__ = ("name", "bases", "keywords", "body", "decorator_list", "type_params")
     elif sys.version_info >= (3, 10):
         __match_args__ = ("name", "bases", "keywords", "body", "decorator_list")
     name: _Identifier
@@ -512,15 +479,7 @@ class ExceptHandler(excepthandler):
 
 class arguments(AST):
     if sys.version_info >= (3, 10):
-        __match_args__ = (
-            "posonlyargs",
-            "args",
-            "vararg",
-            "kwonlyargs",
-            "kw_defaults",
-            "kwarg",
-            "defaults",
-        )
+        __match_args__ = ("posonlyargs", "args", "vararg", "kwonlyargs", "kw_defaults", "kwarg", "defaults")
     posonlyargs: list[arg]
     args: list[arg]
     vararg: arg | None
@@ -544,7 +503,7 @@ class keyword(AST):
 class alias(AST):
     if sys.version_info >= (3, 10):
         __match_args__ = ("name", "asname")
-    name: _Identifier
+    name: str
     asname: _Identifier | None
 
 class withitem(AST):

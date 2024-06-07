@@ -62,16 +62,12 @@ def is_invalid_recursive_alias(seen_nodes: set[TypeAlias], target: Type) -> bool
         if target.alias in seen_nodes:
             return True
         assert target.alias, f"Unfixed type alias {target.type_ref}"
-        return is_invalid_recursive_alias(
-            seen_nodes | {target.alias}, get_proper_type(target)
-        )
+        return is_invalid_recursive_alias(seen_nodes | {target.alias}, get_proper_type(target))
     assert isinstance(target, ProperType)
     if not isinstance(target, (UnionType, TupleType)):
         return False
     if isinstance(target, UnionType):
-        return any(
-            is_invalid_recursive_alias(seen_nodes, item) for item in target.items
-        )
+        return any(is_invalid_recursive_alias(seen_nodes, item) for item in target.items)
     for item in target.items:
         if isinstance(item, UnpackType):
             if is_invalid_recursive_alias(seen_nodes, item.type):
@@ -91,8 +87,7 @@ def is_bad_type_type_item(item: Type) -> bool:
         return True
     if isinstance(item, UnionType):
         return any(
-            isinstance(get_proper_type(i), TypeType)
-            for i in flatten_nested_unions(item.items)
+            isinstance(get_proper_type(i), TypeType) for i in flatten_nested_unions(item.items)
         )
     return False
 
@@ -115,8 +110,7 @@ def is_generic_instance(tp: Type) -> bool:
 def is_overlapping_none(t: Type) -> bool:
     t = get_proper_type(t)
     return isinstance(t, NoneType) or (
-        isinstance(t, UnionType)
-        and any(isinstance(get_proper_type(e), NoneType) for e in t.items)
+        isinstance(t, UnionType) and any(isinstance(get_proper_type(e), NoneType) for e in t.items)
     )
 
 
@@ -141,10 +135,7 @@ def is_self_type_like(typ: Type, *, is_classmethod: bool) -> bool:
 
 
 def store_argument_type(
-    defn: FuncItem,
-    i: int,
-    typ: CallableType,
-    named_type: Callable[[str, list[Type]], Instance],
+    defn: FuncItem, i: int, typ: CallableType, named_type: Callable[[str, list[Type]], Instance]
 ) -> None:
     arg_type = typ.arg_types[i]
     if typ.arg_kinds[i] == ARG_STAR:
@@ -164,16 +155,12 @@ def store_argument_type(
                 # TODO: verify that we can only have a TypeVarTuple here.
                 arg_type = TupleType(
                     [arg_type],
-                    fallback=named_type(
-                        "builtins.tuple", [named_type("builtins.object", [])]
-                    ),
+                    fallback=named_type("builtins.tuple", [named_type("builtins.object", [])]),
                 )
         else:
             # builtins.tuple[T] is typing.Tuple[T, ...]
             arg_type = named_type("builtins.tuple", [arg_type])
     elif typ.arg_kinds[i] == ARG_STAR2:
         if not isinstance(arg_type, ParamSpecType) and not typ.unpack_kwargs:
-            arg_type = named_type(
-                "builtins.dict", [named_type("builtins.str", []), arg_type]
-            )
+            arg_type = named_type("builtins.dict", [named_type("builtins.str", []), arg_type])
     defn.arguments[i].variable.type = arg_type

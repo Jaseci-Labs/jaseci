@@ -35,9 +35,7 @@ def virtualenv(python_executable: str = sys.executable) -> Iterator[tuple[str, s
     """
     with tempfile.TemporaryDirectory() as venv_dir:
         proc = subprocess.run(
-            [python_executable, "-m", "venv", venv_dir],
-            cwd=os.getcwd(),
-            capture_output=True,
+            [python_executable, "-m", "venv", venv_dir], cwd=os.getcwd(), capture_output=True
         )
         if proc.returncode != 0:
             err = proc.stdout.decode("utf-8") + proc.stderr.decode("utf-8")
@@ -88,9 +86,7 @@ def install_package(
         env.update(os.environ)
         try:
             with filelock.FileLock(pip_lock, timeout=pip_timeout):
-                proc = subprocess.run(
-                    install_cmd, cwd=working_dir, capture_output=True, env=env
-                )
+                proc = subprocess.run(install_cmd, cwd=working_dir, capture_output=True, env=env)
         except filelock.Timeout as err:
             raise Exception(f"Failed to acquire {pip_lock}") from err
     if proc.returncode != 0:
@@ -170,10 +166,7 @@ def parse_pkgs(comment: str) -> tuple[list[str], list[str]]:
         return ([], [])
     else:
         pkgs_str, *args = comment[7:].split(";")
-        return (
-            [pkg.strip() for pkg in pkgs_str.split(",")],
-            [arg.strip() for arg in args],
-        )
+        return ([pkg.strip() for pkg in pkgs_str.split(",")], [arg.strip() for arg in args])
 
 
 def parse_mypy_args(line: str) -> list[str]:
@@ -210,9 +203,7 @@ def test_mypy_path_is_respected() -> None:
                 cmd_line_args = []
                 if python_executable != sys.executable:
                     cmd_line_args.append(f"--python-executable={python_executable}")
-                cmd_line_args.extend(
-                    ["--config-file", mypy_config_path, "--package", pkg_name]
-                )
+                cmd_line_args.extend(["--config-file", mypy_config_path, "--package", pkg_name])
 
                 out, err, returncode = mypy.api.run(cmd_line_args)
                 assert returncode == 0

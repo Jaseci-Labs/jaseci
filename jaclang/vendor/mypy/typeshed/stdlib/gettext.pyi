@@ -24,13 +24,7 @@ __all__ = [
 ]
 
 if sys.version_info < (3, 11):
-    __all__ += [
-        "bind_textdomain_codeset",
-        "ldgettext",
-        "ldngettext",
-        "lgettext",
-        "lngettext",
-    ]
+    __all__ += ["bind_textdomain_codeset", "ldgettext", "ldngettext", "lgettext", "lngettext"]
 
 class _TranslationsReader(Protocol):
     def read(self) -> bytes: ...
@@ -63,33 +57,16 @@ class GNUTranslations(NullTranslations):
 
 @overload
 def find(
-    domain: str,
-    localedir: StrPath | None = None,
-    languages: Iterable[str] | None = None,
-    all: Literal[False] = False,
+    domain: str, localedir: StrPath | None = None, languages: Iterable[str] | None = None, all: Literal[False] = False
 ) -> str | None: ...
 @overload
 def find(
-    domain: str,
-    localedir: StrPath | None = None,
-    languages: Iterable[str] | None = None,
-    *,
-    all: Literal[True],
+    domain: str, localedir: StrPath | None = None, languages: Iterable[str] | None = None, *, all: Literal[True]
 ) -> list[str]: ...
 @overload
-def find(
-    domain: str,
-    localedir: StrPath | None,
-    languages: Iterable[str] | None,
-    all: Literal[True],
-) -> list[str]: ...
+def find(domain: str, localedir: StrPath | None, languages: Iterable[str] | None, all: Literal[True]) -> list[str]: ...
 @overload
-def find(
-    domain: str,
-    localedir: StrPath | None = None,
-    languages: Iterable[str] | None = None,
-    all: bool = False,
-) -> Any: ...
+def find(domain: str, localedir: StrPath | None = None, languages: Iterable[str] | None = None, all: bool = False) -> Any: ...
 
 _NullTranslationsT = TypeVar("_NullTranslationsT", bound=NullTranslations)
 
@@ -127,12 +104,7 @@ if sys.version_info >= (3, 11):
         class_: Callable[[io.BufferedReader], NullTranslations] | None = None,
         fallback: bool = False,
     ) -> NullTranslations: ...
-    def install(
-        domain: str,
-        localedir: StrPath | None = None,
-        *,
-        names: Container[str] | None = None,
-    ) -> None: ...
+    def install(domain: str, localedir: StrPath | None = None, *, names: Container[str] | None = None) -> None: ...
 
 else:
     @overload
@@ -173,10 +145,7 @@ else:
         codeset: str | None = None,
     ) -> NullTranslations: ...
     def install(
-        domain: str,
-        localedir: StrPath | None = None,
-        codeset: str | None = None,
-        names: Container[str] | None = None,
+        domain: str, localedir: StrPath | None = None, codeset: str | None = None, names: Container[str] | None = None
     ) -> None: ...
 
 def textdomain(domain: str | None = None) -> str: ...

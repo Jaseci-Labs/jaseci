@@ -43,9 +43,7 @@ def setup_env_class(builder: IRBuilder) -> ClassIR:
     containing a nested function.
     """
     env_class = ClassIR(
-        f"{builder.fn_info.namespaced_name()}_env",
-        builder.module_name,
-        is_generated=True,
+        f"{builder.fn_info.namespaced_name()}_env", builder.module_name, is_generated=True
     )
     env_class.attributes[SELF_NAME] = RInstance(env_class)
     if builder.fn_info.is_nested:
@@ -190,14 +188,10 @@ def add_args_to_env(
             if is_free_variable(builder, arg.variable) or fn_info.is_generator:
                 rtype = builder.type_to_rtype(arg.variable.type)
                 assert base is not None, "base cannot be None for adding nonlocal args"
-                builder.add_var_to_env_class(
-                    arg.variable, rtype, base, reassign=reassign
-                )
+                builder.add_var_to_env_class(arg.variable, rtype, base, reassign=reassign)
 
 
-def setup_func_for_recursive_call(
-    builder: IRBuilder, fdef: FuncDef, base: ImplicitClass
-) -> None:
+def setup_func_for_recursive_call(builder: IRBuilder, fdef: FuncDef, base: ImplicitClass) -> None:
     """Enable calling a nested function (with a callable class) recursively.
 
     Adds the instance of the callable class representing the given

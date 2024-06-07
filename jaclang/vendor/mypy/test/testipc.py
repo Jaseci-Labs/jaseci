@@ -63,9 +63,7 @@ class IPCTests(TestCase):
         connection_name = queue.get()
         with IPCClient(connection_name, timeout=1) as client:
             assert client.read() == msg
-            client.write(
-                ""
-            )  # don't let the server hang up yet, we want to connect again.
+            client.write("")  # don't let the server hang up yet, we want to connect again.
 
         with IPCClient(connection_name, timeout=1) as client:
             assert client.read() == msg
@@ -77,9 +75,7 @@ class IPCTests(TestCase):
 
     def test_multiple_messages(self) -> None:
         queue: Queue[str] = self.ctx.Queue()
-        p = self.ctx.Process(
-            target=server_multi_message_echo, args=(queue,), daemon=True
-        )
+        p = self.ctx.Process(target=server_multi_message_echo, args=(queue,), daemon=True)
         p.start()
         connection_name = queue.get()
         with IPCClient(connection_name, timeout=1) as client:
@@ -91,9 +87,7 @@ class IPCTests(TestCase):
 
             client.write("Test with spaces")
             client.write("Test write before reading previous")
-            time.sleep(
-                0
-            )  # yield to the server to force reading of all messages by server.
+            time.sleep(0)  # yield to the server to force reading of all messages by server.
             assert client.read() == "Test with spaces"
             assert client.read() == "Test write before reading previous"
 

@@ -87,9 +87,7 @@ class FilesystemMetadataStore(MetadataStore):
         return int(os.path.getmtime(os.path.join(self.cache_dir_prefix, name)))
 
     def read(self, name: str) -> str:
-        assert os.path.normpath(name) != os.path.abspath(
-            name
-        ), "Don't use absolute paths!"
+        assert os.path.normpath(name) != os.path.abspath(name), "Don't use absolute paths!"
 
         if not self.cache_dir_prefix:
             raise FileNotFoundError()
@@ -98,9 +96,7 @@ class FilesystemMetadataStore(MetadataStore):
             return f.read()
 
     def write(self, name: str, data: str, mtime: float | None = None) -> bool:
-        assert os.path.normpath(name) != os.path.abspath(
-            name
-        ), "Don't use absolute paths!"
+        assert os.path.normpath(name) != os.path.abspath(name), "Don't use absolute paths!"
 
         if not self.cache_dir_prefix:
             return False

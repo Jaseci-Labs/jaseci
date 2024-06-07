@@ -34,10 +34,7 @@ raise_exception_with_tb_op = custom_op(
 
 # Reraise the currently raised exception.
 reraise_exception_op = custom_op(
-    arg_types=[],
-    return_type=void_rtype,
-    c_function_name="CPy_Reraise",
-    error_kind=ERR_ALWAYS,
+    arg_types=[], return_type=void_rtype, c_function_name="CPy_Reraise", error_kind=ERR_ALWAYS
 )
 
 # Propagate exception if the CPython error indicator is set (an exception was raised).
@@ -70,10 +67,7 @@ keep_propagating_op = custom_op(
 # exception that was previously being handled, which must be restored
 # later.
 error_catch_op = custom_op(
-    arg_types=[],
-    return_type=exc_rtuple,
-    c_function_name="CPy_CatchError",
-    error_kind=ERR_NEVER,
+    arg_types=[], return_type=exc_rtuple, c_function_name="CPy_CatchError", error_kind=ERR_NEVER
 )
 
 # Restore an old "currently handled exception" returned from.
@@ -103,8 +97,5 @@ get_exc_value_op = custom_op(
 
 # Get exception info (exception type, exception instance, traceback object).
 get_exc_info_op = custom_op(
-    arg_types=[],
-    return_type=exc_rtuple,
-    c_function_name="CPy_GetExcInfo",
-    error_kind=ERR_NEVER,
+    arg_types=[], return_type=exc_rtuple, c_function_name="CPy_GetExcInfo", error_kind=ERR_NEVER
 )

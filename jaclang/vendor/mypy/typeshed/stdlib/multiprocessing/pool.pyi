@@ -14,10 +14,7 @@ _T = TypeVar("_T")
 
 class ApplyResult(Generic[_T]):
     def __init__(
-        self,
-        pool: Pool,
-        callback: Callable[[_T], object] | None,
-        error_callback: Callable[[BaseException], object] | None,
+        self, pool: Pool, callback: Callable[[_T], object] | None, error_callback: Callable[[BaseException], object] | None
     ) -> None: ...
     def get(self, timeout: float | None = None) -> _T: ...
     def wait(self, timeout: float | None = None) -> None: ...
@@ -56,12 +53,7 @@ class Pool:
         maxtasksperchild: int | None = None,
         context: Any | None = None,
     ) -> None: ...
-    def apply(
-        self,
-        func: Callable[..., _T],
-        args: Iterable[Any] = (),
-        kwds: Mapping[str, Any] = {},
-    ) -> _T: ...
+    def apply(self, func: Callable[..., _T], args: Iterable[Any] = (), kwds: Mapping[str, Any] = {}) -> _T: ...
     def apply_async(
         self,
         func: Callable[..., _T],
@@ -70,12 +62,7 @@ class Pool:
         callback: Callable[[_T], object] | None = None,
         error_callback: Callable[[BaseException], object] | None = None,
     ) -> AsyncResult[_T]: ...
-    def map(
-        self,
-        func: Callable[[_S], _T],
-        iterable: Iterable[_S],
-        chunksize: int | None = None,
-    ) -> list[_T]: ...
+    def map(self, func: Callable[[_S], _T], iterable: Iterable[_S], chunksize: int | None = None) -> list[_T]: ...
     def map_async(
         self,
         func: Callable[[_S], _T],
@@ -84,24 +71,9 @@ class Pool:
         callback: Callable[[list[_T]], object] | None = None,
         error_callback: Callable[[BaseException], object] | None = None,
     ) -> MapResult[_T]: ...
-    def imap(
-        self,
-        func: Callable[[_S], _T],
-        iterable: Iterable[_S],
-        chunksize: int | None = 1,
-    ) -> IMapIterator[_T]: ...
-    def imap_unordered(
-        self,
-        func: Callable[[_S], _T],
-        iterable: Iterable[_S],
-        chunksize: int | None = 1,
-    ) -> IMapIterator[_T]: ...
-    def starmap(
-        self,
-        func: Callable[..., _T],
-        iterable: Iterable[Iterable[Any]],
-        chunksize: int | None = None,
-    ) -> list[_T]: ...
+    def imap(self, func: Callable[[_S], _T], iterable: Iterable[_S], chunksize: int | None = 1) -> IMapIterator[_T]: ...
+    def imap_unordered(self, func: Callable[[_S], _T], iterable: Iterable[_S], chunksize: int | None = 1) -> IMapIterator[_T]: ...
+    def starmap(self, func: Callable[..., _T], iterable: Iterable[Iterable[Any]], chunksize: int | None = None) -> list[_T]: ...
     def starmap_async(
         self,
         func: Callable[..., _T],
@@ -115,19 +87,13 @@ class Pool:
     def join(self) -> None: ...
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
     ) -> None: ...
     def __del__(self) -> None: ...
 
 class ThreadPool(Pool):
     def __init__(
-        self,
-        processes: int | None = None,
-        initializer: Callable[..., object] | None = None,
-        initargs: Iterable[Any] = (),
+        self, processes: int | None = None, initializer: Callable[..., object] | None = None, initargs: Iterable[Any] = ()
     ) -> None: ...
 
 # undocumented

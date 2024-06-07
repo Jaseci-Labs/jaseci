@@ -40,9 +40,7 @@ def create_source_list(
         elif fscache.isdir(path):
             sub_sources = finder.find_sources_in_dir(path)
             if not sub_sources and not allow_empty_dir:
-                raise InvalidSourceList(
-                    f"There are no .py[i] files in directory '{path}'"
-                )
+                raise InvalidSourceList(f"There are no .py[i] files in directory '{path}'")
             sources.extend(sub_sources)
         else:
             mod = os.path.basename(path) if options.scripts_are_modules else None
@@ -108,17 +106,11 @@ class SourceFinder:
         names = sorted(self.fscache.listdir(path), key=keyfunc)
         for name in names:
             # Skip certain names altogether
-            if name in (
-                "__pycache__",
-                "site-packages",
-                "node_modules",
-            ) or name.startswith("."):
+            if name in ("__pycache__", "site-packages", "node_modules") or name.startswith("."):
                 continue
             subpath = os.path.join(path, name)
 
-            if matches_exclude(
-                subpath, self.exclude, self.fscache, self.verbosity >= 2
-            ):
+            if matches_exclude(subpath, self.exclude, self.fscache, self.verbosity >= 2):
                 continue
 
             if self.fscache.isdir(subpath):
@@ -179,9 +171,7 @@ class SourceFinder:
         ourselves as a subpackage.
         """
         # stop crawling if we're an explicit base directory
-        if self.explicit_package_bases is not None and self.is_explicit_package_base(
-            dir
-        ):
+        if self.explicit_package_bases is not None and self.is_explicit_package_base(dir):
             return "", dir
 
         parent, name = os.path.split(dir)

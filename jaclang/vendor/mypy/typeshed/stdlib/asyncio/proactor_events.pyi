@@ -7,9 +7,7 @@ from . import base_events, constants, events, futures, streams, transports
 
 __all__ = ("BaseProactorEventLoop",)
 
-class _ProactorBasePipeTransport(
-    transports._FlowControlMixin, transports.BaseTransport
-):
+class _ProactorBasePipeTransport(transports._FlowControlMixin, transports.BaseTransport):
     def __init__(
         self,
         loop: events.AbstractEventLoop,
@@ -44,17 +42,11 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport, transports.ReadTran
             server: events.AbstractServer | None = None,
         ) -> None: ...
 
-class _ProactorBaseWritePipeTransport(
-    _ProactorBasePipeTransport, transports.WriteTransport
-): ...
+class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport, transports.WriteTransport): ...
 class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport): ...
-class _ProactorDuplexPipeTransport(
-    _ProactorReadPipeTransport, _ProactorBaseWritePipeTransport, transports.Transport
-): ...
+class _ProactorDuplexPipeTransport(_ProactorReadPipeTransport, _ProactorBaseWritePipeTransport, transports.Transport): ...
 
-class _ProactorSocketTransport(
-    _ProactorReadPipeTransport, _ProactorBaseWritePipeTransport, transports.Transport
-):
+class _ProactorSocketTransport(_ProactorReadPipeTransport, _ProactorBaseWritePipeTransport, transports.Transport):
     _sendfile_compatible: ClassVar[constants._SendfileMode]
     def __init__(
         self,

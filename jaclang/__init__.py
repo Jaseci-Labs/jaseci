@@ -11,9 +11,9 @@ from jaclang.plugin.default import (  # noqa: E402
     JacFeatureDefaults,
 )
 from jaclang.plugin.feature import JacFeature, pm  # noqa: E402
-from jaclang.vendor import lark  # noqa: E402
-from jaclang.vendor import mypy  # noqa: E402
-from jaclang.vendor import pluggy  # noqa: E402
+import lark  # noqa: E402
+import mypy  # noqa: E402
+import pluggy  # noqa: E402
 
 jac_import = JacFeature.jac_import
 

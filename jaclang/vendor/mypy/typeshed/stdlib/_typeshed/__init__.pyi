@@ -3,14 +3,7 @@
 # See the README.md file in this directory for more information.
 
 import sys
-from collections.abc import (
-    Awaitable,
-    Callable,
-    Iterable,
-    Sequence,
-    Set as AbstractSet,
-    Sized,
-)
+from collections.abc import Awaitable, Callable, Iterable, Sequence, Set as AbstractSet, Sized
 from dataclasses import Field
 from os import PathLike
 from types import FrameType, TracebackType
@@ -74,7 +67,7 @@ sentinel: Any
 
 # stable
 class IdentityFunction(Protocol):
-    def __call__(self, __x: _T) -> _T: ...
+    def __call__(self, x: _T, /) -> _T: ...
 
 # stable
 class SupportsNext(Protocol[_T_co]):
@@ -87,49 +80,43 @@ class SupportsAnext(Protocol[_T_co]):
 # Comparison protocols
 
 class SupportsDunderLT(Protocol[_T_contra]):
-    def __lt__(self, __other: _T_contra) -> bool: ...
+    def __lt__(self, other: _T_contra, /) -> bool: ...
 
 class SupportsDunderGT(Protocol[_T_contra]):
-    def __gt__(self, __other: _T_contra) -> bool: ...
+    def __gt__(self, other: _T_contra, /) -> bool: ...
 
 class SupportsDunderLE(Protocol[_T_contra]):
-    def __le__(self, __other: _T_contra) -> bool: ...
+    def __le__(self, other: _T_contra, /) -> bool: ...
 
 class SupportsDunderGE(Protocol[_T_contra]):
-    def __ge__(self, __other: _T_contra) -> bool: ...
+    def __ge__(self, other: _T_contra, /) -> bool: ...
 
 class SupportsAllComparisons(
-    SupportsDunderLT[Any],
-    SupportsDunderGT[Any],
-    SupportsDunderLE[Any],
-    SupportsDunderGE[Any],
-    Protocol,
+    SupportsDunderLT[Any], SupportsDunderGT[Any], SupportsDunderLE[Any], SupportsDunderGE[Any], Protocol
 ): ...
 
 SupportsRichComparison: TypeAlias = SupportsDunderLT[Any] | SupportsDunderGT[Any]
-SupportsRichComparisonT = TypeVar(
-    "SupportsRichComparisonT", bound=SupportsRichComparison
-)  # noqa: Y001
+SupportsRichComparisonT = TypeVar("SupportsRichComparisonT", bound=SupportsRichComparison)  # noqa: Y001
 
 # Dunder protocols
 
 class SupportsAdd(Protocol[_T_contra, _T_co]):
-    def __add__(self, __x: _T_contra) -> _T_co: ...
+    def __add__(self, x: _T_contra, /) -> _T_co: ...
 
 class SupportsRAdd(Protocol[_T_contra, _T_co]):
-    def __radd__(self, __x: _T_contra) -> _T_co: ...
+    def __radd__(self, x: _T_contra, /) -> _T_co: ...
 
 class SupportsSub(Protocol[_T_contra, _T_co]):
-    def __sub__(self, __x: _T_contra) -> _T_co: ...
+    def __sub__(self, x: _T_contra, /) -> _T_co: ...
 
 class SupportsRSub(Protocol[_T_contra, _T_co]):
-    def __rsub__(self, __x: _T_contra) -> _T_co: ...
+    def __rsub__(self, x: _T_contra, /) -> _T_co: ...
 
 class SupportsDivMod(Protocol[_T_contra, _T_co]):
-    def __divmod__(self, __other: _T_contra) -> _T_co: ...
+    def __divmod__(self, other: _T_contra, /) -> _T_co: ...
 
 class SupportsRDivMod(Protocol[_T_contra, _T_co]):
-    def __rdivmod__(self, __other: _T_contra) -> _T_co: ...
+    def __rdivmod__(self, other: _T_contra, /) -> _T_co: ...
 
 # This protocol is generic over the iterator type, while Iterable is
 # generic over the type that is iterated over.
@@ -143,7 +130,7 @@ class SupportsAiter(Protocol[_T_co]):
 
 class SupportsLenAndGetItem(Protocol[_T_co]):
     def __len__(self) -> int: ...
-    def __getitem__(self, __k: int) -> _T_co: ...
+    def __getitem__(self, k: int, /) -> _T_co: ...
 
 class SupportsTrunc(Protocol):
     def __trunc__(self) -> int: ...
@@ -157,17 +144,17 @@ class SupportsItems(Protocol[_KT_co, _VT_co]):
 # stable
 class SupportsKeysAndGetItem(Protocol[_KT, _VT_co]):
     def keys(self) -> Iterable[_KT]: ...
-    def __getitem__(self, __key: _KT) -> _VT_co: ...
+    def __getitem__(self, key: _KT, /) -> _VT_co: ...
 
 # stable
 class SupportsGetItem(Protocol[_KT_contra, _VT_co]):
-    def __contains__(self, __x: Any) -> bool: ...
-    def __getitem__(self, __key: _KT_contra) -> _VT_co: ...
+    def __contains__(self, x: Any, /) -> bool: ...
+    def __getitem__(self, key: _KT_contra, /) -> _VT_co: ...
 
 # stable
 class SupportsItemAccess(SupportsGetItem[_KT_contra, _VT], Protocol[_KT_contra, _VT]):
-    def __setitem__(self, __key: _KT_contra, __value: _VT) -> None: ...
-    def __delitem__(self, __key: _KT_contra) -> None: ...
+    def __setitem__(self, key: _KT_contra, value: _VT, /) -> None: ...
+    def __delitem__(self, key: _KT_contra, /) -> None: ...
 
 StrPath: TypeAlias = str | PathLike[str]  # stable
 BytesPath: TypeAlias = bytes | PathLike[bytes]  # stable
@@ -208,15 +195,9 @@ OpenTextModeUpdating: TypeAlias = Literal[
     "t+x",
     "+tx",
 ]
-OpenTextModeWriting: TypeAlias = Literal[
-    "w", "wt", "tw", "a", "at", "ta", "x", "xt", "tx"
-]
-OpenTextModeReading: TypeAlias = Literal[
-    "r", "rt", "tr", "U", "rU", "Ur", "rtU", "rUt", "Urt", "trU", "tUr", "Utr"
-]
-OpenTextMode: TypeAlias = (
-    OpenTextModeUpdating | OpenTextModeWriting | OpenTextModeReading
-)
+OpenTextModeWriting: TypeAlias = Literal["w", "wt", "tw", "a", "at", "ta", "x", "xt", "tx"]
+OpenTextModeReading: TypeAlias = Literal["r", "rt", "tr", "U", "rU", "Ur", "rtU", "rUt", "Urt", "trU", "tUr", "Utr"]
+OpenTextMode: TypeAlias = OpenTextModeUpdating | OpenTextModeWriting | OpenTextModeReading
 OpenBinaryModeUpdating: TypeAlias = Literal[
     "rb+",
     "r+b",
@@ -244,12 +225,8 @@ OpenBinaryModeUpdating: TypeAlias = Literal[
     "+bx",
 ]
 OpenBinaryModeWriting: TypeAlias = Literal["wb", "bw", "ab", "ba", "xb", "bx"]
-OpenBinaryModeReading: TypeAlias = Literal[
-    "rb", "br", "rbU", "rUb", "Urb", "brU", "bUr", "Ubr"
-]
-OpenBinaryMode: TypeAlias = (
-    OpenBinaryModeUpdating | OpenBinaryModeReading | OpenBinaryModeWriting
-)
+OpenBinaryModeReading: TypeAlias = Literal["rb", "br", "rbU", "rUb", "Urb", "brU", "bUr", "Ubr"]
+OpenBinaryMode: TypeAlias = OpenBinaryModeUpdating | OpenBinaryModeReading | OpenBinaryModeWriting
 
 # stable
 class HasFileno(Protocol):
@@ -261,11 +238,11 @@ FileDescriptorOrPath: TypeAlias = int | StrOrBytesPath
 
 # stable
 class SupportsRead(Protocol[_T_co]):
-    def read(self, __length: int = ...) -> _T_co: ...
+    def read(self, length: int = ..., /) -> _T_co: ...
 
 # stable
 class SupportsReadline(Protocol[_T_co]):
-    def readline(self, __length: int = ...) -> _T_co: ...
+    def readline(self, length: int = ..., /) -> _T_co: ...
 
 # stable
 class SupportsNoArgReadline(Protocol[_T_co]):
@@ -273,7 +250,7 @@ class SupportsNoArgReadline(Protocol[_T_co]):
 
 # stable
 class SupportsWrite(Protocol[_T_contra]):
-    def write(self, __s: _T_contra) -> object: ...
+    def write(self, s: _T_contra, /) -> object: ...
 
 # stable
 class SupportsFlush(Protocol):
@@ -290,17 +267,17 @@ WriteableBuffer: TypeAlias = Buffer
 ReadableBuffer: TypeAlias = Buffer  # stable
 
 class SliceableBuffer(Buffer, Protocol):
-    def __getitem__(self, __slice: slice) -> Sequence[int]: ...
+    def __getitem__(self, slice: slice, /) -> Sequence[int]: ...
 
 class IndexableBuffer(Buffer, Protocol):
-    def __getitem__(self, __i: int) -> int: ...
+    def __getitem__(self, i: int, /) -> int: ...
 
 class SupportsGetItemBuffer(SliceableBuffer, IndexableBuffer, Protocol):
-    def __contains__(self, __x: Any) -> bool: ...
+    def __contains__(self, x: Any, /) -> bool: ...
     @overload
-    def __getitem__(self, __slice: slice) -> Sequence[int]: ...
+    def __getitem__(self, slice: slice, /) -> Sequence[int]: ...
     @overload
-    def __getitem__(self, __i: int) -> int: ...
+    def __getitem__(self, i: int, /) -> int: ...
 
 class SizedBuffer(Sized, Buffer, Protocol): ...
 
@@ -334,9 +311,7 @@ class structseq(Generic[_T_co]):
     # The second parameter will accept a dict of any kind without raising an exception,
     # but only has any meaning if you supply it a dict where the keys are strings.
     # https://github.com/python/typeshed/pull/6560#discussion_r767149830
-    def __new__(
-        cls: type[Self], sequence: Iterable[_T_co], dict: dict[str, Any] = ...
-    ) -> Self: ...
+    def __new__(cls: type[Self], sequence: Iterable[_T_co], dict: dict[str, Any] = ...) -> Self: ...
 
 # Superset of typing.AnyStr that also includes LiteralString
 AnyOrLiteralStr = TypeVar("AnyOrLiteralStr", str, bytes, LiteralString)  # noqa: Y001
@@ -359,9 +334,7 @@ class DataclassInstance(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
 # Anything that can be passed to the int/float constructors
-ConvertibleToInt: TypeAlias = (
-    str | ReadableBuffer | SupportsInt | SupportsIndex | SupportsTrunc
-)
+ConvertibleToInt: TypeAlias = str | ReadableBuffer | SupportsInt | SupportsIndex | SupportsTrunc
 ConvertibleToFloat: TypeAlias = str | ReadableBuffer | SupportsFloat | SupportsIndex
 
 # A few classes updated from Foo(str, Enum) to Foo(StrEnum). This is a convenience so these

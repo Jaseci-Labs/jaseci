@@ -96,10 +96,7 @@ if sys.platform == "win32":
     )
 
     if sys.version_info >= (3, 9):
-        from os import (
-            unsetenv as unsetenv,
-            waitstatus_to_exitcode as waitstatus_to_exitcode,
-        )
+        from os import unsetenv as unsetenv, waitstatus_to_exitcode as waitstatus_to_exitcode
     if sys.version_info >= (3, 11):
         from os import EX_OK as EX_OK
     if sys.version_info >= (3, 12):

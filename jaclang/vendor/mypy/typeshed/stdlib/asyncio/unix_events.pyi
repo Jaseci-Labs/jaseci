@@ -18,10 +18,7 @@ if sys.version_info >= (3, 12):
     class AbstractChildWatcher:
         @abstractmethod
         def add_child_handler(
-            self,
-            pid: int,
-            callback: Callable[[Unpack[_Ts]], object],
-            *args: Unpack[_Ts]
+            self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
         ) -> None: ...
         @abstractmethod
         def remove_child_handler(self, pid: int) -> bool: ...
@@ -33,10 +30,7 @@ if sys.version_info >= (3, 12):
         def __enter__(self) -> Self: ...
         @abstractmethod
         def __exit__(
-            self,
-            typ: type[BaseException] | None,
-            exc: BaseException | None,
-            tb: types.TracebackType | None,
+            self, typ: type[BaseException] | None, exc: BaseException | None, tb: types.TracebackType | None
         ) -> None: ...
         @abstractmethod
         def is_active(self) -> bool: ...
@@ -45,10 +39,7 @@ else:
     class AbstractChildWatcher:
         @abstractmethod
         def add_child_handler(
-            self,
-            pid: int,
-            callback: Callable[[Unpack[_Ts]], object],
-            *args: Unpack[_Ts]
+            self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
         ) -> None: ...
         @abstractmethod
         def remove_child_handler(self, pid: int) -> bool: ...
@@ -60,10 +51,7 @@ else:
         def __enter__(self) -> Self: ...
         @abstractmethod
         def __exit__(
-            self,
-            typ: type[BaseException] | None,
-            exc: BaseException | None,
-            tb: types.TracebackType | None,
+            self, typ: type[BaseException] | None, exc: BaseException | None, tb: types.TracebackType | None
         ) -> None: ...
         @abstractmethod
         def is_active(self) -> bool: ...
@@ -102,67 +90,35 @@ if sys.platform != "win32":
         @deprecated("Deprecated as of Python 3.12; will be removed in Python 3.14")
         class SafeChildWatcher(BaseChildWatcher):
             def __enter__(self) -> Self: ...
-            def __exit__(
-                self,
-                a: type[BaseException] | None,
-                b: BaseException | None,
-                c: types.TracebackType | None,
-            ) -> None: ...
+            def __exit__(self, a: type[BaseException] | None, b: BaseException | None, c: types.TracebackType | None) -> None: ...
             def add_child_handler(
-                self,
-                pid: int,
-                callback: Callable[[Unpack[_Ts]], object],
-                *args: Unpack[_Ts]
+                self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
         @deprecated("Deprecated as of Python 3.12; will be removed in Python 3.14")
         class FastChildWatcher(BaseChildWatcher):
             def __enter__(self) -> Self: ...
-            def __exit__(
-                self,
-                a: type[BaseException] | None,
-                b: BaseException | None,
-                c: types.TracebackType | None,
-            ) -> None: ...
+            def __exit__(self, a: type[BaseException] | None, b: BaseException | None, c: types.TracebackType | None) -> None: ...
             def add_child_handler(
-                self,
-                pid: int,
-                callback: Callable[[Unpack[_Ts]], object],
-                *args: Unpack[_Ts]
+                self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
     else:
         class SafeChildWatcher(BaseChildWatcher):
             def __enter__(self) -> Self: ...
-            def __exit__(
-                self,
-                a: type[BaseException] | None,
-                b: BaseException | None,
-                c: types.TracebackType | None,
-            ) -> None: ...
+            def __exit__(self, a: type[BaseException] | None, b: BaseException | None, c: types.TracebackType | None) -> None: ...
             def add_child_handler(
-                self,
-                pid: int,
-                callback: Callable[[Unpack[_Ts]], object],
-                *args: Unpack[_Ts]
+                self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
         class FastChildWatcher(BaseChildWatcher):
             def __enter__(self) -> Self: ...
-            def __exit__(
-                self,
-                a: type[BaseException] | None,
-                b: BaseException | None,
-                c: types.TracebackType | None,
-            ) -> None: ...
+            def __exit__(self, a: type[BaseException] | None, b: BaseException | None, c: types.TracebackType | None) -> None: ...
             def add_child_handler(
-                self,
-                pid: int,
-                callback: Callable[[Unpack[_Ts]], object],
-                *args: Unpack[_Ts]
+                self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
 
@@ -173,14 +129,10 @@ if sys.platform != "win32":
             @deprecated("Deprecated as of Python 3.12; will be removed in Python 3.14")
             def get_child_watcher(self) -> AbstractChildWatcher: ...
             @deprecated("Deprecated as of Python 3.12; will be removed in Python 3.14")
-            def set_child_watcher(
-                self, watcher: AbstractChildWatcher | None
-            ) -> None: ...
+            def set_child_watcher(self, watcher: AbstractChildWatcher | None) -> None: ...
         else:
             def get_child_watcher(self) -> AbstractChildWatcher: ...
-            def set_child_watcher(
-                self, watcher: AbstractChildWatcher | None
-            ) -> None: ...
+            def set_child_watcher(self, watcher: AbstractChildWatcher | None) -> None: ...
 
     SelectorEventLoop = _UnixSelectorEventLoop
 
@@ -193,16 +145,10 @@ if sys.platform != "win32":
             def close(self) -> None: ...
             def __enter__(self) -> Self: ...
             def __exit__(
-                self,
-                exc_type: type[BaseException] | None,
-                exc_val: BaseException | None,
-                exc_tb: types.TracebackType | None,
+                self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: types.TracebackType | None
             ) -> None: ...
             def add_child_handler(
-                self,
-                pid: int,
-                callback: Callable[[Unpack[_Ts]], object],
-                *args: Unpack[_Ts]
+                self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
             def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
@@ -213,16 +159,10 @@ if sys.platform != "win32":
             def close(self) -> None: ...
             def __enter__(self) -> Self: ...
             def __exit__(
-                self,
-                exc_type: type[BaseException] | None,
-                exc_val: BaseException | None,
-                exc_tb: types.TracebackType | None,
+                self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: types.TracebackType | None
             ) -> None: ...
             def add_child_handler(
-                self,
-                pid: int,
-                callback: Callable[[Unpack[_Ts]], object],
-                *args: Unpack[_Ts]
+                self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...
             def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
@@ -232,17 +172,11 @@ if sys.platform != "win32":
         def close(self) -> None: ...
         def __enter__(self) -> Self: ...
         def __exit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc_val: BaseException | None,
-            exc_tb: types.TracebackType | None,
+            self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: types.TracebackType | None
         ) -> None: ...
         def __del__(self) -> None: ...
         def add_child_handler(
-            self,
-            pid: int,
-            callback: Callable[[Unpack[_Ts]], object],
-            *args: Unpack[_Ts]
+            self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
         ) -> None: ...
         def remove_child_handler(self, pid: int) -> bool: ...
         def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
@@ -251,18 +185,12 @@ if sys.platform != "win32":
         class PidfdChildWatcher(AbstractChildWatcher):
             def __enter__(self) -> Self: ...
             def __exit__(
-                self,
-                exc_type: type[BaseException] | None,
-                exc_val: BaseException | None,
-                exc_tb: types.TracebackType | None,
+                self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: types.TracebackType | None
             ) -> None: ...
             def is_active(self) -> bool: ...
             def close(self) -> None: ...
             def attach_loop(self, loop: AbstractEventLoop | None) -> None: ...
             def add_child_handler(
-                self,
-                pid: int,
-                callback: Callable[[Unpack[_Ts]], object],
-                *args: Unpack[_Ts]
+                self, pid: int, callback: Callable[[int, int, Unpack[_Ts]], object], *args: Unpack[_Ts]
             ) -> None: ...
             def remove_child_handler(self, pid: int) -> bool: ...

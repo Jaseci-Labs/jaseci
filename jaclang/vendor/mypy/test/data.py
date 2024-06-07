@@ -124,23 +124,17 @@ def parse_test_case(case: DataDrivenTestCase) -> None:
         elif re.match(r"stale[0-9]*$", item.id):
             passnum = 1 if item.id == "stale" else int(item.id[len("stale") :])
             assert passnum > 0
-            modules = (
-                set() if item.arg is None else {t.strip() for t in item.arg.split(",")}
-            )
+            modules = set() if item.arg is None else {t.strip() for t in item.arg.split(",")}
             stale_modules[passnum] = modules
         elif re.match(r"rechecked[0-9]*$", item.id):
             passnum = 1 if item.id == "rechecked" else int(item.id[len("rechecked") :])
             assert passnum > 0
-            modules = (
-                set() if item.arg is None else {t.strip() for t in item.arg.split(",")}
-            )
+            modules = set() if item.arg is None else {t.strip() for t in item.arg.split(",")}
             rechecked_modules[passnum] = modules
         elif re.match(r"targets[0-9]*$", item.id):
             passnum = 1 if item.id == "targets" else int(item.id[len("targets") :])
             assert passnum > 0
-            reprocessed = (
-                [] if item.arg is None else [t.strip() for t in item.arg.split(",")]
-            )
+            reprocessed = [] if item.arg is None else [t.strip() for t in item.arg.split(",")]
             targets[passnum] = reprocessed
         elif item.id == "delete":
             # File/directory to delete during a multi-step test case
@@ -164,9 +158,7 @@ def parse_test_case(case: DataDrivenTestCase) -> None:
                 if arg.startswith("version"):
                     compare_op = arg[7:9]
                     if compare_op not in {">=", "=="}:
-                        _item_fail(
-                            "Only >= and == version checks are currently supported"
-                        )
+                        _item_fail("Only >= and == version checks are currently supported")
                     version_str = arg[9:]
                     try:
                         version = tuple(int(x) for x in version_str.split("."))
@@ -218,9 +210,7 @@ def parse_test_case(case: DataDrivenTestCase) -> None:
             and passnum in rechecked_modules
             and not stale_modules[passnum].issubset(rechecked_modules[passnum])
         ):
-            _case_fail(
-                f"Stale modules after pass {passnum} must be a subset of rechecked modules"
-            )
+            _case_fail(f"Stale modules after pass {passnum} must be a subset of rechecked modules")
 
     output_inline_start = len(output)
     input = first_item.data
@@ -231,9 +221,7 @@ def parse_test_case(case: DataDrivenTestCase) -> None:
     seen_files = set()
     for file, _ in files:
         if file in seen_files:
-            _case_fail(
-                f"Duplicated filename {file}. Did you include it multiple times?"
-            )
+            _case_fail(f"Duplicated filename {file}. Did you include it multiple times?")
 
         seen_files.add(file)
 
@@ -281,9 +269,7 @@ class DataDrivenTestCase(pytest.Item):
 
     # Extra attributes used by some tests.
     last_line: int
-    output_files: list[
-        tuple[str, str | Pattern[str]]
-    ]  # Path and contents for output files
+    output_files: list[tuple[str, str | Pattern[str]]]  # Path and contents for output files
     deleted_paths: dict[int, set[str]]  # Mapping run number -> paths
     triggered: list[str]  # Active triggers (one line per incremental step)
 
@@ -405,10 +391,7 @@ class DataDrivenTestCase(pytest.Item):
             # In particular, uncaught exceptions during semantic analysis or type checking
             # call exit() and they already print out a stack trace.
             excrepr = excinfo.exconly()
-        elif (
-            isinstance(excinfo.value, pytest.fail.Exception)
-            and not excinfo.value.pytrace
-        ):
+        elif isinstance(excinfo.value, pytest.fail.Exception) and not excinfo.value.pytrace:
             excrepr = excinfo.exconly()
         else:
             excinfo.traceback = self.parent._traceback_filter(excinfo)
@@ -552,8 +535,7 @@ def expand_errors(input: list[str], output: list[str], fnam: str) -> None:
         # The first in the split things isn't a comment
         for possible_err_comment in input[i].split(" # ")[1:]:
             m = re.search(
-                r"^([ENW]):((?P<col>\d+):)? (?P<message>.*)$",
-                possible_err_comment.strip(),
+                r"^([ENW]):((?P<col>\d+):)? (?P<message>.*)$", possible_err_comment.strip()
             )
             if m:
                 if m.group(1) == "E":
@@ -621,9 +603,7 @@ def pytest_addoption(parser: Any) -> None:
         help="Copy the temp directories from failing tests to a target directory",
     )
     group.addoption(
-        "--mypy-verbose",
-        action="count",
-        help="Set the verbose flag when creating mypy Options",
+        "--mypy-verbose", action="count", help="Set the verbose flag when creating mypy Options"
     )
     group.addoption(
         "--mypyc-showc",
@@ -641,10 +621,7 @@ def pytest_addoption(parser: Any) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    if (
-        config.getoption("--update-data")
-        and config.getoption("--numprocesses", default=1) > 1
-    ):
+    if config.getoption("--update-data") and config.getoption("--numprocesses", default=1) > 1:
         raise pytest.UsageError(
             "--update-data incompatible with parallelized tests; re-run with -n 1"
         )
@@ -663,9 +640,7 @@ def pytest_pycollect_makeitem(collector: Any, name: str, obj: object) -> Any | N
             # Non-None result means this obj is a test case.
             # The collect method of the returned DataSuiteCollector instance will be called later,
             # with self.obj being obj.
-            return DataSuiteCollector.from_parent(  # type: ignore[no-untyped-call]
-                parent=collector, name=name
-            )
+            return DataSuiteCollector.from_parent(parent=collector, name=name)
     return None
 
 
@@ -690,9 +665,7 @@ def split_test_cases(
     """
     with open(file, encoding="utf-8") as f:
         data = f.read()
-    cases = re.split(
-        r"^\[case ([^]+)]+)\][ \t]*$\n", data, flags=re.DOTALL | re.MULTILINE
-    )
+    cases = re.split(r"^\[case ([^]+)]+)\][ \t]*$\n", data, flags=re.DOTALL | re.MULTILINE)
     cases_iter = iter(cases)
     line_no = next(cases_iter).count("\n") + 1
     test_names = set()

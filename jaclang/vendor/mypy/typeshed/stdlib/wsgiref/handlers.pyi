@@ -1,11 +1,5 @@
 from _typeshed import OptExcInfo
-from _typeshed.wsgi import (
-    ErrorStream,
-    InputStream,
-    StartResponse,
-    WSGIApplication,
-    WSGIEnvironment,
-)
+from _typeshed.wsgi import ErrorStream, InputStream, StartResponse, WSGIApplication, WSGIEnvironment
 from abc import abstractmethod
 from collections.abc import Callable, MutableMapping
 from typing import IO
@@ -13,14 +7,7 @@ from typing import IO
 from .headers import Headers
 from .util import FileWrapper
 
-__all__ = [
-    "BaseHandler",
-    "SimpleHandler",
-    "BaseCGIHandler",
-    "CGIHandler",
-    "IISCGIHandler",
-    "read_environ",
-]
+__all__ = ["BaseHandler", "SimpleHandler", "BaseCGIHandler", "CGIHandler", "IISCGIHandler", "read_environ"]
 
 def format_date_time(timestamp: float | None) -> str: ...  # undocumented
 def read_environ() -> dict[str, str]: ...
@@ -51,10 +38,7 @@ class BaseHandler:
     def set_content_length(self) -> None: ...
     def cleanup_headers(self) -> None: ...
     def start_response(
-        self,
-        status: str,
-        headers: list[tuple[str, str]],
-        exc_info: OptExcInfo | None = None,
+        self, status: str, headers: list[tuple[str, str]], exc_info: OptExcInfo | None = None
     ) -> Callable[[bytes], None]: ...
     def send_preamble(self) -> None: ...
     def write(self, data: bytes) -> None: ...
@@ -66,9 +50,7 @@ class BaseHandler:
     def client_is_modern(self) -> bool: ...
     def log_exception(self, exc_info: OptExcInfo) -> None: ...
     def handle_error(self) -> None: ...
-    def error_output(
-        self, environ: WSGIEnvironment, start_response: StartResponse
-    ) -> list[bytes]: ...
+    def error_output(self, environ: WSGIEnvironment, start_response: StartResponse) -> list[bytes]: ...
     @abstractmethod
     def _write(self, data: bytes) -> None: ...
     @abstractmethod

@@ -19,13 +19,6 @@ class _ModifiedArgv0:
     def __exit__(self, *args: Unused) -> None: ...
 
 def run_module(
-    mod_name: str,
-    init_globals: dict[str, Any] | None = None,
-    run_name: str | None = None,
-    alter_sys: bool = False,
+    mod_name: str, init_globals: dict[str, Any] | None = None, run_name: str | None = None, alter_sys: bool = False
 ) -> dict[str, Any]: ...
-def run_path(
-    path_name: str,
-    init_globals: dict[str, Any] | None = None,
-    run_name: str | None = None,
-) -> dict[str, Any]: ...
+def run_path(path_name: str, init_globals: dict[str, Any] | None = None, run_name: str | None = None) -> dict[str, Any]: ...

@@ -7,13 +7,7 @@ from _typeshed import StrPath, SupportsRead, SupportsWrite
 from collections.abc import Mapping, Sequence
 from typing import Any, AnyStr, BinaryIO, ClassVar
 
-__all__ = [
-    "HTTPServer",
-    "ThreadingHTTPServer",
-    "BaseHTTPRequestHandler",
-    "SimpleHTTPRequestHandler",
-    "CGIHTTPRequestHandler",
-]
+__all__ = ["HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler", "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler"]
 
 class HTTPServer(socketserver.TCPServer):
     server_name: str
@@ -41,9 +35,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     monthname: ClassVar[Sequence[str | None]]  # undocumented
     def handle_one_request(self) -> None: ...
     def handle_expect_100(self) -> bool: ...
-    def send_error(
-        self, code: int, message: str | None = None, explain: str | None = None
-    ) -> None: ...
+    def send_error(self, code: int, message: str | None = None, explain: str | None = None) -> None: ...
     def send_response(self, code: int, message: str | None = None) -> None: ...
     def send_header(self, keyword: str, value: str) -> None: ...
     def send_response_only(self, code: int, message: str | None = None) -> None: ...
@@ -76,9 +68,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def send_head(self) -> io.BytesIO | BinaryIO | None: ...  # undocumented
     def list_directory(self, path: StrPath) -> io.BytesIO | None: ...  # undocumented
     def translate_path(self, path: str) -> str: ...  # undocumented
-    def copyfile(
-        self, source: SupportsRead[AnyStr], outputfile: SupportsWrite[AnyStr]
-    ) -> None: ...  # undocumented
+    def copyfile(self, source: SupportsRead[AnyStr], outputfile: SupportsWrite[AnyStr]) -> None: ...  # undocumented
     def guess_type(self, path: StrPath) -> str: ...  # undocumented
 
 def executable(path: StrPath) -> bool: ...  # undocumented

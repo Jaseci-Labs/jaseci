@@ -210,11 +210,7 @@ def consider_sys_version_info(expr: Expression, pyversion: tuple[int, ...]) -> i
             hi = 2
         if 0 <= lo < hi <= 2:
             val = pyversion[lo:hi]
-            if (
-                len(val) == len(thing)
-                or len(val) > len(thing)
-                and op not in ("==", "!=")
-            ):
+            if len(val) == len(thing) or len(val) > len(thing) and op not in ("==", "!="):
                 return fixed_comparison(val, op, thing)
     return TRUTH_VALUE_UNKNOWN
 
@@ -292,9 +288,7 @@ def contains_int_or_tuple_of_ints(expr: Expression) -> None | int | tuple[int, .
     return None
 
 
-def contains_sys_version_info(
-    expr: Expression,
-) -> None | int | tuple[int | None, int | None]:
+def contains_sys_version_info(expr: Expression) -> None | int | tuple[int | None, int | None]:
     if is_sys_attr(expr, "version_info"):
         return (None, None)  # Same as sys.version_info[:]
     if isinstance(expr, IndexExpr) and is_sys_attr(expr.base, "version_info"):

@@ -43,6 +43,7 @@ from mypyc.ir.ops import (
     MethodCall,
     Op,
     OpVisitor,
+    PrimitiveOp,
     RaiseStandardError,
     Register,
     Return,
@@ -73,10 +74,7 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
     def visit_goto(self, op: Goto) -> str:
         return self.format("goto %l", op.label)
 
-    branch_op_names: Final = {
-        Branch.BOOL: ("%r", "bool"),
-        Branch.IS_ERROR: ("is_error(%r)", ""),
-    }
+    branch_op_names: Final = {Branch.BOOL: ("%r", "bool"), Branch.IS_ERROR: ("is_error(%r)", "")}
 
     def visit_branch(self, op: Branch) -> str:
         fmt, typ = self.branch_op_names[op.op]
@@ -102,9 +100,7 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
         return self.format("%r = %r", op.dest, op.src)
 
     def visit_assign_multi(self, op: AssignMulti) -> str:
-        return self.format(
-            "%r = [%s]", op.dest, ", ".join(self.format("%r", v) for v in op.src)
-        )
+        return self.format("%r = [%s]", op.dest, ", ".join(self.format("%r", v) for v in op.src))
 
     def visit_load_error_value(self, op: LoadErrorValue) -> str:
         return self.format("%r = <error> :: %s", op, op.type)
@@ -159,9 +155,7 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
         return self.format("%s = %r :: %s", name, op.value, op.namespace)
 
     def visit_tuple_get(self, op: TupleGet) -> str:
-        return self.format(
-            "%r = %s%r[%d]", op, self.borrow_prefix(op), op.src, op.index
-        )
+        return self.format("%r = %s%r[%d]", op, self.borrow_prefix(op), op.src, op.index)
 
     def visit_tuple_set(self, op: TupleSet) -> str:
         item_str = ", ".join(self.format("%r", item) for item in op.items)
@@ -198,9 +192,7 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
         return s
 
     def visit_cast(self, op: Cast) -> str:
-        return self.format(
-            "%r = %scast(%s, %r)", op, self.borrow_prefix(op), op.type, op.src
-        )
+        return self.format("%r = %scast(%s, %r)", op, self.borrow_prefix(op), op.type, op.src)
 
     def visit_box(self, op: Box) -> str:
         return self.format("%r = box(%s, %r)", op, op.src.type, op.src)
@@ -211,9 +203,7 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
     def visit_raise_standard_error(self, op: RaiseStandardError) -> str:
         if op.value is not None:
             if isinstance(op.value, str):
-                return self.format(
-                    "%r = raise %s(%s)", op, op.class_name, repr(op.value)
-                )
+                return self.format("%r = raise %s(%s)", op, op.class_name, repr(op.value))
             elif isinstance(op.value, Value):
                 return self.format("%r = raise %s(%r)", op, op.class_name, op.value)
             else:
@@ -228,19 +218,34 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
         else:
             return self.format("%r = %s(%s)", op, op.function_name, args_str)
 
+    def visit_primitive_op(self, op: PrimitiveOp) -> str:
+        args = []
+        arg_index = 0
+        type_arg_index = 0
+        for arg_type in zip(op.desc.arg_types):
+            if arg_type:
+                args.append(self.format("%r", op.args[arg_index]))
+                arg_index += 1
+            else:
+                assert op.type_args
+                args.append(self.format("%r", op.type_args[type_arg_index]))
+                type_arg_index += 1
+
+        args_str = ", ".join(args)
+        if op.is_void:
+            return self.format("%s %s", op.desc.name, args_str)
+        else:
+            return self.format("%r = %s %s", op, op.desc.name, args_str)
+
     def visit_truncate(self, op: Truncate) -> str:
-        return self.format(
-            "%r = truncate %r: %t to %t", op, op.src, op.src_type, op.type
-        )
+        return self.format("%r = truncate %r: %t to %t", op, op.src, op.src_type, op.type)
 
     def visit_extend(self, op: Extend) -> str:
         if op.signed:
             extra = " signed"
         else:
             extra = ""
-        return self.format(
-            "%r = extend%s %r: %t to %t", op, extra, op.src, op.src_type, op.type
-        )
+        return self.format("%r = extend%s %r: %t to %t", op, extra, op.src, op.src_type, op.type)
 
     def visit_load_global(self, op: LoadGlobal) -> str:
         ann = f"  ({repr(op.ann)})" if op.ann else ""
@@ -250,29 +255,14 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
         return self.format("%r = %r %s %r", op, op.lhs, IntOp.op_str[op.op], op.rhs)
 
     def visit_comparison_op(self, op: ComparisonOp) -> str:
-        if op.op in (
-            ComparisonOp.SLT,
-            ComparisonOp.SGT,
-            ComparisonOp.SLE,
-            ComparisonOp.SGE,
-        ):
+        if op.op in (ComparisonOp.SLT, ComparisonOp.SGT, ComparisonOp.SLE, ComparisonOp.SGE):
             sign_format = " :: signed"
-        elif op.op in (
-            ComparisonOp.ULT,
-            ComparisonOp.UGT,
-            ComparisonOp.ULE,
-            ComparisonOp.UGE,
-        ):
+        elif op.op in (ComparisonOp.ULT, ComparisonOp.UGT, ComparisonOp.ULE, ComparisonOp.UGE):
             sign_format = " :: unsigned"
         else:
             sign_format = ""
         return self.format(
-            "%r = %r %s %r%s",
-            op,
-            op.lhs,
-            ComparisonOp.op_str[op.op],
-            op.rhs,
-            sign_format,
+            "%r = %r %s %r%s", op, op.lhs, ComparisonOp.op_str[op.op], op.rhs, sign_format
         )
 
     def visit_float_op(self, op: FloatOp) -> str:
@@ -291,9 +281,7 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
         return self.format("set_mem %r, %r :: %t*", op.dest, op.src, op.dest_type)
 
     def visit_get_element_ptr(self, op: GetElementPtr) -> str:
-        return self.format(
-            "%r = get_element_ptr %r %s :: %t", op, op.src, op.field, op.src_type
-        )
+        return self.format("%r = get_element_ptr %r %s :: %t", op, op.src, op.field, op.src_type)
 
     def visit_load_address(self, op: LoadAddress) -> str:
         if isinstance(op.src, Register):
@@ -312,9 +300,7 @@ class IRPrettyPrintVisitor(OpVisitor[str]):
         else:
             steal = ""
         return self.format(
-            "keep_alive {}{}".format(
-                steal, ", ".join(self.format("%r", v) for v in op.src)
-            )
+            "keep_alive {}{}".format(steal, ", ".join(self.format("%r", v) for v in op.src))
         )
 
     def visit_unborrow(self, op: Unborrow) -> str:
@@ -445,15 +431,11 @@ def format_blocks(
     return lines
 
 
-def format_func(
-    fn: FuncIR, errors: Sequence[tuple[ErrorSource, str]] = ()
-) -> list[str]:
+def format_func(fn: FuncIR, errors: Sequence[tuple[ErrorSource, str]] = ()) -> list[str]:
     lines = []
     cls_prefix = fn.class_name + "." if fn.class_name else ""
     lines.append(
-        "def {}{}({}):".format(
-            cls_prefix, fn.name, ", ".join(arg.name for arg in fn.args)
-        )
+        "def {}{}({}):".format(cls_prefix, fn.name, ", ".join(arg.name for arg in fn.args))
     )
     names = generate_names_for_ir(fn.arg_regs, fn.blocks)
     for line in format_registers(fn, names):
@@ -477,9 +459,7 @@ def format_modules(modules: ModuleIRs) -> list[str]:
     return ops
 
 
-def generate_names_for_ir(
-    args: list[Register], blocks: list[BasicBlock]
-) -> dict[Value, str]:
+def generate_names_for_ir(args: list[Register], blocks: list[BasicBlock]) -> dict[Value, str]:
     """Generate unique names for IR values.
 
     Give names such as 'r5' to temp values in IR which are useful when

@@ -50,9 +50,7 @@ _EnumerationT = TypeVar("_EnumerationT", bound=type[Enum])
 # <enum 'Foo'>
 # >>> Enum('Foo', names={'RED': 1, 'YELLOW': 2})
 # <enum 'Foo'>
-_EnumNames: TypeAlias = (
-    str | Iterable[str] | Iterable[Iterable[str | Any]] | Mapping[str, Any]
-)
+_EnumNames: TypeAlias = str | Iterable[str] | Iterable[Iterable[str | Any]] | Mapping[str, Any]
 
 if sys.version_info >= (3, 11):
     class nonmember(Generic[_EnumMemberT]):
@@ -73,13 +71,9 @@ class _EnumDict(dict[str, Any]):
         # Unlike with MutableMapping.update(), the first argument is required,
         # hence the type: ignore
         @overload  # type: ignore[override]
-        def update(
-            self, members: SupportsKeysAndGetItem[str, Any], **more_members: Any
-        ) -> None: ...
+        def update(self, members: SupportsKeysAndGetItem[str, Any], **more_members: Any) -> None: ...
         @overload
-        def update(
-            self, members: Iterable[tuple[str, Any]], **more_members: Any
-        ) -> None: ...
+        def update(self, members: Iterable[tuple[str, Any]], **more_members: Any) -> None: ...
 
 # Structurally: Iterable[T], Reversible[T], Container[T] where T is the enum itself
 class EnumMeta(type):
@@ -96,19 +90,10 @@ class EnumMeta(type):
         ) -> _typeshed.Self: ...
     elif sys.version_info >= (3, 9):
         def __new__(
-            metacls: type[_typeshed.Self],
-            cls: str,
-            bases: tuple[type, ...],
-            classdict: _EnumDict,
-            **kwds: Any,
+            metacls: type[_typeshed.Self], cls: str, bases: tuple[type, ...], classdict: _EnumDict, **kwds: Any
         ) -> _typeshed.Self: ...
     else:
-        def __new__(
-            metacls: type[_typeshed.Self],
-            cls: str,
-            bases: tuple[type, ...],
-            classdict: _EnumDict,
-        ) -> _typeshed.Self: ...
+        def __new__(metacls: type[_typeshed.Self], cls: str, bases: tuple[type, ...], classdict: _EnumDict) -> _typeshed.Self: ...
 
     if sys.version_info >= (3, 9):
         @classmethod
@@ -130,18 +115,14 @@ class EnumMeta(type):
 
     def __getitem__(self: type[_EnumMemberT], name: str) -> _EnumMemberT: ...
     @_builtins_property
-    def __members__(
-        self: type[_EnumMemberT],
-    ) -> types.MappingProxyType[str, _EnumMemberT]: ...
+    def __members__(self: type[_EnumMemberT]) -> types.MappingProxyType[str, _EnumMemberT]: ...
     def __len__(self) -> int: ...
     def __bool__(self) -> Literal[True]: ...
     def __dir__(self) -> list[str]: ...
 
     # Overload 1: Value lookup on an already existing enum class (simple case)
     @overload
-    def __call__(
-        cls: type[_EnumMemberT], value: Any, names: None = None
-    ) -> _EnumMemberT: ...
+    def __call__(cls: type[_EnumMemberT], value: Any, names: None = None) -> _EnumMemberT: ...
 
     # Overload 2: Functional API for constructing new enum classes.
     if sys.version_info >= (3, 11):
@@ -179,9 +160,7 @@ class EnumMeta(type):
     #
     if sys.version_info >= (3, 12):
         @overload
-        def __call__(
-            cls: type[_EnumMemberT], value: Any, *values: Any
-        ) -> _EnumMemberT: ...
+        def __call__(cls: type[_EnumMemberT], value: Any, *values: Any) -> _EnumMemberT: ...
 
     _member_names_: list[str]  # undocumented
     _member_map_: dict[str, Enum]  # undocumented
@@ -214,9 +193,7 @@ class Enum(metaclass=EnumMeta):
     @classmethod
     def _missing_(cls, value: object) -> Any: ...
     @staticmethod
-    def _generate_next_value_(
-        name: str, start: int, count: int, last_values: list[Any]
-    ) -> Any: ...
+    def _generate_next_value_(name: str, start: int, count: int, last_values: list[Any]) -> Any: ...
     # It's not true that `__new__` will accept any argument type,
     # so ideally we'd use `Any` to indicate that the argument type is inexpressible.
     # However, using `Any` causes too many false-positives for those using mypy's `--disallow-any-expr`
@@ -279,9 +256,7 @@ if sys.version_info >= (3, 11):
         @_magic_enum_attr
         def value(self) -> str: ...
         @staticmethod
-        def _generate_next_value_(
-            name: str, start: int, count: int, last_values: list[str]
-        ) -> str: ...
+        def _generate_next_value_(name: str, start: int, count: int, last_values: list[str]) -> str: ...
 
     class EnumCheck(StrEnum):
         CONTINUOUS: str
@@ -342,6 +317,4 @@ class auto(IntFlag):
 
 if sys.version_info >= (3, 11):
     def pickle_by_global_name(self: Enum, proto: int) -> str: ...
-    def pickle_by_enum_name(
-        self: _EnumMemberT, proto: int
-    ) -> tuple[Callable[..., Any], tuple[type[_EnumMemberT], str]]: ...
+    def pickle_by_enum_name(self: _EnumMemberT, proto: int) -> tuple[Callable[..., Any], tuple[type[_EnumMemberT], str]]: ...

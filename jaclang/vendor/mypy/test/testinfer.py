@@ -5,15 +5,7 @@ from __future__ import annotations
 from mypy.argmap import map_actuals_to_formals
 from mypy.checker import DisjointDict, group_comparison_operands
 from mypy.literals import Key
-from mypy.nodes import (
-    ARG_NAMED,
-    ARG_OPT,
-    ARG_POS,
-    ARG_STAR,
-    ARG_STAR2,
-    ArgKind,
-    NameExpr,
-)
+from mypy.nodes import ARG_NAMED, ARG_OPT, ARG_POS, ARG_STAR, ARG_STAR2, ArgKind, NameExpr
 from mypy.test.helpers import Suite, assert_equal
 from mypy.test.typefixture import TypeFixture
 from mypy.types import AnyType, TupleType, Type, TypeOfAny
@@ -54,10 +46,7 @@ class MapActualsToFormalsSuite(Suite):
         any_type = AnyType(TypeOfAny.special_form)
         self.assert_vararg_map([ARG_STAR], [ARG_POS], [[0]], self.make_tuple(any_type))
         self.assert_vararg_map(
-            [ARG_STAR],
-            [ARG_POS, ARG_POS],
-            [[0], [0]],
-            self.make_tuple(any_type, any_type),
+            [ARG_STAR], [ARG_POS, ARG_POS], [[0], [0]], self.make_tuple(any_type, any_type)
         )
         self.assert_vararg_map(
             [ARG_STAR],
@@ -74,9 +63,7 @@ class MapActualsToFormalsSuite(Suite):
         self.assert_map(["y", "x"], [(ARG_POS, "x"), (ARG_POS, "y")], [[1], [0]])
 
     def test_some_named_args(self) -> None:
-        self.assert_map(
-            ["y"], [(ARG_OPT, "x"), (ARG_OPT, "y"), (ARG_OPT, "z")], [[], [0], []]
-        )
+        self.assert_map(["y"], [(ARG_OPT, "x"), (ARG_OPT, "y"), (ARG_OPT, "z")], [[], [0], []])
 
     def test_missing_named_arg(self) -> None:
         self.assert_map(["y"], [(ARG_OPT, "x")], [[]])
@@ -95,9 +82,7 @@ class MapActualsToFormalsSuite(Suite):
         self.assert_map([ARG_POS, ARG_STAR2], [(ARG_POS, "x"), ARG_STAR2], [[0], [1]])
 
     def test_both_kinds_of_varargs(self) -> None:
-        self.assert_map(
-            [ARG_STAR, ARG_STAR2], [(ARG_POS, "x"), (ARG_POS, "y")], [[0, 1], [0, 1]]
-        )
+        self.assert_map([ARG_STAR, ARG_STAR2], [(ARG_POS, "x"), (ARG_POS, "y")], [[0, 1], [0, 1]])
 
     def test_special_cases(self) -> None:
         self.assert_map([ARG_STAR], [ARG_STAR, ARG_STAR2], [[0], []])
@@ -129,9 +114,7 @@ class MapActualsToFormalsSuite(Suite):
         expected: list[list[int]],
         vararg_type: Type,
     ) -> None:
-        result = map_actuals_to_formals(
-            caller_kinds, [], callee_kinds, [], lambda i: vararg_type
-        )
+        result = map_actuals_to_formals(caller_kinds, [], callee_kinds, [], lambda i: vararg_type)
         assert_equal(result, expected)
 
 
@@ -178,8 +161,7 @@ class OperandDisjointDictSuite(Suite):
         d.add_mapping({5, 6, 7}, {"group3"})
 
         self.assertEqual(
-            d.items(),
-            [({0, 1}, {"group1"}), ({2, 3, 4}, {"group2"}), ({5, 6, 7}, {"group3"})],
+            d.items(), [({0, 1}, {"group1"}), ({2, 3, 4}, {"group2"}), ({5, 6, 7}, {"group3"})]
         )
 
     def test_partial_merging(self) -> None:
@@ -210,12 +192,7 @@ class OperandDisjointDictSuite(Suite):
 
         self.assertEqual(
             d.items(),
-            [
-                (
-                    {0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 15, 16},
-                    {"a", "b", "c", "d", "e", "f"},
-                )
-            ],
+            [({0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 15, 16}, {"a", "b", "c", "d", "e", "f"})],
         )
 
     def test_merge_with_multiple_overlaps(self) -> None:
@@ -226,17 +203,13 @@ class OperandDisjointDictSuite(Suite):
         d.add_mapping({6, 1, 2, 4, 5}, {"d"})
         d.add_mapping({6, 1, 2, 4, 5}, {"e"})
 
-        self.assertEqual(
-            d.items(), [({0, 1, 2, 3, 4, 5, 6}, {"a", "b", "c", "d", "e"})]
-        )
+        self.assertEqual(d.items(), [({0, 1, 2, 3, 4, 5, 6}, {"a", "b", "c", "d", "e"})])
 
 
 class OperandComparisonGroupingSuite(Suite):
     """Test cases for checker.group_comparison_operands."""
 
-    def literal_keymap(
-        self, assignable_operands: dict[int, NameExpr]
-    ) -> dict[int, Key]:
+    def literal_keymap(self, assignable_operands: dict[int, NameExpr]) -> dict[int, Key]:
         output: dict[int, Key] = {}
         for index, expr in assignable_operands.items():
             output[index] = ("FakeExpr", expr.name)
@@ -308,13 +281,7 @@ class OperandComparisonGroupingSuite(Suite):
         )
         self.assertEqual(
             group_comparison_operands(
-                [
-                    ("is", x0, x1),
-                    ("is", x1, x2),
-                    ("<", x2, x3),
-                    ("==", x3, x4),
-                    ("==", x4, x5),
-                ],
+                [("is", x0, x1), ("is", x1, x2), ("<", x2, x3), ("==", x3, x4), ("==", x4, x5)],
                 self.literal_keymap({}),
                 {"==", "is"},
             ),
@@ -341,9 +308,7 @@ class OperandComparisonGroupingSuite(Suite):
         ]
         self.assertEqual(
             group_comparison_operands(
-                two_groups,
-                self.literal_keymap({0: x0, 1: x1, 2: x2, 3: x3, 4: x4, 5: x0}),
-                {"=="},
+                two_groups, self.literal_keymap({0: x0, 1: x1, 2: x2, 3: x3, 4: x4, 5: x0}), {"=="}
             ),
             everything_combined,
             "All vars are assignable, everything is combined",
@@ -363,9 +328,7 @@ class OperandComparisonGroupingSuite(Suite):
             "Some vars are unassignable but x0 is, so we combine",
         )
         self.assertEqual(
-            group_comparison_operands(
-                two_groups, self.literal_keymap({0: x0, 5: x0}), {"=="}
-            ),
+            group_comparison_operands(two_groups, self.literal_keymap({0: x0, 5: x0}), {"=="}),
             everything_combined,
             "All vars are unassignable but x0 is, so we combine",
         )
@@ -391,12 +354,7 @@ class OperandComparisonGroupingSuite(Suite):
         single_comparison = [("==", x0, x1)]
         expected_output = [("==", [0, 1])]
 
-        assignable_combinations: list[dict[int, NameExpr]] = [
-            {},
-            {0: x0},
-            {1: x1},
-            {0: x0, 1: x1},
-        ]
+        assignable_combinations: list[dict[int, NameExpr]] = [{}, {0: x0}, {1: x1}, {0: x0, 1: x1}]
         to_group_by: list[set[str]] = [set(), {"=="}, {"is"}]
 
         for combo in assignable_combinations:

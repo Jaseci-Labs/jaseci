@@ -10,6 +10,8 @@ import unittest
 from types import ModuleType
 from typing import Any
 
+import pytest
+
 from mypy.errors import CompileError
 from mypy.moduleinspect import InspectError, ModuleInspect
 from mypy.stubdoc import (
@@ -42,11 +44,7 @@ from mypy.stubutil import (
     walk_packages,
 )
 from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import (
-    assert_equal,
-    assert_string_arrays_equal,
-    local_sys_path_set,
-)
+from mypy.test.helpers import assert_equal, assert_string_arrays_equal, local_sys_path_set
 
 
 class StubgenCmdLineSuite(unittest.TestCase):
@@ -64,9 +62,7 @@ class StubgenCmdLineSuite(unittest.TestCase):
                 os.mkdir(os.path.join("subdir", "pack"))
                 self.make_file("subdir", "pack", "__init__.py")
                 opts = parse_options(["subdir"])
-                py_mods, pyi_mods, c_mods = collect_build_targets(
-                    opts, mypy_options(opts)
-                )
+                py_mods, pyi_mods, c_mods = collect_build_targets(opts, mypy_options(opts))
                 assert_equal(pyi_mods, [])
                 assert_equal(c_mods, [])
                 files = {mod.path for mod in py_mods}
@@ -92,9 +88,7 @@ class StubgenCmdLineSuite(unittest.TestCase):
                 self.make_file("pack", "a.py")
                 self.make_file("pack", "b.py")
                 opts = parse_options(["-p", "pack"])
-                py_mods, pyi_mods, c_mods = collect_build_targets(
-                    opts, mypy_options(opts)
-                )
+                py_mods, pyi_mods, c_mods = collect_build_targets(opts, mypy_options(opts))
                 assert_equal(pyi_mods, [])
                 assert_equal(c_mods, [])
                 files = {os.path.relpath(mod.path or "FAIL") for mod in py_mods}
@@ -148,13 +142,7 @@ class StubgenCliParseSuite(unittest.TestCase):
             all_mypy_packages = set(walk_packages(m, ["mypy"]))
             self.assertTrue(
                 all_mypy_packages.issuperset(
-                    {
-                        "mypy",
-                        "mypy.errors",
-                        "mypy.stubgen",
-                        "mypy.test",
-                        "mypy.test.helpers",
-                    }
+                    {"mypy", "mypy.errors", "mypy.stubgen", "mypy.test", "mypy.test.helpers"}
                 )
             )
 
@@ -172,16 +160,12 @@ class StubgenUtilSuite(unittest.TestCase):
     def test_parse_signature_with_optional_args(self) -> None:
         self.assert_parse_signature("func([arg])", ("func", [], ["arg"]))
         self.assert_parse_signature("func(arg[, arg2])", ("func", ["arg"], ["arg2"]))
-        self.assert_parse_signature(
-            "func([arg[, arg2]])", ("func", [], ["arg", "arg2"])
-        )
+        self.assert_parse_signature("func([arg[, arg2]])", ("func", [], ["arg", "arg2"]))
 
     def test_parse_signature_with_default_arg(self) -> None:
         self.assert_parse_signature("func(arg=None)", ("func", [], ["arg"]))
         self.assert_parse_signature("func(arg, arg2=None)", ("func", ["arg"], ["arg2"]))
-        self.assert_parse_signature(
-            'func(arg=1, arg2="")', ("func", [], ["arg", "arg2"])
-        )
+        self.assert_parse_signature('func(arg=1, arg2="")', ("func", [], ["arg", "arg2"]))
 
     def test_parse_signature_with_qualified_function(self) -> None:
         self.assert_parse_signature("ClassName.func(arg)", ("func", ["arg"], []))
@@ -192,18 +176,12 @@ class StubgenUtilSuite(unittest.TestCase):
         )
 
     def test_parse_signature_with_star_arg(self) -> None:
-        self.assert_parse_signature(
-            "ClassName.func(arg, *args)", ("func", ["arg", "*args"], [])
-        )
+        self.assert_parse_signature("ClassName.func(arg, *args)", ("func", ["arg", "*args"], []))
 
     def test_parse_signature_with_star_star_arg(self) -> None:
-        self.assert_parse_signature(
-            "ClassName.func(arg, **args)", ("func", ["arg", "**args"], [])
-        )
+        self.assert_parse_signature("ClassName.func(arg, **args)", ("func", ["arg", "**args"], []))
 
-    def assert_parse_signature(
-        self, sig: str, result: tuple[str, list[str], list[str]]
-    ) -> None:
+    def assert_parse_signature(self, sig: str, result: tuple[str, list[str], list[str]]) -> None:
         assert_equal(parse_signature(sig), result)
 
     def test_build_signature(self) -> None:
@@ -287,30 +265,20 @@ class StubgenUtilSuite(unittest.TestCase):
         assert_equal(infer_sig_from_docstring("\nfunc(x, y", "func"), [])
         assert_equal(
             infer_sig_from_docstring("\nfunc(x=z(y))", "func"),
-            [
-                FunctionSig(
-                    name="func", args=[ArgSig(name="x", default=True)], ret_type="Any"
-                )
-            ],
+            [FunctionSig(name="func", args=[ArgSig(name="x", default=True)], ret_type="Any")],
         )
 
         assert_equal(infer_sig_from_docstring("\nfunc x", "func"), [])
         # Try to infer signature from type annotation.
         assert_equal(
             infer_sig_from_docstring("\nfunc(x: int)", "func"),
-            [
-                FunctionSig(
-                    name="func", args=[ArgSig(name="x", type="int")], ret_type="Any"
-                )
-            ],
+            [FunctionSig(name="func", args=[ArgSig(name="x", type="int")], ret_type="Any")],
         )
         assert_equal(
             infer_sig_from_docstring("\nfunc(x: int=3)", "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type="int", default=True)],
-                    ret_type="Any",
+                    name="func", args=[ArgSig(name="x", type="int", default=True)], ret_type="Any"
                 )
             ],
         )
@@ -319,9 +287,7 @@ class StubgenUtilSuite(unittest.TestCase):
             infer_sig_from_docstring("\nfunc(x=3)", "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type=None, default=True)],
-                    ret_type="Any",
+                    name="func", args=[ArgSig(name="x", type=None, default=True)], ret_type="Any"
                 )
             ],
         )
@@ -335,9 +301,7 @@ class StubgenUtilSuite(unittest.TestCase):
             infer_sig_from_docstring("\nfunc(x: int=3) -> int", "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type="int", default=True)],
-                    ret_type="int",
+                    name="func", args=[ArgSig(name="x", type="int", default=True)], ret_type="int"
                 )
             ],
         )
@@ -346,9 +310,7 @@ class StubgenUtilSuite(unittest.TestCase):
             infer_sig_from_docstring("\nfunc(x: int=3) -> int   \n", "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type="int", default=True)],
-                    ret_type="int",
+                    name="func", args=[ArgSig(name="x", type="int", default=True)], ret_type="int"
                 )
             ],
         )
@@ -357,9 +319,7 @@ class StubgenUtilSuite(unittest.TestCase):
             infer_sig_from_docstring("\nfunc(x: Tuple[int, str]) -> str", "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type="Tuple[int,str]")],
-                    ret_type="str",
+                    name="func", args=[ArgSig(name="x", type="Tuple[int,str]")], ret_type="str"
                 )
             ],
         )
@@ -382,20 +342,14 @@ class StubgenUtilSuite(unittest.TestCase):
 
         assert_equal(
             infer_sig_from_docstring("\nfunc(x: foo.bar)", "func"),
-            [
-                FunctionSig(
-                    name="func", args=[ArgSig(name="x", type="foo.bar")], ret_type="Any"
-                )
-            ],
+            [FunctionSig(name="func", args=[ArgSig(name="x", type="foo.bar")], ret_type="Any")],
         )
 
         assert_equal(
             infer_sig_from_docstring("\nfunc(x: list=[1,2,[3,4]])", "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type="list", default=True)],
-                    ret_type="Any",
+                    name="func", args=[ArgSig(name="x", type="list", default=True)], ret_type="Any"
                 )
             ],
         )
@@ -404,33 +358,23 @@ class StubgenUtilSuite(unittest.TestCase):
             infer_sig_from_docstring('\nfunc(x: str="nasty[")', "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type="str", default=True)],
-                    ret_type="Any",
+                    name="func", args=[ArgSig(name="x", type="str", default=True)], ret_type="Any"
                 )
             ],
         )
 
-        assert_equal(
-            infer_sig_from_docstring("\nfunc[(x: foo.bar, invalid]", "func"), []
-        )
+        assert_equal(infer_sig_from_docstring("\nfunc[(x: foo.bar, invalid]", "func"), [])
 
         assert_equal(
             infer_sig_from_docstring("\nfunc(x: invalid::type<with_template>)", "func"),
-            [
-                FunctionSig(
-                    name="func", args=[ArgSig(name="x", type=None)], ret_type="Any"
-                )
-            ],
+            [FunctionSig(name="func", args=[ArgSig(name="x", type=None)], ret_type="Any")],
         )
 
         assert_equal(
             infer_sig_from_docstring('\nfunc(x: str="")', "func"),
             [
                 FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x", type="str", default=True)],
-                    ret_type="Any",
+                    name="func", args=[ArgSig(name="x", type="str", default=True)], ret_type="Any"
                 )
             ],
         )
@@ -438,13 +382,7 @@ class StubgenUtilSuite(unittest.TestCase):
     def test_infer_sig_from_docstring_duplicate_args(self) -> None:
         assert_equal(
             infer_sig_from_docstring("\nfunc(x, x) -> str\nfunc(x, y) -> int", "func"),
-            [
-                FunctionSig(
-                    name="func",
-                    args=[ArgSig(name="x"), ArgSig(name="y")],
-                    ret_type="int",
-                )
-            ],
+            [FunctionSig(name="func", args=[ArgSig(name="x"), ArgSig(name="y")], ret_type="int")],
         )
 
     def test_infer_sig_from_docstring_bad_indentation(self) -> None:
@@ -478,20 +416,15 @@ class StubgenUtilSuite(unittest.TestCase):
 
     def test_infer_prop_type_from_docstring(self) -> None:
         assert_equal(infer_prop_type_from_docstring("str: A string."), "str")
+        assert_equal(infer_prop_type_from_docstring("Optional[int]: An int."), "Optional[int]")
         assert_equal(
-            infer_prop_type_from_docstring("Optional[int]: An int."), "Optional[int]"
-        )
-        assert_equal(
-            infer_prop_type_from_docstring("Tuple[int, int]: A tuple."),
-            "Tuple[int, int]",
+            infer_prop_type_from_docstring("Tuple[int, int]: A tuple."), "Tuple[int, int]"
         )
         assert_equal(infer_prop_type_from_docstring("\nstr: A string."), None)
 
     def test_infer_sig_from_docstring_square_brackets(self) -> None:
         assert (
-            infer_sig_from_docstring(
-                "fetch_row([maxrows, how]) -- Fetches stuff", "fetch_row"
-            )
+            infer_sig_from_docstring("fetch_row([maxrows, how]) -- Fetches stuff", "fetch_row")
             == []
         )
 
@@ -645,9 +578,7 @@ class StubgenUtilSuite(unittest.TestCase):
 
         assert_equal(remove_misplaced_type_comments(original), dest)
 
-    @unittest.skipIf(
-        sys.platform == "win32", "Tests building the paths common ancestor on *nix"
-    )
+    @unittest.skipIf(sys.platform == "win32", "Tests building the paths common ancestor on *nix")
     def test_common_dir_prefix_unix(self) -> None:
         assert common_dir_prefix([]) == "."
         assert common_dir_prefix(["x.pyi"]) == "."
@@ -769,6 +700,8 @@ class StubgenPythonSuite(DataSuite):
                 f.write(content)
 
         options = self.parse_flags(source, extra)
+        if sys.version_info < options.pyversion:
+            pytest.skip()
         modules = self.parse_modules(source)
         out_dir = "out"
         try:
@@ -789,9 +722,7 @@ class StubgenPythonSuite(DataSuite):
             except CompileError as e:
                 a = e.messages
             assert_string_arrays_equal(
-                testcase.output,
-                a,
-                f"Invalid output ({testcase.file}, line {testcase.line})",
+                testcase.output, a, f"Invalid output ({testcase.file}, line {testcase.line})"
             )
         finally:
             for mod in mods:
@@ -862,9 +793,7 @@ class StubgencSuite(unittest.TestCase):
         assert_equal(infer_method_ret_type("__hash__"), "int")
 
     def test_infer_getitem_sig(self) -> None:
-        assert_equal(
-            infer_c_method_args("__getitem__"), [self_arg, ArgSig(name="index")]
-        )
+        assert_equal(infer_c_method_args("__getitem__"), [self_arg, ArgSig(name="index")])
 
     def test_infer_setitem_sig(self) -> None:
         assert_equal(
@@ -876,15 +805,12 @@ class StubgencSuite(unittest.TestCase):
     def test_infer_eq_op_sig(self) -> None:
         for op in ("eq", "ne", "lt", "le", "gt", "ge"):
             assert_equal(
-                infer_c_method_args(f"__{op}__"),
-                [self_arg, ArgSig(name="other", type="object")],
+                infer_c_method_args(f"__{op}__"), [self_arg, ArgSig(name="other", type="object")]
             )
 
     def test_infer_binary_op_sig(self) -> None:
         for op in ("add", "radd", "sub", "rsub", "mul", "rmul"):
-            assert_equal(
-                infer_c_method_args(f"__{op}__"), [self_arg, ArgSig(name="other")]
-            )
+            assert_equal(infer_c_method_args(f"__{op}__"), [self_arg, ArgSig(name="other")])
 
     def test_infer_equality_op_sig(self) -> None:
         for op in ("eq", "ne", "lt", "le", "gt", "ge", "contains"):
@@ -901,9 +827,7 @@ class StubgencSuite(unittest.TestCase):
     def test_generate_class_stub_no_crash_for_object(self) -> None:
         output: list[str] = []
         mod = ModuleType("module", "")  # any module is fine
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
 
         gen.generate_class_stub("alias", object, output)
         assert_equal(gen.get_imports().splitlines(), [])
@@ -916,9 +840,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType("module", "")  # any module is fine
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_class_stub("C", TestClassVariableCls, output)
         assert_equal(gen.get_imports().splitlines(), ["from typing import ClassVar"])
         assert_equal(output, ["class C:", "    x: ClassVar[int] = ..."])
@@ -929,9 +851,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType("module, ")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_class_stub("C", TestClass, output)
         assert_equal(output, ["class C(KeyError): ..."])
         assert_equal(gen.get_imports().splitlines(), [])
@@ -939,9 +859,7 @@ class StubgencSuite(unittest.TestCase):
     def test_generate_c_type_inheritance_same_module(self) -> None:
         output: list[str] = []
         mod = ModuleType(TestBaseClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_class_stub("C", TestClass, output)
         assert_equal(output, ["class C(TestBaseClass): ..."])
         assert_equal(gen.get_imports().splitlines(), [])
@@ -954,9 +872,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType("module", "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_class_stub("C", TestClass, output)
         assert_equal(output, ["class C(argparse.Action): ..."])
         assert_equal(gen.get_imports().splitlines(), ["import argparse"])
@@ -967,9 +883,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType("module", "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_class_stub("C", TestClass, output)
         assert_equal(output, ["class C(type): ..."])
         assert_equal(gen.get_imports().splitlines(), [])
@@ -983,9 +897,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1004,9 +916,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1024,9 +934,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1048,9 +956,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1079,9 +985,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1103,9 +1007,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(self.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub("test", test, output=output)
         assert_equal(output, ["def test(arg0: argparse.Action) -> Any: ..."])
         assert_equal(gen.get_imports().splitlines(), ["import argparse"])
@@ -1124,9 +1026,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType("argparse", "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub("test", test, output=output)
         assert_equal(output, ["def test(arg0: Action) -> Action: ..."])
         assert_equal(gen.get_imports().splitlines(), [])
@@ -1141,13 +1041,9 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(self.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub("test", test, output=output)
-        assert_equal(
-            output, ["def test(arg0: argparse.Action) -> argparse.Action: ..."]
-        )
+        assert_equal(output, ["def test(arg0: argparse.Action) -> argparse.Action: ..."])
         assert_equal(gen.get_imports().splitlines(), ["import argparse"])
 
     def test_generate_c_function_same_module_nested(self) -> None:
@@ -1164,9 +1060,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType("argparse", "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub("test", test, output=output)
         assert_equal(output, ["def test(arg0: list[Action]) -> list[Action]: ..."])
         assert_equal(gen.get_imports().splitlines(), [])
@@ -1185,13 +1079,9 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType("argparse", "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub("test", test, output=output)
-        assert_equal(
-            output, ["def test(arg0: Union[Action, None]) -> Tuple[Action, None]: ..."]
-        )
+        assert_equal(output, ["def test(arg0: Union[Action, None]) -> Tuple[Action, None]: ..."])
         assert_equal(gen.get_imports().splitlines(), [])
 
     def test_generate_c_function_other_module_nested(self) -> None:
@@ -1219,9 +1109,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(self.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub("test", test, output=output)
         assert_equal(output, ["def test(*args, **kwargs): ..."])
         assert_equal(gen.get_imports().splitlines(), [])
@@ -1240,9 +1128,7 @@ class StubgencSuite(unittest.TestCase):
         readwrite_properties: list[str] = []
         readonly_properties: list[str] = []
         mod = ModuleType("module", "")  # any module is fine
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_property_stub(
             "attribute",
             TestClass.__dict__["attribute"],
@@ -1252,9 +1138,7 @@ class StubgencSuite(unittest.TestCase):
             readonly_properties,
         )
         assert_equal(readwrite_properties, [])
-        assert_equal(
-            readonly_properties, ["@property", "def attribute(self) -> str: ..."]
-        )
+        assert_equal(readonly_properties, ["@property", "def attribute(self) -> str: ..."])
 
     def test_generate_c_property_with_rw_property(self) -> None:
         class TestClass:
@@ -1272,9 +1156,7 @@ class StubgencSuite(unittest.TestCase):
         readwrite_properties: list[str] = []
         readonly_properties: list[str] = []
         mod = ModuleType("module", "")  # any module is fine
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_property_stub(
             "attribute",
             TestClass.__dict__["attribute"],
@@ -1295,9 +1177,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1316,9 +1196,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1337,9 +1215,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
@@ -1358,18 +1234,14 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
             output=output,
             class_info=ClassInfo(self_var="self", cls=TestClass, name="TestClass"),
         )
-        assert_equal(
-            output, ["def test(self, arg0: Dict[argparse.Action, int]) -> Any: ..."]
-        )
+        assert_equal(output, ["def test(self, arg0: Dict[argparse.Action, int]) -> Any: ..."])
         assert_equal(gen.get_imports().splitlines(), ["import argparse"])
 
     def test_generate_c_type_with_generic_using_other_module_last(self) -> None:
@@ -1381,18 +1253,14 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "test",
             TestClass.test,
             output=output,
             class_info=ClassInfo(self_var="self", cls=TestClass, name="TestClass"),
         )
-        assert_equal(
-            output, ["def test(self, arg0: Dict[str, argparse.Action]) -> Any: ..."]
-        )
+        assert_equal(output, ["def test(self, arg0: Dict[str, argparse.Action]) -> Any: ..."])
         assert_equal(gen.get_imports().splitlines(), ["import argparse"])
 
     def test_generate_c_type_with_overload_pybind11(self) -> None:
@@ -1409,9 +1277,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "__init__",
             TestClass.__init__,
@@ -1443,9 +1309,7 @@ class StubgencSuite(unittest.TestCase):
 
         output: list[str] = []
         mod = ModuleType(TestClass.__module__, "")
-        gen = InspectionStubGenerator(
-            mod.__name__, known_modules=[mod.__name__], module=mod
-        )
+        gen = InspectionStubGenerator(mod.__name__, known_modules=[mod.__name__], module=mod)
         gen.generate_function_stub(
             "__init__",
             TestClass.__init__,
@@ -1472,17 +1336,12 @@ class StubgencSuite(unittest.TestCase):
 class ArgSigSuite(unittest.TestCase):
     def test_repr(self) -> None:
         assert_equal(
-            repr(ArgSig(name='asd"dsa')),
-            "ArgSig(name='asd\"dsa', type=None, default=False)",
+            repr(ArgSig(name='asd"dsa')), "ArgSig(name='asd\"dsa', type=None, default=False)"
         )
         assert_equal(
-            repr(ArgSig(name="asd'dsa")),
-            'ArgSig(name="asd\'dsa", type=None, default=False)',
+            repr(ArgSig(name="asd'dsa")), 'ArgSig(name="asd\'dsa", type=None, default=False)'
         )
-        assert_equal(
-            repr(ArgSig("func", "str")),
-            "ArgSig(name='func', type='str', default=False)",
-        )
+        assert_equal(repr(ArgSig("func", "str")), "ArgSig(name='func', type='str', default=False)")
         assert_equal(
             repr(ArgSig("func", "str", default=True)),
             "ArgSig(name='func', type='str', default=True)",

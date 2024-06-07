@@ -101,9 +101,7 @@ def fail(message: str) -> NoReturn:
     sys.exit(message)
 
 
-def emit_messages(
-    options: Options, messages: list[str], dt: float, serious: bool = False
-) -> None:
+def emit_messages(options: Options, messages: list[str], dt: float, serious: bool = False) -> None:
     # ... you know, just in case.
     if options.junit_xml:
         py_version = f"{options.python_version[0]}_{options.python_version[1]}"
@@ -135,9 +133,7 @@ def get_mypy_config(
 
     if compiler_options.separate:
         mypyc_sources = [
-            src
-            for src in mypyc_sources
-            if src.path and not src.path.endswith("__init__.py")
+            src for src in mypyc_sources if src.path and not src.path.endswith("__init__.py")
         ]
 
     if not mypyc_sources:
@@ -290,9 +286,7 @@ def build_using_shared_lib(
 
     for source in sources:
         module_name = source.module.split(".")[-1]
-        shim_file = generate_c_extension_shim(
-            source.module, module_name, build_dir, group_name
-        )
+        shim_file = generate_c_extension_shim(source.module, module_name, build_dir, group_name)
 
         # We include the __init__ in the "module name" we stick in the Extension,
         # since this seems to be needed for it to end up in the right place.
@@ -302,9 +296,7 @@ def build_using_shared_lib(
             full_module_name += ".__init__"
         extensions.append(
             get_extension()(
-                full_module_name,
-                sources=[shim_file],
-                extra_compile_args=extra_compile_args,
+                full_module_name, sources=[shim_file], extra_compile_args=extra_compile_args
             )
         )
 
@@ -459,10 +451,7 @@ def mypyc_build(
             if os.path.splitext(cfile)[1] == ".c":
                 cfilenames.append(cfile)
 
-        deps = [
-            os.path.join(compiler_options.target_dir, dep)
-            for dep in get_header_deps(cfiles)
-        ]
+        deps = [os.path.join(compiler_options.target_dir, dep) for dep in get_header_deps(cfiles)]
         group_cfilenames.append((cfilenames, deps))
 
     return groups, group_cfilenames
@@ -621,9 +610,7 @@ def mypycify(
             )
         else:
             extensions.extend(
-                build_single_module(
-                    group_sources, cfilenames + shared_cfilenames, cflags
-                )
+                build_single_module(group_sources, cfilenames + shared_cfilenames, cflags)
             )
 
     return extensions
