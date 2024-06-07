@@ -43,11 +43,7 @@ def get_edge_candidates(o: object) -> Iterator[tuple[object, object]]:
     if type(o) not in COLLECTION_TYPE_BLACKLIST:
         for attr in dir(o):
             try:
-                if (
-                    attr not in ATTR_BLACKLIST
-                    and hasattr(o, attr)
-                    and not isproperty(o, attr)
-                ):
+                if attr not in ATTR_BLACKLIST and hasattr(o, attr) and not isproperty(o, attr):
                     e = getattr(o, attr)
                     if type(e) not in ATOMIC_TYPE_BLACKLIST:
                         yield attr, e
@@ -77,9 +73,7 @@ def get_edges(o: object) -> Iterator[tuple[object, object]]:
                 yield s, e
 
 
-def get_reachable_graph(
-    root: object,
-) -> tuple[dict[int, object], dict[int, tuple[int, object]]]:
+def get_reachable_graph(root: object) -> tuple[dict[int, object], dict[int, tuple[int, object]]]:
     parents = {}
     seen = {id(root): root}
     worklist = [root]

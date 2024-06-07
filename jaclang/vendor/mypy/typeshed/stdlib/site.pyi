@@ -8,16 +8,10 @@ USER_BASE: str | None
 
 def main() -> None: ...
 def abs_paths() -> None: ...  # undocumented
-def addpackage(
-    sitedir: StrPath, name: StrPath, known_paths: set[str] | None
-) -> set[str] | None: ...  # undocumented
+def addpackage(sitedir: StrPath, name: StrPath, known_paths: set[str] | None) -> set[str] | None: ...  # undocumented
 def addsitedir(sitedir: str, known_paths: set[str] | None = None) -> None: ...
-def addsitepackages(
-    known_paths: set[str] | None, prefixes: Iterable[str] | None = None
-) -> set[str] | None: ...  # undocumented
-def addusersitepackages(
-    known_paths: set[str] | None,
-) -> set[str] | None: ...  # undocumented
+def addsitepackages(known_paths: set[str] | None, prefixes: Iterable[str] | None = None) -> set[str] | None: ...  # undocumented
+def addusersitepackages(known_paths: set[str] | None) -> set[str] | None: ...  # undocumented
 def check_enableusersite() -> bool | None: ...  # undocumented
 def enablerlcompleter() -> None: ...  # undocumented
 def execsitecustomize() -> None: ...  # undocumented

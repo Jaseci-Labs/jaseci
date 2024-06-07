@@ -8,15 +8,12 @@ from typing import Optional, Callable
 
 from lark import Transformer, v_args
 
-
 class Ast:
     """Abstract class
 
     Subclasses will be collected by `create_transformer()`
     """
-
     pass
-
 
 class AsList:
     """Abstract class
@@ -24,25 +21,19 @@ class AsList:
     Subclasses will be instantiated with the parse results as a single list, instead of as arguments.
     """
 
-
 class WithMeta:
     """Abstract class
 
     Subclasses will be instantiated with the Meta instance of the tree. (see ``v_args`` for more detail)
     """
-
     pass
 
-
 def camel_to_snake(name):
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
 
-
-def create_transformer(
-    ast_module: types.ModuleType,
-    transformer: Optional[Transformer] = None,
-    decorator_factory: Callable = v_args,
-) -> Transformer:
+def create_transformer(ast_module: types.ModuleType,
+                       transformer: Optional[Transformer]=None,
+                       decorator_factory: Callable=v_args) -> Transformer:
     """Collects `Ast` subclasses from the given module, and creates a Lark transformer that builds the AST.
 
     For each class, we create a corresponding rule in the transformer, with a matching name.
@@ -59,11 +50,9 @@ def create_transformer(
     t = transformer or Transformer()
 
     for name, obj in inspect.getmembers(ast_module):
-        if not name.startswith("_") and inspect.isclass(obj):
+        if not name.startswith('_') and inspect.isclass(obj):
             if issubclass(obj, Ast):
-                wrapper = decorator_factory(
-                    inline=not issubclass(obj, AsList), meta=issubclass(obj, WithMeta)
-                )
+                wrapper = decorator_factory(inline=not issubclass(obj, AsList), meta=issubclass(obj, WithMeta))
                 obj = wrapper(obj).__get__(t)
                 setattr(t, camel_to_snake(name), obj)
 

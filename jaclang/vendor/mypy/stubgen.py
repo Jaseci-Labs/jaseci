@@ -47,7 +47,7 @@ import os
 import os.path
 import sys
 import traceback
-from typing import Final, Iterable
+from typing import Final, Iterable, Iterator
 
 import mypy.build
 import mypy.mixedtraverser
@@ -100,6 +100,7 @@ from mypy.nodes import (
     OpExpr,
     OverloadedFuncDef,
     SetExpr,
+    StarExpr,
     Statement,
     StrExpr,
     TempNode,
@@ -109,9 +110,11 @@ from mypy.nodes import (
     Var,
 )
 from mypy.options import Options as MypyOptions
+from mypy.sharedparse import MAGIC_METHODS_POS_ARGS_ONLY
 from mypy.stubdoc import ArgSig, FunctionSig
 from mypy.stubgenc import InspectionStubGenerator, generate_stub_for_c_module
 from mypy.stubutil import (
+    TYPING_BUILTIN_REPLACEMENTS,
     BaseStubGenerator,
     CantImport,
     ClassInfo,
@@ -147,13 +150,7 @@ from mypy.types import (
 from mypy.visitor import NodeVisitor
 
 # Common ways of naming package containing vendored modules.
-VENDOR_PACKAGES: Final = [
-    "packages",
-    "vendor",
-    "vendored",
-    "_vendor",
-    "_vendored_packages",
-]
+VENDOR_PACKAGES: Final = ["packages", "vendor", "vendored", "_vendor", "_vendored_packages"]
 
 # Avoid some file names that are unnecessary or likely to cause trouble (\n for end of path).
 BLACKLIST: Final = [
@@ -293,20 +290,19 @@ class AliasPrinter(NodeVisitor[str]):
                 raise ValueError(f"Unknown argument kind {kind} in call")
         return f"{callee}({', '.join(args)})"
 
+    def _visit_ref_expr(self, node: NameExpr | MemberExpr) -> str:
+        fullname = self.stubgen.get_fullname(node)
+        if fullname in TYPING_BUILTIN_REPLACEMENTS:
+            return self.stubgen.add_name(TYPING_BUILTIN_REPLACEMENTS[fullname], require=False)
+        qualname = get_qualified_name(node)
+        self.stubgen.import_tracker.require_name(qualname)
+        return qualname
+
     def visit_name_expr(self, node: NameExpr) -> str:
-        self.stubgen.import_tracker.require_name(node.name)
-        return node.name
+        return self._visit_ref_expr(node)
 
     def visit_member_expr(self, o: MemberExpr) -> str:
-        node: Expression = o
-        trailer = ""
-        while isinstance(node, MemberExpr):
-            trailer = "." + node.name + trailer
-            node = node.expr
-        if not isinstance(node, NameExpr):
-            return ERROR_MARKER
-        self.stubgen.import_tracker.require_name(node.name)
-        return node.name + trailer
+        return self._visit_ref_expr(o)
 
     def visit_str_expr(self, node: StrExpr) -> str:
         return repr(node.value)
@@ -345,6 +341,9 @@ class AliasPrinter(NodeVisitor[str]):
     def visit_op_expr(self, o: OpExpr) -> str:
         return f"{o.left.accept(self)} {o.op} {o.right.accept(self)}"
 
+    def visit_star_expr(self, o: StarExpr) -> str:
+        return f"*{o.expr.accept(self)}"
+
 
 def find_defined_names(file: MypyFile) -> set[str]:
     finder = DefinitionFinder()
@@ -352,10 +351,16 @@ def find_defined_names(file: MypyFile) -> set[str]:
     return finder.names
 
 
+def get_assigned_names(lvalues: Iterable[Expression]) -> Iterator[str]:
+    for lvalue in lvalues:
+        if isinstance(lvalue, NameExpr):
+            yield lvalue.name
+        elif isinstance(lvalue, TupleExpr):
+            yield from get_assigned_names(lvalue.items)
+
+
 class DefinitionFinder(mypy.traverser.TraverserVisitor):
     """Find names of things defined at the top level of a module."""
-
-    # TODO: Assignment statements etc.
 
     def __init__(self) -> None:
         # Short names of things defined at the top level.
@@ -368,6 +373,10 @@ class DefinitionFinder(mypy.traverser.TraverserVisitor):
     def visit_func_def(self, o: FuncDef) -> None:
         # Don't recurse, as we only keep track of top-level definitions.
         self.names.add(o.name)
+
+    def visit_assignment_stmt(self, o: AssignmentStmt) -> None:
+        for name in get_assigned_names(o.lvalues):
+            self.names.add(name)
 
 
 def find_referenced_names(file: MypyFile) -> set[str]:
@@ -474,9 +483,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                 # skip the overload implementation and clear the decorator we just processed
                 self.clear_decorators()
 
-    def get_default_function_sig(
-        self, func_def: FuncDef, ctx: FunctionContext
-    ) -> FunctionSig:
+    def get_default_function_sig(self, func_def: FuncDef, ctx: FunctionContext) -> FunctionSig:
         args = self._get_func_args(func_def, ctx)
         retname = self._get_func_return(func_def, ctx)
         return FunctionSig(func_def.name, args, retname)
@@ -484,6 +491,9 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
     def _get_func_args(self, o: FuncDef, ctx: FunctionContext) -> list[ArgSig]:
         args: list[ArgSig] = []
 
+        # Ignore pos-only status of magic methods whose args names are elided by mypy at parse
+        actually_pos_only_args = o.name not in MAGIC_METHODS_POS_ARGS_ONLY
+        pos_only_marker_position = 0  # Where to insert "/", if any
         for i, arg_ in enumerate(o.arguments):
             var = arg_.variable
             kind = arg_.kind
@@ -504,6 +514,9 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                 if not isinstance(get_proper_type(annotated_type), AnyType):
                     typename = self.print_annotation(annotated_type)
 
+            if actually_pos_only_args and arg_.pos_only:
+                pos_only_marker_position += 1
+
             if kind.is_named() and not any(arg.name.startswith("*") for arg in args):
                 args.append(ArgSig("*"))
 
@@ -511,9 +524,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
             if arg_.initializer:
                 if not typename:
                     typename = self.get_str_type_of_node(arg_.initializer, True, False)
-                potential_default, valid = self.get_str_default_of_node(
-                    arg_.initializer
-                )
+                potential_default, valid = self.get_str_default_of_node(arg_.initializer)
                 if valid and len(potential_default) <= 200:
                     default = potential_default
             elif kind == ARG_STAR:
@@ -522,13 +533,10 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                 name = f"**{name}"
 
             args.append(
-                ArgSig(
-                    name,
-                    typename,
-                    default=bool(arg_.initializer),
-                    default_value=default,
-                )
+                ArgSig(name, typename, default=bool(arg_.initializer), default_value=default)
             )
+        if pos_only_marker_position:
+            args.insert(pos_only_marker_position, ArgSig("/"))
 
         if ctx.class_info is not None and all(
             arg.type is None and arg.default is False for arg in args
@@ -539,23 +547,6 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
             if new_args is not None:
                 args = new_args
 
-        is_dataclass_generated = (
-            self.analyzed
-            and self.processing_dataclass
-            and o.info.names[o.name].plugin_generated
-        )
-        if (
-            o.name == "__init__"
-            and is_dataclass_generated
-            and "**" in [a.name for a in args]
-        ):
-            # The dataclass plugin generates invalid nameless "*" and "**" arguments
-            new_name = "".join(a.name.strip("*") for a in args)
-            for arg in args:
-                if arg.name == "*":
-                    arg.name = f"*{new_name}_"  # this name is guaranteed to be unique
-                elif arg.name == "**":
-                    arg.name = f"**{new_name}__"  # same here
         return args
 
     def _get_func_return(self, o: FuncDef, ctx: FunctionContext) -> str | None:
@@ -603,9 +594,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
 
     def visit_func_def(self, o: FuncDef) -> None:
         is_dataclass_generated = (
-            self.analyzed
-            and self.processing_dataclass
-            and o.info.names[o.name].plugin_generated
+            self.analyzed and self.processing_dataclass and o.info.names[o.name].plugin_generated
         )
         if is_dataclass_generated and o.name != "__init__":
             # Skip methods generated by the @dataclass decorator (except for __init__)
@@ -652,10 +641,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
         sigs = self.get_signatures(default_sig, self.sig_generators, ctx)
 
         for output in self.format_func_def(
-            sigs,
-            is_coroutine=o.is_coroutine,
-            decorators=self._decorators,
-            docstring=ctx.docstring,
+            sigs, is_coroutine=o.is_coroutine, decorators=self._decorators, docstring=ctx.docstring
         ):
             self.add(output + "\n")
 
@@ -706,9 +692,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                     self.import_tracker.add_import("abc")
                 builtin_decorator_replacement = fullname[len("abc.abstract") :]
                 self.add_decorator(builtin_decorator_replacement, require_name=False)
-                self.add_decorator(
-                    f"{abc_module or 'abc'}.abstractmethod", require_name=True
-                )
+                self.add_decorator(f"{abc_module or 'abc'}.abstractmethod", require_name=True)
                 o.func.abstract_status = IS_ABSTRACT
             elif fullname in OVERLOAD_NAMES:
                 self.add_decorator(qualname, require_name=True)
@@ -804,9 +788,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                         continue
                     fields_str = ", ".join(f"({f!r}, {t})" for f, t in nt_fields)
                     namedtuple_name = self.add_name("typing.NamedTuple")
-                    base_types.append(
-                        f"{namedtuple_name}({typename!r}, [{fields_str}])"
-                    )
+                    base_types.append(f"{namedtuple_name}({typename!r}, [{fields_str}])")
                 elif self.is_typed_namedtuple(base):
                     base_types.append(base.accept(p))
                 else:
@@ -878,11 +860,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                     init = self.get_init(item.name, o.rvalue, annotation)
                     if init:
                         found = True
-                        if (
-                            not sep
-                            and self.is_top_level()
-                            and self._state not in (EMPTY, VAR)
-                        ):
+                        if not sep and self.is_top_level() and self._state not in (EMPTY, VAR):
                             init = "\n" + init
                             sep = True
                         self.add(init)
@@ -1055,10 +1033,15 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                 and isinstance(expr.node, (FuncDef, Decorator, MypyFile))
                 or isinstance(expr.node, TypeInfo)
             ) and not self.is_private_member(expr.node.fullname)
-        elif (
-            isinstance(expr, IndexExpr)
-            and isinstance(expr.base, NameExpr)
-            and not self.is_private_name(expr.base.name)
+        elif isinstance(expr, IndexExpr) and (
+            (isinstance(expr.base, NameExpr) and not self.is_private_name(expr.base.name))
+            or (  # Also some known aliases that could be member expression
+                isinstance(expr.base, MemberExpr)
+                and not self.is_private_member(get_qualified_name(expr.base))
+                and self.get_fullname(expr.base).startswith(
+                    ("builtins.", "typing.", "typing_extensions.", "collections.abc.")
+                )
+            )
         ):
             if isinstance(expr.index, TupleExpr):
                 indices = expr.index.items
@@ -1131,9 +1114,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
             names = [
                 name
                 for name, alias in o.names
-                if name in self._all_
-                and alias is None
-                and name not in self.IGNORED_DUNDERS
+                if name in self._all_ and alias is None and name not in self.IGNORED_DUNDERS
             ]
             exported_names.update(names)
 
@@ -1167,8 +1148,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
                 isinstance(annotation, UnboundType)
                 and not annotation.args
                 and annotation.name == "Final"
-                and self.import_tracker.module_for.get("Final")
-                in self.TYPING_MODULE_NAMES
+                and self.import_tracker.module_for.get("Final") in self.TYPING_MODULE_NAMES
             ):
                 # Final without type argument is invalid in stubs.
                 final_arg = self.get_str_type_of_node(rvalue)
@@ -1194,9 +1174,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
             and not isinstance(rvalue, TempNode)
         ):
             return " = ..."
-        if self.processing_dataclass and not (
-            isinstance(rvalue, TempNode) and rvalue.no_rhs
-        ):
+        if self.processing_dataclass and not (isinstance(rvalue, TempNode) and rvalue.no_rhs):
             return " = ..."
         # TODO: support other possible cases, where initializer is important
 
@@ -1216,10 +1194,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
         return any(self.is_private_name(part) for part in parts)
 
     def get_str_type_of_node(
-        self,
-        rvalue: Expression,
-        can_infer_optional: bool = False,
-        can_be_any: bool = True,
+        self, rvalue: Expression, can_infer_optional: bool = False, can_be_any: bool = True
     ) -> str:
         rvalue = self.maybe_unwrap_unary_expr(rvalue)
 
@@ -1234,17 +1209,13 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
         if isinstance(rvalue, ComplexExpr):  # 1j
             return "complex"
         if isinstance(rvalue, OpExpr) and rvalue.op in ("-", "+"):  # -1j + 1
-            if isinstance(
-                self.maybe_unwrap_unary_expr(rvalue.left), ComplexExpr
-            ) or isinstance(self.maybe_unwrap_unary_expr(rvalue.right), ComplexExpr):
+            if isinstance(self.maybe_unwrap_unary_expr(rvalue.left), ComplexExpr) or isinstance(
+                self.maybe_unwrap_unary_expr(rvalue.right), ComplexExpr
+            ):
                 return "complex"
         if isinstance(rvalue, NameExpr) and rvalue.name in ("True", "False"):
             return "bool"
-        if (
-            can_infer_optional
-            and isinstance(rvalue, NameExpr)
-            and rvalue.name == "None"
-        ):
+        if can_infer_optional and isinstance(rvalue, NameExpr) and rvalue.name == "None":
             return f"{self.add_name('_typeshed.Incomplete')} | None"
         if can_be_any:
             return self.add_name("_typeshed.Incomplete")
@@ -1277,10 +1248,7 @@ class ASTStubGenerator(BaseStubGenerator, mypy.traverser.TraverserVisitor):
             while isinstance(expr, UnaryExpr):
                 if expr.op != "not" or not isinstance(expr.expr, (NameExpr, UnaryExpr)):
                     break
-                if isinstance(expr.expr, NameExpr) and expr.expr.name not in (
-                    "True",
-                    "False",
-                ):
+                if isinstance(expr.expr, NameExpr) and expr.expr.name not in ("True", "False"):
                     break
                 expr = expr.expr
             return expr
@@ -1417,15 +1385,11 @@ def get_qualified_name(o: Expression) -> str:
 
 def remove_blacklisted_modules(modules: list[StubSource]) -> list[StubSource]:
     return [
-        module
-        for module in modules
-        if module.path is None or not is_blacklisted_path(module.path)
+        module for module in modules if module.path is None or not is_blacklisted_path(module.path)
     ]
 
 
-def split_pyc_from_py(
-    modules: list[StubSource],
-) -> tuple[list[StubSource], list[StubSource]]:
+def split_pyc_from_py(modules: list[StubSource]) -> tuple[list[StubSource], list[StubSource]]:
     py_modules = []
     pyc_modules = []
     for mod in modules:
@@ -1437,9 +1401,7 @@ def split_pyc_from_py(
 
 
 def is_blacklisted_path(path: str) -> bool:
-    return any(
-        substr in (normalize_path_separators(path) + "\n") for substr in BLACKLIST
-    )
+    return any(substr in (normalize_path_separators(path) + "\n") for substr in BLACKLIST)
 
 
 def normalize_path_separators(path: str) -> str:
@@ -1458,10 +1420,7 @@ def collect_build_targets(
     if options.packages or options.modules:
         if options.no_import:
             py_modules = find_module_paths_using_search(
-                options.modules,
-                options.packages,
-                options.search_path,
-                options.pyversion,
+                options.modules, options.packages, options.search_path, options.pyversion
             )
             c_modules: list[StubSource] = []
         else:
@@ -1558,10 +1517,7 @@ def translate_module_name(module: str, relative: int) -> tuple[str, int]:
 
 
 def find_module_paths_using_search(
-    modules: list[str],
-    packages: list[str],
-    search_path: list[str],
-    pyversion: tuple[int, int],
+    modules: list[str], packages: list[str], search_path: list[str], pyversion: tuple[int, int]
 ) -> list[StubSource]:
     """Find sources for modules and packages requested.
 
@@ -1571,9 +1527,7 @@ def find_module_paths_using_search(
     """
     result: list[StubSource] = []
     typeshed_path = default_lib_path(mypy.build.default_data_dir(), pyversion, None)
-    search_paths = SearchPaths(
-        (".",) + tuple(search_path), (), (), tuple(typeshed_path)
-    )
+    search_paths = SearchPaths((".",) + tuple(search_path), (), (), tuple(typeshed_path))
     cache = FindModuleCache(search_paths, fscache=None, options=None)
     for module in modules:
         m_result = cache.find_module(module)
@@ -1640,10 +1594,7 @@ def parse_source_file(mod: StubSource, mypy_options: MypyOptions) -> None:
 
 
 def generate_asts_for_modules(
-    py_modules: list[StubSource],
-    parse_only: bool,
-    mypy_options: MypyOptions,
-    verbose: bool,
+    py_modules: list[StubSource], parse_only: bool, mypy_options: MypyOptions, verbose: bool
 ) -> None:
     """Use mypy to parse (and optionally analyze) source files."""
     if not py_modules:
@@ -1705,9 +1656,7 @@ def generate_stub_for_py_module(
             export_less=export_less,
             include_docstrings=include_docstrings,
         )
-        assert (
-            mod.ast is not None
-        ), "This function must be used only with analyzed modules"
+        assert mod.ast is not None, "This function must be used only with analyzed modules"
         mod.ast.accept(gen)
         output = gen.output()
 
@@ -1726,9 +1675,7 @@ def generate_stubs(options: Options) -> None:
     all_modules = py_modules + pyc_modules + c_modules
     all_module_names = sorted(m.module for m in all_modules)
     # Use parsed sources to generate stubs for Python modules.
-    generate_asts_for_modules(
-        py_modules, options.parse_only, mypy_opts, options.verbose
-    )
+    generate_asts_for_modules(py_modules, options.parse_only, mypy_opts, options.verbose)
     files = []
     for mod in py_modules + pyc_modules:
         assert mod.path is not None, "Not found module was not skipped"
@@ -1739,9 +1686,7 @@ def generate_stubs(options: Options) -> None:
             target += ".pyi"
         target = os.path.join(options.output_dir, target)
         files.append(target)
-        with generate_guarded(
-            mod.module, target, options.ignore_errors, options.verbose
-        ):
+        with generate_guarded(mod.module, target, options.ignore_errors, options.verbose):
             generate_stub_for_py_module(
                 mod,
                 target,
@@ -1762,9 +1707,7 @@ def generate_stubs(options: Options) -> None:
             target = mod.module.replace(".", "/") + ".pyi"
         target = os.path.join(options.output_dir, target)
         files.append(target)
-        with generate_guarded(
-            mod.module, target, options.ignore_errors, options.verbose
-        ):
+        with generate_guarded(mod.module, target, options.ignore_errors, options.verbose):
             generate_stub_for_c_module(
                 mod.module,
                 target,
@@ -1795,9 +1738,7 @@ manual changes.  This directory is assumed to exist.
 
 
 def parse_options(args: list[str]) -> Options:
-    parser = argparse.ArgumentParser(
-        prog="stubgen", usage=HEADER, description=DESCRIPTION
-    )
+    parser = argparse.ArgumentParser(prog="stubgen", usage=HEADER, description=DESCRIPTION)
 
     parser.add_argument(
         "--ignore-errors",
@@ -1844,12 +1785,8 @@ def parse_options(args: list[str]) -> Options:
         action="store_true",
         help="include existing docstrings with the stubs",
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="show more verbose messages"
-    )
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="show fewer messages"
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="show more verbose messages")
+    parser.add_argument("-q", "--quiet", action="store_true", help="show fewer messages")
     parser.add_argument(
         "--doc-dir",
         metavar="PATH",
@@ -1908,9 +1845,7 @@ def parse_options(args: list[str]) -> Options:
     if ns.quiet and ns.verbose:
         parser.error("Cannot specify both quiet and verbose messages")
     if ns.inspect and ns.parse_only:
-        parser.error(
-            "Cannot specify both --parse-only/--no-analysis and --inspect-mode"
-        )
+        parser.error("Cannot specify both --parse-only/--no-analysis and --inspect-mode")
 
     # Create the output folder if it doesn't already exist.
     os.makedirs(ns.output_dir, exist_ok=True)

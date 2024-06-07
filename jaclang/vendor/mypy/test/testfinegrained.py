@@ -128,9 +128,7 @@ class FineGrainedSuite(DataSuite):
         a = [line.replace("\\", "/") for line in a]
 
         assert_string_arrays_equal(
-            testcase.output,
-            a,
-            f"Invalid output ({testcase.file}, line {testcase.line})",
+            testcase.output, a, f"Invalid output ({testcase.file}, line {testcase.line})"
         )
 
         if testcase.triggered:
@@ -140,9 +138,7 @@ class FineGrainedSuite(DataSuite):
                 f"Invalid active triggers ({testcase.file}, line {testcase.line})",
             )
 
-    def get_options(
-        self, source: str, testcase: DataDrivenTestCase, build_cache: bool
-    ) -> Options:
+    def get_options(self, source: str, testcase: DataDrivenTestCase, build_cache: bool) -> Options:
         # This handles things like '# flags: --foo'.
         options = parse_options(source, testcase, incremental_step=1)
         options.incremental = True
@@ -168,9 +164,7 @@ class FineGrainedSuite(DataSuite):
         return options
 
     def run_check(self, server: Server, sources: list[BuildSource]) -> list[str]:
-        response = server.check(
-            sources, export_types=False, is_tty=False, terminal_width=-1
-        )
+        response = server.check(sources, export_types=False, is_tty=False, terminal_width=-1)
         out = response["out"] or response["err"]
         assert isinstance(out, str)
         return out.splitlines()
@@ -241,9 +235,7 @@ class FineGrainedSuite(DataSuite):
 
         expected_rechecked = testcase.expected_rechecked_modules.get(step - 1)
         if expected_rechecked is not None:
-            assert_module_equivalence(
-                "rechecked" + str(step - 1), expected_rechecked, updated
-            )
+            assert_module_equivalence("rechecked" + str(step - 1), expected_rechecked, updated)
 
         expected = testcase.expected_fine_grained_targets.get(step)
         if expected:
@@ -277,9 +269,7 @@ class FineGrainedSuite(DataSuite):
         step N (2, 3, ...).
 
         """
-        m = re.search(
-            "# cmd: mypy ([a-zA-Z0-9_./ ]+)$", program_text, flags=re.MULTILINE
-        )
+        m = re.search("# cmd: mypy ([a-zA-Z0-9_./ ]+)$", program_text, flags=re.MULTILINE)
         regex = f"# cmd{incremental_step}: mypy ([a-zA-Z0-9_./ ]+)$"
         alt_m = re.search(regex, program_text, flags=re.MULTILINE)
         if alt_m is not None:
@@ -290,21 +280,15 @@ class FineGrainedSuite(DataSuite):
 
         if m:
             # The test case wants to use a non-default set of files.
-            paths = [
-                os.path.join(test_temp_dir, path) for path in m.group(1).strip().split()
-            ]
+            paths = [os.path.join(test_temp_dir, path) for path in m.group(1).strip().split()]
             return create_source_list(paths, options)
         else:
             base = BuildSource(os.path.join(test_temp_dir, "main"), "__main__", None)
             # Use expand_dir instead of create_source_list to avoid complaints
             # when there aren't any .py files in an increment
-            return [base] + create_source_list(
-                [test_temp_dir], options, allow_empty_dir=True
-            )
+            return [base] + create_source_list([test_temp_dir], options, allow_empty_dir=True)
 
-    def maybe_suggest(
-        self, step: int, server: Server, src: str, tmp_dir: str
-    ) -> list[str]:
+    def maybe_suggest(self, step: int, server: Server, src: str, tmp_dir: str) -> list[str]:
         output: list[str] = []
         targets = self.get_suggest(src, step)
         for flags, target in targets:
@@ -370,19 +354,13 @@ class FineGrainedSuite(DataSuite):
             output.extend(val.strip().split("\n"))
         return output
 
-    def get_suggest(
-        self, program_text: str, incremental_step: int
-    ) -> list[tuple[str, str]]:
+    def get_suggest(self, program_text: str, incremental_step: int) -> list[tuple[str, str]]:
         step_bit = "1?" if incremental_step == 1 else str(incremental_step)
-        regex = (
-            f"# suggest{step_bit}: (--[a-zA-Z0-9_\\-./=?^ ]+ )*([a-zA-Z0-9_.:/?^ ]+)$"
-        )
+        regex = f"# suggest{step_bit}: (--[a-zA-Z0-9_\\-./=?^ ]+ )*([a-zA-Z0-9_.:/?^ ]+)$"
         m = re.findall(regex, program_text, flags=re.MULTILINE)
         return m
 
-    def get_inspect(
-        self, program_text: str, incremental_step: int
-    ) -> list[tuple[str, str]]:
+    def get_inspect(self, program_text: str, incremental_step: int) -> list[tuple[str, str]]:
         step_bit = "1?" if incremental_step == 1 else str(incremental_step)
         regex = f"# inspect{step_bit}: (--[a-zA-Z0-9_\\-=?^ ]+ )*([a-zA-Z0-9_.:/?^ ]+)$"
         m = re.findall(regex, program_text, flags=re.MULTILINE)
@@ -395,20 +373,12 @@ def normalize_messages(messages: list[str]) -> list[str]:
 
 class TestMessageSorting(unittest.TestCase):
     def test_simple_sorting(self) -> None:
-        msgs = [
-            'x.py:1: error: "int" not callable',
-            'foo/y.py:123: note: "X" not defined',
-        ]
-        old_msgs = [
-            'foo/y.py:12: note: "Y" not defined',
-            'x.py:8: error: "str" not callable',
-        ]
-        assert sort_messages_preserving_file_order(msgs, old_msgs) == list(
+        msgs = ['x.py:1: error: "int" not callable', 'foo/y.py:123: note: "X" not defined']
+        old_msgs = ['foo/y.py:12: note: "Y" not defined', 'x.py:8: error: "str" not callable']
+        assert sort_messages_preserving_file_order(msgs, old_msgs) == list(reversed(msgs))
+        assert sort_messages_preserving_file_order(list(reversed(msgs)), old_msgs) == list(
             reversed(msgs)
         )
-        assert sort_messages_preserving_file_order(
-            list(reversed(msgs)), old_msgs
-        ) == list(reversed(msgs))
 
     def test_long_form_sorting(self) -> None:
         # Multi-line errors should be sorted together and not split.
@@ -423,10 +393,7 @@ class TestMessageSorting(unittest.TestCase):
             'foo/y.py:123: note: "X" not defined',
             "and again message continues",
         ]
-        old_msgs = [
-            'foo/y.py:12: note: "Y" not defined',
-            'x.py:8: error: "str" not callable',
-        ]
+        old_msgs = ['foo/y.py:12: note: "Y" not defined', 'x.py:8: error: "str" not callable']
         assert sort_messages_preserving_file_order(msg1 + msg2, old_msgs) == msg2 + msg1
         assert sort_messages_preserving_file_order(msg2 + msg1, old_msgs) == msg2 + msg1
 
@@ -457,18 +424,13 @@ class TestMessageSorting(unittest.TestCase):
         msg2 = 'foo/y.py:123: note: "X" not defined'
         new1 = "ab.py:3: error: Problem: error"
         new2 = "aaa:3: error: Bad"
-        old_msgs = [
-            'foo/y.py:12: note: "Y" not defined',
-            'x.py:8: error: "str" not callable',
-        ]
+        old_msgs = ['foo/y.py:12: note: "Y" not defined', 'x.py:8: error: "str" not callable']
         assert sort_messages_preserving_file_order([msg1, msg2, new1], old_msgs) == [
             msg2,
             msg1,
             new1,
         ]
-        assert sort_messages_preserving_file_order(
-            [new1, msg1, msg2, new2], old_msgs
-        ) == [
+        assert sort_messages_preserving_file_order([new1, msg1, msg2, new2], old_msgs) == [
             msg2,
             msg1,
             new1,

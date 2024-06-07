@@ -182,12 +182,8 @@ class TestRun(MypycDataSuite):
                 perform_file_operations(operations)
             self.run_case_step(testcase, step)
 
-    def run_case_step(
-        self, testcase: DataDrivenTestCase, incremental_step: int
-    ) -> None:
-        bench = (
-            testcase.config.getoption("--bench", False) and "Benchmark" in testcase.name
-        )
+    def run_case_step(self, testcase: DataDrivenTestCase, incremental_step: int) -> None:
+        bench = testcase.config.getoption("--bench", False) and "Benchmark" in testcase.name
 
         options = Options()
         options.use_builtins_fixtures = True
@@ -220,9 +216,7 @@ class TestRun(MypycDataSuite):
                 to_delete.append(fn)
                 module_paths.append(fn)
 
-                shutil.copyfile(
-                    fn, os.path.join(os.path.dirname(fn), name + "_interpreted.py")
-                )
+                shutil.copyfile(fn, os.path.join(os.path.dirname(fn), name + "_interpreted.py"))
 
         for source in sources:
             options.per_module_options.setdefault(source.module, {})["mypyc"] = True
@@ -236,9 +230,7 @@ class TestRun(MypycDataSuite):
         groups = construct_groups(sources, separate, len(module_names) > 1)
 
         try:
-            compiler_options = CompilerOptions(
-                multi_file=self.multi_file, separate=self.separate
-            )
+            compiler_options = CompilerOptions(multi_file=self.multi_file, separate=self.separate)
             result = emitmodule.parse_and_typecheck(
                 sources=sources,
                 options=options,
@@ -271,12 +263,7 @@ class TestRun(MypycDataSuite):
         with open(setup_file, "w", encoding="utf-8") as f:
             f.write(
                 setup_format.format(
-                    module_paths,
-                    separate,
-                    cfiles,
-                    self.multi_file,
-                    opt_level,
-                    debug_level,
+                    module_paths, separate, cfiles, self.multi_file, opt_level, debug_level
                 )
             )
 
@@ -304,13 +291,9 @@ class TestRun(MypycDataSuite):
         debugger = testcase.config.getoption("debugger")
         if debugger:
             if debugger == "lldb":
-                subprocess.check_call(
-                    ["lldb", "--", sys.executable, driver_path], env=env
-                )
+                subprocess.check_call(["lldb", "--", sys.executable, driver_path], env=env)
             elif debugger == "gdb":
-                subprocess.check_call(
-                    ["gdb", "--args", sys.executable, driver_path], env=env
-                )
+                subprocess.check_call(["gdb", "--args", sys.executable, driver_path], env=env)
             else:
                 assert False, "Unsupported debugger"
             # TODO: find a way to automatically disable capturing
@@ -353,21 +336,16 @@ class TestRun(MypycDataSuite):
                 # Tweak some line numbers, but only if the expected output is empty,
                 # as tweaked output might not match expected output.
                 outlines = [
-                    fix_native_line_number(line, testcase.file, testcase.line)
-                    for line in outlines
+                    fix_native_line_number(line, testcase.file, testcase.line) for line in outlines
                 ]
             assert_test_output(testcase, outlines, msg, expected)
 
         if incremental_step > 1 and options.incremental:
             suffix = "" if incremental_step == 2 else str(incremental_step - 1)
-            expected_rechecked = testcase.expected_rechecked_modules.get(
-                incremental_step - 1
-            )
+            expected_rechecked = testcase.expected_rechecked_modules.get(incremental_step - 1)
             if expected_rechecked is not None:
                 assert_module_equivalence(
-                    "rechecked" + suffix,
-                    expected_rechecked,
-                    result.manager.rechecked_modules,
+                    "rechecked" + suffix, expected_rechecked, result.manager.rechecked_modules
                 )
             expected_stale = testcase.expected_stale_modules.get(incremental_step - 1)
             if expected_stale is not None:
@@ -379,9 +357,7 @@ class TestRun(MypycDataSuite):
 
     def get_separate(self, program_text: str, incremental_step: int) -> Any:
         template = r"# separate{}: (\[.*\])$"
-        m = re.search(
-            template.format(incremental_step), program_text, flags=re.MULTILINE
-        )
+        m = re.search(template.format(incremental_step), program_text, flags=re.MULTILINE)
         if not m:
             m = re.search(template.format(""), program_text, flags=re.MULTILINE)
         if m:
@@ -440,9 +416,7 @@ def fix_native_line_number(message: str, fnam: str, delta: int) -> str:
     """
     fnam = os.path.basename(fnam)
     message = re.sub(
-        r"native\.py:([0-9]+):",
-        lambda m: "%s:%d:" % (fnam, int(m.group(1)) + delta),
-        message,
+        r"native\.py:([0-9]+):", lambda m: "%s:%d:" % (fnam, int(m.group(1)) + delta), message
     )
     message = re.sub(
         r'"native.py", line ([0-9]+),',

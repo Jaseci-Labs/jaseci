@@ -33,9 +33,7 @@ class TestArgCheck(unittest.TestCase):
     def test_check_int(self) -> None:
         emitter = Emitter(self.context)
         generate_arg_check("x", int_rprimitive, emitter, ReturnHandler("NULL"))
-        generate_arg_check(
-            "y", int_rprimitive, emitter, ReturnHandler("NULL"), optional=True
-        )
+        generate_arg_check("y", int_rprimitive, emitter, ReturnHandler("NULL"), optional=True)
         lines = emitter.fragments
         self.assert_lines(
             [

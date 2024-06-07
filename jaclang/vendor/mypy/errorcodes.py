@@ -30,9 +30,7 @@ class ErrorCode:
         self.default_enabled = default_enabled
         self.sub_code_of = sub_code_of
         if sub_code_of is not None:
-            assert (
-                sub_code_of.sub_code_of is None
-            ), "Nested subcategories are not supported"
+            assert sub_code_of.sub_code_of is None, "Nested subcategories are not supported"
             sub_code_map[sub_code_of.code].add(code)
         error_codes[code] = self
 
@@ -48,9 +46,7 @@ class ErrorCode:
         return hash((self.code,))
 
 
-ATTR_DEFINED: Final = ErrorCode(
-    "attr-defined", "Check that attribute exists", "General"
-)
+ATTR_DEFINED: Final = ErrorCode("attr-defined", "Check that attribute exists", "General")
 NAME_DEFINED: Final = ErrorCode("name-defined", "Check that name is defined", "General")
 CALL_ARG: Final[ErrorCode] = ErrorCode(
     "call-arg", "Check number, names and kinds of arguments in calls", "General"
@@ -83,19 +79,13 @@ METHOD_ASSIGN: Final[ErrorCode] = ErrorCode(
     "General",
     sub_code_of=ASSIGNMENT,
 )
-TYPE_ARG: Final = ErrorCode(
-    "type-arg", "Check that generic type arguments are present", "General"
-)
-TYPE_VAR: Final = ErrorCode(
-    "type-var", "Check that type variable values are valid", "General"
-)
+TYPE_ARG: Final = ErrorCode("type-arg", "Check that generic type arguments are present", "General")
+TYPE_VAR: Final = ErrorCode("type-var", "Check that type variable values are valid", "General")
 UNION_ATTR: Final = ErrorCode(
     "union-attr", "Check that attribute exists in each item of a union", "General"
 )
 INDEX: Final = ErrorCode("index", "Check indexing operations", "General")
-OPERATOR: Final = ErrorCode(
-    "operator", "Check that operator is valid for operands", "General"
-)
+OPERATOR: Final = ErrorCode("operator", "Check that operator is valid for operands", "General")
 LIST_ITEM: Final = ErrorCode(
     "list-item", "Check list items in a list expression [item, ...]", "General"
 )
@@ -118,32 +108,20 @@ IMPORT: Final = ErrorCode(
     "import", "Require that imported module can be found or has stubs", "General"
 )
 IMPORT_NOT_FOUND: Final = ErrorCode(
-    "import-not-found",
-    "Require that imported module can be found",
-    "General",
-    sub_code_of=IMPORT,
+    "import-not-found", "Require that imported module can be found", "General", sub_code_of=IMPORT
 )
 IMPORT_UNTYPED: Final = ErrorCode(
-    "import-untyped",
-    "Require that imported module has stubs",
-    "General",
-    sub_code_of=IMPORT,
+    "import-untyped", "Require that imported module has stubs", "General", sub_code_of=IMPORT
 )
-NO_REDEF: Final = ErrorCode(
-    "no-redef", "Check that each name is defined once", "General"
-)
+NO_REDEF: Final = ErrorCode("no-redef", "Check that each name is defined once", "General")
 FUNC_RETURNS_VALUE: Final = ErrorCode(
-    "func-returns-value",
-    "Check that called function returns a value in value context",
-    "General",
+    "func-returns-value", "Check that called function returns a value in value context", "General"
 )
 ABSTRACT: Final = ErrorCode(
     "abstract", "Prevent instantiation of classes with abstract attributes", "General"
 )
 TYPE_ABSTRACT: Final = ErrorCode(
-    "type-abstract",
-    "Require only concrete classes where Type[...] is expected",
-    "General",
+    "type-abstract", "Require only concrete classes where Type[...] is expected", "General"
 )
 VALID_NEWTYPE: Final = ErrorCode(
     "valid-newtype", "Check that argument 2 to NewType is valid", "General"
@@ -152,16 +130,12 @@ STRING_FORMATTING: Final = ErrorCode(
     "str-format", "Check that string formatting/interpolation is type-safe", "General"
 )
 STR_BYTES_PY3: Final = ErrorCode(
-    "str-bytes-safe",
-    "Warn about implicit coercions related to bytes and string types",
-    "General",
+    "str-bytes-safe", "Warn about implicit coercions related to bytes and string types", "General"
 )
 EXIT_RETURN: Final = ErrorCode(
     "exit-return", "Warn about too general return type for '__exit__'", "General"
 )
-LITERAL_REQ: Final = ErrorCode(
-    "literal-required", "Check that value is a literal", "General"
-)
+LITERAL_REQ: Final = ErrorCode("literal-required", "Check that value is a literal", "General")
 UNUSED_COROUTINE: Final = ErrorCode(
     "unused-coroutine", "Ensure that all coroutines are used", "General"
 )
@@ -173,9 +147,7 @@ EMPTY_BODY: Final[ErrorCode] = ErrorCode(
     "General",
 )
 SAFE_SUPER: Final = ErrorCode(
-    "safe-super",
-    "Warn about calls to abstract methods with empty/trivial bodies",
-    "General",
+    "safe-super", "Warn about calls to abstract methods with empty/trivial bodies", "General"
 )
 TOP_LEVEL_AWAIT: Final = ErrorCode(
     "top-level-await", "Warn about top level await expressions", "General"
@@ -195,13 +167,9 @@ NO_UNTYPED_CALL: Final = ErrorCode(
 REDUNDANT_CAST: Final = ErrorCode(
     "redundant-cast", "Check that cast changes type of expression", "General"
 )
-ASSERT_TYPE: Final = ErrorCode(
-    "assert-type", "Check that assert_type() call succeeds", "General"
-)
+ASSERT_TYPE: Final = ErrorCode("assert-type", "Check that assert_type() call succeeds", "General")
 COMPARISON_OVERLAP: Final = ErrorCode(
-    "comparison-overlap",
-    "Check that types in comparisons and 'in' expressions overlap",
-    "General",
+    "comparison-overlap", "Check that types in comparisons and 'in' expressions overlap", "General"
 )
 NO_ANY_UNIMPORTED: Final = ErrorCode(
     "no-any-unimported", 'Reject "Any" types from unfollowed imports', "General"
@@ -215,9 +183,7 @@ UNREACHABLE: Final = ErrorCode(
     "unreachable", "Warn about unreachable statements or expressions", "General"
 )
 ANNOTATION_UNCHECKED = ErrorCode(
-    "annotation-unchecked",
-    "Notify about type annotations in unchecked functions",
-    "General",
+    "annotation-unchecked", "Notify about type annotations in unchecked functions", "General"
 )
 POSSIBLY_UNDEFINED: Final[ErrorCode] = ErrorCode(
     "possibly-undefined",
@@ -226,10 +192,7 @@ POSSIBLY_UNDEFINED: Final[ErrorCode] = ErrorCode(
     default_enabled=False,
 )
 REDUNDANT_EXPR: Final = ErrorCode(
-    "redundant-expr",
-    "Warn about redundant expressions",
-    "General",
-    default_enabled=False,
+    "redundant-expr", "Warn about redundant expressions", "General", default_enabled=False
 )
 TRUTHY_BOOL: Final[ErrorCode] = ErrorCode(
     "truthy-bool",
@@ -275,15 +238,10 @@ REDUNDANT_SELF_TYPE = ErrorCode(
     default_enabled=False,
 )
 USED_BEFORE_DEF: Final[ErrorCode] = ErrorCode(
-    "used-before-def",
-    "Warn about variables that are used before they are defined",
-    "General",
+    "used-before-def", "Warn about variables that are used before they are defined", "General"
 )
 UNUSED_IGNORE: Final = ErrorCode(
-    "unused-ignore",
-    "Ensure that all type ignores are used",
-    "General",
-    default_enabled=False,
+    "unused-ignore", "Ensure that all type ignores are used", "General", default_enabled=False
 )
 EXPLICIT_OVERRIDE_REQUIRED: Final = ErrorCode(
     "explicit-override",
@@ -310,9 +268,7 @@ SYNTAX: Final[ErrorCode] = ErrorCode("syntax", "Report syntax errors", "General"
 
 # This is an internal marker code for a whole-file ignore. It is not intended to
 # be user-visible.
-FILE: Final = ErrorCode(
-    "file", "Internal marker for a whole file being ignored", "General"
-)
+FILE: Final = ErrorCode("file", "Internal marker for a whole file being ignored", "General")
 del error_codes[FILE.code]
 
 # This is a catch-all for remaining uncategorized errors.
@@ -323,6 +279,12 @@ OVERLOAD_OVERLAP: Final[ErrorCode] = ErrorCode(
     "Warn if multiple @overload variants overlap in unsafe ways",
     "General",
     sub_code_of=MISC,
+)
+
+NARROWED_TYPE_NOT_SUBTYPE: Final[ErrorCode] = ErrorCode(
+    "narrowed-type-not-subtype",
+    "Warn if a TypeIs function's narrowed type is not a subtype of the original type",
+    "General",
 )
 
 # This copy will not include any error codes defined later in the plugins.

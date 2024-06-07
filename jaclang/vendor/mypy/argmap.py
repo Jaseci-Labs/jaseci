@@ -75,9 +75,7 @@ def map_actuals_to_formals(
                         break
                     fi += 1
         elif actual_kind.is_named():
-            assert (
-                actual_names is not None
-            ), "Internal error: named kinds without names given"
+            assert actual_names is not None, "Internal error: named kinds without names given"
             name = actual_names[ai]
             if name in formal_names:
                 formal_to_actual[formal_names.index(name)].append(ai)
@@ -247,9 +245,7 @@ class ArgTypeExpander:
                     assert formal_name is not None
                 else:
                     # Pick an arbitrary item if no specified keyword is expected.
-                    formal_name = (
-                        set(actual_type.items.keys()) - self.kwargs_used
-                    ).pop()
+                    formal_name = (set(actual_type.items.keys()) - self.kwargs_used).pop()
                 self.kwargs_used.add(formal_name)
                 return actual_type.items[formal_name]
             elif (
@@ -259,9 +255,9 @@ class ArgTypeExpander:
             ):
                 # Only `Mapping` type can be unpacked with `**`.
                 # Other types will produce an error somewhere else.
-                return map_instance_to_supertype(
-                    actual_type, self.context.mapping_type.type
-                ).args[1]
+                return map_instance_to_supertype(actual_type, self.context.mapping_type.type).args[
+                    1
+                ]
             elif isinstance(actual_type, ParamSpecType):
                 # ParamSpec is valid in **kwargs but it can't be unpacked.
                 return actual_type

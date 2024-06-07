@@ -43,9 +43,7 @@ _INI_PARSER_CALLABLE: _TypeAlias = Callable[[Any], _CONFIG_VALUE_TYPES]
 def parse_version(v: str | float) -> tuple[int, int]:
     m = re.match(r"\A(\d)\.(\d+)\Z", str(v))
     if not m:
-        raise argparse.ArgumentTypeError(
-            f"Invalid python version '{v}' (expected format: 'x.y')"
-        )
+        raise argparse.ArgumentTypeError(f"Invalid python version '{v}' (expected format: 'x.y')")
     major, minor = int(m.group(1)), int(m.group(2))
     if major == 2 and minor == 7:
         pass  # Error raised elsewhere
@@ -196,9 +194,7 @@ ini_config_types: Final[dict[str, _INI_PARSER_CALLABLE]] = {
         [p.strip() for p in split_commas(s)]
     ),
     "enable_incomplete_feature": lambda s: [p.strip() for p in split_commas(s)],
-    "disable_error_code": lambda s: validate_codes(
-        [p.strip() for p in split_commas(s)]
-    ),
+    "disable_error_code": lambda s: validate_codes([p.strip() for p in split_commas(s)]),
     "enable_error_code": lambda s: validate_codes([p.strip() for p in split_commas(s)]),
     "package_root": lambda s: [p.strip() for p in split_commas(s)],
     "cache_dir": expand_path,
@@ -252,9 +248,7 @@ def parse_config_file(
     if filename is not None:
         config_files: tuple[str, ...] = (filename,)
     else:
-        config_files_iter: Iterable[str] = map(
-            os.path.expanduser, defaults.CONFIG_FILES
-        )
+        config_files_iter: Iterable[str] = map(os.path.expanduser, defaults.CONFIG_FILES)
         config_files = tuple(config_files_iter)
 
     config_parser = configparser.RawConfigParser()
@@ -277,11 +271,7 @@ def parse_config_file(
                 config_parser.read(config_file)
                 parser = config_parser
                 config_types = ini_config_types
-        except (
-            tomllib.TOMLDecodeError,
-            configparser.Error,
-            ConfigTOMLValueError,
-        ) as err:
+        except (tomllib.TOMLDecodeError, configparser.Error, ConfigTOMLValueError) as err:
             print(f"{config_file}: {err}", file=stderr)
         else:
             if config_file in defaults.SHARED_CONFIG_FILES and "mypy" not in parser:
@@ -513,10 +503,7 @@ def parse_section(
                 elif key == "strict":
                     pass  # Special handling below
                 else:
-                    print(
-                        f"{prefix}Unrecognized option: {key} = {section[key]}",
-                        file=stderr,
-                    )
+                    print(f"{prefix}Unrecognized option: {key} = {section[key]}", file=stderr)
                 if invert:
                     dv = getattr(template, options_key, None)
                 else:
@@ -533,10 +520,7 @@ def parse_section(
                     v = not v
             elif callable(ct):
                 if invert:
-                    print(
-                        f"{prefix}Can not invert non-boolean key {options_key}",
-                        file=stderr,
-                    )
+                    print(f"{prefix}Can not invert non-boolean key {options_key}", file=stderr)
                     continue
                 try:
                     v = ct(section.get(key))
@@ -604,9 +588,7 @@ def split_directive(s: str) -> tuple[list[str], list[str]]:
     return parts, errors
 
 
-def mypy_comments_to_config_map(
-    line: str, template: Options
-) -> tuple[dict[str, str], list[str]]:
+def mypy_comments_to_config_map(line: str, template: Options) -> tuple[dict[str, str], list[str]]:
     """Rewrite the mypy comment syntax into ini file syntax."""
     options = {}
     entries, errors = split_directive(line)
@@ -654,12 +636,7 @@ def parse_mypy_comments(
             strict_found = True
 
         new_sections, reports = parse_section(
-            "",
-            template,
-            set_strict_flags,
-            parser["dummy"],
-            ini_config_types,
-            stderr=stderr,
+            "", template, set_strict_flags, parser["dummy"], ini_config_types, stderr=stderr
         )
         errors.extend((lineno, x) for x in stderr.getvalue().strip().split("\n") if x)
         if reports:

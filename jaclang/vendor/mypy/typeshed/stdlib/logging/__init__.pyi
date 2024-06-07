@@ -63,10 +63,7 @@ if sys.version_info >= (3, 11):
 if sys.version_info >= (3, 12):
     __all__ += ["getHandlerByName", "getHandlerNames"]
 
-_SysExcInfoType: TypeAlias = (
-    tuple[type[BaseException], BaseException, TracebackType | None]
-    | tuple[None, None, None]
-)
+_SysExcInfoType: TypeAlias = tuple[type[BaseException], BaseException, TracebackType | None] | tuple[None, None, None]
 _ExcInfoType: TypeAlias = None | bool | _SysExcInfoType | BaseException
 _ArgsType: TypeAlias = tuple[object, ...] | Mapping[str, object]
 _Level: TypeAlias = int | str
@@ -74,14 +71,12 @@ _FormatStyle: TypeAlias = Literal["%", "{", "$"]
 
 if sys.version_info >= (3, 12):
     class _SupportsFilter(Protocol):
-        def filter(self, __record: LogRecord) -> bool | LogRecord: ...
+        def filter(self, record: LogRecord, /) -> bool | LogRecord: ...
 
-    _FilterType: TypeAlias = (
-        Filter | Callable[[LogRecord], bool | LogRecord] | _SupportsFilter
-    )
+    _FilterType: TypeAlias = Filter | Callable[[LogRecord], bool | LogRecord] | _SupportsFilter
 else:
     class _SupportsFilter(Protocol):
-        def filter(self, __record: LogRecord) -> bool: ...
+        def filter(self, record: LogRecord, /) -> bool: ...
 
     _FilterType: TypeAlias = Filter | Callable[[LogRecord], bool] | _SupportsFilter
 
@@ -220,9 +215,7 @@ class Logger(Filterer):
     fatal = critical
     def addHandler(self, hdlr: Handler) -> None: ...
     def removeHandler(self, hdlr: Handler) -> None: ...
-    def findCaller(
-        self, stack_info: bool = False, stacklevel: int = 1
-    ) -> tuple[str, int, str, str | None]: ...
+    def findCaller(self, stack_info: bool = False, stacklevel: int = 1) -> tuple[str, int, str, str | None]: ...
     def handle(self, record: LogRecord) -> None: ...
     def makeRecord(
         self,
@@ -296,11 +289,7 @@ class Formatter:
         ) -> None: ...
     else:
         def __init__(
-            self,
-            fmt: str | None = None,
-            datefmt: str | None = None,
-            style: _FormatStyle = "%",
-            validate: bool = True,
+            self, fmt: str | None = None, datefmt: str | None = None, style: _FormatStyle = "%", validate: bool = True
         ) -> None: ...
 
     def format(self, record: LogRecord) -> str: ...
@@ -352,6 +341,9 @@ class LogRecord:
     stack_info: str | None
     thread: int | None
     threadName: str | None
+    if sys.version_info >= (3, 12):
+        taskName: str | None
+
     def __init__(
         self,
         name: str,
@@ -366,7 +358,7 @@ class LogRecord:
     ) -> None: ...
     def getMessage(self) -> str: ...
     # Allows setting contextual information on LogRecord objects as per the docs, see #7833
-    def __setattr__(self, __name: str, __value: Any) -> None: ...
+    def __setattr__(self, name: str, value: Any, /) -> None: ...
 
 _L = TypeVar("_L", bound=Logger | LoggerAdapter[Any])
 
@@ -375,16 +367,12 @@ class LoggerAdapter(Generic[_L]):
     manager: Manager  # undocumented
     if sys.version_info >= (3, 10):
         extra: Mapping[str, object] | None
-        def __init__(
-            self, logger: _L, extra: Mapping[str, object] | None = None
-        ) -> None: ...
+        def __init__(self, logger: _L, extra: Mapping[str, object] | None = None) -> None: ...
     else:
         extra: Mapping[str, object]
         def __init__(self, logger: _L, extra: Mapping[str, object]) -> None: ...
 
-    def process(
-        self, msg: Any, kwargs: MutableMapping[str, Any]
-    ) -> tuple[Any, MutableMapping[str, Any]]: ...
+    def process(self, msg: Any, kwargs: MutableMapping[str, Any]) -> tuple[Any, MutableMapping[str, Any]]: ...
     def debug(
         self,
         msg: object,
@@ -594,9 +582,7 @@ else:
         force: bool = ...,
     ) -> None: ...
 
-def shutdown(
-    handlerList: Sequence[Any] = ...,
-) -> None: ...  # handlerList is undocumented
+def shutdown(handlerList: Sequence[Any] = ...) -> None: ...  # handlerList is undocumented
 def setLoggerClass(klass: type[Logger]) -> None: ...
 def captureWarnings(capture: bool) -> None: ...
 def setLogRecordFactory(factory: Callable[..., LogRecord]) -> None: ...
@@ -624,21 +610,10 @@ class FileHandler(StreamHandler[TextIOWrapper]):
     if sys.version_info >= (3, 9):
         errors: str | None  # undocumented
         def __init__(
-            self,
-            filename: StrPath,
-            mode: str = "a",
-            encoding: str | None = None,
-            delay: bool = False,
-            errors: str | None = None,
+            self, filename: StrPath, mode: str = "a", encoding: str | None = None, delay: bool = False, errors: str | None = None
         ) -> None: ...
     else:
-        def __init__(
-            self,
-            filename: StrPath,
-            mode: str = "a",
-            encoding: str | None = None,
-            delay: bool = False,
-        ) -> None: ...
+        def __init__(self, filename: StrPath, mode: str = "a", encoding: str | None = None, delay: bool = False) -> None: ...
 
     def _open(self) -> TextIOWrapper: ...  # undocumented
 
@@ -663,9 +638,7 @@ class PercentStyle:  # undocumented
     validation_pattern: Pattern[str]
     _fmt: str
     if sys.version_info >= (3, 10):
-        def __init__(
-            self, fmt: str, *, defaults: Mapping[str, Any] | None = None
-        ) -> None: ...
+        def __init__(self, fmt: str, *, defaults: Mapping[str, Any] | None = None) -> None: ...
     else:
         def __init__(self, fmt: str) -> None: ...
 

@@ -40,9 +40,7 @@ from mypy.types import (
 class DefaultPlugin(Plugin):
     """Type checker plugin that is enabled by default."""
 
-    def get_function_hook(
-        self, fullname: str
-    ) -> Callable[[FunctionContext], Type] | None:
+    def get_function_hook(self, fullname: str) -> Callable[[FunctionContext], Type] | None:
         from mypy.plugins import ctypes, singledispatch
 
         if fullname == "_ctypes.Array":
@@ -102,6 +100,8 @@ class DefaultPlugin(Plugin):
             return int_pow_callback
         elif fullname == "builtins.int.__neg__":
             return int_neg_callback
+        elif fullname == "builtins.int.__pos__":
+            return int_pos_callback
         elif fullname in ("builtins.tuple.__mul__", "builtins.tuple.__rmul__"):
             return tuple_mul_callback
         elif fullname in {n + ".setdefault" for n in TPDICT_FB_NAMES}:
@@ -120,9 +120,7 @@ class DefaultPlugin(Plugin):
             return singledispatch.call_singledispatch_function_after_register_argument
         return None
 
-    def get_attribute_hook(
-        self, fullname: str
-    ) -> Callable[[AttributeContext], Type] | None:
+    def get_attribute_hook(self, fullname: str) -> Callable[[AttributeContext], Type] | None:
         from mypy.plugins import ctypes, enums
 
         if fullname == "_ctypes.Array.value":
@@ -135,9 +133,7 @@ class DefaultPlugin(Plugin):
             return enums.enum_value_callback
         return None
 
-    def get_class_decorator_hook(
-        self, fullname: str
-    ) -> Callable[[ClassDefContext], None] | None:
+    def get_class_decorator_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         from mypy.plugins import attrs, dataclasses
 
         # These dataclass and attrs hooks run in the main semantic analysis pass
@@ -171,15 +167,11 @@ class DefaultPlugin(Plugin):
             return partial(attrs.attr_class_maker_callback, auto_attribs_default=True)
         elif fullname in attrs.attr_frozen_makers:
             return partial(
-                attrs.attr_class_maker_callback,
-                auto_attribs_default=None,
-                frozen_default=True,
+                attrs.attr_class_maker_callback, auto_attribs_default=None, frozen_default=True
             )
         elif fullname in attrs.attr_define_makers:
             return partial(
-                attrs.attr_class_maker_callback,
-                auto_attribs_default=None,
-                slots_default=True,
+                attrs.attr_class_maker_callback, auto_attribs_default=None, slots_default=True
             )
 
         return None
@@ -219,10 +211,7 @@ def typed_dict_get_signature_callback(ctx: MethodSigContext) -> CallableType:
             tv = signature.variables[0]
             assert isinstance(tv, TypeVarType)
             return signature.copy_modified(
-                arg_types=[
-                    signature.arg_types[0],
-                    make_simplified_union([value_type, tv]),
-                ],
+                arg_types=[signature.arg_types[0], make_simplified_union([value_type, tv])],
                 ret_type=ret_type,
             )
     return signature
@@ -247,11 +236,7 @@ def typed_dict_get_callback(ctx: MethodContext) -> Type:
 
             if len(ctx.arg_types) == 1:
                 output_types.append(value_type)
-            elif (
-                len(ctx.arg_types) == 2
-                and len(ctx.arg_types[1]) == 1
-                and len(ctx.args[1]) == 1
-            ):
+            elif len(ctx.arg_types) == 2 and len(ctx.arg_types[1]) == 1 and len(ctx.args[1]) == 1:
                 default_arg = ctx.args[1][0]
                 if (
                     isinstance(default_arg, DictExpr)
@@ -331,11 +316,7 @@ def typed_dict_pop_callback(ctx: MethodContext) -> Type:
 
         if len(ctx.args[1]) == 0:
             return make_simplified_union(value_types)
-        elif (
-            len(ctx.arg_types) == 2
-            and len(ctx.arg_types[1]) == 1
-            and len(ctx.args[1]) == 1
-        ):
+        elif len(ctx.arg_types) == 2 and len(ctx.arg_types[1]) == 1 and len(ctx.args[1]) == 1:
             return make_simplified_union([*value_types, ctx.arg_types[1][0]])
     return ctx.default_return_type
 
@@ -476,19 +457,11 @@ def int_pow_callback(ctx: MethodContext) -> Type:
     """Infer a more precise return type for int.__pow__."""
     # int.__pow__ has an optional modulo argument,
     # so we expect 2 argument positions
-    if (
-        len(ctx.arg_types) == 2
-        and len(ctx.arg_types[0]) == 1
-        and len(ctx.arg_types[1]) == 0
-    ):
+    if len(ctx.arg_types) == 2 and len(ctx.arg_types[0]) == 1 and len(ctx.arg_types[1]) == 0:
         arg = ctx.args[0][0]
         if isinstance(arg, IntExpr):
             exponent = arg.value
-        elif (
-            isinstance(arg, UnaryExpr)
-            and arg.op == "-"
-            and isinstance(arg.expr, IntExpr)
-        ):
+        elif isinstance(arg, UnaryExpr) and arg.op == "-" and isinstance(arg.expr, IntExpr):
             exponent = -arg.expr.value
         else:
             # Right operand not an int literal or a negated literal -- give up.
@@ -500,22 +473,22 @@ def int_pow_callback(ctx: MethodContext) -> Type:
     return ctx.default_return_type
 
 
-def int_neg_callback(ctx: MethodContext) -> Type:
-    """Infer a more precise return type for int.__neg__.
+def int_neg_callback(ctx: MethodContext, multiplier: int = -1) -> Type:
+    """Infer a more precise return type for int.__neg__ and int.__pos__.
 
     This is mainly used to infer the return type as LiteralType
-    if the original underlying object is a LiteralType object
+    if the original underlying object is a LiteralType object.
     """
     if isinstance(ctx.type, Instance) and ctx.type.last_known_value is not None:
         value = ctx.type.last_known_value.value
         fallback = ctx.type.last_known_value.fallback
         if isinstance(value, int):
             if is_literal_type_like(ctx.api.type_context[-1]):
-                return LiteralType(value=-value, fallback=fallback)
+                return LiteralType(value=multiplier * value, fallback=fallback)
             else:
                 return ctx.type.copy_modified(
                     last_known_value=LiteralType(
-                        value=-value,
+                        value=multiplier * value,
                         fallback=ctx.type,
                         line=ctx.type.line,
                         column=ctx.type.column,
@@ -525,8 +498,16 @@ def int_neg_callback(ctx: MethodContext) -> Type:
         value = ctx.type.value
         fallback = ctx.type.fallback
         if isinstance(value, int):
-            return LiteralType(value=-value, fallback=fallback)
+            return LiteralType(value=multiplier * value, fallback=fallback)
     return ctx.default_return_type
+
+
+def int_pos_callback(ctx: MethodContext) -> Type:
+    """Infer a more precise return type for int.__pos__.
+
+    This is identical to __neg__, except the value is not inverted.
+    """
+    return int_neg_callback(ctx, +1)
 
 
 def tuple_mul_callback(ctx: MethodContext) -> Type:

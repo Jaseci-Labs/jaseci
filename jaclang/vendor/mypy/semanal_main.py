@@ -119,10 +119,7 @@ def cleanup_builtin_scc(state: State) -> None:
 
 
 def semantic_analysis_for_targets(
-    state: State,
-    nodes: list[FineGrainedDeferredNode],
-    graph: Graph,
-    saved_attrs: SavedAttributes,
+    state: State, nodes: list[FineGrainedDeferredNode], graph: Graph, saved_attrs: SavedAttributes
 ) -> None:
     """Semantically analyze only selected nodes in a given module.
 
@@ -145,13 +142,7 @@ def semantic_analysis_for_targets(
             # Already done above.
             continue
         process_top_level_function(
-            analyzer,
-            state,
-            state.id,
-            n.node.fullname,
-            n.node,
-            n.active_typeinfo,
-            patches,
+            analyzer, state, state.id, n.node.fullname, n.node, n.active_typeinfo, patches
         )
     apply_semantic_analyzer_patches(patches)
     apply_class_plugin_hooks(graph, [state.id], state.manager.errors)
@@ -417,11 +408,7 @@ def check_type_arguments_in_targets(
                 func: FuncDef | OverloadedFuncDef | None = None
                 if isinstance(target.node, (FuncDef, OverloadedFuncDef)):
                     func = target.node
-                saved = (
-                    state.id,
-                    target.active_typeinfo,
-                    func,
-                )  # module, class, function
+                saved = (state.id, target.active_typeinfo, func)  # module, class, function
                 with errors.scope.saved_scope(saved) if errors.scope else nullcontext():
                     analyzer.recurse_into_functions = func is not None
                     target.node.accept(analyzer)
@@ -496,12 +483,7 @@ def apply_hooks_to_class(
         with self.file_context(file_node, options, info):
             # We can't use the normal hook because reason = defn, and ClassDefContext only accepts
             # an Expression for reason
-            ok = (
-                ok
-                and dataclasses_plugin.DataclassTransformer(
-                    defn, defn, spec, self
-                ).transform()
-            )
+            ok = ok and dataclasses_plugin.DataclassTransformer(defn, defn, spec, self).transform()
 
     return ok
 
@@ -515,9 +497,7 @@ def calculate_class_properties(graph: Graph, scc: list[str], errors: Errors) -> 
         assert tree
         for _, node, _ in tree.local_definitions():
             if isinstance(node.node, TypeInfo):
-                with state.manager.semantic_analyzer.file_context(
-                    tree, state.options, node.node
-                ):
+                with state.manager.semantic_analyzer.file_context(tree, state.options, node.node):
                     calculate_class_abstract_status(node.node, tree.is_stub, errors)
                     check_protocol_status(node.node, errors)
                     calculate_class_vars(node.node)

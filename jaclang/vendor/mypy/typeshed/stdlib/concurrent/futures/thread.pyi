@@ -26,13 +26,7 @@ class _WorkItem(Generic[_S]):
     fn: Callable[..., _S]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
-    def __init__(
-        self,
-        future: Future[_S],
-        fn: Callable[..., _S],
-        args: Iterable[Any],
-        kwargs: Mapping[str, Any],
-    ) -> None: ...
+    def __init__(self, future: Future[_S], fn: Callable[..., _S], args: Iterable[Any], kwargs: Mapping[str, Any]) -> None: ...
     def run(self) -> None: ...
     if sys.version_info >= (3, 9):
         def __class_getitem__(cls, item: Any) -> GenericAlias: ...

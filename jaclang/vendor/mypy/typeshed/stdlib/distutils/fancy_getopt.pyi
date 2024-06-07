@@ -22,10 +22,7 @@ class FancyGetopt:
     def generate_help(self, header: str | None = None) -> list[str]: ...
 
 def fancy_getopt(
-    options: list[_Option],
-    negative_opt: Mapping[_Option, _Option],
-    object: Any,
-    args: list[str] | None,
+    options: list[_Option], negative_opt: Mapping[_Option, _Option], object: Any, args: list[str] | None
 ) -> list[str] | _GR: ...
 
 WS_TRANS: dict[int, str]

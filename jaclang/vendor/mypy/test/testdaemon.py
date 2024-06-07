@@ -87,12 +87,7 @@ def run_cmd(input: str) -> tuple[int, str]:
     env["PYTHONPATH"] = PREFIX
     try:
         output = subprocess.check_output(
-            input,
-            shell=True,
-            stderr=subprocess.STDOUT,
-            text=True,
-            cwd=test_temp_dir,
-            env=env,
+            input, shell=True, stderr=subprocess.STDOUT, text=True, cwd=test_temp_dir, env=env
         )
         return 0, output
     except subprocess.CalledProcessError as err:
@@ -125,9 +120,7 @@ class DaemonUtilitySuite(unittest.TestCase):
             )
             fscache = FileSystemCache()
             res = filter_out_missing_top_level_packages(
-                {"a", "b", "c", "d", "e", "f", "g", "long_name", "ff", "missing"},
-                search,
-                fscache,
+                {"a", "b", "c", "d", "e", "f", "g", "long_name", "ff", "missing"}, search, fscache
             )
             assert res == {"a", "b", "c", "d", "f", "long_name"}
 

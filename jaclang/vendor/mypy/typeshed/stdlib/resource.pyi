@@ -27,25 +27,7 @@ if sys.platform != "win32":
 
     @final
     class struct_rusage(
-        structseq[float],
-        tuple[
-            float,
-            float,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-        ],
+        structseq[float], tuple[float, float, int, int, int, int, int, int, int, int, int, int, int, int, int, int]
     ):
         if sys.version_info >= (3, 10):
             __match_args__: Final = (
@@ -101,16 +83,12 @@ if sys.platform != "win32":
         def ru_nivcsw(self) -> int: ...
 
     def getpagesize() -> int: ...
-    def getrlimit(__resource: int) -> tuple[int, int]: ...
-    def getrusage(__who: int) -> struct_rusage: ...
-    def setrlimit(__resource: int, __limits: tuple[int, int]) -> None: ...
+    def getrlimit(resource: int, /) -> tuple[int, int]: ...
+    def getrusage(who: int, /) -> struct_rusage: ...
+    def setrlimit(resource: int, limits: tuple[int, int], /) -> None: ...
     if sys.platform == "linux":
         if sys.version_info >= (3, 12):
-            def prlimit(
-                __pid: int, __resource: int, __limits: tuple[int, int] | None = None
-            ) -> tuple[int, int]: ...
+            def prlimit(pid: int, resource: int, limits: tuple[int, int] | None = None, /) -> tuple[int, int]: ...
         else:
-            def prlimit(
-                __pid: int, __resource: int, __limits: tuple[int, int] = ...
-            ) -> tuple[int, int]: ...
+            def prlimit(pid: int, resource: int, limits: tuple[int, int] = ..., /) -> tuple[int, int]: ...
     error = OSError

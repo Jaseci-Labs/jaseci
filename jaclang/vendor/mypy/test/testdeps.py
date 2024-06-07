@@ -38,18 +38,12 @@ class GetDependenciesSuite(DataSuite):
         a = messages
         if files is None or type_map is None:
             if not a:
-                a = [
-                    "Unknown compile error (likely syntax error in test case or fixture)"
-                ]
+                a = ["Unknown compile error (likely syntax error in test case or fixture)"]
         else:
             deps: defaultdict[str, set[str]] = defaultdict(set)
             for module, file in files.items():
-                if (module in dumped_modules or dump_all) and (
-                    module in testcase.test_modules
-                ):
-                    new_deps = get_dependencies(
-                        file, type_map, options.python_version, options
-                    )
+                if (module in dumped_modules or dump_all) and (module in testcase.test_modules):
+                    new_deps = get_dependencies(file, type_map, options.python_version, options)
                     for source in new_deps:
                         deps[source].update(new_deps[source])
 
@@ -65,9 +59,7 @@ class GetDependenciesSuite(DataSuite):
                 a.append(line)
 
         assert_string_arrays_equal(
-            testcase.output,
-            a,
-            f"Invalid output ({testcase.file}, line {testcase.line})",
+            testcase.output, a, f"Invalid output ({testcase.file}, line {testcase.line})"
         )
 
     def build(

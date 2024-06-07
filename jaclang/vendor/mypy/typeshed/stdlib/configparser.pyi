@@ -1,14 +1,6 @@
 import sys
 from _typeshed import StrOrBytesPath, SupportsWrite
-from collections.abc import (
-    Callable,
-    ItemsView,
-    Iterable,
-    Iterator,
-    Mapping,
-    MutableMapping,
-    Sequence,
-)
+from collections.abc import Callable, ItemsView, Iterable, Iterator, Mapping, MutableMapping, Sequence
 from re import Pattern
 from typing import Any, ClassVar, Literal, TypeVar, overload
 from typing_extensions import TypeAlias
@@ -71,26 +63,16 @@ DEFAULTSECT: Literal["DEFAULT"]
 MAX_INTERPOLATION_DEPTH: Literal[10]
 
 class Interpolation:
-    def before_get(
-        self, parser: _Parser, section: str, option: str, value: str, defaults: _Section
-    ) -> str: ...
-    def before_set(
-        self, parser: _Parser, section: str, option: str, value: str
-    ) -> str: ...
-    def before_read(
-        self, parser: _Parser, section: str, option: str, value: str
-    ) -> str: ...
-    def before_write(
-        self, parser: _Parser, section: str, option: str, value: str
-    ) -> str: ...
+    def before_get(self, parser: _Parser, section: str, option: str, value: str, defaults: _Section) -> str: ...
+    def before_set(self, parser: _Parser, section: str, option: str, value: str) -> str: ...
+    def before_read(self, parser: _Parser, section: str, option: str, value: str) -> str: ...
+    def before_write(self, parser: _Parser, section: str, option: str, value: str) -> str: ...
 
 class BasicInterpolation(Interpolation): ...
 class ExtendedInterpolation(Interpolation): ...
 
 class LegacyInterpolation(Interpolation):
-    def before_get(
-        self, parser: _Parser, section: str, option: str, value: str, vars: _Section
-    ) -> str: ...
+    def before_get(self, parser: _Parser, section: str, option: str, value: str, vars: _Section) -> str: ...
 
 class RawConfigParser(_Parser):
     _SECT_TMPL: ClassVar[str]  # undocumented
@@ -164,76 +146,31 @@ class RawConfigParser(_Parser):
     def has_section(self, section: str) -> bool: ...
     def options(self, section: str) -> list[str]: ...
     def has_option(self, section: str, option: str) -> bool: ...
-    def read(
-        self,
-        filenames: StrOrBytesPath | Iterable[StrOrBytesPath],
-        encoding: str | None = None,
-    ) -> list[str]: ...
+    def read(self, filenames: StrOrBytesPath | Iterable[StrOrBytesPath], encoding: str | None = None) -> list[str]: ...
     def read_file(self, f: Iterable[str], source: str | None = None) -> None: ...
     def read_string(self, string: str, source: str = "<string>") -> None: ...
-    def read_dict(
-        self, dictionary: Mapping[str, Mapping[str, Any]], source: str = "<dict>"
-    ) -> None: ...
+    def read_dict(self, dictionary: Mapping[str, Mapping[str, Any]], source: str = "<dict>") -> None: ...
     if sys.version_info < (3, 12):
         def readfp(self, fp: Iterable[str], filename: str | None = None) -> None: ...
     # These get* methods are partially applied (with the same names) in
     # SectionProxy; the stubs should be kept updated together
     @overload
-    def getint(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-    ) -> int: ...
+    def getint(self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None) -> int: ...
     @overload
     def getint(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-        fallback: _T = ...,
+        self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None, fallback: _T = ...
     ) -> int | _T: ...
     @overload
-    def getfloat(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-    ) -> float: ...
+    def getfloat(self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None) -> float: ...
     @overload
     def getfloat(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-        fallback: _T = ...,
+        self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None, fallback: _T = ...
     ) -> float | _T: ...
     @overload
-    def getboolean(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-    ) -> bool: ...
+    def getboolean(self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None) -> bool: ...
     @overload
     def getboolean(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-        fallback: _T = ...,
+        self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None, fallback: _T = ...
     ) -> bool | _T: ...
     def _get_conv(
         self,
@@ -247,36 +184,17 @@ class RawConfigParser(_Parser):
     ) -> _T: ...
     # This is incompatible with MutableMapping so we ignore the type
     @overload  # type: ignore[override]
-    def get(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-    ) -> str | Any: ...
+    def get(self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None) -> str | Any: ...
     @overload
     def get(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-        fallback: _T,
+        self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None, fallback: _T
     ) -> str | _T | Any: ...
     @overload
-    def items(
-        self, *, raw: bool = False, vars: _Section | None = None
-    ) -> ItemsView[str, SectionProxy]: ...
+    def items(self, *, raw: bool = False, vars: _Section | None = None) -> ItemsView[str, SectionProxy]: ...
     @overload
-    def items(
-        self, section: str, raw: bool = False, vars: _Section | None = None
-    ) -> list[tuple[str, str]]: ...
+    def items(self, section: str, raw: bool = False, vars: _Section | None = None) -> list[tuple[str, str]]: ...
     def set(self, section: str, option: str, value: str | None = None) -> None: ...
-    def write(
-        self, fp: SupportsWrite[str], space_around_delimiters: bool = True
-    ) -> None: ...
+    def write(self, fp: SupportsWrite[str], space_around_delimiters: bool = True) -> None: ...
     def remove_option(self, section: str, option: str) -> bool: ...
     def remove_section(self, section: str) -> bool: ...
     def optionxform(self, optionstr: str) -> str: ...
@@ -284,24 +202,9 @@ class RawConfigParser(_Parser):
 class ConfigParser(RawConfigParser):
     # This is incompatible with MutableMapping so we ignore the type
     @overload  # type: ignore[override]
-    def get(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-    ) -> str: ...
+    def get(self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None) -> str: ...
     @overload
-    def get(
-        self,
-        section: str,
-        option: str,
-        *,
-        raw: bool = False,
-        vars: _Section | None = None,
-        fallback: _T,
-    ) -> str | _T: ...
+    def get(self, section: str, option: str, *, raw: bool = False, vars: _Section | None = None, fallback: _T) -> str | _T: ...
 
 if sys.version_info < (3, 12):
     class SafeConfigParser(ConfigParser): ...  # deprecated alias
@@ -331,44 +234,17 @@ class SectionProxy(MutableMapping[str, str]):
     # These are partially-applied version of the methods with the same names in
     # RawConfigParser; the stubs should be kept updated together
     @overload
-    def getint(
-        self, option: str, *, raw: bool = ..., vars: _Section | None = ...
-    ) -> int: ...
+    def getint(self, option: str, *, raw: bool = ..., vars: _Section | None = ...) -> int: ...
     @overload
-    def getint(
-        self,
-        option: str,
-        fallback: _T = ...,
-        *,
-        raw: bool = ...,
-        vars: _Section | None = ...,
-    ) -> int | _T: ...
+    def getint(self, option: str, fallback: _T = ..., *, raw: bool = ..., vars: _Section | None = ...) -> int | _T: ...
     @overload
-    def getfloat(
-        self, option: str, *, raw: bool = ..., vars: _Section | None = ...
-    ) -> float: ...
+    def getfloat(self, option: str, *, raw: bool = ..., vars: _Section | None = ...) -> float: ...
     @overload
-    def getfloat(
-        self,
-        option: str,
-        fallback: _T = ...,
-        *,
-        raw: bool = ...,
-        vars: _Section | None = ...,
-    ) -> float | _T: ...
+    def getfloat(self, option: str, fallback: _T = ..., *, raw: bool = ..., vars: _Section | None = ...) -> float | _T: ...
     @overload
-    def getboolean(
-        self, option: str, *, raw: bool = ..., vars: _Section | None = ...
-    ) -> bool: ...
+    def getboolean(self, option: str, *, raw: bool = ..., vars: _Section | None = ...) -> bool: ...
     @overload
-    def getboolean(
-        self,
-        option: str,
-        fallback: _T = ...,
-        *,
-        raw: bool = ...,
-        vars: _Section | None = ...,
-    ) -> bool | _T: ...
+    def getboolean(self, option: str, fallback: _T = ..., *, raw: bool = ..., vars: _Section | None = ...) -> bool | _T: ...
     # SectionProxy can have arbitrary attributes when custom converters are used
     def __getattr__(self, key: str) -> Callable[..., Any]: ...
 
@@ -393,22 +269,14 @@ class DuplicateSectionError(Error):
     section: str
     source: str | None
     lineno: int | None
-    def __init__(
-        self, section: str, source: str | None = None, lineno: int | None = None
-    ) -> None: ...
+    def __init__(self, section: str, source: str | None = None, lineno: int | None = None) -> None: ...
 
 class DuplicateOptionError(Error):
     section: str
     option: str
     source: str | None
     lineno: int | None
-    def __init__(
-        self,
-        section: str,
-        option: str,
-        source: str | None = None,
-        lineno: int | None = None,
-    ) -> None: ...
+    def __init__(self, section: str, option: str, source: str | None = None, lineno: int | None = None) -> None: ...
 
 class NoOptionError(Error):
     section: str
@@ -425,9 +293,7 @@ class InterpolationDepthError(InterpolationError):
 
 class InterpolationMissingOptionError(InterpolationError):
     reference: str
-    def __init__(
-        self, option: str, section: str, rawval: object, reference: str
-    ) -> None: ...
+    def __init__(self, option: str, section: str, rawval: object, reference: str) -> None: ...
 
 class InterpolationSyntaxError(InterpolationError): ...
 
@@ -437,9 +303,7 @@ class ParsingError(Error):
     if sys.version_info >= (3, 12):
         def __init__(self, source: str) -> None: ...
     else:
-        def __init__(
-            self, source: str | None = None, filename: str | None = None
-        ) -> None: ...
+        def __init__(self, source: str | None = None, filename: str | None = None) -> None: ...
 
     def append(self, lineno: int, line: str) -> None: ...
 

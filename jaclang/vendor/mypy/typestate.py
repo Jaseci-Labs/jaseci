@@ -153,9 +153,7 @@ class TypeState:
         for item in info.mro:
             self.reset_subtype_caches_for(item)
 
-    def is_cached_subtype_check(
-        self, kind: SubtypeKind, left: Instance, right: Instance
-    ) -> bool:
+    def is_cached_subtype_check(self, kind: SubtypeKind, left: Instance, right: Instance) -> bool:
         if left.last_known_value is not None or right.last_known_value is not None:
             # If there is a literal last known value, give up. There
             # will be an unbounded number of potential types to cache,
@@ -219,14 +217,10 @@ class TypeState:
         self._checked_against_members.clear()
         self._rechecked_types.clear()
 
-    def record_protocol_subtype_check(
-        self, left_type: TypeInfo, right_type: TypeInfo
-    ) -> None:
+    def record_protocol_subtype_check(self, left_type: TypeInfo, right_type: TypeInfo) -> None:
         assert right_type.is_protocol
         self._rechecked_types.add(left_type)
-        self._attempted_protocols.setdefault(left_type.fullname, set()).add(
-            right_type.fullname
-        )
+        self._attempted_protocols.setdefault(left_type.fullname, set()).add(right_type.fullname)
         self._checked_against_members.setdefault(left_type.fullname, set()).update(
             right_type.protocol_members
         )
@@ -285,18 +279,14 @@ class TypeState:
                 deps.setdefault(trigger, set()).add(proto)
         return deps
 
-    def update_protocol_deps(
-        self, second_map: dict[str, set[str]] | None = None
-    ) -> None:
+    def update_protocol_deps(self, second_map: dict[str, set[str]] | None = None) -> None:
         """Update global protocol dependency map.
 
         We update the global map incrementally, using a snapshot only from recently
         type checked types. If second_map is given, update it as well. This is currently used
         by FineGrainedBuildManager that maintains normal (non-protocol) dependencies.
         """
-        assert (
-            self.proto_deps is not None
-        ), "This should not be called after failed cache load"
+        assert self.proto_deps is not None, "This should not be called after failed cache load"
         new_deps = self._snapshot_protocol_deps()
         for trigger, targets in new_deps.items():
             self.proto_deps.setdefault(trigger, set()).update(targets)

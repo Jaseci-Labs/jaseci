@@ -6,13 +6,7 @@ from collections import defaultdict
 from typing import Iterable, Sequence
 from typing_extensions import TypeAlias as _TypeAlias
 
-from mypy.constraints import (
-    SUBTYPE_OF,
-    SUPERTYPE_OF,
-    Constraint,
-    infer_constraints,
-    neg_op,
-)
+from mypy.constraints import SUBTYPE_OF, SUPERTYPE_OF, Constraint, infer_constraints, neg_op
 from mypy.expandtype import expand_type
 from mypy.graph_utils import prepare_sccs, strongly_connected_components, topsort
 from mypy.join import join_types
@@ -72,9 +66,7 @@ def solve_constraints(
     extra_vars: list[TypeVarId] = []
     # Get additional type variables from generic actuals.
     for c in constraints:
-        extra_vars.extend(
-            [v.id for v in c.extra_tvars if v.id not in vars + extra_vars]
-        )
+        extra_vars.extend([v.id for v in c.extra_tvars if v.id not in vars + extra_vars])
         originals.update({v.id: v for v in c.extra_tvars if v.id not in originals})
 
     if allow_polymorphic:
@@ -433,10 +425,7 @@ def transitive_closure(
             if (lower, upper) in graph:
                 continue
             graph |= {
-                (l, u)
-                for l in tvars
-                for u in tvars
-                if (l, lower) in graph and (upper, u) in graph
+                (l, u) for l in tvars for u in tvars if (l, lower) in graph and (upper, u) in graph
             }
             for u in tvars:
                 if (upper, u) in graph:
@@ -536,9 +525,7 @@ def skip_reverse_union_constraints(cs: list[Constraint]) -> list[Constraint]:
         if isinstance(p_target, UnionType):
             for item in p_target.items:
                 if isinstance(item, TypeVarType):
-                    reverse_union_cs.add(
-                        Constraint(item, neg_op(c.op), c.origin_type_var)
-                    )
+                    reverse_union_cs.add(Constraint(item, neg_op(c.op), c.origin_type_var))
     return [c for c in cs if c not in reverse_union_cs]
 
 

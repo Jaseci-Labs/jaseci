@@ -31,11 +31,7 @@ class TestStruct(unittest.TestCase):
         assert r2.size == 8
         assert r3.size == 16
 
-        r4 = RStruct(
-            "",
-            [],
-            [bool_rprimitive, bool_rprimitive, bool_rprimitive, int32_rprimitive],
-        )
+        r4 = RStruct("", [], [bool_rprimitive, bool_rprimitive, bool_rprimitive, int32_rprimitive])
         assert r4.size == 8
         assert r4.offsets == [0, 1, 2, 4]
 
@@ -83,9 +79,7 @@ class TestStruct(unittest.TestCase):
 
         # number of types different
         r5 = RStruct(
-            "FooBarBaz",
-            ["a", "b", "c"],
-            [bool_rprimitive, int_rprimitive, bool_rprimitive],
+            "FooBarBaz", ["a", "b", "c"], [bool_rprimitive, int_rprimitive, bool_rprimitive]
         )
 
         assert is_runtime_subtype(r1, r) is True
@@ -113,8 +107,6 @@ class TestStruct(unittest.TestCase):
         assert r != r3
 
         # different type
-        r4 = RStruct(
-            "Foo", ["a", "b"], [bool_rprimitive, int_rprimitive, bool_rprimitive]
-        )
+        r4 = RStruct("Foo", ["a", "b"], [bool_rprimitive, int_rprimitive, bool_rprimitive])
         assert hash(r) != hash(r4)
         assert r != r4

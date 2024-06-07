@@ -10,6 +10,7 @@ repos:
     rev: 24.1.1
     hooks:
       - id: black
+        exclude: "vendor"
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:

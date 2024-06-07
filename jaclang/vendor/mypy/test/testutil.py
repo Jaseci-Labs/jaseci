@@ -92,9 +92,7 @@ line 2</failure>
 
     def test_serious_error(self) -> None:
         serious = True
-        messages_by_file: dict[str | None, list[str]] = {
-            None: ["Error line 1", "Error line 2"]
-        }
+        messages_by_file: dict[str | None, list[str]] = {None: ["Error line 1", "Error line 2"]}
         expected = """<?xml version="1.0" encoding="utf-8"?>
 <testsuite errors="1" failures="0" name="mypy" skips="0" tests="1" time="1.230">
   <testcase classname="mypy" file="mypy" line="1" name="mypy-py3.14-test-plat" time="1.230">

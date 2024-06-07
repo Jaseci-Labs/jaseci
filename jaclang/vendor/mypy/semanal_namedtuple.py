@@ -157,8 +157,7 @@ class NamedTupleAnalyzer:
             if not isinstance(stmt, AssignmentStmt):
                 # Still allow pass or ... (for empty namedtuples).
                 if isinstance(stmt, PassStmt) or (
-                    isinstance(stmt, ExpressionStmt)
-                    and isinstance(stmt.expr, EllipsisExpr)
+                    isinstance(stmt, ExpressionStmt) and isinstance(stmt.expr, EllipsisExpr)
                 ):
                     continue
                 # Also allow methods, including decorated ones.
@@ -197,30 +196,22 @@ class NamedTupleAnalyzer:
                 # ...despite possible minor failures that allow further analyzis.
                 if name.startswith("_"):
                     self.fail(
-                        f"NamedTuple field name cannot start with an underscore: {name}",
-                        stmt,
+                        f"NamedTuple field name cannot start with an underscore: {name}", stmt
                     )
-                if (
-                    stmt.type is None
-                    or hasattr(stmt, "new_syntax")
-                    and not stmt.new_syntax
-                ):
+                if stmt.type is None or hasattr(stmt, "new_syntax") and not stmt.new_syntax:
                     self.fail(NAMEDTUP_CLASS_ERROR, stmt)
                 elif isinstance(stmt.rvalue, TempNode):
                     # x: int assigns rvalue to TempNode(AnyType())
                     if default_items:
                         self.fail(
-                            "Non-default NamedTuple fields cannot follow default fields",
-                            stmt,
+                            "Non-default NamedTuple fields cannot follow default fields", stmt
                         )
                 else:
                     default_items[name] = stmt.rvalue
         if defn.keywords:
             for_function = ' for "__init_subclass__" of "NamedTuple"'
             for key in defn.keywords:
-                self.msg.unexpected_keyword_argument_for_function(
-                    for_function, key, defn
-                )
+                self.msg.unexpected_keyword_argument_for_function(for_function, key, defn)
         return items, types, default_items, statements
 
     def check_namedtuple(
@@ -295,8 +286,7 @@ class NamedTupleAnalyzer:
             name += "@" + str(call.line)
         if defaults:
             default_items = {
-                arg_name: default
-                for arg_name, default in zip(items[-len(defaults) :], defaults)
+                arg_name: default for arg_name, default in zip(items[-len(defaults) :], defaults)
             }
         else:
             default_items = {}
@@ -342,9 +332,7 @@ class NamedTupleAnalyzer:
 
     def parse_namedtuple_args(
         self, call: CallExpr, fullname: str
-    ) -> None | (
-        tuple[list[str], list[Type], list[Expression], str, list[TypeVarLikeType], bool]
-    ):
+    ) -> None | (tuple[list[str], list[Type], list[Expression], str, list[TypeVarLikeType], bool]):
         """Parse a namedtuple() call into data needed to construct a type.
 
         Returns a 6-tuple:
@@ -387,9 +375,7 @@ class NamedTupleAnalyzer:
             self.fail(f'Unexpected arguments to "{type_name}()"', call)
             return None
         if not isinstance(args[0], StrExpr):
-            self.fail(
-                f'"{type_name}()" expects a string literal as the first argument', call
-            )
+            self.fail(f'"{type_name}()" expects a string literal as the first argument', call)
             return None
         typename = args[0].value
         types: list[Type] = []
@@ -464,9 +450,7 @@ class NamedTupleAnalyzer:
                     self.fail('Invalid "NamedTuple()" field name', item)
                     return None
                 try:
-                    type = expr_to_unanalyzed_type(
-                        type_node, self.options, self.api.is_stub_file
-                    )
+                    type = expr_to_unanalyzed_type(type_node, self.options, self.api.is_stub_file)
                 except TypeTranslationError:
                     self.fail("Invalid field type", type_node)
                     return None
@@ -517,10 +501,7 @@ class NamedTupleAnalyzer:
         tuple_base = TupleType(types, fallback)
         if info.special_alias and has_placeholder(info.special_alias.target):
             self.api.process_placeholder(
-                None,
-                "NamedTuple item",
-                info,
-                force_progress=tuple_base != info.tuple_type,
+                None, "NamedTuple item", info, force_progress=tuple_base != info.tuple_type
             )
         info.update_tuple_type(tuple_base)
         info.line = line
@@ -561,9 +542,7 @@ class NamedTupleAnalyzer:
         add_field(Var("__annotations__", ordereddictype), is_initialized_in_class=True)
         add_field(Var("__doc__", strtype), is_initialized_in_class=True)
         if self.options.python_version >= (3, 10):
-            add_field(
-                Var("__match_args__", match_args_type), is_initialized_in_class=True
-            )
+            add_field(Var("__match_args__", match_args_type), is_initialized_in_class=True)
 
         assert info.tuple_type is not None  # Set by update_tuple_type() above.
         tvd = TypeVarType(
@@ -584,11 +563,7 @@ class NamedTupleAnalyzer:
             is_new: bool = False,
         ) -> None:
             if is_classmethod or is_new:
-                first = [
-                    Argument(
-                        Var("_cls"), TypeType.make_normalized(selftype), None, ARG_POS
-                    )
-                ]
+                first = [Argument(Var("_cls"), TypeType.make_normalized(selftype), None, ARG_POS)]
             else:
                 first = [Argument(Var("_self"), selftype, None, ARG_POS)]
             args = first + args
@@ -597,9 +572,7 @@ class NamedTupleAnalyzer:
             items = [arg.variable.name for arg in args]
             arg_kinds = [arg.kind for arg in args]
             assert None not in types
-            signature = CallableType(
-                cast(List[Type], types), arg_kinds, items, ret, function_type
-            )
+            signature = CallableType(cast(List[Type], types), arg_kinds, items, ret, function_type)
             signature.variables = [tvd]
             func = FuncDef(funcname, args, Block([]))
             func.info = info
@@ -624,9 +597,7 @@ class NamedTupleAnalyzer:
         add_method(
             "_replace",
             ret=selftype,
-            args=[
-                Argument(var, var.type, EllipsisExpr(), ARG_NAMED_OPT) for var in vars
-            ],
+            args=[Argument(var, var.type, EllipsisExpr(), ARG_NAMED_OPT) for var in vars],
         )
 
         def make_init_arg(var: Var) -> Argument:
@@ -634,20 +605,13 @@ class NamedTupleAnalyzer:
             kind = ARG_POS if default is None else ARG_OPT
             return Argument(var, var.type, default, kind)
 
-        add_method(
-            "__new__",
-            ret=selftype,
-            args=[make_init_arg(var) for var in vars],
-            is_new=True,
-        )
+        add_method("__new__", ret=selftype, args=[make_init_arg(var) for var in vars], is_new=True)
         add_method("_asdict", args=[], ret=ordereddictype)
         add_method(
             "_make",
             ret=selftype,
             is_classmethod=True,
-            args=[
-                Argument(Var("iterable", iterable_type), iterable_type, None, ARG_POS)
-            ],
+            args=[Argument(Var("iterable", iterable_type), iterable_type, None, ARG_POS)],
         )
 
         self_tvar_expr = TypeVarExpr(
@@ -691,10 +655,7 @@ class NamedTupleAnalyzer:
                 if key == "__doc__":
                     continue
                 sym = named_tuple_info.names[key]
-                if (
-                    isinstance(sym.node, (FuncBase, Decorator))
-                    and not sym.plugin_generated
-                ):
+                if isinstance(sym.node, (FuncBase, Decorator)) and not sym.plugin_generated:
                     # Keep user-defined methods as is.
                     continue
                 # Keep existing (user-provided) definitions under mangled names, so they

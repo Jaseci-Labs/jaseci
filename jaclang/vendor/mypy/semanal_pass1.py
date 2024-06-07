@@ -55,9 +55,7 @@ class SemanticAnalyzerPreAnalysis(TraverserVisitor):
     shouldn't be processed in Python 3 mode, even if the module happens to exist.
     """
 
-    def visit_file(
-        self, file: MypyFile, fnam: str, mod_id: str, options: Options
-    ) -> None:
+    def visit_file(self, file: MypyFile, fnam: str, mod_id: str, options: Options) -> None:
         self.platform = options.platform
         self.cur_mod_id = mod_id
         self.cur_mod_node = file
@@ -75,9 +73,7 @@ class SemanticAnalyzerPreAnalysis(TraverserVisitor):
                     next_def, last = file.defs[i + 1], file.defs[-1]
                     if last.end_line is not None:
                         # We are on a Python version recent enough to support end lines.
-                        self.skipped_lines |= set(
-                            range(next_def.line, last.end_line + 1)
-                        )
+                        self.skipped_lines |= set(range(next_def.line, last.end_line + 1))
                 del file.defs[i + 1 :]
                 break
         file.skipped_lines = self.skipped_lines
