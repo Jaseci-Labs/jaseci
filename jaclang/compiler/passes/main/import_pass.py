@@ -68,21 +68,29 @@ class JacImportPass(Pass):
         if not directory:
             directory = os.getcwd()
             base_path = os.path.join(directory, base_path)
-        for impl_file in os.listdir(directory):
+        impl_folder = base_path + ".impl"
+        search_files = [
+            os.path.join(directory, impl_file) for impl_file in os.listdir(directory)
+        ]
+        if os.path.exists(impl_folder):
+            search_files += [
+                os.path.join(impl_folder, impl_file)
+                for impl_file in os.listdir(impl_folder)
+            ]
+        for impl_file in search_files:
             if node.loc.mod_path.endswith(impl_file):
                 continue
-            impl_file = os.path.join(directory, impl_file)
-            if impl_file.startswith(f"{base_path}.") and impl_file.endswith(
-                ".impl.jac"
-            ):
+            if (
+                impl_file.startswith(f"{base_path}.") or impl_folder in impl_file
+            ) and impl_file.endswith(".impl.jac"):
                 mod = self.import_mod_from_file(impl_file)
                 if mod:
                     node.impl_mod = mod
                     node.add_kids_left([mod], pos_update=False)
                     mod.parent = node
-            if impl_file.startswith(f"{base_path}.") and impl_file.endswith(
-                ".test.jac"
-            ):
+            if (
+                impl_file.startswith(f"{base_path}.") or impl_folder in impl_file
+            ) and impl_file.endswith(".test.jac"):
                 mod = self.import_mod_from_file(impl_file)
                 if mod:
                     node.test_mod = mod
