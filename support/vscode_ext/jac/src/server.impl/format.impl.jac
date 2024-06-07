@@ -1,3 +1,11 @@
+import:py from jaclang.compiler.passes.tool,
+               FuseCommentsPass,
+               JacFormatPass;
+
+import:py from jaclang.compiler.compile,
+               jac_str_to_pass;
+
+
 :can:formatting(ls: LanguageServer, params: lspt.DocumentFormattingParams) -> lspt.List[lspt.TextEdit] {
     try {
         source = ls.workspace.get_text_document(params.text_document.uri).source;

@@ -40,7 +40,6 @@ class JacImportPass(Pass):
                 self.process_import(node, i)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
-        self.annex_impl(node)
         node.mod_deps = self.import_table
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
@@ -53,7 +52,6 @@ class JacImportPass(Pass):
             )
             if mod:
                 self.run_again = True
-                self.annex_impl(mod)
                 i.sub_module = mod
                 i.add_kids_right([mod], pos_update=False)
 
@@ -85,7 +83,7 @@ class JacImportPass(Pass):
             ) and impl_file.endswith(".impl.jac"):
                 mod = self.import_mod_from_file(impl_file)
                 if mod:
-                    node.impl_mod = mod
+                    node.impl_mod.append(mod)
                     node.add_kids_left([mod], pos_update=False)
                     mod.parent = node
             if (
