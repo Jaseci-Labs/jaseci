@@ -4,4 +4,4 @@ client/server
 .vscode-test
 .vscode/settings.json
 env
-
+*.vsix
