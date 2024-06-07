@@ -1,3 +1,3 @@
 :can:baz {
-  print("baz");
+    print("baz");
 }
