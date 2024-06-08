@@ -20,7 +20,6 @@ from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.core.construct import Architype
-from jaclang.langserve.server import run_lang_server
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
@@ -197,6 +196,8 @@ def check(filename: str, print_errs: bool = True) -> None:
 @cmd_registry.register
 def lsp() -> None:
     """Run Jac Language Server Protocol."""
+    from jaclang.langserve.server import run_lang_server
+
     run_lang_server()
 
 
