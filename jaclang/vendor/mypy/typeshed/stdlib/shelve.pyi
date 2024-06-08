@@ -11,11 +11,7 @@ _VT = TypeVar("_VT")
 
 class Shelf(MutableMapping[str, _VT]):
     def __init__(
-        self,
-        dict: MutableMapping[bytes, bytes],
-        protocol: int | None = None,
-        writeback: bool = False,
-        keyencoding: str = "utf-8",
+        self, dict: MutableMapping[bytes, bytes], protocol: int | None = None, writeback: bool = False, keyencoding: str = "utf-8"
     ) -> None: ...
     def __iter__(self) -> Iterator[str]: ...
     def __len__(self) -> int: ...
@@ -31,10 +27,7 @@ class Shelf(MutableMapping[str, _VT]):
     def __contains__(self, key: str) -> bool: ...  # type: ignore[override]
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
+        self, type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
     def __del__(self) -> None: ...
     def close(self) -> None: ...
@@ -48,17 +41,6 @@ class BsdDbShelf(Shelf[_VT]):
     def last(self) -> tuple[str, _VT]: ...
 
 class DbfilenameShelf(Shelf[_VT]):
-    def __init__(
-        self,
-        filename: str,
-        flag: _TFlags = "c",
-        protocol: int | None = None,
-        writeback: bool = False,
-    ) -> None: ...
+    def __init__(self, filename: str, flag: _TFlags = "c", protocol: int | None = None, writeback: bool = False) -> None: ...
 
-def open(
-    filename: str,
-    flag: _TFlags = "c",
-    protocol: int | None = None,
-    writeback: bool = False,
-) -> Shelf[Any]: ...
+def open(filename: str, flag: _TFlags = "c", protocol: int | None = None, writeback: bool = False) -> Shelf[Any]: ...

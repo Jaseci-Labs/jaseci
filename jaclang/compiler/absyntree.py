@@ -391,7 +391,6 @@ class Module(AstDocNode):
         body: Sequence[ElementStmt | String | EmptyToken],
         is_imported: bool,
         kid: Sequence[AstNode],
-        impl_mod: Optional[Module] = None,
         test_mod: Optional[Module] = None,
         registry: Optional[SemRegistry] = None,
     ) -> None:
@@ -400,7 +399,7 @@ class Module(AstDocNode):
         self.source = source
         self.body = body
         self.is_imported = is_imported
-        self.impl_mod = impl_mod
+        self.impl_mod: list[Module] = []
         self.test_mod = test_mod
         self.mod_deps: dict[str, Module] = {}
         self.registry = registry

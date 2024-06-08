@@ -79,11 +79,7 @@ class IPCBase:
                 ov, err = _winapi.ReadFile(self.connection, size, overlapped=True)
                 try:
                     if err == _winapi.ERROR_IO_PENDING:
-                        timeout = (
-                            int(self.timeout * 1000)
-                            if self.timeout
-                            else _winapi.INFINITE
-                        )
+                        timeout = int(self.timeout * 1000) if self.timeout else _winapi.INFINITE
                         res = _winapi.WaitForSingleObject(ov.event, timeout)
                         if res != _winapi.WAIT_OBJECT_0:
                             raise IPCException(f"Bad result from I/O wait: {res}")
@@ -134,16 +130,10 @@ class IPCBase:
 
         if sys.platform == "win32":
             try:
-                ov, err = _winapi.WriteFile(
-                    self.connection, encoded_data, overlapped=True
-                )
+                ov, err = _winapi.WriteFile(self.connection, encoded_data, overlapped=True)
                 try:
                     if err == _winapi.ERROR_IO_PENDING:
-                        timeout = (
-                            int(self.timeout * 1000)
-                            if self.timeout
-                            else _winapi.INFINITE
-                        )
+                        timeout = int(self.timeout * 1000) if self.timeout else _winapi.INFINITE
                         res = _winapi.WaitForSingleObject(ov.event, timeout)
                         if res != _winapi.WAIT_OBJECT_0:
                             raise IPCException(f"Bad result from I/O wait: {res}")
@@ -174,17 +164,11 @@ class IPCClient(IPCBase):
     def __init__(self, name: str, timeout: float | None) -> None:
         super().__init__(name, timeout)
         if sys.platform == "win32":
-            timeout = (
-                int(self.timeout * 1000)
-                if self.timeout
-                else _winapi.NMPWAIT_WAIT_FOREVER
-            )
+            timeout = int(self.timeout * 1000) if self.timeout else _winapi.NMPWAIT_WAIT_FOREVER
             try:
                 _winapi.WaitNamedPipe(self.name, timeout)
             except FileNotFoundError as e:
-                raise IPCException(
-                    f"The NamedPipe at {self.name} was not found."
-                ) from e
+                raise IPCException(f"The NamedPipe at {self.name} was not found.") from e
             except OSError as e:
                 if e.winerror == _winapi.ERROR_SEM_TIMEOUT:
                     raise IPCException("Timed out waiting for connection.") from e
@@ -272,16 +256,11 @@ class IPCServer(IPCBase):
                 ov = _winapi.ConnectNamedPipe(self.connection, overlapped=True)
             except OSError as e:
                 # Don't raise if the client already exists, or the client already connected
-                if e.winerror not in (
-                    _winapi.ERROR_PIPE_CONNECTED,
-                    _winapi.ERROR_NO_DATA,
-                ):
+                if e.winerror not in (_winapi.ERROR_PIPE_CONNECTED, _winapi.ERROR_NO_DATA):
                     raise
             else:
                 try:
-                    timeout = (
-                        int(self.timeout * 1000) if self.timeout else _winapi.INFINITE
-                    )
+                    timeout = int(self.timeout * 1000) if self.timeout else _winapi.INFINITE
                     res = _winapi.WaitForSingleObject(ov.event, timeout)
                     assert res == _winapi.WAIT_OBJECT_0
                 except BaseException:

@@ -116,32 +116,20 @@ def tuple_fallback(typ: TupleType) -> Instance:
         else:
             items.append(item)
     # TODO: we should really use a union here, tuple types are special.
-    return Instance(
-        info, [join_type_list(items)], extra_attrs=typ.partial_fallback.extra_attrs
-    )
+    return Instance(info, [join_type_list(items)], extra_attrs=typ.partial_fallback.extra_attrs)
 
 
-def get_self_type(
-    func: CallableType, default_self: Instance | TupleType
-) -> Type | None:
+def get_self_type(func: CallableType, default_self: Instance | TupleType) -> Type | None:
     if isinstance(get_proper_type(func.ret_type), UninhabitedType):
         return func.ret_type
-    elif (
-        func.arg_types
-        and func.arg_types[0] != default_self
-        and func.arg_kinds[0] == ARG_POS
-    ):
+    elif func.arg_types and func.arg_types[0] != default_self and func.arg_kinds[0] == ARG_POS:
         return func.arg_types[0]
     else:
         return None
 
 
 def type_object_type_from_function(
-    signature: FunctionLike,
-    info: TypeInfo,
-    def_info: TypeInfo,
-    fallback: Instance,
-    is_new: bool,
+    signature: FunctionLike, info: TypeInfo, def_info: TypeInfo, fallback: Instance, is_new: bool
 ) -> FunctionLike:
     # We first need to record all non-trivial (explicit) self types in __init__,
     # since they will not be available after we bind them. Note, we use explicit
@@ -173,17 +161,13 @@ def type_object_type_from_function(
         special_sig = "dict"
 
     if isinstance(signature, CallableType):
-        return class_callable(
-            signature, info, fallback, special_sig, is_new, orig_self_types[0]
-        )
+        return class_callable(signature, info, fallback, special_sig, is_new, orig_self_types[0])
     else:
         # Overloaded __init__/__new__.
         assert isinstance(signature, Overloaded)
         items: list[CallableType] = []
         for item, orig_self in zip(signature.items, orig_self_types):
-            items.append(
-                class_callable(item, info, fallback, special_sig, is_new, orig_self)
-            )
+            items.append(class_callable(item, info, fallback, special_sig, is_new, orig_self))
         return Overloaded(items)
 
 
@@ -231,9 +215,7 @@ def class_callable(
     return c
 
 
-def map_type_from_supertype(
-    typ: Type, sub_info: TypeInfo, super_info: TypeInfo
-) -> Type:
+def map_type_from_supertype(typ: Type, sub_info: TypeInfo, super_info: TypeInfo) -> Type:
     """Map type variables in a type defined in a supertype context to be valid
     in the subtype context. Assume that the result is unique; if more than
     one type is possible, return one of the alternatives.
@@ -282,9 +264,7 @@ def supported_self_type(typ: ProperType, allow_callable: bool = True) -> bool:
 F = TypeVar("F", bound=FunctionLike)
 
 
-def bind_self(
-    method: F, original_type: Type | None = None, is_classmethod: bool = False
-) -> F:
+def bind_self(method: F, original_type: Type | None = None, is_classmethod: bool = False) -> F:
     """Return a copy of `method`, with the type of its first parameter (usually
     self or cls) bound to original_type.
 
@@ -309,10 +289,7 @@ def bind_self(
     """
     if isinstance(method, Overloaded):
         return cast(
-            F,
-            Overloaded(
-                [bind_self(c, original_type, is_classmethod) for c in method.items]
-            ),
+            F, Overloaded([bind_self(c, original_type, is_classmethod) for c in method.items])
         )
     assert isinstance(method, CallableType)
     func = method
@@ -333,9 +310,7 @@ def bind_self(
     # this special-casing looks not very principled, there is nothing meaningful we can infer
     # from such definition, since it is inherently indefinitely recursive.
     allow_callable = func.name is None or not func.name.startswith("__call__ of")
-    if func.variables and supported_self_type(
-        self_param_type, allow_callable=allow_callable
-    ):
+    if func.variables and supported_self_type(self_param_type, allow_callable=allow_callable):
         from mypy.infer import infer_type_arguments
 
         if original_type is None:
@@ -436,9 +411,7 @@ def is_simple_literal(t: ProperType) -> bool:
     if isinstance(t, LiteralType):
         return t.fallback.type.is_enum or t.fallback.type.fullname == "builtins.str"
     if isinstance(t, Instance):
-        return t.last_known_value is not None and isinstance(
-            t.last_known_value.value, str
-        )
+        return t.last_known_value is not None and isinstance(t.last_known_value.value, str)
     return False
 
 
@@ -486,10 +459,7 @@ def make_simplified_union(
     # Step 4: If more than one literal exists in the union, try to simplify
     if (
         contract_literals
-        and sum(
-            isinstance(get_proper_type(item), LiteralType) for item in simplified_set
-        )
-        > 1
+        and sum(isinstance(get_proper_type(item), LiteralType) for item in simplified_set) > 1
     ):
         simplified_set = try_contracting_literals_in_union(simplified_set)
 
@@ -630,9 +600,9 @@ def true_only(t: Type) -> ProperType:
         can_be_true_items = [item for item in new_items if item.can_be_true]
         return make_simplified_union(can_be_true_items, line=t.line, column=t.column)
     else:
-        ret_type = _get_type_method_ret_type(
-            t, name="__bool__"
-        ) or _get_type_method_ret_type(t, name="__len__")
+        ret_type = _get_type_method_ret_type(t, name="__bool__") or _get_type_method_ret_type(
+            t, name="__len__"
+        )
 
         if ret_type and not ret_type.can_be_true:
             return UninhabitedType(line=t.line, column=t.column)
@@ -665,9 +635,9 @@ def false_only(t: Type) -> ProperType:
         can_be_false_items = [item for item in new_items if item.can_be_false]
         return make_simplified_union(can_be_false_items, line=t.line, column=t.column)
     else:
-        ret_type = _get_type_method_ret_type(
-            t, name="__bool__"
-        ) or _get_type_method_ret_type(t, name="__len__")
+        ret_type = _get_type_method_ret_type(t, name="__bool__") or _get_type_method_ret_type(
+            t, name="__len__"
+        )
 
         if ret_type:
             if not ret_type.can_be_false:
@@ -748,9 +718,7 @@ def callable_type(
         self_type: Type = fill_typevars(fdef.info)
         if fdef.is_class or fdef.name == "__new__":
             self_type = TypeType.make_normalized(self_type)
-        args = [self_type] + [AnyType(TypeOfAny.unannotated)] * (
-            len(fdef.arg_names) - 1
-        )
+        args = [self_type] + [AnyType(TypeOfAny.unannotated)] * (len(fdef.arg_names) - 1)
     else:
         args = [AnyType(TypeOfAny.unannotated)] * len(fdef.arg_names)
 
@@ -832,10 +800,7 @@ def try_getting_literals_from_type(
 
     literals: list[T] = []
     for lit in get_proper_types(possible_literals):
-        if (
-            isinstance(lit, LiteralType)
-            and lit.fallback.type.fullname == target_fullname
-        ):
+        if isinstance(lit, LiteralType) and lit.fallback.type.fullname == target_fullname:
             val = lit.value
             if isinstance(val, target_literal_type):
                 literals.append(val)
@@ -908,8 +873,7 @@ def try_expanding_sum_type_to_union(typ: Type, target_fullname: str) -> ProperTy
 
     if isinstance(typ, UnionType):
         items = [
-            try_expanding_sum_type_to_union(item, target_fullname)
-            for item in typ.relevant_items()
+            try_expanding_sum_type_to_union(item, target_fullname) for item in typ.relevant_items()
         ]
         return make_simplified_union(items, contract_literals=False)
     elif isinstance(typ, Instance) and typ.type.fullname == target_fullname:
@@ -925,8 +889,7 @@ def try_expanding_sum_type_to_union(typ: Type, target_fullname: str) -> ProperTy
             return make_simplified_union(new_items, contract_literals=False)
         elif typ.type.fullname == "builtins.bool":
             return make_simplified_union(
-                [LiteralType(True, typ), LiteralType(False, typ)],
-                contract_literals=False,
+                [LiteralType(True, typ), LiteralType(False, typ)], contract_literals=False
             )
 
     return typ
@@ -968,8 +931,7 @@ def try_contracting_literals_in_union(types: Sequence[Type]) -> list[ProperType]
                     marked_for_deletion |= set(rest)
     return list(
         itertools.compress(
-            proper_types,
-            [(i not in marked_for_deletion) for i in range(len(proper_types))],
+            proper_types, [(i not in marked_for_deletion) for i in range(len(proper_types))]
         )
     )
 
@@ -1033,9 +995,7 @@ def custom_special_method(typ: Type, name: str, check_all: bool = False) -> bool
         method = typ.type.get(name)
         if method and isinstance(method.node, (SYMBOL_FUNCBASE_TYPES, Decorator, Var)):
             if method.node.info:
-                return not method.node.info.fullname.startswith(
-                    ("builtins.", "typing.")
-                )
+                return not method.node.info.fullname.startswith(("builtins.", "typing."))
         return False
     if isinstance(typ, UnionType):
         if check_all:
@@ -1053,9 +1013,7 @@ def custom_special_method(typ: Type, name: str, check_all: bool = False) -> bool
     return False
 
 
-def separate_union_literals(
-    t: UnionType,
-) -> tuple[Sequence[LiteralType], Sequence[Type]]:
+def separate_union_literals(t: UnionType) -> tuple[Sequence[LiteralType], Sequence[Type]]:
     """Separate literals from other members in a union type."""
     literal_items = []
     union_items = []
@@ -1101,14 +1059,10 @@ def fixup_partial_type(typ: Type) -> Type:
     if typ.type is None:
         return UnionType.make_union([AnyType(TypeOfAny.unannotated), NoneType()])
     else:
-        return Instance(
-            typ.type, [AnyType(TypeOfAny.unannotated)] * len(typ.type.type_vars)
-        )
+        return Instance(typ.type, [AnyType(TypeOfAny.unannotated)] * len(typ.type.type_vars))
 
 
-def get_protocol_member(
-    left: Instance, member: str, class_obj: bool
-) -> ProperType | None:
+def get_protocol_member(left: Instance, member: str, class_obj: bool) -> ProperType | None:
     if member == "__call__" and class_obj:
         # Special case: class objects always have __call__ that is just the constructor.
         from mypy.checkmember import type_object_type

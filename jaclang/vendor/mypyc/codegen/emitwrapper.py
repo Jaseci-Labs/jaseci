@@ -14,27 +14,9 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from mypy.nodes import (
-    ARG_NAMED,
-    ARG_NAMED_OPT,
-    ARG_OPT,
-    ARG_POS,
-    ARG_STAR,
-    ARG_STAR2,
-    ArgKind,
-)
-from mypy.operators import (
-    op_methods_to_symbols,
-    reverse_op_method_names,
-    reverse_op_methods,
-)
-from mypyc.codegen.emit import (
-    AssignHandler,
-    Emitter,
-    ErrorHandler,
-    GotoHandler,
-    ReturnHandler,
-)
+from mypy.nodes import ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR, ARG_STAR2, ArgKind
+from mypy.operators import op_methods_to_symbols, reverse_op_method_names, reverse_op_methods
+from mypyc.codegen.emit import AssignHandler, Emitter, ErrorHandler, GotoHandler, ReturnHandler
 from mypyc.common import (
     BITMAP_BITS,
     BITMAP_TYPE,
@@ -119,9 +101,7 @@ def make_static_kwlist(args: list[RuntimeArg]) -> str:
     return f"static const char * const kwlist[] = {{{arg_names}0}};"
 
 
-def make_format_string(
-    func_name: str | None, groups: dict[ArgKind, list[RuntimeArg]]
-) -> str:
+def make_format_string(func_name: str | None, groups: dict[ArgKind, list[RuntimeArg]]) -> str:
     """Return a format string that specifies the accepted arguments.
 
     The format string is an extended subset of what is supported by
@@ -185,16 +165,12 @@ def generate_wrapper_function(
             "PyObject *obj_{}{};".format(arg.name, " = NULL" if arg.optional else "")
         )
 
-    cleanups = [
-        f"CPy_DECREF(obj_{arg.name});" for arg in groups[ARG_STAR] + groups[ARG_STAR2]
-    ]
+    cleanups = [f"CPy_DECREF(obj_{arg.name});" for arg in groups[ARG_STAR] + groups[ARG_STAR2]]
 
     arg_ptrs: list[str] = []
     if groups[ARG_STAR] or groups[ARG_STAR2]:
         arg_ptrs += [f"&obj_{groups[ARG_STAR][0].name}" if groups[ARG_STAR] else "NULL"]
-        arg_ptrs += [
-            f"&obj_{groups[ARG_STAR2][0].name}" if groups[ARG_STAR2] else "NULL"
-        ]
+        arg_ptrs += [f"&obj_{groups[ARG_STAR2][0].name}" if groups[ARG_STAR2] else "NULL"]
     arg_ptrs += [f"&obj_{arg.name}" for arg in reordered_args]
 
     if fn.name == "__call__" and use_vectorcall(emitter.capi_version):
@@ -243,10 +219,8 @@ def generate_wrapper_function(
 
 
 def legacy_wrapper_function_header(fn: FuncIR, names: NameGenerator) -> str:
-    return (
-        "PyObject *{prefix}{name}(PyObject *self, PyObject *args, PyObject *kw)".format(
-            prefix=PREFIX, name=fn.cname(names)
-        )
+    return "PyObject *{prefix}{name}(PyObject *self, PyObject *args, PyObject *kw)".format(
+        prefix=PREFIX, name=fn.cname(names)
     )
 
 
@@ -280,23 +254,17 @@ def generate_legacy_wrapper_function(
             "PyObject *obj_{}{};".format(arg.name, " = NULL" if arg.optional else "")
         )
 
-    cleanups = [
-        f"CPy_DECREF(obj_{arg.name});" for arg in groups[ARG_STAR] + groups[ARG_STAR2]
-    ]
+    cleanups = [f"CPy_DECREF(obj_{arg.name});" for arg in groups[ARG_STAR] + groups[ARG_STAR2]]
 
     arg_ptrs: list[str] = []
     if groups[ARG_STAR] or groups[ARG_STAR2]:
         arg_ptrs += [f"&obj_{groups[ARG_STAR][0].name}" if groups[ARG_STAR] else "NULL"]
-        arg_ptrs += [
-            f"&obj_{groups[ARG_STAR2][0].name}" if groups[ARG_STAR2] else "NULL"
-        ]
+        arg_ptrs += [f"&obj_{groups[ARG_STAR2][0].name}" if groups[ARG_STAR2] else "NULL"]
     arg_ptrs += [f"&obj_{arg.name}" for arg in reordered_args]
 
     emitter.emit_lines(
         'if (!CPyArg_ParseTupleAndKeywords(args, kw, "{}", "{}", kwlist{})) {{'.format(
-            make_format_string(None, groups),
-            fn.name,
-            "".join(", " + n for n in arg_ptrs),
+            make_format_string(None, groups), fn.name, "".join(", " + n for n in arg_ptrs)
         ),
         "return NULL;",
         "}",
@@ -480,9 +448,7 @@ def generate_bin_op_both_wrappers(
     gen.finish()
 
 
-def generate_bin_op_reverse_dunder_call(
-    fn: FuncIR, emitter: Emitter, rmethod: str
-) -> None:
+def generate_bin_op_reverse_dunder_call(fn: FuncIR, emitter: Emitter, rmethod: str) -> None:
     if fn.name in ("__pow__", "__rpow__"):
         # Ternary pow() will never call the reverse dunder.
         emitter.emit_line("if (obj_mod == Py_None) {")
@@ -505,9 +471,7 @@ def handle_third_pow_argument(
     if fn.name not in ("__pow__", "__rpow__", "__ipow__"):
         return
 
-    if (
-        fn.name in ("__pow__", "__ipow__") and len(fn.args) == 2
-    ) or fn.name == "__rpow__":
+    if (fn.name in ("__pow__", "__ipow__") and len(fn.args) == 2) or fn.name == "__rpow__":
         # If the power dunder only supports two arguments and the third
         # argument (AKA mod) is set to a non-default value, simply bail.
         #
@@ -574,9 +538,7 @@ def generate_get_wrapper(cl: ClassIR, fn: FuncIR, emitter: Emitter) -> str:
         )
     )
     emitter.emit_line("instance = instance ? instance : Py_None;")
-    emitter.emit_line(
-        f"return {NATIVE_PREFIX}{fn.cname(emitter.names)}(self, instance, owner);"
-    )
+    emitter.emit_line(f"return {NATIVE_PREFIX}{fn.cname(emitter.names)}(self, instance, owner);")
     emitter.emit_line("}")
 
     return name
@@ -698,9 +660,7 @@ def generate_set_del_item_wrapper(cl: ClassIR, fn: FuncIR, emitter: Emitter) -> 
         emitter.emit_line(f"return {del_name}(obj_{args[0].name}, obj_{args[1].name});")
     else:
         # Try to call superclass method instead
-        emitter.emit_line(
-            f"PyObject *super = CPy_Super(CPyModule_builtins, obj_{args[0].name});"
-        )
+        emitter.emit_line(f"PyObject *super = CPy_Super(CPyModule_builtins, obj_{args[0].name});")
         emitter.emit_line("if (super == NULL) return -1;")
         emitter.emit_line(
             'PyObject *result = PyObject_CallMethod(super, "__delitem__", "O", obj_{});'.format(
@@ -716,9 +676,7 @@ def generate_set_del_item_wrapper(cl: ClassIR, fn: FuncIR, emitter: Emitter) -> 
     if method_cls and method_cls[1] == cl:
         generate_set_del_item_wrapper_inner(fn, emitter, args)
     else:
-        emitter.emit_line(
-            f"PyObject *super = CPy_Super(CPyModule_builtins, obj_{args[0].name});"
-        )
+        emitter.emit_line(f"PyObject *super = CPy_Super(CPyModule_builtins, obj_{args[0].name});")
         emitter.emit_line("if (super == NULL) return -1;")
         emitter.emit_line("PyObject *result;")
 
@@ -748,10 +706,7 @@ def generate_set_del_item_wrapper_inner(
     native_args = ", ".join(f"arg_{arg.name}" for arg in args)
     emitter.emit_line(
         "{}val = {}{}({});".format(
-            emitter.ctype_spaced(fn.ret_type),
-            NATIVE_PREFIX,
-            fn.cname(emitter.names),
-            native_args,
+            emitter.ctype_spaced(fn.ret_type), NATIVE_PREFIX, fn.cname(emitter.names), native_args
         )
     )
     emitter.emit_error_check("val", fn.ret_type, "goto fail;")
@@ -839,9 +794,7 @@ def generate_arg_check(
             emitter.emit_line(f"{emitter.ctype(typ)} arg_{name} = {init};")
             emitter.emit_line(f"if (obj_{name} != NULL) {{")
             bitmap = bitmap_name(bitmap_arg_index // BITMAP_BITS)
-            emitter.emit_line(
-                f"{bitmap} |= 1 << {bitmap_arg_index & (BITMAP_BITS - 1)};"
-            )
+            emitter.emit_line(f"{bitmap} |= 1 << {bitmap_arg_index & (BITMAP_BITS - 1)};")
             emitter.emit_unbox(
                 f"obj_{name}",
                 f"arg_{name}",
@@ -942,9 +895,7 @@ class WrapperGenerator:
         bitmap_arg_index = 0
         for arg_name, arg in zip(self.arg_names, self.args):
             # Suppress the argument check for *args/**kwargs, since we know it must be right.
-            typ = (
-                arg.type if arg.kind not in (ARG_STAR, ARG_STAR2) else object_rprimitive
-            )
+            typ = arg.type if arg.kind not in (ARG_STAR, ARG_STAR2) else object_rprimitive
             optional = arg in self.optional_args
             generate_arg_check(
                 arg_name,
@@ -978,10 +929,7 @@ class WrapperGenerator:
             #       handling. Are they relevant?
             emitter.emit_line(
                 "{}retval = {}{}({});".format(
-                    emitter.ctype_spaced(ret_type),
-                    NATIVE_PREFIX,
-                    self.target_cname,
-                    native_args,
+                    emitter.ctype_spaced(ret_type), NATIVE_PREFIX, self.target_cname, native_args
                 )
             )
             emitter.emit_lines(*self.cleanups)
@@ -989,9 +937,7 @@ class WrapperGenerator:
                 emitter.emit_error_check("retval", ret_type, "return NULL;")
                 emitter.emit_box("retval", "retbox", ret_type, declare_dest=True)
 
-            emitter.emit_line(
-                "return {};".format("retbox" if ret_type.is_unboxed else "retval")
-            )
+            emitter.emit_line("return {};".format("retbox" if ret_type.is_unboxed else "retval"))
         else:
             if not_implemented_handler and not isinstance(ret_type, RInstance):
                 # The return value type may overlap with NotImplemented.
@@ -1007,9 +953,7 @@ class WrapperGenerator:
                     "return retbox;",
                 )
             else:
-                emitter.emit_line(
-                    f"return {NATIVE_PREFIX}{self.target_cname}({native_args});"
-                )
+                emitter.emit_line(f"return {NATIVE_PREFIX}{self.target_cname}({native_args});")
             # TODO: Tracebacks?
 
     def error(self) -> ErrorHandler:

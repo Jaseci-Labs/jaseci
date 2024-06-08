@@ -167,17 +167,13 @@ def replacement_map_from_symbol_table(
                 and new_node.kind == node.kind
             ):
                 replacements[new_node.node] = node.node
-                if isinstance(node.node, TypeInfo) and isinstance(
-                    new_node.node, TypeInfo
-                ):
+                if isinstance(node.node, TypeInfo) and isinstance(new_node.node, TypeInfo):
                     type_repl = replacement_map_from_symbol_table(
                         node.node.names, new_node.node.names, prefix
                     )
                     replacements.update(type_repl)
                     if node.node.special_alias and new_node.node.special_alias:
-                        replacements[new_node.node.special_alias] = (
-                            node.node.special_alias
-                        )
+                        replacements[new_node.node.special_alias] = node.node.special_alias
     return replacements
 
 

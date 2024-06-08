@@ -5,13 +5,7 @@ from __future__ import annotations
 from typing import Final, Sequence
 
 from mypy.nodes import ARG_POS, ArgKind, Block, FuncDef
-from mypyc.common import (
-    BITMAP_BITS,
-    JsonDict,
-    bitmap_name,
-    get_id_from_name,
-    short_id_from_name,
-)
+from mypyc.common import BITMAP_BITS, JsonDict, bitmap_name, get_id_from_name, short_id_from_name
 from mypyc.ir.ops import (
     Assign,
     AssignMulti,
@@ -105,10 +99,7 @@ class FuncSignature:
             args = self.args[: -self.num_bitmap_args]
         else:
             args = self.args
-        return {
-            "args": [t.serialize() for t in args],
-            "ret_type": self.ret_type.serialize(),
-        }
+        return {"args": [t.serialize() for t in args], "ret_type": self.ret_type.serialize()}
 
     @classmethod
     def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> FuncSignature:
@@ -315,11 +306,7 @@ class FuncIR:
     @classmethod
     def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> FuncIR:
         return FuncIR(
-            FuncDecl.deserialize(data["decl"], ctx),
-            [],
-            [],
-            data["line"],
-            data["traceback_name"],
+            FuncDecl.deserialize(data["decl"], ctx), [], [], data["line"], data["traceback_name"]
         )
 
 

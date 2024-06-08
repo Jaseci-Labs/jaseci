@@ -69,9 +69,7 @@ def test_semanal(testcase: DataDrivenTestCase) -> None:
         options = get_semanal_options(src, testcase)
         options.python_version = testfile_pyversion(testcase.file)
         result = build.build(
-            sources=[BuildSource("main", None, src)],
-            options=options,
-            alt_lib_path=test_temp_dir,
+            sources=[BuildSource("main", None, src)], options=options, alt_lib_path=test_temp_dir
         )
         a = result.errors
         if a:
@@ -122,9 +120,7 @@ def test_semanal_error(testcase: DataDrivenTestCase) -> None:
     if testcase.normalize_output:
         a = normalize_error_messages(a)
     assert_string_arrays_equal(
-        testcase.output,
-        a,
-        f"Invalid compiler output ({testcase.file}, line {testcase.line})",
+        testcase.output, a, f"Invalid compiler output ({testcase.file}, line {testcase.line})"
     )
 
 
@@ -189,10 +185,7 @@ class SemAnalTypeInfoSuite(DataSuite):
                     for n in file.names.values():
                         if isinstance(n.node, TypeInfo):
                             assert n.fullname
-                            if any(
-                                n.fullname.startswith(m + ".")
-                                for m in testcase.test_modules
-                            ):
+                            if any(n.fullname.startswith(m + ".") for m in testcase.test_modules):
                                 typeinfos[n.fullname] = n.node
 
             # The output is the symbol table converted into a string.

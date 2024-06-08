@@ -45,22 +45,11 @@ def run_pytest_data_suite(
         p.write_text(data_suite)
 
         test_nodeid = f"{pytest_node_prefix}::{p.name}"
-        extra_args = [
-            sys.executable,
-            "-m",
-            "pytest",
-            "-n",
-            "0",
-            "-s",
-            *extra_args,
-            test_nodeid,
-        ]
+        extra_args = [sys.executable, "-m", "pytest", "-n", "0", "-s", *extra_args, test_nodeid]
         cmd = shlex.join(extra_args)
         for i in range(max_attempts - 1, -1, -1):
             print(f">> {cmd}")
-            proc = subprocess.run(
-                extra_args, capture_output=True, check=False, cwd=p_root
-            )
+            proc = subprocess.run(extra_args, capture_output=True, check=False, cwd=p_root)
             if proc.returncode == 0:
                 break
             prefix = "NESTED PYTEST STDOUT"

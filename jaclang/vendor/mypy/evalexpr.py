@@ -147,9 +147,7 @@ class _NodeEvaluator(ExpressionVisitor[object]):
     def visit_set_comprehension(self, o: mypy.nodes.SetComprehension) -> object:
         return UNKNOWN
 
-    def visit_dictionary_comprehension(
-        self, o: mypy.nodes.DictionaryComprehension
-    ) -> object:
+    def visit_dictionary_comprehension(self, o: mypy.nodes.DictionaryComprehension) -> object:
         return UNKNOWN
 
     def visit_generator_expr(self, o: mypy.nodes.GeneratorExpr) -> object:

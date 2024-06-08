@@ -85,13 +85,7 @@ class CompletedProcess(Generic[_T]):
     # and writing all the overloads would be horrific.
     stdout: _T
     stderr: _T
-    def __init__(
-        self,
-        args: _CMD,
-        returncode: int,
-        stdout: _T | None = None,
-        stderr: _T | None = None,
-    ) -> None: ...
+    def __init__(self, args: _CMD, returncode: int, stdout: _T | None = None, stderr: _T | None = None) -> None: ...
     def check_returncode(self) -> None: ...
     if sys.version_info >= (3, 9):
         def __class_getitem__(cls, item: Any) -> GenericAlias: ...
@@ -1816,11 +1810,7 @@ class SubprocessError(Exception): ...
 
 class TimeoutExpired(SubprocessError):
     def __init__(
-        self,
-        cmd: _CMD,
-        timeout: float,
-        output: str | bytes | None = None,
-        stderr: str | bytes | None = None,
+        self, cmd: _CMD, timeout: float, output: str | bytes | None = None, stderr: str | bytes | None = None
     ) -> None: ...
     # morally: _CMD
     cmd: Any
@@ -1841,11 +1831,7 @@ class CalledProcessError(SubprocessError):
     stdout: Any
     stderr: Any
     def __init__(
-        self,
-        returncode: int,
-        cmd: _CMD,
-        output: str | bytes | None = None,
-        stderr: str | bytes | None = None,
+        self, returncode: int, cmd: _CMD, output: str | bytes | None = None, stderr: str | bytes | None = None
     ) -> None: ...
 
 class Popen(Generic[AnyStr]):
@@ -2564,18 +2550,13 @@ class Popen(Generic[AnyStr]):
     # morally the members of the returned tuple should be optional
     # TODO this should allow ReadableBuffer for Popen[bytes], but adding
     # overloads for that runs into a mypy bug (python/mypy#14070).
-    def communicate(
-        self, input: AnyStr | None = None, timeout: float | None = None
-    ) -> tuple[AnyStr, AnyStr]: ...
+    def communicate(self, input: AnyStr | None = None, timeout: float | None = None) -> tuple[AnyStr, AnyStr]: ...
     def send_signal(self, sig: int) -> None: ...
     def terminate(self) -> None: ...
     def kill(self) -> None: ...
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
+        self, exc_type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
     def __del__(self) -> None: ...
     if sys.version_info >= (3, 9):
@@ -2583,16 +2564,12 @@ class Popen(Generic[AnyStr]):
 
 # The result really is always a str.
 if sys.version_info >= (3, 11):
-    def getstatusoutput(
-        cmd: str | bytes, *, encoding: str | None = None, errors: str | None = None
-    ) -> tuple[int, str]: ...
-    def getoutput(
-        cmd: str | bytes, *, encoding: str | None = None, errors: str | None = None
-    ) -> str: ...
+    def getstatusoutput(cmd: _CMD, *, encoding: str | None = None, errors: str | None = None) -> tuple[int, str]: ...
+    def getoutput(cmd: _CMD, *, encoding: str | None = None, errors: str | None = None) -> str: ...
 
 else:
-    def getstatusoutput(cmd: str | bytes) -> tuple[int, str]: ...
-    def getoutput(cmd: str | bytes) -> str: ...
+    def getstatusoutput(cmd: _CMD) -> tuple[int, str]: ...
+    def getoutput(cmd: _CMD) -> str: ...
 
 def list2cmdline(seq: Iterable[StrOrBytesPath]) -> str: ...  # undocumented
 

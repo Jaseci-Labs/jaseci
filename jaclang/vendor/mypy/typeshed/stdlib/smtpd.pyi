@@ -9,13 +9,7 @@ from typing_extensions import TypeAlias
 if sys.version_info >= (3, 11):
     __all__ = ["SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy"]
 else:
-    __all__ = [
-        "SMTPChannel",
-        "SMTPServer",
-        "DebuggingServer",
-        "PureProxy",
-        "MailmanProxy",
-    ]
+    __all__ = ["SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy", "MailmanProxy"]
 
 _Address: TypeAlias = tuple[str, int]  # (host, port)
 
@@ -84,12 +78,7 @@ class SMTPServer(asyncore.dispatcher):
     ) -> None: ...
     def handle_accepted(self, conn: socket.socket, addr: Any) -> None: ...
     def process_message(
-        self,
-        peer: _Address,
-        mailfrom: str,
-        rcpttos: list[str],
-        data: bytes | str,
-        **kwargs: Any
+        self, peer: _Address, mailfrom: str, rcpttos: list[str], data: bytes | str, **kwargs: Any
     ) -> str | None: ...
 
 class DebuggingServer(SMTPServer): ...

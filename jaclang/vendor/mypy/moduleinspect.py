@@ -75,8 +75,7 @@ def get_package_properties(package_id: str) -> ModuleProperties:
             subpackages = [
                 package.__name__ + "." + name
                 for name, val in inspect.getmembers(package)
-                if inspect.ismodule(val)
-                and val.__name__ == package.__name__ + "." + name
+                if inspect.ismodule(val) and val.__name__ == package.__name__ + "." + name
             ]
         else:
             # It's a module inside a package.  There's nothing else to walk/yield.
@@ -85,22 +84,13 @@ def get_package_properties(package_id: str) -> ModuleProperties:
         all_packages = pkgutil.walk_packages(
             path, prefix=package.__name__ + ".", onerror=lambda r: None
         )
-        subpackages = [
-            qualified_name for importer, qualified_name, ispkg in all_packages
-        ]
+        subpackages = [qualified_name for importer, qualified_name, ispkg in all_packages]
     return ModuleProperties(
-        name=name,
-        file=file,
-        path=path,
-        all=pkg_all,
-        is_c_module=is_c,
-        subpackages=subpackages,
+        name=name, file=file, path=path, all=pkg_all, is_c_module=is_c, subpackages=subpackages
     )
 
 
-def worker(
-    tasks: Queue[str], results: Queue[str | ModuleProperties], sys_path: list[str]
-) -> None:
+def worker(tasks: Queue[str], results: Queue[str | ModuleProperties], sys_path: list[str]) -> None:
     """The main loop of a worker introspection process."""
     sys.path = sys_path
     while True:
@@ -139,9 +129,7 @@ class ModuleInspect:
             ctx = get_context("spawn")
         self.tasks: Queue[str] = ctx.Queue()
         self.results: Queue[ModuleProperties | str] = ctx.Queue()
-        self.proc = ctx.Process(
-            target=worker, args=(self.tasks, self.results, sys.path)
-        )
+        self.proc = ctx.Process(target=worker, args=(self.tasks, self.results, sys.path))
         self.proc.start()
         self.counter = 0  # Number of successful roundtrips
 

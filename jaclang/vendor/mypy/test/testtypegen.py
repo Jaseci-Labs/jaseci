@@ -69,15 +69,9 @@ class TypeExportSuite(DataSuite):
 
             for key in sorted(
                 keys,
-                key=lambda n: (
-                    n.line,
-                    short_type(n),
-                    str(n) + map[n].str_with_options(options),
-                ),
+                key=lambda n: (n.line, short_type(n), str(n) + map[n].str_with_options(options)),
             ):
-                ts = (
-                    map[key].str_with_options(options).replace("*", "")
-                )  # Remove erased tags
+                ts = map[key].str_with_options(options).replace("*", "")  # Remove erased tags
                 ts = ts.replace("__main__.", "")
                 a.append(f"{short_type(key)}({key.line}) : {ts}")
         except CompileError as e:

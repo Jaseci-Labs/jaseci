@@ -126,11 +126,7 @@ def split_blocks_at_errors(
                     assert not op.is_void, "void op generating errors?"
 
                 branch = Branch(
-                    target,
-                    true_label=error_label,
-                    false_label=new_block,
-                    op=variant,
-                    line=op.line,
+                    target, true_label=error_label, false_label=new_block, op=variant, line=op.line
                 )
                 branch.negated = negated
                 if op.line != NO_TRACEBACK_LINE_NO and func_name is not None:

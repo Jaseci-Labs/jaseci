@@ -4,23 +4,9 @@ from typing import Final, NamedTuple, Sequence, TypeVar, Union
 from typing_extensions import TypeAlias as _TypeAlias
 
 from mypy.messages import format_type
-from mypy.nodes import (
-    ARG_POS,
-    Argument,
-    Block,
-    ClassDef,
-    Context,
-    SymbolTable,
-    TypeInfo,
-    Var,
-)
+from mypy.nodes import ARG_POS, Argument, Block, ClassDef, Context, SymbolTable, TypeInfo, Var
 from mypy.options import Options
-from mypy.plugin import (
-    CheckerPluginInterface,
-    FunctionContext,
-    MethodContext,
-    MethodSigContext,
-)
+from mypy.plugin import CheckerPluginInterface, FunctionContext, MethodContext, MethodSigContext
 from mypy.plugins.common import add_method_to_class
 from mypy.subtypes import is_subtype
 from mypy.types import (
@@ -85,9 +71,7 @@ def make_fake_register_class_instance(
     info.mro = [info, obj_type]
     defn.info = info
 
-    func_arg = Argument(
-        Var("name"), AnyType(TypeOfAny.implementation_artifact), None, ARG_POS
-    )
+    func_arg = Argument(Var("name"), AnyType(TypeOfAny.implementation_artifact), None, ARG_POS)
     add_method_to_class(api, defn, "__call__", [func_arg], NoneType())
 
     return Instance(info, type_args)
@@ -118,9 +102,7 @@ def create_singledispatch_function_callback(ctx: FunctionContext) -> Type:
     if isinstance(func_type, CallableType):
         if len(func_type.arg_kinds) < 1:
             fail(
-                ctx,
-                "Singledispatch function requires at least one argument",
-                func_type.definition,
+                ctx, "Singledispatch function requires at least one argument", func_type.definition
             )
             return ctx.default_return_type
 
@@ -146,10 +128,7 @@ def singledispatch_register_callback(ctx: MethodContext) -> Type:
     assert isinstance(ctx.type, Instance)
     # TODO: check that there's only one argument
     first_arg_type = get_proper_type(get_first_arg(ctx.arg_types))
-    if (
-        isinstance(first_arg_type, (CallableType, Overloaded))
-        and first_arg_type.is_type_obj()
-    ):
+    if isinstance(first_arg_type, (CallableType, Overloaded)) and first_arg_type.is_type_obj():
         # HACK: We received a class as an argument to register. We need to be able
         # to access the function that register is being applied to, and the typeshed definition
         # of register has it return a generic Callable, so we create a new
@@ -204,8 +183,7 @@ def register_function(
         fail(
             ctx,
             "Dispatch type {} must be subtype of fallback function first argument {}".format(
-                format_type(dispatch_type, options),
-                format_type(fallback_dispatch_type, options),
+                format_type(dispatch_type, options), format_type(fallback_dispatch_type, options)
             ),
             func.definition,
         )
@@ -229,11 +207,7 @@ def call_singledispatch_function_after_register_argument(ctx: MethodContext) -> 
         func = get_first_arg(ctx.arg_types)
         if func is not None:
             register_function(
-                ctx,
-                type_args.singledispatch_obj,
-                func,
-                ctx.api.options,
-                type_args.register_type,
+                ctx, type_args.singledispatch_obj, func, ctx.api.options, type_args.register_type
             )
             # see call to register_function in the callback for register
             return func

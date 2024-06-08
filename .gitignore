@@ -35,8 +35,8 @@ MANIFEST
 .coverage
 .session
 .DS_Store
-build
 .vscode
+build
 *Zone.Identifier
 .DS_Store
 parser.out
@@ -50,3 +50,6 @@ out.txt
 # Mypy files #
 .mypy_cache*
 
+
+# Jaclang session files
+*.session

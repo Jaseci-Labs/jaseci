@@ -76,9 +76,7 @@ class RType:
         return "<%s>" % self.__class__.__name__
 
     def serialize(self) -> JsonDict | str:
-        raise NotImplementedError(
-            f"Cannot serialize {self.__class__.__name__} instance"
-        )
+        raise NotImplementedError(f"Cannot serialize {self.__class__.__name__} instance")
 
 
 def deserialize_type(data: JsonDict | str, ctx: DeserMaps) -> RType:
@@ -261,9 +259,7 @@ class RPrimitive(RType):
 # little as possible, as generic ops are typically slow. Other types,
 # including other primitive types and RInstance, are usually much
 # faster.
-object_rprimitive: Final = RPrimitive(
-    "builtins.object", is_unboxed=False, is_refcounted=True
-)
+object_rprimitive: Final = RPrimitive("builtins.object", is_unboxed=False, is_refcounted=True)
 
 # represents a low level pointer of an object
 object_pointer_rprimitive: Final = RPrimitive(
@@ -397,9 +393,7 @@ else:
     )
 
 # Untyped pointer, represented as integer in the C backend
-pointer_rprimitive: Final = RPrimitive(
-    "ptr", is_unboxed=True, is_refcounted=False, ctype="CPyPtr"
-)
+pointer_rprimitive: Final = RPrimitive("ptr", is_unboxed=True, is_refcounted=False, ctype="CPyPtr")
 
 # Untyped pointer, represented as void * in the C backend
 c_pointer_rprimitive: Final = RPrimitive(
@@ -440,14 +434,10 @@ none_rprimitive: Final = RPrimitive(
 )
 
 # Python list object (or an instance of a subclass of list).
-list_rprimitive: Final = RPrimitive(
-    "builtins.list", is_unboxed=False, is_refcounted=True
-)
+list_rprimitive: Final = RPrimitive("builtins.list", is_unboxed=False, is_refcounted=True)
 
 # Python dict object (or an instance of a subclass of dict).
-dict_rprimitive: Final = RPrimitive(
-    "builtins.dict", is_unboxed=False, is_refcounted=True
-)
+dict_rprimitive: Final = RPrimitive("builtins.dict", is_unboxed=False, is_refcounted=True)
 
 # Python set object (or an instance of a subclass of set).
 set_rprimitive: Final = RPrimitive("builtins.set", is_unboxed=False, is_refcounted=True)
@@ -457,20 +447,14 @@ set_rprimitive: Final = RPrimitive("builtins.set", is_unboxed=False, is_refcount
 str_rprimitive: Final = RPrimitive("builtins.str", is_unboxed=False, is_refcounted=True)
 
 # Python bytes object.
-bytes_rprimitive: Final = RPrimitive(
-    "builtins.bytes", is_unboxed=False, is_refcounted=True
-)
+bytes_rprimitive: Final = RPrimitive("builtins.bytes", is_unboxed=False, is_refcounted=True)
 
 # Tuple of an arbitrary length (corresponds to Tuple[t, ...], with
 # explicit '...').
-tuple_rprimitive: Final = RPrimitive(
-    "builtins.tuple", is_unboxed=False, is_refcounted=True
-)
+tuple_rprimitive: Final = RPrimitive("builtins.tuple", is_unboxed=False, is_refcounted=True)
 
 # Python range object.
-range_rprimitive: Final = RPrimitive(
-    "builtins.range", is_unboxed=False, is_refcounted=True
-)
+range_rprimitive: Final = RPrimitive("builtins.range", is_unboxed=False, is_refcounted=True)
 
 
 def is_tagged(rtype: RType) -> bool:
@@ -580,9 +564,7 @@ def is_range_rprimitive(rtype: RType) -> bool:
 
 def is_sequence_rprimitive(rtype: RType) -> bool:
     return isinstance(rtype, RPrimitive) and (
-        is_list_rprimitive(rtype)
-        or is_tuple_rprimitive(rtype)
-        or is_str_rprimitive(rtype)
+        is_list_rprimitive(rtype) or is_tuple_rprimitive(rtype) or is_str_rprimitive(rtype)
     )
 
 
@@ -655,9 +637,7 @@ class RTuple(RType):
         # Nominally the max c length is 31 chars, but I'm not honestly worried about this.
         self.struct_name = f"tuple_{self.unique_id}"
         self._ctype = f"{self.struct_name}"
-        self.error_overlap = all(t.error_overlap for t in self.types) and bool(
-            self.types
-        )
+        self.error_overlap = all(t.error_overlap for t in self.types) and bool(self.types)
 
     def accept(self, visitor: RTypeVisitor[T]) -> T:
         return visitor.visit_rtuple(self)
@@ -693,9 +673,7 @@ dict_next_rtuple_pair = RTuple(
     [bool_rprimitive, short_int_rprimitive, object_rprimitive, object_rprimitive]
 )
 # Same as above but just for key or value.
-dict_next_rtuple_single = RTuple(
-    [bool_rprimitive, short_int_rprimitive, object_rprimitive]
-)
+dict_next_rtuple_single = RTuple([bool_rprimitive, short_int_rprimitive, object_rprimitive])
 
 
 def compute_rtype_alignment(typ: RType) -> int:
@@ -734,9 +712,7 @@ def compute_rtype_size(typ: RType) -> int:
         return PLATFORM_SIZE
     elif isinstance(typ, RArray):
         alignment = compute_rtype_alignment(typ)
-        aligned_size = (compute_rtype_size(typ.item_type) + (alignment - 1)) & ~(
-            alignment - 1
-        )
+        aligned_size = (compute_rtype_size(typ.item_type) + (alignment - 1)) & ~(alignment - 1)
         return aligned_size * typ.length
     else:
         assert False, "invalid rtype for computing size"
@@ -791,17 +767,13 @@ class RStruct(RType):
         # if not tuple(unnamed structs)
         return "{}{{{}}}".format(
             self.name,
-            ", ".join(
-                name + ":" + str(typ) for name, typ in zip(self.names, self.types)
-            ),
+            ", ".join(name + ":" + str(typ) for name, typ in zip(self.names, self.types)),
         )
 
     def __repr__(self) -> str:
         return "<RStruct {}{{{}}}>".format(
             self.name,
-            ", ".join(
-                name + ":" + repr(typ) for name, typ in zip(self.names, self.types)
-            ),
+            ", ".join(name + ":" + repr(typ) for name, typ in zip(self.names, self.types)),
         )
 
     def __eq__(self, other: object) -> bool:
@@ -1012,15 +984,11 @@ PyObject = RStruct(
 )
 
 PyVarObject = RStruct(
-    name="PyVarObject",
-    names=["ob_base", "ob_size"],
-    types=[PyObject, c_pyssize_t_rprimitive],
+    name="PyVarObject", names=["ob_base", "ob_size"], types=[PyObject, c_pyssize_t_rprimitive]
 )
 
 setentry = RStruct(
-    name="setentry",
-    names=["key", "hash"],
-    types=[pointer_rprimitive, c_pyssize_t_rprimitive],
+    name="setentry", names=["key", "hash"], types=[pointer_rprimitive, c_pyssize_t_rprimitive]
 )
 
 smalltable = RStruct(name="smalltable", names=[], types=[setentry] * 8)

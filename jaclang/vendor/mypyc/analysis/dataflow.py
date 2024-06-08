@@ -38,6 +38,7 @@ from mypyc.ir.ops import (
     MethodCall,
     Op,
     OpVisitor,
+    PrimitiveOp,
     RaiseStandardError,
     RegisterOp,
     Return,
@@ -234,6 +235,9 @@ class BaseAnalysisVisitor(OpVisitor[GenAndKill[T]]):
     def visit_call_c(self, op: CallC) -> GenAndKill[T]:
         return self.visit_register_op(op)
 
+    def visit_primitive_op(self, op: PrimitiveOp) -> GenAndKill[T]:
+        return self.visit_register_op(op)
+
     def visit_truncate(self, op: Truncate) -> GenAndKill[T]:
         return self.visit_register_op(op)
 
@@ -307,9 +311,7 @@ class DefinedVisitor(BaseAnalysisVisitor[Value]):
 
     def visit_assign(self, op: Assign) -> GenAndKill[Value]:
         # Loading an error value may undefine the register.
-        if isinstance(op.src, LoadErrorValue) and (
-            op.src.undefines or self.strict_errors
-        ):
+        if isinstance(op.src, LoadErrorValue) and (op.src.undefines or self.strict_errors):
             return set(), {op.dest}
         else:
             return {op.dest}, set()

@@ -1,6 +1,5 @@
 """This module implements a LALR(1) Parser
 """
-
 # Author: Erez Shinan (2017)
 # Email : erezshin@gmail.com
 from typing import Dict, Any, Optional
@@ -15,11 +14,8 @@ from .lalr_parser_state import ParserState, ParseConf
 
 ###{standalone
 
-
 class LALR_Parser(Serialize):
-    def __init__(
-        self, parser_conf: ParserConf, debug: bool = False, strict: bool = False
-    ):
+    def __init__(self, parser_conf: ParserConf, debug: bool=False, strict: bool=False):
         analysis = LALR_Analyzer(parser_conf, debug=debug, strict=strict)
         analysis.compute_lalr()
         callbacks = parser_conf.callbacks
@@ -59,16 +55,14 @@ class LALR_Parser(Serialize):
                 if isinstance(e, UnexpectedCharacters):
                     # If user didn't change the character position, then we should
                     if p == s.line_ctr.char_pos:
-                        s.line_ctr.feed(s.text[p : p + 1])
+                        s.line_ctr.feed(s.text[p:p+1])
 
                 try:
                     return e.interactive_parser.resume_parse()
                 except UnexpectedToken as e2:
-                    if (
-                        isinstance(e, UnexpectedToken)
-                        and e.token.type == e2.token.type == "$END"
-                        and e.interactive_parser == e2.interactive_parser
-                    ):
+                    if (isinstance(e, UnexpectedToken)
+                        and e.token.type == e2.token.type == '$END'
+                        and e.interactive_parser == e2.interactive_parser):
                         # Prevent infinite loop
                         raise e2
                     e = e2
@@ -81,31 +75,20 @@ class _Parser:
     callbacks: ParserCallbacks
     debug: bool
 
-    def __init__(
-        self,
-        parse_table: ParseTableBase,
-        callbacks: ParserCallbacks,
-        debug: bool = False,
-    ):
+    def __init__(self, parse_table: ParseTableBase, callbacks: ParserCallbacks, debug: bool=False):
         self.parse_table = parse_table
         self.callbacks = callbacks
         self.debug = debug
 
-    def parse(
-        self,
-        lexer: LexerThread,
-        start: str,
-        value_stack=None,
-        state_stack=None,
-        start_interactive=False,
-    ):
+    def parse(self, lexer: LexerThread, start: str, value_stack=None, state_stack=None, start_interactive=False):
         parse_conf = ParseConf(self.parse_table, self.callbacks, start)
         parser_state = ParserState(parse_conf, lexer, state_stack, value_stack)
         if start_interactive:
             return InteractiveParser(self, parser_state, parser_state.lexer)
         return self.parse_from_state(parser_state)
 
-    def parse_from_state(self, state: ParserState, last_token: Optional[Token] = None):
+
+    def parse_from_state(self, state: ParserState, last_token: Optional[Token]=None):
         """Run the main LALR parser loop
 
         Parameters:
@@ -118,11 +101,7 @@ class _Parser:
                 assert token is not None
                 state.feed_token(token)
 
-            end_token = (
-                Token.new_borrow_pos("$END", "", token)
-                if token
-                else Token("$END", "", 0, 1, 1)
-            )
+            end_token = Token.new_borrow_pos('$END', '', token) if token else Token('$END', '', 0, 1, 1)
             return state.feed_token(end_token, True)
         except UnexpectedInput as e:
             try:
@@ -136,10 +115,8 @@ class _Parser:
                 print("STATE STACK DUMP")
                 print("----------------")
                 for i, s in enumerate(state.state_stack):
-                    print("%d)" % i, s)
+                    print('%d)' % i , s)
                 print("")
 
             raise
-
-
 ###}

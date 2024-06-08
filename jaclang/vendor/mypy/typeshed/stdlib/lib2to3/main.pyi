@@ -33,11 +33,7 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
     ) -> None: ...
     # Same as super.write_file but without default values
     def write_file(  # type: ignore[override]
-        self,
-        new_text: str,
-        filename: FileDescriptorOrPath,
-        old_text: str,
-        encoding: str | None,
+        self, new_text: str, filename: FileDescriptorOrPath, old_text: str, encoding: str | None
     ) -> None: ...
     # filename has to be str
     def print_output(self, old: str, new: str, filename: str, equal: bool) -> None: ...  # type: ignore[override]

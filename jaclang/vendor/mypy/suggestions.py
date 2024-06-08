@@ -109,9 +109,7 @@ class SuggestionPlugin(Plugin):
         # (path, line, <arg kinds>, <arg names>, <arg types>)
         self.mystery_hits: list[Callsite] = []
 
-    def get_function_hook(
-        self, fullname: str
-    ) -> Callable[[FunctionContext], Type] | None:
+    def get_function_hook(self, fullname: str) -> Callable[[FunctionContext], Type] | None:
         if fullname == self.target:
             return self.log
         else:
@@ -170,9 +168,7 @@ class ArgUseFinder(TraverserVisitor):
 
     def __init__(self, func: FuncDef, typemap: dict[Expression, Type]) -> None:
         self.typemap = typemap
-        self.arg_types: dict[SymbolNode, list[Type]] = {
-            arg.variable: [] for arg in func.arguments
-        }
+        self.arg_types: dict[SymbolNode, list[Type]] = {arg.variable: [] for arg in func.arguments}
 
     def visit_call_expr(self, o: CallExpr) -> None:
         if not any(isinstance(e, RefExpr) and e.node in self.arg_types for e in o.args):
@@ -373,9 +369,7 @@ class SuggestionEngine:
                 isinstance(get_proper_type(tp), NoneType) for tp in all_arg_types
             ):
                 arg_types.append(
-                    UnionType.make_union(
-                        [all_arg_types[0], AnyType(TypeOfAny.explicit)]
-                    )
+                    UnionType.make_union([all_arg_types[0], AnyType(TypeOfAny.explicit)])
                 )
             elif all_arg_types:
                 arg_types.extend(generate_type_combinations(all_arg_types))
@@ -411,10 +405,7 @@ class SuggestionEngine:
 
         # Take the first `max_guesses` guesses.
         product = itertools.islice(itertools.product(*options), 0, self.max_guesses)
-        return [
-            refine_callable(base, base.copy_modified(arg_types=list(x)))
-            for x in product
-        ]
+        return [refine_callable(base, base.copy_modified(arg_types=list(x))) for x in product]
 
     def get_callsites(self, func: FuncDef) -> tuple[list[Callsite], list[str]]:
         """Find all call sites of a function."""
@@ -443,9 +434,7 @@ class SuggestionEngine:
             or any_score_callable(t, is_method, ignore_return) >= self.flex_any
         ]
 
-    def find_best(
-        self, func: FuncDef, guesses: list[CallableType]
-    ) -> tuple[CallableType, int]:
+    def find_best(self, func: FuncDef, guesses: list[CallableType]) -> tuple[CallableType, int]:
         """From a list of possible function types, find the best one.
 
         For best, we want the fewest errors, then the best "score" from score_callable.
@@ -453,9 +442,7 @@ class SuggestionEngine:
         if not guesses:
             raise SuggestionFailure("No guesses that match criteria!")
         errors = {guess: self.try_type(func, guess) for guess in guesses}
-        best = min(
-            guesses, key=lambda s: (count_errors(errors[s]), self.score_callable(s))
-        )
+        best = min(guesses, key=lambda s: (count_errors(errors[s]), self.score_callable(s)))
         return best, count_errors(errors[best])
 
     def get_guesses_from_parent(self, node: FuncDef) -> list[CallableType]:
@@ -468,9 +455,7 @@ class SuggestionEngine:
             if pnode and isinstance(pnode.node, (FuncDef, Decorator)):
                 typ = get_proper_type(pnode.node.type)
                 # FIXME: Doesn't work right with generic tyeps
-                if isinstance(typ, CallableType) and len(typ.arg_types) == len(
-                    node.arguments
-                ):
+                if isinstance(typ, CallableType) and len(typ.arg_types) == len(node.arguments):
                     # Return the first thing we find, since it probably doesn't make sense
                     # to grab things further up in the chain if an earlier parent has it.
                     return [typ]
@@ -512,10 +497,7 @@ class SuggestionEngine:
             else:
                 ret_types = [NoneType()]
 
-        guesses = [
-            best.copy_modified(ret_type=refine_type(best.ret_type, t))
-            for t in ret_types
-        ]
+        guesses = [best.copy_modified(ret_type=refine_type(best.ret_type, t)) for t in ret_types]
         guesses = self.filter_options(guesses, is_method, ignore_return=False)
         best, errors = self.find_best(node, guesses)
 
@@ -583,9 +565,7 @@ class SuggestionEngine:
 
         return modname, tail, node
 
-    def find_node_by_module_and_name(
-        self, modname: str, tail: str
-    ) -> SymbolNode | None:
+    def find_node_by_module_and_name(self, modname: str, tail: str) -> SymbolNode | None:
         """Find symbol node by module id and qualified name.
 
         Raise SuggestionFailure if can't find one.
@@ -607,9 +587,7 @@ class SuggestionEngine:
             node: SymbolNode | None = names[component].node
             if not isinstance(node, TypeInfo):
                 raise SuggestionFailure(
-                    "Object {}.{} is not a class".format(
-                        modname, ".".join(components[: i + 1])
-                    )
+                    "Object {}.{} is not a class".format(modname, ".".join(components[: i + 1]))
                 )
             names = node.names
 
@@ -618,15 +596,11 @@ class SuggestionEngine:
         if funcname not in names:
             key = modname + "." + tail
             raise SuggestionFailure(
-                "Unknown {} {}".format(
-                    "method" if len(components) > 1 else "function", key
-                )
+                "Unknown {} {}".format("method" if len(components) > 1 else "function", key)
             )
         return names[funcname].node
 
-    def find_node_by_file_and_line(
-        self, file: str, line: int
-    ) -> tuple[str, SymbolNode]:
+    def find_node_by_file_and_line(self, file: str, line: int) -> tuple[str, SymbolNode]:
         """Find symbol node by path to file and line number.
 
         Find the first function declared *before or on* the line number.
@@ -750,9 +724,7 @@ class SuggestionEngine:
         """Format a callable type as a pyannotate dict"""
         start = int(is_method)
         return {
-            "arg_types": [
-                self.format_type(cur_module, t) for t in typ.arg_types[start:]
-            ],
+            "arg_types": [self.format_type(cur_module, t) for t in typ.arg_types[start:]],
             "return_type": self.format_type(cur_module, typ.ret_type),
         }
 
@@ -787,9 +759,9 @@ class SuggestionEngine:
         return 0
 
     def score_callable(self, t: CallableType) -> int:
-        return sum(
-            self.score_type(x, arg_pos=True) for x in t.arg_types
-        ) + self.score_type(t.ret_type, arg_pos=False)
+        return sum(self.score_type(x, arg_pos=True) for x in t.arg_types) + self.score_type(
+            t.ret_type, arg_pos=False
+        )
 
 
 def any_score_type(ut: Type, arg_pos: bool) -> float:
@@ -863,9 +835,7 @@ class TypeFormatter(TypeStrVisitor):
         # to point to the current module. This helps the annotation tool avoid
         # inserting redundant imports when a type has been reexported.
         if self.module:
-            parts = obj.split(
-                "."
-            )  # need to split the object part if it is a nested class
+            parts = obj.split(".")  # need to split the object part if it is a nested class
             tree = self.graph[self.module].tree
             if tree and parts[0] in tree.names:
                 mod = self.module
@@ -991,9 +961,7 @@ def refine_type(ti: Type, si: Type) -> Type:
         return t if isinstance(s, AnyType) and t.missing_import_name else s
 
     if isinstance(t, Instance) and isinstance(s, Instance) and t.type == s.type:
-        return t.copy_modified(
-            args=[refine_type(ta, sa) for ta, sa in zip(t.args, s.args)]
-        )
+        return t.copy_modified(args=[refine_type(ta, sa) for ta, sa in zip(t.args, s.args)])
 
     if (
         isinstance(t, TupleType)
@@ -1001,9 +969,7 @@ def refine_type(ti: Type, si: Type) -> Type:
         and t.partial_fallback == s.partial_fallback
         and len(t.items) == len(s.items)
     ):
-        return t.copy_modified(
-            items=[refine_type(ta, sa) for ta, sa in zip(t.items, s.items)]
-        )
+        return t.copy_modified(items=[refine_type(ta, sa) for ta, sa in zip(t.items, s.items)])
 
     if isinstance(t, CallableType) and isinstance(s, CallableType):
         return refine_callable(t, s)

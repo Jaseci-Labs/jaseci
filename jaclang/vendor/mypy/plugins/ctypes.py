@@ -33,20 +33,14 @@ def _find_simplecdata_base_arg(
     if tp.type.has_base("_ctypes._SimpleCData"):
         simplecdata_base = map_instance_to_supertype(
             tp,
-            api.named_generic_type(
-                "_ctypes._SimpleCData", [AnyType(TypeOfAny.special_form)]
-            ).type,
+            api.named_generic_type("_ctypes._SimpleCData", [AnyType(TypeOfAny.special_form)]).type,
         )
-        assert (
-            len(simplecdata_base.args) == 1
-        ), "_SimpleCData takes exactly one type argument"
+        assert len(simplecdata_base.args) == 1, "_SimpleCData takes exactly one type argument"
         return get_proper_type(simplecdata_base.args[0])
     return None
 
 
-def _autoconvertible_to_cdata(
-    tp: Type, api: mypy.plugin.CheckerPluginInterface
-) -> Type:
+def _autoconvertible_to_cdata(tp: Type, api: mypy.plugin.CheckerPluginInterface) -> Type:
     """Get a type that is compatible with all types that can be implicitly converted to the given
     CData type.
 
@@ -124,9 +118,7 @@ def array_constructor_callback(ctx: mypy.plugin.FunctionContext) -> Type:
         assert (
             len(ctx.arg_types) == 1
         ), "The stub of the ctypes.Array constructor should have a single vararg parameter"
-        for arg_num, (arg_kind, arg_type) in enumerate(
-            zip(ctx.arg_kinds[0], ctx.arg_types[0]), 1
-        ):
+        for arg_num, (arg_kind, arg_type) in enumerate(zip(ctx.arg_kinds[0], ctx.arg_types[0]), 1):
             if arg_kind == nodes.ARG_POS and not is_subtype(arg_type, allowed):
                 ctx.api.msg.fail(
                     "Array constructor argument {} of type {}"
@@ -246,9 +238,7 @@ def array_raw_callback(ctx: mypy.plugin.AttributeContext) -> Type:
             else:
                 ctx.api.msg.fail(
                     'Array attribute "raw" is only available'
-                    ' with element type "c_char", not {}'.format(
-                        format_type(et, ctx.api.options)
-                    ),
+                    ' with element type "c_char", not {}'.format(format_type(et, ctx.api.options)),
                     ctx.context,
                 )
         return make_simplified_union(types)

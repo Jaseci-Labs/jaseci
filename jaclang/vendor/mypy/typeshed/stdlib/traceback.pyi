@@ -27,18 +27,15 @@ __all__ = [
     "walk_tb",
 ]
 
-_PT: TypeAlias = tuple[str, int, str, str | None]
+_FrameSummaryTuple: TypeAlias = tuple[str, int, str, str | None]
 
-def print_tb(
-    tb: TracebackType | None,
-    limit: int | None = None,
-    file: SupportsWrite[str] | None = None,
-) -> None: ...
+def print_tb(tb: TracebackType | None, limit: int | None = None, file: SupportsWrite[str] | None = None) -> None: ...
 
 if sys.version_info >= (3, 10):
     @overload
     def print_exception(
-        __exc: type[BaseException] | None,
+        exc: type[BaseException] | None,
+        /,
         value: BaseException | None = ...,
         tb: TracebackType | None = ...,
         limit: int | None = None,
@@ -47,24 +44,19 @@ if sys.version_info >= (3, 10):
     ) -> None: ...
     @overload
     def print_exception(
-        __exc: BaseException,
-        *,
-        limit: int | None = None,
-        file: SupportsWrite[str] | None = None,
-        chain: bool = True,
+        exc: BaseException, /, *, limit: int | None = None, file: SupportsWrite[str] | None = None, chain: bool = True
     ) -> None: ...
     @overload
     def format_exception(
-        __exc: type[BaseException] | None,
+        exc: type[BaseException] | None,
+        /,
         value: BaseException | None = ...,
         tb: TracebackType | None = ...,
         limit: int | None = None,
         chain: bool = True,
     ) -> list[str]: ...
     @overload
-    def format_exception(
-        __exc: BaseException, *, limit: int | None = None, chain: bool = True
-    ) -> list[str]: ...
+    def format_exception(exc: BaseException, /, *, limit: int | None = None, chain: bool = True) -> list[str]: ...
 
 else:
     def print_exception(
@@ -83,40 +75,24 @@ else:
         chain: bool = True,
     ) -> list[str]: ...
 
-def print_exc(
-    limit: int | None = None, file: SupportsWrite[str] | None = None, chain: bool = True
-) -> None: ...
-def print_last(
-    limit: int | None = None, file: SupportsWrite[str] | None = None, chain: bool = True
-) -> None: ...
-def print_stack(
-    f: FrameType | None = None,
-    limit: int | None = None,
-    file: SupportsWrite[str] | None = None,
-) -> None: ...
+def print_exc(limit: int | None = None, file: SupportsWrite[str] | None = None, chain: bool = True) -> None: ...
+def print_last(limit: int | None = None, file: SupportsWrite[str] | None = None, chain: bool = True) -> None: ...
+def print_stack(f: FrameType | None = None, limit: int | None = None, file: SupportsWrite[str] | None = None) -> None: ...
 def extract_tb(tb: TracebackType | None, limit: int | None = None) -> StackSummary: ...
-def extract_stack(
-    f: FrameType | None = None, limit: int | None = None
-) -> StackSummary: ...
-def format_list(extracted_list: list[FrameSummary]) -> list[str]: ...
+def extract_stack(f: FrameType | None = None, limit: int | None = None) -> StackSummary: ...
+def format_list(extracted_list: Iterable[FrameSummary | _FrameSummaryTuple]) -> list[str]: ...
 
 # undocumented
-def print_list(
-    extracted_list: list[FrameSummary], file: SupportsWrite[str] | None = None
-) -> None: ...
+def print_list(extracted_list: Iterable[FrameSummary | _FrameSummaryTuple], file: SupportsWrite[str] | None = None) -> None: ...
 
 if sys.version_info >= (3, 10):
     @overload
-    def format_exception_only(__exc: BaseException | None) -> list[str]: ...
+    def format_exception_only(exc: BaseException | None, /) -> list[str]: ...
     @overload
-    def format_exception_only(
-        __exc: Unused, value: BaseException | None
-    ) -> list[str]: ...
+    def format_exception_only(exc: Unused, /, value: BaseException | None) -> list[str]: ...
 
 else:
-    def format_exception_only(
-        etype: type[BaseException] | None, value: BaseException | None
-    ) -> list[str]: ...
+    def format_exception_only(etype: type[BaseException] | None, value: BaseException | None) -> list[str]: ...
 
 def format_exc(limit: int | None = None, chain: bool = True) -> str: ...
 def format_tb(tb: TracebackType | None, limit: int | None = None) -> list[str]: ...
@@ -128,9 +104,7 @@ def walk_tb(tb: TracebackType | None) -> Iterator[tuple[FrameType, int]]: ...
 if sys.version_info >= (3, 11):
     class _ExceptionPrintContext:
         def indent(self) -> str: ...
-        def emit(
-            self, text_gen: str | Iterable[str], margin_char: str | None = None
-        ) -> Generator[str, None, None]: ...
+        def emit(self, text_gen: str | Iterable[str], margin_char: str | None = None) -> Generator[str, None, None]: ...
 
 class TracebackException:
     __cause__: TracebackException
@@ -207,28 +181,19 @@ class TracebackException:
         ) -> None: ...
         @classmethod
         def from_exception(
-            cls,
-            exc: BaseException,
-            *,
-            limit: int | None = None,
-            lookup_lines: bool = True,
-            capture_locals: bool = False,
+            cls, exc: BaseException, *, limit: int | None = None, lookup_lines: bool = True, capture_locals: bool = False
         ) -> Self: ...
 
     def __eq__(self, other: object) -> bool: ...
     if sys.version_info >= (3, 11):
-        def format(
-            self, *, chain: bool = True, _ctx: _ExceptionPrintContext | None = None
-        ) -> Generator[str, None, None]: ...
+        def format(self, *, chain: bool = True, _ctx: _ExceptionPrintContext | None = None) -> Generator[str, None, None]: ...
     else:
         def format(self, *, chain: bool = True) -> Generator[str, None, None]: ...
 
     def format_exception_only(self) -> Generator[str, None, None]: ...
 
     if sys.version_info >= (3, 11):
-        def print(
-            self, *, file: SupportsWrite[str] | None = None, chain: bool = True
-        ) -> None: ...
+        def print(self, *, file: SupportsWrite[str] | None = None, chain: bool = True) -> None: ...
 
 class FrameSummary(Iterable[Any]):
     if sys.version_info >= (3, 11):
@@ -290,7 +255,7 @@ class StackSummary(list[FrameSummary]):
         capture_locals: bool = False,
     ) -> StackSummary: ...
     @classmethod
-    def from_list(cls, a_list: Iterable[FrameSummary | _PT]) -> StackSummary: ...
+    def from_list(cls, a_list: Iterable[FrameSummary | _FrameSummaryTuple]) -> StackSummary: ...
     if sys.version_info >= (3, 11):
         def format_frame_summary(self, frame_summary: FrameSummary) -> str: ...
 

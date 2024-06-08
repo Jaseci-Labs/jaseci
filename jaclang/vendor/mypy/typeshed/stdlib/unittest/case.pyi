@@ -1,38 +1,12 @@
 import logging
 import sys
 import unittest.result
-from _typeshed import (
-    SupportsDunderGE,
-    SupportsDunderGT,
-    SupportsDunderLE,
-    SupportsDunderLT,
-    SupportsRSub,
-    SupportsSub,
-)
-from collections.abc import (
-    Callable,
-    Container,
-    Iterable,
-    Mapping,
-    Sequence,
-    Set as AbstractSet,
-)
+from _typeshed import SupportsDunderGE, SupportsDunderGT, SupportsDunderLE, SupportsDunderLT, SupportsRSub, SupportsSub
+from collections.abc import Callable, Container, Iterable, Mapping, Sequence, Set as AbstractSet
 from contextlib import AbstractContextManager
 from re import Pattern
 from types import TracebackType
-from typing import (
-    Any,
-    AnyStr,
-    ClassVar,
-    Generic,
-    NamedTuple,
-    NoReturn,
-    Protocol,
-    SupportsAbs,
-    SupportsRound,
-    TypeVar,
-    overload,
-)
+from typing import Any, AnyStr, ClassVar, Generic, NamedTuple, NoReturn, Protocol, SupportsAbs, SupportsRound, TypeVar, overload
 from typing_extensions import ParamSpec, Self, TypeAlias
 from warnings import WarningMessage
 
@@ -88,20 +62,13 @@ else:
         logger_name: str
         level: int
         msg: None
-        def __init__(
-            self, test_case: TestCase, logger_name: str, level: int
-        ) -> None: ...
+        def __init__(self, test_case: TestCase, logger_name: str, level: int) -> None: ...
         def __enter__(self) -> _LoggingWatcher: ...
         def __exit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc_value: BaseException | None,
-            tb: TracebackType | None,
+            self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
         ) -> bool | None: ...
 
-def addModuleCleanup(
-    __function: Callable[_P, object], *args: _P.args, **kwargs: _P.kwargs
-) -> None: ...
+def addModuleCleanup(function: Callable[_P, object], /, *args: _P.args, **kwargs: _P.kwargs) -> None: ...
 def doModuleCleanups() -> None: ...
 
 if sys.version_info >= (3, 11):
@@ -142,21 +109,13 @@ class TestCase:
     def setUpClass(cls) -> None: ...
     @classmethod
     def tearDownClass(cls) -> None: ...
-    def run(
-        self, result: unittest.result.TestResult | None = None
-    ) -> unittest.result.TestResult | None: ...
-    def __call__(
-        self, result: unittest.result.TestResult | None = ...
-    ) -> unittest.result.TestResult | None: ...
+    def run(self, result: unittest.result.TestResult | None = None) -> unittest.result.TestResult | None: ...
+    def __call__(self, result: unittest.result.TestResult | None = ...) -> unittest.result.TestResult | None: ...
     def skipTest(self, reason: Any) -> NoReturn: ...
-    def subTest(
-        self, msg: Any = ..., **params: Any
-    ) -> AbstractContextManager[None]: ...
+    def subTest(self, msg: Any = ..., **params: Any) -> AbstractContextManager[None]: ...
     def debug(self) -> None: ...
     if sys.version_info < (3, 11):
-        def _addSkip(
-            self, result: unittest.result.TestResult, test_case: TestCase, reason: str
-        ) -> None: ...
+        def _addSkip(self, result: unittest.result.TestResult, test_case: TestCase, reason: str) -> None: ...
 
     def assertEqual(self, first: Any, second: Any, msg: Any = None) -> None: ...
     def assertNotEqual(self, first: Any, second: Any, msg: Any = None) -> None: ...
@@ -166,46 +125,26 @@ class TestCase:
     def assertIsNot(self, expr1: object, expr2: object, msg: Any = None) -> None: ...
     def assertIsNone(self, obj: object, msg: Any = None) -> None: ...
     def assertIsNotNone(self, obj: object, msg: Any = None) -> None: ...
-    def assertIn(
-        self, member: Any, container: Iterable[Any] | Container[Any], msg: Any = None
-    ) -> None: ...
-    def assertNotIn(
-        self, member: Any, container: Iterable[Any] | Container[Any], msg: Any = None
-    ) -> None: ...
-    def assertIsInstance(
-        self, obj: object, cls: _ClassInfo, msg: Any = None
-    ) -> None: ...
-    def assertNotIsInstance(
-        self, obj: object, cls: _ClassInfo, msg: Any = None
-    ) -> None: ...
+    def assertIn(self, member: Any, container: Iterable[Any] | Container[Any], msg: Any = None) -> None: ...
+    def assertNotIn(self, member: Any, container: Iterable[Any] | Container[Any], msg: Any = None) -> None: ...
+    def assertIsInstance(self, obj: object, cls: _ClassInfo, msg: Any = None) -> None: ...
+    def assertNotIsInstance(self, obj: object, cls: _ClassInfo, msg: Any = None) -> None: ...
     @overload
-    def assertGreater(
-        self, a: SupportsDunderGT[_T], b: _T, msg: Any = None
-    ) -> None: ...
+    def assertGreater(self, a: SupportsDunderGT[_T], b: _T, msg: Any = None) -> None: ...
     @overload
-    def assertGreater(
-        self, a: _T, b: SupportsDunderLT[_T], msg: Any = None
-    ) -> None: ...
+    def assertGreater(self, a: _T, b: SupportsDunderLT[_T], msg: Any = None) -> None: ...
     @overload
-    def assertGreaterEqual(
-        self, a: SupportsDunderGE[_T], b: _T, msg: Any = None
-    ) -> None: ...
+    def assertGreaterEqual(self, a: SupportsDunderGE[_T], b: _T, msg: Any = None) -> None: ...
     @overload
-    def assertGreaterEqual(
-        self, a: _T, b: SupportsDunderLE[_T], msg: Any = None
-    ) -> None: ...
+    def assertGreaterEqual(self, a: _T, b: SupportsDunderLE[_T], msg: Any = None) -> None: ...
     @overload
     def assertLess(self, a: SupportsDunderLT[_T], b: _T, msg: Any = None) -> None: ...
     @overload
     def assertLess(self, a: _T, b: SupportsDunderGT[_T], msg: Any = None) -> None: ...
     @overload
-    def assertLessEqual(
-        self, a: SupportsDunderLE[_T], b: _T, msg: Any = None
-    ) -> None: ...
+    def assertLessEqual(self, a: SupportsDunderLE[_T], b: _T, msg: Any = None) -> None: ...
     @overload
-    def assertLessEqual(
-        self, a: _T, b: SupportsDunderGE[_T], msg: Any = None
-    ) -> None: ...
+    def assertLessEqual(self, a: _T, b: SupportsDunderGE[_T], msg: Any = None) -> None: ...
     # `assertRaises`, `assertRaisesRegex`, and `assertRaisesRegexp`
     # are not using `ParamSpec` intentionally,
     # because they might be used with explicitly wrong arg types to raise some error in tests.
@@ -232,11 +171,7 @@ class TestCase:
     ) -> None: ...
     @overload
     def assertRaisesRegex(
-        self,
-        expected_exception: type[_E] | tuple[type[_E], ...],
-        expected_regex: str | Pattern[str],
-        *,
-        msg: Any = ...,
+        self, expected_exception: type[_E] | tuple[type[_E], ...], expected_regex: str | Pattern[str], *, msg: Any = ...
     ) -> _AssertRaisesContext[_E]: ...
     @overload
     def assertWarns(
@@ -248,10 +183,7 @@ class TestCase:
     ) -> None: ...
     @overload
     def assertWarns(
-        self,
-        expected_warning: type[Warning] | tuple[type[Warning], ...],
-        *,
-        msg: Any = ...,
+        self, expected_warning: type[Warning] | tuple[type[Warning], ...], *, msg: Any = ...
     ) -> _AssertWarnsContext: ...
     @overload
     def assertWarnsRegex(
@@ -264,40 +196,21 @@ class TestCase:
     ) -> None: ...
     @overload
     def assertWarnsRegex(
-        self,
-        expected_warning: type[Warning] | tuple[type[Warning], ...],
-        expected_regex: str | Pattern[str],
-        *,
-        msg: Any = ...,
+        self, expected_warning: type[Warning] | tuple[type[Warning], ...], expected_regex: str | Pattern[str], *, msg: Any = ...
     ) -> _AssertWarnsContext: ...
     def assertLogs(
         self, logger: str | logging.Logger | None = None, level: int | str | None = None
     ) -> _AssertLogsContext[_LoggingWatcher]: ...
     if sys.version_info >= (3, 10):
         def assertNoLogs(
-            self,
-            logger: str | logging.Logger | None = None,
-            level: int | str | None = None,
+            self, logger: str | logging.Logger | None = None, level: int | str | None = None
         ) -> _AssertLogsContext[None]: ...
 
     @overload
-    def assertAlmostEqual(
-        self,
-        first: _S,
-        second: _S,
-        places: None,
-        msg: Any,
-        delta: _SupportsAbsAndDunderGE,
-    ) -> None: ...
+    def assertAlmostEqual(self, first: _S, second: _S, places: None, msg: Any, delta: _SupportsAbsAndDunderGE) -> None: ...
     @overload
     def assertAlmostEqual(
-        self,
-        first: _S,
-        second: _S,
-        places: None = None,
-        msg: Any = None,
-        *,
-        delta: _SupportsAbsAndDunderGE,
+        self, first: _S, second: _S, places: None = None, msg: Any = None, *, delta: _SupportsAbsAndDunderGE
     ) -> None: ...
     @overload
     def assertAlmostEqual(
@@ -318,23 +231,10 @@ class TestCase:
         delta: None = None,
     ) -> None: ...
     @overload
-    def assertNotAlmostEqual(
-        self,
-        first: _S,
-        second: _S,
-        places: None,
-        msg: Any,
-        delta: _SupportsAbsAndDunderGE,
-    ) -> None: ...
+    def assertNotAlmostEqual(self, first: _S, second: _S, places: None, msg: Any, delta: _SupportsAbsAndDunderGE) -> None: ...
     @overload
     def assertNotAlmostEqual(
-        self,
-        first: _S,
-        second: _S,
-        places: None = None,
-        msg: Any = None,
-        *,
-        delta: _SupportsAbsAndDunderGE,
+        self, first: _S, second: _S, places: None = None, msg: Any = None, *, delta: _SupportsAbsAndDunderGE
     ) -> None: ...
     @overload
     def assertNotAlmostEqual(
@@ -354,59 +254,33 @@ class TestCase:
         msg: Any = None,
         delta: None = None,
     ) -> None: ...
-    def assertRegex(
-        self, text: AnyStr, expected_regex: AnyStr | Pattern[AnyStr], msg: Any = None
-    ) -> None: ...
-    def assertNotRegex(
-        self, text: AnyStr, unexpected_regex: AnyStr | Pattern[AnyStr], msg: Any = None
-    ) -> None: ...
-    def assertCountEqual(
-        self, first: Iterable[Any], second: Iterable[Any], msg: Any = None
-    ) -> None: ...
-    def addTypeEqualityFunc(
-        self, typeobj: type[Any], function: Callable[..., None]
-    ) -> None: ...
-    def assertMultiLineEqual(
-        self, first: str, second: str, msg: Any = None
-    ) -> None: ...
+    def assertRegex(self, text: AnyStr, expected_regex: AnyStr | Pattern[AnyStr], msg: Any = None) -> None: ...
+    def assertNotRegex(self, text: AnyStr, unexpected_regex: AnyStr | Pattern[AnyStr], msg: Any = None) -> None: ...
+    def assertCountEqual(self, first: Iterable[Any], second: Iterable[Any], msg: Any = None) -> None: ...
+    def addTypeEqualityFunc(self, typeobj: type[Any], function: Callable[..., None]) -> None: ...
+    def assertMultiLineEqual(self, first: str, second: str, msg: Any = None) -> None: ...
     def assertSequenceEqual(
-        self,
-        seq1: Sequence[Any],
-        seq2: Sequence[Any],
-        msg: Any = None,
-        seq_type: type[Sequence[Any]] | None = None,
+        self, seq1: Sequence[Any], seq2: Sequence[Any], msg: Any = None, seq_type: type[Sequence[Any]] | None = None
     ) -> None: ...
-    def assertListEqual(
-        self, list1: list[Any], list2: list[Any], msg: Any = None
-    ) -> None: ...
-    def assertTupleEqual(
-        self, tuple1: tuple[Any, ...], tuple2: tuple[Any, ...], msg: Any = None
-    ) -> None: ...
-    def assertSetEqual(
-        self, set1: AbstractSet[object], set2: AbstractSet[object], msg: Any = None
-    ) -> None: ...
+    def assertListEqual(self, list1: list[Any], list2: list[Any], msg: Any = None) -> None: ...
+    def assertTupleEqual(self, tuple1: tuple[Any, ...], tuple2: tuple[Any, ...], msg: Any = None) -> None: ...
+    def assertSetEqual(self, set1: AbstractSet[object], set2: AbstractSet[object], msg: Any = None) -> None: ...
     # assertDictEqual accepts only true dict instances. We can't use that here, since that would make
     # assertDictEqual incompatible with TypedDict.
-    def assertDictEqual(
-        self, d1: Mapping[Any, object], d2: Mapping[Any, object], msg: Any = None
-    ) -> None: ...
+    def assertDictEqual(self, d1: Mapping[Any, object], d2: Mapping[Any, object], msg: Any = None) -> None: ...
     def fail(self, msg: Any = None) -> NoReturn: ...
     def countTestCases(self) -> int: ...
     def defaultTestResult(self) -> unittest.result.TestResult: ...
     def id(self) -> str: ...
     def shortDescription(self) -> str | None: ...
-    def addCleanup(
-        self, __function: Callable[_P, object], *args: _P.args, **kwargs: _P.kwargs
-    ) -> None: ...
+    def addCleanup(self, function: Callable[_P, object], /, *args: _P.args, **kwargs: _P.kwargs) -> None: ...
 
     if sys.version_info >= (3, 11):
         def enterContext(self, cm: AbstractContextManager[_T]) -> _T: ...
 
     def doCleanups(self) -> None: ...
     @classmethod
-    def addClassCleanup(
-        cls, __function: Callable[_P, object], *args: _P.args, **kwargs: _P.kwargs
-    ) -> None: ...
+    def addClassCleanup(cls, function: Callable[_P, object], /, *args: _P.args, **kwargs: _P.kwargs) -> None: ...
     @classmethod
     def doClassCleanups(cls) -> None: ...
 
@@ -414,12 +288,8 @@ class TestCase:
         @classmethod
         def enterClassContext(cls, cm: AbstractContextManager[_T]) -> _T: ...
 
-    def _formatMessage(
-        self, msg: str | None, standardMsg: str
-    ) -> str: ...  # undocumented
-    def _getAssertEqualityFunc(
-        self, first: Any, second: Any
-    ) -> Callable[..., None]: ...  # undocumented
+    def _formatMessage(self, msg: str | None, standardMsg: str) -> str: ...  # undocumented
+    def _getAssertEqualityFunc(self, first: Any, second: Any) -> Callable[..., None]: ...  # undocumented
     if sys.version_info < (3, 12):
         failUnlessEqual = assertEqual
         assertEquals = assertEqual
@@ -437,10 +307,7 @@ class TestCase:
         assertNotRegexpMatches = assertNotRegex
         assertRaisesRegexp = assertRaisesRegex
         def assertDictContainsSubset(
-            self,
-            subset: Mapping[Any, Any],
-            dictionary: Mapping[Any, Any],
-            msg: object = None,
+            self, subset: Mapping[Any, Any], dictionary: Mapping[Any, Any], msg: object = None
         ) -> None: ...
 
 class FunctionTestCase(TestCase):
@@ -459,10 +326,7 @@ class _AssertRaisesContext(_AssertRaisesBaseContext, Generic[_E]):
     exception: _E
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        tb: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
     ) -> bool: ...
     if sys.version_info >= (3, 9):
         def __class_getitem__(cls, item: Any) -> GenericAlias: ...
@@ -474,8 +338,5 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
     warnings: list[WarningMessage]
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        tb: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
     ) -> None: ...

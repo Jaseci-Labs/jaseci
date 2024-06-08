@@ -3,10 +3,7 @@ from typing import Literal
 
 from .fix_imports import FixImports
 
-MAPPING: dict[
-    str,
-    list[tuple[Literal["urllib.request", "urllib.parse", "urllib.error"], list[str]]],
-]
+MAPPING: dict[str, list[tuple[Literal["urllib.request", "urllib.parse", "urllib.error"], list[str]]]]
 
 def build_pattern() -> Generator[str, None, None]: ...
 

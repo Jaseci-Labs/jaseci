@@ -19,11 +19,7 @@ from multiprocessing.process import (
 # Avoid using `multiprocessing.Queue` as a type annotation;
 # use imports from multiprocessing.queues instead.
 # See #4266 and #8450 for discussion.
-from multiprocessing.queues import (
-    JoinableQueue as JoinableQueue,
-    Queue as Queue,
-    SimpleQueue as SimpleQueue,
-)
+from multiprocessing.queues import JoinableQueue as JoinableQueue, Queue as Queue, SimpleQueue as SimpleQueue
 from multiprocessing.spawn import freeze_support as freeze_support
 
 __all__ = [

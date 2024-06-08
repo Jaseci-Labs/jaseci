@@ -46,14 +46,10 @@ class ASTDiffSuite(DataSuite):
             a.append(trigger)
 
         assert_string_arrays_equal(
-            testcase.output,
-            a,
-            f"Invalid output ({testcase.file}, line {testcase.line})",
+            testcase.output, a, f"Invalid output ({testcase.file}, line {testcase.line})"
         )
 
-    def build(
-        self, source: str, options: Options
-    ) -> tuple[list[str], dict[str, MypyFile] | None]:
+    def build(self, source: str, options: Options) -> tuple[list[str], dict[str, MypyFile] | None]:
         options.use_builtins_fixtures = True
         options.show_traceback = True
         options.cache_dir = os.devnull

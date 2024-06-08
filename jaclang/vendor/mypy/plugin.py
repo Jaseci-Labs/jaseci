@@ -251,9 +251,7 @@ class CheckerPluginInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def get_expression_type(
-        self, node: Expression, type_context: Type | None = None
-    ) -> Type:
+    def get_expression_type(self, node: Expression, type_context: Type | None = None) -> Type:
         """Checks the type of the given expression."""
         raise NotImplementedError
 
@@ -286,9 +284,7 @@ class SemanticAnalyzerPluginInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def named_type_or_none(
-        self, fullname: str, args: list[Type] | None = None
-    ) -> Instance | None:
+    def named_type_or_none(self, fullname: str, args: list[Type] | None = None) -> Instance | None:
         """Construct an instance of a type with given type arguments.
 
         Return None if a type could not be constructed for the qualified
@@ -298,9 +294,7 @@ class SemanticAnalyzerPluginInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def basic_new_typeinfo(
-        self, name: str, basetype_or_fallback: Instance, line: int
-    ) -> TypeInfo:
+    def basic_new_typeinfo(self, name: str, basetype_or_fallback: Instance, line: int) -> TypeInfo:
         raise NotImplementedError
 
     @abstractmethod
@@ -423,9 +417,7 @@ class SemanticAnalyzerPluginInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def analyze_simple_literal_type(
-        self, rvalue: Expression, is_final: bool
-    ) -> Type | None:
+    def analyze_simple_literal_type(self, rvalue: Expression, is_final: bool) -> Type | None:
         raise NotImplementedError
 
 
@@ -454,9 +446,7 @@ class FunctionSigContext(NamedTuple):
 # callback at least sometimes can infer a more precise type.
 class FunctionContext(NamedTuple):
     arg_types: list[list[Type]]  # List of actual caller types for each formal argument
-    arg_kinds: list[
-        list[ArgKind]
-    ]  # Ditto for argument kinds, see nodes.ARG_* constants
+    arg_kinds: list[list[ArgKind]]  # Ditto for argument kinds, see nodes.ARG_* constants
     # Names of formal parameters from the callee definition,
     # these will be sufficient in most cases.
     callee_arg_names: list[str | None]
@@ -497,9 +487,7 @@ class MethodContext(NamedTuple):
     callee_arg_names: list[str | None]
     arg_names: list[list[str | None]]
     default_return_type: Type  # Return type inferred by mypy
-    args: list[
-        list[Expression]
-    ]  # Lists of actual expressions for every formal argument
+    args: list[list[Expression]]  # Lists of actual expressions for every formal argument
     context: Context
     api: CheckerPluginInterface
 
@@ -515,9 +503,7 @@ class AttributeContext(NamedTuple):
 # A context for a class hook that modifies the class definition.
 class ClassDefContext(NamedTuple):
     cls: ClassDef  # The class definition
-    reason: (
-        Expression  # The expression being applied (decorator, metaclass, base class)
-    )
+    reason: Expression  # The expression being applied (decorator, metaclass, base class)
     api: SemanticAnalyzerPluginInterface
 
 
@@ -599,9 +585,7 @@ class Plugin(CommonPluginApi):
         """
         return []
 
-    def get_type_analyze_hook(
-        self, fullname: str
-    ) -> Callable[[AnalyzeTypeContext], Type] | None:
+    def get_type_analyze_hook(self, fullname: str) -> Callable[[AnalyzeTypeContext], Type] | None:
         """Customize behaviour of the type analyzer for given full names.
 
         This method is called during the semantic analysis pass whenever mypy sees an
@@ -636,9 +620,7 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_function_hook(
-        self, fullname: str
-    ) -> Callable[[FunctionContext], Type] | None:
+    def get_function_hook(self, fullname: str) -> Callable[[FunctionContext], Type] | None:
         """Adjust the return type of a function call.
 
         This method is called after type checking a call. Plugin may adjust the return
@@ -692,9 +674,7 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_attribute_hook(
-        self, fullname: str
-    ) -> Callable[[AttributeContext], Type] | None:
+    def get_attribute_hook(self, fullname: str) -> Callable[[AttributeContext], Type] | None:
         """Adjust type of an instance attribute.
 
         This method is called with attribute full name using the class of the instance where
@@ -725,9 +705,7 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_class_attribute_hook(
-        self, fullname: str
-    ) -> Callable[[AttributeContext], Type] | None:
+    def get_class_attribute_hook(self, fullname: str) -> Callable[[AttributeContext], Type] | None:
         """
         Adjust type of a class attribute.
 
@@ -745,9 +723,7 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_class_decorator_hook(
-        self, fullname: str
-    ) -> Callable[[ClassDefContext], None] | None:
+    def get_class_decorator_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update class definition for given class decorators.
 
         The plugin can modify a TypeInfo _in place_ (for example add some generated
@@ -783,9 +759,7 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_metaclass_hook(
-        self, fullname: str
-    ) -> Callable[[ClassDefContext], None] | None:
+    def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update class definition for given declared metaclasses.
 
         Same as get_class_decorator_hook() but for metaclasses. Note:
@@ -796,9 +770,7 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_base_class_hook(
-        self, fullname: str
-    ) -> Callable[[ClassDefContext], None] | None:
+    def get_base_class_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update class definition for given base classes.
 
         Same as get_class_decorator_hook() but for base classes. Base classes
@@ -872,71 +844,49 @@ class ChainedPlugin(Plugin):
             deps.extend(plugin.get_additional_deps(file))
         return deps
 
-    def get_type_analyze_hook(
-        self, fullname: str
-    ) -> Callable[[AnalyzeTypeContext], Type] | None:
+    def get_type_analyze_hook(self, fullname: str) -> Callable[[AnalyzeTypeContext], Type] | None:
         return self._find_hook(lambda plugin: plugin.get_type_analyze_hook(fullname))
 
     def get_function_signature_hook(
         self, fullname: str
     ) -> Callable[[FunctionSigContext], FunctionLike] | None:
-        return self._find_hook(
-            lambda plugin: plugin.get_function_signature_hook(fullname)
-        )
+        return self._find_hook(lambda plugin: plugin.get_function_signature_hook(fullname))
 
-    def get_function_hook(
-        self, fullname: str
-    ) -> Callable[[FunctionContext], Type] | None:
+    def get_function_hook(self, fullname: str) -> Callable[[FunctionContext], Type] | None:
         return self._find_hook(lambda plugin: plugin.get_function_hook(fullname))
 
     def get_method_signature_hook(
         self, fullname: str
     ) -> Callable[[MethodSigContext], FunctionLike] | None:
-        return self._find_hook(
-            lambda plugin: plugin.get_method_signature_hook(fullname)
-        )
+        return self._find_hook(lambda plugin: plugin.get_method_signature_hook(fullname))
 
     def get_method_hook(self, fullname: str) -> Callable[[MethodContext], Type] | None:
         return self._find_hook(lambda plugin: plugin.get_method_hook(fullname))
 
-    def get_attribute_hook(
-        self, fullname: str
-    ) -> Callable[[AttributeContext], Type] | None:
+    def get_attribute_hook(self, fullname: str) -> Callable[[AttributeContext], Type] | None:
         return self._find_hook(lambda plugin: plugin.get_attribute_hook(fullname))
 
-    def get_class_attribute_hook(
-        self, fullname: str
-    ) -> Callable[[AttributeContext], Type] | None:
+    def get_class_attribute_hook(self, fullname: str) -> Callable[[AttributeContext], Type] | None:
         return self._find_hook(lambda plugin: plugin.get_class_attribute_hook(fullname))
 
-    def get_class_decorator_hook(
-        self, fullname: str
-    ) -> Callable[[ClassDefContext], None] | None:
+    def get_class_decorator_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         return self._find_hook(lambda plugin: plugin.get_class_decorator_hook(fullname))
 
     def get_class_decorator_hook_2(
         self, fullname: str
     ) -> Callable[[ClassDefContext], bool] | None:
-        return self._find_hook(
-            lambda plugin: plugin.get_class_decorator_hook_2(fullname)
-        )
+        return self._find_hook(lambda plugin: plugin.get_class_decorator_hook_2(fullname))
 
-    def get_metaclass_hook(
-        self, fullname: str
-    ) -> Callable[[ClassDefContext], None] | None:
+    def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         return self._find_hook(lambda plugin: plugin.get_metaclass_hook(fullname))
 
-    def get_base_class_hook(
-        self, fullname: str
-    ) -> Callable[[ClassDefContext], None] | None:
+    def get_base_class_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         return self._find_hook(lambda plugin: plugin.get_base_class_hook(fullname))
 
     def get_customize_class_mro_hook(
         self, fullname: str
     ) -> Callable[[ClassDefContext], None] | None:
-        return self._find_hook(
-            lambda plugin: plugin.get_customize_class_mro_hook(fullname)
-        )
+        return self._find_hook(lambda plugin: plugin.get_customize_class_mro_hook(fullname))
 
     def get_dynamic_class_hook(
         self, fullname: str

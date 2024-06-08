@@ -68,10 +68,7 @@ class LoopNonlocalControl(NonlocalControl):
     """Nonlocal control within a loop."""
 
     def __init__(
-        self,
-        outer: NonlocalControl,
-        continue_block: BasicBlock,
-        break_block: BasicBlock,
+        self, outer: NonlocalControl, continue_block: BasicBlock, break_block: BasicBlock
     ) -> None:
         self.outer = outer
         self.continue_block = continue_block
@@ -94,9 +91,7 @@ class GeneratorNonlocalControl(BaseNonlocalControl):
         # Assign an invalid next label number so that the next time
         # __next__ is called, we jump to the case in which
         # StopIteration is raised.
-        builder.assign(
-            builder.fn_info.generator_class.next_label_target, Integer(-1), line
-        )
+        builder.assign(builder.fn_info.generator_class.next_label_target, Integer(-1), line)
 
         # Raise a StopIteration containing a field for the value that
         # should be returned. Before doing so, create a new block

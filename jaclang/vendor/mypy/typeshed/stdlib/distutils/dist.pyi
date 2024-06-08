@@ -7,9 +7,7 @@ from typing_extensions import TypeAlias
 
 command_re: Pattern[str]
 
-_OptionsList: TypeAlias = list[
-    tuple[str, str | None, str, int] | tuple[str, str | None, str]
-]
+_OptionsList: TypeAlias = list[tuple[str, str | None, str, int] | tuple[str, str | None, str]]
 _CommandT = TypeVar("_CommandT", bound=Command)
 
 class DistributionMetadata:
@@ -96,10 +94,7 @@ class Distribution:
     have_run: Incomplete
     want_user_cfg: bool
     def dump_option_dicts(
-        self,
-        header: Incomplete | None = None,
-        commands: Incomplete | None = None,
-        indent: str = "",
+        self, header: Incomplete | None = None, commands: Incomplete | None = None, indent: str = ""
     ) -> None: ...
     def find_config_files(self): ...
     commands: Incomplete
@@ -112,13 +107,9 @@ class Distribution:
     def get_command_packages(self): ...
     def get_command_class(self, command: str) -> type[Command]: ...
     @overload
-    def reinitialize_command(
-        self, command: str, reinit_subcommands: bool = False
-    ) -> Command: ...
+    def reinitialize_command(self, command: str, reinit_subcommands: bool = False) -> Command: ...
     @overload
-    def reinitialize_command(
-        self, command: _CommandT, reinit_subcommands: bool = False
-    ) -> _CommandT: ...
+    def reinitialize_command(self, command: _CommandT, reinit_subcommands: bool = False) -> _CommandT: ...
     def announce(self, msg, level: int = 2) -> None: ...
     def run_commands(self) -> None: ...
     def run_command(self, command: str) -> None: ...

@@ -17,13 +17,9 @@ __all__ = [
 ]
 
 _W = TypeVar("_W", bound=list[WarningMessage] | None)
-_ActionKind: TypeAlias = Literal[
-    "default", "error", "ignore", "always", "module", "once"
-]
+_ActionKind: TypeAlias = Literal["default", "error", "ignore", "always", "module", "once"]
 
-filters: Sequence[
-    tuple[str, str | None, type[Warning], str | None, int]
-]  # undocumented, do not mutate
+filters: Sequence[tuple[str, str | None, type[Warning], str | None, int]]  # undocumented, do not mutate
 
 def showwarning(
     message: Warning | str,
@@ -34,26 +30,12 @@ def showwarning(
     line: str | None = None,
 ) -> None: ...
 def formatwarning(
-    message: Warning | str,
-    category: type[Warning],
-    filename: str,
-    lineno: int,
-    line: str | None = None,
+    message: Warning | str, category: type[Warning], filename: str, lineno: int, line: str | None = None
 ) -> str: ...
 def filterwarnings(
-    action: _ActionKind,
-    message: str = "",
-    category: type[Warning] = ...,
-    module: str = "",
-    lineno: int = 0,
-    append: bool = False,
+    action: _ActionKind, message: str = "", category: type[Warning] = ..., module: str = "", lineno: int = 0, append: bool = False
 ) -> None: ...
-def simplefilter(
-    action: _ActionKind,
-    category: type[Warning] = ...,
-    lineno: int = 0,
-    append: bool = False,
-) -> None: ...
+def simplefilter(action: _ActionKind, category: type[Warning] = ..., lineno: int = 0, append: bool = False) -> None: ...
 def resetwarnings() -> None: ...
 
 class _OptionError(Exception): ...
@@ -114,31 +96,17 @@ class catch_warnings(Generic[_W]):
         ) -> None: ...
     else:
         @overload
+        def __init__(self: catch_warnings[None], *, record: Literal[False] = False, module: ModuleType | None = None) -> None: ...
+        @overload
         def __init__(
-            self: catch_warnings[None],
-            *,
-            record: Literal[False] = False,
-            module: ModuleType | None = None,
+            self: catch_warnings[list[WarningMessage]], *, record: Literal[True], module: ModuleType | None = None
         ) -> None: ...
         @overload
         def __init__(
-            self: catch_warnings[list[WarningMessage]],
-            *,
-            record: Literal[True],
-            module: ModuleType | None = None,
-        ) -> None: ...
-        @overload
-        def __init__(
-            self: catch_warnings[list[WarningMessage] | None],
-            *,
-            record: bool,
-            module: ModuleType | None = None,
+            self: catch_warnings[list[WarningMessage] | None], *, record: bool, module: ModuleType | None = None
         ) -> None: ...
 
     def __enter__(self) -> _W: ...
     def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
     ) -> None: ...

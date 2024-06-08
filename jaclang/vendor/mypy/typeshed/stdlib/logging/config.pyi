@@ -7,16 +7,7 @@ from threading import Thread
 from typing import IO, Any, Literal, SupportsIndex, TypedDict, overload
 from typing_extensions import Required, TypeAlias
 
-from . import (
-    Filter,
-    Filterer,
-    Formatter,
-    Handler,
-    Logger,
-    _FilterType,
-    _FormatStyle,
-    _Level,
-)
+from . import Filter, Filterer, Formatter, Handler, Logger, _FilterType, _FormatStyle, _Level
 
 DEFAULT_LOGGING_CONFIG_PORT: int
 RESET_ERROR: int  # undocumented
@@ -38,9 +29,7 @@ class _LoggerConfiguration(_RootLoggerConfiguration, TypedDict, total=False):
     propagate: bool
 
 _FormatterConfigurationTypedDict = TypedDict(
-    "_FormatterConfigurationTypedDict",
-    {"class": str, "format": str, "datefmt": str, "style": _FormatStyle},
-    total=False,
+    "_FormatterConfigurationTypedDict", {"class": str, "format": str, "datefmt": str, "style": _FormatStyle}, total=False
 )
 
 class _FilterConfigurationTypedDict(TypedDict):
@@ -87,9 +76,7 @@ else:
     ) -> None: ...
 
 def valid_ident(s: str) -> Literal[True]: ...  # undocumented
-def listen(
-    port: int = 9030, verify: Callable[[bytes], bytes | None] | None = None
-) -> Thread: ...
+def listen(port: int = 9030, verify: Callable[[bytes], bytes | None] | None = None) -> Thread: ...
 def stopListening() -> None: ...
 
 class ConvertingMixin:  # undocumented
@@ -133,29 +120,15 @@ class BaseConfigurator:  # undocumented
 
 class DictConfigurator(BaseConfigurator):
     def configure(self) -> None: ...  # undocumented
-    def configure_formatter(
-        self, config: _FormatterConfiguration
-    ) -> Formatter | Any: ...  # undocumented
-    def configure_filter(
-        self, config: _FilterConfiguration
-    ) -> Filter | Any: ...  # undocumented
-    def add_filters(
-        self, filterer: Filterer, filters: Iterable[_FilterType]
-    ) -> None: ...  # undocumented
-    def configure_handler(
-        self, config: _HandlerConfiguration
-    ) -> Handler | Any: ...  # undocumented
-    def add_handlers(
-        self, logger: Logger, handlers: Iterable[str]
-    ) -> None: ...  # undocumented
+    def configure_formatter(self, config: _FormatterConfiguration) -> Formatter | Any: ...  # undocumented
+    def configure_filter(self, config: _FilterConfiguration) -> Filter | Any: ...  # undocumented
+    def add_filters(self, filterer: Filterer, filters: Iterable[_FilterType]) -> None: ...  # undocumented
+    def configure_handler(self, config: _HandlerConfiguration) -> Handler | Any: ...  # undocumented
+    def add_handlers(self, logger: Logger, handlers: Iterable[str]) -> None: ...  # undocumented
     def common_logger_config(
         self, logger: Logger, config: _LoggerConfiguration, incremental: bool = False
     ) -> None: ...  # undocumented
-    def configure_logger(
-        self, name: str, config: _LoggerConfiguration, incremental: bool = False
-    ) -> None: ...  # undocumented
-    def configure_root(
-        self, config: _LoggerConfiguration, incremental: bool = False
-    ) -> None: ...  # undocumented
+    def configure_logger(self, name: str, config: _LoggerConfiguration, incremental: bool = False) -> None: ...  # undocumented
+    def configure_root(self, config: _LoggerConfiguration, incremental: bool = False) -> None: ...  # undocumented
 
 dictConfigClass = DictConfigurator

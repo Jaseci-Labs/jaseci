@@ -61,12 +61,7 @@ from mypyc.irbuild.function import (
     handle_non_ext_method,
     load_type,
 )
-from mypyc.irbuild.util import (
-    dataclass_type,
-    get_func_def,
-    is_constant,
-    is_dataclass_decorator,
-)
+from mypyc.irbuild.util import dataclass_type, get_func_def, is_constant, is_dataclass_decorator
 from mypyc.primitives.dict_ops import dict_new_op, dict_set_item_op
 from mypyc.primitives.generic_ops import py_hasattr_op, py_setattr_op
 from mypyc.primitives.misc_ops import (
@@ -95,12 +90,8 @@ def transform_class_def(builder: IRBuilder, cdef: ClassDef) -> None:
     # We do this check here because the base field of parent
     # classes aren't necessarily populated yet at
     # prepare_class_def time.
-    if any(
-        ir.base_mro[i].base != ir.base_mro[i + 1] for i in range(len(ir.base_mro) - 1)
-    ):
-        builder.error(
-            "Multiple inheritance is not supported (except for traits)", cdef.line
-        )
+    if any(ir.base_mro[i].base != ir.base_mro[i + 1] for i in range(len(ir.base_mro) - 1)):
+        builder.error("Multiple inheritance is not supported (except for traits)", cdef.line)
 
     if ir.allow_interpreted_subclasses:
         for parent in ir.mro:
@@ -133,9 +124,7 @@ def transform_class_def(builder: IRBuilder, cdef: ClassDef) -> None:
             if isinstance(cls_builder, NonExtClassBuilder):
                 # properties with both getters and setters in non_extension
                 # classes not supported
-                builder.error(
-                    "Property setters not supported in non-extension classes", stmt.line
-                )
+                builder.error("Property setters not supported in non-extension classes", stmt.line)
             for item in stmt.items:
                 with builder.catch_errors(stmt.line):
                     cls_builder.add_method(get_func_def(item))
@@ -151,15 +140,12 @@ def transform_class_def(builder: IRBuilder, cdef: ClassDef) -> None:
             continue
         elif isinstance(stmt, AssignmentStmt):
             if len(stmt.lvalues) != 1:
-                builder.error(
-                    "Multiple assignment in class bodies not supported", stmt.line
-                )
+                builder.error("Multiple assignment in class bodies not supported", stmt.line)
                 continue
             lvalue = stmt.lvalues[0]
             if not isinstance(lvalue, NameExpr):
                 builder.error(
-                    "Only assignment to variables is supported in class bodies",
-                    stmt.line,
+                    "Only assignment to variables is supported in class bodies", stmt.line
                 )
                 continue
             # We want to collect class variables in a dictionary for both real
@@ -226,9 +212,7 @@ class NonExtClassBuilder(ClassBuilder):
 
     def create_non_ext_info(self) -> NonExtClassInfo:
         non_ext_bases = populate_non_ext_bases(self.builder, self.cdef)
-        non_ext_metaclass = find_non_ext_metaclass(
-            self.builder, self.cdef, non_ext_bases
-        )
+        non_ext_metaclass = find_non_ext_metaclass(self.builder, self.cdef, non_ext_bases)
         non_ext_dict = setup_non_ext_dict(
             self.builder, self.cdef, non_ext_metaclass, non_ext_bases
         )
@@ -236,9 +220,7 @@ class NonExtClassBuilder(ClassBuilder):
         # because dataclasses uses it to determine which attributes to compute on.
         # TODO: Maybe generate more precise types for annotations
         non_ext_anns = self.builder.call_c(dict_new_op, [], self.cdef.line)
-        return NonExtClassInfo(
-            non_ext_dict, non_ext_bases, non_ext_anns, non_ext_metaclass
-        )
+        return NonExtClassInfo(non_ext_dict, non_ext_bases, non_ext_anns, non_ext_metaclass)
 
     def add_method(self, fdef: FuncDef) -> None:
         handle_non_ext_method(self.builder, self.non_ext, self.cdef, fdef)
@@ -251,16 +233,12 @@ class NonExtClassBuilder(ClassBuilder):
 
     def finalize(self, ir: ClassIR) -> None:
         # Dynamically create the class via the type constructor
-        non_ext_class = load_non_ext_class(
-            self.builder, ir, self.non_ext, self.cdef.line
-        )
+        non_ext_class = load_non_ext_class(self.builder, ir, self.non_ext, self.cdef.line)
         non_ext_class = load_decorated_class(self.builder, self.cdef, non_ext_class)
 
         # Save the decorated class
         self.builder.add(
-            InitStatic(
-                non_ext_class, self.cdef.name, self.builder.module_name, NAMESPACE_TYPE
-            )
+            InitStatic(non_ext_class, self.cdef.name, self.builder.module_name, NAMESPACE_TYPE)
         )
 
         # Add the non-extension class to the dict
@@ -336,9 +314,7 @@ class DataClassBuilder(ExtClassBuilder):
             self.builder.call_c(dict_new_op, [], self.cdef.line),
             self.builder.add(TupleSet([], self.cdef.line)),
             self.builder.call_c(dict_new_op, [], self.cdef.line),
-            self.builder.add(
-                LoadAddress(type_object_op.type, type_object_op.src, self.cdef.line)
-            ),
+            self.builder.add(LoadAddress(type_object_op.type, type_object_op.src, self.cdef.line)),
         )
 
     def skip_attr_default(self, name: str, stmt: AssignmentStmt) -> bool:
@@ -419,9 +395,7 @@ class AttrsClassBuilder(DataClassBuilder):
             ):
                 index = stmt.rvalue.arg_names.index("type")
                 type_name = stmt.rvalue.args[index]
-                if isinstance(type_name, NameExpr) and isinstance(
-                    type_name.node, TypeInfo
-                ):
+                if isinstance(type_name, NameExpr) and isinstance(type_name.node, TypeInfo):
                     lvalue = stmt.lvalues[0]
                     assert isinstance(lvalue, NameExpr)
                     return type_name.node
@@ -438,17 +412,10 @@ def allocate_class(builder: IRBuilder, cdef: ClassDef) -> Value:
         tp_bases = builder.add(LoadErrorValue(object_rprimitive, is_borrowed=True))
     modname = builder.load_str(builder.module_name)
     template = builder.add(
-        LoadStatic(
-            object_rprimitive,
-            cdef.name + "_template",
-            builder.module_name,
-            NAMESPACE_TYPE,
-        )
+        LoadStatic(object_rprimitive, cdef.name + "_template", builder.module_name, NAMESPACE_TYPE)
     )
     # Create the class
-    tp = builder.call_c(
-        pytype_from_template_op, [template, tp_bases, modname], cdef.line
-    )
+    tp = builder.call_c(pytype_from_template_op, [template, tp_bases, modname], cdef.line)
     # Immediately fix up the trait vtables, before doing anything with the class.
     ir = builder.mapper.type_to_ir[cdef.info]
     if not ir.is_trait and not ir.builtin_base:
@@ -470,9 +437,7 @@ def allocate_class(builder: IRBuilder, cdef: ClassDef) -> Value:
         [
             tp,
             builder.load_str("__mypyc_attrs__"),
-            create_mypyc_attrs_tuple(
-                builder, builder.mapper.type_to_ir[cdef.info], cdef.line
-            ),
+            create_mypyc_attrs_tuple(builder, builder.mapper.type_to_ir[cdef.info], cdef.line),
         ],
         cdef.line,
     )
@@ -482,9 +447,7 @@ def allocate_class(builder: IRBuilder, cdef: ClassDef) -> Value:
 
     # Add it to the dict
     builder.call_c(
-        dict_set_item_op,
-        [builder.load_globals_dict(), builder.load_str(cdef.name), tp],
-        cdef.line,
+        dict_set_item_op, [builder.load_globals_dict(), builder.load_str(cdef.name), tp], cdef.line
     )
 
     return tp
@@ -572,10 +535,7 @@ def find_non_ext_metaclass(builder: IRBuilder, cdef: ClassDef, bases: Value) -> 
     if cdef.metaclass:
         declared_metaclass = builder.accept(cdef.metaclass)
     else:
-        if cdef.info.typeddict_type is not None and builder.options.capi_version >= (
-            3,
-            9,
-        ):
+        if cdef.info.typeddict_type is not None and builder.options.capi_version >= (3, 9):
             # In Python 3.9, the metaclass for class-based TypedDict is typing._TypedDictMeta.
             # We can't easily calculate it generically, so special case it.
             return builder.get_module_attr("typing", "_TypedDictMeta", cdef.line)
@@ -654,9 +614,7 @@ def add_non_ext_class_attr_ann(
         elif isinstance(ann_type, Instance):
             typ = load_type(builder, ann_type.type, stmt.line)
         else:
-            typ = builder.add(
-                LoadAddress(type_object_op.type, type_object_op.src, stmt.line)
-            )
+            typ = builder.add(LoadAddress(type_object_op.type, type_object_op.src, stmt.line))
 
     key = builder.load_str(lvalue.name)
     builder.call_c(dict_set_item_op, [non_ext.anns, key, typ], stmt.line)
@@ -689,9 +647,7 @@ def add_non_ext_class_attr(
 
 
 def find_attr_initializers(
-    builder: IRBuilder,
-    cdef: ClassDef,
-    skip: Callable[[str, AssignmentStmt], bool] | None = None,
+    builder: IRBuilder, cdef: ClassDef, skip: Callable[[str, AssignmentStmt], bool] | None = None
 ) -> tuple[set[str], list[AssignmentStmt]]:
     """Find initializers of attributes in a class body.
 
@@ -733,10 +689,7 @@ def find_attr_initializers(
 
                 # If the attribute is initialized to None and type isn't optional,
                 # doesn't initialize it to anything (special case for "# type:" comments).
-                if (
-                    isinstance(stmt.rvalue, RefExpr)
-                    and stmt.rvalue.fullname == "builtins.None"
-                ):
+                if isinstance(stmt.rvalue, RefExpr) and stmt.rvalue.fullname == "builtins.None":
                     if (
                         not is_optional_type(attr_type)
                         and not is_object_rprimitive(attr_type)
@@ -790,9 +743,9 @@ def check_deletable_declaration(builder: IRBuilder, cl: ClassIR, line: int) -> N
             else:
                 _, base = cl.attr_details(attr)
                 builder.error(
-                    (
-                        'Attribute "{}" not defined in "{}" ' + '(defined in "{}")'
-                    ).format(attr, cl.name, base.name),
+                    ('Attribute "{}" not defined in "{}" ' + '(defined in "{}")').format(
+                        attr, cl.name, base.name
+                    ),
                     line,
                 )
 
@@ -825,9 +778,7 @@ def gen_glue_ne_method(builder: IRBuilder, cls: ClassIR, line: int) -> None:
         )
 
         builder.activate_block(regular_block)
-        retval = builder.coerce(
-            builder.unary_op(eqval, "not", line), object_rprimitive, line
-        )
+        retval = builder.coerce(builder.unary_op(eqval, "not", line), object_rprimitive, line)
         builder.add(Return(retval))
 
         builder.activate_block(not_implemented_block)
@@ -885,10 +836,7 @@ def create_mypyc_attrs_tuple(builder: IRBuilder, ir: ClassIR, line: int) -> Valu
 
 
 def add_dunders_to_non_ext_dict(
-    builder: IRBuilder,
-    non_ext: NonExtClassInfo,
-    line: int,
-    add_annotations: bool = True,
+    builder: IRBuilder, non_ext: NonExtClassInfo, line: int, add_annotations: bool = True
 ) -> None:
     if add_annotations:
         # Add __annotations__ to the class dict.
@@ -898,9 +846,5 @@ def add_dunders_to_non_ext_dict(
     # dataclass decorator, dataclass will not try to look for __text_signature__.
     # https://github.com/python/cpython/blob/3.7/Lib/dataclasses.py#L957
     filler_doc_str = "mypyc filler docstring"
-    builder.add_to_non_ext_dict(
-        non_ext, "__doc__", builder.load_str(filler_doc_str), line
-    )
-    builder.add_to_non_ext_dict(
-        non_ext, "__module__", builder.load_str(builder.module_name), line
-    )
+    builder.add_to_non_ext_dict(non_ext, "__doc__", builder.load_str(filler_doc_str), line)
+    builder.add_to_non_ext_dict(non_ext, "__module__", builder.load_str(builder.module_name), line)

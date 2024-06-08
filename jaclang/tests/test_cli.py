@@ -112,9 +112,9 @@ class JacCliTests(TestCase):
         cli.tool("ir", ["ast", f"{self.fixture_abs_path('type_info.jac')}"])
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("type_info.Spritesheet"), 13)
-        self.assertEqual(stdout_value.count("builtins.int"), 32)
-        self.assertEqual(stdout_value.count("pygame.surface.Surface"), 22)
+        self.assertEqual(stdout_value.count("type_info.Spritesheet"), 7)
+        self.assertEqual(stdout_value.count("builtins.int"), 28)
+        self.assertEqual(stdout_value.count("pygame.surface.Surface"), 12)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
@@ -211,7 +211,7 @@ class JacCliTests(TestCase):
         graph_params = set(inspect.signature(cli.dot).parameters.keys())
         dotgen_params = set(inspect.signature(dotgen).parameters.keys())
         dotgen_params = dotgen_params - {"node", "dot_file", "edge_type"}
-        dotgen_params.update({"initial", "saveto", "connection"})
+        dotgen_params.update({"initial", "saveto", "connection", "session"})
         self.assertTrue(dotgen_params.issubset(graph_params))
         self.assertEqual(len(dotgen_params) + 1, len(graph_params))
 
@@ -233,7 +233,7 @@ class JacCliTests(TestCase):
         """Test for graph CLI cmd."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.py_to_jac(f"{self.fixture_abs_path('../../tests/fixtures/pyfunc.py')}")
+        cli.py2jac(f"{self.fixture_abs_path('../../tests/fixtures/pyfunc.py')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("can my_print(x: object) -> None", stdout_value)

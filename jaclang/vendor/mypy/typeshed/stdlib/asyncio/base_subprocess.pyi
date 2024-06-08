@@ -47,25 +47,17 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
     def get_pipe_transport(self, fd: int) -> _File: ...  # type: ignore[override]
     def _check_proc(self) -> None: ...  # undocumented
     def send_signal(self, signal: int) -> None: ...
-    async def _connect_pipes(
-        self, waiter: futures.Future[Any] | None
-    ) -> None: ...  # undocumented
+    async def _connect_pipes(self, waiter: futures.Future[Any] | None) -> None: ...  # undocumented
     def _call(self, cb: Callable[..., object], *data: Any) -> None: ...  # undocumented
-    def _pipe_connection_lost(
-        self, fd: int, exc: BaseException | None
-    ) -> None: ...  # undocumented
+    def _pipe_connection_lost(self, fd: int, exc: BaseException | None) -> None: ...  # undocumented
     def _pipe_data_received(self, fd: int, data: bytes) -> None: ...  # undocumented
     def _process_exited(self, returncode: int) -> None: ...  # undocumented
     async def _wait(self) -> int: ...  # undocumented
     def _try_finish(self) -> None: ...  # undocumented
-    def _call_connection_lost(
-        self, exc: BaseException | None
-    ) -> None: ...  # undocumented
+    def _call_connection_lost(self, exc: BaseException | None) -> None: ...  # undocumented
     def __del__(self) -> None: ...
 
 class WriteSubprocessPipeProto(protocols.BaseProtocol):  # undocumented
     def __init__(self, proc: BaseSubprocessTransport, fd: int) -> None: ...
 
-class ReadSubprocessPipeProto(
-    WriteSubprocessPipeProto, protocols.Protocol
-): ...  # undocumented
+class ReadSubprocessPipeProto(WriteSubprocessPipeProto, protocols.Protocol): ...  # undocumented

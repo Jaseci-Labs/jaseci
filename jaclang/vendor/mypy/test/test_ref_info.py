@@ -26,16 +26,12 @@ class RefInfoSuite(DataSuite):
 
         src = "\n".join(testcase.input)
         result = build.build(
-            sources=[BuildSource("main", None, src)],
-            options=options,
-            alt_lib_path=test_temp_dir,
+            sources=[BuildSource("main", None, src)], options=options, alt_lib_path=test_temp_dir
         )
         assert not result.errors
 
         major, minor = sys.version_info[:2]
-        ref_path = os.path.join(
-            options.cache_dir, f"{major}.{minor}", "__main__.refs.json"
-        )
+        ref_path = os.path.join(options.cache_dir, f"{major}.{minor}", "__main__.refs.json")
 
         with open(ref_path) as refs_file:
             data = json.load(refs_file)
@@ -45,7 +41,5 @@ class RefInfoSuite(DataSuite):
             a.append(f"{item['line']}:{item['column']}:{item['target']}")
 
         assert_string_arrays_equal(
-            testcase.output,
-            a,
-            f"Invalid output ({testcase.file}, line {testcase.line})",
+            testcase.output, a, f"Invalid output ({testcase.file}, line {testcase.line})"
         )
