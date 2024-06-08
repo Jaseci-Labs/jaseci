@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from functools import wraps
-from typing import Any, Awaitable, Callable, Coroutine, TypeVar
+from typing import Any, Awaitable, Callable, Coroutine, ParamSpec, TypeVar
 
 from jaclang.vendor.pygls.server import LanguageServer
 
@@ -22,6 +22,7 @@ def log(info: str) -> None:
 
 
 T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
+P = ParamSpec("P")
 
 
 def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
@@ -29,7 +30,7 @@ def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
 
     def decorator(fn: T) -> Callable[..., Awaitable[None]]:
         @wraps(fn)
-        async def debounced(*args: Any, **kwargs: Any) -> None:
+        async def debounced(*args: P.args, **kwargs: P.kwargs) -> None:
             async def call_it() -> None:
                 await fn(*args, **kwargs)
 
@@ -43,7 +44,9 @@ def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
                 except asyncio.CancelledError:
                     pass
 
-            setattr(debounced, "_task", asyncio.create_task(debounced_coro()))
+            setattr(  # noqa: B010
+                debounced, "_task", asyncio.create_task(debounced_coro())
+            )
 
         return debounced
 
