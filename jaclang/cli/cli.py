@@ -390,20 +390,33 @@ def dot(
 
 
 @cmd_registry.register
-def py_to_jac(filename: str, tree: bool = False) -> None:
+def py2jac(filename: str) -> None:
     """Convert a Python file to Jac.
 
     :param filename: The path to the .py file.
-    :param tree: Flag to show the AST tree.(Default-False).
     """
     if filename.endswith(".py"):
         with open(filename, "r") as f:
-            mod = PyastBuildPass(
+            code = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(ast3.parse(f.read()), mod_path=filename),
             ).ir.unparse()
-        print(mod)
+        print(code)
     else:
         print("Not a .py file.")
+
+
+@cmd_registry.register
+def jac2py(filename: str) -> None:
+    """Convert a Jac file to Python.
+
+    :param filename: The path to the .jac file.
+    """
+    if filename.endswith(".jac"):
+        with open(filename, "r"):
+            code = jac_file_to_pass(file_path=filename).ir.gen.py
+        print(code)
+    else:
+        print("Not a .jac file.")
 
 
 def start_cli() -> None:

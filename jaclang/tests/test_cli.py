@@ -233,7 +233,7 @@ class JacCliTests(TestCase):
         """Test for graph CLI cmd."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.py_to_jac(f"{self.fixture_abs_path('../../tests/fixtures/pyfunc.py')}")
+        cli.py2jac(f"{self.fixture_abs_path('../../tests/fixtures/pyfunc.py')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("can my_print(x: object) -> None", stdout_value)
