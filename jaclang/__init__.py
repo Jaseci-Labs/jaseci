@@ -1,10 +1,5 @@
 """The Jac Programming Language."""
 
-import os
-import sys
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor"))
-
 from jaclang.plugin.default import (  # noqa: E402
     JacBuiltin,
     JacCmdDefaults,
