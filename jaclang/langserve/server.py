@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
-from jaclang.langserve.utils import log, log_error
+from jaclang.langserve.utils import debounce, log, log_error
 from jaclang.vendor.pygls.server import LanguageServer
 
 import lsprotocol.types as lspt
@@ -13,6 +13,7 @@ server = LanguageServer("jac-lsp", "v0.1")
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
+@debounce(0.3)
 def did_change(ls: LanguageServer, params: lspt.DidChangeTextDocumentParams) -> None:
     """Check syntax on change."""
     document = ls.workspace.get_document(params.text_document.uri)
