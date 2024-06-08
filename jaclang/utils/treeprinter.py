@@ -89,14 +89,14 @@ def print_ast_tree(
 
     def __node_repr_in_tree(node: AstNode) -> str:
         access = (
-            f"Access: {node.access.tag.value}"
+            f"Access: {node.access.tag.value} ,"
             if isinstance(node, ast.AstAccessNode) and node.access is not None
             else ""
         )
         sym_table_link = (
-            f", SymbolTable: {node.sym_info.typ_sym_table.name}"
+            f"SymbolTable: {node.sym_info.typ_sym_table.name}"
             if isinstance(node, AstSymbolNode) and node.sym_info.typ_sym_table
-            else ", SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
+            else "SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
         )
         if isinstance(node, Token) and isinstance(node, AstSymbolNode):
             return f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}, {access} {sym_table_link}"
