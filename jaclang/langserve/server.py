@@ -14,7 +14,9 @@ server = LanguageServer("jac-lsp", "v0.1")
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
 @debounce(0.3)
-def did_change(ls: LanguageServer, params: lspt.DidChangeTextDocumentParams) -> None:
+async def did_change(
+    ls: LanguageServer, params: lspt.DidChangeTextDocumentParams
+) -> None:
     """Check syntax on change."""
     document = ls.workspace.get_document(params.text_document.uri)
     try:
@@ -54,7 +56,7 @@ def did_change(ls: LanguageServer, params: lspt.DidChangeTextDocumentParams) -> 
     lspt.TEXT_DOCUMENT_COMPLETION,
     lspt.CompletionOptions(trigger_characters=[".", ":", ""]),
 )
-def completions(params: lspt.CompletionParams) -> None:
+def completions(params: lspt.CompletionParams) -> lspt.CompletionList:
     """Provide completions for the given completion request."""
     items = []
     document = server.workspace.get_text_document(params.text_document.uri)

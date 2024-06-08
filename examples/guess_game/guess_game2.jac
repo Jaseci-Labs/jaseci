@@ -30,7 +30,7 @@ obj GuessTheNumberGame :Game: {
         correct_number: int = random.randint(1, 100);
 
     can play {
-
+        
         while self.attempts > 0 {
             guess = input("Guess a number between 1 and 100: ");
             if guess.isdigit() {
