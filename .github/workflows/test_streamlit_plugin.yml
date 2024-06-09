@@ -28,4 +28,4 @@ jobs:
         pip install streamlit-agraph
 
     - name: Run tests
-      run: pytest
+      run: pytest support/plugins/streamlit
