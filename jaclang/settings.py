@@ -11,6 +11,7 @@ class Settings:
 
     fuse_type_info_debug: bool = False
     py_raise: bool = False
+    deep_convert: bool = False
 
     def __post_init__(self) -> None:
         """Initialize settings."""

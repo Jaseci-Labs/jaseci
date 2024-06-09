@@ -660,6 +660,13 @@ class ModulePath(AstSymbolNode):
             sym_type=SymbolType.MODULE,
         )
 
+    @property
+    def path_str(self) -> str:
+        """Get path string."""
+        return ("." * self.level) + ".".join(
+            [p.value for p in self.path] if self.path else ""
+        )
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module path node."""
         res = True
@@ -683,13 +690,6 @@ class ModulePath(AstSymbolNode):
             new_kid.append(self.alias)
         self.set_kids(nodes=new_kid)
         return res
-
-    @property
-    def path_str(self) -> str:
-        """Get path string."""
-        return ("." * self.level) + ".".join(
-            [p.value for p in self.path] if self.path else ""
-        )
 
 
 class ModuleItem(AstSymbolNode):

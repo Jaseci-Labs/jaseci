@@ -2454,8 +2454,8 @@ class JacParser(Pass):
             """Grammar rule.
 
             yield_expr:
-                | KW_YIELD KW_FROM expression
-                | KW_YIELD expression
+                | KW_YIELD KW_FROM? expression
+                | KW_YIELD
             """
             if isinstance(kid[-1], ast.Expr):
                 return self.nu(
@@ -2465,6 +2465,19 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
+            elif (
+                len(kid) == 1
+                and isinstance(kid[0], ast.Token)
+                and kid[0].name == Tok.KW_YIELD
+            ):
+                return self.nu(
+                    ast.YieldExpr(
+                        expr=None,
+                        with_from=False,
+                        kid=kid,
+                    )
+                )
+
             else:
                 raise self.ice()
 
