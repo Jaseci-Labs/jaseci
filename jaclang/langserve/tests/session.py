@@ -44,6 +44,7 @@ class LspSession(MethodDispatcher):
             ],
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
             bufsize=0,
             cwd=self.cwd,
             env=os.environ,
