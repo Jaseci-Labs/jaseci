@@ -26,11 +26,7 @@ from mypy.server.update import FineGrainedBuildManager
 from mypy.strconv import StrConv
 from mypy.test.config import test_temp_dir
 from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import (
-    assert_string_arrays_equal,
-    normalize_error_messages,
-    parse_options,
-)
+from mypy.test.helpers import assert_string_arrays_equal, normalize_error_messages, parse_options
 from mypy.types import Type, TypeStrVisitor
 from mypy.util import IdMapper, short_type
 
@@ -82,9 +78,7 @@ class ASTMergeSuite(DataSuite):
 
         a.append("==>")
 
-        new_file, new_types = self.build_increment(
-            fine_grained_manager, "target", target_path
-        )
+        new_file, new_types = self.build_increment(fine_grained_manager, "target", target_path)
         a.extend(self.dump(fine_grained_manager, kind, testcase.test_modules))
 
         for expr in old_subexpr:
@@ -98,9 +92,7 @@ class ASTMergeSuite(DataSuite):
             a = normalize_error_messages(a)
 
         assert_string_arrays_equal(
-            testcase.output,
-            a,
-            f"Invalid output ({testcase.file}, line {testcase.line})",
+            testcase.output, a, f"Invalid output ({testcase.file}, line {testcase.line})"
         )
 
     def build(self, source: str, testcase: DataDrivenTestCase) -> BuildResult | None:
@@ -142,9 +134,7 @@ class ASTMergeSuite(DataSuite):
         self, manager: FineGrainedBuildManager, kind: str, test_modules: list[str]
     ) -> list[str]:
         modules = {
-            name: file
-            for name, file in manager.manager.modules.items()
-            if name in test_modules
+            name: file for name, file in manager.manager.modules.items() if name in test_modules
         }
         if kind == AST:
             return self.dump_asts(modules)
@@ -228,9 +218,7 @@ class ASTMergeSuite(DataSuite):
             tree = manager.graph[module_id].tree
             assert tree is not None
             type_map = {
-                node: all_types[node]
-                for node in get_subexpressions(tree)
-                if node in all_types
+                node: all_types[node] for node in get_subexpressions(tree) if node in all_types
             }
             if type_map:
                 a.append(f"## {module_id}")

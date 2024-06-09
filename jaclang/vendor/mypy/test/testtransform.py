@@ -7,11 +7,7 @@ from mypy.errors import CompileError
 from mypy.modulefinder import BuildSource
 from mypy.test.config import test_temp_dir
 from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import (
-    assert_string_arrays_equal,
-    normalize_error_messages,
-    parse_options,
-)
+from mypy.test.helpers import assert_string_arrays_equal, normalize_error_messages, parse_options
 from mypy.test.visitors import TypeAssertTransformVisitor
 
 
@@ -44,9 +40,7 @@ def test_transform(testcase: DataDrivenTestCase) -> None:
         options.show_traceback = True
         options.force_uppercase_builtins = True
         result = build.build(
-            sources=[BuildSource("main", None, src)],
-            options=options,
-            alt_lib_path=test_temp_dir,
+            sources=[BuildSource("main", None, src)], options=options, alt_lib_path=test_temp_dir
         )
         a = result.errors
         if a:

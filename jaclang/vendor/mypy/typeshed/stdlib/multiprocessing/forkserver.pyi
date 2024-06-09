@@ -3,12 +3,7 @@ from collections.abc import Sequence
 from struct import Struct
 from typing import Any
 
-__all__ = [
-    "ensure_running",
-    "get_inherited_fds",
-    "connect_to_new_process",
-    "set_forkserver_preload",
-]
+__all__ = ["ensure_running", "get_inherited_fds", "connect_to_new_process", "set_forkserver_preload"]
 
 MAXFDS_TO_SEND: int
 SIGNED_STRUCT: Struct

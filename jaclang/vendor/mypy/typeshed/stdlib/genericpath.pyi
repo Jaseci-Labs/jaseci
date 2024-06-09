@@ -1,12 +1,6 @@
 import os
 import sys
-from _typeshed import (
-    BytesPath,
-    FileDescriptorOrPath,
-    StrOrBytesPath,
-    StrPath,
-    SupportsRichComparisonT,
-)
+from _typeshed import BytesPath, FileDescriptorOrPath, StrOrBytesPath, StrPath, SupportsRichComparisonT
 from collections.abc import Sequence
 from typing import Literal, overload
 from typing_extensions import LiteralString
@@ -37,13 +31,9 @@ def commonprefix(m: Sequence[StrPath]) -> str: ...
 @overload
 def commonprefix(m: Sequence[BytesPath]) -> bytes | Literal[""]: ...
 @overload
-def commonprefix(
-    m: Sequence[list[SupportsRichComparisonT]],
-) -> Sequence[SupportsRichComparisonT]: ...
+def commonprefix(m: Sequence[list[SupportsRichComparisonT]]) -> Sequence[SupportsRichComparisonT]: ...
 @overload
-def commonprefix(
-    m: Sequence[tuple[SupportsRichComparisonT, ...]]
-) -> Sequence[SupportsRichComparisonT]: ...
+def commonprefix(m: Sequence[tuple[SupportsRichComparisonT, ...]]) -> Sequence[SupportsRichComparisonT]: ...
 def exists(path: FileDescriptorOrPath) -> bool: ...
 def getsize(filename: FileDescriptorOrPath) -> int: ...
 def isfile(path: FileDescriptorOrPath) -> bool: ...

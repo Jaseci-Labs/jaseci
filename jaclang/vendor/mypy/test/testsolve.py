@@ -42,9 +42,7 @@ class SolveSuite(Suite):
     def test_unsatisfiable_constraints(self) -> None:
         # The constraints are impossible to satisfy.
         self.assert_solve(
-            [self.fx.t],
-            [self.supc(self.fx.t, self.fx.a), self.subc(self.fx.t, self.fx.b)],
-            [None],
+            [self.fx.t], [self.supc(self.fx.t, self.fx.a), self.subc(self.fx.t, self.fx.b)], [None]
         )
 
     def test_exactly_specified_result(self) -> None:
@@ -67,9 +65,7 @@ class SolveSuite(Suite):
 
     def test_no_constraints_for_var(self) -> None:
         self.assert_solve([self.fx.t], [], [self.fx.uninhabited])
-        self.assert_solve(
-            [self.fx.t, self.fx.s], [], [self.fx.uninhabited, self.fx.uninhabited]
-        )
+        self.assert_solve([self.fx.t, self.fx.s], [], [self.fx.uninhabited, self.fx.uninhabited])
         self.assert_solve(
             [self.fx.t, self.fx.s],
             [self.supc(self.fx.s, self.fx.a)],
@@ -77,9 +73,7 @@ class SolveSuite(Suite):
         )
 
     def test_simple_constraints_with_dynamic_type(self) -> None:
-        self.assert_solve(
-            [self.fx.t], [self.supc(self.fx.t, self.fx.anyt)], [self.fx.anyt]
-        )
+        self.assert_solve([self.fx.t], [self.supc(self.fx.t, self.fx.anyt)], [self.fx.anyt])
         self.assert_solve(
             [self.fx.t],
             [self.supc(self.fx.t, self.fx.anyt), self.supc(self.fx.t, self.fx.anyt)],
@@ -91,9 +85,7 @@ class SolveSuite(Suite):
             [self.fx.anyt],
         )
 
-        self.assert_solve(
-            [self.fx.t], [self.subc(self.fx.t, self.fx.anyt)], [self.fx.anyt]
-        )
+        self.assert_solve([self.fx.t], [self.subc(self.fx.t, self.fx.anyt)], [self.fx.anyt])
         self.assert_solve(
             [self.fx.t],
             [self.subc(self.fx.t, self.fx.anyt), self.subc(self.fx.t, self.fx.anyt)],
@@ -278,9 +270,7 @@ class SolveSuite(Suite):
         lowers: Bounds,
         uppers: Bounds,
     ) -> None:
-        actual_graph, actual_lowers, actual_uppers = transitive_closure(
-            vars, constraints
-        )
+        actual_graph, actual_lowers, actual_uppers = transitive_closure(vars, constraints)
         # Add trivial elements.
         for v in vars:
             graph.add((v, v))

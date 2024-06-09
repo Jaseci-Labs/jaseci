@@ -71,9 +71,5 @@ def infer_type_arguments(
 ) -> list[Type | None]:
     # Like infer_function_type_arguments, but only match a single type
     # against a generic type.
-    constraints = infer_constraints(
-        template, actual, SUPERTYPE_OF if is_supertype else SUBTYPE_OF
-    )
-    return solve_constraints(type_vars, constraints, skip_unsatisfied=skip_unsatisfied)[
-        0
-    ]
+    constraints = infer_constraints(template, actual, SUPERTYPE_OF if is_supertype else SUBTYPE_OF)
+    return solve_constraints(type_vars, constraints, skip_unsatisfied=skip_unsatisfied)[0]

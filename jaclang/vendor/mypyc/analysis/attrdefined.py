@@ -161,10 +161,7 @@ def analyze_always_defined_attrs_in_class(cl: ClassIR, seen: set[ClassIR]) -> No
     for base in cl.mro:
         all_attrs.update(base.attributes)
     maybe_undefined = analyze_maybe_undefined_attrs_in_init(
-        m.blocks,
-        self_reg,
-        initial_undefined=all_attrs - cl.attrs_with_defaults,
-        cfg=cfg,
+        m.blocks, self_reg, initial_undefined=all_attrs - cl.attrs_with_defaults, cfg=cfg
     )
 
     always_defined = find_always_defined_attributes(
@@ -236,8 +233,7 @@ def find_always_defined_attributes(
                     # Gotos/branches can also be "exits".
                     if not dirty.after[block, i] and dirty.before[target, 0]:
                         attrs = attrs & (
-                            maybe_defined.after[target, 0]
-                            - maybe_undefined.after[target, 0]
+                            maybe_defined.after[target, 0] - maybe_undefined.after[target, 0]
                         )
     return attrs
 
@@ -279,10 +275,7 @@ def mark_attr_initialiation_ops(
         for i, op in enumerate(block.ops):
             if isinstance(op, SetAttr) and op.obj is self_reg:
                 attr = op.attr
-                if (
-                    attr not in maybe_defined.before[block, i]
-                    and not dirty.after[block, i]
-                ):
+                if attr not in maybe_defined.before[block, i] and not dirty.after[block, i]:
                     op.mark_as_initializer()
 
 
@@ -342,10 +335,7 @@ class AttributeMaybeDefinedVisitor(BaseAnalysisVisitor[str]):
 
 
 def analyze_maybe_defined_attrs_in_init(
-    blocks: list[BasicBlock],
-    self_reg: Register,
-    attrs_with_defaults: set[str],
-    cfg: CFG,
+    blocks: list[BasicBlock], self_reg: Register, attrs_with_defaults: set[str], cfg: CFG
 ) -> AnalysisResult[str]:
     return run_analysis(
         blocks=blocks,
@@ -406,9 +396,7 @@ def analyze_maybe_undefined_attrs_in_init(
     )
 
 
-def update_always_defined_attrs_using_subclasses(
-    cl: ClassIR, seen: set[ClassIR]
-) -> None:
+def update_always_defined_attrs_using_subclasses(cl: ClassIR, seen: set[ClassIR]) -> None:
     """Remove attributes not defined in all subclasses from always defined attrs."""
     if cl in seen:
         return
@@ -444,9 +432,5 @@ def detect_undefined_bitmap(cl: ClassIR, seen: set[ClassIR]) -> None:
     for base in cl.mro[1:]:
         if base.is_trait:
             for n, t in base.attributes.items():
-                if (
-                    t.error_overlap
-                    and not cl.is_always_defined(n)
-                    and n not in cl.bitmap_attrs
-                ):
+                if t.error_overlap and not cl.is_always_defined(n) and n not in cl.bitmap_attrs:
                     cl.bitmap_attrs.append(n)

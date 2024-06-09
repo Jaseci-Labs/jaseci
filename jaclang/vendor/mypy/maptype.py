@@ -42,9 +42,7 @@ def map_instance_to_supertype(instance: Instance, superclass: TypeInfo) -> Insta
     return map_instance_to_supertypes(instance, superclass)[0]
 
 
-def map_instance_to_supertypes(
-    instance: Instance, supertype: TypeInfo
-) -> list[Instance]:
+def map_instance_to_supertypes(instance: Instance, supertype: TypeInfo) -> list[Instance]:
     # FIX: Currently we should only have one supertype per interface, so no
     #      need to return an array
     result: list[Instance] = []
@@ -88,9 +86,7 @@ def class_derivation_paths(typ: TypeInfo, supertype: TypeInfo) -> list[list[Type
     return result
 
 
-def map_instance_to_direct_supertypes(
-    instance: Instance, supertype: TypeInfo
-) -> list[Instance]:
+def map_instance_to_direct_supertypes(instance: Instance, supertype: TypeInfo) -> list[Instance]:
     # FIX: There should only be one supertypes, always.
     typ = instance.type
     result: list[Instance] = []

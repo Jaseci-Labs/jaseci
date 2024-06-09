@@ -8,15 +8,7 @@ from typing_extensions import TypeAlias as _TypeAlias
 from mypy.erasetype import remove_instance_last_known_values
 from mypy.join import join_simple
 from mypy.literals import Key, literal, literal_hash, subkeys
-from mypy.nodes import (
-    Expression,
-    IndexExpr,
-    MemberExpr,
-    NameExpr,
-    RefExpr,
-    TypeInfo,
-    Var,
-)
+from mypy.nodes import Expression, IndexExpr, MemberExpr, NameExpr, RefExpr, TypeInfo, Var
 from mypy.subtypes import is_same_type, is_subtype
 from mypy.types import (
     AnyType,
@@ -220,12 +212,8 @@ class ConditionalTypeBinder:
             declaration_type = get_proper_type(self.declarations.get(key))
             if isinstance(declaration_type, AnyType):
                 # At this point resulting values can't contain None, see continue above
-                if not all(
-                    is_same_type(type, cast(Type, t)) for t in resulting_values[1:]
-                ):
-                    type = AnyType(
-                        TypeOfAny.from_another_any, source_any=declaration_type
-                    )
+                if not all(is_same_type(type, cast(Type, t)) for t in resulting_values[1:]):
+                    type = AnyType(TypeOfAny.from_another_any, source_any=declaration_type)
             else:
                 for other in resulting_values[1:]:
                     assert other is not None
@@ -244,11 +232,7 @@ class ConditionalTypeBinder:
                         # Simplify away any extra Any's that were added to the declared
                         # type when popping a frame.
                         simplified = UnionType.make_union(
-                            [
-                                t
-                                for t in type.items
-                                if not isinstance(get_proper_type(t), AnyType)
-                            ]
+                            [t for t in type.items if not isinstance(get_proper_type(t), AnyType)]
                         )
                         if simplified == self.declarations[key]:
                             type = simplified
@@ -295,11 +279,7 @@ class ConditionalTypeBinder:
         self.type_assignments = old_assignments
 
     def assign_type(
-        self,
-        expr: Expression,
-        type: Type,
-        declared_type: Type | None,
-        restrict_any: bool = False,
+        self, expr: Expression, type: Type, declared_type: Type | None, restrict_any: bool = False
     ) -> None:
         # We should erase last known value in binder, because if we are using it,
         # it means that the target is not final, and therefore can't hold a literal.
@@ -348,12 +328,9 @@ class ConditionalTypeBinder:
         elif (
             isinstance(p_type, AnyType)
             and isinstance(p_declared, UnionType)
-            and any(
-                isinstance(get_proper_type(item), NoneType) for item in p_declared.items
-            )
+            and any(isinstance(get_proper_type(item), NoneType) for item in p_declared.items)
             and isinstance(
-                get_proper_type(self.most_recent_enclosing_type(expr, NoneType())),
-                NoneType,
+                get_proper_type(self.most_recent_enclosing_type(expr, NoneType())), NoneType
             )
         ):
             # Replace any Nones in the union type with Any
@@ -364,9 +341,7 @@ class ConditionalTypeBinder:
             self.put(expr, UnionType(new_items))
         elif isinstance(p_type, AnyType) and not (
             isinstance(p_declared, UnionType)
-            and any(
-                isinstance(get_proper_type(item), AnyType) for item in p_declared.items
-            )
+            and any(isinstance(get_proper_type(item), AnyType) for item in p_declared.items)
         ):
             # Assigning an Any value doesn't affect the type to avoid false negatives, unless
             # there is an Any item in a declared union type.
@@ -392,18 +367,14 @@ class ConditionalTypeBinder:
         for dep in self.dependencies.get(key, set()):
             self._cleanse_key(dep)
 
-    def most_recent_enclosing_type(
-        self, expr: BindableExpression, type: Type
-    ) -> Type | None:
+    def most_recent_enclosing_type(self, expr: BindableExpression, type: Type) -> Type | None:
         type = get_proper_type(type)
         if isinstance(type, AnyType):
             return get_declaration(expr)
         key = literal_hash(expr)
         assert key is not None
         enclosers = [get_declaration(expr)] + [
-            f.types[key]
-            for f in self.frames
-            if key in f.types and is_subtype(type, f.types[key])
+            f.types[key] for f in self.frames if key in f.types and is_subtype(type, f.types[key])
         ]
         return enclosers[-1]
 
@@ -563,7 +534,5 @@ def collapse_variadic_union(typ: UnionType) -> Type:
     if len(first.items) == 0:
         simplified: Type = unpacked.copy_modified()
     else:
-        simplified = TupleType(
-            prefix + [unpack] + suffix, fallback=last.partial_fallback
-        )
+        simplified = TupleType(prefix + [unpack] + suffix, fallback=last.partial_fallback)
     return UnionType.make_union([simplified] + other_items)

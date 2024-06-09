@@ -140,7 +140,7 @@ class JacParser(Pass):
             body = kid[1:] if doc else kid
             body = [i for i in body if isinstance(i, ast.ElementStmt)]
             mod = ast.Module(
-                name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
+                name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
                 source=self.parse_ref.source,
                 doc=doc,
                 body=body,

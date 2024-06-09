@@ -7,8 +7,8 @@ symbols are available for matching.
 
 import ast as py_ast
 import importlib.util
+import os
 import sys
-from os import path
 from typing import Optional
 
 
@@ -40,7 +40,6 @@ class JacImportPass(Pass):
                 self.process_import(node, i)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
-        self.__annex_impl(node)
         node.mod_deps = self.import_table
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
@@ -53,7 +52,6 @@ class JacImportPass(Pass):
             )
             if mod:
                 self.run_again = True
-                self.__annex_impl(mod)
                 i.sub_module = mod
                 i.add_kids_right([mod], pos_update=False)
 
@@ -61,22 +59,49 @@ class JacImportPass(Pass):
         """Annex impl and test modules."""
         if not node.loc.mod_path:
             self.error("Module has no path")
-        if node.loc.mod_path.endswith(".jac") and path.exists(
-            f"{node.loc.mod_path[:-4]}.impl.jac"
-        ):
-            mod = self.import_jac_mod_from_file(f"{node.loc.mod_path[:-4]}.impl.jac")
-            if mod:
-                node.impl_mod = mod
-                node.add_kids_left([mod], pos_update=False)
-                mod.parent = node
-        if node.loc.mod_path.endswith(".jac") and path.exists(
-            f"{node.loc.mod_path[:-4]}.test.jac"
-        ):
-            mod = self.import_jac_mod_from_file(f"{node.loc.mod_path[:-4]}.test.jac")
-            if mod:
-                node.test_mod = mod
-                node.add_kids_right([mod], pos_update=False)
-                mod.parent = node
+        if not node.loc.mod_path.endswith(".jac"):
+            return
+        base_path = node.loc.mod_path[:-4]
+        directory = os.path.dirname(node.loc.mod_path)
+        if not directory:
+            directory = os.getcwd()
+            base_path = os.path.join(directory, base_path)
+        impl_folder = base_path + ".impl"
+        test_folder = base_path + ".test"
+        search_files = [
+            os.path.join(directory, impl_file) for impl_file in os.listdir(directory)
+        ]
+        if os.path.exists(impl_folder):
+            search_files += [
+                os.path.join(impl_folder, impl_file)
+                for impl_file in os.listdir(impl_folder)
+            ]
+        if os.path.exists(test_folder):
+            search_files += [
+                os.path.join(test_folder, test_file)
+                for test_file in os.listdir(test_folder)
+            ]
+        for cur_file in search_files:
+            if node.loc.mod_path.endswith(cur_file):
+                continue
+            if (
+                cur_file.startswith(f"{base_path}.")
+                or impl_folder == os.path.dirname(cur_file)
+            ) and cur_file.endswith(".impl.jac"):
+                mod = self.import_jac_mod_from_file(cur_file)
+                if mod:
+                    node.impl_mod.append(mod)
+                    node.add_kids_left([mod], pos_update=False)
+                    mod.parent = node
+            if (
+                cur_file.startswith(f"{base_path}.")
+                or test_folder == os.path.dirname(cur_file)
+            ) and cur_file.endswith(".test.jac"):
+                mod = self.import_jac_mod_from_file(cur_file)
+                if mod:
+                    node.test_mod = mod
+                    node.add_kids_right([mod], pos_update=False)
+                    mod.parent = node
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -95,7 +120,7 @@ class JacImportPass(Pass):
         """Import a module."""
         self.cur_node = node  # impacts error reporting
         target = import_target_to_relative_path(
-            node.level, node.path_str, path.dirname(node.loc.mod_path)
+            node.level, node.path_str, os.path.dirname(node.loc.mod_path)
         )
         return self.import_jac_mod_from_file(target)
 
@@ -104,7 +129,7 @@ class JacImportPass(Pass):
         from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
-        if not path.exists(target):
+        if not os.path.exists(target):
             self.error(f"Could not find module {target}")
             return None
         if target in self.import_table:
@@ -152,7 +177,7 @@ class PyImportPass(JacImportPass):
         """Import a module."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
-        base_dir = path.dirname(mod_path)
+        base_dir = os.path.dirname(mod_path)
         sys.path.append(base_dir)
         try:
             # Dynamically import the module

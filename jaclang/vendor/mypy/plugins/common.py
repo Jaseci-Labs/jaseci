@@ -25,11 +25,7 @@ from mypy.nodes import (
     TypeInfo,
     Var,
 )
-from mypy.plugin import (
-    CheckerPluginInterface,
-    ClassDefContext,
-    SemanticAnalyzerPluginInterface,
-)
+from mypy.plugin import CheckerPluginInterface, ClassDefContext, SemanticAnalyzerPluginInterface
 from mypy.semanal_shared import (
     ALLOW_INCOMPATIBLE_OVERRIDE,
     parse_bool,
@@ -56,9 +52,7 @@ from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 
 
-def _get_decorator_bool_argument(
-    ctx: ClassDefContext, name: str, default: bool
-) -> bool:
+def _get_decorator_bool_argument(ctx: ClassDefContext, name: str, default: bool) -> bool:
     """Return the bool argument for the decorator.
 
     This handles both @decorator(...) and @decorator.
@@ -69,9 +63,7 @@ def _get_decorator_bool_argument(
         return default
 
 
-def _get_bool_argument(
-    ctx: ClassDefContext, expr: CallExpr, name: str, default: bool
-) -> bool:
+def _get_bool_argument(ctx: ClassDefContext, expr: CallExpr, name: str, default: bool) -> bool:
     """Return the boolean value for an argument to a call or the
     default if it's not found.
     """
@@ -106,9 +98,7 @@ def _get_argument(call: CallExpr, name: str) -> Expression | None:
     return None
 
 
-def find_shallow_matching_overload_item(
-    overload: Overloaded, call: CallExpr
-) -> CallableType:
+def find_shallow_matching_overload_item(overload: Overloaded, call: CallExpr) -> CallableType:
     """Perform limited lookup of a matching overload item.
 
     Full overload resolution is only supported during type checking, but plugins
@@ -148,9 +138,7 @@ def find_shallow_matching_overload_item(
             elif actuals:
                 args = [call.args[i] for i in actuals]
                 arg_type = get_proper_type(arg_type)
-                arg_none = any(
-                    isinstance(arg, NameExpr) and arg.name == "None" for arg in args
-                )
+                arg_none = any(isinstance(arg, NameExpr) and arg.name == "None" for arg in args)
                 if isinstance(arg_type, NoneType):
                     if not arg_none:
                         ok = False
@@ -166,9 +154,7 @@ def find_shallow_matching_overload_item(
                 ):
                     ok = False
                     break
-                elif isinstance(arg_type, LiteralType) and isinstance(
-                    arg_type.value, bool
-                ):
+                elif isinstance(arg_type, LiteralType) and isinstance(arg_type.value, bool):
                     if not any(parse_bool(arg) == arg_type.value for arg in args):
                         ok = False
                         break
@@ -258,9 +244,7 @@ def add_method_to_class(
         api,
         cls.info,
         name,
-        MethodSpec(
-            args=args, return_type=return_type, self_type=self_type, tvar_defs=tvar_def
-        ),
+        MethodSpec(args=args, return_type=return_type, self_type=self_type, tvar_defs=tvar_def),
         is_classmethod=is_classmethod,
         is_staticmethod=is_staticmethod,
     )
@@ -375,9 +359,7 @@ def _add_method_by_spec(
         arg_names.append(arg.variable.name)
         arg_kinds.append(arg.kind)
 
-    signature = CallableType(
-        arg_types, arg_kinds, arg_names, return_type, function_type
-    )
+    signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
     if tvar_defs:
         signature.variables = tvar_defs
 
@@ -452,9 +434,7 @@ def add_attribute_to_class(
     return node
 
 
-def deserialize_and_fixup_type(
-    data: str | JsonDict, api: SemanticAnalyzerPluginInterface
-) -> Type:
+def deserialize_and_fixup_type(data: str | JsonDict, api: SemanticAnalyzerPluginInterface) -> Type:
     typ = deserialize_type(data)
     typ.accept(TypeFixer(api.modules, allow_missing=False))
     return typ

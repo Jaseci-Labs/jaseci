@@ -47,9 +47,7 @@ from mypy.visitor import NodeVisitor
 # N.B: we do a allow_missing fixup when fixing up a fine-grained
 # incremental cache load (since there may be cross-refs into deleted
 # modules)
-def fixup_module(
-    tree: MypyFile, modules: dict[str, MypyFile], allow_missing: bool
-) -> None:
+def fixup_module(tree: MypyFile, modules: dict[str, MypyFile], allow_missing: bool) -> None:
     node_fixer = NodeFixer(modules, allow_missing)
     node_fixer.visit_symbol_table(tree.names, tree.fullname)
 
@@ -145,10 +143,7 @@ class NodeFixer(NodeVisitor[None]):
                             # as it would stop dependency propagation.
                             value.node = Var(key + "@deleted")
                         else:
-                            assert stnode.node is not None, (
-                                table_fullname + "." + key,
-                                cross_ref,
-                            )
+                            assert stnode.node is not None, (table_fullname + "." + key, cross_ref)
                             value.node = stnode.node
                     elif not self.allow_missing:
                         assert False, f"Could not find cross-ref {cross_ref}"
@@ -275,6 +270,8 @@ class TypeFixer(TypeVisitor[None]):
                 arg.accept(self)
         if ct.type_guard is not None:
             ct.type_guard.accept(self)
+        if ct.type_is is not None:
+            ct.type_is.accept(self)
 
     def visit_overloaded(self, t: Overloaded) -> None:
         for ct in t.items:
@@ -420,9 +417,7 @@ def missing_info(modules: dict[str, MypyFile]) -> TypeInfo:
     dummy_def.fullname = suggestion
 
     info = TypeInfo(SymbolTable(), dummy_def, "<missing>")
-    obj_type = lookup_fully_qualified_typeinfo(
-        modules, "builtins.object", allow_missing=False
-    )
+    obj_type = lookup_fully_qualified_typeinfo(modules, "builtins.object", allow_missing=False)
     info.bases = [Instance(obj_type, [])]
     info.mro = [info, obj_type]
     return info

@@ -94,7 +94,7 @@ DEFAULT_PROTOCOL: int
 bytes_types: tuple[type[Any], ...]  # undocumented
 
 class _ReadableFileobj(Protocol):
-    def read(self, __n: int) -> bytes: ...
+    def read(self, n: int, /) -> bytes: ...
     def readline(self) -> bytes: ...
 
 @final
@@ -102,8 +102,8 @@ class PickleBuffer:
     def __init__(self, buffer: ReadableBuffer) -> None: ...
     def raw(self) -> memoryview: ...
     def release(self) -> None: ...
-    def __buffer__(self, __flags: int) -> memoryview: ...
-    def __release_buffer__(self, __buffer: memoryview) -> None: ...
+    def __buffer__(self, flags: int, /) -> memoryview: ...
+    def __release_buffer__(self, buffer: memoryview, /) -> None: ...
 
 _BufferCallback: TypeAlias = Callable[[PickleBuffer], Any] | None
 
@@ -116,11 +116,7 @@ def dump(
     buffer_callback: _BufferCallback = None,
 ) -> None: ...
 def dumps(
-    obj: Any,
-    protocol: int | None = None,
-    *,
-    fix_imports: bool = True,
-    buffer_callback: _BufferCallback = None,
+    obj: Any, protocol: int | None = None, *, fix_imports: bool = True, buffer_callback: _BufferCallback = None
 ) -> bytes: ...
 def load(
     file: _ReadableFileobj,
@@ -131,7 +127,8 @@ def load(
     buffers: Iterable[Any] | None = (),
 ) -> Any: ...
 def loads(
-    __data: ReadableBuffer,
+    data: ReadableBuffer,
+    /,
     *,
     fix_imports: bool = True,
     encoding: str = "ASCII",
@@ -148,22 +145,14 @@ _ReducedType: TypeAlias = (
     | tuple[Callable[..., Any], tuple[Any, ...]]
     | tuple[Callable[..., Any], tuple[Any, ...], Any]
     | tuple[Callable[..., Any], tuple[Any, ...], Any, Iterator[Any] | None]
-    | tuple[
-        Callable[..., Any],
-        tuple[Any, ...],
-        Any,
-        Iterator[Any] | None,
-        Iterator[Any] | None,
-    ]
+    | tuple[Callable[..., Any], tuple[Any, ...], Any, Iterator[Any] | None, Iterator[Any] | None]
 )
 
 class Pickler:
     fast: bool
     dispatch_table: Mapping[type, Callable[[Any], _ReducedType]]
     bin: bool  # undocumented
-    dispatch: ClassVar[
-        dict[type, Callable[[Unpickler, Any], None]]
-    ]  # undocumented, _Pickler only
+    dispatch: ClassVar[dict[type, Callable[[Unpickler, Any], None]]]  # undocumented, _Pickler only
 
     def __init__(
         self,
@@ -174,14 +163,12 @@ class Pickler:
         buffer_callback: _BufferCallback = ...,
     ) -> None: ...
     def reducer_override(self, obj: Any) -> Any: ...
-    def dump(self, __obj: Any) -> None: ...
+    def dump(self, obj: Any, /) -> None: ...
     def clear_memo(self) -> None: ...
     def persistent_id(self, obj: Any) -> Any: ...
 
 class Unpickler:
-    dispatch: ClassVar[
-        dict[int, Callable[[Unpickler], None]]
-    ]  # undocumented, _Unpickler only
+    dispatch: ClassVar[dict[int, Callable[[Unpickler], None]]]  # undocumented, _Unpickler only
 
     def __init__(
         self,
@@ -193,7 +180,7 @@ class Unpickler:
         buffers: Iterable[Any] | None = ...,
     ) -> None: ...
     def load(self) -> Any: ...
-    def find_class(self, __module_name: str, __global_name: str) -> Any: ...
+    def find_class(self, module_name: str, global_name: str, /) -> Any: ...
     def persistent_load(self, pid: Any) -> Any: ...
 
 MARK: bytes
@@ -277,9 +264,7 @@ NEXT_BUFFER: bytes
 READONLY_BUFFER: bytes
 
 def encode_long(x: int) -> bytes: ...  # undocumented
-def decode_long(
-    data: Iterable[SupportsIndex] | SupportsBytes | ReadableBuffer,
-) -> int: ...  # undocumented
+def decode_long(data: Iterable[SupportsIndex] | SupportsBytes | ReadableBuffer) -> int: ...  # undocumented
 
 # pure-Python implementations
 _Pickler = Pickler  # undocumented

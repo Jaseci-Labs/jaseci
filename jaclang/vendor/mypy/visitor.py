@@ -136,9 +136,7 @@ class ExpressionVisitor(Generic[T]):
         pass
 
     @abstractmethod
-    def visit_dictionary_comprehension(
-        self, o: mypy.nodes.DictionaryComprehension
-    ) -> T:
+    def visit_dictionary_comprehension(self, o: mypy.nodes.DictionaryComprehension) -> T:
         pass
 
     @abstractmethod
@@ -350,9 +348,7 @@ class PatternVisitor(Generic[T]):
 
 @trait
 @mypyc_attr(allow_interpreted_subclasses=True)
-class NodeVisitor(
-    Generic[T], ExpressionVisitor[T], StatementVisitor[T], PatternVisitor[T]
-):
+class NodeVisitor(Generic[T], ExpressionVisitor[T], StatementVisitor[T], PatternVisitor[T]):
     """Empty base class for parse tree node visitors.
 
     The T type argument specifies the return type of the visit
@@ -553,9 +549,7 @@ class NodeVisitor(
     def visit_set_comprehension(self, o: mypy.nodes.SetComprehension) -> T:
         pass
 
-    def visit_dictionary_comprehension(
-        self, o: mypy.nodes.DictionaryComprehension
-    ) -> T:
+    def visit_dictionary_comprehension(self, o: mypy.nodes.DictionaryComprehension) -> T:
         pass
 
     def visit_generator_expr(self, o: mypy.nodes.GeneratorExpr) -> T:

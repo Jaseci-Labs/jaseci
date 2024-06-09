@@ -2,12 +2,14 @@
 
 import ast as ast3
 import importlib
+import inspect
 import marshal
 import os
 import pickle
 import shutil
 import types
 from typing import Optional
+from uuid import UUID
 
 import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
@@ -17,6 +19,7 @@ from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.core.construct import Architype
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
@@ -63,13 +66,33 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 
 @cmd_registry.register
-def run(filename: str, main: bool = True, cache: bool = True) -> None:
+def run(
+    filename: str,
+    session: str = "",
+    main: bool = True,
+    cache: bool = True,
+    walker: str = "",
+    node: str = "",
+) -> None:
     """Run the specified .jac file."""
+    # if no session specified, check if it was defined when starting the command shell
+    # otherwise default to jaclang.session
+    if session == "":
+        session = (
+            cmd_registry.args.session
+            if hasattr(cmd_registry, "args")
+            and hasattr(cmd_registry.args, "session")
+            and cmd_registry.args.session
+            else ""
+        )
+
+    Jac.context().init_memory(session)
+
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        jac_import(
+        loaded_mod = jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
@@ -78,7 +101,7 @@ def run(filename: str, main: bool = True, cache: bool = True) -> None:
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             ir = pickle.load(f)
-            jac_import(
+            loaded_mod = jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -87,6 +110,49 @@ def run(filename: str, main: bool = True, cache: bool = True) -> None:
             )
     else:
         print("Not a .jac file.")
+        return
+
+    if not node or node == "root":
+        entrypoint: Architype = Jac.get_root()
+    else:
+        obj = Jac.context().get_obj(UUID(node))
+        if obj is None:
+            print(f"Entrypoint {node} not found.")
+            return
+        entrypoint = obj
+
+    # TODO: handle no override name
+    if walker:
+        walker_module = dict(inspect.getmembers(loaded_mod)).get(walker)
+        if walker_module:
+            Jac.spawn_call(entrypoint, walker_module())
+        else:
+            print(f"Walker {walker} not found.")
+
+    Jac.reset_context()
+
+
+@cmd_registry.register
+def get_object(id: str, session: str = "") -> dict:
+    """Get the object with the specified id."""
+    if session == "":
+        session = cmd_registry.args.session if "session" in cmd_registry.args else ""
+
+    Jac.context().init_memory(session)
+
+    if id == "root":
+        id_uuid = UUID(int=0)
+    else:
+        id_uuid = UUID(id)
+
+    obj = Jac.context().get_obj(id_uuid)
+    if obj is None:
+        print(f"Object with id {id} not found.")
+        Jac.reset_context()
+        return {}
+    else:
+        Jac.reset_context()
+        return obj.__getstate__()
 
 
 @cmd_registry.register
@@ -125,6 +191,14 @@ def check(filename: str, print_errs: bool = True) -> None:
         print(f"Errors: {errs}, Warnings: {warnings}")
     else:
         print("Not a .jac file.")
+
+
+@cmd_registry.register
+def lsp() -> None:
+    """Run Jac Language Server Protocol."""
+    from jaclang.langserve.server import run_lang_server
+
+    run_lang_server()
 
 
 @cmd_registry.register
@@ -242,6 +316,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
 @cmd_registry.register
 def dot(
     filename: str,
+    session: str = "",
     initial: str = "",
     depth: int = -1,
     traverse: bool = False,
@@ -263,6 +338,17 @@ def dot(
     :param node_limit: The maximum number of nodes allowed in the graph.
     :param saveto: Path to save the generated graph.
     """
+    if session == "":
+        session = (
+            cmd_registry.args.session
+            if hasattr(cmd_registry, "args")
+            and hasattr(cmd_registry.args, "session")
+            and cmd_registry.args.session
+            else ""
+        )
+
+    Jac.context().init_memory(session)
+
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
@@ -286,6 +372,10 @@ def dot(
             )
         except Exception as e:
             print(f"Error while generating graph: {e}")
+            import traceback
+
+            traceback.print_exc()
+            Jac.reset_context()
             return
         file_name = saveto if saveto else f"{mod}.dot"
         with open(file_name, "w") as file:
@@ -294,22 +384,37 @@ def dot(
     else:
         print("Not a .jac file.")
 
+    Jac.reset_context()
+
 
 @cmd_registry.register
-def py_to_jac(filename: str, tree: bool = False) -> None:
+def py2jac(filename: str) -> None:
     """Convert a Python file to Jac.
 
     :param filename: The path to the .py file.
-    :param tree: Flag to show the AST tree.(Default-False).
     """
     if filename.endswith(".py"):
         with open(filename, "r") as f:
-            mod = PyastBuildPass(
+            code = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(ast3.parse(f.read()), mod_path=filename),
             ).ir.unparse()
-        print(mod)
+        print(code)
     else:
         print("Not a .py file.")
+
+
+@cmd_registry.register
+def jac2py(filename: str) -> None:
+    """Convert a Jac file to Python.
+
+    :param filename: The path to the .jac file.
+    """
+    if filename.endswith(".jac"):
+        with open(filename, "r"):
+            code = jac_file_to_pass(file_path=filename).ir.gen.py
+        print(code)
+    else:
+        print("Not a .jac file.")
 
 
 def start_cli() -> None:
@@ -321,10 +426,13 @@ def start_cli() -> None:
     """
     parser = cmd_registry.parser
     args = parser.parse_args()
+    cmd_registry.args = args
     command = cmd_registry.get(args.command)
     if command:
         args_dict = vars(args)
         args_dict.pop("command")
+        if command not in ["run"]:
+            args_dict.pop("session")
         ret = command.call(**args_dict)
         if ret:
             print(ret)

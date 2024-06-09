@@ -5,13 +5,7 @@ from __future__ import annotations
 import sys
 from typing import AbstractSet
 
-from mypy.build import (
-    BuildManager,
-    BuildSourceSet,
-    State,
-    order_ascc,
-    sorted_components,
-)
+from mypy.build import BuildManager, BuildSourceSet, State, order_ascc, sorted_components
 from mypy.errors import Errors
 from mypy.fscache import FileSystemCache
 from mypy.graph_utils import strongly_connected_components, topsort
@@ -29,22 +23,13 @@ class GraphSuite(Suite):
         b = frozenset({"B"})
         c = frozenset({"C"})
         d = frozenset({"D"})
-        data: dict[AbstractSet[str], set[AbstractSet[str]]] = {
-            a: {b, c},
-            b: {d},
-            c: {d},
-        }
+        data: dict[AbstractSet[str], set[AbstractSet[str]]] = {a: {b, c}, b: {d}, c: {d}}
         res = list(topsort(data))
         assert_equal(res, [{d}, {b, c}, {a}])
 
     def test_scc(self) -> None:
         vertices = {"A", "B", "C", "D"}
-        edges: dict[str, list[str]] = {
-            "A": ["B", "C"],
-            "B": ["C"],
-            "C": ["B", "D"],
-            "D": [],
-        }
+        edges: dict[str, list[str]] = {"A": ["B", "C"], "B": ["C"], "C": ["B", "D"], "D": []}
         sccs = {frozenset(x) for x in strongly_connected_components(vertices, edges)}
         assert_equal(sccs, {frozenset({"A"}), frozenset({"B", "C"}), frozenset({"D"})})
 

@@ -4,12 +4,7 @@ import re
 from collections import defaultdict
 from typing import Iterator
 
-from mypy.test.data import (
-    DataDrivenTestCase,
-    DataFileCollector,
-    DataFileFix,
-    parse_test_data,
-)
+from mypy.test.data import DataDrivenTestCase, DataFileCollector, DataFileFix, parse_test_data
 
 
 def update_testcase_output(
@@ -69,13 +64,9 @@ def _iter_fixes(
         fix_lines = []
         for lineno, source_line in enumerate(source_lines, start=1):
             reports = reports_by_line.get((file_path, lineno))
-            comment_match = re.search(
-                r"(?P<indent>\s+)(?P<comment># [EWN]: .+)$", source_line
-            )
+            comment_match = re.search(r"(?P<indent>\s+)(?P<comment># [EWN]: .+)$", source_line)
             if comment_match:
-                source_line = source_line[
-                    : comment_match.start("indent")
-                ]  # strip old comment
+                source_line = source_line[: comment_match.start("indent")]  # strip old comment
             if reports:
                 indent = comment_match.group("indent") if comment_match else "  "
                 # multiline comments are on the first line and then on subsequent lines emtpy lines
@@ -85,9 +76,7 @@ def _iter_fixes(
                     is_last = j == len(reports) - 1
                     severity_char = severity[0].upper()
                     continuation = "" if is_last else " \\"
-                    fix_lines.append(
-                        f"{out_l}{indent}# {severity_char}: {msg}{continuation}"
-                    )
+                    fix_lines.append(f"{out_l}{indent}# {severity_char}: {msg}{continuation}")
             else:
                 fix_lines.append(source_line)
 

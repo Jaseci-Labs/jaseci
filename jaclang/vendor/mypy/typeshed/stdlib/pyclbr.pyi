@@ -20,18 +20,10 @@ class _Object:
 
     if sys.version_info >= (3, 10):
         def __init__(
-            self,
-            module: str,
-            name: str,
-            file: str,
-            lineno: int,
-            end_lineno: int | None,
-            parent: _Object | None,
+            self, module: str, name: str, file: str, lineno: int, end_lineno: int | None, parent: _Object | None
         ) -> None: ...
     else:
-        def __init__(
-            self, module: str, name: str, file: str, lineno: int, parent: _Object | None
-        ) -> None: ...
+        def __init__(self, module: str, name: str, file: str, lineno: int, parent: _Object | None) -> None: ...
 
 class Function(_Object):
     if sys.version_info >= (3, 10):
@@ -53,14 +45,7 @@ class Function(_Object):
             end_lineno: int | None = None,
         ) -> None: ...
     else:
-        def __init__(
-            self,
-            module: str,
-            name: str,
-            file: str,
-            lineno: int,
-            parent: Function | Class | None = None,
-        ) -> None: ...
+        def __init__(self, module: str, name: str, file: str, lineno: int, parent: Function | Class | None = None) -> None: ...
 
 class Class(_Object):
     super: list[Class | str] | None
@@ -82,16 +67,8 @@ class Class(_Object):
         ) -> None: ...
     else:
         def __init__(
-            self,
-            module: str,
-            name: str,
-            super: list[Class | str] | None,
-            file: str,
-            lineno: int,
-            parent: Class | None = None,
+            self, module: str, name: str, super: list[Class | str] | None, file: str, lineno: int, parent: Class | None = None
         ) -> None: ...
 
 def readmodule(module: str, path: Sequence[str] | None = None) -> dict[str, Class]: ...
-def readmodule_ex(
-    module: str, path: Sequence[str] | None = None
-) -> dict[str, Class | Function | list[str]]: ...
+def readmodule_ex(module: str, path: Sequence[str] | None = None) -> dict[str, Class | Function | list[str]]: ...

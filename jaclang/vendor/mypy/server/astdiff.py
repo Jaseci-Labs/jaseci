@@ -113,9 +113,7 @@ from mypy.util import get_prefix
 # For example, the snapshot of the 'int' type is ('Instance', 'builtins.int', ()).
 
 # Type snapshots are strict, they must be hashable and ordered (e.g. for Unions).
-Primitive: _TypeAlias = Union[
-    str, float, int, bool
-]  # float is for Literal[3.14] support.
+Primitive: _TypeAlias = Union[str, float, int, bool]  # float is for Literal[3.14] support.
 SnapshotItem: _TypeAlias = Tuple[Union[Primitive, "SnapshotItem"], ...]
 
 # Symbol snapshots can be more lenient.
@@ -123,9 +121,7 @@ SymbolSnapshot: _TypeAlias = Tuple[object, ...]
 
 
 def compare_symbol_table_snapshots(
-    name_prefix: str,
-    snapshot1: dict[str, SymbolSnapshot],
-    snapshot2: dict[str, SymbolSnapshot],
+    name_prefix: str, snapshot1: dict[str, SymbolSnapshot], snapshot2: dict[str, SymbolSnapshot]
 ) -> set[str]:
     """Return names that are different in two snapshots of a symbol table.
 
@@ -167,9 +163,7 @@ def compare_symbol_table_snapshots(
     return triggers
 
 
-def snapshot_symbol_table(
-    name_prefix: str, table: SymbolTable
-) -> dict[str, SymbolSnapshot]:
+def snapshot_symbol_table(name_prefix: str, table: SymbolTable) -> dict[str, SymbolSnapshot]:
     """Create a snapshot description that represents the state of a symbol table.
 
     The snapshot has a representation based on nested tuples and dicts
@@ -231,9 +225,7 @@ def snapshot_symbol_table(
     return result
 
 
-def snapshot_definition(
-    node: SymbolNode | None, common: SymbolSnapshot
-) -> SymbolSnapshot:
+def snapshot_definition(node: SymbolNode | None, common: SymbolSnapshot) -> SymbolSnapshot:
     """Create a snapshot description of a symbol table node.
 
     The representation is nested tuples and dicts. Only externally
@@ -261,11 +253,7 @@ def snapshot_definition(
             node.is_static,
             signature,
             is_trivial_body,
-            (
-                dataclass_transform_spec.serialize()
-                if dataclass_transform_spec is not None
-                else None
-            ),
+            dataclass_transform_spec.serialize() if dataclass_transform_spec is not None else None,
         )
     elif isinstance(node, Var):
         return ("Var", common, snapshot_optional_type(node.type), node.is_final)
@@ -311,19 +299,12 @@ def snapshot_definition(
             tuple(snapshot_type(tdef) for tdef in node.defn.type_vars),
             [snapshot_type(base) for base in node.bases],
             [snapshot_type(p) for p in node._promote],
-            (
-                dataclass_transform_spec.serialize()
-                if dataclass_transform_spec is not None
-                else None
-            ),
+            dataclass_transform_spec.serialize() if dataclass_transform_spec is not None else None,
         )
         prefix = node.fullname
         symbol_table = snapshot_symbol_table(prefix, node.names)
         # Special dependency for abstract attribute handling.
-        symbol_table["(abstract)"] = (
-            "Abstract",
-            tuple(sorted(node.abstract_attributes)),
-        )
+        symbol_table["(abstract)"] = ("Abstract", tuple(sorted(node.abstract_attributes)))
         return ("TypeInfo", common, attrs, symbol_table)
     else:
         # Other node types are handled elsewhere.
@@ -401,11 +382,7 @@ class SnapshotTypeVisitor(TypeVisitor[SnapshotItem]):
             "Instance",
             encode_optional_str(typ.type.fullname),
             snapshot_types(typ.args),
-            (
-                ("None",)
-                if typ.last_known_value is None
-                else snapshot_type(typ.last_known_value)
-            ),
+            ("None",) if typ.last_known_value is None else snapshot_type(typ.last_known_value),
         )
 
     def visit_type_var(self, typ: TypeVarType) -> SnapshotItem:
@@ -487,9 +464,7 @@ class SnapshotTypeVisitor(TypeVisitor[SnapshotItem]):
         return ("TupleType", snapshot_types(typ.items))
 
     def visit_typeddict_type(self, typ: TypedDictType) -> SnapshotItem:
-        items = tuple(
-            (key, snapshot_type(item_type)) for key, item_type in typ.items.items()
-        )
+        items = tuple((key, snapshot_type(item_type)) for key, item_type in typ.items.items())
         required = tuple(sorted(typ.required_keys))
         return ("TypedDictType", items, required)
 

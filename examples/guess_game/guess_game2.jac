@@ -16,7 +16,9 @@ obj Game {
         won: bool = False;
 
     can play {
-        raise NotImplementedError("Subclasses must implement this method.");
+        raise NotImplementedError(
+            "Subclasses must implement this method."
+        );
     }
 }
 
@@ -38,7 +40,9 @@ obj GuessTheNumberGame :Game: {
             }
         }
         if not self.won {
-            print("Sorry, you didn't guess the number. Better luck next time!");
+            print(
+                "Sorry, you didn't guess the number. Better luck next time!"
+            );
         }
     }
 
@@ -52,7 +56,7 @@ obj GuessTheNumberGame :Game: {
             self.attempts = 0;# end the game
             self.won = True;
         }
-        self.attempts-=1;
+        self.attempts -= 1;
         print(f"You have {self.attempts} attempts left.");
     }
 }

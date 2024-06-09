@@ -13,7 +13,7 @@ import native
 failures = []
 
 for name in dir(native):
-    if name.startswith("test_"):
+    if name.startswith('test_'):
         test_func = getattr(native, name)
         try:
             test_func()
@@ -25,10 +25,8 @@ if failures:
     import re
 
     def extract_line(tb):
-        formatted = "\n".join(format_tb(tb))
-        m = re.search(
-            'File "(native|driver).py", line ([0-9]+), in (test_|<module>)', formatted
-        )
+        formatted = '\n'.join(format_tb(tb))
+        m = re.search('File "(native|driver).py", line ([0-9]+), in (test_|<module>)', formatted)
         if m is None:
             return "0"
         return m.group(1)
@@ -38,13 +36,13 @@ if failures:
 
     # If there are multiple failures, print stack traces of all but the final failure.
     for name, e in failures[:-1]:
-        print(f"<< {name} >>")
+        print(f'<< {name} >>')
         sys.stdout.flush()
         print_exception(*e)
         print()
         sys.stdout.flush()
 
     # Raise exception for the last failure. Test runner will show the traceback.
-    print(f"<< {failures[-1][0]} >>")
+    print(f'<< {failures[-1][0]} >>')
     sys.stdout.flush()
     raise failures[-1][1][1]

@@ -53,12 +53,7 @@ if sys.version_info >= (3, 10):
     ) -> None: ...
     @overload
     def insort_left(
-        a: MutableSequence[_T],
-        x: _T,
-        lo: int = 0,
-        hi: int | None = None,
-        *,
-        key: Callable[[_T], SupportsRichComparisonT],
+        a: MutableSequence[_T], x: _T, lo: int = 0, hi: int | None = None, *, key: Callable[[_T], SupportsRichComparisonT]
     ) -> None: ...
     @overload
     def insort_right(
@@ -71,36 +66,19 @@ if sys.version_info >= (3, 10):
     ) -> None: ...
     @overload
     def insort_right(
-        a: MutableSequence[_T],
-        x: _T,
-        lo: int = 0,
-        hi: int | None = None,
-        *,
-        key: Callable[[_T], SupportsRichComparisonT],
+        a: MutableSequence[_T], x: _T, lo: int = 0, hi: int | None = None, *, key: Callable[[_T], SupportsRichComparisonT]
     ) -> None: ...
 
 else:
     def bisect_left(
-        a: SupportsLenAndGetItem[SupportsRichComparisonT],
-        x: SupportsRichComparisonT,
-        lo: int = 0,
-        hi: int | None = None,
+        a: SupportsLenAndGetItem[SupportsRichComparisonT], x: SupportsRichComparisonT, lo: int = 0, hi: int | None = None
     ) -> int: ...
     def bisect_right(
-        a: SupportsLenAndGetItem[SupportsRichComparisonT],
-        x: SupportsRichComparisonT,
-        lo: int = 0,
-        hi: int | None = None,
+        a: SupportsLenAndGetItem[SupportsRichComparisonT], x: SupportsRichComparisonT, lo: int = 0, hi: int | None = None
     ) -> int: ...
     def insort_left(
-        a: MutableSequence[SupportsRichComparisonT],
-        x: SupportsRichComparisonT,
-        lo: int = 0,
-        hi: int | None = None,
+        a: MutableSequence[SupportsRichComparisonT], x: SupportsRichComparisonT, lo: int = 0, hi: int | None = None
     ) -> None: ...
     def insort_right(
-        a: MutableSequence[SupportsRichComparisonT],
-        x: SupportsRichComparisonT,
-        lo: int = 0,
-        hi: int | None = None,
+        a: MutableSequence[SupportsRichComparisonT], x: SupportsRichComparisonT, lo: int = 0, hi: int | None = None
     ) -> None: ...

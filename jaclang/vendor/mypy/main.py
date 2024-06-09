@@ -22,13 +22,7 @@ from mypy.errorcodes import error_codes
 from mypy.errors import CompileError
 from mypy.find_sources import InvalidSourceList, create_source_list
 from mypy.fscache import FileSystemCache
-from mypy.modulefinder import (
-    BuildSource,
-    FindModuleCache,
-    SearchPaths,
-    get_search_dirs,
-    mypy_path,
-)
+from mypy.modulefinder import BuildSource, FindModuleCache, SearchPaths, get_search_dirs, mypy_path
 from mypy.options import COMPLETE_FEATURES, INCOMPLETE_FEATURES, BuildType, Options
 from mypy.split_namespace import SplitNamespace
 from mypy.version import __version__
@@ -74,9 +68,7 @@ def main(
         args = sys.argv[1:]
 
     fscache = FileSystemCache()
-    sources, options = process_options(
-        args, stdout=stdout, stderr=stderr, fscache=fscache
-    )
+    sources, options = process_options(args, stdout=stdout, stderr=stderr, fscache=fscache)
     if clean_exit:
         options.fast_exit = False
 
@@ -84,24 +76,14 @@ def main(
 
     if options.install_types and (stdout is not sys.stdout or stderr is not sys.stderr):
         # Since --install-types performs user input, we want regular stdout and stderr.
-        fail(
-            "error: --install-types not supported in this mode of running mypy",
-            stderr,
-            options,
-        )
+        fail("error: --install-types not supported in this mode of running mypy", stderr, options)
 
     if options.non_interactive and not options.install_types:
-        fail(
-            "error: --non-interactive is only supported with --install-types",
-            stderr,
-            options,
-        )
+        fail("error: --non-interactive is only supported with --install-types", stderr, options)
 
     if options.install_types and not options.incremental:
         fail(
-            "error: --install-types not supported with incremental mode disabled",
-            stderr,
-            options,
+            "error: --install-types not supported with incremental mode disabled", stderr, options
         )
 
     if options.install_types and options.python_executable is None:
@@ -124,9 +106,7 @@ def main(
             install_types(formatter, options, after_run=True, non_interactive=True)
             fscache.flush()
             print()
-            res, messages, blockers = run_build(
-                sources, options, fscache, t0, stdout, stderr
-            )
+            res, messages, blockers = run_build(sources, options, fscache, t0, stdout, stderr)
         show_messages(messages, stderr, formatter, options)
 
     if MEM_PROFILE:
@@ -141,24 +121,16 @@ def main(
     if options.error_summary:
         if n_errors:
             summary = formatter.format_error(
-                n_errors,
-                n_files,
-                len(sources),
-                blockers=blockers,
-                use_color=options.color_output,
+                n_errors, n_files, len(sources), blockers=blockers, use_color=options.color_output
             )
             stdout.write(summary + "\n")
         # Only notes should also output success
         elif not messages or n_notes == len(messages):
-            stdout.write(
-                formatter.format_success(len(sources), options.color_output) + "\n"
-            )
+            stdout.write(formatter.format_success(len(sources), options.color_output) + "\n")
         stdout.flush()
 
     if options.install_types and not options.non_interactive:
-        result = install_types(
-            formatter, options, after_run=True, non_interactive=False
-        )
+        result = install_types(formatter, options, after_run=True, non_interactive=False)
         if result:
             print()
             print("note: Run mypy again for up-to-date results with installed types")
@@ -189,9 +161,7 @@ def run_build(
     messages = []
     messages_by_file = defaultdict(list)
 
-    def flush_errors(
-        filename: str | None, new_messages: list[str], serious: bool
-    ) -> None:
+    def flush_errors(filename: str | None, new_messages: list[str], serious: bool) -> None:
         if options.pretty:
             new_messages = formatter.fit_in_terminal(new_messages)
         messages.extend(new_messages)
@@ -234,9 +204,7 @@ def run_build(
             ),
             file=stderr,
         )
-    maybe_write_junit_xml(
-        time.time() - t0, serious, messages, messages_by_file, options
-    )
+    maybe_write_junit_xml(time.time() - t0, serious, messages, messages_by_file, options)
     return res, messages, blockers
 
 
@@ -307,8 +275,7 @@ def _python_executable_from_version(python_version: tuple[int, int]) -> str:
     try:
         sys_exe = (
             subprocess.check_output(
-                python_executable_prefix(str_ver)
-                + ["-c", "import sys; print(sys.executable)"],
+                python_executable_prefix(str_ver) + ["-c", "import sys; print(sys.executable)"],
                 stderr=subprocess.STDOUT,
             )
             .decode()
@@ -318,9 +285,7 @@ def _python_executable_from_version(python_version: tuple[int, int]) -> str:
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         raise PythonExecutableInferenceError(
             "failed to find a Python executable matching version {},"
-            " perhaps try --python-executable, or --no-site-packages?".format(
-                python_version
-            )
+            " perhaps try --python-executable, or --no-site-packages?".format(python_version)
         ) from e
 
 
@@ -450,11 +415,7 @@ class CapturableVersionAction(argparse.Action):
         stdout: IO[str] | None = None,
     ) -> None:
         super().__init__(
-            option_strings=option_strings,
-            dest=dest,
-            default=default,
-            nargs=0,
-            help=help,
+            option_strings=option_strings, dest=dest, default=default, nargs=0, help=help
         )
         self.version = version
         self.stdout = stdout or sys.stdout
@@ -524,10 +485,7 @@ def process_options(
             help += f" (inverse: {inverse})"
 
         arg = group.add_argument(
-            flag,
-            action="store_false" if default else "store_true",
-            dest=dest,
-            help=help,
+            flag, action="store_false" if default else "store_true", dest=dest, help=help
         )
         dest = arg.dest
         group.add_argument(
@@ -554,11 +512,7 @@ def process_options(
         "-h", "--help", action="help", help="Show this help message and exit"
     )
     general_group.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        dest="verbosity",
-        help="More verbose messages",
+        "-v", "--verbose", action="count", dest="verbosity", help="More verbose messages"
     )
 
     compilation_status = "no" if __file__.endswith(".py") else "yes"
@@ -592,8 +546,7 @@ def process_options(
     )
 
     imports_group = parser.add_argument_group(
-        title="Import discovery",
-        description="Configure how imports are discovered and followed.",
+        title="Import discovery", description="Configure how imports are discovered and followed."
     )
     add_invertible_flag(
         "--no-namespace-packages",
@@ -779,9 +732,7 @@ def process_options(
         help="Assume arguments with default values of None are Optional",
         group=none_group,
     )
-    none_group.add_argument(
-        "--strict-optional", action="store_true", help=argparse.SUPPRESS
-    )
+    none_group.add_argument("--strict-optional", action="store_true", help=argparse.SUPPRESS)
     none_group.add_argument(
         "--no-strict-optional",
         action="store_false",
@@ -790,10 +741,7 @@ def process_options(
     )
 
     add_invertible_flag(
-        "--force-uppercase-builtins",
-        default=False,
-        help=argparse.SUPPRESS,
-        group=none_group,
+        "--force-uppercase-builtins", default=False, help=argparse.SUPPRESS, group=none_group
     )
 
     add_invertible_flag(
@@ -1035,14 +983,9 @@ def process_options(
     internals_group = parser.add_argument_group(
         title="Advanced options", description="Debug and customize mypy internals."
     )
+    internals_group.add_argument("--pdb", action="store_true", help="Invoke pdb on fatal error")
     internals_group.add_argument(
-        "--pdb", action="store_true", help="Invoke pdb on fatal error"
-    )
-    internals_group.add_argument(
-        "--show-traceback",
-        "--tb",
-        action="store_true",
-        help="Show traceback on fatal error",
+        "--show-traceback", "--tb", action="store_true", help="Show traceback on fatal error"
     )
     internals_group.add_argument(
         "--raise-exceptions", action="store_true", help="Raise exception on fatal error"
@@ -1087,28 +1030,20 @@ def process_options(
         help="When encountering SOURCE_FILE, read and type check "
         "the contents of SHADOW_FILE instead.",
     )
-    internals_group.add_argument(
-        "--fast-exit", action="store_true", help=argparse.SUPPRESS
-    )
+    internals_group.add_argument("--fast-exit", action="store_true", help=argparse.SUPPRESS)
     internals_group.add_argument(
         "--no-fast-exit", action="store_false", dest="fast_exit", help=argparse.SUPPRESS
     )
     # This flag is useful for mypy tests, where function bodies may be omitted. Plugin developers
     # may want to use this as well in their tests.
     add_invertible_flag(
-        "--allow-empty-bodies",
-        default=False,
-        help=argparse.SUPPRESS,
-        group=internals_group,
+        "--allow-empty-bodies", default=False, help=argparse.SUPPRESS, group=internals_group
     )
     # This undocumented feature exports limited line-level dependency information.
-    internals_group.add_argument(
-        "--export-ref-info", action="store_true", help=argparse.SUPPRESS
-    )
+    internals_group.add_argument("--export-ref-info", action="store_true", help=argparse.SUPPRESS)
 
     report_group = parser.add_argument_group(
-        title="Report generation",
-        description="Generate a report in the specified format.",
+        title="Report generation", description="Generate a report in the specified format."
     )
     for report_type in sorted(defaults.REPORTER_NAMES):
         if report_type not in {"memory-xml"}:
@@ -1177,14 +1112,9 @@ def process_options(
         "--stats", action="store_true", dest="dump_type_stats", help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--inferstats",
-        action="store_true",
-        dest="dump_inference_stats",
-        help=argparse.SUPPRESS,
+        "--inferstats", action="store_true", dest="dump_inference_stats", help=argparse.SUPPRESS
     )
-    parser.add_argument(
-        "--dump-build-stats", action="store_true", help=argparse.SUPPRESS
-    )
+    parser.add_argument("--dump-build-stats", action="store_true", help=argparse.SUPPRESS)
     # Dump timing stats for each processed file into the given output file
     parser.add_argument("--timing-stats", dest="timing_stats", help=argparse.SUPPRESS)
     # Dump per line type checking timing stats for each processed file into the given
@@ -1202,16 +1132,12 @@ def process_options(
     # --dump-graph will dump the contents of the graph of SCCs and exit.
     parser.add_argument("--dump-graph", action="store_true", help=argparse.SUPPRESS)
     # --semantic-analysis-only does exactly that.
-    parser.add_argument(
-        "--semantic-analysis-only", action="store_true", help=argparse.SUPPRESS
-    )
+    parser.add_argument("--semantic-analysis-only", action="store_true", help=argparse.SUPPRESS)
     # Some tests use this to tell mypy that we are running a test.
     parser.add_argument("--test-env", action="store_true", help=argparse.SUPPRESS)
     # --local-partial-types disallows partial types spanning module top level and a function
     # (implicitly defined in fine-grained incremental mode)
-    parser.add_argument(
-        "--local-partial-types", action="store_true", help=argparse.SUPPRESS
-    )
+    parser.add_argument("--local-partial-types", action="store_true", help=argparse.SUPPRESS)
     # --logical-deps adds some more dependencies that are not semantically needed, but
     # may be helpful to determine relative importance of classes and functions for overall
     # type precision in a code base. It also _removes_ some deps, so this flag should be never
@@ -1223,11 +1149,7 @@ def process_options(
     # --package-root adds a directory below which directories are considered
     # packages even without __init__.py.  May be repeated.
     parser.add_argument(
-        "--package-root",
-        metavar="ROOT",
-        action="append",
-        default=[],
-        help=argparse.SUPPRESS,
+        "--package-root", metavar="ROOT", action="append", default=[], help=argparse.SUPPRESS
     )
     # --cache-map FILE ... gives a mapping from source files to cache files.
     # Each triple of arguments is a source file, a cache meta file, and a cache data file.
@@ -1238,9 +1160,7 @@ def process_options(
     )
     # --debug-serialize will run tree.serialize() even if cache generation is disabled.
     # Useful for mypy_primer to detect serialize errors earlier.
-    parser.add_argument(
-        "--debug-serialize", action="store_true", help=argparse.SUPPRESS
-    )
+    parser.add_argument("--debug-serialize", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--disable-bytearray-promotion", action="store_true", help=argparse.SUPPRESS
@@ -1249,9 +1169,7 @@ def process_options(
         "--disable-memoryview-promotion", action="store_true", help=argparse.SUPPRESS
     )
     # This flag is deprecated, it has been moved to --extra-checks
-    parser.add_argument(
-        "--strict-concatenate", action="store_true", help=argparse.SUPPRESS
-    )
+    parser.add_argument("--strict-concatenate", action="store_true", help=argparse.SUPPRESS)
 
     # options specifying code to check
     code_group = parser.add_argument_group(
@@ -1542,9 +1460,7 @@ def process_package_roots(
             if not root.endswith(os.sep):
                 root = root + os.sep
             if root.startswith(dotdotslash):
-                parser.error(
-                    f"Package root cannot be above current directory: {root!r}"
-                )
+                parser.error(f"Package root cannot be above current directory: {root!r}")
             if root in trivial_paths:
                 root = ""
         package_root.append(root)
@@ -1565,18 +1481,14 @@ def process_cache_map(
         if source in options.cache_map:
             parser.error(f"Duplicate --cache-map source {source})")
         if not source.endswith(".py") and not source.endswith(".pyi"):
-            parser.error(
-                f"Invalid --cache-map source {source} (triple[0] must be *.py[i])"
-            )
+            parser.error(f"Invalid --cache-map source {source} (triple[0] must be *.py[i])")
         if not meta_file.endswith(".meta.json"):
             parser.error(
-                "Invalid --cache-map meta_file %s (triple[1] must be *.meta.json)"
-                % meta_file
+                "Invalid --cache-map meta_file %s (triple[1] must be *.meta.json)" % meta_file
             )
         if not data_file.endswith(".data.json"):
             parser.error(
-                "Invalid --cache-map data_file %s (triple[2] must be *.data.json)"
-                % data_file
+                "Invalid --cache-map data_file %s (triple[2] must be *.data.json)" % data_file
             )
         options.cache_map[source] = (meta_file, data_file)
 
@@ -1602,12 +1514,7 @@ def maybe_write_junit_xml(
         else:
             # per_file
             util.write_junit_xml(
-                td,
-                serious,
-                messages_by_file,
-                options.junit_xml,
-                py_version,
-                options.platform,
+                td, serious, messages_by_file, options.junit_xml, py_version, options.platform
             )
 
 
@@ -1615,11 +1522,7 @@ def fail(msg: str, stderr: TextIO, options: Options) -> NoReturn:
     """Fail with a serious error."""
     stderr.write(f"{msg}\n")
     maybe_write_junit_xml(
-        0.0,
-        serious=True,
-        all_messages=[msg],
-        messages_by_file={None: [msg]},
-        options=options,
+        0.0, serious=True, all_messages=[msg], messages_by_file={None: [msg]}, options=options
     )
     sys.exit(2)
 
@@ -1632,9 +1535,7 @@ def read_types_packages_to_install(cache_dir: str, after_run: bool) -> list[str]
                 + "(and no cache from previous mypy run)\n"
             )
         else:
-            sys.stderr.write(
-                "error: --install-types failed (no mypy cache directory)\n"
-            )
+            sys.stderr.write("error: --install-types failed (no mypy cache directory)\n")
         sys.exit(2)
     fnam = build.missing_stubs_file(cache_dir)
     if not os.path.isfile(fnam):

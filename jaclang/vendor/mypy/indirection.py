@@ -64,9 +64,7 @@ class TypeIndirectionVisitor(TypeVisitor[Set[str]]):
         return set()
 
     def visit_type_var(self, t: types.TypeVarType) -> set[str]:
-        return (
-            self._visit(t.values) | self._visit(t.upper_bound) | self._visit(t.default)
-        )
+        return self._visit(t.values) | self._visit(t.upper_bound) | self._visit(t.default)
 
     def visit_param_spec(self, t: types.ParamSpecType) -> set[str]:
         return self._visit(t.upper_bound) | self._visit(t.default)

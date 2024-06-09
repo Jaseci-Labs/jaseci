@@ -41,11 +41,7 @@ class TestExternal(unittest.TestCase):
             if "GTEST_COLOR" not in os.environ:
                 env["GTEST_COLOR"] = "yes"  # Use fancy colors
             status = subprocess.call(
-                [
-                    sys.executable,
-                    "-c",
-                    "import sys, test_capi; sys.exit(test_capi.run_tests())",
-                ],
+                [sys.executable, "-c", "import sys, test_capi; sys.exit(test_capi.run_tests())"],
                 env=env,
                 cwd=tmpdir,
             )

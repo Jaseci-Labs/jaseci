@@ -69,9 +69,7 @@ class TestGenOps(MypycDataSuite):
         if options is None:
             # Skipped test case
             return
-        with use_custom_builtins(
-            os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase
-        ):
+        with use_custom_builtins(os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase):
             expected_output = remove_comment_lines(testcase.output)
             expected_output = replace_word_size(expected_output)
             name = testcase.name
@@ -86,6 +84,4 @@ class TestGenOps(MypycDataSuite):
                         continue
                     actual.extend(format_func(fn))
 
-            assert_test_output(
-                testcase, actual, "Invalid source code output", expected_output
-            )
+            assert_test_output(testcase, actual, "Invalid source code output", expected_output)

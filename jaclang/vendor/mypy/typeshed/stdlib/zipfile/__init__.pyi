@@ -40,16 +40,16 @@ error = BadZipfile
 class LargeZipFile(Exception): ...
 
 class _ZipStream(Protocol):
-    def read(self, __n: int) -> bytes: ...
+    def read(self, n: int, /) -> bytes: ...
     # The following methods are optional:
     # def seekable(self) -> bool: ...
     # def tell(self) -> int: ...
-    # def seek(self, __n: int) -> object: ...
+    # def seek(self, n: int, /) -> object: ...
 
 # Stream shape as required by _EndRecData() and _EndRecData64().
 class _SupportsReadSeekTell(Protocol):
-    def read(self, __n: int = ...) -> bytes: ...
-    def seek(self, __cookie: int, __whence: int) -> object: ...
+    def read(self, n: int = ..., /) -> bytes: ...
+    def seek(self, cookie: int, whence: int, /) -> object: ...
     def tell(self) -> int: ...
 
 class _ClosableZipStream(_ZipStream, Protocol):
@@ -64,12 +64,7 @@ class ZipExtFile(io.BufferedIOBase):
     name: str
     @overload
     def __init__(
-        self,
-        fileobj: _ClosableZipStream,
-        mode: _ReadWriteMode,
-        zipinfo: ZipInfo,
-        pwd: bytes | None,
-        close_fileobj: Literal[True],
+        self, fileobj: _ClosableZipStream, mode: _ReadWriteMode, zipinfo: ZipInfo, pwd: bytes | None, close_fileobj: Literal[True]
     ) -> None: ...
     @overload
     def __init__(
@@ -97,7 +92,7 @@ class ZipExtFile(io.BufferedIOBase):
     def seek(self, offset: int, whence: int = 0) -> int: ...
 
 class _Writer(Protocol):
-    def write(self, __s: str) -> object: ...
+    def write(self, s: str, /) -> object: ...
 
 class ZipFile:
     filename: str | None
@@ -150,34 +145,18 @@ class ZipFile:
 
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
+        self, type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
     def close(self) -> None: ...
     def getinfo(self, name: str) -> ZipInfo: ...
     def infolist(self) -> list[ZipInfo]: ...
     def namelist(self) -> list[str]: ...
     def open(
-        self,
-        name: str | ZipInfo,
-        mode: _ReadWriteMode = "r",
-        pwd: bytes | None = None,
-        *,
-        force_zip64: bool = False,
+        self, name: str | ZipInfo, mode: _ReadWriteMode = "r", pwd: bytes | None = None, *, force_zip64: bool = False
     ) -> IO[bytes]: ...
-    def extract(
-        self,
-        member: str | ZipInfo,
-        path: StrPath | None = None,
-        pwd: bytes | None = None,
-    ) -> str: ...
+    def extract(self, member: str | ZipInfo, path: StrPath | None = None, pwd: bytes | None = None) -> str: ...
     def extractall(
-        self,
-        path: StrPath | None = None,
-        members: Iterable[str | ZipInfo] | None = None,
-        pwd: bytes | None = None,
+        self, path: StrPath | None = None, members: Iterable[str | ZipInfo] | None = None, pwd: bytes | None = None
     ) -> None: ...
     def printdir(self, file: _Writer | None = None) -> None: ...
     def setpassword(self, pwd: bytes) -> None: ...
@@ -198,27 +177,15 @@ class ZipFile:
         compresslevel: int | None = None,
     ) -> None: ...
     if sys.version_info >= (3, 11):
-        def mkdir(
-            self, zinfo_or_directory_name: str | ZipInfo, mode: int = 0o777
-        ) -> None: ...
+        def mkdir(self, zinfo_or_directory_name: str | ZipInfo, mode: int = 0o777) -> None: ...
 
     def __del__(self) -> None: ...
 
 class PyZipFile(ZipFile):
     def __init__(
-        self,
-        file: str | IO[bytes],
-        mode: _ZipFileMode = "r",
-        compression: int = 0,
-        allowZip64: bool = True,
-        optimize: int = -1,
+        self, file: str | IO[bytes], mode: _ZipFileMode = "r", compression: int = 0, allowZip64: bool = True, optimize: int = -1
     ) -> None: ...
-    def writepy(
-        self,
-        pathname: str,
-        basename: str = "",
-        filterfunc: Callable[[str], bool] | None = None,
-    ) -> None: ...
+    def writepy(self, pathname: str, basename: str = "", filterfunc: Callable[[str], bool] | None = None) -> None: ...
 
 class ZipInfo:
     filename: str
@@ -239,17 +206,9 @@ class ZipInfo:
     compress_size: int
     file_size: int
     orig_filename: str  # undocumented
-    def __init__(
-        self, filename: str = "NoName", date_time: _DateTuple = (1980, 1, 1, 0, 0, 0)
-    ) -> None: ...
+    def __init__(self, filename: str = "NoName", date_time: _DateTuple = (1980, 1, 1, 0, 0, 0)) -> None: ...
     @classmethod
-    def from_file(
-        cls,
-        filename: StrPath,
-        arcname: StrPath | None = None,
-        *,
-        strict_timestamps: bool = True,
-    ) -> Self: ...
+    def from_file(cls, filename: StrPath, arcname: StrPath | None = None, *, strict_timestamps: bool = True) -> Self: ...
     def is_dir(self) -> bool: ...
     def FileHeader(self, zip64: bool | None = None) -> bytes: ...
 
@@ -268,9 +227,7 @@ else:
 
     class Path:
         root: CompleteDirs
-        def __init__(
-            self, root: ZipFile | StrPath | IO[bytes], at: str = ""
-        ) -> None: ...
+        def __init__(self, root: ZipFile | StrPath | IO[bytes], at: str = "") -> None: ...
         @property
         def name(self) -> str: ...
         @property
@@ -300,16 +257,10 @@ else:
                 pwd: bytes | None = None,
             ) -> TextIOWrapper: ...
             @overload
-            def open(
-                self, mode: Literal["rb", "wb"], *, pwd: bytes | None = None
-            ) -> IO[bytes]: ...
+            def open(self, mode: Literal["rb", "wb"], *, pwd: bytes | None = None) -> IO[bytes]: ...
         else:
             def open(
-                self,
-                mode: _ReadWriteBinaryMode = "r",
-                pwd: bytes | None = None,
-                *,
-                force_zip64: bool = False,
+                self, mode: _ReadWriteBinaryMode = "r", pwd: bytes | None = None, *, force_zip64: bool = False
             ) -> IO[bytes]: ...
 
         if sys.version_info >= (3, 10):

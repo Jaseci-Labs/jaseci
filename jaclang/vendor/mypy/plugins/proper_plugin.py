@@ -42,9 +42,7 @@ class ProperTypePlugin(Plugin):
     all these became dangerous because typ may be e.g. an alias to union.
     """
 
-    def get_function_hook(
-        self, fullname: str
-    ) -> Callable[[FunctionContext], Type] | None:
+    def get_function_hook(self, fullname: str) -> Callable[[FunctionContext], Type] | None:
         if fullname == "builtins.isinstance":
             return isinstance_proper_hook
         if fullname == "mypy.types.get_proper_type":
@@ -122,9 +120,7 @@ def is_improper_type(typ: Type) -> bool:
     typ = get_proper_type(typ)
     if isinstance(typ, Instance):
         info = typ.type
-        return info.has_base("mypy.types.Type") and not info.has_base(
-            "mypy.types.ProperType"
-        )
+        return info.has_base("mypy.types.Type") and not info.has_base("mypy.types.ProperType")
     if isinstance(typ, UnionType):
         return any(is_improper_type(t) for t in typ.items)
     return False

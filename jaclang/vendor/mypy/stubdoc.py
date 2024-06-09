@@ -11,15 +11,7 @@ import io
 import keyword
 import re
 import tokenize
-from typing import (
-    Any,
-    Final,
-    MutableMapping,
-    MutableSequence,
-    NamedTuple,
-    Sequence,
-    Tuple,
-)
+from typing import Any, Final, MutableMapping, MutableSequence, NamedTuple, Sequence, Tuple
 from typing_extensions import TypeAlias as _TypeAlias
 
 import mypy.util
@@ -150,11 +142,7 @@ class FunctionSig(NamedTuple):
 
         prefix = "async " if is_async else ""
         sig = "{indent}{prefix}def {name}({args}){ret}:".format(
-            indent=indent,
-            prefix=prefix,
-            name=self.name,
-            args=", ".join(args),
-            ret=retfield,
+            indent=indent, prefix=prefix, name=self.name, args=", ".join(args), ret=retfield
         )
         if docstring:
             suffix = f"\n{indent}    {mypy.util.quote_docstring(docstring)}"
@@ -280,18 +268,12 @@ class DocStringParser:
                 if self.arg_type and not is_valid_type(self.arg_type):
                     # wrong type, use Any
                     self.args.append(
-                        ArgSig(
-                            name=self.arg_name,
-                            type=None,
-                            default=bool(self.arg_default),
-                        )
+                        ArgSig(name=self.arg_name, type=None, default=bool(self.arg_default))
                     )
                 else:
                     self.args.append(
                         ArgSig(
-                            name=self.arg_name,
-                            type=self.arg_type,
-                            default=bool(self.arg_default),
+                            name=self.arg_name, type=self.arg_type, default=bool(self.arg_default)
                         )
                     )
             self.arg_name = ""
@@ -299,18 +281,12 @@ class DocStringParser:
             self.arg_default = None
             self.accumulator = ""
 
-        elif (
-            token.type == tokenize.OP
-            and token.string == "->"
-            and self.state[-1] == STATE_INIT
-        ):
+        elif token.type == tokenize.OP and token.string == "->" and self.state[-1] == STATE_INIT:
             self.accumulator = ""
             self.state.append(STATE_RETURN_VALUE)
 
         # ENDMAKER is necessary for python 3.4 and 3.5.
-        elif token.type in (tokenize.NEWLINE, tokenize.ENDMARKER) and self.state[
-            -1
-        ] in (
+        elif token.type in (tokenize.NEWLINE, tokenize.ENDMARKER) and self.state[-1] in (
             STATE_INIT,
             STATE_RETURN_VALUE,
         ):
@@ -324,9 +300,7 @@ class DocStringParser:
 
             if self.found:
                 self.signatures.append(
-                    FunctionSig(
-                        name=self.function_name, args=self.args, ret_type=self.ret_type
-                    )
+                    FunctionSig(name=self.function_name, args=self.args, ret_type=self.ret_type)
                 )
                 self.found = False
             self.args = []
@@ -409,11 +383,7 @@ def infer_ret_type_sig_from_docstring(docstr: str, name: str) -> str | None:
 
 def infer_ret_type_sig_from_anon_docstring(docstr: str) -> str | None:
     """Convert signature in form of "(self: TestClass, arg0) -> int" to their return type."""
-    lines = [
-        "stub" + line.strip()
-        for line in docstr.splitlines()
-        if line.strip().startswith("(")
-    ]
+    lines = ["stub" + line.strip() for line in docstr.splitlines() if line.strip().startswith("(")]
     return infer_ret_type_sig_from_docstring("".join(lines), "stub")
 
 

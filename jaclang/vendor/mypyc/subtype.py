@@ -29,9 +29,7 @@ def is_subtype(left: RType, right: RType) -> bool:
     elif isinstance(right, RUnion):
         if isinstance(left, RUnion):
             for left_item in left.items:
-                if not any(
-                    is_subtype(left_item, right_item) for right_item in right.items
-                ):
+                if not any(is_subtype(left_item, right_item) for right_item in right.items):
                     return False
             return True
         else:
@@ -50,10 +48,7 @@ class SubtypeVisitor(RTypeVisitor[bool]):
         self.right = right
 
     def visit_rinstance(self, left: RInstance) -> bool:
-        return (
-            isinstance(self.right, RInstance)
-            and self.right.class_ir in left.class_ir.mro
-        )
+        return isinstance(self.right, RInstance) and self.right.class_ir in left.class_ir.mro
 
     def visit_runion(self, left: RUnion) -> bool:
         return all(is_subtype(item, self.right) for item in left.items)
@@ -64,11 +59,7 @@ class SubtypeVisitor(RTypeVisitor[bool]):
             if is_tagged(right) or is_fixed_width_rtype(right):
                 return True
         elif is_bit_rprimitive(left):
-            if (
-                is_bool_rprimitive(right)
-                or is_tagged(right)
-                or is_fixed_width_rtype(right)
-            ):
+            if is_bool_rprimitive(right) or is_tagged(right) or is_fixed_width_rtype(right):
                 return True
         elif is_short_int_rprimitive(left):
             if is_int_rprimitive(right):

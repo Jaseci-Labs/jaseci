@@ -11,9 +11,7 @@ LiteralValue = Union[
 
 
 def _is_literal_value(obj: object) -> TypeGuard[LiteralValue]:
-    return isinstance(
-        obj, (str, bytes, int, float, complex, tuple, frozenset, type(None))
-    )
+    return isinstance(obj, (str, bytes, int, float, complex, tuple, frozenset, type(None)))
 
 
 # Some literals are singletons and handled specially (None, False and True)

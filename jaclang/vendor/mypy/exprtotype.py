@@ -74,13 +74,9 @@ def expr_to_unanalyzed_type(
     if isinstance(expr, NameExpr):
         name = expr.name
         if name == "True":
-            return RawExpressionType(
-                True, "builtins.bool", line=expr.line, column=expr.column
-            )
+            return RawExpressionType(True, "builtins.bool", line=expr.line, column=expr.column)
         elif name == "False":
-            return RawExpressionType(
-                False, "builtins.bool", line=expr.line, column=expr.column
-            )
+            return RawExpressionType(False, "builtins.bool", line=expr.line, column=expr.column)
         else:
             return UnboundType(name, line=expr.line, column=expr.column)
     elif isinstance(expr, MemberExpr):
@@ -99,10 +95,7 @@ def expr_to_unanalyzed_type(
             else:
                 args = [expr.index]
 
-            if (
-                isinstance(expr.base, RefExpr)
-                and expr.base.fullname in ANNOTATED_TYPE_NAMES
-            ):
+            if isinstance(expr.base, RefExpr) and expr.base.fullname in ANNOTATED_TYPE_NAMES:
                 # TODO: this is not the optimal solution as we are basically getting rid
                 # of the Annotation definition and only returning the type information,
                 # losing all the annotations.
@@ -177,9 +170,7 @@ def expr_to_unanalyzed_type(
     elif isinstance(expr, ListExpr):
         return TypeList(
             [
-                expr_to_unanalyzed_type(
-                    t, options, allow_new_syntax, expr, allow_unpack=True
-                )
+                expr_to_unanalyzed_type(t, options, allow_new_syntax, expr, allow_unpack=True)
                 for t in expr.items
             ],
             line=expr.line,
@@ -192,31 +183,27 @@ def expr_to_unanalyzed_type(
     elif isinstance(expr, UnaryExpr):
         typ = expr_to_unanalyzed_type(expr.expr, options, allow_new_syntax)
         if isinstance(typ, RawExpressionType):
-            if isinstance(typ.literal_value, int) and expr.op == "-":
-                typ.literal_value *= -1
-                return typ
+            if isinstance(typ.literal_value, int):
+                if expr.op == "-":
+                    typ.literal_value *= -1
+                    return typ
+                elif expr.op == "+":
+                    return typ
         raise TypeTranslationError()
     elif isinstance(expr, IntExpr):
-        return RawExpressionType(
-            expr.value, "builtins.int", line=expr.line, column=expr.column
-        )
+        return RawExpressionType(expr.value, "builtins.int", line=expr.line, column=expr.column)
     elif isinstance(expr, FloatExpr):
         # Floats are not valid parameters for RawExpressionType , so we just
         # pass in 'None' for now. We'll report the appropriate error at a later stage.
-        return RawExpressionType(
-            None, "builtins.float", line=expr.line, column=expr.column
-        )
+        return RawExpressionType(None, "builtins.float", line=expr.line, column=expr.column)
     elif isinstance(expr, ComplexExpr):
         # Same thing as above with complex numbers.
-        return RawExpressionType(
-            None, "builtins.complex", line=expr.line, column=expr.column
-        )
+        return RawExpressionType(None, "builtins.complex", line=expr.line, column=expr.column)
     elif isinstance(expr, EllipsisExpr):
         return EllipsisType(expr.line)
     elif allow_unpack and isinstance(expr, StarExpr):
         return UnpackType(
-            expr_to_unanalyzed_type(expr.expr, options, allow_new_syntax),
-            from_star_syntax=True,
+            expr_to_unanalyzed_type(expr.expr, options, allow_new_syntax), from_star_syntax=True
         )
     else:
         raise TypeTranslationError()

@@ -20,14 +20,7 @@ from mypy.nodes import TypeInfo
 from mypy.semanal_enum import ENUM_BASES
 from mypy.subtypes import is_equivalent
 from mypy.typeops import fixup_partial_type, make_simplified_union
-from mypy.types import (
-    CallableType,
-    Instance,
-    LiteralType,
-    ProperType,
-    Type,
-    get_proper_type,
-)
+from mypy.types import CallableType, Instance, LiteralType, ProperType, Type, get_proper_type
 
 ENUM_NAME_ACCESS: Final = {f"{prefix}.name" for prefix in ENUM_BASES} | {
     f"{prefix}._name_" for prefix in ENUM_BASES
@@ -85,9 +78,7 @@ def _infer_value_type_with_auto_fallback(
     if proper_type is None:
         return None
     proper_type = get_proper_type(fixup_partial_type(proper_type))
-    if not (
-        isinstance(proper_type, Instance) and proper_type.type.fullname == "enum.auto"
-    ):
+    if not (isinstance(proper_type, Instance) and proper_type.type.fullname == "enum.auto"):
         return proper_type
     assert isinstance(ctx.type, Instance), "An incorrect ctx.type was passed."
     info = ctx.type.type
@@ -96,9 +87,7 @@ def _infer_value_type_with_auto_fallback(
     # `_generate_next_value_` is `Any`.  In reality the default `auto()`
     # returns an `int` (presumably the `Any` in typeshed is to make it
     # easier to subclass and change the returned type).
-    type_with_gnv = _first(
-        ti for ti in info.mro if ti.names.get("_generate_next_value_")
-    )
+    type_with_gnv = _first(ti for ti in info.mro if ti.names.get("_generate_next_value_"))
     if type_with_gnv is None:
         return ctx.default_attr_type
 
@@ -234,9 +223,7 @@ def enum_value_callback(ctx: mypy.plugin.AttributeContext) -> Type:
     if stnode is None:
         return ctx.default_attr_type
 
-    underlying_type = _infer_value_type_with_auto_fallback(
-        ctx, get_proper_type(stnode.type)
-    )
+    underlying_type = _infer_value_type_with_auto_fallback(ctx, get_proper_type(stnode.type))
     if underlying_type is None:
         return ctx.default_attr_type
 

@@ -22,14 +22,7 @@ else:
     __all__ += ["hasnargs"]
 
 if sys.version_info >= (3, 9):
-    cmp_op: tuple[
-        Literal["<"],
-        Literal["<="],
-        Literal["=="],
-        Literal["!="],
-        Literal[">"],
-        Literal[">="],
-    ]
+    cmp_op: tuple[Literal["<"], Literal["<="], Literal["=="], Literal["!="], Literal[">"], Literal[">="]]
 else:
     cmp_op: tuple[
         Literal["<"],
@@ -63,6 +56,4 @@ opmap: dict[str, int]
 HAVE_ARGUMENT: Literal[90]
 EXTENDED_ARG: Literal[144]
 
-def stack_effect(
-    __opcode: int, __oparg: int | None = None, *, jump: bool | None = None
-) -> int: ...
+def stack_effect(opcode: int, oparg: int | None = None, /, *, jump: bool | None = None) -> int: ...

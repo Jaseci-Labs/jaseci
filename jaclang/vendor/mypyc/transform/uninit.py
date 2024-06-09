@@ -2,12 +2,7 @@
 
 from __future__ import annotations
 
-from mypyc.analysis.dataflow import (
-    AnalysisDict,
-    analyze_must_defined_regs,
-    cleanup_cfg,
-    get_cfg,
-)
+from mypyc.analysis.dataflow import AnalysisDict, analyze_must_defined_regs, cleanup_cfg, get_cfg
 from mypyc.common import BITMAP_BITS
 from mypyc.ir.func_ir import FuncIR, all_values
 from mypyc.ir.ops import (
@@ -75,9 +70,7 @@ def split_blocks_at_uninits(
                     and not isinstance(op, LoadAddress)
                 ):
                     new_block, error_block = BasicBlock(), BasicBlock()
-                    new_block.error_handler = error_block.error_handler = (
-                        cur_block.error_handler
-                    )
+                    new_block.error_handler = error_block.error_handler = cur_block.error_handler
                     new_blocks += [error_block, new_block]
 
                     if src not in init_registers_set:
@@ -117,9 +110,7 @@ def split_blocks_at_uninits(
             cur_block.ops.append(op)
 
     if bitmap_backed:
-        update_register_assignments_to_set_bitmap(
-            new_blocks, bitmap_registers, bitmap_backed
-        )
+        update_register_assignments_to_set_bitmap(new_blocks, bitmap_registers, bitmap_backed)
 
     if init_registers:
         new_ops: list[Op] = []
@@ -169,9 +160,7 @@ def check_for_uninit_using_bitmap(
 
 
 def update_register_assignments_to_set_bitmap(
-    blocks: list[BasicBlock],
-    bitmap_registers: list[Register],
-    bitmap_backed: list[Register],
+    blocks: list[BasicBlock], bitmap_registers: list[Register], bitmap_backed: list[Register]
 ) -> None:
     """Update some assignments to registers to also set a bit in a bitmap.
 

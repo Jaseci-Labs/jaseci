@@ -144,6 +144,14 @@ class ExpressionChecker(mycke.ExpressionChecker):
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
+    def visit_member_expr(
+        self, e: myfp.MemberExpr, is_lvalue: bool = False
+    ) -> myb.Type:
+        """Type check a member expr."""
+        out = super().visit_member_expr(e, is_lvalue)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
 
 class State(myb.State):
     """Overrides to mypy state for direct AST pass through."""

@@ -11,18 +11,10 @@ class Chooser(Dialog):
 
 if sys.version_info >= (3, 9):
     def askcolor(
-        color: str | bytes | None = None,
-        *,
-        initialcolor: str = ...,
-        parent: Misc = ...,
-        title: str = ...
+        color: str | bytes | None = None, *, initialcolor: str = ..., parent: Misc = ..., title: str = ...
     ) -> tuple[None, None] | tuple[tuple[int, int, int], str]: ...
 
 else:
     def askcolor(
-        color: str | bytes | None = None,
-        *,
-        initialcolor: str = ...,
-        parent: Misc = ...,
-        title: str = ...
+        color: str | bytes | None = None, *, initialcolor: str = ..., parent: Misc = ..., title: str = ...
     ) -> tuple[None, None] | tuple[tuple[float, float, float], str]: ...

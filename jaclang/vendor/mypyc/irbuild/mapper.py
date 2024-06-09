@@ -2,16 +2,7 @@
 
 from __future__ import annotations
 
-from mypy.nodes import (
-    ARG_STAR,
-    ARG_STAR2,
-    GDEF,
-    ArgKind,
-    FuncDef,
-    RefExpr,
-    SymbolNode,
-    TypeInfo,
-)
+from mypy.nodes import ARG_STAR, ARG_STAR2, GDEF, ArgKind, FuncDef, RefExpr, SymbolNode, TypeInfo
 from mypy.types import (
     AnyType,
     CallableType,
@@ -135,9 +126,7 @@ class Mapper:
         elif isinstance(typ, NoneTyp):
             return none_rprimitive
         elif isinstance(typ, UnionType):
-            return RUnion.make_simplified_union(
-                [self.type_to_rtype(item) for item in typ.items]
-            )
+            return RUnion.make_simplified_union([self.type_to_rtype(item) for item in typ.items])
         elif isinstance(typ, AnyType):
             return object_rprimitive
         elif isinstance(typ, TypeType):
