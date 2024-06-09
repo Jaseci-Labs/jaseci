@@ -102,8 +102,8 @@ Generate and return the output result(s) only, adhering to the provided Type in 
 
 ---
 
-[Chain of Thoughts] Lets Think Step by Step.
-"""  # noqa E501
+[Chain of Thoughts] Lets Think Step by Step,
+1. """  # noqa E501
 
 COMPLETION_REACT_SUFFIX = """
 """  # noqa E501
