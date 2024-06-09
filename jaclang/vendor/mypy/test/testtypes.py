@@ -133,13 +133,8 @@ class TypesSuite(Suite):
     def test_tuple_type_upper(self) -> None:
         options = Options()
         options.force_uppercase_builtins = True
-        assert_equal(
-            TupleType([], self.fx.std_tuple).str_with_options(options), "Tuple[()]"
-        )
-        assert_equal(
-            TupleType([self.x], self.fx.std_tuple).str_with_options(options),
-            "Tuple[X?]",
-        )
+        assert_equal(TupleType([], self.fx.std_tuple).str_with_options(options), "Tuple[()]")
+        assert_equal(TupleType([self.x], self.fx.std_tuple).str_with_options(options), "Tuple[X?]")
         assert_equal(
             TupleType(
                 [self.x, AnyType(TypeOfAny.special_form)], self.fx.std_tuple
@@ -149,11 +144,7 @@ class TypesSuite(Suite):
 
     def test_type_variable_binding(self) -> None:
         assert_equal(
-            str(
-                TypeVarType(
-                    "X", "X", 1, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics)
-                )
-            ),
+            str(TypeVarType("X", "X", 1, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics))),
             "X`1",
         )
         assert_equal(
@@ -179,25 +170,14 @@ class TypesSuite(Suite):
             self.function,
             name=None,
             variables=[
-                TypeVarType(
-                    "X",
-                    "X",
-                    -1,
-                    [],
-                    self.fx.o,
-                    AnyType(TypeOfAny.from_omitted_generics),
-                )
+                TypeVarType("X", "X", -1, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics))
             ],
         )
         assert_equal(str(c), "def [X] (X?, Y?) -> Y?")
 
         v = [
-            TypeVarType(
-                "Y", "Y", -1, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics)
-            ),
-            TypeVarType(
-                "X", "X", -2, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics)
-            ),
+            TypeVarType("Y", "Y", -1, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics)),
+            TypeVarType("X", "X", -2, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics)),
         ]
         c2 = CallableType([], [], [], NoneType(), self.function, name=None, variables=v)
         assert_equal(str(c2), "def [Y, X] ()")
@@ -225,9 +205,7 @@ class TypesSuite(Suite):
 
     def test_recursive_nested_in_non_recursive(self) -> None:
         A, _ = self.fx.def_alias_1(self.fx.a)
-        T = TypeVarType(
-            "T", "T", -1, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics)
-        )
+        T = TypeVarType("T", "T", -1, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics))
         NA = self.fx.non_rec_alias(Instance(self.fx.gi, [T]), [T], [A])
         assert not NA.is_recursive
         assert has_recursive_types(NA)
@@ -307,9 +285,7 @@ class TypeOpsSuite(Suite):
 
     def test_erase_with_generic_type(self) -> None:
         self.assert_erase(self.fx.ga, self.fx.gdyn)
-        self.assert_erase(
-            self.fx.hab, Instance(self.fx.hi, [self.fx.anyt, self.fx.anyt])
-        )
+        self.assert_erase(self.fx.hab, Instance(self.fx.hi, [self.fx.anyt, self.fx.anyt]))
 
     def test_erase_with_generic_type_recursive(self) -> None:
         tuple_any = Instance(self.fx.std_tuplei, [AnyType(TypeOfAny.explicit)])
@@ -482,9 +458,7 @@ class TypeOpsSuite(Suite):
         assert not tuple_type.can_be_true
 
     def test_nonempty_tuple_always_true(self) -> None:
-        tuple_type = self.tuple(
-            AnyType(TypeOfAny.special_form), AnyType(TypeOfAny.special_form)
-        )
+        tuple_type = self.tuple(AnyType(TypeOfAny.special_form), AnyType(TypeOfAny.special_form))
         assert tuple_type.can_be_true
         assert not tuple_type.can_be_false
 
@@ -614,29 +588,20 @@ class TypeOpsSuite(Suite):
         )
         self.assert_simplified_union([fx.lit1_inst, fx.uninhabited], fx.lit1_inst)
         self.assert_simplified_union([fx.lit1, fx.lit1_inst], fx.lit1)
-        self.assert_simplified_union(
-            [fx.lit1, fx.lit2_inst], UnionType([fx.lit1, fx.lit2_inst])
-        )
-        self.assert_simplified_union(
-            [fx.lit1, fx.lit3_inst], UnionType([fx.lit1, fx.lit3_inst])
-        )
+        self.assert_simplified_union([fx.lit1, fx.lit2_inst], UnionType([fx.lit1, fx.lit2_inst]))
+        self.assert_simplified_union([fx.lit1, fx.lit3_inst], UnionType([fx.lit1, fx.lit3_inst]))
 
     def test_simplified_union_with_str_literals(self) -> None:
         fx = self.fx
 
-        self.assert_simplified_union(
-            [fx.lit_str1, fx.lit_str2, fx.str_type], fx.str_type
-        )
-        self.assert_simplified_union(
-            [fx.lit_str1, fx.lit_str1, fx.lit_str1], fx.lit_str1
-        )
+        self.assert_simplified_union([fx.lit_str1, fx.lit_str2, fx.str_type], fx.str_type)
+        self.assert_simplified_union([fx.lit_str1, fx.lit_str1, fx.lit_str1], fx.lit_str1)
         self.assert_simplified_union(
             [fx.lit_str1, fx.lit_str2, fx.lit_str3],
             UnionType([fx.lit_str1, fx.lit_str2, fx.lit_str3]),
         )
         self.assert_simplified_union(
-            [fx.lit_str1, fx.lit_str2, fx.uninhabited],
-            UnionType([fx.lit_str1, fx.lit_str2]),
+            [fx.lit_str1, fx.lit_str2, fx.uninhabited], UnionType([fx.lit_str1, fx.lit_str2])
         )
 
     def test_simplify_very_large_union(self) -> None:
@@ -672,9 +637,7 @@ class TypeOpsSuite(Suite):
             [fx.lit_str1, fx.lit_str2, fx.lit_str3_inst],
             UnionType([fx.lit_str1, fx.lit_str2, fx.lit_str3_inst]),
         )
-        self.assert_simplified_union(
-            [fx.lit_str1, fx.lit_str1, fx.lit_str1_inst], fx.lit_str1
-        )
+        self.assert_simplified_union([fx.lit_str1, fx.lit_str1, fx.lit_str1_inst], fx.lit_str1)
 
     def assert_simplified_union(self, original: list[Type], union: Type) -> None:
         assert_equal(make_simplified_union(original), union)
@@ -694,9 +657,7 @@ class TypeOpsSuite(Suite):
         n = -1
         for v in vars:
             tv.append(
-                TypeVarType(
-                    v, v, n, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics)
-                )
+                TypeVarType(v, v, n, [], self.fx.o, AnyType(TypeOfAny.from_omitted_generics))
             )
             n -= 1
         return CallableType(
@@ -729,9 +690,7 @@ class JoinSuite(Suite):
 
     def test_tuples(self) -> None:
         self.assert_join(self.tuple(), self.tuple(), self.tuple())
-        self.assert_join(
-            self.tuple(self.fx.a), self.tuple(self.fx.a), self.tuple(self.fx.a)
-        )
+        self.assert_join(self.tuple(self.fx.a), self.tuple(self.fx.a), self.tuple(self.fx.a))
         self.assert_join(
             self.tuple(self.fx.b, self.fx.c),
             self.tuple(self.fx.a, self.fx.d),
@@ -739,19 +698,13 @@ class JoinSuite(Suite):
         )
 
         self.assert_join(
-            self.tuple(self.fx.a, self.fx.a),
-            self.fx.std_tuple,
-            self.var_tuple(self.fx.anyt),
+            self.tuple(self.fx.a, self.fx.a), self.fx.std_tuple, self.var_tuple(self.fx.anyt)
         )
         self.assert_join(
-            self.tuple(self.fx.a),
-            self.tuple(self.fx.a, self.fx.a),
-            self.var_tuple(self.fx.a),
+            self.tuple(self.fx.a), self.tuple(self.fx.a, self.fx.a), self.var_tuple(self.fx.a)
         )
         self.assert_join(
-            self.tuple(self.fx.b),
-            self.tuple(self.fx.a, self.fx.c),
-            self.var_tuple(self.fx.a),
+            self.tuple(self.fx.b), self.tuple(self.fx.a, self.fx.c), self.var_tuple(self.fx.a)
         )
         self.assert_join(self.tuple(), self.tuple(self.fx.a), self.var_tuple(self.fx.a))
 
@@ -762,9 +715,7 @@ class JoinSuite(Suite):
         self.assert_join(
             self.var_tuple(self.fx.a), self.tuple(self.fx.a), self.var_tuple(self.fx.a)
         )
-        self.assert_join(
-            self.var_tuple(self.fx.a), self.tuple(), self.var_tuple(self.fx.a)
-        )
+        self.assert_join(self.var_tuple(self.fx.a), self.tuple(), self.var_tuple(self.fx.a))
 
     def test_function_types(self) -> None:
         self.assert_join(
@@ -783,9 +734,7 @@ class JoinSuite(Suite):
             self.callable(self.fx.a, self.fx.a),
             self.callable(self.fx.a, self.fx.a),
         )
-        self.assert_join(
-            self.callable(self.fx.a, self.fx.b), self.fx.function, self.fx.function
-        )
+        self.assert_join(self.callable(self.fx.a, self.fx.b), self.fx.function, self.fx.function)
         self.assert_join(
             self.callable(self.fx.a, self.fx.b),
             self.callable(self.fx.d, self.fx.b),
@@ -860,18 +809,8 @@ class JoinSuite(Suite):
 
     def test_other_mixed_types(self) -> None:
         # In general, joining unrelated types produces object.
-        for t1 in [
-            self.fx.a,
-            self.fx.t,
-            self.tuple(),
-            self.callable(self.fx.a, self.fx.b),
-        ]:
-            for t2 in [
-                self.fx.a,
-                self.fx.t,
-                self.tuple(),
-                self.callable(self.fx.a, self.fx.b),
-            ]:
+        for t1 in [self.fx.a, self.fx.t, self.tuple(), self.callable(self.fx.a, self.fx.b)]:
+            for t2 in [self.fx.a, self.fx.t, self.tuple(), self.callable(self.fx.a, self.fx.b)]:
                 if str(t1) != str(t2):
                     self.assert_join(t1, t2, self.fx.o)
 
@@ -1011,9 +950,7 @@ class JoinSuite(Suite):
         self.assert_join(self.fx.type_b, self.fx.type_any, self.fx.type_any)
         self.assert_join(self.fx.type_b, self.fx.type_type, self.fx.type_type)
         self.assert_join(self.fx.type_b, self.fx.type_c, self.fx.type_a)
-        self.assert_join(
-            self.fx.type_c, self.fx.type_d, TypeType.make_normalized(self.fx.o)
-        )
+        self.assert_join(self.fx.type_c, self.fx.type_d, TypeType.make_normalized(self.fx.o))
         self.assert_join(self.fx.type_type, self.fx.type_any, self.fx.type_type)
         self.assert_join(self.fx.type_b, self.fx.anyt, self.fx.anyt)
 
@@ -1037,23 +974,17 @@ class JoinSuite(Suite):
         self.assert_join(UnionType([d, lit3]), d, UnionType([d, lit3]))
         self.assert_join(UnionType([a, lit1]), lit1, a)
         self.assert_join(UnionType([a, lit1]), lit2, a)
-        self.assert_join(
-            UnionType([lit1, lit2]), UnionType([lit1, lit2]), UnionType([lit1, lit2])
-        )
+        self.assert_join(UnionType([lit1, lit2]), UnionType([lit1, lit2]), UnionType([lit1, lit2]))
 
         # The order in which we try joining two unions influences the
         # ordering of the items in the final produced unions. So, we
         # manually call 'assert_simple_join' and tune the output
         # after swapping the arguments here.
         self.assert_simple_join(
-            UnionType([lit1, lit2]),
-            UnionType([lit2, lit3]),
-            UnionType([lit1, lit2, lit3]),
+            UnionType([lit1, lit2]), UnionType([lit2, lit3]), UnionType([lit1, lit2, lit3])
         )
         self.assert_simple_join(
-            UnionType([lit2, lit3]),
-            UnionType([lit1, lit2]),
-            UnionType([lit2, lit3, lit1]),
+            UnionType([lit2, lit3]), UnionType([lit1, lit2]), UnionType([lit2, lit3, lit1])
         )
 
     def test_variadic_tuple_joins(self) -> None:
@@ -1065,45 +996,29 @@ class JoinSuite(Suite):
         )
         self.assert_join(
             self.tuple(self.fx.a, self.fx.a),
-            self.tuple(
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
-            ),
-            self.tuple(
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
-            ),
+            self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a),
+            self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a),
         )
         self.assert_join(
             self.tuple(self.fx.a, self.fx.a),
-            self.tuple(
-                self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))
-            ),
-            self.tuple(
-                self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))
-            ),
+            self.tuple(self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))),
+            self.tuple(self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))),
         )
         self.assert_join(
             self.tuple(
-                self.fx.a,
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])),
-                self.fx.a,
+                self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
             ),
             self.tuple(
-                self.fx.a,
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])),
-                self.fx.a,
+                self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
             ),
             self.tuple(
-                self.fx.a,
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])),
-                self.fx.a,
+                self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
             ),
         )
         self.assert_join(
             self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))),
             self.tuple(
-                self.fx.a,
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])),
-                self.fx.a,
+                self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
             ),
             self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))),
         )
@@ -1113,17 +1028,11 @@ class JoinSuite(Suite):
             self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))),
         )
         self.assert_join(
+            self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a),
             self.tuple(
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
+                self.fx.b, UnpackType(Instance(self.fx.std_tuplei, [self.fx.b])), self.fx.b
             ),
-            self.tuple(
-                self.fx.b,
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.b])),
-                self.fx.b,
-            ),
-            self.tuple(
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
-            ),
+            self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a),
         )
 
     # There are additional test cases in check-inference.test.
@@ -1154,9 +1063,7 @@ class JoinSuite(Suite):
         a1, ... an and return type r.
         """
         n = len(a) - 1
-        return CallableType(
-            list(a[:-1]), [ARG_POS] * n, [None] * n, a[-1], self.fx.function
-        )
+        return CallableType(list(a[:-1]), [ARG_POS] * n, [None] * n, a[-1], self.fx.function)
 
     def type_callable(self, *a: Type) -> CallableType:
         """type_callable(a1, ..., an, r) constructs a callable with
@@ -1164,9 +1071,7 @@ class JoinSuite(Suite):
         represents a type.
         """
         n = len(a) - 1
-        return CallableType(
-            list(a[:-1]), [ARG_POS] * n, [None] * n, a[-1], self.fx.type_type
-        )
+        return CallableType(list(a[:-1]), [ARG_POS] * n, [None] * n, a[-1], self.fx.type_type)
 
 
 class MeetSuite(Suite):
@@ -1186,9 +1091,7 @@ class MeetSuite(Suite):
 
     def test_tuples(self) -> None:
         self.assert_meet(self.tuple(), self.tuple(), self.tuple())
-        self.assert_meet(
-            self.tuple(self.fx.a), self.tuple(self.fx.a), self.tuple(self.fx.a)
-        )
+        self.assert_meet(self.tuple(self.fx.a), self.tuple(self.fx.a), self.tuple(self.fx.a))
         self.assert_meet(
             self.tuple(self.fx.b, self.fx.c),
             self.tuple(self.fx.a, self.fx.d),
@@ -1196,13 +1099,9 @@ class MeetSuite(Suite):
         )
 
         self.assert_meet(
-            self.tuple(self.fx.a, self.fx.a),
-            self.fx.std_tuple,
-            self.tuple(self.fx.a, self.fx.a),
+            self.tuple(self.fx.a, self.fx.a), self.fx.std_tuple, self.tuple(self.fx.a, self.fx.a)
         )
-        self.assert_meet(
-            self.tuple(self.fx.a), self.tuple(self.fx.a, self.fx.a), NoneType()
-        )
+        self.assert_meet(self.tuple(self.fx.a), self.tuple(self.fx.a, self.fx.a), NoneType())
 
     def test_function_types(self) -> None:
         self.assert_meet(
@@ -1285,12 +1184,7 @@ class MeetSuite(Suite):
         self.assert_meet(self.fx.ga, self.fx.nonet, self.fx.nonet)
         self.assert_meet(self.fx.ga, self.fx.anyt, self.fx.ga)
 
-        for t in [
-            self.fx.a,
-            self.fx.t,
-            self.tuple(),
-            self.callable(self.fx.a, self.fx.b),
-        ]:
+        for t in [self.fx.a, self.fx.t, self.tuple(), self.callable(self.fx.a, self.fx.b)]:
             self.assert_meet(t, self.fx.ga, self.fx.nonet)
 
     def test_generics_with_multiple_args(self) -> None:
@@ -1361,9 +1255,7 @@ class MeetSuite(Suite):
         self.assert_meet_uninhabited(lit1, lit2)
         self.assert_meet(UnionType([lit1, lit2]), lit1, lit1)
         self.assert_meet(UnionType([lit1, lit2]), UnionType([lit2, lit3]), lit2)
-        self.assert_meet(
-            UnionType([lit1, lit2]), UnionType([lit1, lit2]), UnionType([lit1, lit2])
-        )
+        self.assert_meet(UnionType([lit1, lit2]), UnionType([lit1, lit2]), UnionType([lit1, lit2]))
         self.assert_meet(lit1, self.fx.anyt, lit1)
         self.assert_meet(lit1, self.fx.o, lit1)
 
@@ -1387,16 +1279,12 @@ class MeetSuite(Suite):
         )
         self.assert_meet(
             self.tuple(self.fx.a, self.fx.a),
-            self.tuple(
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
-            ),
+            self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a),
             self.tuple(self.fx.a, self.fx.a),
         )
         self.assert_meet(
             self.tuple(self.fx.a, self.fx.a),
-            self.tuple(
-                self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))
-            ),
+            self.tuple(self.fx.a, UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))),
             self.tuple(self.fx.a, self.fx.a),
         )
         self.assert_meet(
@@ -1405,15 +1293,9 @@ class MeetSuite(Suite):
             self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))),
         )
         self.assert_meet(
-            self.tuple(
-                UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a
-            ),
-            self.tuple(
-                self.fx.b, UnpackType(Instance(self.fx.std_tuplei, [self.fx.b]))
-            ),
-            self.tuple(
-                self.fx.b, UnpackType(Instance(self.fx.std_tuplei, [self.fx.b]))
-            ),
+            self.tuple(UnpackType(Instance(self.fx.std_tuplei, [self.fx.a])), self.fx.a),
+            self.tuple(self.fx.b, UnpackType(Instance(self.fx.std_tuplei, [self.fx.b]))),
+            self.tuple(self.fx.b, UnpackType(Instance(self.fx.std_tuplei, [self.fx.b]))),
         )
 
     def assert_meet(self, s: Type, t: Type, meet: Type) -> None:
@@ -1436,9 +1318,7 @@ class MeetSuite(Suite):
         a1, ... an and return type r.
         """
         n = len(a) - 1
-        return CallableType(
-            list(a[:-1]), [ARG_POS] * n, [None] * n, a[-1], self.fx.function
-        )
+        return CallableType(list(a[:-1]), [ARG_POS] * n, [None] * n, a[-1], self.fx.function)
 
 
 class SameTypeSuite(Suite):
@@ -1472,21 +1352,15 @@ class SameTypeSuite(Suite):
         self.assert_simple_is_same(s, t, False, strict=strict)
         self.assert_simple_is_same(t, s, False, strict=strict)
 
-    def assert_simple_is_same(
-        self, s: Type, t: Type, expected: bool, strict: bool
-    ) -> None:
+    def assert_simple_is_same(self, s: Type, t: Type, expected: bool, strict: bool) -> None:
         actual = is_same_type(s, t)
-        assert_equal(
-            actual, expected, f"is_same_type({s}, {t}) is {{}} ({{}} expected)"
-        )
+        assert_equal(actual, expected, f"is_same_type({s}, {t}) is {{}} ({{}} expected)")
 
         if strict:
             actual2 = s == t
             assert_equal(actual2, expected, f"({s} == {t}) is {{}} ({{}} expected)")
             assert_equal(
-                hash(s) == hash(t),
-                expected,
-                f"(hash({s}) == hash({t}) is {{}} ({{}} expected)",
+                hash(s) == hash(t), expected, f"(hash({s}) == hash({t}) is {{}} ({{}} expected)"
             )
 
 
@@ -1515,9 +1389,7 @@ class RemoveLastKnownValueSuite(Suite):
         self.assert_union_result(t, [self.fx.a, self.fx.nonet])
 
     def test_last_known_values_with_merge(self) -> None:
-        t = UnionType.make_union(
-            [self.fx.lit1_inst, self.fx.lit2_inst, self.fx.lit4_inst]
-        )
+        t = UnionType.make_union([self.fx.lit1_inst, self.fx.lit2_inst, self.fx.lit4_inst])
         assert remove_instance_last_known_values(t) == self.fx.a
         t = UnionType.make_union(
             [self.fx.lit1_inst, self.fx.b, self.fx.lit2_inst, self.fx.lit4_inst]
@@ -1540,9 +1412,7 @@ class ShallowOverloadMatchingSuite(Suite):
 
     def test_simple(self) -> None:
         fx = self.fx
-        ov = self.make_overload(
-            [[("x", fx.anyt, ARG_NAMED)], [("y", fx.anyt, ARG_NAMED)]]
-        )
+        ov = self.make_overload([[("x", fx.anyt, ARG_NAMED)], [("y", fx.anyt, ARG_NAMED)]])
         # Match first only
         self.assert_find_shallow_matching_overload_item(ov, make_call(("foo", "x")), 0)
         # Match second only
@@ -1566,15 +1436,9 @@ class ShallowOverloadMatchingSuite(Suite):
                 [("x", fx.anyt, ARG_POS)],
             ]
         )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("None", None)), 0
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("builtins.False", None)), 1
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("builtins.True", None)), 2
-        )
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("None", None)), 0)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("builtins.False", None)), 1)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("builtins.True", None)), 2)
         self.assert_find_shallow_matching_overload_item(ov, make_call(("foo", None)), 3)
 
     def test_none_special_cases(self) -> None:
@@ -1582,68 +1446,32 @@ class ShallowOverloadMatchingSuite(Suite):
         ov = self.make_overload(
             [[("x", fx.callable(fx.nonet), ARG_POS)], [("x", fx.nonet, ARG_POS)]]
         )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("None", None)), 1
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("func", None)), 0
-        )
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("None", None)), 1)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("func", None)), 0)
+        ov = self.make_overload([[("x", fx.str_type, ARG_POS)], [("x", fx.nonet, ARG_POS)]])
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("None", None)), 1)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("func", None)), 0)
         ov = self.make_overload(
-            [[("x", fx.str_type, ARG_POS)], [("x", fx.nonet, ARG_POS)]]
+            [[("x", UnionType([fx.str_type, fx.a]), ARG_POS)], [("x", fx.nonet, ARG_POS)]]
         )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("None", None)), 1
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("func", None)), 0
-        )
-        ov = self.make_overload(
-            [
-                [("x", UnionType([fx.str_type, fx.a]), ARG_POS)],
-                [("x", fx.nonet, ARG_POS)],
-            ]
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("None", None)), 1
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("func", None)), 0
-        )
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("None", None)), 1)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("func", None)), 0)
         ov = self.make_overload([[("x", fx.o, ARG_POS)], [("x", fx.nonet, ARG_POS)]])
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("None", None)), 0
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("func", None)), 0
-        )
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("None", None)), 0)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("func", None)), 0)
         ov = self.make_overload(
-            [
-                [("x", UnionType([fx.str_type, fx.nonet]), ARG_POS)],
-                [("x", fx.nonet, ARG_POS)],
-            ]
+            [[("x", UnionType([fx.str_type, fx.nonet]), ARG_POS)], [("x", fx.nonet, ARG_POS)]]
         )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("None", None)), 0
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("func", None)), 0
-        )
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("None", None)), 0)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("func", None)), 0)
         ov = self.make_overload([[("x", fx.anyt, ARG_POS)], [("x", fx.nonet, ARG_POS)]])
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("None", None)), 0
-        )
-        self.assert_find_shallow_matching_overload_item(
-            ov, make_call(("func", None)), 0
-        )
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("None", None)), 0)
+        self.assert_find_shallow_matching_overload_item(ov, make_call(("func", None)), 0)
 
     def test_optional_arg(self) -> None:
         fx = self.fx
         ov = self.make_overload(
-            [
-                [("x", fx.anyt, ARG_NAMED)],
-                [("y", fx.anyt, ARG_OPT)],
-                [("z", fx.anyt, ARG_NAMED)],
-            ]
+            [[("x", fx.anyt, ARG_NAMED)], [("y", fx.anyt, ARG_OPT)], [("z", fx.anyt, ARG_NAMED)]]
         )
         self.assert_find_shallow_matching_overload_item(ov, make_call(), 1)
         self.assert_find_shallow_matching_overload_item(ov, make_call(("foo", "x")), 0)
@@ -1687,11 +1515,7 @@ class ShallowOverloadMatchingSuite(Suite):
                 arg_kinds.append(kind)
             result.append(
                 CallableType(
-                    arg_types,
-                    arg_kinds,
-                    arg_names,
-                    ret_type=NoneType(),
-                    fallback=self.fx.o,
+                    arg_types, arg_kinds, arg_names, ret_type=NoneType(), fallback=self.fx.o
                 )
             )
         return Overloaded(result)

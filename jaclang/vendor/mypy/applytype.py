@@ -26,9 +26,7 @@ def get_target_type(
     tvar: TypeVarLikeType,
     type: Type,
     callable: CallableType,
-    report_incompatible_typevar_value: Callable[
-        [CallableType, Type, str, Context], None
-    ],
+    report_incompatible_typevar_value: Callable[[CallableType, Type, str, Context], None],
     context: Context,
     skip_unsatisfied: bool,
 ) -> Type | None:
@@ -47,10 +45,7 @@ def get_target_type(
         if isinstance(p_type, TypeVarType) and p_type.values:
             # Allow substituting T1 for T if every allowed value of T1
             # is also a legal value of T.
-            if all(
-                any(mypy.subtypes.is_same_type(v, v1) for v in values)
-                for v1 in p_type.values
-            ):
+            if all(any(mypy.subtypes.is_same_type(v, v1) for v in values) for v1 in p_type.values):
                 return type
         matching = []
         for value in values:
@@ -83,9 +78,7 @@ def get_target_type(
 def apply_generic_arguments(
     callable: CallableType,
     orig_types: Sequence[Type | None],
-    report_incompatible_typevar_value: Callable[
-        [CallableType, Type, str, Context], None
-    ],
+    report_incompatible_typevar_value: Callable[[CallableType, Type, str, Context], None],
     context: Context,
     skip_unsatisfied: bool = False,
 ) -> CallableType:
@@ -108,19 +101,12 @@ def apply_generic_arguments(
     id_to_type: dict[TypeVarId, Type] = {}
 
     for tvar, type in zip(tvars, orig_types):
-        assert not isinstance(
-            type, PartialType
-        ), "Internal error: must never apply partial type"
+        assert not isinstance(type, PartialType), "Internal error: must never apply partial type"
         if type is None:
             continue
 
         target_type = get_target_type(
-            tvar,
-            type,
-            callable,
-            report_incompatible_typevar_value,
-            context,
-            skip_unsatisfied,
+            tvar, type, callable, report_incompatible_typevar_value, context, skip_unsatisfied
         )
         if target_type is not None:
             id_to_type[tvar.id] = target_type
@@ -145,28 +131,42 @@ def apply_generic_arguments(
         # Same as for ParamSpec, callable with variadic types needs to be expanded as a whole.
         callable = expand_type(callable, id_to_type)
         assert isinstance(callable, CallableType)
-        return callable.copy_modified(
-            variables=[tv for tv in tvars if tv.id not in id_to_type]
-        )
+        return callable.copy_modified(variables=[tv for tv in tvars if tv.id not in id_to_type])
     else:
         callable = callable.copy_modified(
             arg_types=[expand_type(at, id_to_type) for at in callable.arg_types]
         )
 
-    # Apply arguments to TypeGuard if any.
+    # Apply arguments to TypeGuard and TypeIs if any.
     if callable.type_guard is not None:
         type_guard = expand_type(callable.type_guard, id_to_type)
     else:
         type_guard = None
+    if callable.type_is is not None:
+        type_is = expand_type(callable.type_is, id_to_type)
+    else:
+        type_is = None
 
     # The callable may retain some type vars if only some were applied.
     # TODO: move apply_poly() logic from checkexpr.py here when new inference
     # becomes universally used (i.e. in all passes + in unification).
     # With this new logic we can actually *add* some new free variables.
-    remaining_tvars = [tv for tv in tvars if tv.id not in id_to_type]
+    remaining_tvars: list[TypeVarLikeType] = []
+    for tv in tvars:
+        if tv.id in id_to_type:
+            continue
+        if not tv.has_default():
+            remaining_tvars.append(tv)
+            continue
+        # TypeVarLike isn't in id_to_type mapping.
+        # Only expand the TypeVar default here.
+        typ = expand_type(tv, id_to_type)
+        assert isinstance(typ, TypeVarLikeType)
+        remaining_tvars.append(typ)
 
     return callable.copy_modified(
         ret_type=expand_type(callable.ret_type, id_to_type),
         variables=remaining_tvars,
         type_guard=type_guard,
+        type_is=type_is,
     )

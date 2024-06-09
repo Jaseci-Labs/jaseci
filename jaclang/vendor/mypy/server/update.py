@@ -166,10 +166,7 @@ from mypy.util import module_prefix, split_target
 
 MAX_ITER: Final = 1000
 
-SENSITIVE_INTERNAL_MODULES = tuple(core_modules) + (
-    "mypy_extensions",
-    "typing_extensions",
-)
+SENSITIVE_INTERNAL_MODULES = tuple(core_modules) + ("mypy_extensions", "typing_extensions")
 
 
 class FineGrainedBuildManager:
@@ -254,8 +251,7 @@ class FineGrainedBuildManager:
         )
         if self.previous_targets_with_errors and is_verbose(self.manager):
             self.manager.log_fine_grained(
-                "previous targets with errors: %s"
-                % sorted(self.previous_targets_with_errors)
+                "previous targets with errors: %s" % sorted(self.previous_targets_with_errors)
             )
 
         blocking_error = None
@@ -370,9 +366,7 @@ class FineGrainedBuildManager:
             )
             return changed_modules, (next_id, next_path), None
 
-        result = self.update_module(
-            next_id, next_path, next_id in removed_set, followed
-        )
+        result = self.update_module(next_id, next_path, next_id in removed_set, followed)
         remaining, (next_id, next_path), blocker_messages = result
         changed_modules = [(id, path) for id, path in changed_modules if id != next_id]
         changed_modules = dedupe_modules(remaining + changed_modules)
@@ -502,9 +496,7 @@ def find_unloaded_deps(
     return unloaded
 
 
-def ensure_deps_loaded(
-    module: str, deps: dict[str, set[str]], graph: dict[str, State]
-) -> None:
+def ensure_deps_loaded(module: str, deps: dict[str, set[str]], graph: dict[str, State]) -> None:
     """Ensure that the dependencies on a module are loaded.
 
     Dependencies are loaded into the 'deps' dictionary.
@@ -667,9 +659,7 @@ def update_module_isolated(
 
     # Merge old and new ASTs.
     new_modules_dict: dict[str, MypyFile | None] = {module: state.tree}
-    replace_modules_with_new_variants(
-        manager, graph, {orig_module: orig_tree}, new_modules_dict
-    )
+    replace_modules_with_new_variants(manager, graph, {orig_module: orig_tree}, new_modules_dict)
 
     t1 = time.time()
     # Perform type checking.
@@ -680,18 +670,14 @@ def update_module_isolated(
     t2 = time.time()
     state.finish_passes()
     t3 = time.time()
-    manager.add_stats(
-        semanal_time=t1 - t0, typecheck_time=t2 - t1, finish_passes_time=t3 - t2
-    )
+    manager.add_stats(semanal_time=t1 - t0, typecheck_time=t2 - t1, finish_passes_time=t3 - t2)
 
     graph[module] = state
 
     return NormalUpdate(module, path, remaining_modules, state.tree)
 
 
-def find_relative_leaf_module(
-    modules: list[tuple[str, str]], graph: Graph
-) -> tuple[str, str]:
+def find_relative_leaf_module(modules: list[tuple[str, str]], graph: Graph) -> tuple[str, str]:
     """Find a module in a list that directly imports no other module in the list.
 
     If no such module exists, return the lexicographically first module from the list.
@@ -718,9 +704,7 @@ def find_relative_leaf_module(
     return modules[0]
 
 
-def delete_module(
-    module_id: str, path: str, graph: Graph, manager: BuildManager
-) -> None:
+def delete_module(module_id: str, path: str, graph: Graph, manager: BuildManager) -> None:
     manager.log_fine_grained(f"delete module {module_id!r}")
     # TODO: Remove deps for the module (this only affects memory use, not correctness)
     if module_id in graph:
@@ -794,9 +778,7 @@ def calculate_active_triggers(
         diff = compare_symbol_table_snapshots(id, snapshot1, snapshot2)
         package_nesting_level = id.count(".")
         for item in diff.copy():
-            if item.count(".") <= package_nesting_level + 1 and item.split(".")[
-                -1
-            ] not in (
+            if item.count(".") <= package_nesting_level + 1 and item.split(".")[-1] not in (
                 "__builtins__",
                 "__file__",
                 "__name__",
@@ -838,9 +820,7 @@ def replace_modules_with_new_variants(
         preserved_module = old_modules.get(id)
         new_module = new_modules[id]
         if preserved_module and new_module is not None:
-            merge_asts(
-                preserved_module, preserved_module.names, new_module, new_module.names
-            )
+            merge_asts(preserved_module, preserved_module.names, new_module, new_module.names)
             manager.modules[id] = preserved_module
             graph[id].tree = preserved_module
 
@@ -871,9 +851,7 @@ def propagate_changes_using_dependencies(
     while triggered or targets_with_errors:
         num_iter += 1
         if num_iter > MAX_ITER:
-            raise RuntimeError(
-                "Max number of iterations (%d) reached (endless loop?)" % MAX_ITER
-            )
+            raise RuntimeError("Max number of iterations (%d) reached (endless loop?)" % MAX_ITER)
 
         todo, unloaded, stale_protos = find_targets_recursive(
             manager, graph, triggered, deps, up_to_date_modules
@@ -900,9 +878,7 @@ def propagate_changes_using_dependencies(
         # TODO: Preserve order (set is not optimal)
         for id, nodes in sorted(todo.items(), key=lambda x: x[0]):
             assert id not in up_to_date_modules
-            triggered |= reprocess_nodes(
-                manager, graph, id, nodes, deps, processed_targets
-            )
+            triggered |= reprocess_nodes(manager, graph, id, nodes, deps, processed_targets)
         # Changes elsewhere may require us to reprocess modules that were
         # previously considered up to date. For example, there may be a
         # dependency loop that loops back to an originally processed module.
@@ -989,9 +965,7 @@ def reprocess_nodes(
     Return fired triggers.
     """
     if module_id not in graph:
-        manager.log_fine_grained(
-            "%s not in graph (blocking errors or deleted?)" % module_id
-        )
+        manager.log_fine_grained("%s not in graph (blocking errors or deleted?)" % module_id)
         return set()
 
     file_node = manager.modules[module_id]
@@ -1010,9 +984,7 @@ def reprocess_nodes(
     state = graph[module_id]
     options = state.options
     manager.errors.set_file_ignored_lines(
-        file_node.path,
-        file_node.ignored_lines,
-        options.ignore_errors or state.ignore_all,
+        file_node.path, file_node.ignored_lines, options.ignore_errors or state.ignore_all
     )
     manager.errors.set_skipped_lines(file_node.path, file_node.skipped_lines)
 
@@ -1077,9 +1049,7 @@ def reprocess_nodes(
     return new_triggered
 
 
-def find_symbol_tables_recursive(
-    prefix: str, symbols: SymbolTable
-) -> dict[str, SymbolTable]:
+def find_symbol_tables_recursive(prefix: str, symbols: SymbolTable) -> dict[str, SymbolTable]:
     """Find all nested symbol tables.
 
     Args:
@@ -1092,9 +1062,7 @@ def find_symbol_tables_recursive(
     result = {}
     result[prefix] = symbols
     for name, node in symbols.items():
-        if isinstance(node.node, TypeInfo) and node.node.fullname.startswith(
-            prefix + "."
-        ):
+        if isinstance(node.node, TypeInfo) and node.node.fullname.startswith(prefix + "."):
             more = find_symbol_tables_recursive(prefix + "." + name, node.node.names)
             result.update(more)
     return result
@@ -1132,9 +1100,7 @@ def lookup_target(
     """
 
     def not_found() -> None:
-        manager.log_fine_grained(
-            f"Can't find matching target for {target} (stale dependency?)"
-        )
+        manager.log_fine_grained(f"Can't find matching target for {target} (stale dependency?)")
 
     modules = manager.modules
     items = split_target(modules, target)
@@ -1205,9 +1171,7 @@ def is_verbose(manager: BuildManager) -> bool:
     return manager.options.verbosity >= 1 or DEBUG_FINE_GRAINED
 
 
-def target_from_node(
-    module: str, node: FuncDef | MypyFile | OverloadedFuncDef
-) -> str | None:
+def target_from_node(module: str, node: FuncDef | MypyFile | OverloadedFuncDef) -> str | None:
     """Return the target name corresponding to a deferred node.
 
     Args:

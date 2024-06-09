@@ -37,9 +37,7 @@ OnePackageDir = Tuple[str, bool]
 PackageDirs = List[OnePackageDir]
 
 # Minimum and maximum Python versions for modules in stdlib as (major, minor)
-StdlibVersions: _TypeAlias = Dict[
-    str, Tuple[Tuple[int, int], Optional[Tuple[int, int]]]
-]
+StdlibVersions: _TypeAlias = Dict[str, Tuple[Tuple[int, int], Optional[Tuple[int, int]]]]
 
 PYTHON_EXTENSIONS: Final = [".pyi", ".py"]
 
@@ -69,14 +67,10 @@ class ModuleNotFoundReason(Enum):
     def error_message_templates(self, daemon: bool) -> tuple[str, list[str]]:
         doc_link = "See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports"
         if self is ModuleNotFoundReason.NOT_FOUND:
-            msg = (
-                'Cannot find implementation or library stub for module named "{module}"'
-            )
+            msg = 'Cannot find implementation or library stub for module named "{module}"'
             notes = [doc_link]
         elif self is ModuleNotFoundReason.WRONG_WORKING_DIRECTORY:
-            msg = (
-                'Cannot find implementation or library stub for module named "{module}"'
-            )
+            msg = 'Cannot find implementation or library stub for module named "{module}"'
             notes = [
                 "You may be running mypy in a subpackage, "
                 "mypy should be run on the package root"
@@ -119,14 +113,14 @@ class BuildSource:
         self.path = path  # File where it's found (e.g. 'xxx/yyy/foo/bar.py')
         self.module = module or "__main__"  # Module name (e.g. 'foo.bar')
         self.text = text  # Source code, if initially supplied, else None
-        self.base_dir = (
-            base_dir  # Directory where the package is rooted (e.g. 'xxx/yyy')
-        )
+        self.base_dir = base_dir  # Directory where the package is rooted (e.g. 'xxx/yyy')
         self.followed = followed  # Was this found by following imports?
 
     def __repr__(self) -> str:
-        return "BuildSource(path={!r}, module={!r}, has_text={}, base_dir={!r}, followed={})".format(
-            self.path, self.module, self.text is not None, self.base_dir, self.followed
+        return (
+            "BuildSource(path={!r}, module={!r}, has_text={}, base_dir={!r}, followed={})".format(
+                self.path, self.module, self.text is not None, self.base_dir, self.followed
+            )
         )
 
 
@@ -211,8 +205,7 @@ class FindModuleCache:
             d = os.path.dirname(p)
             for _ in range(id.count(".")):
                 if not any(
-                    self.fscache.isfile(os.path.join(d, "__init__" + x))
-                    for x in PYTHON_EXTENSIONS
+                    self.fscache.isfile(os.path.join(d, "__init__" + x)) for x in PYTHON_EXTENSIONS
                 ):
                     return None
                 d = os.path.dirname(d)
@@ -261,9 +254,7 @@ class FindModuleCache:
                 dirs.append((dir, True))
         return dirs
 
-    def get_toplevel_possibilities(
-        self, lib_path: tuple[str, ...], id: str
-    ) -> list[str]:
+    def get_toplevel_possibilities(self, lib_path: tuple[str, ...], id: str) -> list[str]:
         """Find which elements of lib_path could contain a particular top-level module.
 
         In practice, almost all modules can be routed to the correct entry in
@@ -309,10 +300,7 @@ class FindModuleCache:
                 use_typeshed = self._typeshed_has_version(top_level)
             self.results[id] = self._find_module(id, use_typeshed)
             if (
-                not (
-                    fast_path
-                    or (self.options is not None and self.options.fast_module_lookup)
-                )
+                not (fast_path or (self.options is not None and self.options.fast_module_lookup))
                 and self.results[id] is ModuleNotFoundReason.NOT_FOUND
                 and self._can_find_module_in_parent_dir(id)
             ):
@@ -324,9 +312,7 @@ class FindModuleCache:
             return True
         version = typeshed_py_version(self.options)
         min_version, max_version = self.stdlib_py_versions[module]
-        return version >= min_version and (
-            max_version is None or version <= max_version
-        )
+        return version >= min_version and (max_version is None or version <= max_version)
 
     def _find_module_non_stub_helper(
         self, components: list[str], pkg_dir: str
@@ -352,9 +338,7 @@ class FindModuleCache:
         else:
             return ModuleNotFoundReason.NOT_FOUND
 
-    def _update_ns_ancestors(
-        self, components: list[str], match: tuple[str, bool]
-    ) -> None:
+    def _update_ns_ancestors(self, components: list[str], match: tuple[str, bool]) -> None:
         path, verify = match
         for i in range(1, len(components)):
             pkg_id = ".".join(components[:-i])
@@ -376,9 +360,7 @@ class FindModuleCache:
         while any(is_init_file(file) for file in os.listdir(working_dir)):
             working_dir = os.path.dirname(working_dir)
             parent_search.search_paths = SearchPaths((working_dir,), (), (), ())
-            if not isinstance(
-                parent_search._find_module(id, False), ModuleNotFoundReason
-            ):
+            if not isinstance(parent_search._find_module(id, False), ModuleNotFoundReason):
                 return True
         return False
 
@@ -463,9 +445,7 @@ class FindModuleCache:
             if isinstance(non_stub_match, ModuleNotFoundReason):
                 if non_stub_match is ModuleNotFoundReason.FOUND_WITHOUT_TYPE_HINTS:
                     found_possible_third_party_missing_type_hints = True
-                elif (
-                    non_stub_match is ModuleNotFoundReason.APPROVED_STUBS_NOT_INSTALLED
-                ):
+                elif non_stub_match is ModuleNotFoundReason.APPROVED_STUBS_NOT_INSTALLED:
                     need_installed_stubs = True
             else:
                 third_party_inline_dirs.append(non_stub_match)
@@ -481,9 +461,7 @@ class FindModuleCache:
             # Search for stdlib stubs in typeshed before installed
             # stubs to avoid picking up backports (dataclasses, for
             # example) when the library is included in stdlib.
-            candidate_base_dirs += self.find_lib_path_dirs(
-                id, self.search_paths.typeshed_path
-            )
+            candidate_base_dirs += self.find_lib_path_dirs(id, self.search_paths.typeshed_path)
         candidate_base_dirs += third_party_stubs_dirs + third_party_inline_dirs
 
         # If we're looking for a module like 'foo.bar.baz', then candidate_base_dirs now
@@ -510,9 +488,7 @@ class FindModuleCache:
                         continue
                     return path
                 elif fscache.isfile_case(path_stubs, dir_prefix):
-                    if verify and not verify_module(
-                        fscache, id, path_stubs, dir_prefix
-                    ):
+                    if verify and not verify_module(fscache, id, path_stubs, dir_prefix):
                         near_misses.append((path_stubs, dir_prefix))
                         continue
                     return path_stubs
@@ -602,11 +578,7 @@ class FindModuleCache:
         names = sorted(self.fscache.listdir(package_path))
         for name in names:
             # Skip certain names altogether
-            if name in (
-                "__pycache__",
-                "site-packages",
-                "node_modules",
-            ) or name.startswith("."):
+            if name in ("__pycache__", "site-packages", "node_modules") or name.startswith("."):
                 continue
             subpath = os.path.join(package_path, name)
 
@@ -647,8 +619,7 @@ def matches_exclude(
         if re.search(exclude, subpath_str):
             if verbose:
                 print(
-                    f"TRACE: Excluding {subpath_str} (matches pattern {exclude})",
-                    file=sys.stderr,
+                    f"TRACE: Excluding {subpath_str} (matches pattern {exclude})", file=sys.stderr
                 )
             return True
     return False
@@ -672,9 +643,7 @@ def verify_module(fscache: FileSystemCache, id: str, path: str, prefix: str) -> 
     return True
 
 
-def highest_init_level(
-    fscache: FileSystemCache, id: str, path: str, prefix: str
-) -> int:
+def highest_init_level(fscache: FileSystemCache, id: str, path: str, prefix: str) -> int:
     """Compute the highest level where an __init__ file is found."""
     if is_init_file(path):
         path = os.path.dirname(path)
@@ -704,9 +673,7 @@ def default_lib_path(
 
     if custom_typeshed_dir:
         typeshed_dir = os.path.join(custom_typeshed_dir, "stdlib")
-        mypy_extensions_dir = os.path.join(
-            custom_typeshed_dir, "stubs", "mypy-extensions"
-        )
+        mypy_extensions_dir = os.path.join(custom_typeshed_dir, "stubs", "mypy-extensions")
         versions_file = os.path.join(typeshed_dir, "VERSIONS")
         if not os.path.isdir(typeshed_dir) or not os.path.isfile(versions_file):
             print(
@@ -720,9 +687,7 @@ def default_lib_path(
         if os.path.isdir(auto):
             data_dir = auto
         typeshed_dir = os.path.join(data_dir, "typeshed", "stdlib")
-        mypy_extensions_dir = os.path.join(
-            data_dir, "typeshed", "stubs", "mypy-extensions"
-        )
+        mypy_extensions_dir = os.path.join(data_dir, "typeshed", "stubs", "mypy-extensions")
     path.append(typeshed_dir)
 
     # Get mypy-extensions stubs from typeshed, since we treat it as an
@@ -783,10 +748,7 @@ def get_search_dirs(python_executable: str | None) -> tuple[list[str], list[str]
 
 
 def compute_search_paths(
-    sources: list[BuildSource],
-    options: Options,
-    data_dir: str,
-    alt_lib_path: str | None = None,
+    sources: list[BuildSource], options: Options, data_dir: str, alt_lib_path: str | None = None
 ) -> SearchPaths:
     """Compute the search paths as specified in PEP 561.
 
@@ -799,9 +761,7 @@ def compute_search_paths(
     # Determine the default module search path.
     lib_path = collections.deque(
         default_lib_path(
-            data_dir,
-            options.python_version,
-            custom_typeshed_dir=options.custom_typeshed_dir,
+            data_dir, options.python_version, custom_typeshed_dir=options.custom_typeshed_dir
         )
     )
 
@@ -856,10 +816,7 @@ def compute_search_paths(
         if (
             site in mypypath
             or any(p.startswith(site + os.path.sep) for p in mypypath)
-            or (
-                os.path.altsep
-                and any(p.startswith(site + os.path.altsep) for p in mypypath)
-            )
+            or (os.path.altsep and any(p.startswith(site + os.path.altsep) for p in mypypath))
         ):
             print(f"{site} is in the MYPYPATH. Please remove it.", file=sys.stderr)
             print(
@@ -885,9 +842,7 @@ def load_stdlib_py_versions(custom_typeshed_dir: str | None) -> StdlibVersions:
 
     None means there is no maximum version.
     """
-    typeshed_dir = custom_typeshed_dir or os.path.join(
-        os.path.dirname(__file__), "typeshed"
-    )
+    typeshed_dir = custom_typeshed_dir or os.path.join(os.path.dirname(__file__), "typeshed")
     stdlib_dir = os.path.join(typeshed_dir, "stdlib")
     result = {}
 
@@ -902,9 +857,7 @@ def load_stdlib_py_versions(custom_typeshed_dir: str | None) -> StdlibVersions:
             versions = version_range.split("-")
             min_version = parse_version(versions[0])
             max_version = (
-                parse_version(versions[1])
-                if len(versions) >= 2 and versions[1].strip()
-                else None
+                parse_version(versions[1]) if len(versions) >= 2 and versions[1].strip() else None
             )
             result[module] = min_version, max_version
     return result
@@ -917,6 +870,6 @@ def parse_version(version: str) -> tuple[int, int]:
 
 def typeshed_py_version(options: Options) -> tuple[int, int]:
     """Return Python version used for checking whether module supports typeshed."""
-    # Typeshed no longer covers Python 3.x versions before 3.7, so 3.7 is
+    # Typeshed no longer covers Python 3.x versions before 3.8, so 3.8 is
     # the earliest we can support.
-    return max(options.python_version, (3, 7))
+    return max(options.python_version, (3, 8))

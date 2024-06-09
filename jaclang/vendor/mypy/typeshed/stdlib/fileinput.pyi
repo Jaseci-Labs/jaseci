@@ -41,9 +41,7 @@ if sys.version_info >= (3, 10):
         backup: str = "",
         *,
         mode: _TextMode = "r",
-        openhook: (
-            Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None
-        ) = None,
+        openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None = None,
         encoding: str | None = None,
         errors: str | None = None,
     ) -> FileInput[str]: ...
@@ -54,9 +52,7 @@ if sys.version_info >= (3, 10):
         backup: str = "",
         *,
         mode: Literal["rb"],
-        openhook: (
-            Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None
-        ) = None,
+        openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None = None,
         encoding: None = None,
         errors: None = None,
     ) -> FileInput[bytes]: ...
@@ -67,9 +63,7 @@ if sys.version_info >= (3, 10):
         backup: str = "",
         *,
         mode: str,
-        openhook: (
-            Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None
-        ) = None,
+        openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None = None,
         encoding: str | None = None,
         errors: str | None = None,
     ) -> FileInput[Any]: ...
@@ -83,9 +77,7 @@ else:
         backup: str = "",
         *,
         mode: _TextMode = "r",
-        openhook: (
-            Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None
-        ) = None,
+        openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None = None,
     ) -> FileInput[str]: ...
     @overload
     def input(
@@ -94,9 +86,7 @@ else:
         backup: str = "",
         *,
         mode: Literal["rb"],
-        openhook: (
-            Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None
-        ) = None,
+        openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None = None,
     ) -> FileInput[bytes]: ...
     @overload
     def input(
@@ -105,9 +95,7 @@ else:
         backup: str = "",
         *,
         mode: str,
-        openhook: (
-            Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None
-        ) = None,
+        openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None = None,
     ) -> FileInput[Any]: ...
 
 def close() -> None: ...
@@ -130,9 +118,7 @@ class FileInput(Iterator[AnyStr]):
             backup: str = "",
             *,
             mode: _TextMode = "r",
-            openhook: (
-                Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None
-            ) = None,
+            openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None = None,
             encoding: str | None = None,
             errors: str | None = None,
         ) -> None: ...
@@ -144,9 +130,7 @@ class FileInput(Iterator[AnyStr]):
             backup: str = "",
             *,
             mode: Literal["rb"],
-            openhook: (
-                Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None
-            ) = None,
+            openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None = None,
             encoding: None = None,
             errors: None = None,
         ) -> None: ...
@@ -158,9 +142,7 @@ class FileInput(Iterator[AnyStr]):
             backup: str = "",
             *,
             mode: str,
-            openhook: (
-                Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None
-            ) = None,
+            openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None = None,
             encoding: str | None = None,
             errors: str | None = None,
         ) -> None: ...
@@ -175,9 +157,7 @@ class FileInput(Iterator[AnyStr]):
             backup: str = "",
             *,
             mode: _TextMode = "r",
-            openhook: (
-                Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None
-            ) = None,
+            openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[str]] | None = None,
         ) -> None: ...
         @overload
         def __init__(
@@ -187,9 +167,7 @@ class FileInput(Iterator[AnyStr]):
             backup: str = "",
             *,
             mode: Literal["rb"],
-            openhook: (
-                Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None
-            ) = None,
+            openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[bytes]] | None = None,
         ) -> None: ...
         @overload
         def __init__(
@@ -199,19 +177,14 @@ class FileInput(Iterator[AnyStr]):
             backup: str = "",
             *,
             mode: str,
-            openhook: (
-                Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None
-            ) = None,
+            openhook: Callable[[StrOrBytesPath, str], _HasReadlineAndFileno[Any]] | None = None,
         ) -> None: ...
 
     def __del__(self) -> None: ...
     def close(self) -> None: ...
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
+        self, type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
     def __iter__(self) -> Self: ...
     def __next__(self) -> AnyStr: ...
@@ -231,16 +204,10 @@ class FileInput(Iterator[AnyStr]):
 
 if sys.version_info >= (3, 10):
     def hook_compressed(
-        filename: StrOrBytesPath,
-        mode: str,
-        *,
-        encoding: str | None = None,
-        errors: str | None = None,
+        filename: StrOrBytesPath, mode: str, *, encoding: str | None = None, errors: str | None = None
     ) -> IO[Any]: ...
 
 else:
     def hook_compressed(filename: StrOrBytesPath, mode: str) -> IO[Any]: ...
 
-def hook_encoded(
-    encoding: str, errors: str | None = None
-) -> Callable[[StrOrBytesPath, str], IO[Any]]: ...
+def hook_encoded(encoding: str, errors: str | None = None) -> Callable[[StrOrBytesPath, str], IO[Any]]: ...

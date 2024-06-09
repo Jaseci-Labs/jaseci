@@ -50,10 +50,7 @@ class ArgSuite(Suite):
         assert options.python_executable == sys.executable
 
         # test that --no-site-packages will disable executable inference
-        matching_version = base + [
-            f"--python-version={sys_ver_str}",
-            "--no-site-packages",
-        ]
+        matching_version = base + [f"--python-version={sys_ver_str}", "--no-site-packages"]
         _, options = process_options(matching_version)
         assert options.python_version == sys.version_info[:2]
         assert options.python_executable is None

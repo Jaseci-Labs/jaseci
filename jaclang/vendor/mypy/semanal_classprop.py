@@ -39,9 +39,7 @@ TYPE_PROMOTIONS: Final = {
 }
 
 
-def calculate_class_abstract_status(
-    typ: TypeInfo, is_stub_file: bool, errors: Errors
-) -> None:
+def calculate_class_abstract_status(typ: TypeInfo, is_stub_file: bool, errors: Errors) -> None:
     """Calculate abstract status of a class.
 
     Set is_abstract of the type to True if the type has an unimplemented
@@ -98,9 +96,7 @@ def calculate_class_abstract_status(
     # implement some methods.
     typ.abstract_attributes = sorted(abstract)
     if is_stub_file:
-        if typ.declared_metaclass and typ.declared_metaclass.type.has_base(
-            "abc.ABCMeta"
-        ):
+        if typ.declared_metaclass and typ.declared_metaclass.type.has_base("abc.ABCMeta"):
             return
         if typ.is_protocol:
             return
@@ -112,15 +108,12 @@ def calculate_class_abstract_status(
             attrs = ", ".join(f'"{attr}"' for attr, _ in sorted(abstract))
             report(f"Class {typ.fullname} has abstract attributes {attrs}", "error")
             report(
-                "If it is meant to be abstract, add 'abc.ABCMeta' as an explicit metaclass",
-                "note",
+                "If it is meant to be abstract, add 'abc.ABCMeta' as an explicit metaclass", "note"
             )
     if typ.is_final and abstract:
         attrs = ", ".join(f'"{attr}"' for attr, _ in sorted(abstract))
         errors.report(
-            typ.line,
-            typ.column,
-            f"Final class {typ.fullname} has abstract attributes {attrs}",
+            typ.line, typ.column, f"Final class {typ.fullname} has abstract attributes {attrs}"
         )
 
 
@@ -148,27 +141,15 @@ def calculate_class_vars(info: TypeInfo) -> None:
     """
     for name, sym in info.names.items():
         node = sym.node
-        if (
-            isinstance(node, Var)
-            and node.info
-            and node.is_inferred
-            and not node.is_classvar
-        ):
+        if isinstance(node, Var) and node.info and node.is_inferred and not node.is_classvar:
             for base in info.mro[1:]:
                 member = base.names.get(name)
-                if (
-                    member is not None
-                    and isinstance(member.node, Var)
-                    and member.node.is_classvar
-                ):
+                if member is not None and isinstance(member.node, Var) and member.node.is_classvar:
                     node.is_classvar = True
 
 
 def add_type_promotion(
-    info: TypeInfo,
-    module_names: SymbolTable,
-    options: Options,
-    builtin_names: SymbolTable,
+    info: TypeInfo, module_names: SymbolTable, options: Options, builtin_names: SymbolTable
 ) -> None:
     """Setup extra, ad-hoc subtyping relationships between classes (promotion).
 
@@ -185,15 +166,9 @@ def add_type_promotion(
     if not promote_targets:
         if defn.fullname in TYPE_PROMOTIONS:
             target_sym = module_names.get(TYPE_PROMOTIONS[defn.fullname])
-            if (
-                defn.fullname == "builtins.bytearray"
-                and options.disable_bytearray_promotion
-            ):
+            if defn.fullname == "builtins.bytearray" and options.disable_bytearray_promotion:
                 target_sym = None
-            elif (
-                defn.fullname == "builtins.memoryview"
-                and options.disable_memoryview_promotion
-            ):
+            elif defn.fullname == "builtins.memoryview" and options.disable_memoryview_promotion:
                 target_sym = None
             # With test stubs, the target may not exist.
             if target_sym:

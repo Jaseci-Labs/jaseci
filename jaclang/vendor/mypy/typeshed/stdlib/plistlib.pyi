@@ -6,24 +6,9 @@ from enum import Enum
 from typing import IO, Any
 from typing_extensions import Self
 
-__all__ = [
-    "InvalidFileException",
-    "FMT_XML",
-    "FMT_BINARY",
-    "load",
-    "dump",
-    "loads",
-    "dumps",
-    "UID",
-]
+__all__ = ["InvalidFileException", "FMT_XML", "FMT_BINARY", "load", "dump", "loads", "dumps", "UID"]
 if sys.version_info < (3, 9):
-    __all__ += [
-        "readPlist",
-        "writePlist",
-        "readPlistFromBytes",
-        "writePlistToBytes",
-        "Data",
-    ]
+    __all__ += ["readPlist", "writePlist", "readPlistFromBytes", "writePlistToBytes", "Data"]
 
 class PlistFormat(Enum):
     FMT_XML: int
@@ -48,17 +33,9 @@ if sys.version_info >= (3, 13):
     ) -> Any: ...
 
 elif sys.version_info >= (3, 9):
-    def load(
-        fp: IO[bytes],
-        *,
-        fmt: PlistFormat | None = None,
-        dict_type: type[MutableMapping[str, Any]] = ...,
-    ) -> Any: ...
+    def load(fp: IO[bytes], *, fmt: PlistFormat | None = None, dict_type: type[MutableMapping[str, Any]] = ...) -> Any: ...
     def loads(
-        value: ReadableBuffer,
-        *,
-        fmt: PlistFormat | None = None,
-        dict_type: type[MutableMapping[str, Any]] = ...,
+        value: ReadableBuffer, *, fmt: PlistFormat | None = None, dict_type: type[MutableMapping[str, Any]] = ...
     ) -> Any: ...
 
 else:
@@ -79,17 +56,7 @@ else:
 
 if sys.version_info >= (3, 13):
     def dump(
-        value: (
-            Mapping[str, Any]
-            | list[Any]
-            | tuple[Any, ...]
-            | str
-            | bool
-            | float
-            | bytes
-            | bytearray
-            | datetime
-        ),
+        value: Mapping[str, Any] | list[Any] | tuple[Any, ...] | str | bool | float | bytes | bytearray | datetime,
         fp: IO[bytes],
         *,
         fmt: PlistFormat = ...,
@@ -98,17 +65,7 @@ if sys.version_info >= (3, 13):
         aware_datetime: bool = False,
     ) -> None: ...
     def dumps(
-        value: (
-            Mapping[str, Any]
-            | list[Any]
-            | tuple[Any, ...]
-            | str
-            | bool
-            | float
-            | bytes
-            | bytearray
-            | datetime
-        ),
+        value: Mapping[str, Any] | list[Any] | tuple[Any, ...] | str | bool | float | bytes | bytearray | datetime,
         *,
         fmt: PlistFormat = ...,
         skipkeys: bool = False,
@@ -118,17 +75,7 @@ if sys.version_info >= (3, 13):
 
 else:
     def dump(
-        value: (
-            Mapping[str, Any]
-            | list[Any]
-            | tuple[Any, ...]
-            | str
-            | bool
-            | float
-            | bytes
-            | bytearray
-            | datetime
-        ),
+        value: Mapping[str, Any] | list[Any] | tuple[Any, ...] | str | bool | float | bytes | bytearray | datetime,
         fp: IO[bytes],
         *,
         fmt: PlistFormat = ...,
@@ -136,17 +83,7 @@ else:
         skipkeys: bool = False,
     ) -> None: ...
     def dumps(
-        value: (
-            Mapping[str, Any]
-            | list[Any]
-            | tuple[Any, ...]
-            | str
-            | bool
-            | float
-            | bytes
-            | bytearray
-            | datetime
-        ),
+        value: Mapping[str, Any] | list[Any] | tuple[Any, ...] | str | bool | float | bytes | bytearray | datetime,
         *,
         fmt: PlistFormat = ...,
         skipkeys: bool = False,

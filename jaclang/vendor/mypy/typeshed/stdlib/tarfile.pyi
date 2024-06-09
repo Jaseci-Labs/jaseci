@@ -2,14 +2,9 @@ import bz2
 import io
 import sys
 from _typeshed import StrOrBytesPath, StrPath
-from builtins import (
-    list as _list,
-)  # aliases to avoid name clashes with fields named "type" or "list"
+from builtins import list as _list  # aliases to avoid name clashes with fields named "type" or "list"
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from gzip import (
-    _ReadableFileobj as _GzipReadableFileobj,
-    _WritableFileobj as _GzipWritableFileobj,
-)
+from gzip import _ReadableFileobj as _GzipReadableFileobj, _WritableFileobj as _GzipWritableFileobj
 from types import TracebackType
 from typing import IO, ClassVar, Literal, Protocol, overload
 from typing_extensions import Self, TypeAlias
@@ -48,10 +43,10 @@ _FilterFunction: TypeAlias = Callable[[TarInfo, str], TarInfo | None]
 _TarfileFilter: TypeAlias = Literal["fully_trusted", "tar", "data"] | _FilterFunction
 
 class _Fileobj(Protocol):
-    def read(self, __size: int) -> bytes: ...
-    def write(self, __b: bytes) -> object: ...
+    def read(self, size: int, /) -> bytes: ...
+    def write(self, b: bytes, /) -> object: ...
     def tell(self) -> int: ...
-    def seek(self, __pos: int) -> object: ...
+    def seek(self, pos: int, /) -> object: ...
     def close(self) -> object: ...
     # Optional fields:
     # name: str | bytes
@@ -165,10 +160,7 @@ class TarFile:
     ) -> None: ...
     def __enter__(self) -> Self: ...
     def __exit__(
-        self,
-        type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
+        self, type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
     def __iter__(self) -> Iterator[TarInfo]: ...
     @classmethod
@@ -298,10 +290,10 @@ class TarFile:
     def getmember(self, name: str) -> TarInfo: ...
     def getmembers(self) -> _list[TarInfo]: ...
     def getnames(self) -> _list[str]: ...
-    def list(
-        self, verbose: bool = True, *, members: _list[TarInfo] | None = None
-    ) -> None: ...
+    def list(self, verbose: bool = True, *, members: _list[TarInfo] | None = None) -> None: ...
     def next(self) -> TarInfo | None: ...
+    # Calling this method without `filter` is deprecated, but it may be set either on the class or in an
+    # individual call, so we can't mark it as @deprecated here.
     def extractall(
         self,
         path: StrOrBytesPath = ".",
@@ -310,6 +302,7 @@ class TarFile:
         numeric_owner: bool = False,
         filter: _TarfileFilter | None = ...,
     ) -> None: ...
+    # Same situation as for `extractall`.
     def extract(
         self,
         member: str | TarInfo,
@@ -320,40 +313,18 @@ class TarFile:
         filter: _TarfileFilter | None = ...,
     ) -> None: ...
     def _extract_member(
-        self,
-        tarinfo: TarInfo,
-        targetpath: str,
-        set_attrs: bool = True,
-        numeric_owner: bool = False,
+        self, tarinfo: TarInfo, targetpath: str, set_attrs: bool = True, numeric_owner: bool = False
     ) -> None: ...  # undocumented
     def extractfile(self, member: str | TarInfo) -> IO[bytes] | None: ...
-    def makedir(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
-    def makefile(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
-    def makeunknown(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
-    def makefifo(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
-    def makedev(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
-    def makelink(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
-    def chown(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath, numeric_owner: bool
-    ) -> None: ...  # undocumented
-    def chmod(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
-    def utime(
-        self, tarinfo: TarInfo, targetpath: StrOrBytesPath
-    ) -> None: ...  # undocumented
+    def makedir(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
+    def makefile(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
+    def makeunknown(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
+    def makefifo(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
+    def makedev(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
+    def makelink(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
+    def chown(self, tarinfo: TarInfo, targetpath: StrOrBytesPath, numeric_owner: bool) -> None: ...  # undocumented
+    def chmod(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
+    def utime(self, tarinfo: TarInfo, targetpath: StrOrBytesPath) -> None: ...  # undocumented
     def add(
         self,
         name: StrPath,
@@ -364,10 +335,7 @@ class TarFile:
     ) -> None: ...
     def addfile(self, tarinfo: TarInfo, fileobj: IO[bytes] | None = None) -> None: ...
     def gettarinfo(
-        self,
-        name: StrOrBytesPath | None = None,
-        arcname: str | None = None,
-        fileobj: IO[bytes] | None = None,
+        self, name: StrOrBytesPath | None = None, arcname: str | None = None, fileobj: IO[bytes] | None = None
     ) -> TarInfo: ...
     def close(self) -> None: ...
 
@@ -451,27 +419,14 @@ class TarInfo:
         deep: bool = True,
     ) -> Self: ...
     def get_info(self) -> Mapping[str, str | int | bytes | Mapping[str, str]]: ...
-    def tobuf(
-        self,
-        format: int | None = 2,
-        encoding: str | None = "utf-8",
-        errors: str = "surrogateescape",
-    ) -> bytes: ...
+    def tobuf(self, format: int | None = 2, encoding: str | None = "utf-8", errors: str = "surrogateescape") -> bytes: ...
     def create_ustar_header(
-        self,
-        info: Mapping[str, str | int | bytes | Mapping[str, str]],
-        encoding: str,
-        errors: str,
+        self, info: Mapping[str, str | int | bytes | Mapping[str, str]], encoding: str, errors: str
     ) -> bytes: ...
     def create_gnu_header(
-        self,
-        info: Mapping[str, str | int | bytes | Mapping[str, str]],
-        encoding: str,
-        errors: str,
+        self, info: Mapping[str, str | int | bytes | Mapping[str, str]], encoding: str, errors: str
     ) -> bytes: ...
-    def create_pax_header(
-        self, info: Mapping[str, str | int | bytes | Mapping[str, str]], encoding: str
-    ) -> bytes: ...
+    def create_pax_header(self, info: Mapping[str, str | int | bytes | Mapping[str, str]], encoding: str) -> bytes: ...
     @classmethod
     def create_pax_global_header(cls, pax_headers: Mapping[str, str]) -> bytes: ...
     def isfile(self) -> bool: ...

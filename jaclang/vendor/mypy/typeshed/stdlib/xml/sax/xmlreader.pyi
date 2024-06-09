@@ -71,9 +71,7 @@ class AttributesImpl:
 _NSName: TypeAlias = tuple[str | None, str]
 
 class AttributesNSImpl(AttributesImpl):
-    def __init__(
-        self, attrs: Mapping[_NSName, str], qnames: Mapping[_NSName, str]
-    ) -> None: ...
+    def __init__(self, attrs: Mapping[_NSName, str], qnames: Mapping[_NSName, str]) -> None: ...
     def getType(self, name: _NSName) -> str: ...  # type: ignore[override]
     def getValue(self, name: _NSName) -> str: ...  # type: ignore[override]
     def getNameByQName(self, name: str) -> _NSName: ...  # type: ignore[override]

@@ -149,6 +149,17 @@ def import_target_to_relative_path(
     return relative_path
 
 
+def is_standard_lib_module(module_path: str) -> bool:
+    """Check if a module is a standard library module."""
+    import os
+    import sysconfig
+
+    stdlib_dir = sysconfig.get_paths()["stdlib"]
+    direc_path = os.path.join(stdlib_dir, module_path)
+    file_path = direc_path + ".py"
+    return os.path.isfile(file_path) or os.path.isdir(direc_path)
+
+
 class Jdb(pdb.Pdb):
     """Jac debugger."""
 

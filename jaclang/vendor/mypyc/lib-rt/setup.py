@@ -35,12 +35,7 @@ class build_ext_custom(build_ext):
         # Build Google Test, the C++ framework we use for testing C code.
         # The source code for Google Test is copied to this repository.
         subprocess.check_call(
-            [
-                "make",
-                "-f",
-                os.path.join(gtest_dir, "make", "Makefile"),
-                f"GTEST_DIR={gtest_dir}",
-            ],
+            ["make", "-f", os.path.join(gtest_dir, "make", "Makefile"), f"GTEST_DIR={gtest_dir}"],
             cwd=self.build_temp,
         )
 
@@ -65,8 +60,7 @@ setup(
                 "generic_ops.c",
             ],
             depends=["CPy.h", "mypyc_util.h", "pythonsupport.h"],
-            extra_compile_args=["-Wno-unused-function", "-Wno-sign-compare"]
-            + compile_args,
+            extra_compile_args=["-Wno-unused-function", "-Wno-sign-compare"] + compile_args,
             libraries=["gtest"],
             include_dirs=["../external/googletest", "../external/googletest/include"],
             **kwargs,

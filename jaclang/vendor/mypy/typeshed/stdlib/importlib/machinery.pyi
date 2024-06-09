@@ -32,16 +32,11 @@ class BuiltinImporter(importlib.abc.MetaPathFinder, importlib.abc.InspectLoader)
     # MetaPathFinder
     if sys.version_info < (3, 12):
         @classmethod
-        def find_module(
-            cls, fullname: str, path: Sequence[str] | None = None
-        ) -> importlib.abc.Loader | None: ...
+        def find_module(cls, fullname: str, path: Sequence[str] | None = None) -> importlib.abc.Loader | None: ...
 
     @classmethod
     def find_spec(
-        cls,
-        fullname: str,
-        path: Sequence[str] | None = None,
-        target: types.ModuleType | None = None,
+        cls, fullname: str, path: Sequence[str] | None = None, target: types.ModuleType | None = None
     ) -> ModuleSpec | None: ...
     # InspectLoader
     @classmethod
@@ -71,16 +66,11 @@ class FrozenImporter(importlib.abc.MetaPathFinder, importlib.abc.InspectLoader):
     # MetaPathFinder
     if sys.version_info < (3, 12):
         @classmethod
-        def find_module(
-            cls, fullname: str, path: Sequence[str] | None = None
-        ) -> importlib.abc.Loader | None: ...
+        def find_module(cls, fullname: str, path: Sequence[str] | None = None) -> importlib.abc.Loader | None: ...
 
     @classmethod
     def find_spec(
-        cls,
-        fullname: str,
-        path: Sequence[str] | None = None,
-        target: types.ModuleType | None = None,
+        cls, fullname: str, path: Sequence[str] | None = None, target: types.ModuleType | None = None
     ) -> ModuleSpec | None: ...
     # InspectLoader
     @classmethod
@@ -108,16 +98,11 @@ class FrozenImporter(importlib.abc.MetaPathFinder, importlib.abc.InspectLoader):
 class WindowsRegistryFinder(importlib.abc.MetaPathFinder):
     if sys.version_info < (3, 12):
         @classmethod
-        def find_module(
-            cls, fullname: str, path: Sequence[str] | None = None
-        ) -> importlib.abc.Loader | None: ...
+        def find_module(cls, fullname: str, path: Sequence[str] | None = None) -> importlib.abc.Loader | None: ...
 
     @classmethod
     def find_spec(
-        cls,
-        fullname: str,
-        path: Sequence[str] | None = None,
-        target: types.ModuleType | None = None,
+        cls, fullname: str, path: Sequence[str] | None = None, target: types.ModuleType | None = None
     ) -> ModuleSpec | None: ...
 
 class PathFinder:
@@ -129,27 +114,18 @@ class PathFinder:
         def invalidate_caches(cls) -> None: ...
     if sys.version_info >= (3, 10):
         @staticmethod
-        def find_distributions(
-            context: DistributionFinder.Context = ...,
-        ) -> Iterable[PathDistribution]: ...
+        def find_distributions(context: DistributionFinder.Context = ...) -> Iterable[PathDistribution]: ...
     else:
         @classmethod
-        def find_distributions(
-            cls, context: DistributionFinder.Context = ...
-        ) -> Iterable[PathDistribution]: ...
+        def find_distributions(cls, context: DistributionFinder.Context = ...) -> Iterable[PathDistribution]: ...
 
     @classmethod
     def find_spec(
-        cls,
-        fullname: str,
-        path: Sequence[str] | None = None,
-        target: types.ModuleType | None = None,
+        cls, fullname: str, path: Sequence[str] | None = None, target: types.ModuleType | None = None
     ) -> ModuleSpec | None: ...
     if sys.version_info < (3, 12):
         @classmethod
-        def find_module(
-            cls, fullname: str, path: Sequence[str] | None = None
-        ) -> importlib.abc.Loader | None: ...
+        def find_module(cls, fullname: str, path: Sequence[str] | None = None) -> importlib.abc.Loader | None: ...
 
 SOURCE_SUFFIXES: list[str]
 DEBUG_BYTECODE_SUFFIXES: list[str]
@@ -161,18 +137,14 @@ def all_suffixes() -> list[str]: ...
 
 class FileFinder(importlib.abc.PathEntryFinder):
     path: str
-    def __init__(
-        self, path: str, *loader_details: tuple[type[importlib.abc.Loader], list[str]]
-    ) -> None: ...
+    def __init__(self, path: str, *loader_details: tuple[type[importlib.abc.Loader], list[str]]) -> None: ...
     @classmethod
     def path_hook(
         cls, *loader_details: tuple[type[importlib.abc.Loader], list[str]]
     ) -> Callable[[str], importlib.abc.PathEntryFinder]: ...
 
 class SourceFileLoader(importlib.abc.FileLoader, importlib.abc.SourceLoader):
-    def set_data(
-        self, path: str, data: ReadableBuffer, *, _mode: int = 0o666
-    ) -> None: ...
+    def set_data(self, path: str, data: ReadableBuffer, *, _mode: int = 0o666) -> None: ...
 
 class SourcelessFileLoader(importlib.abc.FileLoader, importlib.abc.SourceLoader): ...
 
@@ -191,10 +163,7 @@ if sys.version_info >= (3, 11):
 
     class NamespaceLoader(importlib.abc.InspectLoader):
         def __init__(
-            self,
-            name: str,
-            path: MutableSequence[str],
-            path_finder: Callable[[str, tuple[str, ...]], ModuleSpec],
+            self, name: str, path: MutableSequence[str], path_finder: Callable[[str, tuple[str, ...]], ModuleSpec]
         ) -> None: ...
         def is_package(self, fullname: str) -> Literal[True]: ...
         def get_source(self, fullname: str) -> Literal[""]: ...
@@ -203,12 +172,8 @@ if sys.version_info >= (3, 11):
         def exec_module(self, module: types.ModuleType) -> None: ...
         @deprecated("load_module() is deprecated; use exec_module() instead")
         def load_module(self, fullname: str) -> types.ModuleType: ...
-        def get_resource_reader(
-            self, module: types.ModuleType
-        ) -> importlib.readers.NamespaceReader: ...
+        def get_resource_reader(self, module: types.ModuleType) -> importlib.readers.NamespaceReader: ...
         if sys.version_info < (3, 12):
             @staticmethod
-            @deprecated(
-                "module_repr() is deprecated, and has been removed in Python 3.12"
-            )
+            @deprecated("module_repr() is deprecated, and has been removed in Python 3.12")
             def module_repr(module: types.ModuleType) -> str: ...

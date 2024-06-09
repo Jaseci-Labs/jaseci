@@ -1,9 +1,6 @@
 from typing import Any
 
-from .domreg import (
-    getDOMImplementation as getDOMImplementation,
-    registerDOMImplementation as registerDOMImplementation,
-)
+from .domreg import getDOMImplementation as getDOMImplementation, registerDOMImplementation as registerDOMImplementation
 
 class Node:
     ELEMENT_NODE: int

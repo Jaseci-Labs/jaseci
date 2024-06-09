@@ -468,12 +468,8 @@ class Options:
         # than foo.bar.*.
         # (A section being "processed last" results in its config "winning".)
         # Unstructured glob configs are stored and are all checked for each module.
-        unstructured_glob_keys = [
-            k for k in self.per_module_options.keys() if "*" in k[:-1]
-        ]
-        structured_keys = [
-            k for k in self.per_module_options.keys() if "*" not in k[:-1]
-        ]
+        unstructured_glob_keys = [k for k in self.per_module_options.keys() if "*" in k[:-1]]
+        structured_keys = [k for k in self.per_module_options.keys() if "*" not in k[:-1]]
         wildcards = sorted(k for k in structured_keys if k.endswith(".*"))
         concrete = [k for k in structured_keys if not k.endswith(".*")]
 
@@ -491,9 +487,7 @@ class Options:
             # on inheriting from parent configs.
             options = self.clone_for_module(key)
             # And then update it with its per-module options.
-            self._per_module_cache[key] = options.apply_changes(
-                self.per_module_options[key]
-            )
+            self._per_module_cache[key] = options.apply_changes(self.per_module_options[key])
 
         # Add the more structured sections into unused configs, since
         # they only count as used if actually used by a real module.

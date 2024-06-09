@@ -2,13 +2,12 @@
 supported by the mypy typechecker.
 
 Example usage:
-    from jaclang.vendor.mypy_extensions import TypedDict
+    from mypy_extensions import TypedDict
 """
 
 from typing import Any
 
 import sys
-
 # _type_check is NOT a part of public typing API, it is used here only to mimic
 # the (convenient) behavior of types provided by typing module.
 from typing import _type_check  # type: ignore
@@ -16,9 +15,9 @@ from typing import _type_check  # type: ignore
 
 def _check_fails(cls, other):
     try:
-        if sys._getframe(1).f_globals["__name__"] not in ["abc", "functools", "typing"]:
+        if sys._getframe(1).f_globals['__name__'] not in ['abc', 'functools', 'typing']:
             # Typed dicts are only for static structural subtyping.
-            raise TypeError("TypedDict does not support instance and class checks")
+            raise TypeError('TypedDict does not support instance and class checks')
     except (AttributeError, ValueError):
         pass
     return False
@@ -29,67 +28,51 @@ def _dict_new(cls, *args, **kwargs):
 
 
 def _typeddict_new(cls, _typename, _fields=None, **kwargs):
-    total = kwargs.pop("total", True)
+    total = kwargs.pop('total', True)
     if _fields is None:
         _fields = kwargs
     elif kwargs:
-        raise TypeError(
-            "TypedDict takes either a dict or keyword arguments," " but not both"
-        )
+        raise TypeError("TypedDict takes either a dict or keyword arguments,"
+                        " but not both")
 
-    ns = {"__annotations__": dict(_fields), "__total__": total}
+    ns = {'__annotations__': dict(_fields), '__total__': total}
     try:
         # Setting correct module is necessary to make typed dict classes pickleable.
-        ns["__module__"] = sys._getframe(1).f_globals.get("__name__", "__main__")
+        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
         pass
 
-    return _TypedDictMeta(_typename, (), ns, _from_functional_call=True)
+    return _TypedDictMeta(_typename, (), ns)
 
 
 class _TypedDictMeta(type):
-    def __new__(cls, name, bases, ns, total=True, _from_functional_call=False):
+    def __new__(cls, name, bases, ns, total=True):
         # Create new typed dict class object.
         # This method is called directly when TypedDict is subclassed,
         # or via _typeddict_new when TypedDict is instantiated. This way
         # TypedDict supports all three syntaxes described in its docstring.
         # Subclasses and instances of TypedDict return actual dictionaries
         # via _dict_new.
-
-        # We need the `if TypedDict in globals()` check,
-        # or we emit a DeprecationWarning when creating mypy_extensions.TypedDict itself
-        if "TypedDict" in globals():
-            import warnings
-
-            warnings.warn(
-                (
-                    "mypy_extensions.TypedDict is deprecated, "
-                    "and will be removed in a future version. "
-                    "Use typing.TypedDict or typing_extensions.TypedDict instead."
-                ),
-                DeprecationWarning,
-                stacklevel=(3 if _from_functional_call else 2),
-            )
-
-        ns["__new__"] = _typeddict_new if name == "TypedDict" else _dict_new
+        ns['__new__'] = _typeddict_new if name == 'TypedDict' else _dict_new
         tp_dict = super(_TypedDictMeta, cls).__new__(cls, name, (dict,), ns)
 
-        anns = ns.get("__annotations__", {})
+        anns = ns.get('__annotations__', {})
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         anns = {n: _type_check(tp, msg) for n, tp in anns.items()}
         for base in bases:
-            anns.update(base.__dict__.get("__annotations__", {}))
+            anns.update(base.__dict__.get('__annotations__', {}))
         tp_dict.__annotations__ = anns
-        if not hasattr(tp_dict, "__total__"):
+        if not hasattr(tp_dict, '__total__'):
             tp_dict.__total__ = total
         return tp_dict
 
     __instancecheck__ = __subclasscheck__ = _check_fails
 
 
-TypedDict = _TypedDictMeta("TypedDict", (dict,), {})
+TypedDict = _TypedDictMeta('TypedDict', (dict,), {})
 TypedDict.__module__ = __name__
-TypedDict.__doc__ = """A simple typed name space. At runtime it is equivalent to a plain dict.
+TypedDict.__doc__ = \
+    """A simple typed name space. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type that expects all of its
     instances to have a certain set of keys, with each key
@@ -152,8 +135,7 @@ def KwArg(type=Any):
 
 
 # Return type that indicates a function does not return
-class NoReturn:
-    pass
+class NoReturn: pass
 
 
 def trait(cls):
@@ -219,14 +201,13 @@ class u8(metaclass=_NativeIntMeta):
 
 
 for _int_type in i64, i32, i16, u8:
-    _int_type.__doc__ = """A native fixed-width integer type when used with mypyc.
+    _int_type.__doc__ = \
+        """A native fixed-width integer type when used with mypyc.
 
         In code not compiled with mypyc, behaves like the 'int' type in these
         runtime contexts:
 
         * {name}(x[, base=n]) converts a number or string to 'int'
         * isinstance(x, {name}) is the same as isinstance(x, int)
-        """.format(
-        name=_int_type.__name__
-    )
+        """.format(name=_int_type.__name__)
 del _int_type

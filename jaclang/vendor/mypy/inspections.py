@@ -505,11 +505,7 @@ class InspectionEngine:
 
         if expression is None:
             span = f"{line}:{column}:{end_line}:{end_column}"
-            return {
-                "out": f"Can't find expression at span {span}",
-                "err": "",
-                "status": 1,
-            }
+            return {"out": f"Can't find expression at span {span}", "err": "", "status": 1}
 
         inspection_str, success = method(expression)
         return {"out": inspection_str, "err": "", "status": 0 if success else 1}
@@ -557,17 +553,11 @@ class InspectionEngine:
         # We are using a bit slower but robust way to find a module by path,
         # to be sure that namespace packages are handled properly.
         abs_path = os.path.abspath(file)
-        state = next(
-            (s for s in self.fg_manager.graph.values() if s.abspath == abs_path), None
-        )
+        state = next((s for s in self.fg_manager.graph.values() if s.abspath == abs_path), None)
         self.module = state
         return (
             state,
-            (
-                {"out": f"Unknown module: {file}", "err": "", "status": 1}
-                if state is None
-                else {}
-            ),
+            {"out": f"Unknown module: {file}", "err": "", "status": 1} if state is None else {},
         )
 
     def run_inspection(

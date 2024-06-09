@@ -141,9 +141,7 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
         )
     if is_enum_overlapping_union(declared, narrowed):
         return original_narrowed
-    elif not is_overlapping_types(
-        declared, narrowed, prohibit_none_typevar_overlap=True
-    ):
+    elif not is_overlapping_types(declared, narrowed, prohibit_none_typevar_overlap=True):
         if state.strict_optional:
             return UninhabitedType()
         else:
@@ -154,14 +152,10 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
         )
     elif isinstance(narrowed, AnyType):
         return original_narrowed
-    elif isinstance(narrowed, TypeVarType) and is_subtype(
-        narrowed.upper_bound, declared
-    ):
+    elif isinstance(narrowed, TypeVarType) and is_subtype(narrowed.upper_bound, declared):
         return narrowed
     elif isinstance(declared, TypeType) and isinstance(narrowed, TypeType):
-        return TypeType.make_normalized(
-            narrow_declared_type(declared.item, narrowed.item)
-        )
+        return TypeType.make_normalized(narrow_declared_type(declared.item, narrowed.item))
     elif (
         isinstance(declared, TypeType)
         and isinstance(narrowed, Instance)
@@ -351,15 +345,9 @@ def is_overlapping_types(
         return True
 
     if is_proper_subtype(
-        left,
-        right,
-        ignore_promotions=ignore_promotions,
-        ignore_uninhabited=ignore_uninhabited,
+        left, right, ignore_promotions=ignore_promotions, ignore_uninhabited=ignore_uninhabited
     ) or is_proper_subtype(
-        right,
-        left,
-        ignore_promotions=ignore_promotions,
-        ignore_uninhabited=ignore_uninhabited,
+        right, left, ignore_promotions=ignore_promotions, ignore_uninhabited=ignore_uninhabited
     ):
         return True
 
@@ -399,9 +387,7 @@ def is_overlapping_types(
         return isinstance(t1, NoneType) and isinstance(t2, TypeVarLikeType)
 
     if prohibit_none_typevar_overlap:
-        if is_none_typevarlike_overlap(left, right) or is_none_typevarlike_overlap(
-            right, left
-        ):
+        if is_none_typevarlike_overlap(left, right) or is_none_typevarlike_overlap(right, left):
             return False
 
     if (
@@ -423,9 +409,7 @@ def is_overlapping_types(
     # We must perform this check after the TypeVarLike checks because
     # a TypeVar could be bound to None, for example.
 
-    if state.strict_optional and isinstance(left, NoneType) != isinstance(
-        right, NoneType
-    ):
+    if state.strict_optional and isinstance(left, NoneType) != isinstance(right, NoneType):
         return False
 
     # Next, we handle single-variant types that may be inherently partially overlapping:
@@ -437,14 +421,10 @@ def is_overlapping_types(
     # into their 'Instance' fallbacks.
 
     if isinstance(left, TypedDictType) and isinstance(right, TypedDictType):
-        return are_typed_dicts_overlapping(
-            left, right, ignore_promotions=ignore_promotions
-        )
+        return are_typed_dicts_overlapping(left, right, ignore_promotions=ignore_promotions)
     elif typed_dict_mapping_pair(left, right):
         # Overlaps between TypedDicts and Mappings require dedicated logic.
-        return typed_dict_mapping_overlap(
-            left, right, overlapping=_is_overlapping_types
-        )
+        return typed_dict_mapping_overlap(left, right, overlapping=_is_overlapping_types)
     elif isinstance(left, TypedDictType):
         left = left.fallback
     elif isinstance(right, TypedDictType):
@@ -521,22 +501,13 @@ def is_overlapping_types(
         # First we need to handle promotions and structural compatibility for instances
         # that came as fallbacks, so simply call is_subtype() to avoid code duplication.
         if is_subtype(
-            left,
-            right,
-            ignore_promotions=ignore_promotions,
-            ignore_uninhabited=ignore_uninhabited,
+            left, right, ignore_promotions=ignore_promotions, ignore_uninhabited=ignore_uninhabited
         ) or is_subtype(
-            right,
-            left,
-            ignore_promotions=ignore_promotions,
-            ignore_uninhabited=ignore_uninhabited,
+            right, left, ignore_promotions=ignore_promotions, ignore_uninhabited=ignore_uninhabited
         ):
             return True
 
-        if (
-            right.type.fullname == "builtins.int"
-            and left.type.fullname in MYPYC_NATIVE_INT_NAMES
-        ):
+        if right.type.fullname == "builtins.int" and left.type.fullname in MYPYC_NATIVE_INT_NAMES:
             return True
 
         # Two unrelated types cannot be partially overlapping: they're disjoint.
@@ -699,8 +670,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
     def visit_none_type(self, t: NoneType) -> ProperType:
         if state.strict_optional:
             if isinstance(self.s, NoneType) or (
-                isinstance(self.s, Instance)
-                and self.s.type.fullname == "builtins.object"
+                isinstance(self.s, Instance) and self.s.type.fullname == "builtins.object"
             ):
                 return t
             else:
@@ -753,10 +723,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
             from mypy.join import join_types
 
             return t.copy_modified(
-                arg_types=[
-                    join_types(s_a, t_a)
-                    for s_a, t_a in zip(self.s.arg_types, t.arg_types)
-                ]
+                arg_types=[join_types(s_a, t_a) for s_a, t_a in zip(self.s.arg_types, t.arg_types)]
             )
         else:
             return self.default(self.s)
@@ -788,12 +755,8 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
                         t_prefix, t_middle, t_suffix = split_with_prefix_and_suffix(
                             t.args, prefix, suffix
                         )
-                        s_args = (
-                            s_prefix + (TupleType(list(s_middle), fallback),) + s_suffix
-                        )
-                        t_args = (
-                            t_prefix + (TupleType(list(t_middle), fallback),) + t_suffix
-                        )
+                        s_args = s_prefix + (TupleType(list(s_middle), fallback),) + s_suffix
+                        t_args = t_prefix + (TupleType(list(t_middle), fallback),) + t_suffix
                     else:
                         t_args = t.args
                         s_args = self.s.args
@@ -807,9 +770,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
                                 continue
                             else:
                                 assert isinstance(meet, UninhabitedType)
-                                meet = UnpackType(
-                                    tv.tuple_fallback.copy_modified(args=[meet])
-                                )
+                                meet = UnpackType(tv.tuple_fallback.copy_modified(args=[meet]))
                         args.append(meet)
                     return Instance(t.type, args)
                 else:
@@ -838,11 +799,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
             call = join.unpack_callback_protocol(t)
             if call:
                 return meet_types(call, self.s)
-        elif (
-            isinstance(self.s, FunctionLike)
-            and self.s.is_type_obj()
-            and t.type.is_metaclass()
-        ):
+        elif isinstance(self.s, FunctionLike) and self.s.is_type_obj() and t.type.is_metaclass():
             if is_subtype(self.s.fallback, t):
                 return self.s
             return self.default(self.s)
@@ -936,10 +893,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
                 t_unpack = t.items[unpack_index]
                 assert isinstance(t_unpack, UnpackType)
                 t_unpacked = get_proper_type(t_unpack.type)
-                if not (
-                    isinstance(s_unpacked, Instance)
-                    and isinstance(t_unpacked, Instance)
-                ):
+                if not (isinstance(s_unpacked, Instance) and isinstance(t_unpacked, Instance)):
                     return None
                 meet = self.meet(s_unpacked, t_unpacked)
                 if not isinstance(meet, Instance):
@@ -948,9 +902,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
                 for si, ti in zip(s.items[:unpack_index], t.items[:unpack_index]):
                     m_prefix.append(meet_types(si, ti))
                 m_suffix: list[Type] = []
-                for si, ti in zip(
-                    s.items[unpack_index + 1 :], t.items[unpack_index + 1 :]
-                ):
+                for si, ti in zip(s.items[unpack_index + 1 :], t.items[unpack_index + 1 :]):
                     m_suffix.append(meet_types(si, ti))
                 return m_prefix + [UnpackType(meet)] + m_suffix
             return None
@@ -996,9 +948,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
         elif isinstance(self.s, Instance):
             # meet(Tuple[t1, t2, <...>], Tuple[s, ...]) == Tuple[meet(t1, s), meet(t2, s), <...>].
             if self.s.type.fullname in TUPLE_LIKE_INSTANCE_NAMES and self.s.args:
-                return t.copy_modified(
-                    items=[meet_types(it, self.s.args[0]) for it in t.items]
-                )
+                return t.copy_modified(items=[meet_types(it, self.s.args[0]) for it in t.items])
             elif is_proper_subtype(t, self.s):
                 # A named tuple that inherits from a normal class
                 return t
@@ -1173,14 +1123,10 @@ def typed_dict_mapping_overlap(
 
     # TODO: is there a cleaner way to get str_type here?
     fallback = typed.as_anonymous().fallback
-    str_type = fallback.type.bases[0].args[
-        0
-    ]  # typing._TypedDict inherits Mapping[str, object]
+    str_type = fallback.type.bases[0].args[0]  # typing._TypedDict inherits Mapping[str, object]
 
     # Special case: a TypedDict with no required keys overlaps with an empty dict.
-    if isinstance(key_type, UninhabitedType) and isinstance(
-        value_type, UninhabitedType
-    ):
+    if isinstance(key_type, UninhabitedType) and isinstance(value_type, UninhabitedType):
         return not typed.required_keys
 
     if typed.required_keys:

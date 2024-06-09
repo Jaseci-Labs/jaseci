@@ -54,12 +54,7 @@ class POP3:
 class POP3_SSL(POP3):
     if sys.version_info >= (3, 12):
         def __init__(
-            self,
-            host: str,
-            port: int = 995,
-            *,
-            timeout: float = ...,
-            context: ssl.SSLContext | None = None
+            self, host: str, port: int = 995, *, timeout: float = ..., context: ssl.SSLContext | None = None
         ) -> None: ...
         def stls(self, context: Any = None) -> NoReturn: ...
     else:
@@ -73,6 +68,4 @@ class POP3_SSL(POP3):
             context: ssl.SSLContext | None = None,
         ) -> None: ...
         # "context" is actually the last argument, but that breaks LSP and it doesn't really matter because all the arguments are ignored
-        def stls(
-            self, context: Any = None, keyfile: Any = None, certfile: Any = None
-        ) -> NoReturn: ...
+        def stls(self, context: Any = None, keyfile: Any = None, certfile: Any = None) -> NoReturn: ...

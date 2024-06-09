@@ -145,11 +145,7 @@ class TracebackAndGotoHandler(ErrorHandler):
     """Add traceback item and goto label on error."""
 
     def __init__(
-        self,
-        label: str,
-        source_path: str,
-        module_name: str,
-        traceback_entry: tuple[str, int],
+        self, label: str, source_path: str, module_name: str, traceback_entry: tuple[str, int]
     ) -> None:
         self.label = label
         self.source_path = source_path
@@ -288,9 +284,7 @@ class Emitter:
         # See docs above
         return self.get_module_group_prefix(obj.module_name)
 
-    def static_name(
-        self, id: str, module: str | None, prefix: str = STATIC_PREFIX
-    ) -> str:
+    def static_name(self, id: str, module: str | None, prefix: str = STATIC_PREFIX) -> str:
         """Create name of a C static variable.
 
         These are used for literals and imported modules, among other
@@ -380,9 +374,7 @@ class Emitter:
         """
         self._emit_attr_bitmap_update(value, obj, rtype, cl, attr, clear=False)
 
-    def emit_attr_bitmap_clear(
-        self, obj: str, rtype: RType, cl: ClassIR, attr: str
-    ) -> None:
+    def emit_attr_bitmap_clear(self, obj: str, rtype: RType, cl: ClassIR, attr: str) -> None:
         """Mark an attribute as undefined in the attribute bitmap.
 
         Unlike emit_attr_bitmap_set, clear unconditionally.
@@ -483,9 +475,7 @@ class Emitter:
                 # Empty tuples contain a flag so that they can still indicate
                 # error values.
                 return f"{{ {int_rprimitive.c_undefined} }}"
-            items = ", ".join(
-                [self.c_initializer_undefined_value(t) for t in rtype.types]
-            )
+            items = ", ".join([self.c_initializer_undefined_value(t) for t in rtype.types])
             return f"{{ {items} }}"
         else:
             return self.c_undefined_value(rtype)
@@ -501,9 +491,7 @@ class Emitter:
                     dependencies.add(typ.struct_name)
 
             self.context.declarations[tuple_type.struct_name] = HeaderDeclaration(
-                self.tuple_c_declaration(tuple_type),
-                dependencies=dependencies,
-                is_type=True,
+                self.tuple_c_declaration(tuple_type), dependencies=dependencies, is_type=True
             )
 
     def emit_inc_ref(self, dest: str, rtype: RType, *, rare: bool = False) -> None:
@@ -729,22 +717,13 @@ class Emitter:
             assert False, "Cast not implemented: %s" % typ
 
     def emit_cast_error_handler(
-        self,
-        error: ErrorHandler,
-        src: str,
-        dest: str,
-        typ: RType,
-        raise_exception: bool,
+        self, error: ErrorHandler, src: str, dest: str, typ: RType, raise_exception: bool
     ) -> None:
         if raise_exception:
             if isinstance(error, TracebackAndGotoHandler):
                 # Merge raising and emitting traceback entry into a single call.
                 self.emit_type_error_traceback(
-                    error.source_path,
-                    error.module_name,
-                    error.traceback_entry,
-                    typ=typ,
-                    src=src,
+                    error.source_path, error.module_name, error.traceback_entry, typ=typ, src=src
                 )
                 self.emit_line("goto %s;" % error.label)
                 return
@@ -755,9 +734,7 @@ class Emitter:
             self.emit_line("goto %s;" % error.label)
         elif isinstance(error, TracebackAndGotoHandler):
             self.emit_line("%s = NULL;" % dest)
-            self.emit_traceback(
-                error.source_path, error.module_name, error.traceback_entry
-            )
+            self.emit_traceback(error.source_path, error.module_name, error.traceback_entry)
             self.emit_line("goto %s;" % error.label)
         else:
             assert isinstance(error, ReturnHandler)
@@ -843,9 +820,7 @@ class Emitter:
         self.emit_line(f"{dest} = {src};")
         self.emit_label(out_label)
 
-    def emit_arg_check(
-        self, src: str, dest: str, typ: RType, check: str, optional: bool
-    ) -> None:
+    def emit_arg_check(self, src: str, dest: str, typ: RType, check: str, optional: bool) -> None:
         if optional:
             self.emit_line(f"if ({src} == NULL) {{")
             self.emit_line(f"{dest} = {self.c_error_value(typ)};")
@@ -899,9 +874,7 @@ class Emitter:
         if is_int_rprimitive(typ) or is_short_int_rprimitive(typ):
             if declare_dest:
                 self.emit_line(f"CPyTagged {dest};")
-            self.emit_arg_check(
-                src, dest, typ, f"(likely(PyLong_Check({src})))", optional
-            )
+            self.emit_arg_check(src, dest, typ, f"(likely(PyLong_Check({src})))", optional)
             if borrow:
                 self.emit_line(f"    {dest} = CPyTagged_BorrowFromObject({src});")
             else:
@@ -913,9 +886,7 @@ class Emitter:
             # Whether we are borrowing or not makes no difference.
             if declare_dest:
                 self.emit_line(f"char {dest};")
-            self.emit_arg_check(
-                src, dest, typ, f"(unlikely(!PyBool_Check({src}))) {{", optional
-            )
+            self.emit_arg_check(src, dest, typ, f"(unlikely(!PyBool_Check({src}))) {{", optional)
             self.emit_line(failure)
             self.emit_line("} else")
             conversion = f"{src} == Py_True"
@@ -924,9 +895,7 @@ class Emitter:
             # Whether we are borrowing or not makes no difference.
             if declare_dest:
                 self.emit_line(f"char {dest};")
-            self.emit_arg_check(
-                src, dest, typ, f"(unlikely({src} != Py_None)) {{", optional
-            )
+            self.emit_arg_check(src, dest, typ, f"(unlikely({src} != Py_None)) {{", optional)
             self.emit_line(failure)
             self.emit_line("} else")
             self.emit_line(f"    {dest} = 1;")
@@ -1023,12 +992,7 @@ class Emitter:
             assert False, "Unboxing not implemented: %s" % typ
 
     def emit_box(
-        self,
-        src: str,
-        dest: str,
-        typ: RType,
-        declare_dest: bool = False,
-        can_borrow: bool = False,
+        self, src: str, dest: str, typ: RType, declare_dest: bool = False, can_borrow: bool = False
     ) -> None:
         """Emit code for boxing a value of given type.
 
@@ -1058,11 +1022,7 @@ class Emitter:
             self.emit_lines(f"{declaration}{dest} = Py_None;")
             if not can_borrow:
                 self.emit_inc_ref(dest, object_rprimitive)
-        elif (
-            is_int32_rprimitive(typ)
-            or is_int16_rprimitive(typ)
-            or is_uint8_rprimitive(typ)
-        ):
+        elif is_int32_rprimitive(typ) or is_int16_rprimitive(typ) or is_uint8_rprimitive(typ):
             self.emit_line(f"{declaration}{dest} = PyLong_FromLong({src});")
         elif is_int64_rprimitive(typ):
             self.emit_line(f"{declaration}{dest} = PyLong_FromLongLong({src});")
@@ -1079,9 +1039,7 @@ class Emitter:
                     self.emit_line(f"PyTuple_SET_ITEM({dest}, {i}, {src}.f{i}")
                 else:
                     inner_name = self.temp_name()
-                    self.emit_box(
-                        f"{src}.f{i}", inner_name, typ.types[i], declare_dest=True
-                    )
+                    self.emit_box(f"{src}.f{i}", inner_name, typ.types[i], declare_dest=True)
                     self.emit_line(f"PyTuple_SET_ITEM({dest}, {i}, {inner_name});")
         else:
             assert not typ.is_unboxed
@@ -1094,16 +1052,12 @@ class Emitter:
             if len(rtype.types) == 0:
                 return  # empty tuples can't fail.
             else:
-                cond = self.tuple_undefined_check_cond(
-                    rtype, value, self.c_error_value, "=="
-                )
+                cond = self.tuple_undefined_check_cond(rtype, value, self.c_error_value, "==")
                 self.emit_line(f"if ({cond}) {{")
         elif rtype.error_overlap:
             # The error value is also valid as a normal value, so we need to also check
             # for a raised exception.
-            self.emit_line(
-                f"if ({value} == {self.c_error_value(rtype)} && PyErr_Occurred()) {{"
-            )
+            self.emit_line(f"if ({value} == {self.c_error_value(rtype)} && PyErr_Occurred()) {{")
         else:
             self.emit_line(f"if ({value} == {self.c_error_value(rtype)}) {{")
         self.emit_lines(failure, "}")
@@ -1148,10 +1102,7 @@ class Emitter:
         elif isinstance(rtype, RTuple):
             for i, item_type in enumerate(rtype.types):
                 self.emit_gc_clear(f"{target}.f{i}", item_type)
-        elif (
-            self.ctype(rtype) == "PyObject *"
-            and self.c_undefined_value(rtype) == "NULL"
-        ):
+        elif self.ctype(rtype) == "PyObject *" and self.c_undefined_value(rtype) == "NULL":
             # The simplest case.
             self.emit_line(f"Py_CLEAR({target});")
         else:
@@ -1160,9 +1111,7 @@ class Emitter:
     def emit_traceback(
         self, source_path: str, module_name: str, traceback_entry: tuple[str, int]
     ) -> None:
-        return self._emit_traceback(
-            "CPy_AddTraceback", source_path, module_name, traceback_entry
-        )
+        return self._emit_traceback("CPy_AddTraceback", source_path, module_name, traceback_entry)
 
     def emit_type_error_traceback(
         self,
@@ -1207,9 +1156,7 @@ class Emitter:
     def emit_unbox_failure_with_overlapping_error_value(
         self, dest: str, typ: RType, failure: str
     ) -> None:
-        self.emit_line(
-            f"if ({dest} == {self.c_error_value(typ)} && PyErr_Occurred()) {{"
-        )
+        self.emit_line(f"if ({dest} == {self.c_error_value(typ)} && PyErr_Occurred()) {{")
         self.emit_line(failure)
         self.emit_line("}")
 

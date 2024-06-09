@@ -36,12 +36,7 @@ class Class(SymbolTable):
 
 class Symbol:
     def __init__(
-        self,
-        name: str,
-        flags: int,
-        namespaces: Sequence[SymbolTable] | None = None,
-        *,
-        module_scope: bool = False
+        self, name: str, flags: int, namespaces: Sequence[SymbolTable] | None = None, *, module_scope: bool = False
     ) -> None: ...
     def is_nonlocal(self) -> bool: ...
     def get_name(self) -> str: ...

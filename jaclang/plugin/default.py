@@ -7,9 +7,11 @@ import html
 import os
 import pickle
 import types
+from contextvars import ContextVar
 from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Optional, Type, Union
+from uuid import UUID
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
@@ -34,10 +36,11 @@ from jaclang.core.construct import (
     Root,
     WalkerAnchor,
     WalkerArchitype,
-    root,
 )
 from jaclang.core.importer import jac_importer
+from jaclang.core.memory import Memory
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
+from jaclang.core.shelve_storage import ShelveStorage
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -55,11 +58,10 @@ __all__ = [
     "WalkerAnchor",
     "NodeArchitype",
     "EdgeArchitype",
+    "Root",
     "WalkerArchitype",
     "Architype",
     "DSFunc",
-    "root",
-    "Root",
     "jac_importer",
     "T",
 ]
@@ -68,10 +70,94 @@ __all__ = [
 hookimpl = pluggy.HookimplMarker("jac")
 
 
+class ExecutionContext:
+    """Default Execution Context implementation."""
+
+    mem: Optional[Memory]
+    root: Optional[Root]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.mem = ShelveStorage()
+        self.root = None
+
+    def init_memory(self, session: str = "") -> None:
+        if session:
+            self.mem = ShelveStorage(session)
+        else:
+            self.mem = Memory()
+
+    def get_root(self) -> Root:
+        if self.mem is None:
+            raise ValueError("Memory not initialized")
+
+        if not self.root:
+            root = self.mem.get_obj(UUID(int=0))
+            if root is None:
+                self.root = Root()
+                self.mem.save_obj(self.root, persistent=self.root._jac_.persistent)
+            elif not isinstance(root, Root):
+                raise ValueError(f"Invalid root object: {root}")
+            else:
+                self.root = root
+        return self.root
+
+    def get_obj(self, obj_id: UUID) -> Architype | None:
+        """Get object from memory."""
+        if self.mem is None:
+            raise ValueError("Memory not initialized")
+
+        return self.mem.get_obj(obj_id)
+
+    def save_obj(self, item: Architype, persistent: bool) -> None:
+        """Save object to memory."""
+        if self.mem is None:
+            raise ValueError("Memory not initialized")
+
+        self.mem.save_obj(item, persistent)
+
+    def reset(self) -> None:
+        """Reset the execution context."""
+        if self.mem:
+            self.mem.close()
+        self.mem = None
+        self.root = None
+
+
+ExecContext: ContextVar[ExecutionContext | None] = ContextVar(
+    "ExecutionContext", default=None
+)
+
+
 class JacFeatureDefaults:
     """Jac Feature."""
 
     pm = pluggy.PluginManager("jac")
+
+    @staticmethod
+    @hookimpl
+    def context(session: str = "") -> ExecutionContext:
+        """Get the execution context."""
+        ctx = ExecContext.get()
+        if ctx is None:
+            ctx = ExecutionContext()
+            ExecContext.set(ctx)
+        return ctx
+
+    @staticmethod
+    @hookimpl
+    def reset_context() -> None:
+        """Reset the execution context."""
+        ctx = ExecContext.get()
+        if ctx:
+            ctx.reset()
+        ExecContext.set(None)
+
+    @staticmethod
+    @hookimpl
+    def memory_hook() -> Memory | None:
+        """Return the memory hook."""
+        return Jac.context().mem
 
     @staticmethod
     @hookimpl
@@ -377,6 +463,12 @@ class JacFeatureDefaults:
                 conn_edge = edge_spec()
                 edges.append(conn_edge)
                 i._jac_.connect_node(j, conn_edge)
+
+                if i._jac_.persistent or j._jac_.persistent:
+                    conn_edge.save()
+                    j.save()
+                    i.save()
+
         return right if not edges_only else edges
 
     @staticmethod
@@ -429,7 +521,7 @@ class JacFeatureDefaults:
     @hookimpl
     def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        return root
+        return Jac.context().get_root()
 
     @staticmethod
     @hookimpl
@@ -592,12 +684,18 @@ class JacFeatureDefaults:
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None
 
-        reason = model_params.pop("reason") if "reason" in model_params else False
+        method = model_params.pop("method") if "method" in model_params else "Normal"
+        available_methods = model.MTLLM_METHOD_PROMPTS.keys()
+        assert (
+            method in available_methods
+        ), f"Invalid method: {method}. Select from {available_methods}"
+
         context = (
-            ",".join(model_params.pop("context")) if "context" in model_params else ""
+            "\n".join(model_params.pop("context")) if "context" in model_params else ""
         )
 
         type_collector: list = []
+        incl_info = [x for x in incl_info if not isinstance(x[1], type)]
         information, collected_types = get_info_types(_scope, mod_registry, incl_info)
         type_collector.extend(collected_types)
         inputs_information_list = []
@@ -611,25 +709,35 @@ class JacFeatureDefaults:
 
         output_information = f"{outputs[0]} ({outputs[1]})"
         type_collector.extend(extract_non_primary_type(outputs[1]))
+        output_type_explanations = "\n".join(
+            list(
+                get_all_type_explanations(
+                    extract_non_primary_type(outputs[1]), mod_registry
+                ).values()
+            )
+        )
 
         type_explanations_list = list(
             get_all_type_explanations(type_collector, mod_registry).values()
         )
         type_explanations = "\n".join(type_explanations_list)
 
-        meaning_in = aott_raise(
-            model,
-            information,
-            inputs_information,
-            output_information,
-            type_explanations,
-            action,
-            context,
-            reason,
+        meaning_out = aott_raise(
+            model=model,
+            information=information,
+            inputs_information=inputs_information,
+            output_information=output_information,
+            type_explanations=type_explanations,
+            action=action,
+            context=context,
+            method=method,
+            tools=[],
+            model_params=model_params,
         )
-        meaning_out = model.__infer__(meaning_in, **model_params)
-        output = model.resolve_output(meaning_out, reason)
-        return output["output"]
+        output = model.resolve_output(
+            meaning_out, outputs[0], outputs[1], output_type_explanations
+        )
+        return output
 
 
 class JacBuiltin:

@@ -108,11 +108,7 @@ specializers: dict[tuple[str, RType | None], list[Specializer]] = {}
 
 
 def _apply_specialization(
-    builder: IRBuilder,
-    expr: CallExpr,
-    callee: RefExpr,
-    name: str | None,
-    typ: RType | None = None,
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr, name: str | None, typ: RType | None = None
 ) -> Value | None:
     # TODO: Allow special cases to have default args or named args. Currently they don't since
     #       they check that everything in arg_kinds is ARG_POS.
@@ -160,9 +156,7 @@ def specialize_function(
 
 
 @specialize_function("builtins.globals")
-def translate_globals(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_globals(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     if len(expr.args) == 0:
         return builder.load_globals_dict()
     return None
@@ -183,11 +177,7 @@ def translate_builtins_with_unary_dunder(
 
     E.g. i64(x) gets specialized to x.__int__() if x is a native instance.
     """
-    if (
-        len(expr.args) == 1
-        and expr.arg_kinds == [ARG_POS]
-        and isinstance(callee, NameExpr)
-    ):
+    if len(expr.args) == 1 and expr.arg_kinds == [ARG_POS] and isinstance(callee, NameExpr):
         arg = expr.args[0]
         arg_typ = builder.node_type(arg)
         shortname = callee.fullname.split(".")[1]
@@ -223,9 +213,7 @@ def translate_len(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value 
 
 
 @specialize_function("builtins.list")
-def dict_methods_fast_path(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def dict_methods_fast_path(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     """Specialize a common case when list() is called on a dictionary
     view method call.
 
@@ -235,11 +223,7 @@ def dict_methods_fast_path(
     if not (len(expr.args) == 1 and expr.arg_kinds == [ARG_POS]):
         return None
     arg = expr.args[0]
-    if not (
-        isinstance(arg, CallExpr)
-        and not arg.args
-        and isinstance(arg.callee, MemberExpr)
-    ):
+    if not (isinstance(arg, CallExpr) and not arg.args and isinstance(arg.callee, MemberExpr)):
         return None
     base = arg.callee.expr
     attr = arg.callee.name
@@ -403,24 +387,18 @@ def translate_safe_generator_call(
 
 
 @specialize_function("builtins.any")
-def translate_any_call(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_any_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     if (
         len(expr.args) == 1
         and expr.arg_kinds == [ARG_POS]
         and isinstance(expr.args[0], GeneratorExpr)
     ):
-        return any_all_helper(
-            builder, expr.args[0], builder.false, lambda x: x, builder.true
-        )
+        return any_all_helper(builder, expr.args[0], builder.false, lambda x: x, builder.true)
     return None
 
 
 @specialize_function("builtins.all")
-def translate_all_call(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_all_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     if (
         len(expr.args) == 1
         and expr.arg_kinds == [ARG_POS]
@@ -463,9 +441,7 @@ def any_all_helper(
 
 
 @specialize_function("builtins.sum")
-def translate_sum_call(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_sum_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     # specialized implementation is used if:
     # - only one or two arguments given (if not, sum() has been given invalid arguments)
     # - first argument is a Generator (there is no benefit to optimizing the performance of eg.
@@ -489,9 +465,7 @@ def translate_sum_call(
     gen_expr = expr.args[0]
     target_type = builder.node_type(expr)
     retval = Register(target_type)
-    builder.assign(
-        retval, builder.coerce(builder.accept(start_expr), target_type, -1), -1
-    )
+    builder.assign(retval, builder.coerce(builder.accept(start_expr), target_type, -1), -1)
 
     def gen_inner_stmts() -> None:
         call_expr = builder.accept(gen_expr.left_expr)
@@ -523,9 +497,7 @@ def translate_dataclasses_field_call(
 
 
 @specialize_function("builtins.next")
-def translate_next_call(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_next_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     """Special case for calling next() on a generator expression, an
     idiom that shows up some in mypy.
 
@@ -561,9 +533,7 @@ def translate_next_call(
         builder.assign(retval, default_val, gen.left_expr.line)
         builder.goto(exit_block)
     else:
-        builder.add(
-            RaiseStandardError(RaiseStandardError.STOP_ITERATION, None, expr.line)
-        )
+        builder.add(RaiseStandardError(RaiseStandardError.STOP_ITERATION, None, expr.line))
         builder.add(Unreachable())
 
     builder.activate_block(exit_block)
@@ -571,9 +541,7 @@ def translate_next_call(
 
 
 @specialize_function("builtins.isinstance")
-def translate_isinstance(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_isinstance(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     """Special case for builtins.isinstance.
 
     Prevent coercions on the thing we are checking the instance of -
@@ -590,9 +558,7 @@ def translate_isinstance(
         irs = builder.flatten_classes(expr.args[1])
         if irs is not None:
             can_borrow = all(
-                ir.is_ext_class
-                and not ir.inherits_python
-                and not ir.allow_interpreted_subclasses
+                ir.is_ext_class and not ir.inherits_python and not ir.allow_interpreted_subclasses
                 for ir in irs
             )
             obj = builder.accept(expr.args[0], can_borrow=can_borrow)
@@ -601,9 +567,7 @@ def translate_isinstance(
 
 
 @specialize_function("setdefault", dict_rprimitive)
-def translate_dict_setdefault(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_dict_setdefault(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     """Special case for 'dict.setdefault' which would only construct
     default empty collection when needed.
 
@@ -649,9 +613,7 @@ def translate_dict_setdefault(
 
 
 @specialize_function("format", str_rprimitive)
-def translate_str_format(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_str_format(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     if (
         isinstance(callee, MemberExpr)
         and isinstance(callee.expr, StrExpr)
@@ -663,9 +625,7 @@ def translate_str_format(
             return None
         literals, format_ops = tokens
         # Convert variables to strings
-        substitutions = convert_format_expr_to_str(
-            builder, format_ops, expr.args, expr.line
-        )
+        substitutions = convert_format_expr_to_str(builder, format_ops, expr.args, expr.line)
         if substitutions is None:
             return None
         return join_formatted_strings(builder, literals, substitutions, expr.line)
@@ -673,9 +633,7 @@ def translate_str_format(
 
 
 @specialize_function("join", str_rprimitive)
-def translate_fstring(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_fstring(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     """Special case for f-string, which is translated into str.join()
     in mypy AST.
 
@@ -693,14 +651,10 @@ def translate_fstring(
             if isinstance(item, StrExpr):
                 continue
             elif isinstance(item, CallExpr):
-                if (
-                    not isinstance(item.callee, MemberExpr)
-                    or item.callee.name != "format"
-                ):
+                if not isinstance(item.callee, MemberExpr) or item.callee.name != "format":
                     return None
                 elif (
-                    not isinstance(item.callee.expr, StrExpr)
-                    or item.callee.expr.value != "{:{}}"
+                    not isinstance(item.callee.expr, StrExpr) or item.callee.expr.value != "{:{}}"
                 ):
                     return None
 
@@ -720,9 +674,7 @@ def translate_fstring(
                 format_ops.append(FormatOp.STR)
                 exprs.append(item.args[0])
 
-        substitutions = convert_format_expr_to_str(
-            builder, format_ops, exprs, expr.line
-        )
+        substitutions = convert_format_expr_to_str(builder, format_ops, exprs, expr.line)
         if substitutions is None:
             return None
 
@@ -859,9 +811,7 @@ def translate_bool(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value
 
 
 @specialize_function("builtins.float")
-def translate_float(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value | None:
+def translate_float(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value | None:
     if len(expr.args) != 1 or expr.arg_kinds[0] != ARG_POS:
         return None
     arg = expr.args[0]

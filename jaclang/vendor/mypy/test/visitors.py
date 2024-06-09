@@ -8,15 +8,7 @@ even if the test was compiled.
 
 from __future__ import annotations
 
-from mypy.nodes import (
-    AssignmentStmt,
-    CallExpr,
-    Expression,
-    IntExpr,
-    NameExpr,
-    Node,
-    TypeVarExpr,
-)
+from mypy.nodes import AssignmentStmt, CallExpr, Expression, IntExpr, NameExpr, Node, TypeVarExpr
 from mypy.traverser import TraverserVisitor
 from mypy.treetransform import TransformVisitor
 from mypy.types import Type

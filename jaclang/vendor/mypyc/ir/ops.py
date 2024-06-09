@@ -12,16 +12,7 @@ value has a type (RType). A value can hold various things, such as:
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Final,
-    Generic,
-    List,
-    NamedTuple,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Final, Generic, List, NamedTuple, Sequence, TypeVar, Union
 
 from mypy_extensions import trait
 
@@ -161,9 +152,7 @@ class Register(Value):
     to refer to arbitrary Values (for example, in RegisterOp).
     """
 
-    def __init__(
-        self, type: RType, name: str = "", is_arg: bool = False, line: int = -1
-    ) -> None:
+    def __init__(self, type: RType, name: str = "", is_arg: bool = False, line: int = -1) -> None:
         self.type = type
         self.name = name
         self.is_arg = is_arg
@@ -194,9 +183,7 @@ class Integer(Value):
      * Null pointers (value 0) of various types, including object_rprimitive
     """
 
-    def __init__(
-        self, value: int, rtype: RType = short_int_rprimitive, line: int = -1
-    ) -> None:
+    def __init__(self, value: int, rtype: RType = short_int_rprimitive, line: int = -1) -> None:
         if is_short_int_rprimitive(rtype) or is_int_rprimitive(rtype):
             self.value = value * 2
         else:
@@ -564,15 +551,11 @@ class Call(RegisterOp):
 class MethodCall(RegisterOp):
     """Native method call obj.method(arg, ...)"""
 
-    def __init__(
-        self, obj: Value, method: str, args: list[Value], line: int = -1
-    ) -> None:
+    def __init__(self, obj: Value, method: str, args: list[Value], line: int = -1) -> None:
         self.obj = obj
         self.method = method
         self.args = args
-        assert isinstance(
-            obj.type, RInstance
-        ), "Methods can only be called on instances"
+        assert isinstance(obj.type, RInstance), "Methods can only be called on instances"
         self.receiver_type = obj.type
         method_ir = self.receiver_type.class_ir.method_sig(method)
         assert method_ir is not None, "{} doesn't have method {}".format(
@@ -593,6 +576,86 @@ class MethodCall(RegisterOp):
         return visitor.visit_method_call(self)
 
 
+class PrimitiveDescription:
+    """Description of a primitive op.
+
+    Primitives get lowered into lower-level ops before code generation.
+
+    If c_function_name is provided, a primitive will be lowered into a CallC op.
+    Otherwise custom logic will need to be implemented to transform the
+    primitive into lower-level ops.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        arg_types: list[RType],
+        return_type: RType,  # TODO: What about generic?
+        var_arg_type: RType | None,
+        truncated_type: RType | None,
+        c_function_name: str | None,
+        error_kind: int,
+        steals: StealsDescription,
+        is_borrowed: bool,
+        ordering: list[int] | None,
+        extra_int_constants: list[tuple[int, RType]],
+        priority: int,
+    ) -> None:
+        # Each primitive much have a distinct name, but otherwise they are arbitrary.
+        self.name: Final = name
+        self.arg_types: Final = arg_types
+        self.return_type: Final = return_type
+        self.var_arg_type: Final = var_arg_type
+        self.truncated_type: Final = truncated_type
+        # If non-None, this will map to a call of a C helper function; if None,
+        # there must be a custom handler function that gets invoked during the lowering
+        # pass to generate low-level IR for the primitive (in the mypyc.lower package)
+        self.c_function_name: Final = c_function_name
+        self.error_kind: Final = error_kind
+        self.steals: Final = steals
+        self.is_borrowed: Final = is_borrowed
+        self.ordering: Final = ordering
+        self.extra_int_constants: Final = extra_int_constants
+        self.priority: Final = priority
+
+    def __repr__(self) -> str:
+        return f"<PrimitiveDescription {self.name}>"
+
+
+class PrimitiveOp(RegisterOp):
+    """A higher-level primitive operation.
+
+    Some of these have special compiler support. These will be lowered
+    (transformed) into lower-level IR ops before code generation, and after
+    reference counting op insertion. Others will be transformed into CallC
+    ops.
+
+    Tagged integer equality is a typical primitive op with non-trivial
+    lowering. It gets transformed into a tag check, followed by different
+    code paths for short and long representations.
+    """
+
+    def __init__(self, args: list[Value], desc: PrimitiveDescription, line: int = -1) -> None:
+        self.args = args
+        self.type = desc.return_type
+        self.error_kind = desc.error_kind
+        self.desc = desc
+
+    def sources(self) -> list[Value]:
+        return self.args
+
+    def stolen(self) -> list[Value]:
+        steals = self.desc.steals
+        if isinstance(steals, list):
+            assert len(steals) == len(self.args)
+            return [arg for arg, steal in zip(self.args, steals) if steal]
+        else:
+            return [] if not steals else self.sources()
+
+    def accept(self, visitor: OpVisitor[T]) -> T:
+        return visitor.visit_primitive_op(self)
+
+
 class LoadErrorValue(RegisterOp):
     """Load an error value.
 
@@ -603,11 +666,7 @@ class LoadErrorValue(RegisterOp):
     error_kind = ERR_NEVER
 
     def __init__(
-        self,
-        rtype: RType,
-        line: int = -1,
-        is_borrowed: bool = False,
-        undefines: bool = False,
+        self, rtype: RType, line: int = -1, is_borrowed: bool = False, undefines: bool = False
     ) -> None:
         super().__init__(line)
         self.type = rtype
@@ -661,15 +720,11 @@ class GetAttr(RegisterOp):
 
     error_kind = ERR_MAGIC
 
-    def __init__(
-        self, obj: Value, attr: str, line: int, *, borrow: bool = False
-    ) -> None:
+    def __init__(self, obj: Value, attr: str, line: int, *, borrow: bool = False) -> None:
         super().__init__(line)
         self.obj = obj
         self.attr = attr
-        assert isinstance(obj.type, RInstance), (
-            "Attribute access not supported: %s" % obj.type
-        )
+        assert isinstance(obj.type, RInstance), "Attribute access not supported: %s" % obj.type
         self.class_type = obj.type
         attr_type = obj.type.attr_type(attr)
         self.type = attr_type
@@ -697,9 +752,7 @@ class SetAttr(RegisterOp):
         self.obj = obj
         self.attr = attr
         self.src = src
-        assert isinstance(obj.type, RInstance), (
-            "Attribute access not supported: %s" % obj.type
-        )
+        assert isinstance(obj.type, RInstance), "Attribute access not supported: %s" % obj.type
         self.class_type = obj.type
         self.type = bool_rprimitive
         # If True, we can safely assume that the attribute is previously undefined
@@ -831,9 +884,7 @@ class TupleGet(RegisterOp):
 
     error_kind = ERR_NEVER
 
-    def __init__(
-        self, src: Value, index: int, line: int = -1, *, borrow: bool = False
-    ) -> None:
+    def __init__(self, src: Value, index: int, line: int = -1, *, borrow: bool = False) -> None:
         super().__init__(line)
         self.src = src
         self.index = index
@@ -859,9 +910,7 @@ class Cast(RegisterOp):
 
     error_kind = ERR_MAGIC
 
-    def __init__(
-        self, src: Value, typ: RType, line: int, *, borrow: bool = False
-    ) -> None:
+    def __init__(self, src: Value, typ: RType, line: int, *, borrow: bool = False) -> None:
         super().__init__(line)
         self.src = src
         self.type = typ
@@ -1053,9 +1102,7 @@ class Extend(RegisterOp):
 
     error_kind = ERR_NEVER
 
-    def __init__(
-        self, src: Value, dst_type: RType, signed: bool, line: int = -1
-    ) -> None:
+    def __init__(self, src: Value, dst_type: RType, signed: bool, line: int = -1) -> None:
         super().__init__(line)
         self.src = src
         self.type = dst_type
@@ -1083,9 +1130,7 @@ class LoadGlobal(RegisterOp):
     error_kind = ERR_NEVER
     is_borrowed = True
 
-    def __init__(
-        self, type: RType, identifier: str, line: int = -1, ann: object = None
-    ) -> None:
+    def __init__(self, type: RType, identifier: str, line: int = -1, ann: object = None) -> None:
         super().__init__(line)
         self.identifier = identifier
         self.type = type
@@ -1140,9 +1185,7 @@ class IntOp(RegisterOp):
         RIGHT_SHIFT: ">>",
     }
 
-    def __init__(
-        self, type: RType, lhs: Value, rhs: Value, op: int, line: int = -1
-    ) -> None:
+    def __init__(self, type: RType, lhs: Value, rhs: Value, op: int, line: int = -1) -> None:
         super().__init__(line)
         self.type = type
         self.lhs = lhs
@@ -1203,14 +1246,7 @@ class ComparisonOp(RegisterOp):
     }
 
     signed_ops: Final = {"==": EQ, "!=": NEQ, "<": SLT, ">": SGT, "<=": SLE, ">=": SGE}
-    unsigned_ops: Final = {
-        "==": EQ,
-        "!=": NEQ,
-        "<": ULT,
-        ">": UGT,
-        "<=": ULE,
-        ">=": UGE,
-    }
+    unsigned_ops: Final = {"==": EQ, "!=": NEQ, "<": ULT, ">": UGT, "<=": ULE, ">=": UGE}
 
     def __init__(self, lhs: Value, rhs: Value, op: int, line: int = -1) -> None:
         super().__init__(line)
@@ -1311,9 +1347,7 @@ class FloatComparisonOp(RegisterOp):
 
 # We can't have this in the FloatOp class body, because of
 # https://github.com/mypyc/mypyc/issues/932.
-float_comparison_op_to_id: Final = {
-    op: op_id for op_id, op in FloatComparisonOp.op_str.items()
-}
+float_comparison_op_to_id: Final = {op: op_id for op_id, op in FloatComparisonOp.op_str.items()}
 
 
 class LoadMem(RegisterOp):
@@ -1406,9 +1440,7 @@ class LoadAddress(RegisterOp):
     error_kind = ERR_NEVER
     is_borrowed = True
 
-    def __init__(
-        self, type: RType, src: str | Register | LoadStatic, line: int = -1
-    ) -> None:
+    def __init__(self, type: RType, src: str | Register | LoadStatic, line: int = -1) -> None:
         super().__init__(line)
         self.type = type
         self.src = src
@@ -1494,7 +1526,8 @@ class Unborrow(RegisterOp):
 
     error_kind = ERR_NEVER
 
-    def __init__(self, src: Value) -> None:
+    def __init__(self, src: Value, line: int = -1) -> None:
+        super().__init__(line)
         assert src.is_borrowed
         self.src = src
         self.type = src.type
@@ -1601,6 +1634,10 @@ class OpVisitor(Generic[T]):
 
     @abstractmethod
     def visit_call_c(self, op: CallC) -> T:
+        raise NotImplementedError
+
+    @abstractmethod
+    def visit_primitive_op(self, op: PrimitiveOp) -> T:
         raise NotImplementedError
 
     @abstractmethod

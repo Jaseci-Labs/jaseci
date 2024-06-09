@@ -64,9 +64,10 @@ def make_recons_rule_to_term(origin, term):
 
 def parse_rulename(s):
     "Parse rule names that may contain a template syntax (like rule{a, b, ...})"
-    name, args_str = re.match(r"(\w+)(?:{(.+)})?", s).groups()
-    args = args_str and [a.strip() for a in args_str.split(",")]
+    name, args_str = re.match(r'(\w+)(?:{(.+)})?', s).groups()
+    args = args_str and [a.strip() for a in args_str.split(',')]
     return name, args
+
 
 
 class ChildrenLexer:
@@ -75,7 +76,6 @@ class ChildrenLexer:
 
     def lex(self, parser_state):
         return self.children
-
 
 class TreeMatcher:
     """Match the elements of a tree node, based on an ontology
@@ -113,19 +113,13 @@ class TreeMatcher:
                 aliases[r.origin].append(r.alias)
 
         rule_names = {r.origin for r in rules}
-        nonterminals = {
-            sym
-            for sym in rule_names
-            if sym.name.startswith("_") or sym in expand1s or sym in aliases
-        }
+        nonterminals = {sym for sym in rule_names
+                        if sym.name.startswith('_') or sym in expand1s or sym in aliases}
 
         seen = set()
         for r in rules:
-            recons_exp = [
-                sym if sym in nonterminals else Terminal(sym.name)
-                for sym in r.expansion
-                if not is_discarded_terminal(sym)
-            ]
+            recons_exp = [sym if sym in nonterminals else Terminal(sym.name)
+                          for sym in r.expansion if not is_discarded_terminal(sym)]
 
             # Skip self-recursive constructs
             if recons_exp == [r.origin] and r.alias is None:
@@ -141,7 +135,7 @@ class TreeMatcher:
                     yield make_recons_rule_to_term(sym, sym)
                     seen.add(sym.name)
             else:
-                if sym.name.startswith("_") or sym in expand1s:
+                if sym.name.startswith('_') or sym in expand1s:
                     yield rule
                 else:
                     self.rules_for_root[sym.name].append(rule)
@@ -183,9 +177,7 @@ class TreeMatcher:
             # TODO pass callbacks through dict, instead of alias?
             callbacks = {rule: rule.alias for rule in rules}
             conf = ParserConf(rules, callbacks, [rulename])
-            parser = earley.Parser(
-                self.parser.lexer_conf, conf, _match, resolve_ambiguity=True
-            )
+            parser = earley.Parser(self.parser.lexer_conf, conf, _match, resolve_ambiguity=True)
             self._parser_cache[rulename] = parser
 
         # find a full derivation

@@ -35,9 +35,7 @@ else:
         TYPESHED_DIR = str(_resource.parent / "typeshed")
 
 
-ENCODING_RE: Final = re.compile(
-    rb"([ \t\v]*#.*(\r\n?|\n))??[ \t\v]*#.*coding[:=][ \t]*([-\w.]+)"
-)
+ENCODING_RE: Final = re.compile(rb"([ \t\v]*#.*(\r\n?|\n))??[ \t\v]*#.*coding[:=][ \t]*([-\w.]+)")
 
 DEFAULT_SOURCE_OFFSET: Final = 4
 DEFAULT_COLUMNS: Final = 80
@@ -124,10 +122,7 @@ def find_python_encoding(text: bytes) -> tuple[str, int]:
         line = 2 if result.group(1) else 1
         encoding = result.group(3).decode("ascii")
         # Handle some aliases that Python is happy to accept and that are used in the wild.
-        if (
-            encoding.startswith(("iso-latin-1-", "latin-1-"))
-            or encoding == "iso-latin-1"
-        ):
+        if encoding.startswith(("iso-latin-1-", "latin-1-")) or encoding == "iso-latin-1":
             encoding = "latin-1"
         return encoding, line
     else:
@@ -193,9 +188,7 @@ def read_py_file(path: str, read: Callable[[str], bytes]) -> list[str] | None:
         return source_lines
 
 
-def trim_source_line(
-    line: str, max_len: int, col: int, min_width: int
-) -> tuple[str, int]:
+def trim_source_line(line: str, max_len: int, col: int, min_width: int) -> tuple[str, int]:
     """Trim a line of source code to fit into max_len.
 
     Show 'min_width' characters on each side of 'col' (an error location). If either
@@ -288,9 +281,7 @@ def _generate_junit_contents(
     )
 
     if not messages_by_file:
-        xml += JUNIT_TESTCASE_PASS_TEMPLATE.format(
-            time=dt, ver=version, platform=platform
-        )
+        xml += JUNIT_TESTCASE_PASS_TEMPLATE.format(time=dt, ver=version, platform=platform)
     else:
         for filename, messages in messages_by_file.items():
             if filename is not None:
@@ -307,9 +298,7 @@ def _generate_junit_contents(
                     text=escape("\n".join(messages)),
                     filename="mypy",
                     time=dt,
-                    name="mypy-py{ver}-{platform}".format(
-                        ver=version, platform=platform
-                    ),
+                    name=f"mypy-py{version}-{platform}",
                 )
 
     xml += JUNIT_FOOTER
@@ -385,12 +374,9 @@ def get_class_descriptors(cls: type[object]) -> Sequence[str]:
     # (that is, attributes from __slots__ and C extension classes)
     if cls not in fields_cache:
         members = inspect.getmembers(
-            cls,
-            lambda o: inspect.isgetsetdescriptor(o) or inspect.ismemberdescriptor(o),
+            cls, lambda o: inspect.isgetsetdescriptor(o) or inspect.ismemberdescriptor(o)
         )
-        fields_cache[cls] = [
-            x for x, y in members if x != "__weakref__" and x != "__dict__"
-        ]
+        fields_cache[cls] = [x for x, y in members if x != "__weakref__" and x != "__dict__"]
     return fields_cache[cls]
 
 
@@ -730,19 +716,13 @@ class FancyFormatter:
                 # Let source have some space also on the right side, plus 6
                 # to accommodate ... on each side.
                 max_len = width - DEFAULT_SOURCE_OFFSET - 6
-                source_line, offset = trim_source_line(
-                    error, max_len, column, MINIMUM_WIDTH
-                )
+                source_line, offset = trim_source_line(error, max_len, column, MINIMUM_WIDTH)
 
                 new_messages[i] = " " * DEFAULT_SOURCE_OFFSET + source_line
                 # Also adjust the error marker position and trim error marker is needed.
-                new_marker_line = (
-                    " " * (DEFAULT_SOURCE_OFFSET + column - offset) + marker
-                )
+                new_marker_line = " " * (DEFAULT_SOURCE_OFFSET + column - offset) + marker
                 if len(new_marker_line) > len(new_messages[i]) and len(marker) > 3:
-                    new_marker_line = (
-                        new_marker_line[: len(new_messages[i]) - 3] + "..."
-                    )
+                    new_marker_line = new_marker_line[: len(new_messages[i]) - 3] + "..."
                 new_messages[i + 1] = new_marker_line
         return new_messages
 
@@ -752,9 +732,7 @@ class FancyFormatter:
             loc, msg = error.split("error:", maxsplit=1)
             if self.hide_error_codes:
                 return (
-                    loc
-                    + self.style("error:", "red", bold=True)
-                    + self.highlight_quote_groups(msg)
+                    loc + self.style("error:", "red", bold=True) + self.highlight_quote_groups(msg)
                 )
             codepos = msg.rfind("[")
             if codepos != -1:
@@ -807,11 +785,7 @@ class FancyFormatter:
             return note
         start = match.start()
         end = match.end()
-        return (
-            note[:start]
-            + self.style(note[start:end], "none", underline=True)
-            + note[end:]
-        )
+        return note[:start] + self.style(note[start:end], "none", underline=True) + note[end:]
 
     def format_success(self, n_sources: int, use_color: bool = True) -> str:
         """Format short summary in case of success.
@@ -819,9 +793,7 @@ class FancyFormatter:
         n_sources is total number of files passed directly on command line,
         i.e. excluding stubs and followed imports.
         """
-        msg = (
-            f"Success: no issues found in {n_sources} source file{plural_s(n_sources)}"
-        )
+        msg = f"Success: no issues found in {n_sources} source file{plural_s(n_sources)}"
         if not use_color:
             return msg
         return self.style(msg, "green", bold=True)
@@ -858,10 +830,7 @@ def is_stub_package_file(file: str) -> bool:
     # Use hacky heuristics to check whether file is part of a PEP 561 stub package.
     if not file.endswith(".pyi"):
         return False
-    return any(
-        component.endswith("-stubs")
-        for component in os.path.split(os.path.abspath(file))
-    )
+    return any(component.endswith("-stubs") for component in os.path.split(os.path.abspath(file)))
 
 
 def unnamed_function(name: str | None) -> bool:

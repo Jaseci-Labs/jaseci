@@ -80,6 +80,7 @@ from mypyc.irbuild.builder import IRBuilder, int_borrow_friendly_op
 from mypyc.irbuild.constant_fold import constant_fold_expr
 from mypyc.irbuild.for_helpers import (
     comprehension_helper,
+    raise_error_if_contains_unreachable_names,
     translate_list_comprehension,
     translate_set_comprehension,
 )
@@ -90,21 +91,12 @@ from mypyc.irbuild.format_str_tokenizer import (
     join_formatted_strings,
     tokenizer_printf_style,
 )
-from mypyc.irbuild.specialize import (
-    apply_function_specialization,
-    apply_method_specialization,
-)
+from mypyc.irbuild.specialize import apply_function_specialization, apply_method_specialization
 from mypyc.primitives.bytes_ops import bytes_slice_op
 from mypyc.primitives.dict_ops import dict_get_item_op, dict_new_op, dict_set_item_op
 from mypyc.primitives.generic_ops import iter_op
-from mypyc.primitives.int_ops import int_comparison_op_mapping
 from mypyc.primitives.list_ops import list_append_op, list_extend_op, list_slice_op
-from mypyc.primitives.misc_ops import (
-    ellipsis_op,
-    get_module_dict_op,
-    new_slice_op,
-    type_op,
-)
+from mypyc.primitives.misc_ops import ellipsis_op, get_module_dict_op, new_slice_op, type_op
 from mypyc.primitives.registry import CFunctionDescription, builtin_names
 from mypyc.primitives.set_ops import set_add_op, set_in_op, set_update_op
 from mypyc.primitives.str_ops import str_slice_op
@@ -134,6 +126,8 @@ def transform_name_expr(builder: IRBuilder, expr: NameExpr) -> Value:
         return builder.true()
     if fullname == "builtins.False":
         return builder.false()
+    if fullname in ("typing.TYPE_CHECKING", "typing_extensions.TYPE_CHECKING"):
+        return builder.false()
 
     math_literal = transform_math_literal(builder, fullname)
     if math_literal is not None:
@@ -158,9 +152,7 @@ def transform_name_expr(builder: IRBuilder, expr: NameExpr) -> Value:
     # assignment target and return it. Otherwise if the expression is a global, load it from
     # the globals dictionary.
     # Except for imports, that currently always happens in the global namespace.
-    if expr.kind == LDEF and not (
-        isinstance(expr.node, Var) and expr.node.is_suppressed_import
-    ):
+    if expr.kind == LDEF and not (isinstance(expr.node, Var) and expr.node.is_suppressed_import):
         # Try to detect and error when we hit the irritating mypy bug
         # where a local variable is cast to None. (#5423)
         if (
@@ -185,20 +177,20 @@ def transform_name_expr(builder: IRBuilder, expr: NameExpr) -> Value:
             # instead load the module separately on each access.
             mod_dict = builder.call_c(get_module_dict_op, [], expr.line)
             obj = builder.call_c(
-                dict_get_item_op,
-                [mod_dict, builder.load_str(expr.node.fullname)],
-                expr.line,
+                dict_get_item_op, [mod_dict, builder.load_str(expr.node.fullname)], expr.line
             )
             return obj
         else:
-            return builder.read(
-                builder.get_assignment_target(expr, for_read=True), expr.line
-            )
+            return builder.read(builder.get_assignment_target(expr, for_read=True), expr.line)
 
     return builder.load_global(expr)
 
 
 def transform_member_expr(builder: IRBuilder, expr: MemberExpr) -> Value:
+    # Special Cases
+    if expr.fullname in ("typing.TYPE_CHECKING", "typing_extensions.TYPE_CHECKING"):
+        return builder.false()
+
     # First check if this is maybe a final attribute.
     final = builder.get_final_ref(expr)
     if final is not None:
@@ -226,9 +218,7 @@ def transform_member_expr(builder: IRBuilder, expr: MemberExpr) -> Value:
         fields = typ.partial_fallback.type.metadata["namedtuple"]["fields"]
         if expr.name in fields:
             index = builder.builder.load_int(fields.index(expr.name))
-            return builder.gen_method_call(
-                obj, "__getitem__", [index], rtype, expr.line
-            )
+            return builder.gen_method_call(obj, "__getitem__", [index], rtype, expr.line)
 
     check_instance_attribute_access_through_class(builder, expr, typ)
 
@@ -316,9 +306,9 @@ def transform_call_expr(builder: IRBuilder, expr: CallExpr) -> Value:
         if isinstance(callee.expr, RefExpr) and isinstance(callee.expr.node, MypyFile):
             # Call a module-level function, not a method.
             return translate_call(builder, expr, callee)
-        return apply_method_specialization(
+        return apply_method_specialization(builder, expr, callee) or translate_method_call(
             builder, expr, callee
-        ) or translate_method_call(builder, expr, callee)
+        )
     elif isinstance(callee, SuperExpr):
         return translate_super_method_call(builder, expr, callee)
     else:
@@ -328,9 +318,9 @@ def transform_call_expr(builder: IRBuilder, expr: CallExpr) -> Value:
 def translate_call(builder: IRBuilder, expr: CallExpr, callee: Expression) -> Value:
     # The common case of calls is refexprs
     if isinstance(callee, RefExpr):
-        return apply_function_specialization(
+        return apply_function_specialization(builder, expr, callee) or translate_refexpr_call(
             builder, expr, callee
-        ) or translate_refexpr_call(builder, expr, callee)
+        )
 
     function = builder.accept(callee)
     args = [builder.accept(arg) for arg in expr.args]
@@ -339,9 +329,7 @@ def translate_call(builder: IRBuilder, expr: CallExpr, callee: Expression) -> Va
     )
 
 
-def translate_refexpr_call(
-    builder: IRBuilder, expr: CallExpr, callee: RefExpr
-) -> Value:
+def translate_refexpr_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value:
     """Translate a non-method call."""
     # Gen the argument values
     arg_values = [builder.accept(arg) for arg in expr.args]
@@ -349,9 +337,7 @@ def translate_refexpr_call(
     return builder.call_refexpr_with_args(expr, callee, arg_values)
 
 
-def translate_method_call(
-    builder: IRBuilder, expr: CallExpr, callee: MemberExpr
-) -> Value:
+def translate_method_call(builder: IRBuilder, expr: CallExpr, callee: MemberExpr) -> Value:
     """Generate IR for an arbitrary call of form e.m(...).
 
     This can also deal with calls to module-level functions.
@@ -374,11 +360,7 @@ def translate_method_call(
         function = builder.accept(callee)
         args = [builder.accept(arg) for arg in expr.args]
         return builder.py_call(
-            function,
-            args,
-            expr.line,
-            arg_kinds=expr.arg_kinds,
-            arg_names=expr.arg_names,
+            function, args, expr.line, arg_kinds=expr.arg_kinds, arg_names=expr.arg_names
         )
     else:
         if isinstance(callee.expr, RefExpr):
@@ -387,11 +369,7 @@ def translate_method_call(
                 typ = get_proper_type(node.type)
                 if isinstance(typ, TypeType) and isinstance(typ.item, Instance):
                     class_ir = builder.mapper.type_to_ir.get(typ.item.type)
-                    if (
-                        class_ir
-                        and class_ir.is_ext_class
-                        and class_ir.has_no_subclasses()
-                    ):
+                    if class_ir and class_ir.is_ext_class and class_ir.has_no_subclasses():
                         # Call a native classmethod via cls that can be statically bound,
                         # since the class has no subclasses.
                         return call_classmethod(builder, class_ir, expr, callee)
@@ -417,9 +395,7 @@ def translate_method_call(
         )
 
 
-def call_classmethod(
-    builder: IRBuilder, ir: ClassIR, expr: CallExpr, callee: MemberExpr
-) -> Value:
+def call_classmethod(builder: IRBuilder, ir: ClassIR, expr: CallExpr, callee: MemberExpr) -> Value:
     decl = ir.method_decl(callee.name)
     args = []
     arg_kinds, arg_names = expr.arg_kinds.copy(), expr.arg_names.copy()
@@ -445,12 +421,8 @@ def call_classmethod(
         )
 
 
-def translate_super_method_call(
-    builder: IRBuilder, expr: CallExpr, callee: SuperExpr
-) -> Value:
-    if callee.info is None or (
-        len(callee.call.args) != 0 and len(callee.call.args) != 2
-    ):
+def translate_super_method_call(builder: IRBuilder, expr: CallExpr, callee: SuperExpr) -> Value:
+    if callee.info is None or (len(callee.call.args) != 0 and len(callee.call.args) != 2):
         return translate_call(builder, expr, callee)
 
     # We support two-argument super but only when it is super(CurrentClass, self)
@@ -645,9 +617,7 @@ def try_gen_slice_op(builder: IRBuilder, base: Value, index: SliceExpr) -> Value
             # (a sequence can't be longer).
             end = builder.load_int(MAX_SHORT_INT)
         candidates = [list_slice_op, tuple_slice_op, str_slice_op, bytes_slice_op]
-        return builder.builder.matching_call_c(
-            candidates, [base, begin, end], index.line
-        )
+        return builder.builder.matching_call_c(candidates, [base, begin, end], index.line)
 
     return None
 
@@ -677,9 +647,7 @@ def transform_conditional_expr(builder: IRBuilder, expr: ConditionalExpr) -> Val
     return target
 
 
-def set_literal_values(
-    builder: IRBuilder, items: Sequence[Expression]
-) -> list[object] | None:
+def set_literal_values(builder: IRBuilder, items: Sequence[Expression]) -> list[object] | None:
     values: list[object] = []
     for item in items:
         const_value = constant_fold_expr(builder, item)
@@ -787,7 +755,7 @@ def transform_comparison_expr(builder: IRBuilder, e: ComparisonExpr) -> Value:
         set_literal = precompute_set_literal(builder, e.operands[1])
         if set_literal is not None:
             lhs = e.operands[0]
-            result = builder.builder.call_c(
+            result = builder.builder.primitive_op(
                 set_in_op, [builder.accept(lhs), set_literal], e.line, bool_rprimitive
             )
             if first_op == "not in":
@@ -798,14 +766,9 @@ def transform_comparison_expr(builder: IRBuilder, e: ComparisonExpr) -> Value:
         # Special some common simple cases
         if first_op in ("is", "is not"):
             right_expr = e.operands[1]
-            if (
-                isinstance(right_expr, NameExpr)
-                and right_expr.fullname == "builtins.None"
-            ):
+            if isinstance(right_expr, NameExpr) and right_expr.fullname == "builtins.None":
                 # Special case 'is None' / 'is not None'.
-                return translate_is_none(
-                    builder, e.operands[0], negated=first_op != "is"
-                )
+                return translate_is_none(builder, e.operands[0], negated=first_op != "is")
         left_expr = e.operands[0]
         if is_int_rprimitive(builder.node_type(left_expr)):
             right_expr = e.operands[1]
@@ -814,7 +777,7 @@ def transform_comparison_expr(builder: IRBuilder, e: ComparisonExpr) -> Value:
                     borrow_left = is_borrow_friendly_expr(builder, right_expr)
                     left = builder.accept(left_expr, can_borrow=borrow_left)
                     right = builder.accept(right_expr, can_borrow=True)
-                    return builder.compare_tagged(left, right, first_op, e.line)
+                    return builder.binary_op(left, right, first_op, e.line)
 
     # TODO: Don't produce an expression when used in conditional context
     # All of the trickiness here is due to support for chained conditionals
@@ -834,9 +797,7 @@ def transform_comparison_expr(builder: IRBuilder, e: ComparisonExpr) -> Value:
         return builder.builder.shortcircuit_helper(
             "and",
             expr_type,
-            lambda: transform_basic_comparison(
-                builder, e.operators[i], prev, next, e.line
-            ),
+            lambda: transform_basic_comparison(builder, e.operators[i], prev, next, e.line),
             lambda: go(i + 1, next),
             e.line,
         )
@@ -846,21 +807,13 @@ def transform_comparison_expr(builder: IRBuilder, e: ComparisonExpr) -> Value:
 
 def translate_is_none(builder: IRBuilder, expr: Expression, negated: bool) -> Value:
     v = builder.accept(expr, can_borrow=True)
-    return builder.binary_op(
-        v, builder.none_object(), "is not" if negated else "is", expr.line
-    )
+    return builder.binary_op(v, builder.none_object(), "is not" if negated else "is", expr.line)
 
 
 def transform_basic_comparison(
     builder: IRBuilder, op: str, left: Value, right: Value, line: int
 ) -> Value:
-    if (
-        is_int_rprimitive(left.type)
-        and is_int_rprimitive(right.type)
-        and op in int_comparison_op_mapping
-    ):
-        return builder.compare_tagged(left, right, op, line)
-    if is_fixed_width_rtype(left.type) and op in int_comparison_op_mapping:
+    if is_fixed_width_rtype(left.type) and op in ComparisonOp.signed_ops:
         if right.type == left.type:
             if left.type.is_signed:
                 op_id = ComparisonOp.signed_ops[op]
@@ -877,7 +830,7 @@ def transform_basic_comparison(
             )
     elif (
         is_fixed_width_rtype(right.type)
-        and op in int_comparison_op_mapping
+        and op in ComparisonOp.signed_ops
         and isinstance(left, Integer)
     ):
         if right.type.is_signed:
@@ -919,17 +872,13 @@ def translate_printf_style_formatting(
                 builder, format_ops, exprs, format_expr.line
             )
             if substitutions is not None:
-                return join_formatted_bytes(
-                    builder, literals, substitutions, format_expr.line
-                )
+                return join_formatted_bytes(builder, literals, substitutions, format_expr.line)
         else:
             substitutions = convert_format_expr_to_str(
                 builder, format_ops, exprs, format_expr.line
             )
             if substitutions is not None:
-                return join_formatted_strings(
-                    builder, literals, substitutions, format_expr.line
-                )
+                return join_formatted_strings(builder, literals, substitutions, format_expr.line)
 
     return None
 
@@ -968,9 +917,7 @@ def transform_list_expr(builder: IRBuilder, expr: ListExpr) -> Value:
     return _visit_list_display(builder, expr.items, expr.line)
 
 
-def _visit_list_display(
-    builder: IRBuilder, items: list[Expression], line: int
-) -> Value:
+def _visit_list_display(builder: IRBuilder, items: list[Expression], line: int) -> Value:
     return _visit_display(
         builder, items, builder.new_list_op, list_append_op, list_extend_op, line, True
     )
@@ -1017,13 +964,7 @@ def transform_dict_expr(builder: IRBuilder, expr: DictExpr) -> Value:
 
 def transform_set_expr(builder: IRBuilder, expr: SetExpr) -> Value:
     return _visit_display(
-        builder,
-        expr.items,
-        builder.new_set_op,
-        set_add_op,
-        set_update_op,
-        expr.line,
-        False,
+        builder, expr.items, builder.new_set_op, set_add_op, set_update_op, expr.line, False
     )
 
 
@@ -1072,9 +1013,10 @@ def transform_set_comprehension(builder: IRBuilder, o: SetComprehension) -> Valu
     return translate_set_comprehension(builder, o.generator)
 
 
-def transform_dictionary_comprehension(
-    builder: IRBuilder, o: DictionaryComprehension
-) -> Value:
+def transform_dictionary_comprehension(builder: IRBuilder, o: DictionaryComprehension) -> Value:
+    if raise_error_if_contains_unreachable_names(builder, o):
+        return builder.none()
+
     d = builder.maybe_spill(builder.call_c(dict_new_op, [], o.line))
     loop_params = list(zip(o.indices, o.sequences, o.condlists, o.is_async))
 

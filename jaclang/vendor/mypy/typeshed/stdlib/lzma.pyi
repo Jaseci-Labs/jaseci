@@ -82,12 +82,7 @@ PRESET_EXTREME: int  # v big number
 # from _lzma.c
 @final
 class LZMADecompressor:
-    def __init__(
-        self,
-        format: int | None = ...,
-        memlimit: int | None = ...,
-        filters: _FilterChain | None = ...,
-    ) -> None: ...
+    def __init__(self, format: int | None = ..., memlimit: int | None = ..., filters: _FilterChain | None = ...) -> None: ...
     def decompress(self, data: ReadableBuffer, max_length: int = -1) -> bytes: ...
     @property
     def check(self) -> int: ...
@@ -102,13 +97,9 @@ class LZMADecompressor:
 @final
 class LZMACompressor:
     def __init__(
-        self,
-        format: int | None = ...,
-        check: int = ...,
-        preset: int | None = ...,
-        filters: _FilterChain | None = ...,
+        self, format: int | None = ..., check: int = ..., preset: int | None = ..., filters: _FilterChain | None = ...
     ) -> None: ...
-    def compress(self, __data: ReadableBuffer) -> bytes: ...
+    def compress(self, data: ReadableBuffer, /) -> bytes: ...
     def flush(self) -> bytes: ...
 
 class LZMAError(Exception): ...
@@ -198,16 +189,9 @@ def open(
     newline: str | None = None,
 ) -> LZMAFile | TextIO: ...
 def compress(
-    data: ReadableBuffer,
-    format: int = 1,
-    check: int = -1,
-    preset: int | None = None,
-    filters: _FilterChain | None = None,
+    data: ReadableBuffer, format: int = 1, check: int = -1, preset: int | None = None, filters: _FilterChain | None = None
 ) -> bytes: ...
 def decompress(
-    data: ReadableBuffer,
-    format: int = 0,
-    memlimit: int | None = None,
-    filters: _FilterChain | None = None,
+    data: ReadableBuffer, format: int = 0, memlimit: int | None = None, filters: _FilterChain | None = None
 ) -> bytes: ...
-def is_check_supported(__check_id: int) -> bool: ...
+def is_check_supported(check_id: int, /) -> bool: ...

@@ -1,17 +1,7 @@
 import sys
 from _typeshed import Incomplete, StrOrBytesPath
 from collections.abc import Iterable
-from tkinter import (
-    Button,
-    Entry,
-    Frame,
-    Listbox,
-    Misc,
-    Scrollbar,
-    StringVar,
-    Toplevel,
-    commondialog,
-)
+from tkinter import Button, Entry, Frame, Listbox, Misc, Scrollbar, StringVar, Toplevel, commondialog
 from typing import IO, ClassVar, Literal
 
 if sys.version_info >= (3, 9):
@@ -51,17 +41,9 @@ class FileDialog:
     cancel_button: Button
     def __init__(
         self, master, title: Incomplete | None = None
-    ) -> (
-        None
-    ): ...  # title is usually a str or None, but e.g. int doesn't raise en exception either
+    ) -> None: ...  # title is usually a str or None, but e.g. int doesn't raise en exception either
     how: Incomplete | None
-    def go(
-        self,
-        dir_or_file=".",
-        pattern: str = "*",
-        default: str = "",
-        key: Incomplete | None = None,
-    ): ...
+    def go(self, dir_or_file=".", pattern: str = "*", default: str = "", key: Incomplete | None = None): ...
     def quit(self, how: Incomplete | None = None) -> None: ...
     def dirs_double_event(self, event) -> None: ...
     def dirs_select_event(self, event) -> None: ...
@@ -128,11 +110,7 @@ def askopenfilenames(
     typevariable: StringVar | str | None = ...,
 ) -> Literal[""] | tuple[str, ...]: ...
 def askdirectory(
-    *,
-    initialdir: StrOrBytesPath | None = ...,
-    mustexist: bool | None = ...,
-    parent: Misc | None = ...,
-    title: str | None = ...,
+    *, initialdir: StrOrBytesPath | None = ..., mustexist: bool | None = ..., parent: Misc | None = ..., title: str | None = ...
 ) -> str: ...  # can be empty string
 
 # TODO: If someone actually uses these, overload to have the actual return type of open(..., mode)

@@ -38,10 +38,7 @@ function_op(
 
 # Construct an empty dictionary.
 dict_new_op = custom_op(
-    arg_types=[],
-    return_type=dict_rprimitive,
-    c_function_name="PyDict_New",
-    error_kind=ERR_MAGIC,
+    arg_types=[], return_type=dict_rprimitive, c_function_name="PyDict_New", error_kind=ERR_MAGIC
 )
 
 # Construct a dictionary from keys and values.

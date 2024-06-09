@@ -38,9 +38,7 @@ else:
 
 # Strictly this should not have to include Callable, but mypy doesn't use FunctionType
 # for functions (python/mypy#3171)
-_HaveCodeType: TypeAlias = (
-    types.MethodType | types.FunctionType | types.CodeType | type | Callable[..., Any]
-)
+_HaveCodeType: TypeAlias = types.MethodType | types.FunctionType | types.CodeType | type | Callable[..., Any]
 
 if sys.version_info >= (3, 11):
     class Positions(NamedTuple):
@@ -73,12 +71,7 @@ else:
         is_jump_target: bool
 
 class Instruction(_Instruction):
-    def _disassemble(
-        self,
-        lineno_width: int = 3,
-        mark_as_current: bool = False,
-        offset_width: int = 4,
-    ) -> str: ...
+    def _disassemble(self, lineno_width: int = 3, mark_as_current: bool = False, offset_width: int = 4) -> str: ...
 
 class Bytecode:
     codeobj: types.CodeType
@@ -94,20 +87,10 @@ class Bytecode:
             adaptive: bool = False,
         ) -> None: ...
         @classmethod
-        def from_traceback(
-            cls,
-            tb: types.TracebackType,
-            *,
-            show_caches: bool = False,
-            adaptive: bool = False,
-        ) -> Self: ...
+        def from_traceback(cls, tb: types.TracebackType, *, show_caches: bool = False, adaptive: bool = False) -> Self: ...
     else:
         def __init__(
-            self,
-            x: _HaveCodeType | str,
-            *,
-            first_line: int | None = None,
-            current_offset: int | None = None,
+            self, x: _HaveCodeType | str, *, first_line: int | None = None, current_offset: int | None = None
         ) -> None: ...
         @classmethod
         def from_traceback(cls, tb: types.TracebackType) -> Self: ...
@@ -135,56 +118,27 @@ if sys.version_info >= (3, 11):
 
 else:
     def dis(
-        x: _HaveCodeType | str | bytes | bytearray | None = None,
-        *,
-        file: IO[str] | None = None,
-        depth: int | None = None,
+        x: _HaveCodeType | str | bytes | bytearray | None = None, *, file: IO[str] | None = None, depth: int | None = None
     ) -> None: ...
 
 if sys.version_info >= (3, 11):
     def disassemble(
-        co: _HaveCodeType,
-        lasti: int = -1,
-        *,
-        file: IO[str] | None = None,
-        show_caches: bool = False,
-        adaptive: bool = False,
+        co: _HaveCodeType, lasti: int = -1, *, file: IO[str] | None = None, show_caches: bool = False, adaptive: bool = False
     ) -> None: ...
     def disco(
-        co: _HaveCodeType,
-        lasti: int = -1,
-        *,
-        file: IO[str] | None = None,
-        show_caches: bool = False,
-        adaptive: bool = False,
+        co: _HaveCodeType, lasti: int = -1, *, file: IO[str] | None = None, show_caches: bool = False, adaptive: bool = False
     ) -> None: ...
     def distb(
-        tb: types.TracebackType | None = None,
-        *,
-        file: IO[str] | None = None,
-        show_caches: bool = False,
-        adaptive: bool = False,
+        tb: types.TracebackType | None = None, *, file: IO[str] | None = None, show_caches: bool = False, adaptive: bool = False
     ) -> None: ...
     def get_instructions(
-        x: _HaveCodeType,
-        *,
-        first_line: int | None = None,
-        show_caches: bool = False,
-        adaptive: bool = False,
+        x: _HaveCodeType, *, first_line: int | None = None, show_caches: bool = False, adaptive: bool = False
     ) -> Iterator[Instruction]: ...
 
 else:
-    def disassemble(
-        co: _HaveCodeType, lasti: int = -1, *, file: IO[str] | None = None
-    ) -> None: ...
-    def disco(
-        co: _HaveCodeType, lasti: int = -1, *, file: IO[str] | None = None
-    ) -> None: ...
-    def distb(
-        tb: types.TracebackType | None = None, *, file: IO[str] | None = None
-    ) -> None: ...
-    def get_instructions(
-        x: _HaveCodeType, *, first_line: int | None = None
-    ) -> Iterator[Instruction]: ...
+    def disassemble(co: _HaveCodeType, lasti: int = -1, *, file: IO[str] | None = None) -> None: ...
+    def disco(co: _HaveCodeType, lasti: int = -1, *, file: IO[str] | None = None) -> None: ...
+    def distb(tb: types.TracebackType | None = None, *, file: IO[str] | None = None) -> None: ...
+    def get_instructions(x: _HaveCodeType, *, first_line: int | None = None) -> Iterator[Instruction]: ...
 
 def show_code(co: _HaveCodeType, *, file: IO[str] | None = None) -> None: ...

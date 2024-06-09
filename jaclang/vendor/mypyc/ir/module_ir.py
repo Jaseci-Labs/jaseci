@@ -48,9 +48,7 @@ class ModuleIR:
         )
 
 
-def deserialize_modules(
-    data: dict[str, JsonDict], ctx: DeserMaps
-) -> dict[str, ModuleIR]:
+def deserialize_modules(data: dict[str, JsonDict], ctx: DeserMaps) -> dict[str, ModuleIR]:
     """Deserialize a collection of modules.
 
     The modules can contain dependencies on each other.
@@ -69,9 +67,7 @@ def deserialize_modules(
         # First create ClassIRs for every class so that we can construct types and whatnot
         for cls in mod["classes"]:
             ir = ClassIR(cls["name"], cls["module_name"])
-            assert ir.fullname not in ctx.classes, (
-                "Class %s already in map" % ir.fullname
-            )
+            assert ir.fullname not in ctx.classes, "Class %s already in map" % ir.fullname
             ctx.classes[ir.fullname] = ir
 
     for mod in data.values():

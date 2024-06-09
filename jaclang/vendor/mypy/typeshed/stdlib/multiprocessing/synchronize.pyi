@@ -11,11 +11,7 @@ _LockLike: TypeAlias = Lock | RLock
 
 class Barrier(threading.Barrier):
     def __init__(
-        self,
-        parties: int,
-        action: Callable[[], object] | None = None,
-        timeout: float | None = None,
-        *ctx: BaseContext
+        self, parties: int, action: Callable[[], object] | None = None, timeout: float | None = None, *ctx: BaseContext
     ) -> None: ...
 
 class Condition(AbstractContextManager[bool]):
@@ -23,16 +19,11 @@ class Condition(AbstractContextManager[bool]):
     def notify(self, n: int = 1) -> None: ...
     def notify_all(self) -> None: ...
     def wait(self, timeout: float | None = None) -> bool: ...
-    def wait_for(
-        self, predicate: Callable[[], bool], timeout: float | None = None
-    ) -> bool: ...
+    def wait_for(self, predicate: Callable[[], bool], timeout: float | None = None) -> bool: ...
     def acquire(self, block: bool = ..., timeout: float | None = ...) -> bool: ...
     def release(self) -> None: ...
     def __exit__(
-        self,
-        __exc_type: type[BaseException] | None,
-        __exc_val: BaseException | None,
-        __exc_tb: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None, /
     ) -> None: ...
 
 class Event:
@@ -47,10 +38,7 @@ class SemLock(AbstractContextManager[bool]):
     def acquire(self, block: bool = ..., timeout: float | None = ...) -> bool: ...
     def release(self) -> None: ...
     def __exit__(
-        self,
-        __exc_type: type[BaseException] | None,
-        __exc_val: BaseException | None,
-        __exc_tb: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None, /
     ) -> None: ...
 
 class Lock(SemLock):
