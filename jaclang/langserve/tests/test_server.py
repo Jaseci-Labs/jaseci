@@ -8,6 +8,10 @@ class TestJacLangServer(TestCase):
     def test_formatting(self) -> None:
         with LspSession() as s:
             s.initialize()
+            with open(self.fixture_abs_path("hello.jac"), "w") as f:
+                f.write('with entry {print("Hello, World!");}')
+            with open(self.fixture_abs_path("hello.jac"), "r") as f:
+                self.assertEqual(f.read(), 'with entry {print("Hello, World!");}')
             params_json = {
                 "textDocument": {
                     "uri": uris.from_fs_path(self.fixture_abs_path("hello.jac")),
