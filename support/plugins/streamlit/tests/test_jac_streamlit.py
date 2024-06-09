@@ -6,7 +6,7 @@ import subprocess
 from jaclang.utils.test import TestCase
 
 
-class JacPlugins(TestCase):
+class JacStreamlitPlugin(TestCase):
     """Test pass module."""
 
     def setUp(self) -> None:
