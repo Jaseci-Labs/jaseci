@@ -90,7 +90,9 @@ def formatting(
         lspt.TextEdit(
             range=lspt.Range(
                 start=lspt.Position(line=0, character=0),
-                end=lspt.Position(line=len(formatted_text), character=0),
+                end=lspt.Position(
+                    line=len(formatted_text.splitlines()) + 1, character=0
+                ),
             ),
             new_text=formatted_text,
         )
@@ -100,3 +102,7 @@ def formatting(
 def run_lang_server() -> None:
     """Run the language server."""
     server.start_io()
+
+
+if __name__ == "__main__":
+    run_lang_server()
