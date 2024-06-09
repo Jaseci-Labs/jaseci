@@ -3,17 +3,15 @@
 from jaclang.core.llms import BaseLLM
 
 REASON_SUFFIX = """
-Reason and return the output results(s) only such that <Output> should be eval(<Output>) Compatible and reflects the
-expected output type, Follow the format below to provide the reasoning for the output result(s).
+Reason and return the output result(s) only, adhering to the provided Type in the following format
 
-[Reasoning] <Reasoning>
-[Output] <Output>
+[Reasoning] <Reason>
+[Output] <Result>
 """
 
-NORMAL_SUFFIX = """Return the output result(s) only such that <Output> should be eval(<Output>) Compatible and
-reflects the expected output type, Follow the format below to provide the output result(s).
+NORMAL_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
 
-[Output] <Output>
+[Output] <result>
 """  # noqa E501
 
 CHAIN_OF_THOUGHT_SUFFIX = """
@@ -76,3 +74,60 @@ class Ollama(BaseLLM):
     def download_model(self, model_name: str) -> None:
         """Download the model."""
         self.client.pull(model_name)
+
+
+COMPLETION_REASON_SUFFIX = """
+Reason and return the output result(s) only, adhering to the provided Type in the following format
+
+[Reasoning] <Reason>
+[Output] <Result>
+
+---
+
+[Reasoning] """
+
+COMPLETION_NORMAL_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
+
+[Output] <result>
+
+---
+
+[Output] """  # noqa E501
+
+COMPLETION_CHAIN_OF_THOUGHT_SUFFIX = """
+Generate and return the output result(s) only, adhering to the provided Type in the following format. Perform the operation in a chain of thoughts.(Think Step by Step)
+
+[Chain of Thoughts] <Chain of Thoughts>
+[Output] <Result>
+
+---
+
+[Chain of Thoughts] Lets Think Step by Step.
+"""  # noqa E501
+
+COMPLETION_REACT_SUFFIX = """
+"""  # noqa E501
+
+
+class OllamaCompletion(Ollama):
+    """Ollama Completion API client for MTLLM."""
+
+    MTLLM_METHOD_PROMPTS: dict[str, str] = {
+        "Normal": COMPLETION_NORMAL_SUFFIX,
+        "Reason": COMPLETION_REASON_SUFFIX,
+        "Chain-of-Thoughts": COMPLETION_CHAIN_OF_THOUGHT_SUFFIX,
+        "ReAct": COMPLETION_REACT_SUFFIX,
+    }
+
+    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+        """Infer a response from the input meaning."""
+        model = str(kwargs.get("model_name", self.model_name))
+        if not self.check_model(model):
+            self.download_model(model)
+        model_params = {k: v for k, v in kwargs.items() if k not in ["model_name"]}
+        output = self.client.generate(
+            model=model,
+            prompt=meaning_in,
+            options={**self.default_model_params, **model_params},
+        )
+        return output["choices"][0]["text"].strip()

@@ -51,6 +51,10 @@ class OpenAI(BaseLLM):
 
     def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
+        assert (
+            "instruct" not in self.model_name
+        ), "Please use OpenAICompletion for instruct completion models."
+
         messages = [{"role": "user", "content": meaning_in}]
         output = self.client.chat.completions.create(
             model=kwargs.get("model_name", self.model_name),
@@ -58,4 +62,64 @@ class OpenAI(BaseLLM):
             max_tokens=kwargs.get("max_tokens", self.max_tokens),
             messages=messages,
         )
-        return output.choices[0].message.content
+        return output.choices[0].message.content.strip()
+
+
+COMPLETION_REASON_SUFFIX = """
+Reason and return the output result(s) only, adhering to the provided Type in the following format
+
+[Reasoning] <Reason>
+[Output] <Result>
+
+---
+
+[Reasoning] """
+
+COMPLETION_NORMAL_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
+
+[Output] <result>
+
+---
+
+[Output] """  # noqa E501
+
+COMPLETION_CHAIN_OF_THOUGHT_SUFFIX = """
+Generate and return the output result(s) only, adhering to the provided Type in the following format. Perform the operation in a chain of thoughts.(Think Step by Step)
+
+[Chain of Thoughts] <Chain of Thoughts>
+[Output] <Result>
+
+---
+
+[Chain of Thoughts] Lets Think Step by Step.
+"""  # noqa E501
+
+COMPLETION_REACT_SUFFIX = """
+"""  # noqa E501
+
+
+class OpenAICompletion(OpenAI):
+    """OpenAI Completion API client for MTLLM."""
+
+    MTLLM_METHOD_PROMPTS: dict[str, str] = {
+        "Normal": COMPLETION_NORMAL_SUFFIX,
+        "Reason": COMPLETION_REASON_SUFFIX,
+        "Chain-of-Thoughts": COMPLETION_CHAIN_OF_THOUGHT_SUFFIX,
+        "ReAct": COMPLETION_REACT_SUFFIX,
+    }
+
+    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+        """Infer a response from the input meaning."""
+        assert "instruct" in self.model_name or self.model in [
+            "babbage-002",
+            "davinci-002",
+        ], "Please use OpenAI for chat completion models."
+
+        output = self.client.completions.create(
+            model=kwargs.get("model_name", self.model_name),
+            prompt=meaning_in,
+            temperature=kwargs.get("temperature", self.temperature),
+            max_tokens=kwargs.get("max_tokens", self.max_tokens),
+            **kwargs
+        )
+        return output.choices[0].text.strip()
