@@ -813,7 +813,7 @@ class JacLanguageTests(TestCase):
 
     def test_deep_convert(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.py_raise = settings.deep_convert = True
+        settings.py_raise = settings.py_raise_deep = True
         file_name = os.path.join(self.fixture_abs_path("./"), "deep_convert.jac")
         from jaclang.compiler.passes.main.schedules import py_code_gen
         import jaclang.compiler.absyntree as ast
@@ -828,4 +828,4 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Deep convo is imported", stdout_value)
-        settings.py_raise = settings.deep_convert = False
+        settings.py_raise = settings.py_raise_deep = False

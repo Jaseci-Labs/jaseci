@@ -168,7 +168,7 @@ class PyImportPass(JacImportPass):
             if mod:
                 i.sub_module = mod
                 i.add_kids_right([mod], pos_update=False)
-                if settings.deep_convert:
+                if settings.py_raise_deep:
                     self.run_again = True
 
     def import_py_module(
