@@ -91,9 +91,7 @@ def assert_modules_same(ir1: ModuleIR, ir2: ModuleIR) -> None:
         assert_blobs_same(
             get_function_dict(fn1), get_function_dict(fn2), (ir1.fullname, fn1.fullname)
         )
-        assert_blobs_same(
-            get_dict(fn1.decl), get_dict(fn2.decl), (ir1.fullname, fn1.fullname)
-        )
+        assert_blobs_same(get_dict(fn1.decl), get_dict(fn2.decl), (ir1.fullname, fn1.fullname))
 
     assert_blobs_same(ir1.final_names, ir2.final_names, (ir1.fullname, "final_names"))
 

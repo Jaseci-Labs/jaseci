@@ -29,12 +29,7 @@ from mypy.fscache import FileSystemCache
 from mypy.fswatcher import FileData, FileSystemWatcher
 from mypy.inspections import InspectionEngine
 from mypy.ipc import IPCServer
-from mypy.modulefinder import (
-    BuildSource,
-    FindModuleCache,
-    SearchPaths,
-    compute_search_paths,
-)
+from mypy.modulefinder import BuildSource, FindModuleCache, SearchPaths, compute_search_paths
 from mypy.options import Options
 from mypy.server.update import FineGrainedBuildManager, refresh_suppressed_submodules
 from mypy.suggestions import SuggestionEngine, SuggestionFailure
@@ -48,10 +43,7 @@ if sys.platform == "win32":
     from subprocess import STARTUPINFO
 
     def daemonize(
-        options: Options,
-        status_file: str,
-        timeout: int | None = None,
-        log_file: str | None = None,
+        options: Options, status_file: str, timeout: int | None = None, log_file: str | None = None
     ) -> int:
         """Create the daemon process via "dmypy daemon" and pass options via command line
 
@@ -63,14 +55,7 @@ if sys.platform == "win32":
 
         It also pickles the options to be unpickled by mypy.
         """
-        command = [
-            sys.executable,
-            "-m",
-            "mypy.dmypy",
-            "--status-file",
-            status_file,
-            "daemon",
-        ]
+        command = [sys.executable, "-m", "mypy.dmypy", "--status-file", status_file, "daemon"]
         pickled_options = pickle.dumps(options.snapshot())
         command.append(f'--options-data="{base64.b64encode(pickled_options).decode()}"')
         if timeout:
@@ -81,9 +66,7 @@ if sys.platform == "win32":
         info.dwFlags = 0x1  # STARTF_USESHOWWINDOW aka use wShowWindow's value
         info.wShowWindow = 0  # SW_HIDE aka make the window invisible
         try:
-            subprocess.Popen(
-                command, creationflags=0x10, startupinfo=info
-            )  # CREATE_NEW_CONSOLE
+            subprocess.Popen(command, creationflags=0x10, startupinfo=info)  # CREATE_NEW_CONSOLE
             return 0
         except subprocess.CalledProcessError as e:
             return e.returncode
@@ -136,10 +119,7 @@ else:
             os._exit(1)
 
     def daemonize(
-        options: Options,
-        status_file: str,
-        timeout: int | None = None,
-        log_file: str | None = None,
+        options: Options, status_file: str, timeout: int | None = None, log_file: str | None = None
     ) -> int:
         """Run the mypy daemon in a grandchild of the current process
 
@@ -159,9 +139,7 @@ def process_start_options(flags: list[str], allow_sources: bool) -> Options:
         ["-i"] + flags, require_targets=False, server_options=True
     )
     if options.report_dirs:
-        print(
-            "dmypy: Ignoring report generation settings. Start/restart cannot generate reports."
-        )
+        print("dmypy: Ignoring report generation settings. Start/restart cannot generate reports.")
     if options.junit_xml:
         print(
             "dmypy: Ignoring report generation settings. "
@@ -192,9 +170,7 @@ class Server:
     # NOTE: the instance is constructed in the parent process but
     # serve() is called in the grandchild (by daemonize()).
 
-    def __init__(
-        self, options: Options, status_file: str, timeout: int | None = None
-    ) -> None:
+    def __init__(self, options: Options, status_file: str, timeout: int | None = None) -> None:
         """Initialize the server with the desired mypy flags."""
         self.options = options
         # Snapshot the options info before we muck with it, to detect changes
@@ -224,14 +200,10 @@ class Server:
 
         # Since the object is created in the parent process we can check
         # the output terminal options here.
-        self.formatter = FancyFormatter(
-            sys.stdout, sys.stderr, options.hide_error_codes
-        )
+        self.formatter = FancyFormatter(sys.stdout, sys.stderr, options.hide_error_codes)
 
     def _response_metadata(self) -> dict[str, str]:
-        py_version = (
-            f"{self.options.python_version[0]}_{self.options.python_version[1]}"
-        )
+        py_version = f"{self.options.python_version[0]}_{self.options.python_version[1]}"
         return {"platform": self.options.platform, "python_version": py_version}
 
     def serve(self) -> None:
@@ -244,9 +216,7 @@ class Server:
 
         try:
             with open(self.status_file, "w") as f:
-                json.dump(
-                    {"pid": os.getpid(), "connection_name": server.connection_name}, f
-                )
+                json.dump({"pid": os.getpid(), "connection_name": server.connection_name}, f)
                 f.write("\n")  # I like my JSON with a trailing newline
             while True:
                 with server:
@@ -379,19 +349,11 @@ class Server:
         except InvalidSourceList as err:
             return {"out": "", "err": str(err), "status": 2}
         except SystemExit as e:
-            return {
-                "out": stdout.getvalue(),
-                "err": stderr.getvalue(),
-                "status": e.code,
-            }
+            return {"out": stdout.getvalue(), "err": stderr.getvalue(), "status": e.code}
         return self.check(sources, export_types, is_tty, terminal_width)
 
     def cmd_check(
-        self,
-        files: Sequence[str],
-        export_types: bool,
-        is_tty: bool,
-        terminal_width: int,
+        self, files: Sequence[str], export_types: bool, is_tty: bool, terminal_width: int
     ) -> dict[str, object]:
         """Check a list of files."""
         try:
@@ -449,11 +411,7 @@ class Server:
         return res
 
     def check(
-        self,
-        sources: list[BuildSource],
-        export_types: bool,
-        is_tty: bool,
-        terminal_width: int,
+        self, sources: list[BuildSource], export_types: bool, is_tty: bool, terminal_width: int
     ) -> dict[str, Any]:
         """Check using fine-grained incremental mode.
 
@@ -466,9 +424,7 @@ class Server:
             res = self.initialize_fine_grained(sources, is_tty, terminal_width)
         else:
             if not self.following_imports():
-                messages = self.fine_grained_increment(
-                    sources, explicit_export_types=export_types
-                )
+                messages = self.fine_grained_increment(sources, explicit_export_types=export_types)
             else:
                 messages = self.fine_grained_increment_follow_imports(
                     sources, explicit_export_types=export_types
@@ -504,9 +460,7 @@ class Server:
         self.update_sources(sources)
         t1 = time.time()
         try:
-            result = mypy.build.build(
-                sources=sources, options=self.options, fscache=self.fscache
-            )
+            result = mypy.build.build(sources=sources, options=self.options, fscache=self.fscache)
         except mypy.errors.CompileError as e:
             output = "".join(s + "\n" for s in e.messages)
             if e.use_stdout:
@@ -519,9 +473,7 @@ class Server:
 
         original_sources_len = len(sources)
         if self.following_imports():
-            sources = find_all_sources_in_build(
-                self.fine_grained_manager.graph, sources
-            )
+            sources = find_all_sources_in_build(self.fine_grained_manager.graph, sources)
             self.update_sources(sources)
 
         self.previous_sources = sources
@@ -540,9 +492,7 @@ class Server:
                 assert state.path is not None
                 self.fswatcher.set_file_data(
                     state.path,
-                    FileData(
-                        st_mtime=float(meta.mtime), st_size=meta.size, hash=meta.hash
-                    ),
+                    FileData(st_mtime=float(meta.mtime), st_size=meta.size, hash=meta.hash),
                 )
 
             changed, removed = self.find_changed(sources)
@@ -587,9 +537,7 @@ class Server:
         __, n_notes, __ = count_stats(messages)
         status = 1 if messages and n_notes < len(messages) else 0
         # We use explicit sources length to match the logic in non-incremental mode.
-        messages = self.pretty_messages(
-            messages, original_sources_len, is_tty, terminal_width
-        )
+        messages = self.pretty_messages(messages, original_sources_len, is_tty, terminal_width)
         return {"out": "".join(s + "\n" for s in messages), "err": "", "status": status}
 
     def fine_grained_increment(
@@ -631,9 +579,7 @@ class Server:
         changed += self.find_added_suppressed(
             self.fine_grained_manager.graph, set(), manager.search_paths
         )
-        manager.search_paths = compute_search_paths(
-            sources, manager.options, manager.data_dir
-        )
+        manager.search_paths = compute_search_paths(sources, manager.options, manager.data_dir)
         t1 = time.time()
         manager.log(f"fine-grained increment: find_changed: {t1 - t0:.3f}s")
         messages = self.fine_grained_manager.update(changed, removed)
@@ -665,9 +611,7 @@ class Server:
 
         self.update_sources(sources)
         changed_paths = self.fswatcher.find_changed()
-        manager.search_paths = compute_search_paths(
-            sources, manager.options, manager.data_dir
-        )
+        manager.search_paths = compute_search_paths(sources, manager.options, manager.data_dir)
 
         t1 = time.time()
         manager.log(f"fine-grained increment: find_changed: {t1 - t0:.3f}s")
@@ -711,12 +655,7 @@ class Server:
 
         for module_id, state in list(graph.items()):
             new_messages = refresh_suppressed_submodules(
-                module_id,
-                state.path,
-                fine_grained_manager.deps,
-                graph,
-                self.fscache,
-                refresh_file,
+                module_id, state.path, fine_grained_manager.deps, graph, self.fscache, refresh_file
             )
             if new_messages is not None:
                 messages = new_messages
@@ -726,26 +665,17 @@ class Server:
         # There may be new files that became available, currently treated as
         # suppressed imports. Process them.
         while True:
-            new_unsuppressed = self.find_added_suppressed(
-                graph, seen, manager.search_paths
-            )
+            new_unsuppressed = self.find_added_suppressed(graph, seen, manager.search_paths)
             if not new_unsuppressed:
                 break
-            new_files = [
-                BuildSource(mod[1], mod[0], followed=True) for mod in new_unsuppressed
-            ]
+            new_files = [BuildSource(mod[1], mod[0], followed=True) for mod in new_unsuppressed]
             sources.extend(new_files)
             self.update_sources(new_files)
             messages = fine_grained_manager.update(new_unsuppressed, [], followed=True)
 
             for module_id, path in new_unsuppressed:
                 new_messages = refresh_suppressed_submodules(
-                    module_id,
-                    path,
-                    fine_grained_manager.deps,
-                    graph,
-                    self.fscache,
-                    refresh_file,
+                    module_id, path, fine_grained_manager.deps, graph, self.fscache, refresh_file
                 )
                 if new_messages is not None:
                     messages = new_messages
@@ -823,9 +753,7 @@ class Server:
                 for dep in state.dependencies:
                     if dep not in seen:
                         seen.add(dep)
-                        worklist.append(
-                            BuildSource(graph[dep].path, graph[dep].id, followed=True)
-                        )
+                        worklist.append(BuildSource(graph[dep].path, graph[dep].id, followed=True))
         return changed, new_files
 
     def direct_imports(
@@ -833,10 +761,7 @@ class Server:
     ) -> list[BuildSource]:
         """Return the direct imports of module not included in seen."""
         state = graph[module[0]]
-        return [
-            BuildSource(graph[dep].path, dep, followed=True)
-            for dep in state.dependencies
-        ]
+        return [BuildSource(graph[dep].path, dep, followed=True) for dep in state.dependencies]
 
     def find_added_suppressed(
         self, graph: mypy.build.Graph, seen: set[str], search_paths: SearchPaths
@@ -865,9 +790,7 @@ class Server:
         # there, to avoid calling the relatively slow find_module()
         # below too many times.
         packages = {module.split(".", 1)[0] for module in all_suppressed}
-        packages = filter_out_missing_top_level_packages(
-            packages, search_paths, self.fscache
-        )
+        packages = filter_out_missing_top_level_packages(packages, search_paths, self.fscache)
 
         # TODO: Namespace packages
 
@@ -891,11 +814,7 @@ class Server:
         return found
 
     def increment_output(
-        self,
-        messages: list[str],
-        sources: list[BuildSource],
-        is_tty: bool,
-        terminal_width: int,
+        self, messages: list[str], sources: list[BuildSource], is_tty: bool, terminal_width: int
     ) -> dict[str, Any]:
         status = 1 if messages else 0
         messages = self.pretty_messages(messages, len(sources), is_tty, terminal_width)
@@ -959,9 +878,7 @@ class Server:
 
         # Now find anything that has been removed from the build
         modules = {source.module for source in sources}
-        omitted = [
-            source for source in self.previous_sources if source.module not in modules
-        ]
+        omitted = [source for source in self.previous_sources if source.module not in modules]
         removed = []
         for source in omitted:
             path = source.path
@@ -1040,9 +957,7 @@ class Server:
             result["out"] += "\n"
         return result
 
-    def cmd_suggest(
-        self, function: str, callsites: bool, **kwargs: Any
-    ) -> dict[str, object]:
+    def cmd_suggest(self, function: str, callsites: bool, **kwargs: Any) -> dict[str, object]:
         """Suggest a signature for a function."""
         if not self.fine_grained_manager:
             return {
@@ -1118,9 +1033,7 @@ def find_all_sources_in_build(
     return result
 
 
-def add_all_sources_to_changed(
-    sources: list[BuildSource], changed: list[tuple[str, str]]
-) -> None:
+def add_all_sources_to_changed(sources: list[BuildSource], changed: list[tuple[str, str]]) -> None:
     """Add all (explicit) sources to the list changed files in place.
 
     Use this when re-processing of unchanged files is needed (e.g. for

@@ -67,9 +67,7 @@ def setup_callable_class(builder: IRBuilder) -> None:
     # If the enclosing class doesn't contain nested (which will happen if
     # this is a toplevel lambda), don't set up an environment.
     if builder.fn_infos[-2].contains_nested:
-        callable_class_ir.attributes[ENV_ATTR_NAME] = RInstance(
-            builder.fn_infos[-2].env_class
-        )
+        callable_class_ir.attributes[ENV_ATTR_NAME] = RInstance(builder.fn_infos[-2].env_class)
     callable_class_ir.mro = [callable_class_ir]
     builder.fn_info.callable_class = ImplicitClass(callable_class_ir)
     builder.classes.append(callable_class_ir)
@@ -77,9 +75,7 @@ def setup_callable_class(builder: IRBuilder) -> None:
     # Add a 'self' variable to the environment of the callable class,
     # and store that variable in a register to be accessed later.
     self_target = builder.add_self_to_env(callable_class_ir)
-    builder.fn_info.callable_class.self_reg = builder.read(
-        self_target, builder.fn_info.fitem.line
-    )
+    builder.fn_info.callable_class.self_reg = builder.read(self_target, builder.fn_info.fitem.line)
 
 
 def add_call_to_callable_class(
@@ -100,15 +96,9 @@ def add_call_to_callable_class(
     sig = FuncSignature(
         (RuntimeArg(SELF_NAME, object_rprimitive),) + sig.args[:nargs], sig.ret_type
     )
-    call_fn_decl = FuncDecl(
-        "__call__", fn_info.callable_class.ir.name, builder.module_name, sig
-    )
+    call_fn_decl = FuncDecl("__call__", fn_info.callable_class.ir.name, builder.module_name, sig)
     call_fn_ir = FuncIR(
-        call_fn_decl,
-        args,
-        blocks,
-        fn_info.fitem.line,
-        traceback_name=fn_info.fitem.name,
+        call_fn_decl, args, blocks, fn_info.fitem.line, traceback_name=fn_info.fitem.name
     )
     fn_info.callable_class.ir.methods["__call__"] = call_fn_ir
     fn_info.callable_class.ir.method_decls["__call__"] = call_fn_decl
@@ -142,11 +132,7 @@ def add_get_to_callable_class(builder: IRBuilder, fn_info: FuncInfo) -> None:
 
         builder.activate_block(instance_block)
         builder.add(
-            Return(
-                builder.call_c(
-                    method_new_op, [builder.self(), builder.read(instance)], line
-                )
-            )
+            Return(builder.call_c(method_new_op, [builder.self(), builder.read(instance)], line))
         )
 
 

@@ -131,9 +131,7 @@ def transform_block(builder: IRBuilder, block: Block) -> None:
     elif block.body:
         builder.add(
             RaiseStandardError(
-                RaiseStandardError.RUNTIME_ERROR,
-                "Reached allegedly unreachable code!",
-                block.line,
+                RaiseStandardError.RUNTIME_ERROR, "Reached allegedly unreachable code!", block.line
             )
         )
         builder.add(Unreachable())
@@ -225,9 +223,7 @@ def is_simple_lvalue(expr: Expression) -> bool:
     return not isinstance(expr, (StarExpr, ListExpr, TupleExpr))
 
 
-def transform_operator_assignment_stmt(
-    builder: IRBuilder, stmt: OperatorAssignmentStmt
-) -> None:
+def transform_operator_assignment_stmt(builder: IRBuilder, stmt: OperatorAssignmentStmt) -> None:
     """Operator assignment statement such as x += 1"""
     builder.disallow_class_assignments([stmt.lvalue], stmt.line)
     if (
@@ -235,9 +231,9 @@ def transform_operator_assignment_stmt(
         and is_tagged(builder.node_type(stmt.rvalue))
         and stmt.op in int_borrow_friendly_op
     ):
-        can_borrow = is_borrow_friendly_expr(
-            builder, stmt.rvalue
-        ) and is_borrow_friendly_expr(builder, stmt.lvalue)
+        can_borrow = is_borrow_friendly_expr(builder, stmt.rvalue) and is_borrow_friendly_expr(
+            builder, stmt.lvalue
+        )
     else:
         can_borrow = False
     target = builder.get_assignment_target(stmt.lvalue)
@@ -302,10 +298,7 @@ def transform_import(builder: IRBuilder, node: Import) -> None:
             builder.gen_method_call(
                 globals,
                 "__setitem__",
-                [
-                    builder.load_str(globals_name),
-                    builder.get_module(globals_id, node.line),
-                ],
+                [builder.load_str(globals_name), builder.get_module(globals_id, node.line)],
                 result_type=None,
                 line=node.line,
             )
@@ -324,17 +317,11 @@ def transform_import(builder: IRBuilder, node: Import) -> None:
         for mod_id, as_name in import_node.ids:
             builder.imports[mod_id] = None
             modules.append((mod_id, *import_globals_id_and_name(mod_id, as_name)))
-            mod_static = LoadStatic(
-                object_rprimitive, mod_id, namespace=NAMESPACE_MODULE
-            )
-            static_ptrs.append(
-                builder.add(LoadAddress(object_pointer_rprimitive, mod_static))
-            )
+            mod_static = LoadStatic(object_rprimitive, mod_id, namespace=NAMESPACE_MODULE)
+            static_ptrs.append(builder.add(LoadAddress(object_pointer_rprimitive, mod_static)))
             mod_lines.append(Integer(import_node.line, c_pyssize_t_rprimitive))
 
-    static_array_ptr = builder.builder.setup_rarray(
-        object_pointer_rprimitive, static_ptrs
-    )
+    static_array_ptr = builder.builder.setup_rarray(object_pointer_rprimitive, static_ptrs)
     import_line_ptr = builder.builder.setup_rarray(c_pyssize_t_rprimitive, mod_lines)
     builder.call_c(
         import_many_op,
@@ -378,12 +365,7 @@ def transform_import_from(builder: IRBuilder, node: ImportFrom) -> None:
     # This probably doesn't matter much and the code runs basically right.
     module = builder.call_c(
         import_from_many_op,
-        [
-            builder.load_str(id),
-            names_literal,
-            as_names_literal,
-            builder.load_globals_dict(),
-        ],
+        [builder.load_str(id), names_literal, as_names_literal, builder.load_globals_dict()],
         node.line,
     )
     builder.add(InitStatic(module, id, namespace=NAMESPACE_MODULE))
@@ -447,13 +429,7 @@ def transform_for_stmt(builder: IRBuilder, s: ForStmt) -> None:
         builder.accept(s.else_body)
 
     for_loop_helper(
-        builder,
-        s.index,
-        s.expr,
-        body,
-        else_block if s.else_body else None,
-        s.is_async,
-        s.line,
+        builder, s.index, s.expr, body, else_block if s.else_body else None, s.is_async, s.line
     )
 
 
@@ -479,9 +455,7 @@ def transform_raise_stmt(builder: IRBuilder, s: RaiseStmt) -> None:
 def transform_try_except(
     builder: IRBuilder,
     body: GenFunc,
-    handlers: Sequence[
-        tuple[tuple[ValueGenFunc, int] | None, Expression | None, GenFunc]
-    ],
+    handlers: Sequence[tuple[tuple[ValueGenFunc, int] | None, Expression | None, GenFunc]],
     else_body: GenFunc | None,
     line: int,
 ) -> None:
@@ -512,9 +486,7 @@ def transform_try_except(
     builder.activate_block(except_entry)
     old_exc = builder.maybe_spill(builder.call_c(error_catch_op, [], line))
     # Compile the except blocks with the nonlocal control flow overridden to clear exc_info
-    builder.nonlocal_control.append(
-        ExceptNonlocalControl(builder.nonlocal_control[-1], old_exc)
-    )
+    builder.nonlocal_control.append(ExceptNonlocalControl(builder.nonlocal_control[-1], old_exc))
 
     # Process the bodies
     for type, var, handler_body in handlers:
@@ -527,9 +499,7 @@ def transform_try_except(
             builder.activate_block(body_block)
         if var:
             target = builder.get_assignment_target(var)
-            builder.assign(
-                target, builder.call_c(get_exc_value_op, [], var.line), var.line
-            )
+            builder.assign(target, builder.call_c(get_exc_value_op, [], var.line), var.line)
         handler_body()
         builder.goto(cleanup_block)
         if next_block:
@@ -751,9 +721,7 @@ def transform_try_stmt(builder: IRBuilder, t: TryStmt) -> None:
 
         body = t.finally_body
 
-        transform_try_finally_stmt(
-            builder, transform_try_body, lambda: builder.accept(body)
-        )
+        transform_try_finally_stmt(builder, transform_try_body, lambda: builder.accept(body))
     else:
         transform_try_except_stmt(builder, t)
 
@@ -786,9 +754,7 @@ def transform_with(
     else:
         typ = builder.call_c(type_op, [mgr_v], line)
         exit_ = builder.maybe_spill(builder.py_get_attr(typ, f"__{al}exit__", line))
-        value = builder.py_call(
-            builder.py_get_attr(typ, f"__{al}enter__", line), [mgr_v], line
-        )
+        value = builder.py_call(builder.py_get_attr(typ, f"__{al}enter__", line), [mgr_v], line)
 
     mgr = builder.maybe_spill(mgr_v)
     exc = builder.maybe_spill_assignable(builder.true())
@@ -813,9 +779,7 @@ def transform_with(
             )
         else:
             assert exit_ is not None
-            exit_val = builder.py_call(
-                builder.read(exit_), [builder.read(mgr)] + args, line
-            )
+            exit_val = builder.py_call(builder.read(exit_), [builder.read(mgr)] + args, line)
 
         if is_async:
             return emit_await(builder, exit_val, line)
@@ -830,9 +794,7 @@ def transform_with(
     def except_body() -> None:
         builder.assign(exc, builder.false(), line)
         out_block, reraise_block = BasicBlock(), BasicBlock()
-        builder.add_bool_branch(
-            maybe_natively_call_exit(exc_info=True), out_block, reraise_block
-        )
+        builder.add_bool_branch(maybe_natively_call_exit(exc_info=True), out_block, reraise_block)
         builder.activate_block(reraise_block)
         builder.call_c(reraise_exception_op, [], NO_TRACEBACK_LINE_NO)
         builder.add(Unreachable())
@@ -848,9 +810,7 @@ def transform_with(
 
     transform_try_finally_stmt(
         builder,
-        lambda: transform_try_except(
-            builder, try_body, [(None, None, except_body)], None, line
-        ),
+        lambda: transform_try_except(builder, try_body, [(None, None, except_body)], None, line),
         finally_body,
     )
 
@@ -862,12 +822,7 @@ def transform_with_stmt(builder: IRBuilder, o: WithStmt) -> None:
             builder.accept(o.body)
         else:
             transform_with(
-                builder,
-                o.expr[i],
-                o.target[i],
-                lambda: generate(i + 1),
-                o.is_async,
-                o.line,
+                builder, o.expr[i], o.target[i], lambda: generate(i + 1), o.is_async, o.line
             )
 
     generate(0)
@@ -882,20 +837,14 @@ def transform_assert_stmt(builder: IRBuilder, a: AssertStmt) -> None:
     builder.activate_block(error_block)
     if a.msg is None:
         # Special case (for simpler generated code)
-        builder.add(
-            RaiseStandardError(RaiseStandardError.ASSERTION_ERROR, None, a.line)
-        )
+        builder.add(RaiseStandardError(RaiseStandardError.ASSERTION_ERROR, None, a.line))
     elif isinstance(a.msg, StrExpr):
         # Another special case
-        builder.add(
-            RaiseStandardError(RaiseStandardError.ASSERTION_ERROR, a.msg.value, a.line)
-        )
+        builder.add(RaiseStandardError(RaiseStandardError.ASSERTION_ERROR, a.msg.value, a.line))
     else:
         # The general case -- explicitly construct an exception instance
         message = builder.accept(a.msg)
-        exc_type = builder.load_module_attr_by_fullname(
-            "builtins.AssertionError", a.line
-        )
+        exc_type = builder.load_module_attr_by_fullname("builtins.AssertionError", a.line)
         exc = builder.py_call(exc_type, [message], a.line)
         builder.call_c(raise_exception_op, [exc], a.line)
     builder.add(Unreachable())
@@ -927,10 +876,7 @@ def transform_del_item(builder: IRBuilder, target: AssignmentTarget, line: int) 
         # Delete a local by assigning an error value to it, which will
         # prompt the insertion of uninit checks.
         builder.add(
-            Assign(
-                target.register,
-                builder.add(LoadErrorValue(target.type, undefines=True)),
-            )
+            Assign(target.register, builder.add(LoadErrorValue(target.type, undefines=True)))
         )
     elif isinstance(target, AssignmentTargetTuple):
         for subtarget in target.items:
@@ -995,9 +941,7 @@ def emit_yield_from_or_await(
     builder.goto_and_activate(loop_block)
 
     def try_body() -> None:
-        builder.assign(
-            received_reg, emit_yield(builder, builder.read(to_yield_reg), line), line
-        )
+        builder.assign(received_reg, emit_yield(builder, builder.read(to_yield_reg), line), line)
 
     def except_body() -> None:
         # The body of the except is all implemented in a C function to
@@ -1005,9 +949,7 @@ def emit_yield_from_or_await(
         # indicating whether to break or yield (or raise an exception).
         val = Register(object_rprimitive)
         val_address = builder.add(LoadAddress(object_pointer_rprimitive, val))
-        to_stop = builder.call_c(
-            yield_from_except_op, [builder.read(iter_reg), val_address], line
-        )
+        to_stop = builder.call_c(yield_from_except_op, [builder.read(iter_reg), val_address], line)
 
         ok, stop = BasicBlock(), BasicBlock()
         builder.add(Branch(to_stop, stop, ok, Branch.BOOL))
@@ -1025,9 +967,7 @@ def emit_yield_from_or_await(
     def else_body() -> None:
         # Do a next() or a .send(). It will return NULL on exception
         # but it won't automatically propagate.
-        _y = builder.call_c(
-            send_op, [builder.read(iter_reg), builder.read(received_reg)], line
-        )
+        _y = builder.call_c(send_op, [builder.read(iter_reg), builder.read(received_reg)], line)
         ok, stop = BasicBlock(), BasicBlock()
         builder.add(Branch(_y, stop, ok, Branch.IS_ERROR))
 
@@ -1043,9 +983,7 @@ def emit_yield_from_or_await(
         builder.nonlocal_control[-1].gen_break(builder, line)
 
     builder.push_loop_stack(loop_block, done_block)
-    transform_try_except(
-        builder, try_body, [(None, None, except_body)], else_body, line
-    )
+    transform_try_except(builder, try_body, [(None, None, except_body)], else_body, line)
     builder.pop_loop_stack()
 
     builder.goto_and_activate(done_block)
@@ -1068,15 +1006,11 @@ def transform_yield_expr(builder: IRBuilder, expr: YieldExpr) -> Value:
 
 
 def transform_yield_from_expr(builder: IRBuilder, o: YieldFromExpr) -> Value:
-    return emit_yield_from_or_await(
-        builder, builder.accept(o.expr), o.line, is_await=False
-    )
+    return emit_yield_from_or_await(builder, builder.accept(o.expr), o.line, is_await=False)
 
 
 def transform_await_expr(builder: IRBuilder, o: AwaitExpr) -> Value:
-    return emit_yield_from_or_await(
-        builder, builder.accept(o.expr), o.line, is_await=True
-    )
+    return emit_yield_from_or_await(builder, builder.accept(o.expr), o.line, is_await=True)
 
 
 def transform_match_stmt(builder: IRBuilder, m: MatchStmt) -> None:

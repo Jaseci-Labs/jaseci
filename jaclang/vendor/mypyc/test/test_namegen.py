@@ -20,10 +20,7 @@ class TestNameGen(unittest.TestCase):
         assert exported_name("foo.bar") == "foo___bar"
 
     def test_make_module_translation_map(self) -> None:
-        assert make_module_translation_map(["foo", "bar"]) == {
-            "foo": "foo.",
-            "bar": "bar.",
-        }
+        assert make_module_translation_map(["foo", "bar"]) == {"foo": "foo.", "bar": "bar."}
         assert make_module_translation_map(["foo.bar", "foo.baz"]) == {
             "foo.bar": "bar.",
             "foo.baz": "baz.",

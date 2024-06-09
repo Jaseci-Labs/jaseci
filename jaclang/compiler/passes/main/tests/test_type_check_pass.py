@@ -4,6 +4,7 @@ from typing import List
 
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.utils.lang_tools import AstTool
 from jaclang.utils.test import TestCase
 
 
@@ -47,3 +48,17 @@ class MypyTypeCheckPassTests(TestCase):
             'Argument 2 to "is_pressed" of "Button" has incompatible type "int"; expected "str"',
         ]:
             self.assertIn(i, errs + files)
+
+    def test_type_coverage(self) -> None:
+        """Testing for type info coverage in sym_tab via ast."""
+        out = AstTool().ir(["ast", f"{self.fixture_abs_path('type_info.jac')}"])
+        lis = [
+            "introduce - Type: None",
+            "25:30 - 25:37\t        |   |   |           +-- Name - species - Type: None",  # AtomTrailer
+        ]
+        self.assertIn("HasVar - species - Type: builtins.str", out)
+        self.assertIn("myDog - Type: type_info.Dog", out)
+        self.assertIn("Body - Type: type_info.Dog.Body", out)
+        self.assertEqual(out.count("Type: builtins.str"), 27)
+        for i in lis:
+            self.assertNotIn(i, out)

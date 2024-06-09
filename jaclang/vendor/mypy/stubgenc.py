@@ -40,9 +40,7 @@ from mypy.stubutil import (
 
 class ExternalSignatureGenerator(SignatureGenerator):
     def __init__(
-        self,
-        func_sigs: dict[str, str] | None = None,
-        class_sigs: dict[str, str] | None = None,
+        self, func_sigs: dict[str, str] | None = None, class_sigs: dict[str, str] | None = None
     ) -> None:
         """
         Takes a mapping of function/method names to signatures and class name to
@@ -78,9 +76,7 @@ class ExternalSignatureGenerator(SignatureGenerator):
             return [
                 FunctionSig(
                     name=ctx.name,
-                    args=infer_arg_sig_from_anon_docstring(
-                        self.class_sigs[ctx.class_info.name]
-                    ),
+                    args=infer_arg_sig_from_anon_docstring(self.class_sigs[ctx.class_info.name]),
                     ret_type=infer_method_ret_type(ctx.name),
                 )
             ]
@@ -101,9 +97,7 @@ class ExternalSignatureGenerator(SignatureGenerator):
         else:
             return inferred
 
-    def get_property_type(
-        self, default_type: str | None, ctx: FunctionContext
-    ) -> str | None:
+    def get_property_type(self, default_type: str | None, ctx: FunctionContext) -> str | None:
         return None
 
 
@@ -121,18 +115,14 @@ class DocstringSignatureGenerator(SignatureGenerator):
         if ctx.class_info:
             if not inferred and ctx.name == "__init__":
                 # look for class-level constructor signatures of the form <class_name>(<signature>)
-                inferred = infer_sig_from_docstring(
-                    ctx.class_info.docstring, ctx.class_info.name
-                )
+                inferred = infer_sig_from_docstring(ctx.class_info.docstring, ctx.class_info.name)
                 if inferred:
                     inferred = [sig._replace(name="__init__") for sig in inferred]
             return self.remove_self_type(inferred, ctx.class_info.self_var)
         else:
             return inferred
 
-    def get_property_type(
-        self, default_type: str | None, ctx: FunctionContext
-    ) -> str | None:
+    def get_property_type(self, default_type: str | None, ctx: FunctionContext) -> str | None:
         """Infer property type from docstring or docstring signature."""
         if ctx.docstring is not None:
             inferred = infer_ret_type_sig_from_anon_docstring(ctx.docstring)
@@ -207,9 +197,7 @@ class CFunctionStub:
         return CFunctionStub(sig.name, sig.format_sig()[:-4], is_abstract)
 
     @classmethod
-    def _from_sigs(
-        cls, sigs: list[FunctionSig], is_abstract: bool = False
-    ) -> CFunctionStub:
+    def _from_sigs(cls, sigs: list[FunctionSig], is_abstract: bool = False) -> CFunctionStub:
         return CFunctionStub(
             sigs[0].name, "\n".join(sig.format_sig()[:-4] for sig in sigs), is_abstract
         )
@@ -272,9 +260,7 @@ class InspectionStubGenerator(BaseStubGenerator):
                 }
             )
 
-    def get_default_function_sig(
-        self, func: object, ctx: FunctionContext
-    ) -> FunctionSig:
+    def get_default_function_sig(self, func: object, ctx: FunctionContext) -> FunctionSig:
         argspec = None
         if not self.is_c_module:
             # Get the full argument specification of the function
@@ -348,9 +334,7 @@ class InspectionStubGenerator(BaseStubGenerator):
             arg.type is None and arg.default is False for arg in arglist
         ):
             new_args = infer_method_arg_types(
-                ctx.name,
-                ctx.class_info.self_var,
-                [arg.name for arg in arglist if arg.name],
+                ctx.name, ctx.class_info.self_var, [arg.name for arg in arglist if arg.name]
             )
             if new_args is not None:
                 arglist = new_args
@@ -365,9 +349,7 @@ class InspectionStubGenerator(BaseStubGenerator):
             sig_generators: list[SignatureGenerator] = [DocstringSignatureGenerator()]
             if self.doc_dir:
                 # Collect info from docs (if given). Always check these first.
-                sig_generators.insert(
-                    0, ExternalSignatureGenerator.from_doc_dir(self.doc_dir)
-                )
+                sig_generators.insert(0, ExternalSignatureGenerator.from_doc_dir(self.doc_dir))
             return sig_generators
 
     def strip_or_import(self, type_name: str) -> str:
@@ -422,9 +404,7 @@ class InspectionStubGenerator(BaseStubGenerator):
                     if self.should_reexport(name, obj_module_name, name_is_alias=False):
                         self.import_tracker.reexport(name)
 
-        self.set_defined_names(
-            {name for name, obj in all_items if not inspect.ismodule(obj)}
-        )
+        self.set_defined_names({name for name, obj in all_items if not inspect.ismodule(obj)})
 
         if self.resort_members:
             functions: list[str] = []
@@ -515,7 +495,7 @@ class InspectionStubGenerator(BaseStubGenerator):
         if obj is None or obj is type(None):
             return "None"
         elif inspect.isclass(obj):
-            return "type[{}]".format(self.get_type_fullname(obj))
+            return f"type[{self.get_type_fullname(obj)}]"
         elif isinstance(obj, FunctionType):
             return self.add_name("typing.Callable")
         elif isinstance(obj, ModuleType):
@@ -549,21 +529,15 @@ class InspectionStubGenerator(BaseStubGenerator):
         else:
             return inspect.ismethod(obj)
 
-    def is_staticmethod(
-        self, class_info: ClassInfo | None, name: str, obj: object
-    ) -> bool:
+    def is_staticmethod(self, class_info: ClassInfo | None, name: str, obj: object) -> bool:
         if class_info is None:
             return False
         elif self.is_c_module:
-            raw_lookup: Mapping[str, Any] = getattr(
-                class_info.cls, "__dict__"
-            )  # noqa: B009
+            raw_lookup: Mapping[str, Any] = getattr(class_info.cls, "__dict__")  # noqa: B009
             raw_value = raw_lookup.get(name, obj)
             return isinstance(raw_value, staticmethod)
         else:
-            return isinstance(
-                inspect.getattr_static(class_info.cls, name), staticmethod
-            )
+            return isinstance(inspect.getattr_static(class_info.cls, name), staticmethod)
 
     @staticmethod
     def is_abstract_method(obj: object) -> bool:
@@ -594,12 +568,7 @@ class InspectionStubGenerator(BaseStubGenerator):
                 inferred[i] = sig._replace(ret_type=self.strip_or_import(sig.ret_type))
 
     def generate_function_stub(
-        self,
-        name: str,
-        obj: object,
-        *,
-        output: list[str],
-        class_info: ClassInfo | None = None,
+        self, name: str, obj: object, *, output: list[str], class_info: ClassInfo | None = None
     ) -> None:
         """Generate stub for a single function or method.
 
@@ -647,9 +616,7 @@ class InspectionStubGenerator(BaseStubGenerator):
 
         if docstring:
             docstring = self._indent_docstring(docstring)
-        output.extend(
-            self.format_func_def(inferred, decorators=decorators, docstring=docstring)
-        )
+        output.extend(self.format_func_def(inferred, decorators=decorators, docstring=docstring))
         self._fix_iter(ctx, inferred, output)
 
     def _indent_docstring(self, docstring: str) -> str:
@@ -692,9 +659,7 @@ class InspectionStubGenerator(BaseStubGenerator):
             obj = CFunctionStub(
                 "__iter__", f"def __iter__(self) -> typing.Iterator[{item_type}]\n"
             )
-            self.generate_function_stub(
-                "__iter__", obj, output=output, class_info=ctx.class_info
-            )
+            self.generate_function_stub("__iter__", obj, output=output, class_info=ctx.class_info)
 
     def generate_property_stub(
         self,
@@ -724,11 +689,7 @@ class InspectionStubGenerator(BaseStubGenerator):
                 docstring = alt_docstr
 
         ctx = FunctionContext(
-            self.module_name,
-            name,
-            docstring=docstring,
-            is_abstract=False,
-            class_info=class_info,
+            self.module_name, name, docstring=docstring, is_abstract=False, class_info=class_info
         )
 
         if self.is_private_name(name, ctx.fullname) or self.is_not_in_all(name):
@@ -796,9 +757,7 @@ class InspectionStubGenerator(BaseStubGenerator):
                 bases.append(base)
         return [self.strip_or_import(self.get_type_fullname(base)) for base in bases]
 
-    def generate_class_stub(
-        self, class_name: str, cls: type, output: list[str]
-    ) -> None:
+    def generate_class_stub(self, class_name: str, cls: type, output: list[str]) -> None:
         """Generate stub for a single class using runtime introspection.
 
         The result lines will be appended to 'output'. If necessary, any
@@ -842,9 +801,7 @@ class InspectionStubGenerator(BaseStubGenerator):
                     class_info.self_var = "cls"
                 else:
                     class_info.self_var = "self"
-                self.generate_function_stub(
-                    attr, value, output=methods, class_info=class_info
-                )
+                self.generate_function_stub(attr, value, output=methods, class_info=class_info)
             elif self.is_property(class_info, attr, raw_value):
                 self.generate_property_stub(
                     attr,
@@ -866,9 +823,7 @@ class InspectionStubGenerator(BaseStubGenerator):
                 continue
             prop_type_name = self.strip_or_import(self.get_type_annotation(value))
             classvar = self.add_name("typing.ClassVar")
-            static_properties.append(
-                f"{self._indent}{attr}: {classvar}[{prop_type_name}] = ..."
-            )
+            static_properties.append(f"{self._indent}{attr}: {classvar}[{prop_type_name}] = ...")
 
         self.dedent()
 
@@ -905,9 +860,7 @@ class InspectionStubGenerator(BaseStubGenerator):
         The result lines will be appended to 'output'. If necessary, any
         required names will be added to 'imports'.
         """
-        if self.is_private_name(
-            name, f"{self.module_name}.{name}"
-        ) or self.is_not_in_all(name):
+        if self.is_private_name(name, f"{self.module_name}.{name}") or self.is_not_in_all(name):
             return
         self.record_name(name)
         type_str = self.strip_or_import(self.get_type_annotation(obj))

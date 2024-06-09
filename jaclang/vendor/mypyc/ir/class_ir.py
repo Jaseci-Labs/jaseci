@@ -130,9 +130,7 @@ class ClassIR:
         # in a few ad-hoc cases.
         self.builtin_base: str | None = None
         # Default empty constructor
-        self.ctor = FuncDecl(
-            name, None, module_name, FuncSignature([], RInstance(self))
-        )
+        self.ctor = FuncDecl(name, None, module_name, FuncSignature([], RInstance(self)))
         # Attributes defined in the class (not inherited)
         self.attributes: dict[str, RType] = {}
         # Deletable attributes
@@ -373,15 +371,12 @@ class ClassIR:
             ],
             # We serialize properties and property_types separately out of an
             # abundance of caution about preserving dict ordering...
-            "property_types": [
-                (k, t.serialize()) for k, t in self.property_types.items()
-            ],
+            "property_types": [(k, t.serialize()) for k, t in self.property_types.items()],
             "properties": list(self.properties),
             "vtable": self.vtable,
             "vtable_entries": serialize_vtable(self.vtable_entries),
             "trait_vtables": [
-                (cir.fullname, serialize_vtable(v))
-                for cir, v in self.trait_vtables.items()
+                (cir.fullname, serialize_vtable(v)) for cir, v in self.trait_vtables.items()
             ],
             # References to class IRs are all just names
             "base": self.base.fullname if self.base else None,
@@ -389,9 +384,7 @@ class ClassIR:
             "mro": [cir.fullname for cir in self.mro],
             "base_mro": [cir.fullname for cir in self.base_mro],
             "children": (
-                [cir.fullname for cir in self.children]
-                if self.children is not None
-                else None
+                [cir.fullname for cir in self.children] if self.children is not None else None
             ),
             "deletable": self.deletable,
             "attrs_with_defaults": sorted(self.attrs_with_defaults),
@@ -420,23 +413,16 @@ class ClassIR:
         ir.ctor = FuncDecl.deserialize(data["ctor"], ctx)
         ir.attributes = {k: deserialize_type(t, ctx) for k, t in data["attributes"]}
         ir.method_decls = {
-            k: (
-                ctx.functions[v].decl
-                if isinstance(v, str)
-                else FuncDecl.deserialize(v, ctx)
-            )
+            k: ctx.functions[v].decl if isinstance(v, str) else FuncDecl.deserialize(v, ctx)
             for k, v in data["method_decls"]
         }
         ir.methods = {k: ctx.functions[v] for k, v in data["methods"]}
         ir.glue_methods = {
             (ctx.classes[c], k): ctx.functions[v] for (c, k), v in data["glue_methods"]
         }
-        ir.property_types = {
-            k: deserialize_type(t, ctx) for k, t in data["property_types"]
-        }
+        ir.property_types = {k: deserialize_type(t, ctx) for k, t in data["property_types"]}
         ir.properties = {
-            k: (ir.methods[k], ir.methods.get(PROPSET_PREFIX + k))
-            for k in data["properties"]
+            k: (ir.methods[k], ir.methods.get(PROPSET_PREFIX + k)) for k in data["properties"]
         }
 
         ir.vtable = data["vtable"]
@@ -467,9 +453,7 @@ class NonExtClassInfo:
     the class annotations dictionary, and the metaclass.
     """
 
-    def __init__(
-        self, dict: Value, bases: Value, anns: Value, metaclass: Value
-    ) -> None:
+    def __init__(self, dict: Value, bases: Value, anns: Value, metaclass: Value) -> None:
         self.dict = dict
         self.bases = bases
         self.anns = anns

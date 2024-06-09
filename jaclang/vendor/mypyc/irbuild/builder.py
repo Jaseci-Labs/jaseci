@@ -60,19 +60,13 @@ from mypy.types import (
     UnionType,
     get_proper_type,
 )
-from mypy.util import split_target
+from mypy.util import module_prefix, split_target
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypyc.common import BITMAP_BITS, SELF_NAME, TEMP_ATTR_NAME
 from mypyc.crash import catch_errors
 from mypyc.errors import Errors
 from mypyc.ir.class_ir import ClassIR, NonExtClassInfo
-from mypyc.ir.func_ir import (
-    INVALID_FUNC_DEF,
-    FuncDecl,
-    FuncIR,
-    FuncSignature,
-    RuntimeArg,
-)
+from mypyc.ir.func_ir import INVALID_FUNC_DEF, FuncDecl, FuncIR, FuncSignature, RuntimeArg
 from mypyc.ir.ops import (
     NAMESPACE_MODULE,
     Assign,
@@ -134,11 +128,7 @@ from mypyc.options import CompilerOptions
 from mypyc.primitives.dict_ops import dict_get_item_op, dict_set_item_op
 from mypyc.primitives.generic_ops import iter_op, next_op, py_setattr_op
 from mypyc.primitives.list_ops import list_get_item_unsafe_op, list_pop_last, to_list
-from mypyc.primitives.misc_ops import (
-    check_unpack_count_op,
-    get_module_dict_op,
-    import_op,
-)
+from mypyc.primitives.misc_ops import check_unpack_count_op, get_module_dict_op, import_op
 from mypyc.primitives.registry import CFunctionDescription, function_ops
 
 # These int binary operations can borrow their operands safely, since the
@@ -170,7 +160,7 @@ class IRBuilder:
         options: CompilerOptions,
         singledispatch_impls: dict[FuncDef, list[RegisterImplInfo]],
     ) -> None:
-        self.builder = LowLevelIRBuilder(current_module, errors, mapper, options)
+        self.builder = LowLevelIRBuilder(errors, options)
         self.builders = [self.builder]
         self.symtables: list[dict[SymbolNode, SymbolTarget]] = [{}]
         self.runtime_args: list[list[RuntimeArg]] = [[]]
@@ -247,9 +237,7 @@ class IRBuilder:
     @overload
     def accept(self, node: Statement) -> None: ...
 
-    def accept(
-        self, node: Statement | Expression, *, can_borrow: bool = False
-    ) -> Value | None:
+    def accept(self, node: Statement | Expression, *, can_borrow: bool = False) -> Value | None:
         """Transform an expression or a statement.
 
         If can_borrow is true, prefer to generate a borrowed reference.
@@ -327,12 +315,8 @@ class IRBuilder:
     def binary_op(self, lreg: Value, rreg: Value, expr_op: str, line: int) -> Value:
         return self.builder.binary_op(lreg, rreg, expr_op, line)
 
-    def coerce(
-        self, src: Value, target_type: RType, line: int, force: bool = False
-    ) -> Value:
-        return self.builder.coerce(
-            src, target_type, line, force, can_borrow=self.can_borrow
-        )
+    def coerce(self, src: Value, target_type: RType, line: int, force: bool = False) -> Value:
+        return self.builder.coerce(src, target_type, line, force, can_borrow=self.can_borrow)
 
     def none_object(self) -> Value:
         return self.builder.none_object()
@@ -352,9 +336,7 @@ class IRBuilder:
     def new_set_op(self, values: list[Value], line: int) -> Value:
         return self.builder.new_set_op(values, line)
 
-    def translate_is_op(
-        self, lreg: Value, rreg: Value, expr_op: str, line: int
-    ) -> Value:
+    def translate_is_op(self, lreg: Value, rreg: Value, expr_op: str, line: int) -> Value:
         return self.builder.translate_is_op(lreg, rreg, expr_op, line)
 
     def py_call(
@@ -367,9 +349,7 @@ class IRBuilder:
     ) -> Value:
         return self.builder.py_call(function, arg_values, line, arg_kinds, arg_names)
 
-    def add_bool_branch(
-        self, value: Value, true: BasicBlock, false: BasicBlock
-    ) -> None:
+    def add_bool_branch(self, value: Value, true: BasicBlock, false: BasicBlock) -> None:
         self.builder.add_bool_branch(value, true, false)
 
     def load_native_type_object(self, fullname: str) -> Value:
@@ -386,14 +366,7 @@ class IRBuilder:
         arg_names: list[str | None] | None = None,
     ) -> Value:
         return self.builder.gen_method_call(
-            base,
-            name,
-            arg_values,
-            result_type,
-            line,
-            arg_kinds,
-            arg_names,
-            self.can_borrow,
+            base, name, arg_values, result_type, line, arg_kinds, arg_names, self.can_borrow
         )
 
     def load_module(self, name: str) -> Value:
@@ -404,9 +377,6 @@ class IRBuilder:
 
     def int_op(self, type: RType, lhs: Value, rhs: Value, op: int, line: int) -> Value:
         return self.builder.int_op(type, lhs, rhs, op, line)
-
-    def compare_tagged(self, lhs: Value, rhs: Value, op: str, line: int) -> Value:
-        return self.builder.compare_tagged(lhs, rhs, op, line)
 
     def compare_tuples(self, lhs: Value, rhs: Value, op: str, line: int) -> Value:
         return self.builder.compare_tuples(lhs, rhs, op, line)
@@ -448,9 +418,7 @@ class IRBuilder:
             needs_import: the BasicBlock that is run if the module has not been loaded yet
             out: the BasicBlock that is run if the module has already been loaded"""
         first_load = self.load_module(id)
-        comparison = self.translate_is_op(
-            first_load, self.none_object(), "is not", line
-        )
+        comparison = self.translate_is_op(first_load, self.none_object(), "is not", line)
         self.add_bool_branch(comparison, out, needs_import)
 
     def get_module(self, module: str, line: int) -> Value:
@@ -471,9 +439,7 @@ class IRBuilder:
         module_obj = self.get_module(module, line)
         return self.py_get_attr(module_obj, attr, line)
 
-    def assign_if_null(
-        self, target: Register, get_val: Callable[[], Value], line: int
-    ) -> None:
+    def assign_if_null(self, target: Register, get_val: Callable[[], Value], line: int) -> None:
         """If target is NULL, assign value produced by get_val to it."""
         error_block, body_block = BasicBlock(), BasicBlock()
         self.add(Branch(target, error_block, body_block, Branch.IS_ERROR))
@@ -501,9 +467,7 @@ class IRBuilder:
         self.activate_block(body_block)
 
     def maybe_add_implicit_return(self) -> None:
-        if is_none_rprimitive(self.ret_types[-1]) or is_object_rprimitive(
-            self.ret_types[-1]
-        ):
+        if is_none_rprimitive(self.ret_types[-1]) or is_object_rprimitive(self.ret_types[-1]):
             self.add_implicit_return()
         else:
             self.add_implicit_unreachable()
@@ -532,10 +496,7 @@ class IRBuilder:
             ):
                 var = lvalue.expr.node[lvalue.name].node
                 if isinstance(var, Var) and not var.is_classvar:
-                    self.error(
-                        "Only class variables defined as ClassVar can be assigned to",
-                        line,
-                    )
+                    self.error("Only class variables defined as ClassVar can be assigned to", line)
 
     def non_function_scope(self) -> bool:
         # Currently the stack always has at least two items: dummy and top-level.
@@ -562,9 +523,7 @@ class IRBuilder:
             else:
                 name = f"{class_name}.{lvalue.name}"
             assert name is not None, "Full name not set for variable"
-            coerced = self.coerce(
-                rvalue_reg, type_override or self.node_type(lvalue), lvalue.line
-            )
+            coerced = self.coerce(rvalue_reg, type_override or self.node_type(lvalue), lvalue.line)
             self.final_names.append((name, coerced.type))
             self.add(InitStatic(coerced, name, self.module_name))
 
@@ -582,9 +541,7 @@ class IRBuilder:
             error_msg=f'value for final name "{error_name}" was not set',
         )
 
-    def load_literal_value(
-        self, val: int | str | bytes | float | complex | bool
-    ) -> Value:
+    def load_literal_value(self, val: int | str | bytes | float | complex | bool) -> Value:
         """Load value of a final name, class-level attribute, or constant folded expression."""
         if isinstance(val, bool):
             if val:
@@ -623,9 +580,7 @@ class IRBuilder:
                 self.error("Cannot assign to the first argument of classmethod", line)
             if lvalue.kind == LDEF:
                 if symbol not in self.symtables[-1]:
-                    if isinstance(symbol, Var) and not isinstance(
-                        symbol.type, DeletedType
-                    ):
+                    if isinstance(symbol, Var) and not isinstance(symbol.type, DeletedType):
                         reg_type = self.type_to_rtype(symbol.type)
                     else:
                         reg_type = self.node_type(lvalue)
@@ -636,10 +591,7 @@ class IRBuilder:
                     # current environment.
                     if self.fn_info.is_generator:
                         return self.add_var_to_env_class(
-                            symbol,
-                            reg_type,
-                            self.fn_info.generator_class,
-                            reassign=False,
+                            symbol, reg_type, self.fn_info.generator_class, reassign=False
                         )
 
                     # Otherwise define a new local variable.
@@ -697,10 +649,7 @@ class IRBuilder:
                 return reg
             assert False, target.base.type
         if isinstance(target, AssignmentTargetAttr):
-            if (
-                isinstance(target.obj.type, RInstance)
-                and target.obj.type.class_ir.is_ext_class
-            ):
+            if isinstance(target.obj.type, RInstance) and target.obj.type.class_ir.is_ext_class:
                 borrow = can_borrow and target.can_borrow
                 return self.add(GetAttr(target.obj, target.attr, line, borrow=borrow))
             else:
@@ -708,9 +657,7 @@ class IRBuilder:
 
         assert False, "Unsupported lvalue: %r" % target
 
-    def assign(
-        self, target: Register | AssignmentTarget, rvalue_reg: Value, line: int
-    ) -> None:
+    def assign(self, target: Register | AssignmentTarget, rvalue_reg: Value, line: int) -> None:
         if isinstance(target, Register):
             self.add(Assign(target, self.coerce_rvalue(rvalue_reg, target.type, line)))
         elif isinstance(target, AssignmentTargetRegister):
@@ -737,8 +684,7 @@ class IRBuilder:
                     item_value = self.add(TupleGet(rvalue_reg, i, line))
                     self.assign(target.items[i], item_value, line)
             elif (
-                is_list_rprimitive(rvalue_reg.type)
-                or is_tuple_rprimitive(rvalue_reg.type)
+                is_list_rprimitive(rvalue_reg.type) or is_tuple_rprimitive(rvalue_reg.type)
             ) and target.star_idx is None:
                 self.process_sequence_assignment(target, rvalue_reg, line)
             else:
@@ -791,9 +737,7 @@ class IRBuilder:
 
         self.activate_block(error_block)
         self.add(
-            RaiseStandardError(
-                RaiseStandardError.VALUE_ERROR, "not enough values to unpack", line
-            )
+            RaiseStandardError(RaiseStandardError.VALUE_ERROR, "not enough values to unpack", line)
         )
         self.add(Unreachable())
 
@@ -806,9 +750,7 @@ class IRBuilder:
         iterator = self.call_c(iter_op, [rvalue_reg], line)
 
         # This may be the whole lvalue list if there is no starred value
-        split_idx = (
-            target.star_idx if target.star_idx is not None else len(target.items)
-        )
+        split_idx = target.star_idx if target.star_idx is not None else len(target.items)
 
         # Assign values before the first starred value
         for litem in target.items[:split_idx]:
@@ -873,9 +815,7 @@ class IRBuilder:
 
             self.activate_block(ok_block)
 
-    def push_loop_stack(
-        self, continue_block: BasicBlock, break_block: BasicBlock
-    ) -> None:
+    def push_loop_stack(self, continue_block: BasicBlock, break_block: BasicBlock) -> None:
         self.nonlocal_control.append(
             LoopNonlocalControl(self.nonlocal_control[-1], continue_block, break_block)
         )
@@ -887,9 +827,7 @@ class IRBuilder:
         """Moves a given Value instance into the generator class' environment class."""
         name = f"{TEMP_ATTR_NAME}{self.temp_counter}"
         self.temp_counter += 1
-        target = self.add_var_to_env_class(
-            Var(name), type, self.fn_info.generator_class
-        )
+        target = self.add_var_to_env_class(Var(name), type, self.fn_info.generator_class)
         return target
 
     def spill(self, value: Value) -> AssignmentTarget:
@@ -968,14 +906,10 @@ class IRBuilder:
         for t in types:
             if isinstance(t, TypedDictType):
                 t = t.fallback
-                dict_base = next(
-                    base for base in t.type.mro if base.fullname == "typing.Mapping"
-                )
+                dict_base = next(base for base in t.type.mro if base.fullname == "typing.Mapping")
             else:
                 assert isinstance(t, Instance), t
-                dict_base = next(
-                    base for base in t.type.mro if base.fullname == "builtins.dict"
-                )
+                dict_base = next(base for base in t.type.mro if base.fullname == "builtins.dict")
             dict_types.append(map_instance_to_supertype(t, dict_base))
         return dict_types
 
@@ -1072,13 +1006,7 @@ class IRBuilder:
         return None
 
     def emit_load_final(
-        self,
-        final_var: Var,
-        fullname: str,
-        name: str,
-        native: bool,
-        typ: Type,
-        line: int,
+        self, final_var: Var, fullname: str, name: str, native: bool, typ: Type, line: int
     ) -> Value | None:
         """Emit code for loading value of a final name (if possible).
 
@@ -1092,10 +1020,8 @@ class IRBuilder:
         """
         if final_var.final_value is not None:  # this is safe even for non-native names
             return self.load_literal_value(final_var.final_value)
-        elif native:
-            return self.load_final_static(
-                fullname, self.mapper.type_to_rtype(typ), line, name
-            )
+        elif native and module_prefix(self.graph, fullname):
+            return self.load_final_static(fullname, self.mapper.type_to_rtype(typ), line, name)
         else:
             return None
 
@@ -1137,18 +1063,12 @@ class IRBuilder:
             and all(kind in (ARG_POS, ARG_NAMED) for kind in expr.arg_kinds)
         ):
             decl = self.mapper.func_to_decl[callee_node]
-            return self.builder.call(
-                decl, arg_values, expr.arg_kinds, expr.arg_names, expr.line
-            )
+            return self.builder.call(decl, arg_values, expr.arg_kinds, expr.arg_names, expr.line)
 
         # Fall back to a Python call
         function = self.accept(callee)
         return self.py_call(
-            function,
-            arg_values,
-            expr.line,
-            arg_kinds=expr.arg_kinds,
-            arg_names=expr.arg_names,
+            function, arg_values, expr.line, arg_kinds=expr.arg_kinds, arg_names=expr.arg_names
         )
 
     def shortcircuit_expr(self, expr: OpExpr) -> Value:
@@ -1188,9 +1108,7 @@ class IRBuilder:
     def enter(self, fn_info: FuncInfo | str = "") -> None:
         if isinstance(fn_info, str):
             fn_info = FuncInfo(name=fn_info)
-        self.builder = LowLevelIRBuilder(
-            self.current_module, self.errors, self.mapper, self.options
-        )
+        self.builder = LowLevelIRBuilder(self.errors, self.options)
         self.builder.set_module(self.module_name, self.module_path)
         self.builders.append(self.builder)
         self.symtables.append({})
@@ -1204,9 +1122,7 @@ class IRBuilder:
             self.nonlocal_control.append(BaseNonlocalControl())
         self.activate_block(BasicBlock())
 
-    def leave(
-        self,
-    ) -> tuple[list[Register], list[RuntimeArg], list[BasicBlock], RType, FuncInfo]:
+    def leave(self) -> tuple[list[Register], list[RuntimeArg], list[BasicBlock], RType, FuncInfo]:
         builder = self.builders.pop()
         self.symtables.pop()
         runtime_args = self.runtime_args.pop()
@@ -1259,9 +1175,7 @@ class IRBuilder:
             class_ir.method_decls[name] = ir.decl
             self.functions.append(ir)
 
-    def add_argument(
-        self, var: str | Var, typ: RType, kind: ArgKind = ARG_POS
-    ) -> Register:
+    def add_argument(self, var: str | Var, typ: RType, kind: ArgKind = ARG_POS) -> Register:
         """Declare an argument in the current function.
 
         You should use this instead of directly calling add_local() in new code.
@@ -1275,9 +1189,7 @@ class IRBuilder:
     def lookup(self, symbol: SymbolNode) -> SymbolTarget:
         return self.symtables[-1][symbol]
 
-    def add_local(
-        self, symbol: SymbolNode, typ: RType, is_arg: bool = False
-    ) -> Register:
+    def add_local(self, symbol: SymbolNode, typ: RType, is_arg: bool = False) -> Register:
         """Add register that represents a symbol to the symbol table.
 
         Args:
@@ -1285,10 +1197,7 @@ class IRBuilder:
         """
         assert isinstance(symbol, SymbolNode)
         reg = Register(
-            typ,
-            remangle_redefinition_name(symbol.name),
-            is_arg=is_arg,
-            line=symbol.line,
+            typ, remangle_redefinition_name(symbol.name), is_arg=is_arg, line=symbol.line
         )
         self.symtables[-1][symbol] = AssignmentTargetRegister(reg)
         if is_arg:
@@ -1328,22 +1237,19 @@ class IRBuilder:
         return self.type_to_rtype(mypy_type)
 
     def add_var_to_env_class(
-        self,
-        var: SymbolNode,
-        rtype: RType,
-        base: FuncInfo | ImplicitClass,
-        reassign: bool = False,
+        self, var: SymbolNode, rtype: RType, base: FuncInfo | ImplicitClass, reassign: bool = False
     ) -> AssignmentTarget:
         # First, define the variable name as an attribute of the environment class, and then
         # construct a target for that attribute.
-        self.fn_info.env_class.attributes[var.name] = rtype
-        attr_target = AssignmentTargetAttr(base.curr_env_reg, var.name)
+        name = remangle_redefinition_name(var.name)
+        self.fn_info.env_class.attributes[name] = rtype
+        attr_target = AssignmentTargetAttr(base.curr_env_reg, name)
 
         if reassign:
             # Read the local definition of the variable, and set the corresponding attribute of
             # the environment class' variable to be that value.
             reg = self.read(self.lookup(var), self.fn_info.fitem.line)
-            self.add(SetAttr(base.curr_env_reg, var.name, reg, self.fn_info.fitem.line))
+            self.add(SetAttr(base.curr_env_reg, name, reg, self.fn_info.fitem.line))
 
         # Override the local definition of the variable to instead point at the variable in
         # the environment class.
@@ -1351,9 +1257,7 @@ class IRBuilder:
 
     def is_builtin_ref_expr(self, expr: RefExpr) -> bool:
         assert expr.node, "RefExpr not resolved"
-        return (
-            "." in expr.node.fullname and expr.node.fullname.split(".")[0] == "builtins"
-        )
+        return "." in expr.node.fullname and expr.node.fullname.split(".")[0] == "builtins"
 
     def load_global(self, expr: NameExpr) -> Value:
         """Loads a Python-level global.
@@ -1421,9 +1325,7 @@ class IRBuilder:
     def add_function(self, func_ir: FuncIR, line: int) -> None:
         name = (func_ir.class_name, func_ir.name)
         if name in self.function_names:
-            self.error(
-                f'Duplicate definition of "{name[1]}" not supported by mypyc', line
-            )
+            self.error(f'Duplicate definition of "{name[1]}" not supported by mypyc', line)
             return
         self.function_names.add(name)
         self.functions.append(func_ir)
@@ -1453,9 +1355,7 @@ def gen_arg_defaults(builder: IRBuilder) -> None:
                 elif not builder.fn_info.is_nested:
                     name = fitem.fullname + "." + arg.variable.name
                     builder.final_names.append((name, target.type))
-                    return builder.add(
-                        LoadStatic(target.type, name, builder.module_name)
-                    )
+                    return builder.add(LoadStatic(target.type, name, builder.module_name))
                 else:
                     name = arg.variable.name
                     builder.fn_info.callable_class.ir.attributes[name] = target.type
@@ -1466,9 +1366,7 @@ def gen_arg_defaults(builder: IRBuilder) -> None:
             assert isinstance(target, AssignmentTargetRegister)
             reg = target.register
             if not reg.type.error_overlap:
-                builder.assign_if_null(
-                    target.register, get_default, arg.initializer.line
-                )
+                builder.assign_if_null(target.register, get_default, arg.initializer.line)
             else:
                 builder.assign_if_bitmap_unset(
                     target.register, get_default, nb, arg.initializer.line

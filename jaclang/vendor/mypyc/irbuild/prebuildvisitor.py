@@ -101,10 +101,7 @@ class PreBuildVisitor(ExtendedTraverserVisitor):
             # mypy. Functions decorated only by special decorators
             # (and property setters) are not treated as decorated
             # functions by the IR builder.
-            if (
-                isinstance(dec.decorators[0], MemberExpr)
-                and dec.decorators[0].name == "setter"
-            ):
+            if isinstance(dec.decorators[0], MemberExpr) and dec.decorators[0].name == "setter":
                 # Property setters are not treated as decorated methods.
                 self.prop_setters.add(dec.func)
             else:

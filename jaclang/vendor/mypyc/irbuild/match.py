@@ -132,9 +132,7 @@ class MatchVisitor(TraverserVisitor):
         )
 
         cond = self.builder.call_c(
-            isinstance_op,
-            [self.subject, self.builder.accept(pattern.class_ref)],
-            pattern.line,
+            isinstance_op, [self.subject, self.builder.accept(pattern.class_ref)], pattern.line
         )
 
         self.builder.add_bool_branch(cond, self.code_block, self.next_block)
@@ -163,9 +161,7 @@ class MatchVisitor(TraverserVisitor):
 
             for item in match_args_type.items:
                 proper_item = get_proper_type(item)
-                assert (
-                    isinstance(proper_item, Instance) and proper_item.last_known_value
-                )
+                assert isinstance(proper_item, Instance) and proper_item.last_known_value
 
                 match_arg = proper_item.last_known_value.value
                 assert isinstance(match_arg, str)
@@ -178,9 +174,7 @@ class MatchVisitor(TraverserVisitor):
 
                 # TODO: use faster "get_attr" method instead when calling on native or
                 # builtin objects
-                positional = self.builder.py_get_attr(
-                    self.subject, match_args[i], expr.line
-                )
+                positional = self.builder.py_get_attr(self.subject, match_args[i], expr.line)
 
                 with self.enter_subpattern(positional):
                     expr.accept(self)
@@ -222,9 +216,7 @@ class MatchVisitor(TraverserVisitor):
         self.builder.add_bool_branch(cond, self.code_block, self.next_block)
 
     def visit_mapping_pattern(self, pattern: MappingPattern) -> None:
-        is_dict = self.builder.call_c(
-            supports_mapping_protocol, [self.subject], pattern.line
-        )
+        is_dict = self.builder.call_c(supports_mapping_protocol, [self.subject], pattern.line)
 
         self.builder.add_bool_branch(is_dict, self.code_block, self.next_block)
 
@@ -237,20 +229,14 @@ class MatchVisitor(TraverserVisitor):
             key_value = self.builder.accept(key)
             keys.append(key_value)
 
-            exists = self.builder.call_c(
-                mapping_has_key, [self.subject, key_value], pattern.line
-            )
+            exists = self.builder.call_c(mapping_has_key, [self.subject, key_value], pattern.line)
 
             self.builder.add_bool_branch(exists, self.code_block, self.next_block)
             self.builder.activate_block(self.code_block)
             self.code_block = BasicBlock()
 
             item = self.builder.gen_method_call(
-                self.subject,
-                "__getitem__",
-                [key_value],
-                object_rprimitive,
-                pattern.line,
+                self.subject, "__getitem__", [key_value], object_rprimitive, pattern.line
             )
 
             with self.enter_subpattern(item):
@@ -267,27 +253,21 @@ class MatchVisitor(TraverserVisitor):
             self.builder.assign(target, rest, pattern.rest.line)
 
             for i, key_name in enumerate(keys):
-                self.builder.call_c(
-                    dict_del_item, [rest, key_name], pattern.keys[i].line
-                )
+                self.builder.call_c(dict_del_item, [rest, key_name], pattern.keys[i].line)
 
             self.builder.goto(self.code_block)
 
     def visit_sequence_pattern(self, seq_pattern: SequencePattern) -> None:
         star_index, capture, patterns = prep_sequence_pattern(seq_pattern)
 
-        is_list = self.builder.call_c(
-            supports_sequence_protocol, [self.subject], seq_pattern.line
-        )
+        is_list = self.builder.call_c(supports_sequence_protocol, [self.subject], seq_pattern.line)
 
         self.builder.add_bool_branch(is_list, self.code_block, self.next_block)
 
         self.builder.activate_block(self.code_block)
         self.code_block = BasicBlock()
 
-        actual_len = self.builder.call_c(
-            generic_ssize_t_len_op, [self.subject], seq_pattern.line
-        )
+        actual_len = self.builder.call_c(generic_ssize_t_len_op, [self.subject], seq_pattern.line)
         min_len = len(patterns)
 
         is_long_enough = self.builder.binary_op(
@@ -311,9 +291,7 @@ class MatchVisitor(TraverserVisitor):
             else:
                 current = self.builder.load_int(i)
 
-            item = self.builder.call_c(
-                sequence_get_item, [self.subject, current], pattern.line
-            )
+            item = self.builder.call_c(sequence_get_item, [self.subject, current], pattern.line)
 
             with self.enter_subpattern(item):
                 pattern.accept(self)
@@ -323,10 +301,7 @@ class MatchVisitor(TraverserVisitor):
             self.code_block = BasicBlock()
 
             capture_end = self.builder.binary_op(
-                actual_len,
-                self.builder.load_int(min_len - star_index),
-                "-",
-                capture.line,
+                actual_len, self.builder.load_int(min_len - star_index), "-", capture.line
             )
 
             rest = self.builder.call_c(

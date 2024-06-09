@@ -1,12 +1,5 @@
 import sys
-from collections.abc import (
-    Callable,
-    Generator,
-    Iterable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-)
+from collections.abc import Callable, Generator, Iterable, Mapping, MutableMapping, MutableSequence
 from multiprocessing.connection import Connection
 from multiprocessing.context import BaseContext, Process
 from multiprocessing.queues import Queue, SimpleQueue
@@ -55,13 +48,7 @@ class _WorkItem(Generic[_T]):
     fn: Callable[..., _T]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
-    def __init__(
-        self,
-        future: Future[_T],
-        fn: Callable[..., _T],
-        args: Iterable[Any],
-        kwargs: Mapping[str, Any],
-    ) -> None: ...
+    def __init__(self, future: Future[_T], fn: Callable[..., _T], args: Iterable[Any], kwargs: Mapping[str, Any]) -> None: ...
 
 class _ResultItem:
     work_id: int
@@ -70,32 +57,17 @@ class _ResultItem:
     if sys.version_info >= (3, 11):
         exit_pid: int | None
         def __init__(
-            self,
-            work_id: int,
-            exception: Exception | None = None,
-            result: Any | None = None,
-            exit_pid: int | None = None,
+            self, work_id: int, exception: Exception | None = None, result: Any | None = None, exit_pid: int | None = None
         ) -> None: ...
     else:
-        def __init__(
-            self,
-            work_id: int,
-            exception: Exception | None = None,
-            result: Any | None = None,
-        ) -> None: ...
+        def __init__(self, work_id: int, exception: Exception | None = None, result: Any | None = None) -> None: ...
 
 class _CallItem:
     work_id: int
     fn: Callable[..., Any]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
-    def __init__(
-        self,
-        work_id: int,
-        fn: Callable[..., Any],
-        args: Iterable[Any],
-        kwargs: Mapping[str, Any],
-    ) -> None: ...
+    def __init__(self, work_id: int, fn: Callable[..., Any], args: Iterable[Any], kwargs: Mapping[str, Any]) -> None: ...
 
 class _SafeQueue(Queue[Future[Any]]):
     pending_work_items: dict[int, _WorkItem[Any]]
@@ -113,21 +85,13 @@ class _SafeQueue(Queue[Future[Any]]):
         ) -> None: ...
     else:
         def __init__(
-            self,
-            max_size: int | None = 0,
-            *,
-            ctx: BaseContext,
-            pending_work_items: dict[int, _WorkItem[Any]],
+            self, max_size: int | None = 0, *, ctx: BaseContext, pending_work_items: dict[int, _WorkItem[Any]]
         ) -> None: ...
 
     def _on_queue_feeder_error(self, e: Exception, obj: _CallItem) -> None: ...
 
-def _get_chunks(
-    *iterables: Any, chunksize: int
-) -> Generator[tuple[Any, ...], None, None]: ...
-def _process_chunk(
-    fn: Callable[..., _T], chunk: Iterable[tuple[Any, ...]]
-) -> list[_T]: ...
+def _get_chunks(*iterables: Any, chunksize: int) -> Generator[tuple[Any, ...], None, None]: ...
+def _process_chunk(fn: Callable[..., _T], chunk: Iterable[tuple[Any, ...]]) -> list[_T]: ...
 
 if sys.version_info >= (3, 11):
     def _sendback_result(
@@ -140,10 +104,7 @@ if sys.version_info >= (3, 11):
 
 else:
     def _sendback_result(
-        result_queue: SimpleQueue[_WorkItem[Any]],
-        work_id: int,
-        result: Any | None = None,
-        exception: Exception | None = None,
+        result_queue: SimpleQueue[_WorkItem[Any]], work_id: int, result: Any | None = None, exception: Exception | None = None
     ) -> None: ...
 
 if sys.version_info >= (3, 11):

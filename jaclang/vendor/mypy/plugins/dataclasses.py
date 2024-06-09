@@ -24,6 +24,7 @@ from mypy.nodes import (
     Context,
     DataclassTransformSpec,
     Decorator,
+    EllipsisExpr,
     Expression,
     FuncDef,
     FuncItem,
@@ -41,11 +42,7 @@ from mypy.nodes import (
     TypeVarExpr,
     Var,
 )
-from mypy.plugin import (
-    ClassDefContext,
-    FunctionSigContext,
-    SemanticAnalyzerPluginInterface,
-)
+from mypy.plugin import ClassDefContext, FunctionSigContext, SemanticAnalyzerPluginInterface
 from mypy.plugins.common import (
     _get_callee_type,
     _get_decorator_bool_argument,
@@ -53,10 +50,7 @@ from mypy.plugins.common import (
     add_method_to_class,
     deserialize_and_fixup_type,
 )
-from mypy.semanal_shared import (
-    find_dataclass_transform_spec,
-    require_bool_literal_argument,
-)
+from mypy.semanal_shared import find_dataclass_transform_spec, require_bool_literal_argument
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.state import state
 from mypy.typeops import map_type_from_supertype, try_getting_literals_from_type
@@ -127,10 +121,7 @@ class DataclassAttribute:
         self._api = api
 
     def to_argument(
-        self,
-        current_info: TypeInfo,
-        *,
-        of: Literal["__init__", "replace", "__post_init__"],
+        self, current_info: TypeInfo, *, of: Literal["__init__", "replace", "__post_init__"]
     ) -> Argument:
         if of == "__init__":
             arg_kind = ARG_POS
@@ -141,11 +132,7 @@ class DataclassAttribute:
             elif not self.kw_only and self.has_default:
                 arg_kind = ARG_OPT
         elif of == "replace":
-            arg_kind = (
-                ARG_NAMED
-                if self.is_init_var and not self.has_default
-                else ARG_NAMED_OPT
-            )
+            arg_kind = ARG_NAMED if self.is_init_var and not self.has_default else ARG_NAMED_OPT
         elif of == "__post_init__":
             # We always use `ARG_POS` without a default value, because it is practical.
             # Consider this case:
@@ -163,13 +150,13 @@ class DataclassAttribute:
         return Argument(
             variable=self.to_var(current_info),
             type_annotation=self.expand_type(current_info),
-            initializer=None,
+            initializer=EllipsisExpr() if self.has_default else None,  # Only used by stubgen
             kind=arg_kind,
         )
 
     def expand_type(self, current_info: TypeInfo) -> Type | None:
         if self.type is not None and self.info.self_type is not None:
-            # In general, it is not safe to call `expand_type()` during semantic analyzis,
+            # In general, it is not safe to call `expand_type()` during semantic analysis,
             # however this plugin is called very late, so all types should be fully ready.
             # Also, it is tricky to avoid eager expansion of Self types here (e.g. because
             # we serialize attributes).
@@ -266,9 +253,7 @@ class DataclassTransformer:
         # then the object default __init__ with an empty signature will be present anyway.
         if (
             decorator_arguments["init"]
-            and (
-                "__init__" not in info.names or info.names["__init__"].plugin_generated
-            )
+            and ("__init__" not in info.names or info.names["__init__"].plugin_generated)
             and attributes
         ):
             args = [
@@ -285,13 +270,17 @@ class DataclassTransformer:
                     if arg.kind == ARG_POS:
                         arg.kind = ARG_OPT
 
-                nameless_var = Var("")
+                existing_args_names = {arg.variable.name for arg in args}
+                gen_args_name = "generated_args"
+                while gen_args_name in existing_args_names:
+                    gen_args_name += "_"
+                gen_kwargs_name = "generated_kwargs"
+                while gen_kwargs_name in existing_args_names:
+                    gen_kwargs_name += "_"
                 args = [
-                    Argument(nameless_var, AnyType(TypeOfAny.explicit), None, ARG_STAR),
+                    Argument(Var(gen_args_name), AnyType(TypeOfAny.explicit), None, ARG_STAR),
                     *args,
-                    Argument(
-                        nameless_var, AnyType(TypeOfAny.explicit), None, ARG_STAR2
-                    ),
+                    Argument(Var(gen_kwargs_name), AnyType(TypeOfAny.explicit), None, ARG_STAR2),
                 ]
 
             add_method_to_class(
@@ -333,9 +322,7 @@ class DataclassTransformer:
                 )
                 order_return_type = self._api.named_type("builtins.bool")
                 order_args = [
-                    Argument(
-                        Var("other", order_tvar_def), order_tvar_def, None, ARG_POS
-                    )
+                    Argument(Var("other", order_tvar_def), order_tvar_def, None, ARG_POS)
                 ]
 
                 existing_method = info.get(method_name)
@@ -368,16 +355,12 @@ class DataclassTransformer:
 
         if decorator_arguments["frozen"]:
             if any(not parent["frozen"] for parent in parent_decorator_arguments):
-                self._api.fail(
-                    "Cannot inherit frozen dataclass from a non-frozen one", info
-                )
+                self._api.fail("Cannot inherit frozen dataclass from a non-frozen one", info)
             self._propertize_callables(attributes, settable=False)
             self._freeze(attributes)
         else:
             if any(parent["frozen"] for parent in parent_decorator_arguments):
-                self._api.fail(
-                    "Cannot inherit non-frozen dataclass from a frozen one", info
-                )
+                self._api.fail("Cannot inherit non-frozen dataclass from a frozen one", info)
             self._propertize_callables(attributes)
 
         if decorator_arguments["slots"]:
@@ -388,23 +371,16 @@ class DataclassTransformer:
         if (
             decorator_arguments["match_args"]
             and (
-                "__match_args__" not in info.names
-                or info.names["__match_args__"].plugin_generated
+                "__match_args__" not in info.names or info.names["__match_args__"].plugin_generated
             )
             and py_version >= (3, 10)
         ):
             str_type = self._api.named_type("builtins.str")
             literals: list[Type] = [
-                LiteralType(attr.name, str_type)
-                for attr in attributes
-                if attr.is_in_init
+                LiteralType(attr.name, str_type) for attr in attributes if attr.is_in_init
             ]
-            match_args_type = TupleType(
-                literals, self._api.named_type("builtins.tuple")
-            )
-            add_attribute_to_class(
-                self._api, self._cls, "__match_args__", match_args_type
-            )
+            match_args_type = TupleType(literals, self._api.named_type("builtins.tuple"))
+            add_attribute_to_class(self._api, self._cls, "__match_args__", match_args_type)
 
         self._add_dataclass_fields_magic_attribute()
         self._add_internal_replace_method(attributes)
@@ -418,9 +394,7 @@ class DataclassTransformer:
 
         return True
 
-    def _add_internal_replace_method(
-        self, attributes: list[DataclassAttribute]
-    ) -> None:
+    def _add_internal_replace_method(self, attributes: list[DataclassAttribute]) -> None:
         """
         Stashes the signature of 'dataclasses.replace(...)' for this specific dataclass
         to be used later whenever 'dataclasses.replace' is called for this dataclass.
@@ -429,16 +403,12 @@ class DataclassTransformer:
             self._api,
             self._cls,
             _INTERNAL_REPLACE_SYM_NAME,
-            args=[
-                attr.to_argument(self._cls.info, of="replace") for attr in attributes
-            ],
+            args=[attr.to_argument(self._cls.info, of="replace") for attr in attributes],
             return_type=NoneType(),
             is_staticmethod=True,
         )
 
-    def _add_internal_post_init_method(
-        self, attributes: list[DataclassAttribute]
-    ) -> None:
+    def _add_internal_post_init_method(self, attributes: list[DataclassAttribute]) -> None:
         add_method_to_class(
             self._api,
             self._cls,
@@ -452,11 +422,7 @@ class DataclassTransformer:
         )
 
     def add_slots(
-        self,
-        info: TypeInfo,
-        attributes: list[DataclassAttribute],
-        *,
-        correct_version: bool,
+        self, info: TypeInfo, attributes: list[DataclassAttribute], *, correct_version: bool
     ) -> None:
         if not correct_version:
             # This means that version is lower than `3.10`,
@@ -498,9 +464,7 @@ class DataclassTransformer:
         )
         add_attribute_to_class(self._api, self._cls, "__slots__", slots_type)
 
-    def reset_init_only_vars(
-        self, info: TypeInfo, attributes: list[DataclassAttribute]
-    ) -> None:
+    def reset_init_only_vars(self, info: TypeInfo, attributes: list[DataclassAttribute]) -> None:
         """Remove init-only vars from the class and reset init var declarations."""
         for attr in attributes:
             if attr.is_init_var:
@@ -526,9 +490,7 @@ class DataclassTransformer:
         if stmt.else_body is not None and not stmt.else_body.is_unreachable:
             yield from self._get_assignment_statements_from_block(stmt.else_body)
 
-    def _get_assignment_statements_from_block(
-        self, block: Block
-    ) -> Iterator[AssignmentStmt]:
+    def _get_assignment_statements_from_block(self, block: Block) -> Iterator[AssignmentStmt]:
         for stmt in block.body:
             if isinstance(stmt, AssignmentStmt):
                 yield stmt
@@ -614,9 +576,7 @@ class DataclassTransformer:
 
             if isinstance(node, TypeAlias):
                 self._api.fail(
-                    (
-                        "Type aliases inside dataclass definitions are not supported at runtime"
-                    ),
+                    ("Type aliases inside dataclass definitions are not supported at runtime"),
                     node,
                 )
                 # Skip processing this node. This doesn't match the runtime behaviour,
@@ -651,9 +611,7 @@ class DataclassTransformer:
 
             is_in_init_param = field_args.get("init")
             if is_in_init_param is None:
-                is_in_init = self._get_default_init_value_for_field_specifier(
-                    stmt.rvalue
-                )
+                is_in_init = self._get_default_init_value_for_field_specifier(stmt.rvalue)
             else:
                 is_in_init = bool(self._api.parse_bool(is_in_init_param))
 
@@ -689,9 +647,7 @@ class DataclassTransformer:
                 if value is not None:
                     is_kw_only = value
                 else:
-                    self._api.fail(
-                        '"kw_only" argument must be a boolean literal', stmt.rvalue
-                    )
+                    self._api.fail('"kw_only" argument must be a boolean literal', stmt.rvalue)
 
             if sym.type is None and node.is_final and node.is_inferred:
                 # This is a special case, assignment like x: Final = 42 is classified
@@ -752,20 +708,14 @@ class DataclassTransformer:
             # If we find any attribute that is_in_init, not kw_only, and that
             # doesn't have a default after one that does have one,
             # then that's an error.
-            if (
-                found_default
-                and attr.is_in_init
-                and not attr.has_default
-                and not attr.kw_only
-            ):
+            if found_default and attr.is_in_init and not attr.has_default and not attr.kw_only:
                 # If the issue comes from merging different classes, report it
                 # at the class definition point.
                 context: Context = cls
                 if attr.name in current_attr_names:
                     context = Context(line=attr.line, column=attr.column)
                 self._api.fail(
-                    "Attributes without a default cannot follow attributes with one",
-                    context,
+                    "Attributes without a default cannot follow attributes with one", context
                 )
 
             found_default = found_default or (attr.has_default and attr.is_in_init)
@@ -774,8 +724,7 @@ class DataclassTransformer:
                 if attr.name in current_attr_names:
                     context = Context(line=attr.line, column=attr.column)
                 self._api.fail(
-                    "There may not be more than one field with the KW_ONLY type",
-                    context,
+                    "There may not be more than one field with the KW_ONLY type", context
                 )
             found_kw_sentinel = found_kw_sentinel or self._is_kw_only_type(attr.type)
         return all_attrs
@@ -844,10 +793,7 @@ class DataclassTransformer:
         # In either case, we're aiming to match the Typeshed stub for `is_dataclass`, which expects
         # the instance to have a `__dataclass_fields__` attribute of type `dict[str, Field[Any]]`.
         if self._spec is _TRANSFORM_SPEC_FOR_DATACLASSES:
-            field_type = (
-                self._api.named_type_or_none("dataclasses.Field", [any_type])
-                or any_type
-            )
+            field_type = self._api.named_type_or_none("dataclasses.Field", [any_type]) or any_type
         else:
             field_type = any_type
         attr_type = self._api.named_type(
@@ -861,9 +807,7 @@ class DataclassTransformer:
             kind=MDEF, node=var, plugin_generated=True
         )
 
-    def _collect_field_args(
-        self, expr: Expression
-    ) -> tuple[bool, dict[str, Expression]]:
+    def _collect_field_args(self, expr: Expression) -> tuple[bool, dict[str, Expression]]:
         """Returns a tuple where the first value represents whether or not
         the expression is a call to dataclass.field and the second is a
         dictionary of the keyword arguments that field() was called with.
@@ -973,8 +917,7 @@ class DataclassTransformer:
                     return expand_type_by_instance(setter_type.arg_types[2], t)
                 else:
                     self._api.fail(
-                        f'Unsupported signature for "__set__" in "{t.type.name}"',
-                        context,
+                        f'Unsupported signature for "__set__" in "{t.type.name}"', context
                     )
             else:
                 self._api.fail(f'Unsupported "__set__" in "{t.type.name}"', context)
@@ -1040,10 +983,7 @@ def _has_direct_dataclass_transform_metaclass(info: TypeInfo) -> bool:
 
 
 def _get_expanded_dataclasses_fields(
-    ctx: FunctionSigContext,
-    typ: ProperType,
-    display_typ: ProperType,
-    parent_typ: ProperType,
+    ctx: FunctionSigContext, typ: ProperType, display_typ: ProperType, parent_typ: ProperType
 ) -> list[CallableType] | None:
     """
     For a given type, determine what dataclasses it can be: for each class, return the field types.
@@ -1085,9 +1025,7 @@ def _meet_replace_sigs(sigs: list[CallableType]) -> CallableType:
     """
     args = {
         name: (typ, kind)
-        for name, typ, kind in zip(
-            sigs[0].arg_names, sigs[0].arg_types, sigs[0].arg_kinds
-        )
+        for name, typ, kind in zip(sigs[0].arg_names, sigs[0].arg_types, sigs[0].arg_kinds)
     }
 
     for sig in sigs[1:]:
@@ -1117,10 +1055,7 @@ def replace_function_sig_callback(ctx: FunctionSigContext) -> CallableType:
     """
     if len(ctx.args) != 2:
         # Ideally the name and context should be callee's, but we don't have it in FunctionSigContext.
-        ctx.api.fail(
-            f'"{ctx.default_signature.name}" has unexpected type annotation',
-            ctx.context,
-        )
+        ctx.api.fail(f'"{ctx.default_signature.name}" has unexpected type annotation', ctx.context)
         return ctx.default_signature
 
     if len(ctx.args[0]) != 1:

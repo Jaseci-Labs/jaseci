@@ -8,12 +8,7 @@ class NetrcParseError(Exception):
     filename: str | None
     lineno: int | None
     msg: str
-    def __init__(
-        self,
-        msg: str,
-        filename: StrOrBytesPath | None = None,
-        lineno: int | None = None,
-    ) -> None: ...
+    def __init__(self, msg: str, filename: StrOrBytesPath | None = None, lineno: int | None = None) -> None: ...
 
 # (login, account, password) tuple
 if sys.version_info >= (3, 11):

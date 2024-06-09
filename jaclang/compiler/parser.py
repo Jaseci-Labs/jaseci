@@ -140,7 +140,7 @@ class JacParser(Pass):
             body = kid[1:] if doc else kid
             body = [i for i in body if isinstance(i, ast.ElementStmt)]
             mod = ast.Module(
-                name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
+                name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
                 source=self.parse_ref.source,
                 doc=doc,
                 body=body,
@@ -2454,8 +2454,8 @@ class JacParser(Pass):
             """Grammar rule.
 
             yield_expr:
-                | KW_YIELD KW_FROM expression
-                | KW_YIELD expression
+                | KW_YIELD KW_FROM? expression
+                | KW_YIELD
             """
             if isinstance(kid[-1], ast.Expr):
                 return self.nu(
@@ -2465,6 +2465,19 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
+            elif (
+                len(kid) == 1
+                and isinstance(kid[0], ast.Token)
+                and kid[0].name == Tok.KW_YIELD
+            ):
+                return self.nu(
+                    ast.YieldExpr(
+                        expr=None,
+                        with_from=False,
+                        kid=kid,
+                    )
+                )
+
             else:
                 raise self.ice()
 

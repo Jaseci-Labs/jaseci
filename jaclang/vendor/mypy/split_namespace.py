@@ -14,9 +14,7 @@ from typing import Any
 
 
 class SplitNamespace(argparse.Namespace):
-    def __init__(
-        self, standard_namespace: object, alt_namespace: object, alt_prefix: str
-    ) -> None:
+    def __init__(self, standard_namespace: object, alt_namespace: object, alt_prefix: str) -> None:
         self.__dict__["_standard_namespace"] = standard_namespace
         self.__dict__["_alt_namespace"] = alt_namespace
         self.__dict__["_alt_prefix"] = alt_prefix

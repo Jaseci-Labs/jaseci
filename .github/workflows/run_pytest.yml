@@ -23,10 +23,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .
         pip install pytest
-        pip install pygame
-        pip install streamlit
-        pip install pydot
-        pip install streamlit-agraph
 
     - name: Run tests
       run: pytest

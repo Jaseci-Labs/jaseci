@@ -24,10 +24,7 @@ class TestEmitter(unittest.TestCase):
 
     def test_object_annotation(self) -> None:
         emitter = Emitter(self.context, {})
-        assert (
-            emitter.object_annotation("hello, world", "line;")
-            == " /* 'hello, world' */"
-        )
+        assert emitter.object_annotation("hello, world", "line;") == " /* 'hello, world' */"
         assert (
             emitter.object_annotation(list(range(30)), "line;")
             == """\
@@ -62,18 +59,11 @@ CPyStatics[1]; /* [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
     def test_emit_undefined_value_for_tuple(self) -> None:
         emitter = Emitter(self.context, {})
         assert (
-            emitter.c_undefined_value(
-                RTuple([str_rprimitive, int_rprimitive, bool_rprimitive])
-            )
+            emitter.c_undefined_value(RTuple([str_rprimitive, int_rprimitive, bool_rprimitive]))
             == "(tuple_T3OIC) { NULL, CPY_INT_TAG, 2 }"
         )
+        assert emitter.c_undefined_value(RTuple([str_rprimitive])) == "(tuple_T1O) { NULL }"
         assert (
-            emitter.c_undefined_value(RTuple([str_rprimitive]))
-            == "(tuple_T1O) { NULL }"
-        )
-        assert (
-            emitter.c_undefined_value(
-                RTuple([RTuple([str_rprimitive]), bool_rprimitive])
-            )
+            emitter.c_undefined_value(RTuple([RTuple([str_rprimitive]), bool_rprimitive]))
             == "(tuple_T2T1OC) { { NULL }, 2 }"
         )

@@ -126,10 +126,7 @@ class StatisticsVisitor(TraverserVisitor):
 
     def process_import(self, imp: ImportFrom | ImportAll) -> None:
         import_id, ok = correct_relative_import(
-            self.cur_mod_id,
-            imp.relative,
-            imp.id,
-            self.cur_mod_node.is_package_init_file(),
+            self.cur_mod_id, imp.relative, imp.id, self.cur_mod_node.is_package_init_file()
         )
         if ok and import_id in self.modules:
             kind = TYPE_PRECISE
@@ -163,11 +160,7 @@ class StatisticsVisitor(TraverserVisitor):
                     assert isinstance(o.type, CallableType)
                     sig = o.type
                     arg_types = sig.arg_types
-                    if (
-                        sig.arg_names
-                        and sig.arg_names[0] == "self"
-                        and not self.inferred
-                    ):
+                    if sig.arg_names and sig.arg_names[0] == "self" and not self.inferred:
                         arg_types = arg_types[1:]
                     for arg in arg_types:
                         self.type(arg)
@@ -241,12 +234,7 @@ class StatisticsVisitor(TraverserVisitor):
         self.record_precise_if_checked_scope(o)
 
     def visit_name_expr(self, o: NameExpr) -> None:
-        if o.fullname in (
-            "builtins.None",
-            "builtins.True",
-            "builtins.False",
-            "builtins.Ellipsis",
-        ):
+        if o.fullname in ("builtins.None", "builtins.True", "builtins.False", "builtins.Ellipsis"):
             self.record_precise_if_checked_scope(o)
         else:
             self.process_node(o)
@@ -277,9 +265,7 @@ class StatisticsVisitor(TraverserVisitor):
         else:
             pass  # TODO: Handle overloaded functions, etc.
 
-    def record_callable_target_precision(
-        self, o: CallExpr, callee: CallableType
-    ) -> None:
+    def record_callable_target_precision(self, o: CallExpr, callee: CallableType) -> None:
         """Record imprecision caused by callee argument types.
 
         This only considers arguments passed in a call expression. Arguments
@@ -382,9 +368,7 @@ class StatisticsVisitor(TraverserVisitor):
             self.log("  !! Any type around line %d" % self.line)
             self.num_any_exprs += 1
             self.record_line(self.line, TYPE_ANY)
-        elif (not self.all_nodes and is_imprecise(t)) or (
-            self.all_nodes and is_imprecise2(t)
-        ):
+        elif (not self.all_nodes and is_imprecise(t)) or (self.all_nodes and is_imprecise2(t)):
             self.log("  !! Imprecise type around line %d" % self.line)
             self.num_imprecise_exprs += 1
             self.record_line(self.line, TYPE_IMPRECISE)
@@ -438,9 +422,7 @@ def dump_type_stats(
     if is_special_module(path):
         return
     print(path)
-    visitor = StatisticsVisitor(
-        inferred, filename=tree.fullname, modules=modules, typemap=typemap
-    )
+    visitor = StatisticsVisitor(inferred, filename=tree.fullname, modules=modules, typemap=typemap)
     tree.accept(visitor)
     for line in visitor.output:
         print(line)

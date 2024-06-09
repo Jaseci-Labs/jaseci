@@ -26,25 +26,15 @@ from _ctypes import (
     set_errno as set_errno,
     sizeof as sizeof,
 )
-from ctypes._endian import (
-    BigEndianStructure as BigEndianStructure,
-    LittleEndianStructure as LittleEndianStructure,
-)
+from ctypes._endian import BigEndianStructure as BigEndianStructure, LittleEndianStructure as LittleEndianStructure
 from typing import Any, ClassVar, Generic, TypeVar
 from typing_extensions import TypeAlias
 
 if sys.platform == "win32":
-    from _ctypes import (
-        FormatError as FormatError,
-        get_last_error as get_last_error,
-        set_last_error as set_last_error,
-    )
+    from _ctypes import FormatError as FormatError, get_last_error as get_last_error, set_last_error as set_last_error
 
 if sys.version_info >= (3, 11):
-    from ctypes._endian import (
-        BigEndianUnion as BigEndianUnion,
-        LittleEndianUnion as LittleEndianUnion,
-    )
+    from ctypes._endian import BigEndianUnion as BigEndianUnion, LittleEndianUnion as LittleEndianUnion
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
@@ -101,23 +91,15 @@ class _NamedFuncPointer(_FuncPointer):
     __name__: str
 
 def CFUNCTYPE(
-    restype: type[_CData] | None,
-    *argtypes: type[_CData],
-    use_errno: bool = ...,
-    use_last_error: bool = ...
+    restype: type[_CData] | None, *argtypes: type[_CData], use_errno: bool = ..., use_last_error: bool = ...
 ) -> type[_FuncPointer]: ...
 
 if sys.platform == "win32":
     def WINFUNCTYPE(
-        restype: type[_CData] | None,
-        *argtypes: type[_CData],
-        use_errno: bool = ...,
-        use_last_error: bool = ...
+        restype: type[_CData] | None, *argtypes: type[_CData], use_errno: bool = ..., use_last_error: bool = ...
     ) -> type[_FuncPointer]: ...
 
-def PYFUNCTYPE(
-    restype: type[_CData] | None, *argtypes: type[_CData]
-) -> type[_FuncPointer]: ...
+def PYFUNCTYPE(restype: type[_CData] | None, *argtypes: type[_CData]) -> type[_FuncPointer]: ...
 
 # Any type that can be implicitly converted to c_void_p when passed as a C function argument.
 # (bytes is not included here, see below.)
@@ -131,21 +113,15 @@ _CVoidConstPLike: TypeAlias = _CVoidPLike | bytes
 _CastT = TypeVar("_CastT", bound=_CanCastTo)
 
 def cast(obj: _CData | _CArgObject | int, typ: type[_CastT]) -> _CastT: ...
-def create_string_buffer(
-    init: int | bytes, size: int | None = None
-) -> Array[c_char]: ...
+def create_string_buffer(init: int | bytes, size: int | None = None) -> Array[c_char]: ...
 
 c_buffer = create_string_buffer
 
-def create_unicode_buffer(
-    init: int | str, size: int | None = None
-) -> Array[c_wchar]: ...
+def create_unicode_buffer(init: int | str, size: int | None = None) -> Array[c_wchar]: ...
 
 if sys.platform == "win32":
     def DllCanUnloadNow() -> int: ...
-    def DllGetClassObject(
-        rclsid: Any, riid: Any, ppv: Any
-    ) -> int: ...  # TODO not documented
+    def DllGetClassObject(rclsid: Any, riid: Any, ppv: Any) -> int: ...  # TODO not documented
     def GetLastError() -> int: ...
 
 def memmove(dst: _CVoidPLike, src: _CVoidConstPLike, count: int) -> int: ...

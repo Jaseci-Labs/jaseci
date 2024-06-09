@@ -1,13 +1,7 @@
 import _random
 import sys
 from _typeshed import SupportsLenAndGetItem
-from collections.abc import (
-    Callable,
-    Iterable,
-    MutableSequence,
-    Sequence,
-    Set as AbstractSet,
-)
+from collections.abc import Callable, Iterable, MutableSequence, Sequence, Set as AbstractSet
 from fractions import Fraction
 from typing import Any, ClassVar, NoReturn, TypeVar
 
@@ -75,34 +69,18 @@ class Random(_random.Random):
     if sys.version_info >= (3, 11):
         def shuffle(self, x: MutableSequence[Any]) -> None: ...
     else:
-        def shuffle(
-            self, x: MutableSequence[Any], random: Callable[[], float] | None = None
-        ) -> None: ...
+        def shuffle(self, x: MutableSequence[Any], random: Callable[[], float] | None = None) -> None: ...
     if sys.version_info >= (3, 11):
-        def sample(
-            self,
-            population: Sequence[_T],
-            k: int,
-            *,
-            counts: Iterable[int] | None = None,
-        ) -> list[_T]: ...
+        def sample(self, population: Sequence[_T], k: int, *, counts: Iterable[int] | None = None) -> list[_T]: ...
     elif sys.version_info >= (3, 9):
         def sample(
-            self,
-            population: Sequence[_T] | AbstractSet[_T],
-            k: int,
-            *,
-            counts: Iterable[int] | None = None,
+            self, population: Sequence[_T] | AbstractSet[_T], k: int, *, counts: Iterable[int] | None = None
         ) -> list[_T]: ...
     else:
-        def sample(
-            self, population: Sequence[_T] | AbstractSet[_T], k: int
-        ) -> list[_T]: ...
+        def sample(self, population: Sequence[_T] | AbstractSet[_T], k: int) -> list[_T]: ...
 
     def uniform(self, a: float, b: float) -> float: ...
-    def triangular(
-        self, low: float = 0.0, high: float = 1.0, mode: float | None = None
-    ) -> float: ...
+    def triangular(self, low: float = 0.0, high: float = 1.0, mode: float | None = None) -> float: ...
     if sys.version_info >= (3, 12):
         def binomialvariate(self, n: int = 1, p: float = 0.5) -> int: ...
 

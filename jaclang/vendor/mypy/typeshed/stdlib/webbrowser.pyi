@@ -8,11 +8,7 @@ __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 class Error(Exception): ...
 
 def register(
-    name: str,
-    klass: Callable[[], BaseBrowser] | None,
-    instance: BaseBrowser | None = None,
-    *,
-    preferred: bool = False
+    name: str, klass: Callable[[], BaseBrowser] | None, instance: BaseBrowser | None = None, *, preferred: bool = False
 ) -> None: ...
 def get(using: str | None = None) -> BaseBrowser: ...
 def open(url: str, new: int = 0, autoraise: bool = True) -> bool: ...
@@ -69,9 +65,7 @@ if sys.platform == "darwin":
     class MacOSX(BaseBrowser):
         def open(self, url: str, new: int = 0, autoraise: bool = True) -> bool: ...
 
-    class MacOSXOSAScript(
-        BaseBrowser
-    ):  # In runtime this class does not have `name` and `basename`
+    class MacOSXOSAScript(BaseBrowser):  # In runtime this class does not have `name` and `basename`
         if sys.version_info >= (3, 11):
             def __init__(self, name: str = "default") -> None: ...
         else:

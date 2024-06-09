@@ -6,14 +6,7 @@ from collections.abc import Iterable
 from typing import IO, Any, Literal, Protocol, SupportsIndex, TextIO, final, overload
 from typing_extensions import Self, TypeAlias
 
-__all__ = [
-    "BZ2File",
-    "BZ2Compressor",
-    "BZ2Decompressor",
-    "open",
-    "compress",
-    "decompress",
-]
+__all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor", "open", "compress", "decompress"]
 
 # The following attributes and methods are optional:
 # def fileno(self) -> int: ...
@@ -21,7 +14,7 @@ __all__ = [
 class _ReadableFileobj(_compression._Reader, Protocol): ...
 
 class _WritableFileobj(Protocol):
-    def write(self, __b: bytes) -> object: ...
+    def write(self, b: bytes, /) -> object: ...
     # The following attributes and methods are optional:
     # def fileno(self) -> int: ...
     # def close(self) -> object: ...
@@ -102,45 +95,21 @@ class BZ2File(BaseStream, IO[bytes]):
     def __enter__(self) -> Self: ...
     if sys.version_info >= (3, 9):
         @overload
-        def __init__(
-            self,
-            filename: _WritableFileobj,
-            mode: _WriteBinaryMode,
-            *,
-            compresslevel: int = 9
-        ) -> None: ...
+        def __init__(self, filename: _WritableFileobj, mode: _WriteBinaryMode, *, compresslevel: int = 9) -> None: ...
+        @overload
+        def __init__(self, filename: _ReadableFileobj, mode: _ReadBinaryMode = "r", *, compresslevel: int = 9) -> None: ...
         @overload
         def __init__(
-            self,
-            filename: _ReadableFileobj,
-            mode: _ReadBinaryMode = "r",
-            *,
-            compresslevel: int = 9
-        ) -> None: ...
-        @overload
-        def __init__(
-            self,
-            filename: StrOrBytesPath,
-            mode: _ReadBinaryMode | _WriteBinaryMode = "r",
-            *,
-            compresslevel: int = 9
+            self, filename: StrOrBytesPath, mode: _ReadBinaryMode | _WriteBinaryMode = "r", *, compresslevel: int = 9
         ) -> None: ...
     else:
         @overload
         def __init__(
-            self,
-            filename: _WritableFileobj,
-            mode: _WriteBinaryMode,
-            buffering: Any | None = None,
-            compresslevel: int = 9,
+            self, filename: _WritableFileobj, mode: _WriteBinaryMode, buffering: Any | None = None, compresslevel: int = 9
         ) -> None: ...
         @overload
         def __init__(
-            self,
-            filename: _ReadableFileobj,
-            mode: _ReadBinaryMode = "r",
-            buffering: Any | None = None,
-            compresslevel: int = 9,
+            self, filename: _ReadableFileobj, mode: _ReadBinaryMode = "r", buffering: Any | None = None, compresslevel: int = 9
         ) -> None: ...
         @overload
         def __init__(
@@ -163,7 +132,7 @@ class BZ2File(BaseStream, IO[bytes]):
 @final
 class BZ2Compressor:
     def __init__(self, compresslevel: int = ...) -> None: ...
-    def compress(self, __data: ReadableBuffer) -> bytes: ...
+    def compress(self, data: ReadableBuffer, /) -> bytes: ...
     def flush(self) -> bytes: ...
 
 @final

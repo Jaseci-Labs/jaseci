@@ -126,25 +126,11 @@ PY_MINOR_VERSION: Final = sys.version_info[1]
 import ast as ast3
 
 # TODO: Index, ExtSlice are deprecated in 3.9.
-from ast import (
-    AST,
-    Attribute,
-    Call,
-    FunctionType,
-    Index,
-    Name,
-    Starred,
-    UAdd,
-    UnaryOp,
-    USub,
-)
+from ast import AST, Attribute, Call, FunctionType, Index, Name, Starred, UAdd, UnaryOp, USub
 
 
 def ast3_parse(
-    source: str | bytes,
-    filename: str,
-    mode: str,
-    feature_version: int = PY_MINOR_VERSION,
+    source: str | bytes, filename: str, mode: str, feature_version: int = PY_MINOR_VERSION
 ) -> AST:
     return ast3.parse(
         source,
@@ -216,9 +202,7 @@ def parse(
         fnam in errors.ignored_files
     )
     # If errors are ignored, we can drop many function bodies to speed up type checking.
-    strip_function_bodies = ignore_errors and (
-        options is None or not options.preserve_asts
-    )
+    strip_function_bodies = ignore_errors and (options is None or not options.preserve_asts)
 
     if options is None:
         options = Options()
@@ -226,10 +210,7 @@ def parse(
     is_stub_file = fnam.endswith(".pyi")
     if is_stub_file:
         feature_version = defaults.PYTHON3_VERSION[1]
-        if (
-            options.python_version[0] == 3
-            and options.python_version[1] > feature_version
-        ):
+        if options.python_version[0] == 3 and options.python_version[1] > feature_version:
             feature_version = options.python_version[1]
     else:
         assert options.python_version[0] >= 3
@@ -256,12 +237,8 @@ def parse(
             # lineno within the file.
             e.lineno = None
         message = e.msg
-        if feature_version > sys.version_info.minor and message.startswith(
-            "invalid syntax"
-        ):
-            python_version_str = (
-                f"{options.python_version[0]}.{options.python_version[1]}"
-            )
+        if feature_version > sys.version_info.minor and message.startswith("invalid syntax"):
+            python_version_str = f"{options.python_version[0]}.{options.python_version[1]}"
             message += f"; you likely need to run mypy using Python {python_version_str} or newer"
         errors.report(
             e.lineno if e.lineno is not None else -1,
@@ -306,9 +283,7 @@ def parse_type_comment(
     except SyntaxError:
         if errors is not None:
             stripped_type = type_comment.split("#", 2)[0].strip()
-            err_msg = message_registry.TYPE_COMMENT_SYNTAX_ERROR_VALUE.format(
-                stripped_type
-            )
+            err_msg = message_registry.TYPE_COMMENT_SYNTAX_ERROR_VALUE.format(stripped_type)
             errors.report(line, column, err_msg.value, blocker=True, code=err_msg.code)
             return None, None
         else:
@@ -321,10 +296,7 @@ def parse_type_comment(
             if ignored is None:
                 if errors is not None:
                     errors.report(
-                        line,
-                        column,
-                        message_registry.INVALID_TYPE_IGNORE.value,
-                        code=codes.SYNTAX,
+                        line, column, message_registry.INVALID_TYPE_IGNORE.value, code=codes.SYNTAX
                     )
                 else:
                     raise SyntaxError
@@ -346,9 +318,7 @@ def parse_type_string(
     string expression "blah" using this function.
     """
     try:
-        _, node = parse_type_comment(
-            f"({expr_string})", line=line, column=column, errors=None
-        )
+        _, node = parse_type_comment(f"({expr_string})", line=line, column=column, errors=None)
         if isinstance(node, UnboundType) and node.original_str_expr is None:
             node.original_str_expr = expr_string
             node.original_str_fallback = expr_fallback_name
@@ -400,9 +370,7 @@ class ASTConverter:
     def note(self, msg: str, line: int, column: int) -> None:
         self.errors.report(line, column, msg, severity="note", code=codes.SYNTAX)
 
-    def fail(
-        self, msg: ErrorMessage, line: int, column: int, blocker: bool = True
-    ) -> None:
+    def fail(self, msg: ErrorMessage, line: int, column: int, blocker: bool = True) -> None:
         if blocker or not self.options.ignore_errors:
             # Make sure self.errors reflects any type ignores that we have parsed
             self.errors.set_file_ignored_lines(
@@ -437,9 +405,7 @@ class ASTConverter:
 
         return node
 
-    def translate_opt_expr_list(
-        self, l: Sequence[AST | None]
-    ) -> list[Expression | None]:
+    def translate_opt_expr_list(self, l: Sequence[AST | None]) -> list[Expression | None]:
         res: list[Expression | None] = []
         for e in l:
             exp = self.visit(e)
@@ -477,16 +443,14 @@ class ASTConverter:
             if ignores:
                 joined_ignores = ", ".join(ignores)
                 self.fail(
-                    message_registry.TYPE_IGNORE_WITH_ERRCODE_ON_MODULE.format(
-                        joined_ignores
-                    ),
+                    message_registry.TYPE_IGNORE_WITH_ERRCODE_ON_MODULE.format(joined_ignores),
                     line=min(self.type_ignores),
                     column=0,
                     blocker=False,
                 )
-            self.errors.used_ignored_lines[self.errors.file][
-                min(self.type_ignores)
-            ].append(codes.FILE.code)
+            self.errors.used_ignored_lines[self.errors.file][min(self.type_ignores)].append(
+                codes.FILE.code
+            )
             block = Block(self.fix_function_overloads(self.translate_stmt_list(stmts)))
             self.set_block_lines(block, stmts)
             mark_block_unreachable(block)
@@ -544,9 +508,7 @@ class ASTConverter:
             return None
         else:
             lineno = n.lineno
-            extra_ignore, typ = parse_type_comment(
-                type_comment, lineno, n.col_offset, self.errors
-            )
+            extra_ignore, typ = parse_type_comment(type_comment, lineno, n.col_offset, self.errors)
             if extra_ignore is not None:
                 self.type_ignores[lineno] = extra_ignore
             return typ
@@ -617,18 +579,12 @@ class ASTConverter:
         return b
 
     def as_required_block(
-        self,
-        stmts: list[ast3.stmt],
-        *,
-        can_strip: bool = False,
-        is_coroutine: bool = False,
+        self, stmts: list[ast3.stmt], *, can_strip: bool = False, is_coroutine: bool = False
     ) -> Block:
         assert stmts  # must be non-empty
         b = Block(
             self.fix_function_overloads(
-                self.translate_stmt_list(
-                    stmts, can_strip=can_strip, is_coroutine=is_coroutine
-                )
+                self.translate_stmt_list(stmts, can_strip=can_strip, is_coroutine=is_coroutine)
             )
         )
         self.set_block_lines(b, stmts)
@@ -650,14 +606,11 @@ class ASTConverter:
             if_unknown_truth_value: IfStmt | None = None
             if isinstance(stmt, IfStmt) and seen_unconditional_func_def is False:
                 # Check IfStmt block to determine if function overloads can be merged
-                if_overload_name = self._check_ifstmt_for_overloads(
-                    stmt, current_overload_name
-                )
+                if_overload_name = self._check_ifstmt_for_overloads(stmt, current_overload_name)
                 if if_overload_name is not None:
-                    (
-                        if_block_with_overload,
-                        if_unknown_truth_value,
-                    ) = self._get_executable_if_block_with_overloads(stmt)
+                    (if_block_with_overload, if_unknown_truth_value) = (
+                        self._get_executable_if_block_with_overloads(stmt)
+                    )
 
             if (
                 current_overload_name is not None
@@ -703,9 +656,7 @@ class ASTConverter:
                         current_overload.append(last_if_overload)
                     last_if_stmt, last_if_overload = None, None
                 if isinstance(if_block_with_overload.body[-1], OverloadedFuncDef):
-                    skipped_if_stmts.extend(
-                        cast(List[IfStmt], if_block_with_overload.body[:-1])
-                    )
+                    skipped_if_stmts.extend(cast(List[IfStmt], if_block_with_overload.body[:-1]))
                     current_overload.extend(if_block_with_overload.body[-1].items)
                 else:
                     current_overload.append(
@@ -718,10 +669,7 @@ class ASTConverter:
                     last_if_stmt, last_if_overload = None, None
                     last_if_unknown_truth_value = None
 
-                if (
-                    current_overload
-                    and current_overload_name == last_if_stmt_overload_name
-                ):
+                if current_overload and current_overload_name == last_if_stmt_overload_name:
                     # Remove last stmt (IfStmt) from ret if the overload names matched
                     # Only happens if no executable block had been found in IfStmt
                     popped = ret.pop()
@@ -800,9 +748,7 @@ class ASTConverter:
             )
             or len(stmt.body[0].body) > 1
             and isinstance(stmt.body[0].body[-1], OverloadedFuncDef)
-            and all(
-                self._is_stripped_if_stmt(if_stmt) for if_stmt in stmt.body[0].body[:-1]
-            )
+            and all(self._is_stripped_if_stmt(if_stmt) for if_stmt in stmt.body[0].body[:-1])
         ):
             return None
 
@@ -815,17 +761,13 @@ class ASTConverter:
         if len(stmt.else_body.body) == 1:
             # For elif: else_body contains an IfStmt itself -> do a recursive check.
             if (
-                isinstance(
-                    stmt.else_body.body[0], (Decorator, FuncDef, OverloadedFuncDef)
-                )
+                isinstance(stmt.else_body.body[0], (Decorator, FuncDef, OverloadedFuncDef))
                 and stmt.else_body.body[0].name == overload_name
             ):
                 return overload_name
             if (
                 isinstance(stmt.else_body.body[0], IfStmt)
-                and self._check_ifstmt_for_overloads(
-                    stmt.else_body.body[0], current_overload_name
-                )
+                and self._check_ifstmt_for_overloads(stmt.else_body.body[0], current_overload_name)
                 == overload_name
             ):
                 return overload_name
@@ -860,9 +802,7 @@ class ASTConverter:
             # body will be set unreachable if condition is always False
             # else_body can contain an IfStmt itself (for elif) -> do a recursive check
             if isinstance(stmt.else_body.body[0], IfStmt):
-                return self._get_executable_if_block_with_overloads(
-                    stmt.else_body.body[0]
-                )
+                return self._get_executable_if_block_with_overloads(stmt.else_body.body[0])
             return stmt.else_body, None
         return None, stmt
 
@@ -912,13 +852,9 @@ class ASTConverter:
             if parsed is not None:
                 self.type_ignores[ti.lineno] = parsed
             else:
-                self.fail(
-                    message_registry.INVALID_TYPE_IGNORE, ti.lineno, -1, blocker=False
-                )
+                self.fail(message_registry.INVALID_TYPE_IGNORE, ti.lineno, -1, blocker=False)
 
-        body = self.fix_function_overloads(
-            self.translate_stmt_list(mod.body, ismodule=True)
-        )
+        body = self.fix_function_overloads(self.translate_stmt_list(mod.body, ismodule=True))
 
         ret = MypyFile(body, self.imports, False, ignored_lines=self.type_ignores)
         ret.is_stub = self.is_stub
@@ -944,8 +880,7 @@ class ASTConverter:
         """Helper shared between visit_FunctionDef and visit_AsyncFunctionDef."""
         self.class_and_function_stack.append("D")
         no_type_check = bool(
-            n.decorator_list
-            and any(is_no_type_check_decorator(d) for d in n.decorator_list)
+            n.decorator_list and any(is_no_type_check_decorator(d) for d in n.decorator_list)
         )
 
         lineno = n.lineno
@@ -973,11 +908,7 @@ class ASTConverter:
                 ):
                     if n.returns:
                         # PEP 484 disallows both type annotations and type comments
-                        self.fail(
-                            message_registry.DUPLICATE_TYPE_SIGNATURES,
-                            lineno,
-                            n.col_offset,
-                        )
+                        self.fail(message_registry.DUPLICATE_TYPE_SIGNATURES, lineno, n.col_offset)
                     arg_types = [
                         (
                             a.type_annotation
@@ -989,19 +920,13 @@ class ASTConverter:
                 else:
                     # PEP 484 disallows both type annotations and type comments
                     if n.returns or any(a.type_annotation is not None for a in args):
-                        self.fail(
-                            message_registry.DUPLICATE_TYPE_SIGNATURES,
-                            lineno,
-                            n.col_offset,
-                        )
+                        self.fail(message_registry.DUPLICATE_TYPE_SIGNATURES, lineno, n.col_offset)
                     translated_args: list[Type] = TypeConverter(
                         self.errors, line=lineno, override_column=n.col_offset
                     ).translate_expr_list(func_type_ast.argtypes)
                     # Use a cast to work around `list` invariance
                     arg_types = cast(List[Optional[Type]], translated_args)
-                return_type = TypeConverter(self.errors, line=lineno).visit(
-                    func_type_ast.returns
-                )
+                return_type = TypeConverter(self.errors, line=lineno).visit(func_type_ast.returns)
 
                 # add implicit self type
                 in_method_scope = self.class_and_function_stack[-2:] == ["C", "D"]
@@ -1009,24 +934,18 @@ class ASTConverter:
                     arg_types.insert(0, AnyType(TypeOfAny.special_form))
             except SyntaxError:
                 stripped_type = n.type_comment.split("#", 2)[0].strip()
-                err_msg = message_registry.TYPE_COMMENT_SYNTAX_ERROR_VALUE.format(
-                    stripped_type
-                )
+                err_msg = message_registry.TYPE_COMMENT_SYNTAX_ERROR_VALUE.format(stripped_type)
                 self.fail(err_msg, lineno, n.col_offset)
                 if n.type_comment and n.type_comment[0] not in ["(", "#"]:
                     self.note(
-                        "Suggestion: wrap argument types in parentheses",
-                        lineno,
-                        n.col_offset,
+                        "Suggestion: wrap argument types in parentheses", lineno, n.col_offset
                     )
                 arg_types = [AnyType(TypeOfAny.from_error)] * len(args)
                 return_type = AnyType(TypeOfAny.from_error)
         else:
             if sys.version_info >= (3, 12) and n.type_params:
                 self.fail(
-                    ErrorMessage(
-                        "PEP 695 generics are not yet supported", code=codes.VALID_TYPE
-                    ),
+                    ErrorMessage("PEP 695 generics are not yet supported", code=codes.VALID_TYPE),
                     n.type_params[0].lineno,
                     n.type_params[0].col_offset,
                     blocker=False,
@@ -1042,12 +961,8 @@ class ASTConverter:
 
         func_type = None
         if any(arg_types) or return_type:
-            if len(arg_types) != 1 and any(
-                isinstance(t, EllipsisType) for t in arg_types
-            ):
-                self.fail(
-                    message_registry.ELLIPSIS_WITH_OTHER_TYPEARGS, lineno, n.col_offset
-                )
+            if len(arg_types) != 1 and any(isinstance(t, EllipsisType) for t in arg_types):
+                self.fail(message_registry.ELLIPSIS_WITH_OTHER_TYPEARGS, lineno, n.col_offset)
             elif len(arg_types) > len(arg_kinds):
                 self.fail(
                     message_registry.TYPE_SIGNATURE_TOO_MANY_ARGS,
@@ -1064,17 +979,10 @@ class ASTConverter:
                 )
             else:
                 func_type = CallableType(
-                    [
-                        a if a is not None else AnyType(TypeOfAny.unannotated)
-                        for a in arg_types
-                    ],
+                    [a if a is not None else AnyType(TypeOfAny.unannotated) for a in arg_types],
                     arg_kinds,
                     arg_names,
-                    (
-                        return_type
-                        if return_type is not None
-                        else AnyType(TypeOfAny.unannotated)
-                    ),
+                    return_type if return_type is not None else AnyType(TypeOfAny.unannotated),
                     _dummy_fallback,
                 )
 
@@ -1121,9 +1029,7 @@ class ASTConverter:
         self.class_and_function_stack.pop()
         return retval
 
-    def set_type_optional(
-        self, type: Type | None, initializer: Expression | None
-    ) -> None:
+    def set_type_optional(self, type: Type | None, initializer: Expression | None) -> None:
         if not self.options.implicit_optional:
             return
         # Indicate that type should be wrapped in an Optional if arg is initialized to None.
@@ -1143,9 +1049,7 @@ class ASTConverter:
         # positional arguments without defaults
         for i, a in enumerate(args_args[:num_no_defaults]):
             pos_only = i < len(posonlyargs)
-            new_args.append(
-                self.make_argument(a, None, ARG_POS, no_type_check, pos_only)
-            )
+            new_args.append(self.make_argument(a, None, ARG_POS, no_type_check, pos_only))
             names.append(a)
 
         # positional arguments with defaults
@@ -1156,9 +1060,7 @@ class ASTConverter:
 
         # *arg
         if args.vararg is not None:
-            new_args.append(
-                self.make_argument(args.vararg, None, ARG_STAR, no_type_check)
-            )
+            new_args.append(self.make_argument(args.vararg, None, ARG_STAR, no_type_check))
             names.append(args.vararg)
 
         # keyword-only arguments with defaults
@@ -1172,9 +1074,7 @@ class ASTConverter:
 
         # **kwarg
         if args.kwarg is not None:
-            new_args.append(
-                self.make_argument(args.kwarg, None, ARG_STAR2, no_type_check)
-            )
+            new_args.append(self.make_argument(args.kwarg, None, ARG_STAR2, no_type_check))
             names.append(args.kwarg)
 
         check_arg_names([arg.variable.name for arg in new_args], names, self.fail_arg)
@@ -1195,11 +1095,7 @@ class ASTConverter:
             annotation = arg.annotation
             type_comment = arg.type_comment
             if annotation is not None and type_comment is not None:
-                self.fail(
-                    message_registry.DUPLICATE_TYPE_SIGNATURES,
-                    arg.lineno,
-                    arg.col_offset,
-                )
+                self.fail(message_registry.DUPLICATE_TYPE_SIGNATURES, arg.lineno, arg.col_offset)
             arg_type = None
             if annotation is not None:
                 arg_type = TypeConverter(self.errors, line=arg.lineno).visit(annotation)
@@ -1231,9 +1127,7 @@ class ASTConverter:
 
         if sys.version_info >= (3, 12) and n.type_params:
             self.fail(
-                ErrorMessage(
-                    "PEP 695 generics are not yet supported", code=codes.VALID_TYPE
-                ),
+                ErrorMessage("PEP 695 generics are not yet supported", code=codes.VALID_TYPE),
                 n.type_params[0].lineno,
                 n.type_params[0].col_offset,
                 blocker=False,
@@ -1341,9 +1235,7 @@ class ASTConverter:
     # If(expr test, stmt* body, stmt* orelse)
     def visit_If(self, n: ast3.If) -> IfStmt:
         node = IfStmt(
-            [self.visit(n.test)],
-            [self.as_required_block(n.body)],
-            self.as_block(n.orelse),
+            [self.visit(n.test)], [self.as_required_block(n.body)], self.as_block(n.orelse)
         )
         return self.set_line(node, n)
 
@@ -1378,8 +1270,7 @@ class ASTConverter:
     # Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
     def visit_Try(self, n: ast3.Try) -> TryStmt:
         vs = [
-            self.set_line(NameExpr(h.name), h) if h.name is not None else None
-            for h in n.handlers
+            self.set_line(NameExpr(h.name), h) if h.name is not None else None for h in n.handlers
         ]
         types = [self.visit(h.type) for h in n.handlers]
         handlers = [self.as_required_block(h.body) for h in n.handlers]
@@ -1396,8 +1287,7 @@ class ASTConverter:
 
     def visit_TryStar(self, n: TryStar) -> TryStmt:
         vs = [
-            self.set_line(NameExpr(h.name), h) if h.name is not None else None
-            for h in n.handlers
+            self.set_line(NameExpr(h.name), h) if h.name is not None else None for h in n.handlers
         ]
         types = [self.visit(h.type) for h in n.handlers]
         handlers = [self.as_required_block(h.body) for h in n.handlers]
@@ -1543,31 +1433,20 @@ class ASTConverter:
         body.col_offset = n.body.col_offset
 
         self.class_and_function_stack.append("L")
-        e = LambdaExpr(
-            self.transform_args(n.args, n.lineno), self.as_required_block([body])
-        )
+        e = LambdaExpr(self.transform_args(n.args, n.lineno), self.as_required_block([body]))
         self.class_and_function_stack.pop()
-        e.set_line(
-            n.lineno, n.col_offset
-        )  # Overrides set_line -- can't use self.set_line
+        e.set_line(n.lineno, n.col_offset)  # Overrides set_line -- can't use self.set_line
         return e
 
     # IfExp(expr test, expr body, expr orelse)
     def visit_IfExp(self, n: ast3.IfExp) -> ConditionalExpr:
-        e = ConditionalExpr(
-            self.visit(n.test), self.visit(n.body), self.visit(n.orelse)
-        )
+        e = ConditionalExpr(self.visit(n.test), self.visit(n.body), self.visit(n.orelse))
         return self.set_line(e, n)
 
     # Dict(expr* keys, expr* values)
     def visit_Dict(self, n: ast3.Dict) -> DictExpr:
         e = DictExpr(
-            list(
-                zip(
-                    self.translate_opt_expr_list(n.keys),
-                    self.translate_expr_list(n.values),
-                )
-            )
+            list(zip(self.translate_opt_expr_list(n.keys), self.translate_expr_list(n.values)))
         )
         return self.set_line(e, n)
 
@@ -1636,8 +1515,7 @@ class ASTConverter:
         keywords = n.keywords
         keyword_names = [k.arg for k in keywords]
         arg_types = self.translate_expr_list(
-            [a.value if isinstance(a, Starred) else a for a in args]
-            + [k.value for k in keywords]
+            [a.value if isinstance(a, Starred) else a for a in args] + [k.value for k in keywords]
         )
         arg_kinds = [ARG_STAR if type(a) is Starred else ARG_POS for a in args] + [
             ARG_STAR2 if arg is None else ARG_NAMED for arg in keyword_names
@@ -1706,9 +1584,7 @@ class ASTConverter:
         val_exp.set_line(n.lineno, n.col_offset)
         conv_str = "" if n.conversion < 0 else "!" + chr(n.conversion)
         format_string = StrExpr("{" + conv_str + ":{}}")
-        format_spec_exp = (
-            self.visit(n.format_spec) if n.format_spec is not None else StrExpr("")
-        )
+        format_spec_exp = self.visit(n.format_spec) if n.format_spec is not None else StrExpr("")
         format_string.set_line(n.lineno, n.col_offset)
         format_method = MemberExpr(format_string, "format")
         format_method.set_line(format_string)
@@ -1866,9 +1742,7 @@ class ASTConverter:
 
     def visit_TypeAlias(self, n: ast_TypeAlias) -> AssignmentStmt:
         self.fail(
-            ErrorMessage(
-                "PEP 695 type aliases are not yet supported", code=codes.VALID_TYPE
-            ),
+            ErrorMessage("PEP 695 type aliases are not yet supported", code=codes.VALID_TYPE),
             n.lineno,
             n.col_offset,
             blocker=False,
@@ -1913,11 +1787,7 @@ class TypeConverter:
         See RawExpressionType's docstring for more details on how it's used.
         """
         return RawExpressionType(
-            None,
-            "typing.Any",
-            line=self.line,
-            column=getattr(node, "col_offset", -1),
-            note=note,
+            None, "typing.Any", line=self.line, column=getattr(node, "col_offset", -1), note=note
         )
 
     @overload
@@ -1968,14 +1838,10 @@ class TypeConverter:
         if not isinstance(self.parent(), ast3.List):
             note = None
             if constructor:
-                note = "Suggestion: use {0}[...] instead of {0}(...)".format(
-                    constructor
-                )
+                note = "Suggestion: use {0}[...] instead of {0}(...)".format(constructor)
             return self.invalid_type(e, note=note)
         if not constructor:
-            self.fail(
-                message_registry.ARG_CONSTRUCTOR_NAME_EXPECTED, e.lineno, e.col_offset
-            )
+            self.fail(message_registry.ARG_CONSTRUCTOR_NAME_EXPECTED, e.lineno, e.col_offset)
 
         name: str | None = None
         default_type = AnyType(TypeOfAny.special_form)
@@ -1988,19 +1854,13 @@ class TypeConverter:
             elif i == 1:
                 name = self._extract_argument_name(arg)
             else:
-                self.fail(
-                    message_registry.ARG_CONSTRUCTOR_TOO_MANY_ARGS,
-                    f.lineno,
-                    f.col_offset,
-                )
+                self.fail(message_registry.ARG_CONSTRUCTOR_TOO_MANY_ARGS, f.lineno, f.col_offset)
         for k in e.keywords:
             value = k.value
             if k.arg == "name":
                 if name is not None:
                     self.fail(
-                        message_registry.MULTIPLE_VALUES_FOR_NAME_KWARG.format(
-                            constructor
-                        ),
+                        message_registry.MULTIPLE_VALUES_FOR_NAME_KWARG.format(constructor),
                         f.lineno,
                         f.col_offset,
                     )
@@ -2008,9 +1868,7 @@ class TypeConverter:
             elif k.arg == "type":
                 if typ is not default_type:
                     self.fail(
-                        message_registry.MULTIPLE_VALUES_FOR_TYPE_KWARG.format(
-                            constructor
-                        ),
+                        message_registry.MULTIPLE_VALUES_FOR_TYPE_KWARG.format(constructor),
                         f.lineno,
                         f.col_offset,
                     )
@@ -2041,9 +1899,7 @@ class TypeConverter:
         return None
 
     def visit_Name(self, n: Name) -> Type:
-        return UnboundType(
-            n.id, line=self.line, column=self.convert_column(n.col_offset)
-        )
+        return UnboundType(n.id, line=self.line, column=self.convert_column(n.col_offset))
 
     def visit_BinOp(self, n: ast3.BinOp) -> Type:
         if not isinstance(n.op, ast3.BitOr):
@@ -2077,9 +1933,7 @@ class TypeConverter:
             return self.numeric_type(val, n)
         if isinstance(val, bytes):
             contents = bytes_to_human_readable_repr(val)
-            return RawExpressionType(
-                contents, "builtins.bytes", self.line, column=n.col_offset
-            )
+            return RawExpressionType(contents, "builtins.bytes", self.line, column=n.col_offset)
         # Everything else is invalid.
         return self.invalid_type(n)
 
@@ -2115,10 +1969,7 @@ class TypeConverter:
             numeric_value = None
             type_name = f"builtins.{type(value).__name__}"
         return RawExpressionType(
-            numeric_value,
-            type_name,
-            line=self.line,
-            column=getattr(n, "col_offset", -1),
+            numeric_value, type_name, line=self.line, column=getattr(n, "col_offset", -1)
         )
 
     def visit_Index(self, n: ast3.Index) -> Type:

@@ -29,13 +29,7 @@ _OpSubpatternType: TypeAlias = tuple[int | None, int, int, SubPattern]
 _OpGroupRefExistsType: TypeAlias = tuple[int, SubPattern, SubPattern]
 _OpInType: TypeAlias = list[tuple[_NIC, int]]
 _OpBranchType: TypeAlias = tuple[None, list[SubPattern]]
-_AvType: TypeAlias = (
-    _OpInType
-    | _OpBranchType
-    | Iterable[SubPattern]
-    | _OpGroupRefExistsType
-    | _OpSubpatternType
-)
+_AvType: TypeAlias = _OpInType | _OpBranchType | Iterable[SubPattern] | _OpGroupRefExistsType | _OpSubpatternType
 _CodeType: TypeAlias = tuple[_NIC, _AvType]
 
 class State:

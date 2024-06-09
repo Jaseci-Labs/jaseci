@@ -37,6 +37,7 @@ from mypyc.ir.ops import (
     MethodCall,
     Op,
     OpVisitor,
+    PrimitiveOp,
     RaiseStandardError,
     Register,
     Return,
@@ -77,9 +78,7 @@ class FnError:
 
     def __eq__(self, other: object) -> bool:
         return (
-            isinstance(other, FnError)
-            and self.source == other.source
-            and self.desc == other.desc
+            isinstance(other, FnError) and self.source == other.source and self.desc == other.desc
         )
 
     def __repr__(self) -> str:
@@ -95,16 +94,11 @@ def check_func_ir(fn: FuncIR) -> list[FnError]:
     for block in fn.blocks:
         if not block.terminated:
             errors.append(
-                FnError(
-                    source=block.ops[-1] if block.ops else block,
-                    desc="Block not terminated",
-                )
+                FnError(source=block.ops[-1] if block.ops else block, desc="Block not terminated")
             )
         for op in block.ops[:-1]:
             if isinstance(op, ControlOp):
-                errors.append(
-                    FnError(source=op, desc="Block has operations after control op")
-                )
+                errors.append(FnError(source=op, desc="Block has operations after control op"))
 
             if op in op_set:
                 errors.append(FnError(source=op, desc="Func has a duplicate op"))
@@ -168,8 +162,7 @@ def check_op_sources_valid(fn: FuncIR) -> list[FnError]:
                     if source not in valid_registers:
                         errors.append(
                             FnError(
-                                source=op,
-                                desc=f"Invalid op reference to register {source.name!r}",
+                                source=op, desc=f"Invalid op reference to register {source.name!r}"
                             )
                         )
 
@@ -224,15 +217,12 @@ class OpChecker(OpVisitor[None]):
     def check_control_op_targets(self, op: ControlOp) -> None:
         for target in op.targets():
             if target not in self.parent_fn.blocks:
-                self.fail(
-                    source=op, desc=f"Invalid control operation target: {target.label}"
-                )
+                self.fail(source=op, desc=f"Invalid control operation target: {target.label}")
 
     def check_type_coercion(self, op: Op, src: RType, dest: RType) -> None:
         if not can_coerce_to(src, dest):
             self.fail(
-                source=op,
-                desc=f"Cannot coerce source type {src.name} to dest type {dest.name}",
+                source=op, desc=f"Cannot coerce source type {src.name} to dest type {dest.name}"
             )
 
     def check_compatibility(self, op: Op, t: RType, s: RType) -> None:
@@ -275,20 +265,14 @@ class OpChecker(OpVisitor[None]):
         # has an error value.
         pass
 
-    def check_tuple_items_valid_literals(
-        self, op: LoadLiteral, t: tuple[object, ...]
-    ) -> None:
+    def check_tuple_items_valid_literals(self, op: LoadLiteral, t: tuple[object, ...]) -> None:
         for x in t:
-            if x is not None and not isinstance(
-                x, (str, bytes, bool, int, float, complex, tuple)
-            ):
+            if x is not None and not isinstance(x, (str, bytes, bool, int, float, complex, tuple)):
                 self.fail(op, f"Invalid type for item of tuple literal: {type(x)})")
             if isinstance(x, tuple):
                 self.check_tuple_items_valid_literals(op, x)
 
-    def check_frozenset_items_valid_literals(
-        self, op: LoadLiteral, s: frozenset[object]
-    ) -> None:
+    def check_frozenset_items_valid_literals(self, op: LoadLiteral, s: frozenset[object]) -> None:
         for x in s:
             if x is None or isinstance(x, (str, bytes, bool, int, float, complex)):
                 pass
@@ -396,6 +380,9 @@ class OpChecker(OpVisitor[None]):
         pass
 
     def visit_call_c(self, op: CallC) -> None:
+        pass
+
+    def visit_primitive_op(self, op: PrimitiveOp) -> None:
         pass
 
     def visit_truncate(self, op: Truncate) -> None:

@@ -22,9 +22,7 @@ class CompilerOptions:
         self.global_opts = not separate
         self.target_dir = target_dir or "build"
         self.include_runtime_files = (
-            include_runtime_files
-            if include_runtime_files is not None
-            else not multi_file
+            include_runtime_files if include_runtime_files is not None else not multi_file
         )
         # The target Python C API version. Overriding this is mostly
         # useful in IR tests, since there's no guarantee that

@@ -5,27 +5,10 @@ from __future__ import annotations
 from typing import Final
 
 from mypyc.analysis.blockfreq import frequently_executed_blocks
-from mypyc.codegen.emit import (
-    DEBUG_ERRORS,
-    Emitter,
-    TracebackAndGotoHandler,
-    c_array_initializer,
-)
-from mypyc.common import (
-    MODULE_PREFIX,
-    NATIVE_PREFIX,
-    REG_PREFIX,
-    STATIC_PREFIX,
-    TYPE_PREFIX,
-)
+from mypyc.codegen.emit import DEBUG_ERRORS, Emitter, TracebackAndGotoHandler, c_array_initializer
+from mypyc.common import MODULE_PREFIX, NATIVE_PREFIX, REG_PREFIX, STATIC_PREFIX, TYPE_PREFIX
 from mypyc.ir.class_ir import ClassIR
-from mypyc.ir.func_ir import (
-    FUNC_CLASSMETHOD,
-    FUNC_STATICMETHOD,
-    FuncDecl,
-    FuncIR,
-    all_values,
-)
+from mypyc.ir.func_ir import FUNC_CLASSMETHOD, FUNC_STATICMETHOD, FuncDecl, FuncIR, all_values
 from mypyc.ir.ops import (
     ERR_FALSE,
     NAMESPACE_MODULE,
@@ -64,6 +47,7 @@ from mypyc.ir.ops import (
     MethodCall,
     Op,
     OpVisitor,
+    PrimitiveOp,
     RaiseStandardError,
     Register,
     Return,
@@ -190,11 +174,7 @@ def generate_native_function(
 
 class FunctionEmitterVisitor(OpVisitor[None]):
     def __init__(
-        self,
-        emitter: Emitter,
-        declarations: Emitter,
-        source_path: str,
-        module_name: str,
+        self, emitter: Emitter, declarations: Emitter, source_path: str, module_name: str
     ) -> None:
         self.emitter = emitter
         self.names = emitter.names
@@ -315,9 +295,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
         if isinstance(op.type, RTuple):
             values = [self.c_undefined_value(item) for item in op.type.types]
             tmp = self.temp_name()
-            self.emit_line(
-                "{} {} = {{ {} }};".format(self.ctype(op.type), tmp, ", ".join(values))
-            )
+            self.emit_line("{} {} = {{ {} }};".format(self.ctype(op.type), tmp, ", ".join(values)))
             self.emit_line(f"{self.reg(op)} = {tmp};")
         else:
             self.emit_line(f"{self.reg(op)} = {self.c_error_value(op.type)};")
@@ -328,8 +306,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
             self.emit_line("%s = CPyStatics[%d];" % (self.reg(op), index), ann=op.value)
         else:
             self.emit_line(
-                "%s = (CPyTagged)CPyStatics[%d] | 1;" % (self.reg(op), index),
-                ann=op.value,
+                "%s = (CPyTagged)CPyStatics[%d] | 1;" % (self.reg(op), index), ann=op.value
             )
 
     def get_attr_expr(self, obj: str, op: GetAttr | SetAttr, decl_cl: ClassIR) -> str:
@@ -559,11 +536,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
         obj_args = (
             []
             if method.decl.kind == FUNC_STATICMETHOD
-            else (
-                [f"(PyObject *)Py_TYPE({obj})"]
-                if method.decl.kind == FUNC_CLASSMETHOD
-                else [obj]
-            )
+            else [f"(PyObject *)Py_TYPE({obj})"] if method.decl.kind == FUNC_CLASSMETHOD else [obj]
         )
         args = ", ".join(obj_args + [self.reg(arg) for arg in op.args])
         mtype = native_function_type(method, self.emitter)
@@ -571,9 +544,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
         if is_direct:
             # Directly call method, without going through the vtable.
             lib = self.emitter.get_group_prefix(method.decl)
-            self.emit_line(
-                f"{dest}{lib}{NATIVE_PREFIX}{method.cname(self.names)}({args});"
-            )
+            self.emit_line(f"{dest}{lib}{NATIVE_PREFIX}{method.cname(self.names)}({args});")
         else:
             # Call using vtable.
             method_idx = rtype.method_index(name)
@@ -600,9 +571,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
         self.emit_dec_ref(src, op.src.type, is_xdec=op.is_xdec)
 
     def visit_box(self, op: Box) -> None:
-        self.emitter.emit_box(
-            self.reg(op.src), self.reg(op), op.src.type, can_borrow=True
-        )
+        self.emitter.emit_box(self.reg(op.src), self.reg(op), op.src.type, can_borrow=True)
 
     def visit_cast(self, op: Cast) -> None:
         branch = self.next_branch()
@@ -640,9 +609,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
         if op.value is not None:
             if isinstance(op.value, str):
                 message = op.value.replace('"', '\\"')
-                self.emitter.emit_line(
-                    f'PyErr_SetString(PyExc_{op.class_name}, "{message}");'
-                )
+                self.emitter.emit_line(f'PyErr_SetString(PyExc_{op.class_name}, "{message}");')
             elif isinstance(op.value, Value):
                 self.emitter.emit_line(
                     "PyErr_SetObject(PyExc_{}, {});".format(
@@ -662,6 +629,11 @@ class FunctionEmitterVisitor(OpVisitor[None]):
             dest = self.get_dest_assign(op)
         args = ", ".join(self.reg(arg) for arg in op.args)
         self.emitter.emit_line(f"{dest}{op.function_name}({args});")
+
+    def visit_primitive_op(self, op: PrimitiveOp) -> None:
+        raise RuntimeError(
+            f"unexpected PrimitiveOp {op.desc.name}: they must be lowered before codegen"
+        )
 
     def visit_truncate(self, op: Truncate) -> None:
         dest = self.reg(op)
@@ -698,21 +670,11 @@ class FunctionEmitterVisitor(OpVisitor[None]):
         rhs = self.reg(op.rhs)
         lhs_cast = ""
         rhs_cast = ""
-        if op.op in (
-            ComparisonOp.SLT,
-            ComparisonOp.SGT,
-            ComparisonOp.SLE,
-            ComparisonOp.SGE,
-        ):
+        if op.op in (ComparisonOp.SLT, ComparisonOp.SGT, ComparisonOp.SLE, ComparisonOp.SGE):
             # Always signed comparison op
             lhs_cast = self.emit_signed_int_cast(op.lhs.type)
             rhs_cast = self.emit_signed_int_cast(op.rhs.type)
-        elif op.op in (
-            ComparisonOp.ULT,
-            ComparisonOp.UGT,
-            ComparisonOp.ULE,
-            ComparisonOp.UGE,
-        ):
+        elif op.op in (ComparisonOp.ULT, ComparisonOp.UGT, ComparisonOp.ULE, ComparisonOp.UGE):
             # Always unsigned comparison op
             lhs_cast = self.emit_unsigned_int_cast(op.lhs.type)
             rhs_cast = self.emit_unsigned_int_cast(op.rhs.type)
@@ -780,9 +742,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
             src = self.reg(op.src)
         elif isinstance(op.src, LoadStatic):
             prefix = self.PREFIX_MAP[op.src.namespace]
-            src = self.emitter.static_name(
-                op.src.identifier, op.src.module_name, prefix
-            )
+            src = self.emitter.static_name(op.src.identifier, op.src.module_name, prefix)
         else:
             src = op.src
         self.emit_line(f"{dest} = ({typ._ctype})&{src};")
@@ -858,9 +818,7 @@ class FunctionEmitterVisitor(OpVisitor[None]):
 
     def emit_traceback(self, op: Branch) -> None:
         if op.traceback_entry is not None:
-            self.emitter.emit_traceback(
-                self.source_path, self.module_name, op.traceback_entry
-            )
+            self.emitter.emit_traceback(self.source_path, self.module_name, op.traceback_entry)
 
     def emit_attribute_error(self, op: Branch, class_name: str, attr: str) -> None:
         assert op.traceback_entry is not None

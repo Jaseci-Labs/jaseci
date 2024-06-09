@@ -30,10 +30,7 @@ from .signals import (
 from .suite import BaseTestSuite as BaseTestSuite, TestSuite as TestSuite
 
 if sys.version_info >= (3, 11):
-    from .case import (
-        doModuleCleanups as doModuleCleanups,
-        enterModuleContext as enterModuleContext,
-    )
+    from .case import doModuleCleanups as doModuleCleanups, enterModuleContext as enterModuleContext
 
 __all__ = [
     "IsolatedAsyncioTestCase",
@@ -65,8 +62,6 @@ if sys.version_info >= (3, 11):
     __all__ += ["enterModuleContext", "doModuleCleanups"]
 
 if sys.version_info < (3, 12):
-    def load_tests(
-        loader: TestLoader, tests: TestSuite, pattern: str | None
-    ) -> TestSuite: ...
+    def load_tests(loader: TestLoader, tests: TestSuite, pattern: str | None) -> TestSuite: ...
 
 def __dir__() -> set[str]: ...

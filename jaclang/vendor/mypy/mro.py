@@ -7,9 +7,7 @@ from mypy.types import Instance
 from mypy.typestate import type_state
 
 
-def calculate_mro(
-    info: TypeInfo, obj_type: Callable[[], Instance] | None = None
-) -> None:
+def calculate_mro(info: TypeInfo, obj_type: Callable[[], Instance] | None = None) -> None:
     """Calculate and set mro (method resolution order).
 
     Raise MroError if cannot determine mro.

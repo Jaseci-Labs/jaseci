@@ -30,12 +30,7 @@ import pytest
 python3_path = sys.executable
 
 # Files containing test case descriptions.
-cmdline_files = [
-    "cmdline.test",
-    "cmdline.pyproject.test",
-    "reports.test",
-    "envvars.test",
-]
+cmdline_files = ["cmdline.test", "cmdline.pyproject.test", "reports.test", "envvars.test"]
 
 
 class PythonCmdlineSuite(DataSuite):
@@ -104,11 +99,7 @@ def test_python_cmdline(testcase: DataDrivenTestCase, step: int) -> None:
         if err or result:
             raise AssertionError(
                 "Expected zero status and empty stderr%s, got %d and\n%s"
-                % (
-                    " on step %d" % step if testcase.output2 else "",
-                    result,
-                    "\n".join(err + out),
-                )
+                % (" on step %d" % step if testcase.output2 else "", result, "\n".join(err + out))
             )
         check_test_output_files(testcase, step)
     else:
@@ -124,9 +115,7 @@ def test_python_cmdline(testcase: DataDrivenTestCase, step: int) -> None:
             expected_out,
             out,
             "Invalid output ({}, line {}){}".format(
-                testcase.file,
-                testcase.line,
-                " on step %d" % step if testcase.output2 else "",
+                testcase.file, testcase.line, " on step %d" % step if testcase.output2 else ""
             ),
         )
 

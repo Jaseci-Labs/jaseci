@@ -13,7 +13,6 @@ from jaclang.core.construct import (
     Root as Root,
     WalkerAnchor as WalkerAnchor,
     WalkerArchitype as WalkerArchitype,
-    root as root,
 )
 from jaclang.core.importer import jac_importer as jac_importer
 from typing import Any, Callable, Optional, Type, Union, TypeVar
@@ -33,7 +32,6 @@ __all__ = [
     "WalkerArchitype",
     "Architype",
     "DSFunc",
-    "root",
     "Root",
     "jac_importer",
     "T",

@@ -36,9 +36,7 @@ parser = argparse.ArgumentParser(
 )
 parser.set_defaults(action=None)
 parser.add_argument(
-    "--status-file",
-    default=DEFAULT_STATUS_FILE,
-    help="status file to retrieve daemon details",
+    "--status-file", default=DEFAULT_STATUS_FILE, help="status file to retrieve daemon details"
 )
 parser.add_argument(
     "-V",
@@ -50,68 +48,40 @@ parser.add_argument(
 subparsers = parser.add_subparsers()
 
 start_parser = p = subparsers.add_parser("start", help="Start daemon")
+p.add_argument("--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE")
 p.add_argument(
-    "--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE"
+    "--timeout", metavar="TIMEOUT", type=int, help="Server shutdown timeout (in seconds)"
 )
 p.add_argument(
-    "--timeout",
-    metavar="TIMEOUT",
-    type=int,
-    help="Server shutdown timeout (in seconds)",
-)
-p.add_argument(
-    "flags",
-    metavar="FLAG",
-    nargs="*",
-    type=str,
-    help="Regular mypy flags (precede with --)",
+    "flags", metavar="FLAG", nargs="*", type=str, help="Regular mypy flags (precede with --)"
 )
 
 restart_parser = p = subparsers.add_parser(
     "restart", help="Restart daemon (stop or kill followed by start)"
 )
+p.add_argument("--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE")
 p.add_argument(
-    "--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE"
+    "--timeout", metavar="TIMEOUT", type=int, help="Server shutdown timeout (in seconds)"
 )
 p.add_argument(
-    "--timeout",
-    metavar="TIMEOUT",
-    type=int,
-    help="Server shutdown timeout (in seconds)",
-)
-p.add_argument(
-    "flags",
-    metavar="FLAG",
-    nargs="*",
-    type=str,
-    help="Regular mypy flags (precede with --)",
+    "flags", metavar="FLAG", nargs="*", type=str, help="Regular mypy flags (precede with --)"
 )
 
 status_parser = p = subparsers.add_parser("status", help="Show daemon status")
 p.add_argument("-v", "--verbose", action="store_true", help="Print detailed status")
-p.add_argument(
-    "--fswatcher-dump-file", help="Collect information about the current file state"
-)
+p.add_argument("--fswatcher-dump-file", help="Collect information about the current file state")
 
-stop_parser = p = subparsers.add_parser(
-    "stop", help="Stop daemon (asks it politely to go away)"
-)
+stop_parser = p = subparsers.add_parser("stop", help="Stop daemon (asks it politely to go away)")
 
 kill_parser = p = subparsers.add_parser("kill", help="Kill daemon (kills the process)")
 
 check_parser = p = subparsers.add_parser(
-    "check",
-    formatter_class=AugmentedHelpFormatter,
-    help="Check some files (requires daemon)",
+    "check", formatter_class=AugmentedHelpFormatter, help="Check some files (requires daemon)"
 )
 p.add_argument("-v", "--verbose", action="store_true", help="Print detailed status")
-p.add_argument(
-    "-q", "--quiet", action="store_true", help=argparse.SUPPRESS
-)  # Deprecated
+p.add_argument("-q", "--quiet", action="store_true", help=argparse.SUPPRESS)  # Deprecated
 p.add_argument("--junit-xml", help="Write junit.xml to the given file")
-p.add_argument(
-    "--perf-stats-file", help="write performance information to the given file"
-)
+p.add_argument("--perf-stats-file", help="write performance information to the given file")
 p.add_argument("files", metavar="FILE", nargs="+", help="File (or directory) to check")
 p.add_argument(
     "--export-types",
@@ -126,18 +96,11 @@ run_parser = p = subparsers.add_parser(
 )
 p.add_argument("-v", "--verbose", action="store_true", help="Print detailed status")
 p.add_argument("--junit-xml", help="Write junit.xml to the given file")
+p.add_argument("--perf-stats-file", help="write performance information to the given file")
 p.add_argument(
-    "--perf-stats-file", help="write performance information to the given file"
+    "--timeout", metavar="TIMEOUT", type=int, help="Server shutdown timeout (in seconds)"
 )
-p.add_argument(
-    "--timeout",
-    metavar="TIMEOUT",
-    type=int,
-    help="Server shutdown timeout (in seconds)",
-)
-p.add_argument(
-    "--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE"
-)
+p.add_argument("--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE")
 p.add_argument(
     "--export-types",
     action="store_true",
@@ -157,13 +120,9 @@ recheck_parser = p = subparsers.add_parser(
     help="Re-check the previous list of files, with optional modifications (requires daemon)",
 )
 p.add_argument("-v", "--verbose", action="store_true", help="Print detailed status")
-p.add_argument(
-    "-q", "--quiet", action="store_true", help=argparse.SUPPRESS
-)  # Deprecated
+p.add_argument("-q", "--quiet", action="store_true", help=argparse.SUPPRESS)  # Deprecated
 p.add_argument("--junit-xml", help="Write junit.xml to the given file")
-p.add_argument(
-    "--perf-stats-file", help="write performance information to the given file"
-)
+p.add_argument("--perf-stats-file", help="write performance information to the given file")
 p.add_argument(
     "--export-types",
     action="store_true",
@@ -175,9 +134,7 @@ p.add_argument(
     nargs="*",
     help="Files in the run to add or check again (default: all from previous run)",
 )
-p.add_argument(
-    "--remove", metavar="FILE", nargs="*", help="Files to remove from the run"
-)
+p.add_argument("--remove", metavar="FILE", nargs="*", help="Files to remove from the run")
 
 suggest_parser = p = subparsers.add_parser(
     "suggest", help="Suggest a signature or show call sites for a specific function"
@@ -194,14 +151,10 @@ p.add_argument(
     help="Produce json that pyannotate can use to apply a suggestion",
 )
 p.add_argument(
-    "--no-errors",
-    action="store_true",
-    help="Only produce suggestions that cause no errors",
+    "--no-errors", action="store_true", help="Only produce suggestions that cause no errors"
 )
 p.add_argument(
-    "--no-any",
-    action="store_true",
-    help="Only produce suggestions that don't contain Any",
+    "--no-any", action="store_true", help="Only produce suggestions that don't contain Any"
 )
 p.add_argument(
     "--flex-any",
@@ -209,9 +162,7 @@ p.add_argument(
     help="Allow anys in types if they go above a certain score (scores are from 0-1)",
 )
 p.add_argument(
-    "--callsites",
-    action="store_true",
-    help="Find callsites instead of suggesting a type",
+    "--callsites", action="store_true", help="Find callsites instead of suggesting a type"
 )
 p.add_argument(
     "--use-fixme",
@@ -291,20 +242,11 @@ hang_parser = p = subparsers.add_parser("hang", help="Hang for 100 seconds")
 
 daemon_parser = p = subparsers.add_parser("daemon", help="Run daemon in foreground")
 p.add_argument(
-    "--timeout",
-    metavar="TIMEOUT",
-    type=int,
-    help="Server shutdown timeout (in seconds)",
+    "--timeout", metavar="TIMEOUT", type=int, help="Server shutdown timeout (in seconds)"
 )
+p.add_argument("--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE")
 p.add_argument(
-    "--log-file", metavar="FILE", type=str, help="Direct daemon stdout/stderr to FILE"
-)
-p.add_argument(
-    "flags",
-    metavar="FLAG",
-    nargs="*",
-    type=str,
-    help="Regular mypy flags (precede with --)",
+    "flags", metavar="FLAG", nargs="*", type=str, help="Regular mypy flags (precede with --)"
 )
 p.add_argument("--options-data", help=argparse.SUPPRESS)
 help_parser = p = subparsers.add_parser("help")
@@ -348,9 +290,7 @@ def fail(msg: str) -> NoReturn:
 ActionFunction = Callable[[argparse.Namespace], None]
 
 
-def action(
-    subparser: argparse.ArgumentParser,
-) -> Callable[[ActionFunction], ActionFunction]:
+def action(subparser: argparse.ArgumentParser) -> Callable[[ActionFunction], ActionFunction]:
     """Decorator to tie an action function to a subparser."""
 
     def register(func: ActionFunction) -> ActionFunction:
@@ -411,9 +351,7 @@ def start_server(args: argparse.Namespace, allow_sources: bool = False) -> None:
     from mypy.dmypy_server import daemonize, process_start_options
 
     start_options = process_start_options(args.flags, allow_sources)
-    if daemonize(
-        start_options, args.status_file, timeout=args.timeout, log_file=args.log_file
-    ):
+    if daemonize(start_options, args.status_file, timeout=args.timeout, log_file=args.log_file):
         sys.exit(2)
     wait_for_server(args.status_file)
 
@@ -493,10 +431,7 @@ def do_status(args: argparse.Namespace) -> None:
     # which will be handled by main().
     check_status(status)
     response = request(
-        args.status_file,
-        "status",
-        fswatcher_dump_file=args.fswatcher_dump_file,
-        timeout=5,
+        args.status_file, "status", fswatcher_dump_file=args.fswatcher_dump_file, timeout=5
     )
     if args.verbose or "error" in response:
         show_stats(response)
@@ -533,9 +468,7 @@ def do_kill(args: argparse.Namespace) -> None:
 def do_check(args: argparse.Namespace) -> None:
     """Ask the daemon to check a list of files."""
     t0 = time.time()
-    response = request(
-        args.status_file, "check", files=args.files, export_types=args.export_types
-    )
+    response = request(args.status_file, "check", files=args.files, export_types=args.export_types)
     t1 = time.time()
     response["roundtrip_time"] = t1 - t0
     check_output(response, args.verbose, args.junit_xml, args.perf_stats_file)
@@ -614,10 +547,7 @@ def do_inspect(args: argparse.Namespace) -> None:
 
 
 def check_output(
-    response: dict[str, Any],
-    verbose: bool,
-    junit_xml: str | None,
-    perf_stats_file: str | None,
+    response: dict[str, Any], verbose: bool, junit_xml: str | None, perf_stats_file: str | None
 ) -> None:
     """Print the output from a check or recheck command.
 
@@ -666,9 +596,7 @@ def show_stats(response: Mapping[str, object]) -> None:
                 value = f"{value[:40]} ... {len(value)-40} more characters"
             print("%-24s: %s" % (key, value))
             continue
-        print(
-            "%-24s: %10s" % (key, "%.3f" % value if isinstance(value, float) else value)
-        )
+        print("%-24s: %10s" % (key, "%.3f" % value if isinstance(value, float) else value))
 
 
 @action(hang_parser)

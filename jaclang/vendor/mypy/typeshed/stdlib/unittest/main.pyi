@@ -11,9 +11,7 @@ MAIN_EXAMPLES: str
 MODULE_EXAMPLES: str
 
 class _TestRunner(Protocol):
-    def run(
-        self, __test: unittest.suite.TestSuite | unittest.case.TestCase
-    ) -> unittest.result.TestResult: ...
+    def run(self, test: unittest.suite.TestSuite | unittest.case.TestCase, /) -> unittest.result.TestResult: ...
 
 # not really documented
 class TestProgram:
@@ -65,11 +63,7 @@ class TestProgram:
 
     def usageExit(self, msg: Any = None) -> None: ...
     def parseArgs(self, argv: list[str]) -> None: ...
-    def createTests(
-        self,
-        from_discovery: bool = False,
-        Loader: unittest.loader.TestLoader | None = None,
-    ) -> None: ...
+    def createTests(self, from_discovery: bool = False, Loader: unittest.loader.TestLoader | None = None) -> None: ...
     def runTests(self) -> None: ...  # undocumented
 
 main = TestProgram

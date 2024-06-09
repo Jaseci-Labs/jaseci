@@ -250,10 +250,7 @@ class TypeTranslator(TypeVisitor[Type]):
         )
 
     def visit_typeddict_type(self, t: TypedDictType) -> Type:
-        items = {
-            item_name: item_type.accept(self)
-            for (item_name, item_type) in t.items.items()
-        }
+        items = {item_name: item_type.accept(self) for (item_name, item_type) in t.items.items()}
         return TypedDictType(
             items,
             t.required_keys,
@@ -266,9 +263,7 @@ class TypeTranslator(TypeVisitor[Type]):
     def visit_literal_type(self, t: LiteralType) -> Type:
         fallback = t.fallback.accept(self)
         assert isinstance(fallback, Instance)  # type: ignore[misc]
-        return LiteralType(
-            value=t.value, fallback=fallback, line=t.line, column=t.column
-        )
+        return LiteralType(value=t.value, fallback=fallback, line=t.line, column=t.column)
 
     def visit_union_type(self, t: UnionType) -> Type:
         return UnionType(self.translate_types(t.items), t.line, t.column)
@@ -290,9 +285,7 @@ class TypeTranslator(TypeVisitor[Type]):
         return Overloaded(items=items)
 
     def visit_type_type(self, t: TypeType) -> Type:
-        return TypeType.make_normalized(
-            t.item.accept(self), line=t.line, column=t.column
-        )
+        return TypeType.make_normalized(t.item.accept(self), line=t.line, column=t.column)
 
     @abstractmethod
     def visit_type_alias_type(self, t: TypeAliasType) -> Type:

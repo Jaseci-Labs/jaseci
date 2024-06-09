@@ -145,12 +145,8 @@ class TransformVisitor(NodeVisitor[Node]):
     def visit_mypy_file(self, node: MypyFile) -> MypyFile:
         assert self.test_only, "This visitor should not be used for whole files."
         # NOTE: The 'names' and 'imports' instance variables will be empty!
-        ignored_lines = {
-            line: codes.copy() for line, codes in node.ignored_lines.items()
-        }
-        new = MypyFile(
-            self.statements(node.defs), [], node.is_bom, ignored_lines=ignored_lines
-        )
+        ignored_lines = {line: codes.copy() for line, codes in node.ignored_lines.items()}
+        new = MypyFile(self.statements(node.defs), [], node.is_bom, ignored_lines=ignored_lines)
         new._fullname = node._fullname
         new.path = node.path
         new.names = SymbolTable()
@@ -286,9 +282,7 @@ class TransformVisitor(NodeVisitor[Node]):
         # Note that a Decorator must be transformed to a Decorator.
         func = self.visit_func_def(node.func)
         func.line = node.func.line
-        new = Decorator(
-            func, self.expressions(node.decorators), self.visit_var(node.var)
-        )
+        new = Decorator(func, self.expressions(node.decorators), self.visit_var(node.var))
         new.is_overload = node.is_overload
         return new
 
@@ -334,15 +328,11 @@ class TransformVisitor(NodeVisitor[Node]):
     def visit_operator_assignment_stmt(
         self, node: OperatorAssignmentStmt
     ) -> OperatorAssignmentStmt:
-        return OperatorAssignmentStmt(
-            node.op, self.expr(node.lvalue), self.expr(node.rvalue)
-        )
+        return OperatorAssignmentStmt(node.op, self.expr(node.lvalue), self.expr(node.rvalue))
 
     def visit_while_stmt(self, node: WhileStmt) -> WhileStmt:
         return WhileStmt(
-            self.expr(node.expr),
-            self.block(node.body),
-            self.optional_block(node.else_body),
+            self.expr(node.expr), self.block(node.body), self.optional_block(node.else_body)
         )
 
     def visit_for_stmt(self, node: ForStmt) -> ForStmt:
@@ -383,9 +373,7 @@ class TransformVisitor(NodeVisitor[Node]):
         return PassStmt()
 
     def visit_raise_stmt(self, node: RaiseStmt) -> RaiseStmt:
-        return RaiseStmt(
-            self.optional_expr(node.expr), self.optional_expr(node.from_expr)
-        )
+        return RaiseStmt(self.optional_expr(node.expr), self.optional_expr(node.from_expr))
 
     def visit_try_stmt(self, node: TryStmt) -> TryStmt:
         new = TryStmt(
@@ -429,9 +417,7 @@ class TransformVisitor(NodeVisitor[Node]):
         return SequencePattern([self.pattern(pat) for pat in p.patterns])
 
     def visit_starred_pattern(self, p: StarredPattern) -> StarredPattern:
-        return StarredPattern(
-            self.duplicate_name(p.capture) if p.capture is not None else None
-        )
+        return StarredPattern(self.duplicate_name(p.capture) if p.capture is not None else None)
 
     def visit_mapping_pattern(self, p: MappingPattern) -> MappingPattern:
         return MappingPattern(
@@ -584,10 +570,7 @@ class TransformVisitor(NodeVisitor[Node]):
 
     def visit_dict_expr(self, node: DictExpr) -> DictExpr:
         return DictExpr(
-            [
-                (self.expr(key) if key else None, self.expr(value))
-                for key, value in node.items
-            ]
+            [(self.expr(key) if key else None, self.expr(value)) for key, value in node.items]
         )
 
     def visit_tuple_expr(self, node: TupleExpr) -> TupleExpr:

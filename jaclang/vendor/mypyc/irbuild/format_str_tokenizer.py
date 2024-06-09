@@ -161,10 +161,7 @@ def convert_format_expr_to_str(
 
 
 def join_formatted_strings(
-    builder: IRBuilder,
-    literals: list[str] | None,
-    substitutions: list[Value],
-    line: int,
+    builder: IRBuilder, literals: list[str] | None, substitutions: list[Value], line: int
 ) -> Value:
     """Merge the list of literals and the list of substitutions
     alternatively using 'str_build_op'.
