@@ -5,6 +5,8 @@ import logging
 from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, ParamSpec, TypeVar
 
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.vendor.pygls.server import LanguageServer
 
 import lsprotocol.types as lspt
@@ -51,3 +53,18 @@ def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
         return debounced
 
     return decorator
+
+
+def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
+    """Iterate through symbol table."""
+    sym_tabs = (
+        [sym_tab]
+        if not (
+            isinstance(sym_tab.owner, ast.Module)
+            and sym_tab.owner.loc.mod_path != file_path
+        )
+        else []
+    )
+    for i in sym_tab.kid:
+        sym_tabs += sym_tab_list(i, file_path=file_path)
+    return sym_tabs
