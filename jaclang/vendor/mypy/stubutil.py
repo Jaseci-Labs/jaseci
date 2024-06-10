@@ -17,18 +17,30 @@ import mypy.options
 from mypy.modulefinder import ModuleNotFoundReason
 from mypy.moduleinspect import InspectError, ModuleInspect
 from mypy.stubdoc import ArgSig, FunctionSig
-from mypy.types import (
-    AnyType,
-    NoneType,
-    Type,
-    TypeList,
-    TypeStrVisitor,
-    UnboundType,
-    UnionType,
-)
+from mypy.types import AnyType, NoneType, Type, TypeList, TypeStrVisitor, UnboundType, UnionType
 
 # Modules that may fail when imported, or that may have side effects (fully qualified).
 NOT_IMPORTABLE_MODULES = ()
+
+# Typing constructs to be replaced by their builtin equivalents.
+TYPING_BUILTIN_REPLACEMENTS: Final = {
+    # From typing
+    "typing.Text": "builtins.str",
+    "typing.Tuple": "builtins.tuple",
+    "typing.List": "builtins.list",
+    "typing.Dict": "builtins.dict",
+    "typing.Set": "builtins.set",
+    "typing.FrozenSet": "builtins.frozenset",
+    "typing.Type": "builtins.type",
+    # From typing_extensions
+    "typing_extensions.Text": "builtins.str",
+    "typing_extensions.Tuple": "builtins.tuple",
+    "typing_extensions.List": "builtins.list",
+    "typing_extensions.Dict": "builtins.dict",
+    "typing_extensions.Set": "builtins.set",
+    "typing_extensions.FrozenSet": "builtins.frozenset",
+    "typing_extensions.Type": "builtins.type",
+}
 
 
 class CantImport(Exception):
@@ -177,9 +189,7 @@ def remove_misplaced_type_comments(source: str | bytes) -> str | bytes:
     text = re.sub(r"''' *\n[ \t\n]*# +type: +\(.*$", "'''\n", text, flags=re.MULTILINE)
 
     # Remove something that looks like a badly formed function type comment.
-    text = re.sub(
-        r"^[ \t]*# +type: +\([^()]+(\)[ \t]*)?$", "", text, flags=re.MULTILINE
-    )
+    text = re.sub(r"^[ \t]*# +type: +\([^()]+(\)[ \t]*)?$", "", text, flags=re.MULTILINE)
 
     if isinstance(source, bytes):
         return text.encode("latin1")
@@ -239,12 +249,12 @@ class AnnotationPrinter(TypeStrVisitor):
             return " | ".join([item.accept(self) for item in t.args])
         if fullname == "typing.Optional":
             return f"{t.args[0].accept(self)} | None"
+        if fullname in TYPING_BUILTIN_REPLACEMENTS:
+            s = self.stubgen.add_name(TYPING_BUILTIN_REPLACEMENTS[fullname], require=True)
         if self.known_modules is not None and "." in s:
             # see if this object is from any of the modules that we're currently processing.
             # reverse sort so that subpackages come before parents: e.g. "foo.bar" before "foo".
-            for module_name in self.local_modules + sorted(
-                self.known_modules, reverse=True
-            ):
+            for module_name in self.local_modules + sorted(self.known_modules, reverse=True):
                 if s.startswith(module_name + "."):
                     if module_name in self.local_modules:
                         s = s[len(module_name) + 1 :]
@@ -262,6 +272,8 @@ class AnnotationPrinter(TypeStrVisitor):
             self.stubgen.import_tracker.require_name(s)
         if t.args:
             s += f"[{self.args_str(t.args)}]"
+        elif t.empty_tuple_index:
+            s += "[()]"
         return s
 
     def visit_none_type(self, t: NoneType) -> str:
@@ -292,11 +304,7 @@ class AnnotationPrinter(TypeStrVisitor):
 
 class ClassInfo:
     def __init__(
-        self,
-        name: str,
-        self_var: str,
-        docstring: str | None = None,
-        cls: type | None = None,
+        self, name: str, self_var: str, docstring: str | None = None, cls: type | None = None
     ) -> None:
         self.name = name
         self.self_var = self_var
@@ -324,9 +332,7 @@ class FunctionContext:
     def fullname(self) -> str:
         if self._fullname is None:
             if self.class_info:
-                self._fullname = (
-                    f"{self.module_name}.{self.class_info.name}.{self.name}"
-                )
+                self._fullname = f"{self.module_name}.{self.class_info.name}.{self.name}"
             else:
                 self._fullname = f"{self.module_name}.{self.name}"
         return self._fullname
@@ -341,16 +347,7 @@ def infer_method_ret_type(name: str) -> str | None:
         # Note: __eq__ and co may return arbitrary types, but bool is good enough for stubgen.
         elif name in ("eq", "ne", "lt", "le", "gt", "ge", "contains"):
             return "bool"
-        elif name in (
-            "len",
-            "length_hint",
-            "index",
-            "hash",
-            "sizeof",
-            "trunc",
-            "floor",
-            "ceil",
-        ):
+        elif name in ("len", "length_hint", "index", "hash", "sizeof", "trunc", "floor", "ceil"):
             return "int"
         elif name in ("format", "repr"):
             return "str"
@@ -414,9 +411,7 @@ class SignatureGenerator:
         pass
 
     @abstractmethod
-    def get_property_type(
-        self, default_type: str | None, ctx: FunctionContext
-    ) -> str | None:
+    def get_property_type(self, default_type: str | None, ctx: FunctionContext) -> str | None:
         """Return the type of the given property"""
         pass
 
@@ -466,9 +461,7 @@ class ImportTracker:
                 self.require_name(alias or name)
             self.direct_imports.pop(alias or name, None)
 
-    def add_import(
-        self, module: str, alias: str | None = None, require: bool = False
-    ) -> None:
+    def add_import(self, module: str, alias: str | None = None, require: bool = False) -> None:
         if alias:
             # 'import {module} as {alias}'
             assert "." not in alias  # invalid syntax
@@ -505,7 +498,7 @@ class ImportTracker:
     def import_lines(self) -> list[str]:
         """The list of required import lines (as strings with python code).
 
-        In order for a module be included in this output, an indentifier must be both
+        In order for a module be included in this output, an identifier must be both
         'required' via require_name() and 'imported' via add_import_from()
         or add_import()
         """
@@ -518,9 +511,7 @@ class ImportTracker:
 
         for name in sorted(
             self.required_names,
-            key=lambda n: (
-                (self.reverse_alias[n], n) if n in self.reverse_alias else (n, "")
-            ),
+            key=lambda n: (self.reverse_alias[n], n) if n in self.reverse_alias else (n, ""),
         ):
             # If we haven't seen this name in an import statement, ignore it
             if name not in self.module_for:
@@ -542,9 +533,7 @@ class ImportTracker:
                     source = self.reverse_alias[name]
                     result.append(f"import {source} as {name}\n")
                 elif name in self.reexports:
-                    assert (
-                        "." not in name
-                    )  # Because reexports only has nonqualified names
+                    assert "." not in name  # Because reexports only has nonqualified names
                     result.append(f"import {name} as {name}\n")
                 else:
                     result.append(f"import {name}\n")
@@ -618,9 +607,9 @@ class BaseStubGenerator:
         # a corresponding import statement.
         self.known_imports = {
             "_typeshed": ["Incomplete"],
-            "typing": ["Any", "TypeVar", "NamedTuple"],
+            "typing": ["Any", "TypeVar", "NamedTuple", "TypedDict"],
             "collections.abc": ["Generator"],
-            "typing_extensions": ["TypedDict", "ParamSpec", "TypeVarTuple"],
+            "typing_extensions": ["ParamSpec", "TypeVarTuple"],
         }
 
     def get_sig_generators(self) -> list[SignatureGenerator]:
@@ -632,17 +621,11 @@ class BaseStubGenerator:
             real_module = self.import_tracker.module_for.get(name)
             real_short = self.import_tracker.reverse_alias.get(name, name)
             if real_module is None and real_short not in self.defined_names:
-                real_module = (
-                    "builtins"  # not imported and not defined, must be a builtin
-                )
+                real_module = "builtins"  # not imported and not defined, must be a builtin
         else:
             name_module, real_short = name.split(".", 1)
-            real_module = self.import_tracker.reverse_alias.get(
-                name_module, name_module
-            )
-        resolved_name = (
-            real_short if real_module is None else f"{real_module}.{real_short}"
-        )
+            real_module = self.import_tracker.reverse_alias.get(name_module, name_module)
+        resolved_name = real_short if real_module is None else f"{real_module}.{real_short}"
         return resolved_name
 
     def add_name(self, fullname: str, require: bool = True) -> str:
@@ -652,7 +635,10 @@ class BaseStubGenerator:
         """
         module, name = fullname.rsplit(".", 1)
         alias = "_" + name if name in self.defined_names else None
-        self.import_tracker.add_import_from(module, [(name, alias)], require=require)
+        while alias in self.defined_names:
+            alias = "_" + alias
+        if module != "builtins" or alias:  # don't import from builtins unless needed
+            self.import_tracker.add_import_from(module, [(name, alias)], require=require)
         return alias or name
 
     def add_import_line(self, line: str) -> None:
@@ -730,9 +716,7 @@ class BaseStubGenerator:
                 self.add_name(f"{pkg}.{t}", require=False)
 
     def check_undefined_names(self) -> None:
-        undefined_names = [
-            name for name in self._all_ or [] if name not in self._toplevel_names
-        ]
+        undefined_names = [name for name in self._all_ or [] if name not in self._toplevel_names]
         if undefined_names:
             if self._output:
                 self.add("\n")

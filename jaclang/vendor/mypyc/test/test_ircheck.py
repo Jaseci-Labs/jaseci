@@ -80,9 +80,7 @@ class TestIrcheck(unittest.TestCase):
     def test_valid_goto(self) -> None:
         block_1 = self.basic_block([Return(value=NONE_VALUE)])
         block_2 = self.basic_block([Goto(label=block_1)])
-        fn = FuncIR(
-            decl=self.func_decl(name="func_1"), arg_regs=[], blocks=[block_1, block_2]
-        )
+        fn = FuncIR(decl=self.func_decl(name="func_1"), arg_regs=[], blocks=[block_1, block_2])
         assert_no_errors(fn)
 
     def test_invalid_goto(self) -> None:
@@ -95,25 +93,20 @@ class TestIrcheck(unittest.TestCase):
             # block_1 omitted
             blocks=[block_2],
         )
-        assert_has_error(
-            fn, FnError(source=goto, desc="Invalid control operation target: 1")
-        )
+        assert_has_error(fn, FnError(source=goto, desc="Invalid control operation target: 1"))
 
     def test_invalid_register_source(self) -> None:
         ret = Return(value=Register(type=none_rprimitive, name="r1"))
         block = self.basic_block([ret])
         fn = FuncIR(decl=self.func_decl(name="func_1"), arg_regs=[], blocks=[block])
-        assert_has_error(
-            fn, FnError(source=ret, desc="Invalid op reference to register 'r1'")
-        )
+        assert_has_error(fn, FnError(source=ret, desc="Invalid op reference to register 'r1'"))
 
     def test_invalid_op_source(self) -> None:
         ret = Return(value=LoadLiteral(value="foo", rtype=str_rprimitive))
         block = self.basic_block([ret])
         fn = FuncIR(decl=self.func_decl(name="func_1"), arg_regs=[], blocks=[block])
         assert_has_error(
-            fn,
-            FnError(source=ret, desc="Invalid op reference to op of type LoadLiteral"),
+            fn, FnError(source=ret, desc="Invalid op reference to op of type LoadLiteral")
         )
 
     def test_invalid_return_type(self) -> None:
@@ -124,8 +117,7 @@ class TestIrcheck(unittest.TestCase):
             blocks=[self.basic_block([ret])],
         )
         assert_has_error(
-            fn,
-            FnError(source=ret, desc="Cannot coerce source type i32 to dest type i64"),
+            fn, FnError(source=ret, desc="Cannot coerce source type i32 to dest type i64")
         )
 
     def test_invalid_assign(self) -> None:
@@ -138,10 +130,7 @@ class TestIrcheck(unittest.TestCase):
             blocks=[self.basic_block([assign, ret])],
         )
         assert_has_error(
-            fn,
-            FnError(
-                source=assign, desc="Cannot coerce source type i32 to dest type i64"
-            ),
+            fn, FnError(source=assign, desc="Cannot coerce source type i32 to dest type i64")
         )
 
     def test_can_coerce_to(self) -> None:

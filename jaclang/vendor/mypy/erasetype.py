@@ -83,9 +83,7 @@ class EraseTypeVisitor(TypeVisitor[ProperType]):
             if isinstance(tv, TypeVarTupleType):
                 args.append(
                     UnpackType(
-                        tv.tuple_fallback.copy_modified(
-                            args=[AnyType(TypeOfAny.special_form)]
-                        )
+                        tv.tuple_fallback.copy_modified(args=[AnyType(TypeOfAny.special_form)])
                     )
                 )
             else:
@@ -147,9 +145,7 @@ class EraseTypeVisitor(TypeVisitor[ProperType]):
         return TypeType.make_normalized(t.item.accept(self), line=t.line)
 
     def visit_type_alias_type(self, t: TypeAliasType) -> ProperType:
-        raise RuntimeError(
-            "Type aliases should be expanded before accepting this visitor"
-        )
+        raise RuntimeError("Type aliases should be expanded before accepting this visitor")
 
 
 def erase_typevars(t: Type, ids_to_erase: Container[TypeVarId] | None = None) -> Type:
@@ -173,9 +169,7 @@ def replace_meta_vars(t: Type, target_type: Type) -> Type:
 class TypeVarEraser(TypeTranslator):
     """Implementation of type erasure"""
 
-    def __init__(
-        self, erase_id: Callable[[TypeVarId], bool], replacement: Type
-    ) -> None:
+    def __init__(self, erase_id: Callable[[TypeVarId], bool], replacement: Type) -> None:
         self.erase_id = erase_id
         self.replacement = replacement
 
@@ -243,9 +237,7 @@ class LastKnownValueEraser(TypeTranslator):
     def visit_instance(self, t: Instance) -> Type:
         if not t.last_known_value and not t.args:
             return t
-        return t.copy_modified(
-            args=[a.accept(self) for a in t.args], last_known_value=None
-        )
+        return t.copy_modified(args=[a.accept(self) for a in t.args], last_known_value=None)
 
     def visit_type_alias_type(self, t: TypeAliasType) -> Type:
         # Type aliases can't contain literal values, because they are
@@ -258,18 +250,14 @@ class LastKnownValueEraser(TypeTranslator):
         # Call make_simplified_union only on lists of instance types
         # that all have the same fullname, to avoid simplifying too
         # much.
-        instances = [
-            item for item in new.items if isinstance(get_proper_type(item), Instance)
-        ]
+        instances = [item for item in new.items if isinstance(get_proper_type(item), Instance)]
         # Avoid merge in simple cases such as optional types.
         if len(instances) > 1:
             instances_by_name: dict[str, list[Instance]] = {}
             p_new_items = get_proper_types(new.items)
             for p_item in p_new_items:
                 if isinstance(p_item, Instance) and not p_item.args:
-                    instances_by_name.setdefault(p_item.type.fullname, []).append(
-                        p_item
-                    )
+                    instances_by_name.setdefault(p_item.type.fullname, []).append(p_item)
             merged: list[Type] = []
             for item in new.items:
                 orig_item = item

@@ -1,15 +1,7 @@
 import sys
 from typing import IO
 
-__all__ = [
-    "pprint",
-    "pformat",
-    "isreadable",
-    "isrecursive",
-    "saferepr",
-    "PrettyPrinter",
-    "pp",
-]
+__all__ = ["pprint", "pformat", "isreadable", "isrecursive", "saferepr", "PrettyPrinter", "pp"]
 
 if sys.version_info >= (3, 10):
     def pformat(
@@ -117,6 +109,4 @@ class PrettyPrinter:
     def pprint(self, object: object) -> None: ...
     def isreadable(self, object: object) -> bool: ...
     def isrecursive(self, object: object) -> bool: ...
-    def format(
-        self, object: object, context: dict[int, int], maxlevels: int, level: int
-    ) -> tuple[str, bool, bool]: ...
+    def format(self, object: object, context: dict[int, int], maxlevels: int, level: int) -> tuple[str, bool, bool]: ...

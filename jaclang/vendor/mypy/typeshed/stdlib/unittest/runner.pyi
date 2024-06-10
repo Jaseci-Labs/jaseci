@@ -19,22 +19,13 @@ class TextTestResult(unittest.result.TestResult):
     if sys.version_info >= (3, 12):
         durations: unittest.result._DurationsType | None
         def __init__(
-            self,
-            stream: TextIO,
-            descriptions: bool,
-            verbosity: int,
-            *,
-            durations: unittest.result._DurationsType | None = None,
+            self, stream: TextIO, descriptions: bool, verbosity: int, *, durations: unittest.result._DurationsType | None = None
         ) -> None: ...
     else:
-        def __init__(
-            self, stream: TextIO, descriptions: bool, verbosity: int
-        ) -> None: ...
+        def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None: ...
 
     def getDescription(self, test: unittest.case.TestCase) -> str: ...
-    def printErrorList(
-        self, flavour: str, errors: Iterable[tuple[unittest.case.TestCase, str]]
-    ) -> None: ...
+    def printErrorList(self, flavour: str, errors: Iterable[tuple[unittest.case.TestCase, str]]) -> None: ...
 
 class TextTestRunner:
     resultclass: _ResultClassType
@@ -78,6 +69,4 @@ class TextTestRunner:
         ) -> None: ...
 
     def _makeResult(self) -> unittest.result.TestResult: ...
-    def run(
-        self, test: unittest.suite.TestSuite | unittest.case.TestCase
-    ) -> unittest.result.TestResult: ...
+    def run(self, test: unittest.suite.TestSuite | unittest.case.TestCase) -> unittest.result.TestResult: ...

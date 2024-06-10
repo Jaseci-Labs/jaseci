@@ -20,9 +20,7 @@ replacePackageMap: dict[str, str]  # undocumented
 def ReplacePackage(oldname: str, newname: str) -> None: ...
 
 class Module:  # undocumented
-    def __init__(
-        self, name: str, file: str | None = None, path: str | None = None
-    ) -> None: ...
+    def __init__(self, name: str, file: str | None = None, path: str | None = None) -> None: ...
 
 class ModuleFinder:
     modules: dict[str, Module]
@@ -46,32 +44,16 @@ class ModuleFinder:
     def run_script(self, pathname: str) -> None: ...
     def load_file(self, pathname: str) -> None: ...  # undocumented
     def import_hook(
-        self,
-        name: str,
-        caller: Module | None = None,
-        fromlist: list[str] | None = None,
-        level: int = -1,
+        self, name: str, caller: Module | None = None, fromlist: list[str] | None = None, level: int = -1
     ) -> Module | None: ...  # undocumented
-    def determine_parent(
-        self, caller: Module | None, level: int = -1
-    ) -> Module | None: ...  # undocumented
-    def find_head_package(
-        self, parent: Module, name: str
-    ) -> tuple[Module, str]: ...  # undocumented
+    def determine_parent(self, caller: Module | None, level: int = -1) -> Module | None: ...  # undocumented
+    def find_head_package(self, parent: Module, name: str) -> tuple[Module, str]: ...  # undocumented
     def load_tail(self, q: Module, tail: str) -> Module: ...  # undocumented
-    def ensure_fromlist(
-        self, m: Module, fromlist: Iterable[str], recursive: int = 0
-    ) -> None: ...  # undocumented
+    def ensure_fromlist(self, m: Module, fromlist: Iterable[str], recursive: int = 0) -> None: ...  # undocumented
     def find_all_submodules(self, m: Module) -> Iterable[str]: ...  # undocumented
-    def import_module(
-        self, partname: str, fqname: str, parent: Module
-    ) -> Module | None: ...  # undocumented
-    def load_module(
-        self, fqname: str, fp: IO[str], pathname: str, file_info: tuple[str, str, str]
-    ) -> Module: ...  # undocumented
-    def scan_opcodes(
-        self, co: CodeType
-    ) -> Iterator[tuple[str, tuple[Any, ...]]]: ...  # undocumented
+    def import_module(self, partname: str, fqname: str, parent: Module) -> Module | None: ...  # undocumented
+    def load_module(self, fqname: str, fp: IO[str], pathname: str, file_info: tuple[str, str, str]) -> Module: ...  # undocumented
+    def scan_opcodes(self, co: CodeType) -> Iterator[tuple[str, tuple[Any, ...]]]: ...  # undocumented
     def scan_code(self, co: CodeType, m: Module) -> None: ...  # undocumented
     def load_package(self, fqname: str, pathname: str) -> Module: ...  # undocumented
     def add_module(self, fqname: str) -> Module: ...  # undocumented

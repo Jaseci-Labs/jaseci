@@ -13,9 +13,7 @@ if sys.version_info >= (3, 12):
     class InitializedState:
         def __init__(self, *args: object, **kwargs: object) -> None: ...
         def __getstate__(self) -> tuple[list[object], dict[object, object]]: ...
-        def __setstate__(
-            self, state: Sequence[tuple[list[object], dict[object, object]]]
-        ) -> None: ...
+        def __setstate__(self, state: Sequence[tuple[list[object], dict[object, object]]]) -> None: ...
 
     class CompleteDirs(InitializedState, ZipFile):
         def resolve_dir(self, name: str) -> str: ...
@@ -28,9 +26,7 @@ if sys.version_info >= (3, 12):
 
     class Path:
         root: CompleteDirs
-        def __init__(
-            self, root: ZipFile | StrPath | IO[bytes], at: str = ""
-        ) -> None: ...
+        def __init__(self, root: ZipFile | StrPath | IO[bytes], at: str = "") -> None: ...
         @property
         def name(self) -> str: ...
         @property
@@ -60,16 +56,10 @@ if sys.version_info >= (3, 12):
                 pwd: bytes | None = None,
             ) -> TextIOWrapper: ...
             @overload
-            def open(
-                self, mode: Literal["rb", "wb"], *, pwd: bytes | None = None
-            ) -> IO[bytes]: ...
+            def open(self, mode: Literal["rb", "wb"], *, pwd: bytes | None = None) -> IO[bytes]: ...
         else:
             def open(
-                self,
-                mode: _ReadWriteBinaryMode = "r",
-                pwd: bytes | None = None,
-                *,
-                force_zip64: bool = False,
+                self, mode: _ReadWriteBinaryMode = "r", pwd: bytes | None = None, *, force_zip64: bool = False
             ) -> IO[bytes]: ...
 
         if sys.version_info >= (3, 10):

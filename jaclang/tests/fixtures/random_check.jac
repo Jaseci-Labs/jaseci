@@ -60,11 +60,3 @@ with entry {
     __label__.pack(pady=10);
     print(tk.Button);
 }
-# import:py pygame;
-# with entry{
-#     pygame.<>init();
-#     # Print the version of Pygame
-#     print("Pygame version:", pygame.version.ver);
-#     # Quit Pygame
-#     pygame.quit();
-# }

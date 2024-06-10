@@ -81,12 +81,8 @@ class InstanceJoiner:
                 tvt = s.type.defn.type_vars[prefix]
                 assert isinstance(tvt, TypeVarTupleType)
                 fallback = tvt.tuple_fallback
-                s_prefix, s_middle, s_suffix = split_with_prefix_and_suffix(
-                    s.args, prefix, suffix
-                )
-                t_prefix, t_middle, t_suffix = split_with_prefix_and_suffix(
-                    t.args, prefix, suffix
-                )
+                s_prefix, s_middle, s_suffix = split_with_prefix_and_suffix(s.args, prefix, suffix)
+                t_prefix, t_middle, t_suffix = split_with_prefix_and_suffix(t.args, prefix, suffix)
                 s_args = s_prefix + (TupleType(list(s_middle), fallback),) + s_suffix
                 t_args = t_prefix + (TupleType(list(t_middle), fallback),) + t_suffix
             else:
@@ -103,10 +99,7 @@ class InstanceJoiner:
                 elif isinstance(type_var, TypeVarType):
                     if type_var.variance == COVARIANT:
                         new_type = join_types(ta, sa, self)
-                        if (
-                            len(type_var.values) != 0
-                            and new_type not in type_var.values
-                        ):
+                        if len(type_var.values) != 0 and new_type not in type_var.values:
                             self.seen_instances.pop()
                             return object_from_instance(t)
                         if not is_subtype(new_type, type_var.upper_bound):
@@ -115,12 +108,17 @@ class InstanceJoiner:
                     # TODO: contravariant case should use meet but pass seen instances as
                     # an argument to keep track of recursive checks.
                     elif type_var.variance in (INVARIANT, CONTRAVARIANT):
-                        if not is_equivalent(ta, sa):
+                        if isinstance(ta_proper, UninhabitedType) and not ta_proper.is_noreturn:
+                            new_type = sa
+                        elif isinstance(sa_proper, UninhabitedType) and not sa_proper.is_noreturn:
+                            new_type = ta
+                        elif not is_equivalent(ta, sa):
                             self.seen_instances.pop()
                             return object_from_instance(t)
-                        # If the types are different but equivalent, then an Any is involved
-                        # so using a join in the contravariant case is also OK.
-                        new_type = join_types(ta, sa, self)
+                        else:
+                            # If the types are different but equivalent, then an Any is involved
+                            # so using a join in the contravariant case is also OK.
+                            new_type = join_types(ta, sa, self)
                 elif isinstance(type_var, TypeVarTupleType):
                     new_type = get_proper_type(join_types(ta, sa, self))
                     # Put the joined arguments back into instance in the normal form:
@@ -248,9 +246,7 @@ def join_types(
 
 
 @overload
-def join_types(
-    s: Type, t: Type, instance_joiner: InstanceJoiner | None = None
-) -> Type: ...
+def join_types(s: Type, t: Type, instance_joiner: InstanceJoiner | None = None) -> Type: ...
 
 
 def join_types(s: Type, t: Type, instance_joiner: InstanceJoiner | None = None) -> Type:
@@ -299,9 +295,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
       s: The other (left) type operand.
     """
 
-    def __init__(
-        self, s: ProperType, instance_joiner: InstanceJoiner | None = None
-    ) -> None:
+    def __init__(self, s: ProperType, instance_joiner: InstanceJoiner | None = None) -> None:
         self.s = s
         self.instance_joiner = instance_joiner
 
@@ -364,8 +358,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
 
             return t.copy_modified(
                 arg_types=[
-                    meet_types(s_a, t_a)
-                    for s_a, t_a in zip(self.s.arg_types, t.arg_types)
+                    meet_types(s_a, t_a) for s_a, t_a in zip(self.s.arg_types, t.arg_types)
                 ],
                 arg_names=combine_arg_names(self.s, t),
             )
@@ -522,10 +515,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
                 joined = join_types(s_unpacked, t_unpacked)
                 if isinstance(joined, TypeVarTupleType):
                     items.append(UnpackType(joined))
-                elif (
-                    isinstance(joined, Instance)
-                    and joined.type.fullname == "builtins.tuple"
-                ):
+                elif isinstance(joined, Instance) and joined.type.fullname == "builtins.tuple":
                     items.append(UnpackType(joined))
                 else:
                     if isinstance(t_unpacked, Instance):
@@ -549,10 +539,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
                 # Another case we can handle is when one of tuple is purely variadic
                 # (i.e. a non-normalized form of tuple[X, ...]), in this case the join
                 # will be again purely variadic.
-                if not (
-                    isinstance(s_unpacked, Instance)
-                    and isinstance(t_unpacked, Instance)
-                ):
+                if not (isinstance(s_unpacked, Instance) and isinstance(t_unpacked, Instance)):
                     return None
                 assert s_unpacked.type.fullname == "builtins.tuple"
                 assert t_unpacked.type.fullname == "builtins.tuple"
@@ -638,8 +625,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
                 for (item_name, s_item_type, t_item_type) in self.s.zip(t)
                 if (
                     is_equivalent(s_item_type, t_item_type)
-                    and (item_name in t.required_keys)
-                    == (item_name in self.s.required_keys)
+                    and (item_name in t.required_keys) == (item_name in self.s.required_keys)
                 )
             }
             fallback = self.s.create_anonymous_fallback()
@@ -669,9 +655,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
 
     def visit_type_type(self, t: TypeType) -> ProperType:
         if isinstance(self.s, TypeType):
-            return TypeType.make_normalized(
-                join_types(t.item, self.s.item), line=t.line
-            )
+            return TypeType.make_normalized(join_types(t.item, self.s.item), line=t.line)
         elif isinstance(self.s, Instance) and self.s.type.fullname == "builtins.type":
             return self.s
         else:
@@ -777,10 +761,7 @@ def safe_meet(t: Type, s: Type) -> Type:
         elif isinstance(unpacked, TupleType):
             fallback_type = unpacked.partial_fallback.type
         else:
-            assert (
-                isinstance(unpacked, Instance)
-                and unpacked.type.fullname == "builtins.tuple"
-            )
+            assert isinstance(unpacked, Instance) and unpacked.type.fullname == "builtins.tuple"
             fallback_type = unpacked.type
         res = meet_types(t.type, s.type)
         if isinstance(res, UninhabitedType):

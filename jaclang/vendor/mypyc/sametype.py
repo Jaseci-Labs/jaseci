@@ -25,8 +25,7 @@ def is_same_signature(a: FuncSignature, b: FuncSignature) -> bool:
         len(a.args) == len(b.args)
         and is_same_type(a.ret_type, b.ret_type)
         and all(
-            is_same_type(t1.type, t2.type) and t1.name == t2.name
-            for t1, t2 in zip(a.args, b.args)
+            is_same_type(t1.type, t2.type) and t1.name == t2.name for t1, t2 in zip(a.args, b.args)
         )
     )
 
@@ -71,9 +70,7 @@ class SameTypeVisitor(RTypeVisitor[bool]):
         return (
             isinstance(self.right, RTuple)
             and len(self.right.types) == len(left.types)
-            and all(
-                is_same_type(t1, t2) for t1, t2 in zip(left.types, self.right.types)
-            )
+            and all(is_same_type(t1, t2) for t1, t2 in zip(left.types, self.right.types))
         )
 
     def visit_rstruct(self, left: RStruct) -> bool:

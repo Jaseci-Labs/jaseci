@@ -31,18 +31,16 @@ try:
 except ImportError:
     LXML_INSTALLED = False
 
-type_of_any_name_map: Final[collections.OrderedDict[int, str]] = (
-    collections.OrderedDict(
-        [
-            (TypeOfAny.unannotated, "Unannotated"),
-            (TypeOfAny.explicit, "Explicit"),
-            (TypeOfAny.from_unimported_type, "Unimported"),
-            (TypeOfAny.from_omitted_generics, "Omitted Generics"),
-            (TypeOfAny.from_error, "Error"),
-            (TypeOfAny.special_form, "Special Form"),
-            (TypeOfAny.implementation_artifact, "Implementation Artifact"),
-        ]
-    )
+type_of_any_name_map: Final[collections.OrderedDict[int, str]] = collections.OrderedDict(
+    [
+        (TypeOfAny.unannotated, "Unannotated"),
+        (TypeOfAny.explicit, "Explicit"),
+        (TypeOfAny.from_unimported_type, "Unimported"),
+        (TypeOfAny.from_omitted_generics, "Omitted Generics"),
+        (TypeOfAny.from_error, "Error"),
+        (TypeOfAny.special_form, "Special Form"),
+        (TypeOfAny.implementation_artifact, "Implementation Artifact"),
+    ]
 )
 
 ReporterClasses: _TypeAlias = Dict[
@@ -190,9 +188,7 @@ class LineCountReporter(AbstractReporter):
             annotated_funcs = 0
 
         imputed_annotated_lines = (
-            physical_lines * annotated_funcs // total_funcs
-            if total_funcs
-            else physical_lines
+            physical_lines * annotated_funcs // total_funcs if total_funcs else physical_lines
         )
 
         self.counts[tree._fullname] = (
@@ -241,9 +237,7 @@ class AnyExpressionsReporter(AbstractReporter):
         )
         tree.accept(visitor)
         self.any_types_counter[tree.fullname] = visitor.type_of_any_counter
-        num_unanalyzed_lines = list(visitor.line_map.values()).count(
-            stats.TYPE_UNANALYZED
-        )
+        num_unanalyzed_lines = list(visitor.line_map.values()).count(stats.TYPE_UNANALYZED)
         # count each line of dead code as one expression of type "Any"
         num_any = visitor.num_any_exprs + num_unanalyzed_lines
         num_total = visitor.num_imprecise_exprs + visitor.num_precise_exprs + num_any
@@ -269,21 +263,15 @@ class AnyExpressionsReporter(AbstractReporter):
             if i > 0:
                 widths[i] = w + min_column_distance
         with open(os.path.join(self.output_dir, filename), "w") as f:
-            header_str = ("{:>{}}" * len(widths)).format(
-                *itertools.chain(*zip(header, widths))
-            )
+            header_str = ("{:>{}}" * len(widths)).format(*itertools.chain(*zip(header, widths)))
             separator = "-" * len(header_str)
             f.write(header_str + "\n")
             f.write(separator + "\n")
             for row_values in rows:
-                r = ("{:>{}}" * len(widths)).format(
-                    *itertools.chain(*zip(row_values, widths))
-                )
+                r = ("{:>{}}" * len(widths)).format(*itertools.chain(*zip(row_values, widths)))
                 f.write(r + "\n")
             f.write(separator + "\n")
-            footer_str = ("{:>{}}" * len(widths)).format(
-                *itertools.chain(*zip(footer, widths))
-            )
+            footer_str = ("{:>{}}" * len(widths)).format(*itertools.chain(*zip(footer, widths)))
             f.write(footer_str + "\n")
 
     def _report_any_exprs(self) -> None:
@@ -314,13 +302,9 @@ class AnyExpressionsReporter(AbstractReporter):
         column_names = [file_column_name] + list(type_of_any_name_map.values())
         rows: list[list[str]] = []
         for filename, counter in self.any_types_counter.items():
-            rows.append(
-                [filename] + [str(counter[typ]) for typ in type_of_any_name_map]
-            )
+            rows.append([filename] + [str(counter[typ]) for typ in type_of_any_name_map])
         rows.sort(key=lambda x: x[0])
-        total_row = [total_row_name] + [
-            str(total_counter[typ]) for typ in type_of_any_name_map
-        ]
+        total_row = [total_row_name] + [str(total_counter[typ]) for typ in type_of_any_name_map]
         self._write_out_report("types-of-anys.txt", column_names, rows, total_row)
 
 
@@ -470,10 +454,7 @@ class FileInfo:
         return sum(self.counts)
 
     def attrib(self) -> dict[str, str]:
-        return {
-            name: str(val)
-            for name, val in sorted(zip(stats.precision_names, self.counts))
-        }
+        return {name: str(val) for name, val in sorted(zip(stats.precision_names, self.counts))}
 
 
 class MemoryXmlReporter(AbstractReporter):
@@ -496,9 +477,7 @@ class MemoryXmlReporter(AbstractReporter):
     # XML doesn't like control characters, but they are sometimes
     # legal in source code (e.g. comments, string literals).
     # Tabs (#x09) are allowed in XML content.
-    control_fixer: Final = str.maketrans(
-        "".join(chr(i) for i in range(32) if i != 9), "?" * 31
-    )
+    control_fixer: Final = str.maketrans("".join(chr(i) for i in range(32) if i != 9), "?" * 31)
 
     def on_file(
         self,
@@ -615,9 +594,7 @@ class CoberturaPackage:
     def as_xml(self) -> Any:
         package_element = etree.Element("package", complexity="1.0", name=self.name)
         package_element.attrib["branch-rate"] = "0"
-        package_element.attrib["line-rate"] = get_line_rate(
-            self.covered_lines, self.total_lines
-        )
+        package_element.attrib["line-rate"] = get_line_rate(self.covered_lines, self.total_lines)
         classes_element = etree.SubElement(package_element, "classes")
         for class_name in sorted(self.classes):
             classes_element.append(self.classes[class_name])
@@ -637,9 +614,7 @@ class CoberturaXmlReporter(AbstractReporter):
     def __init__(self, reports: Reports, output_dir: str) -> None:
         super().__init__(reports, output_dir)
 
-        self.root = etree.Element(
-            "coverage", timestamp=str(int(time.time())), version=__version__
-        )
+        self.root = etree.Element("coverage", timestamp=str(int(time.time())), version=__version__)
         self.doc = etree.ElementTree(self.root)
         self.root_package = CoberturaPackage(".")
 
@@ -662,9 +637,7 @@ class CoberturaXmlReporter(AbstractReporter):
 
         class_name = os.path.basename(path)
         file_info = FileInfo(path, tree._fullname)
-        class_element = etree.Element(
-            "class", complexity="1.0", filename=path, name=class_name
-        )
+        class_element = etree.Element("class", complexity="1.0", filename=path, name=class_name)
         etree.SubElement(class_element, "methods")
         lines_element = etree.SubElement(class_element, "lines")
 
@@ -694,9 +667,7 @@ class CoberturaXmlReporter(AbstractReporter):
             if branch:
                 line_element.attrib["condition-coverage"] = "50% (1/2)"
         class_element.attrib["branch-rate"] = "0"
-        class_element.attrib["line-rate"] = get_line_rate(
-            class_lines_covered, class_total_lines
-        )
+        class_element.attrib["line-rate"] = get_line_rate(class_lines_covered, class_total_lines)
         # parent_module is set to whichever module contains this file.  For most files, we want
         # to simply strip the last element off of the module.  But for __init__.py files,
         # the module == the parent module.

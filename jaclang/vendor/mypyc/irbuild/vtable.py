@@ -70,9 +70,7 @@ def specialize_parent_vtable(cls: ClassIR, parent: ClassIR) -> VTableEntries:
                 is_same_method_signature(orig_parent_method.sig, child_method.sig)
                 or orig_parent_method.name == "__init__"
             ):
-                entry = VTableMethod(
-                    entry.cls, entry.name, child_method, entry.shadow_method
-                )
+                entry = VTableMethod(entry.cls, entry.name, child_method, entry.shadow_method)
             else:
                 entry = VTableMethod(
                     entry.cls,

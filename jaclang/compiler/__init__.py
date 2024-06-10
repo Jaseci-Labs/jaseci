@@ -104,6 +104,7 @@ TOKEN_MAP.update(
         "BW_NOT_EQ": "~=",
         "LSHIFT_EQ": "<<=",
         "RSHIFT_EQ": ">>=",
+        "ELLIPSIS": "...",
     }
 )
 

@@ -48,9 +48,7 @@ def builtins_wrapper(
 
 
 @contextlib.contextmanager
-def use_custom_builtins(
-    builtins_path: str, testcase: DataDrivenTestCase
-) -> Iterator[None]:
+def use_custom_builtins(builtins_path: str, testcase: DataDrivenTestCase) -> Iterator[None]:
     for path, _ in testcase.files:
         if os.path.basename(path) == "builtins.pyi":
             default_builtins = False
@@ -71,9 +69,7 @@ def use_custom_builtins(
 
 
 def perform_test(
-    func: Callable[[DataDrivenTestCase], None],
-    builtins_path: str,
-    testcase: DataDrivenTestCase,
+    func: Callable[[DataDrivenTestCase], None], builtins_path: str, testcase: DataDrivenTestCase
 ) -> None:
     for path, _ in testcase.files:
         if os.path.basename(path) == "builtins.py":

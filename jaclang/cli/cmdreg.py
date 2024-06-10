@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import cmd
 import inspect
+import pprint
 from typing import Callable, Optional
 
 
@@ -30,12 +31,17 @@ class CommandRegistry:
     registry: dict[str, Command]
     sub_parsers: argparse._SubParsersAction
     parser: argparse.ArgumentParser
+    args: argparse.Namespace
 
     def __init__(self) -> None:
         """Initialize a CommandRegistry instance."""
         self.registry = {}
-        self.parser = argparse.ArgumentParser(prog="CLI")
+        self.parser = argparse.ArgumentParser(prog="jac")
+        self.parser.add_argument(
+            "--session", help="Session file path", nargs="?", default=""
+        )
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
+        self.args = argparse.Namespace()
 
     def register(self, func: Callable) -> Callable:
         """Register a command in the registry."""
@@ -48,6 +54,11 @@ class CommandRegistry:
         first = True
         for param_name, param in cmd.sig.parameters.items():
             arg_msg = f"type: {param.annotation.__name__}"
+            # shorthand is first character by default,
+            # If already taken, use the first 2 characters
+            shorthand = param_name[:1]
+            if f"-{shorthand}" in cmd_parser._option_string_actions:
+                shorthand = param_name[:2]
             if param_name == "args":
                 cmd_parser.add_argument("args", nargs=argparse.REMAINDER, help=arg_msg)
             elif param_name == "filepath":
@@ -76,7 +87,7 @@ class CommandRegistry:
                     )
                 else:
                     cmd_parser.add_argument(
-                        f"-{param_name[:1]}",
+                        f"-{shorthand}",
                         f"--{param_name}",
                         required=True,
                         type=(
@@ -99,14 +110,14 @@ class CommandRegistry:
                 arg_msg += f", default: {param.default}"
                 if param.annotation == bool:
                     cmd_parser.add_argument(
-                        f"-{param_name[:1]}",
+                        f"-{shorthand}",
                         f"--{param_name}",
                         default=param.default,
                         action="store_true",
                         help=arg_msg,
                     )
                     cmd_parser.add_argument(
-                        f"-n{param_name[:1]}",
+                        f"-n{shorthand}",
                         f"--no-{param_name}",
                         dest=param_name,
                         action="store_false",
@@ -114,7 +125,7 @@ class CommandRegistry:
                     )
                 else:
                     cmd_parser.add_argument(
-                        f"-{param_name[:1]}",
+                        f"-{shorthand}",
                         f"--{param_name}",
                         default=param.default,
                         help=arg_msg,
@@ -168,7 +179,8 @@ class CommandShell(cmd.Cmd):
                 args.pop("command")
                 ret = command.call(**args)
                 if ret:
-                    self.stdout.write(ret + "\n")
+                    ret_str = pprint.pformat(ret, indent=2)
+                    self.stdout.write(f"{ret_str}\n")
         except Exception as e:
             print(e)
 

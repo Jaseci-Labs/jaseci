@@ -391,7 +391,6 @@ class Module(AstDocNode):
         body: Sequence[ElementStmt | String | EmptyToken],
         is_imported: bool,
         kid: Sequence[AstNode],
-        impl_mod: Optional[Module] = None,
         test_mod: Optional[Module] = None,
         registry: Optional[SemRegistry] = None,
     ) -> None:
@@ -400,7 +399,7 @@ class Module(AstDocNode):
         self.source = source
         self.body = body
         self.is_imported = is_imported
-        self.impl_mod = impl_mod
+        self.impl_mod: list[Module] = []
         self.test_mod = test_mod
         self.mod_deps: dict[str, Module] = {}
         self.registry = registry
@@ -661,6 +660,13 @@ class ModulePath(AstSymbolNode):
             sym_type=SymbolType.MODULE,
         )
 
+    @property
+    def path_str(self) -> str:
+        """Get path string."""
+        return ("." * self.level) + ".".join(
+            [p.value for p in self.path] if self.path else ""
+        )
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module path node."""
         res = True
@@ -684,13 +690,6 @@ class ModulePath(AstSymbolNode):
             new_kid.append(self.alias)
         self.set_kids(nodes=new_kid)
         return res
-
-    @property
-    def path_str(self) -> str:
-        """Get path string."""
-        return ("." * self.level) + ".".join(
-            [p.value for p in self.path] if self.path else ""
-        )
 
 
 class ModuleItem(AstSymbolNode):

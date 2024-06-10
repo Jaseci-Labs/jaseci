@@ -29,9 +29,7 @@ class TestAlwaysDefined(MypycDataSuite):
         if options is None:
             # Skipped test case
             return
-        with use_custom_builtins(
-            os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase
-        ):
+        with use_custom_builtins(os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase):
             try:
                 ir = build_ir_for_single_file2(testcase.input, options)
             except CompileError as e:
@@ -42,9 +40,7 @@ class TestAlwaysDefined(MypycDataSuite):
                     if cl.name.startswith("_"):
                         continue
                     actual.append(
-                        "{}: [{}]".format(
-                            cl.name, ", ".join(sorted(cl._always_initialized_attrs))
-                        )
+                        "{}: [{}]".format(cl.name, ", ".join(sorted(cl._always_initialized_attrs)))
                     )
 
             assert_test_output(testcase, actual, "Invalid test output", testcase.output)

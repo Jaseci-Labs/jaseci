@@ -9,8 +9,13 @@ from dataclasses import dataclass, fields
 class Settings:
     """Main settings of Jac lang."""
 
+    # Debug configuration
     fuse_type_info_debug: bool = False
+    filter_sym_builtins: bool = True
+
+    # Import configuration
     py_raise: bool = False
+    py_raise_deep: bool = False
 
     def __post_init__(self) -> None:
         """Initialize settings."""

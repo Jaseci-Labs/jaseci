@@ -34,9 +34,7 @@ class TestExceptionTransform(MypycDataSuite):
 
     def run_case(self, testcase: DataDrivenTestCase) -> None:
         """Perform a runtime checking transformation test case."""
-        with use_custom_builtins(
-            os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase
-        ):
+        with use_custom_builtins(os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase):
             expected_output = remove_comment_lines(testcase.output)
             try:
                 ir = build_ir_for_single_file(testcase.input)
@@ -45,9 +43,7 @@ class TestExceptionTransform(MypycDataSuite):
             else:
                 actual = []
                 for fn in ir:
-                    if fn.name == TOP_LEVEL_NAME and not testcase.name.endswith(
-                        "_toplevel"
-                    ):
+                    if fn.name == TOP_LEVEL_NAME and not testcase.name.endswith("_toplevel"):
                         continue
                     insert_uninit_checks(fn)
                     insert_exception_handling(fn)
@@ -55,10 +51,6 @@ class TestExceptionTransform(MypycDataSuite):
                     actual.extend(format_func(fn))
                     if testcase.name.endswith("_freq"):
                         common = frequently_executed_blocks(fn.blocks[0])
-                        actual.append(
-                            "hot blocks: %s" % sorted(b.label for b in common)
-                        )
+                        actual.append("hot blocks: %s" % sorted(b.label for b in common))
 
-            assert_test_output(
-                testcase, actual, "Invalid source code output", expected_output
-            )
+            assert_test_output(testcase, actual, "Invalid source code output", expected_output)

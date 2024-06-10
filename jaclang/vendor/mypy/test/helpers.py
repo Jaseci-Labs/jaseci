@@ -24,12 +24,7 @@ from mypy import defaults
 from mypy.main import process_options
 from mypy.options import Options
 from mypy.test.config import test_data_prefix, test_temp_dir
-from mypy.test.data import (
-    DataDrivenTestCase,
-    DeleteFile,
-    UpdateFile,
-    fix_cobertura_filename,
-)
+from mypy.test.data import DataDrivenTestCase, DeleteFile, UpdateFile, fix_cobertura_filename
 
 skip = pytest.mark.skip
 
@@ -42,13 +37,11 @@ def run_mypy(args: list[str]) -> None:
     __tracebackhide__ = True
     # We must enable site packages even though they could cause problems,
     # since stubs for typing_extensions live there.
-    outval, errval, status = api.run(
-        args + ["--show-traceback", "--no-silence-site-packages"]
-    )
+    outval, errval, status = api.run(args + ["--show-traceback", "--no-silence-site-packages"])
     if status != 0:
         sys.stdout.write(outval)
         sys.stderr.write(errval)
-        pytest.fail(msg="Sample check failed", pytrace=False)
+        pytest.fail(reason="Sample check failed", pytrace=False)
 
 
 def diff_ranges(
@@ -111,9 +104,7 @@ def render_diff_range(
             output.write("\n")
 
 
-def assert_string_arrays_equal(
-    expected: list[str], actual: list[str], msg: str
-) -> None:
+def assert_string_arrays_equal(expected: list[str], actual: list[str], msg: str) -> None:
     """Assert that two string arrays are equal.
 
     Display any differences in a human-readable form.
@@ -148,30 +139,26 @@ def assert_string_arrays_equal(
         pytest.fail(msg, pytrace=False)
 
 
-def assert_module_equivalence(
-    name: str, expected: Iterable[str], actual: Iterable[str]
-) -> None:
+def assert_module_equivalence(name: str, expected: Iterable[str], actual: Iterable[str]) -> None:
     expected_normalized = sorted(expected)
     actual_normalized = sorted(set(actual).difference({"__main__"}))
     assert_string_arrays_equal(
         expected_normalized,
         actual_normalized,
-        (
-            'Actual modules ({}) do not match expected modules ({}) for "[{} ...]"'
-        ).format(", ".join(actual_normalized), ", ".join(expected_normalized), name),
+        ('Actual modules ({}) do not match expected modules ({}) for "[{} ...]"').format(
+            ", ".join(actual_normalized), ", ".join(expected_normalized), name
+        ),
     )
 
 
-def assert_target_equivalence(
-    name: str, expected: list[str], actual: list[str]
-) -> None:
+def assert_target_equivalence(name: str, expected: list[str], actual: list[str]) -> None:
     """Compare actual and expected targets (order sensitive)."""
     assert_string_arrays_equal(
         expected,
         actual,
-        (
-            'Actual targets ({}) do not match expected targets ({}) for "[{} ...]"'
-        ).format(", ".join(actual), ", ".join(expected), name),
+        ('Actual targets ({}) do not match expected targets ({}) for "[{} ...]"').format(
+            ", ".join(actual), ", ".join(expected), name
+        ),
     )
 
 
@@ -341,9 +328,7 @@ def typename(t: type) -> str:
 def assert_type(typ: type, value: object) -> None:
     __tracebackhide__ = True
     if type(value) != typ:
-        raise AssertionError(
-            f"Invalid type {typename(type(value))}, expected {typename(typ)}"
-        )
+        raise AssertionError(f"Invalid type {typename(type(value))}, expected {typename(typ)}")
 
 
 def parse_options(
@@ -353,23 +338,17 @@ def parse_options(
     options = Options()
     flags = re.search("# flags: (.*)$", program_text, flags=re.MULTILINE)
     if incremental_step > 1:
-        flags2 = re.search(
-            f"# flags{incremental_step}: (.*)$", program_text, flags=re.MULTILINE
-        )
+        flags2 = re.search(f"# flags{incremental_step}: (.*)$", program_text, flags=re.MULTILINE)
         if flags2:
             flags = flags2
 
     if flags:
         flag_list = flags.group(1).split()
-        flag_list.append(
-            "--no-site-packages"
-        )  # the tests shouldn't need an installed Python
+        flag_list.append("--no-site-packages")  # the tests shouldn't need an installed Python
         targets, options = process_options(flag_list, require_targets=False)
         if targets:
             # TODO: support specifying targets via the flags pragma
-            raise RuntimeError(
-                "Specifying targets via the flags pragma is not supported."
-            )
+            raise RuntimeError("Specifying targets via the flags pragma is not supported.")
         if "--show-error-codes" not in flag_list:
             options.hide_error_codes = True
     else:
@@ -464,9 +443,7 @@ def check_test_output_files(
         # specific things if requested.
         if testcase.normalize_output:
             if testcase.suite.native_sep and os.path.sep == "\\":
-                normalized_output = [
-                    fix_cobertura_filename(line) for line in normalized_output
-                ]
+                normalized_output = [fix_cobertura_filename(line) for line in normalized_output]
             normalized_output = normalize_error_messages(normalized_output)
         assert_string_arrays_equal(
             expected_content.splitlines(),
@@ -486,9 +463,7 @@ def normalize_file_output(content: list[str], current_abs_path: str) -> list[str
     # We generate a new mypy.version when building mypy wheels that
     # lacks base_version, so handle that case.
     base_version = getattr(mypy.version, "base_version", version)
-    result = [
-        re.sub(r"\b" + re.escape(base_version) + r"\b", "$VERSION", x) for x in result
-    ]
+    result = [re.sub(r"\b" + re.escape(base_version) + r"\b", "$VERSION", x) for x in result]
     result = [timestamp_regex.sub("$TIMESTAMP", x) for x in result]
     return result
 

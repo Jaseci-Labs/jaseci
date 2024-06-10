@@ -80,17 +80,14 @@ class SubtypingSuite(Suite):
 
     def test_basic_callable_subtyping(self) -> None:
         self.assert_strict_subtype(
-            self.fx.callable(self.fx.o, self.fx.d),
-            self.fx.callable(self.fx.a, self.fx.d),
+            self.fx.callable(self.fx.o, self.fx.d), self.fx.callable(self.fx.a, self.fx.d)
         )
         self.assert_strict_subtype(
-            self.fx.callable(self.fx.d, self.fx.b),
-            self.fx.callable(self.fx.d, self.fx.a),
+            self.fx.callable(self.fx.d, self.fx.b), self.fx.callable(self.fx.d, self.fx.a)
         )
 
         self.assert_strict_subtype(
-            self.fx.callable(self.fx.a, self.fx.nonet),
-            self.fx.callable(self.fx.a, self.fx.a),
+            self.fx.callable(self.fx.a, self.fx.nonet), self.fx.callable(self.fx.a, self.fx.a)
         )
 
         self.assert_unrelated(
@@ -143,8 +140,7 @@ class SubtypingSuite(Suite):
 
     def test_var_arg_callable_subtyping_3(self) -> None:
         self.assert_strict_subtype(
-            self.fx.callable_var_arg(0, self.fx.a, self.fx.a),
-            self.fx.callable(self.fx.a),
+            self.fx.callable_var_arg(0, self.fx.a, self.fx.a), self.fx.callable(self.fx.a)
         )
 
     def test_var_arg_callable_subtyping_4(self) -> None:
@@ -192,18 +188,14 @@ class SubtypingSuite(Suite):
         )
 
     def test_type_callable_subtyping(self) -> None:
-        self.assert_subtype(
-            self.fx.callable_type(self.fx.d, self.fx.a), self.fx.type_type
+        self.assert_subtype(self.fx.callable_type(self.fx.d, self.fx.a), self.fx.type_type)
+
+        self.assert_strict_subtype(
+            self.fx.callable_type(self.fx.d, self.fx.b), self.fx.callable(self.fx.d, self.fx.a)
         )
 
         self.assert_strict_subtype(
-            self.fx.callable_type(self.fx.d, self.fx.b),
-            self.fx.callable(self.fx.d, self.fx.a),
-        )
-
-        self.assert_strict_subtype(
-            self.fx.callable_type(self.fx.a, self.fx.b),
-            self.fx.callable(self.fx.a, self.fx.b),
+            self.fx.callable_type(self.fx.a, self.fx.b), self.fx.callable(self.fx.a, self.fx.b)
         )
 
     def test_type_var_tuple(self) -> None:
@@ -217,8 +209,7 @@ class SubtypingSuite(Suite):
             Instance(self.fx.gvi, [self.fx.b, self.fx.a]),
         )
         self.assert_not_subtype(
-            Instance(self.fx.gvi, [self.fx.a, self.fx.b]),
-            Instance(self.fx.gvi, [self.fx.a]),
+            Instance(self.fx.gvi, [self.fx.a, self.fx.b]), Instance(self.fx.gvi, [self.fx.a])
         )
 
         self.assert_subtype(
@@ -234,8 +225,7 @@ class SubtypingSuite(Suite):
             Instance(self.fx.gvi, [UnpackType(self.fx.ss)]), Instance(self.fx.gvi, [])
         )
         self.assert_not_subtype(
-            Instance(self.fx.gvi, [UnpackType(self.fx.ss)]),
-            Instance(self.fx.gvi, [self.fx.anyt]),
+            Instance(self.fx.gvi, [UnpackType(self.fx.ss)]), Instance(self.fx.gvi, [self.fx.anyt])
         )
 
     def test_type_var_tuple_with_prefix_suffix(self) -> None:
@@ -270,28 +260,18 @@ class SubtypingSuite(Suite):
         )
 
         self.assert_subtype(
-            Instance(
-                self.fx.gvi, [self.fx.a, self.fx.b, UnpackType(self.fx.ss), self.fx.c]
-            ),
-            Instance(
-                self.fx.gvi, [self.fx.a, self.fx.b, UnpackType(self.fx.ss), self.fx.c]
-            ),
+            Instance(self.fx.gvi, [self.fx.a, self.fx.b, UnpackType(self.fx.ss), self.fx.c]),
+            Instance(self.fx.gvi, [self.fx.a, self.fx.b, UnpackType(self.fx.ss), self.fx.c]),
         )
         self.assert_not_subtype(
-            Instance(
-                self.fx.gvi, [self.fx.a, self.fx.b, UnpackType(self.fx.ss), self.fx.c]
-            ),
-            Instance(
-                self.fx.gvi, [self.fx.a, UnpackType(self.fx.ss), self.fx.b, self.fx.c]
-            ),
+            Instance(self.fx.gvi, [self.fx.a, self.fx.b, UnpackType(self.fx.ss), self.fx.c]),
+            Instance(self.fx.gvi, [self.fx.a, UnpackType(self.fx.ss), self.fx.b, self.fx.c]),
         )
 
     def test_type_var_tuple_unpacked_variable_length_tuple(self) -> None:
         self.assert_subtype(
             Instance(self.fx.gvi, [self.fx.a, self.fx.a]),
-            Instance(
-                self.fx.gvi, [UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))]
-            ),
+            Instance(self.fx.gvi, [UnpackType(Instance(self.fx.std_tuplei, [self.fx.a]))]),
         )
 
     # IDEA: Maybe add these test cases (they are tested pretty well in type

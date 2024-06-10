@@ -4,9 +4,7 @@ from typing import Any, Final, final
 
 if sys.platform != "win32":
     @final
-    class struct_spwd(
-        structseq[Any], tuple[str, str, int, int, int, int, int, int, int]
-    ):
+    class struct_spwd(structseq[Any], tuple[str, str, int, int, int, int, int, int, int]):
         if sys.version_info >= (3, 10):
             __match_args__: Final = (
                 "sp_namp",
@@ -40,4 +38,4 @@ if sys.platform != "win32":
         def sp_flag(self) -> int: ...
 
     def getspall() -> list[struct_spwd]: ...
-    def getspnam(__arg: str) -> struct_spwd: ...
+    def getspnam(arg: str, /) -> struct_spwd: ...

@@ -119,9 +119,7 @@ def get_mypyc_attrs(stmt: ClassDef | Decorator) -> dict[str, Any]:
 
 def is_extension_class(cdef: ClassDef) -> bool:
     if any(
-        not is_trait_decorator(d)
-        and not is_dataclass_decorator(d)
-        and not get_mypyc_attr_call(d)
+        not is_trait_decorator(d) and not is_dataclass_decorator(d) and not get_mypyc_attr_call(d)
         for d in cdef.decorators
     ):
         return False
@@ -168,11 +166,7 @@ def is_constant(e: Expression) -> bool:
     """
     return (
         isinstance(e, (StrExpr, BytesExpr, IntExpr, FloatExpr))
-        or (
-            isinstance(e, UnaryExpr)
-            and e.op == "-"
-            and isinstance(e.expr, (IntExpr, FloatExpr))
-        )
+        or (isinstance(e, UnaryExpr) and e.op == "-" and isinstance(e.expr, (IntExpr, FloatExpr)))
         or (isinstance(e, TupleExpr) and all(is_constant(e) for e in e.items))
         or (
             isinstance(e, RefExpr)

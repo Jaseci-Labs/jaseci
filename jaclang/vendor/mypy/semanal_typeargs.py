@@ -88,9 +88,7 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
             return
         self.seen_aliases.add(t)
         assert t.alias is not None, f"Unfixed type alias {t.type_ref}"
-        is_error = self.validate_args(
-            t.alias.name, tuple(t.args), t.alias.alias_tvars, t
-        )
+        is_error = self.validate_args(t.alias.name, tuple(t.args), t.alias.alias_tvars, t)
         if not is_error:
             # If there was already an error for the alias itself, there is no point in checking
             # the expansion, most likely it will result in the same kind of error.
@@ -133,16 +131,10 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
                     t.args = unpacked.args
 
     def validate_args(
-        self,
-        name: str,
-        args: tuple[Type, ...],
-        type_vars: list[TypeVarLikeType],
-        ctx: Context,
+        self, name: str, args: tuple[Type, ...], type_vars: list[TypeVarLikeType], ctx: Context
     ) -> bool:
         if any(isinstance(v, TypeVarTupleType) for v in type_vars):
-            prefix = next(
-                i for (i, v) in enumerate(type_vars) if isinstance(v, TypeVarTupleType)
-            )
+            prefix = next(i for (i, v) in enumerate(type_vars) if isinstance(v, TypeVarTupleType))
             tvt = type_vars[prefix]
             assert isinstance(tvt, TypeVarTupleType)
             start, middle, end = split_with_prefix_and_suffix(
@@ -173,18 +165,14 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
                         if not arg_values:
                             is_error = True
                             self.fail(
-                                message_registry.INVALID_TYPEVAR_AS_TYPEARG.format(
-                                    arg.name, name
-                                ),
+                                message_registry.INVALID_TYPEVAR_AS_TYPEARG.format(arg.name, name),
                                 ctx,
                                 code=codes.TYPE_VAR,
                             )
                             continue
                     else:
                         arg_values = [arg]
-                    if self.check_type_var_values(
-                        name, arg_values, tvar.name, tvar.values, ctx
-                    ):
+                    if self.check_type_var_values(name, arg_values, tvar.name, tvar.values, ctx):
                         is_error = True
                 # Check against upper bound. Since it's object the vast majority of the time,
                 # add fast path to avoid a potentially slow subtype check.
@@ -210,8 +198,7 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
                     )
             elif isinstance(tvar, ParamSpecType):
                 if not isinstance(
-                    get_proper_type(arg),
-                    (ParamSpecType, Parameters, AnyType, UnboundType),
+                    get_proper_type(arg), (ParamSpecType, Parameters, AnyType, UnboundType)
                 ):
                     self.fail(
                         "Can only replace ParamSpec with a parameter types list or"
@@ -229,30 +216,20 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
             return
         # TODO: this should probably be .has_base("builtins.tuple"), also elsewhere. This is
         # tricky however, since this needs map_instance_to_supertype() available in many places.
-        if (
-            isinstance(proper_type, Instance)
-            and proper_type.type.fullname == "builtins.tuple"
-        ):
+        if isinstance(proper_type, Instance) and proper_type.type.fullname == "builtins.tuple":
             return
         if not isinstance(proper_type, (UnboundType, AnyType)):
             # Avoid extra errors if there were some errors already. Also interpret plain Any
             # as tuple[Any, ...] (this is better for the code in type checker).
             self.fail(
-                message_registry.INVALID_UNPACK.format(
-                    format_type(proper_type, self.options)
-                ),
+                message_registry.INVALID_UNPACK.format(format_type(proper_type, self.options)),
                 typ.type,
                 code=codes.VALID_TYPE,
             )
         typ.type = self.named_type("builtins.tuple", [AnyType(TypeOfAny.from_error)])
 
     def check_type_var_values(
-        self,
-        name: str,
-        actuals: list[Type],
-        arg_name: str,
-        valids: list[Type],
-        context: Context,
+        self, name: str, actuals: list[Type], arg_name: str, valids: list[Type], context: Context
     ) -> bool:
         is_error = False
         for actual in get_proper_types(actuals):
@@ -281,14 +258,8 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
                     )
         return is_error
 
-    def fail(
-        self, msg: str, context: Context, *, code: ErrorCode | None = None
-    ) -> None:
+    def fail(self, msg: str, context: Context, *, code: ErrorCode | None = None) -> None:
         self.errors.report(context.line, context.column, msg, code=code)
 
-    def note(
-        self, msg: str, context: Context, *, code: ErrorCode | None = None
-    ) -> None:
-        self.errors.report(
-            context.line, context.column, msg, severity="note", code=code
-        )
+    def note(self, msg: str, context: Context, *, code: ErrorCode | None = None) -> None:
+        self.errors.report(context.line, context.column, msg, severity="note", code=code)

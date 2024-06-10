@@ -219,6 +219,7 @@ return_stmt: KW_RETURN expression?
 
 // Yield statements
 yield_expr: KW_YIELD KW_FROM? expression
+          | KW_YIELD
 
 // Raise statements
 raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?

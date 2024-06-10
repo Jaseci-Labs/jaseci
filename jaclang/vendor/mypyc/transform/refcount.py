@@ -67,9 +67,7 @@ def insert_ref_count_opcodes(ir: FuncIR) -> None:
     args: set[Value] = set(ir.arg_regs)
     live = analyze_live_regs(ir.blocks, cfg)
     borrow = analyze_borrowed_arguments(ir.blocks, cfg, borrowed)
-    defined = analyze_must_defined_regs(
-        ir.blocks, cfg, args, values, strict_errors=True
-    )
+    defined = analyze_must_defined_regs(ir.blocks, cfg, args, values, strict_errors=True)
     ordering = make_value_ordering(ir)
     cache: BlockCache = {}
     for block in ir.blocks.copy():
@@ -94,10 +92,7 @@ def is_maybe_undefined(post_must_defined: set[Value], src: Value) -> bool:
 
 
 def maybe_append_dec_ref(
-    ops: list[Op],
-    dest: Value,
-    defined: AnalysisDict[Value],
-    key: tuple[BasicBlock, int],
+    ops: list[Op], dest: Value, defined: AnalysisDict[Value], key: tuple[BasicBlock, int]
 ) -> None:
     if dest.type.is_refcounted and not isinstance(dest, Integer):
         ops.append(DecRef(dest, is_xdec=is_maybe_undefined(defined[key], dest)))
@@ -146,11 +141,7 @@ def transform_block(
 
         for src in op.unique_sources():
             # Decrement source that won't be live afterwards.
-            if (
-                src not in post_live[key]
-                and src not in pre_borrow[key]
-                and src not in stolen
-            ):
+            if src not in post_live[key] and src not in pre_borrow[key] and src not in stolen:
                 maybe_append_dec_ref(ops, src, post_must_defined, key)
         # Decrement the destination if it is dead after the op and
         # wasn't a borrowed RegisterOp
@@ -207,17 +198,9 @@ def insert_branch_inc_and_decrefs(
             omitted = ()
 
         decs = after_branch_decrefs(
-            target,
-            pre_live,
-            source_defined,
-            source_borrowed,
-            source_live_regs,
-            ordering,
-            omitted,
+            target, pre_live, source_defined, source_borrowed, source_live_regs, ordering, omitted
         )
-        incs = after_branch_increfs(
-            target, pre_live, pre_borrow, source_borrowed, ordering
-        )
+        incs = after_branch_increfs(target, pre_live, pre_borrow, source_borrowed, ordering)
         term.set_target(i, add_block(decs, incs, cache, blocks, target))
 
 
@@ -253,19 +236,13 @@ def after_branch_increfs(
     incref = (source_borrowed - target_borrowed) & target_pre_live
     if incref:
         return tuple(
-            reg
-            for reg in sorted(incref, key=lambda r: ordering[r])
-            if reg.type.is_refcounted
+            reg for reg in sorted(incref, key=lambda r: ordering[r]) if reg.type.is_refcounted
         )
     return ()
 
 
 def add_block(
-    decs: Decs,
-    incs: Incs,
-    cache: BlockCache,
-    blocks: list[BasicBlock],
-    label: BasicBlock,
+    decs: Decs, incs: Incs, cache: BlockCache, blocks: list[BasicBlock], label: BasicBlock
 ) -> BasicBlock:
     if not decs and not incs:
         return label

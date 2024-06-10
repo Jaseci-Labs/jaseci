@@ -41,14 +41,10 @@ if sys.version_info < (3, 11):
     MAX_CACHE_SIZE: int
 
 class _ResultMixinStr:
-    def encode(
-        self, encoding: str = "ascii", errors: str = "strict"
-    ) -> _ResultMixinBytes: ...
+    def encode(self, encoding: str = "ascii", errors: str = "strict") -> _ResultMixinBytes: ...
 
 class _ResultMixinBytes:
-    def decode(
-        self, encoding: str = "ascii", errors: str = "strict"
-    ) -> _ResultMixinStr: ...
+    def decode(self, encoding: str = "ascii", errors: str = "strict") -> _ResultMixinStr: ...
 
 class _NetlocResultMixinBase(Generic[AnyStr]):
     @property
@@ -123,39 +119,23 @@ def parse_qsl(
     separator: str = "&",
 ) -> list[tuple[AnyStr, AnyStr]]: ...
 @overload
-def quote(
-    string: str,
-    safe: str | Iterable[int] = "/",
-    encoding: str | None = None,
-    errors: str | None = None,
-) -> str: ...
+def quote(string: str, safe: str | Iterable[int] = "/", encoding: str | None = None, errors: str | None = None) -> str: ...
 @overload
 def quote(string: bytes | bytearray, safe: str | Iterable[int] = "/") -> str: ...
 def quote_from_bytes(bs: bytes | bytearray, safe: str | Iterable[int] = "/") -> str: ...
 @overload
-def quote_plus(
-    string: str,
-    safe: str | Iterable[int] = "",
-    encoding: str | None = None,
-    errors: str | None = None,
-) -> str: ...
+def quote_plus(string: str, safe: str | Iterable[int] = "", encoding: str | None = None, errors: str | None = None) -> str: ...
 @overload
 def quote_plus(string: bytes | bytearray, safe: str | Iterable[int] = "") -> str: ...
 
 if sys.version_info >= (3, 9):
-    def unquote(
-        string: str | bytes, encoding: str = "utf-8", errors: str = "replace"
-    ) -> str: ...
+    def unquote(string: str | bytes, encoding: str = "utf-8", errors: str = "replace") -> str: ...
 
 else:
-    def unquote(
-        string: str, encoding: str = "utf-8", errors: str = "replace"
-    ) -> str: ...
+    def unquote(string: str, encoding: str = "utf-8", errors: str = "replace") -> str: ...
 
 def unquote_to_bytes(string: str | bytes | bytearray) -> bytes: ...
-def unquote_plus(
-    string: str, encoding: str = "utf-8", errors: str = "replace"
-) -> str: ...
+def unquote_plus(string: str, encoding: str = "utf-8", errors: str = "replace") -> str: ...
 @overload
 def urldefrag(url: str) -> DefragResult: ...
 @overload
@@ -163,10 +143,7 @@ def urldefrag(url: bytes | bytearray | None) -> DefragResultBytes: ...
 
 _Q = TypeVar("_Q", bound=str | Iterable[int])
 _QueryType: TypeAlias = (
-    Mapping[Any, Any]
-    | Mapping[Any, Sequence[Any]]
-    | Sequence[tuple[Any, Any]]
-    | Sequence[tuple[Any, Sequence[Any]]]
+    Mapping[Any, Any] | Mapping[Any, Sequence[Any]] | Sequence[tuple[Any, Any]] | Sequence[tuple[Any, Sequence[Any]]]
 )
 
 @overload
@@ -197,38 +174,26 @@ def urlencode(
     errors: str | None = None,
     quote_via: Callable[[AnyStr, _Q, str, str], str] = ...,
 ) -> str: ...
-def urljoin(
-    base: AnyStr, url: AnyStr | None, allow_fragments: bool = True
-) -> AnyStr: ...
+def urljoin(base: AnyStr, url: AnyStr | None, allow_fragments: bool = True) -> AnyStr: ...
+@overload
+def urlparse(url: str, scheme: str = "", allow_fragments: bool = True) -> ParseResult: ...
 @overload
 def urlparse(
-    url: str, scheme: str = "", allow_fragments: bool = True
-) -> ParseResult: ...
-@overload
-def urlparse(
-    url: bytes | bytearray | None,
-    scheme: bytes | bytearray | None | Literal[""] = "",
-    allow_fragments: bool = True,
+    url: bytes | bytearray | None, scheme: bytes | bytearray | None | Literal[""] = "", allow_fragments: bool = True
 ) -> ParseResultBytes: ...
 @overload
-def urlsplit(
-    url: str, scheme: str = "", allow_fragments: bool = True
-) -> SplitResult: ...
+def urlsplit(url: str, scheme: str = "", allow_fragments: bool = True) -> SplitResult: ...
 
 if sys.version_info >= (3, 11):
     @overload
     def urlsplit(
-        url: bytes | None,
-        scheme: bytes | None | Literal[""] = "",
-        allow_fragments: bool = True,
+        url: bytes | None, scheme: bytes | None | Literal[""] = "", allow_fragments: bool = True
     ) -> SplitResultBytes: ...
 
 else:
     @overload
     def urlsplit(
-        url: bytes | bytearray | None,
-        scheme: bytes | bytearray | None | Literal[""] = "",
-        allow_fragments: bool = True,
+        url: bytes | bytearray | None, scheme: bytes | bytearray | None | Literal[""] = "", allow_fragments: bool = True
     ) -> SplitResultBytes: ...
 
 # Requires an iterable of length 6

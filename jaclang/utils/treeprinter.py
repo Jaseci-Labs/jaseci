@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import ast as ast3
+import builtins
 import html
 from typing import Optional, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
+from jaclang.settings import settings
 
 
 if TYPE_CHECKING:
@@ -89,16 +91,21 @@ def print_ast_tree(
 
     def __node_repr_in_tree(node: AstNode) -> str:
         access = (
-            f"Access: {node.access.tag.value}"
+            f"Access: {node.access.tag.value} ,"
             if isinstance(node, ast.AstAccessNode) and node.access is not None
             else ""
         )
+        sym_table_link = (
+            f"SymbolTable: {node.sym_info.typ_sym_table.name}"
+            if isinstance(node, AstSymbolNode) and node.sym_info.typ_sym_table
+            else "SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
+        )
         if isinstance(node, Token) and isinstance(node, AstSymbolNode):
-            return f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}, {access}"
+            return f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}, {access} {sym_table_link}"
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif isinstance(node, AstSymbolNode):
-            return f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}, {access}"
+            return f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}, {access} {sym_table_link}"
         else:
             return f"{node.__class__.__name__}, {access}"
 
@@ -266,7 +273,11 @@ def get_symtab_tree_str(
     depth: Optional[int] = None,
 ) -> str:
     """Recursively print symbol table tree."""
-    if root is None or depth == 0:
+    if (
+        root is None
+        or depth == 0
+        or (settings.filter_sym_builtins and root.name in dir(builtins))
+    ):
         return ""
 
     level_markers = level_markers or []
@@ -320,6 +331,8 @@ def dotgen_symtab_tree(node: SymbolTable) -> str:
         dot_lines.append(f"{gen_node_id(node)} {gen_node_parameters(node)};")
         for kid_node in node.kid:
             if kid_node:
+                if settings.filter_sym_builtins and kid_node.name in dir(builtins):
+                    continue
                 dot_lines.append(f"{gen_node_id(node)}  -> {gen_node_id(kid_node)};")
                 gen_dot_graph(kid_node)
 

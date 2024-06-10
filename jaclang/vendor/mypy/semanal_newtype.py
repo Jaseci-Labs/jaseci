@@ -72,11 +72,7 @@ class NewTypeAnalyzer:
             name += "@" + str(s.line)
         fullname = self.api.qualified_name(name)
 
-        if (
-            not call.analyzed
-            or isinstance(call.analyzed, NewTypeExpr)
-            and not call.analyzed.info
-        ):
+        if not call.analyzed or isinstance(call.analyzed, NewTypeExpr) and not call.analyzed.info:
             # Start from labeling this as a future class, as we do for normal ClassDefs.
             placeholder = PlaceholderNode(fullname, s, s.line, becomes_typeinfo=True)
             self.api.add_symbol(var_name, placeholder, s, can_defer=False)
@@ -84,9 +80,7 @@ class NewTypeAnalyzer:
         old_type, should_defer = self.check_newtype_args(var_name, call, s)
         old_type = get_proper_type(old_type)
         if not isinstance(call.analyzed, NewTypeExpr):
-            call.analyzed = NewTypeExpr(
-                var_name, old_type, line=call.line, column=call.column
-            )
+            call.analyzed = NewTypeExpr(var_name, old_type, line=call.line, column=call.column)
         else:
             call.analyzed.old_type = old_type
         if old_type is None:
@@ -128,12 +122,8 @@ class NewTypeAnalyzer:
             old_type, self.options, self.api.is_typeshed_stub_file, self.msg, context=s
         )
 
-        if self.options.disallow_any_unimported and has_any_from_unimported_type(
-            old_type
-        ):
-            self.msg.unimported_type_becomes_any(
-                "Argument 2 to NewType(...)", old_type, s
-            )
+        if self.options.disallow_any_unimported and has_any_from_unimported_type(old_type):
+            self.msg.unimported_type_becomes_any("Argument 2 to NewType(...)", old_type, s)
 
         # If so, add it to the symbol table.
         assert isinstance(call.analyzed, NewTypeExpr)
@@ -149,9 +139,7 @@ class NewTypeAnalyzer:
         newtype_class_info.line = s.line
         return True
 
-    def analyze_newtype_declaration(
-        self, s: AssignmentStmt
-    ) -> tuple[str | None, CallExpr | None]:
+    def analyze_newtype_declaration(self, s: AssignmentStmt) -> tuple[str | None, CallExpr | None]:
         """Return the NewType call expression if `s` is a newtype declaration or None otherwise."""
         name, call = None, None
         if (
@@ -159,10 +147,7 @@ class NewTypeAnalyzer:
             and isinstance(s.lvalues[0], NameExpr)
             and isinstance(s.rvalue, CallExpr)
             and isinstance(s.rvalue.callee, RefExpr)
-            and (
-                s.rvalue.callee.fullname
-                in ("typing.NewType", "typing_extensions.NewType")
-            )
+            and (s.rvalue.callee.fullname in ("typing.NewType", "typing_extensions.NewType"))
         ):
             name = s.lvalues[0].name
 
@@ -211,9 +196,7 @@ class NewTypeAnalyzer:
         # Check second argument
         msg = "Argument 2 to NewType(...) must be a valid type"
         try:
-            unanalyzed_type = expr_to_unanalyzed_type(
-                args[1], self.options, self.api.is_stub_file
-            )
+            unanalyzed_type = expr_to_unanalyzed_type(args[1], self.options, self.api.is_stub_file)
         except TypeTranslationError:
             self.fail(msg, context)
             return None, False
@@ -278,9 +261,7 @@ class NewTypeAnalyzer:
         info.names["__init__"] = SymbolTableNode(MDEF, init_func)
 
         if has_placeholder(old_type):
-            self.api.process_placeholder(
-                None, "NewType base", info, force_progress=updated
-            )
+            self.api.process_placeholder(None, "NewType base", info, force_progress=updated)
         return info
 
     # Helpers

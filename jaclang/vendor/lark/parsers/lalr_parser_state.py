@@ -8,16 +8,8 @@ from lark.exceptions import UnexpectedToken
 
 ###{standalone
 
-
 class ParseConf(Generic[StateT]):
-    __slots__ = (
-        "parse_table",
-        "callbacks",
-        "start",
-        "start_state",
-        "end_state",
-        "states",
-    )
+    __slots__ = 'parse_table', 'callbacks', 'start', 'start_state', 'end_state', 'states'
 
     parse_table: ParseTableBase[StateT]
     callbacks: ParserCallbacks
@@ -27,12 +19,7 @@ class ParseConf(Generic[StateT]):
     end_state: StateT
     states: Dict[StateT, Dict[str, tuple]]
 
-    def __init__(
-        self,
-        parse_table: ParseTableBase[StateT],
-        callbacks: ParserCallbacks,
-        start: str,
-    ):
+    def __init__(self, parse_table: ParseTableBase[StateT], callbacks: ParserCallbacks, start: str):
         self.parse_table = parse_table
 
         self.start_state = self.parse_table.start_states[start]
@@ -42,22 +29,15 @@ class ParseConf(Generic[StateT]):
         self.callbacks = callbacks
         self.start = start
 
-
 class ParserState(Generic[StateT]):
-    __slots__ = "parse_conf", "lexer", "state_stack", "value_stack"
+    __slots__ = 'parse_conf', 'lexer', 'state_stack', 'value_stack'
 
     parse_conf: ParseConf[StateT]
     lexer: LexerThread
     state_stack: List[StateT]
     value_stack: list
 
-    def __init__(
-        self,
-        parse_conf: ParseConf[StateT],
-        lexer: LexerThread,
-        state_stack=None,
-        value_stack=None,
-    ):
+    def __init__(self, parse_conf: ParseConf[StateT], lexer: LexerThread, state_stack=None, value_stack=None):
         self.parse_conf = parse_conf
         self.lexer = lexer
         self.state_stack = state_stack or [self.parse_conf.start_state]
@@ -71,20 +51,17 @@ class ParserState(Generic[StateT]):
     def __eq__(self, other) -> bool:
         if not isinstance(other, ParserState):
             return NotImplemented
-        return (
-            len(self.state_stack) == len(other.state_stack)
-            and self.position == other.position
-        )
+        return len(self.state_stack) == len(other.state_stack) and self.position == other.position
 
     def __copy__(self):
         return type(self)(
             self.parse_conf,
-            self.lexer,  # XXX copy
+            self.lexer, # XXX copy
             copy(self.state_stack),
             deepcopy(self.value_stack),
         )
 
-    def copy(self) -> "ParserState[StateT]":
+    def copy(self) -> 'ParserState[StateT]':
         return copy(self)
 
     def feed_token(self, token: Token, is_end=False) -> Any:
@@ -100,9 +77,7 @@ class ParserState(Generic[StateT]):
                 action, arg = states[state][token.type]
             except KeyError:
                 expected = {s for s in states[state].keys() if s.isupper()}
-                raise UnexpectedToken(
-                    token, expected, state=self, interactive_parser=None
-                )
+                raise UnexpectedToken(token, expected, state=self, interactive_parser=None)
 
             assert arg != end_state
 
@@ -110,11 +85,7 @@ class ParserState(Generic[StateT]):
                 # shift once and return
                 assert not is_end
                 state_stack.append(arg)
-                value_stack.append(
-                    token
-                    if token.type not in callbacks
-                    else callbacks[token.type](token)
-                )
+                value_stack.append(token if token.type not in callbacks else callbacks[token.type](token))
                 return
             else:
                 # reduce+shift as many times as necessary
@@ -136,6 +107,4 @@ class ParserState(Generic[StateT]):
 
                 if is_end and state_stack[-1] == end_state:
                     return value_stack[-1]
-
-
 ###}

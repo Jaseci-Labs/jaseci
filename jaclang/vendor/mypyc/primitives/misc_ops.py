@@ -13,11 +13,14 @@ from mypyc.ir.rtypes import (
     int_rprimitive,
     object_pointer_rprimitive,
     object_rprimitive,
+    pointer_rprimitive,
     str_rprimitive,
+    void_rtype,
 )
 from mypyc.primitives.registry import (
     ERR_NEG_INT,
     custom_op,
+    custom_primitive_op,
     function_op,
     load_address_op,
 )
@@ -29,27 +32,19 @@ load_address_op(name="builtins.bool", type=object_rprimitive, src="PyBool_Type")
 load_address_op(name="builtins.range", type=object_rprimitive, src="PyRange_Type")
 
 # Get the boxed Python 'None' object
-none_object_op = load_address_op(
-    name="Py_None", type=object_rprimitive, src="_Py_NoneStruct"
-)
+none_object_op = load_address_op(name="Py_None", type=object_rprimitive, src="_Py_NoneStruct")
 
 # Get the boxed object '...'
-ellipsis_op = load_address_op(
-    name="...", type=object_rprimitive, src="_Py_EllipsisObject"
-)
+ellipsis_op = load_address_op(name="...", type=object_rprimitive, src="_Py_EllipsisObject")
 
 # Get the boxed NotImplemented object
 not_implemented_op = load_address_op(
-    name="builtins.NotImplemented",
-    type=object_rprimitive,
-    src="_Py_NotImplementedStruct",
+    name="builtins.NotImplemented", type=object_rprimitive, src="_Py_NotImplementedStruct"
 )
 
 # Get the boxed StopAsyncIteration object
 stop_async_iteration_op = load_address_op(
-    name="builtins.StopAsyncIteration",
-    type=object_rprimitive,
-    src="PyExc_StopAsyncIteration",
+    name="builtins.StopAsyncIteration", type=object_rprimitive, src="PyExc_StopAsyncIteration"
 )
 
 # id(obj)
@@ -150,12 +145,7 @@ import_many_op = custom_op(
 
 # From import helper op
 import_from_many_op = custom_op(
-    arg_types=[
-        object_rprimitive,
-        object_rprimitive,
-        object_rprimitive,
-        object_rprimitive,
-    ],
+    arg_types=[object_rprimitive, object_rprimitive, object_rprimitive, object_rprimitive],
     return_type=object_rprimitive,
     c_function_name="CPyImport_ImportFromMany",
     error_kind=ERR_MAGIC,
@@ -220,9 +210,7 @@ type_op = function_op(
 )
 
 # Get 'builtins.type' (base class of all classes)
-type_object_op = load_address_op(
-    name="builtins.type", type=object_rprimitive, src="PyType_Type"
-)
+type_object_op = load_address_op(name="builtins.type", type=object_rprimitive, src="PyType_Type")
 
 # Create a heap type based on a template non-heap type.
 # See CPyType_FromTemplate for more docs.
@@ -252,10 +240,28 @@ check_unpack_count_op = custom_op(
 )
 
 
-# register an implementation for a singledispatch function
+# Register an implementation for a singledispatch function
 register_function = custom_op(
     arg_types=[object_rprimitive, object_rprimitive, object_rprimitive],
     return_type=object_rprimitive,
     c_function_name="CPySingledispatch_RegisterFunction",
     error_kind=ERR_MAGIC,
+)
+
+
+# Initialize a PyObject * item in a memory buffer (steal the value)
+buf_init_item = custom_primitive_op(
+    name="buf_init_item",
+    arg_types=[pointer_rprimitive, c_pyssize_t_rprimitive, object_rprimitive],
+    return_type=void_rtype,
+    error_kind=ERR_NEVER,
+    steals=[False, False, True],
+)
+
+# Get length of PyVarObject instance (e.g. list or tuple)
+var_object_size = custom_primitive_op(
+    name="var_object_size",
+    arg_types=[object_rprimitive],
+    return_type=c_pyssize_t_rprimitive,
+    error_kind=ERR_NEVER,
 )

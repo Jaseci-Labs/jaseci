@@ -20,9 +20,9 @@ def dotgen(
     dot_file: Optional[str] = None,
 ) -> str:
     """Print the dot graph."""
-    from jaclang.core.construct import root
     from jaclang.plugin.feature import pm
 
+    root = pm.hook.get_root()
     node = node if node is not None else root
     depth = depth if depth is not None else -1
     traverse = traverse if traverse is not None else False

@@ -147,9 +147,7 @@ def constant_fold_binary_int_op(op: str, left: int, right: int) -> int | float |
     return None
 
 
-def constant_fold_binary_float_op(
-    op: str, left: int | float, right: int | float
-) -> float | None:
+def constant_fold_binary_float_op(op: str, left: int | float, right: int | float) -> float | None:
     assert not (isinstance(left, int) and isinstance(right, int)), (op, left, right)
     if op == "+":
         return left + right

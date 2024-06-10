@@ -24,21 +24,10 @@ class WatchedFileHandler(FileHandler):
     ino: int  # undocumented
     if sys.version_info >= (3, 9):
         def __init__(
-            self,
-            filename: StrPath,
-            mode: str = "a",
-            encoding: str | None = None,
-            delay: bool = False,
-            errors: str | None = None,
+            self, filename: StrPath, mode: str = "a", encoding: str | None = None, delay: bool = False, errors: str | None = None
         ) -> None: ...
     else:
-        def __init__(
-            self,
-            filename: StrPath,
-            mode: str = "a",
-            encoding: str | None = None,
-            delay: bool = False,
-        ) -> None: ...
+        def __init__(self, filename: StrPath, mode: str = "a", encoding: str | None = None, delay: bool = False) -> None: ...
 
     def _statstream(self) -> None: ...  # undocumented
     def reopenIfNeeded(self) -> None: ...
@@ -48,21 +37,10 @@ class BaseRotatingHandler(FileHandler):
     rotator: Callable[[str, str], None] | None
     if sys.version_info >= (3, 9):
         def __init__(
-            self,
-            filename: StrPath,
-            mode: str,
-            encoding: str | None = None,
-            delay: bool = False,
-            errors: str | None = None,
+            self, filename: StrPath, mode: str, encoding: str | None = None, delay: bool = False, errors: str | None = None
         ) -> None: ...
     else:
-        def __init__(
-            self,
-            filename: StrPath,
-            mode: str,
-            encoding: str | None = None,
-            delay: bool = False,
-        ) -> None: ...
+        def __init__(self, filename: StrPath, mode: str, encoding: str | None = None, delay: bool = False) -> None: ...
 
     def rotation_filename(self, default_name: str) -> str: ...
     def rotate(self, source: str, dest: str) -> None: ...
@@ -202,10 +180,7 @@ class SysLogHandler(Handler):
     facility_names: ClassVar[dict[str, int]]  # undocumented
     priority_map: ClassVar[dict[str, str]]  # undocumented
     def __init__(
-        self,
-        address: tuple[str, int] | str = ("localhost", 514),
-        facility: str | int = 1,
-        socktype: SocketKind | None = None,
+        self, address: tuple[str, int] | str = ("localhost", 514), facility: str | int = 1, socktype: SocketKind | None = None
     ) -> None: ...
     if sys.version_info >= (3, 11):
         def createSocket(self) -> None: ...
@@ -214,9 +189,7 @@ class SysLogHandler(Handler):
     def mapPriority(self, levelName: str) -> str: ...
 
 class NTEventLogHandler(Handler):
-    def __init__(
-        self, appname: str, dllname: str | None = None, logtype: str = "Application"
-    ) -> None: ...
+    def __init__(self, appname: str, dllname: str | None = None, logtype: str = "Application") -> None: ...
     def getEventCategory(self, record: LogRecord) -> int: ...
     # TODO correct return value?
     def getEventType(self, record: LogRecord) -> int: ...
@@ -255,13 +228,7 @@ class MemoryHandler(BufferingHandler):
     flushLevel: int  # undocumented
     target: Handler | None  # undocumented
     flushOnClose: bool  # undocumented
-    def __init__(
-        self,
-        capacity: int,
-        flushLevel: int = 40,
-        target: Handler | None = None,
-        flushOnClose: bool = True,
-    ) -> None: ...
+    def __init__(self, capacity: int, flushLevel: int = 40, target: Handler | None = None, flushOnClose: bool = True) -> None: ...
     def setTarget(self, target: Handler | None) -> None: ...
 
 class HTTPHandler(Handler):
@@ -282,13 +249,11 @@ class HTTPHandler(Handler):
     ) -> None: ...
     def mapLogRecord(self, record: LogRecord) -> dict[str, Any]: ...
     if sys.version_info >= (3, 9):
-        def getConnection(
-            self, host: str, secure: bool
-        ) -> http.client.HTTPConnection: ...  # undocumented
+        def getConnection(self, host: str, secure: bool) -> http.client.HTTPConnection: ...  # undocumented
 
 class _QueueLike(Protocol[_T]):
     def get(self) -> _T: ...
-    def put_nowait(self, __item: _T) -> None: ...
+    def put_nowait(self, item: _T, /) -> None: ...
 
 class QueueHandler(Handler):
     queue: _QueueLike[Any]
@@ -301,12 +266,7 @@ class QueueListener:
     respect_handler_level: bool  # undocumented
     queue: _QueueLike[Any]  # undocumented
     _thread: Thread | None  # undocumented
-    def __init__(
-        self,
-        queue: _QueueLike[Any],
-        *handlers: Handler,
-        respect_handler_level: bool = False
-    ) -> None: ...
+    def __init__(self, queue: _QueueLike[Any], *handlers: Handler, respect_handler_level: bool = False) -> None: ...
     def dequeue(self, block: bool) -> LogRecord: ...
     def prepare(self, record: LogRecord) -> Any: ...
     def start(self) -> None: ...

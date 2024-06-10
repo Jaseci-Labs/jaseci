@@ -8,13 +8,7 @@ from typing import Callable, Final, Iterable, NoReturn, Optional, TextIO, Tuple,
 from typing_extensions import Literal, TypeAlias as _TypeAlias
 
 from mypy import errorcodes as codes
-from mypy.errorcodes import (
-    IMPORT,
-    IMPORT_NOT_FOUND,
-    IMPORT_UNTYPED,
-    ErrorCode,
-    mypy_error_codes,
-)
+from mypy.errorcodes import IMPORT, IMPORT_NOT_FOUND, IMPORT_UNTYPED, ErrorCode, mypy_error_codes
 from mypy.message_registry import ErrorMessage
 from mypy.options import Options
 from mypy.scope import Scope
@@ -49,10 +43,7 @@ BASE_RTD_URL: Final = "https://mypy.rtfd.io/en/stable/_refs.html#code"
 
 # Keep track of the original error code when the error code of a message is changed.
 # This is used to give notes about out-of-date "type: ignore" comments.
-original_error_codes: Final = {
-    codes.LITERAL_REQ: codes.MISC,
-    codes.TYPE_ABSTRACT: codes.MISC,
-}
+original_error_codes: Final = {codes.LITERAL_REQ: codes.MISC, codes.TYPE_ABSTRACT: codes.MISC}
 
 
 class ErrorInfo:
@@ -189,9 +180,7 @@ class ErrorWatcher:
         self.errors._watchers.append(self)
         return self
 
-    def __exit__(
-        self, exc_type: object, exc_val: object, exc_tb: object
-    ) -> Literal[False]:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> Literal[False]:
         last = self.errors._watchers.pop()
         assert last == self
         return False
@@ -302,9 +291,7 @@ class Errors:
     ) -> None:
         self.options = options
         self.hide_error_codes = (
-            hide_error_codes
-            if hide_error_codes is not None
-            else options.hide_error_codes
+            hide_error_codes if hide_error_codes is not None else options.hide_error_codes
         )
         # We use fscache to read source code when showing snippets.
         self.read_source = read_source
@@ -344,11 +331,7 @@ class Errors:
             return remove_path_prefix(file, self.ignore_prefix)
 
     def set_file(
-        self,
-        file: str,
-        module: str | None,
-        options: Options,
-        scope: Scope | None = None,
+        self, file: str, module: str | None, options: Options, scope: Scope | None = None
     ) -> None:
         """Set the path and module id of the current file."""
         # The path will be simplified later, in render_messages. That way
@@ -515,9 +498,7 @@ class Errors:
                 # Check each line in this context for "type: ignore" comments.
                 # line == end_line for most nodes, so we only loop once.
                 for scope_line in lines:
-                    if self.is_ignored_error(
-                        scope_line, info, self.ignored_lines[file]
-                    ):
+                    if self.is_ignored_error(scope_line, info, self.ignored_lines[file]):
                         # Annotation requests us to ignore all errors on this line.
                         self.used_ignored_lines[file][scope_line].append(
                             (info.code or codes.MISC).code
@@ -646,9 +627,7 @@ class Errors:
         )
         self._add_error_info(info.origin[0], new_info)
 
-    def is_ignored_error(
-        self, line: int, info: ErrorInfo, ignores: dict[int, list[str]]
-    ) -> bool:
+    def is_ignored_error(self, line: int, info: ErrorInfo, ignores: dict[int, list[str]]) -> bool:
         if info.blocker:
             # Blocking errors can never be ignored
             return False
@@ -679,10 +658,7 @@ class Errors:
             return False
         elif error_code in current_mod_enabled:
             return True
-        elif (
-            error_code.sub_code_of is not None
-            and error_code.sub_code_of in current_mod_disabled
-        ):
+        elif error_code.sub_code_of is not None and error_code.sub_code_of in current_mod_disabled:
             return False
         else:
             return error_code.default_enabled
@@ -704,9 +680,7 @@ class Errors:
 
     def generate_unused_ignore_errors(self, file: str) -> None:
         if (
-            is_typeshed_file(
-                self.options.abs_custom_typeshed_dir if self.options else None, file
-            )
+            is_typeshed_file(self.options.abs_custom_typeshed_dir if self.options else None, file)
             or file in self.ignored_files
         ):
             return
@@ -758,9 +732,7 @@ class Errors:
         self, file: str, is_warning_unused_ignores: bool
     ) -> None:
         if (
-            is_typeshed_file(
-                self.options.abs_custom_typeshed_dir if self.options else None, file
-            )
+            is_typeshed_file(self.options.abs_custom_typeshed_dir if self.options else None, file)
             or file in self.ignored_files
         ):
             return
@@ -785,9 +757,7 @@ class Errors:
             codes_hint = ""
             ignored_codes = sorted(set(used_ignored_lines[line]))
             if ignored_codes:
-                codes_hint = (
-                    f' (consider "type: ignore[{", ".join(ignored_codes)}]" instead)'
-                )
+                codes_hint = f' (consider "type: ignore[{", ".join(ignored_codes)}]" instead)'
 
             message = f'"type: ignore" comment without error code{codes_hint}'
             # Don't use report since add_error_info will ignore the error!
@@ -860,9 +830,7 @@ class Errors:
         # self.new_messages() will format all messages that haven't already
         # been returned from a file_messages() call.
         raise CompileError(
-            self.new_messages(),
-            use_stdout=use_stdout,
-            module_with_blocker=self.blocker_module(),
+            self.new_messages(), use_stdout=use_stdout, module_with_blocker=self.blocker_module()
         )
 
     def format_messages(
@@ -893,11 +861,7 @@ class Errors:
             if file is not None:
                 if self.options.show_column_numbers and line >= 0 and column >= 0:
                     srcloc = f"{file}:{line}:{1 + column}"
-                    if (
-                        self.options.show_error_end
-                        and end_line >= 0
-                        and end_column >= 0
-                    ):
+                    if self.options.show_error_end and end_line >= 0 and end_column >= 0:
                         srcloc += f":{end_line}:{end_column}"
                 elif line >= 0:
                     srcloc = f"{file}:{line}"
@@ -968,10 +932,7 @@ class Errors:
         # TODO: Make sure that either target is always defined or that not being defined
         #       is okay for fine-grained incremental checking.
         return {
-            info.target
-            for errs in self.error_info_map.values()
-            for info in errs
-            if info.target
+            info.target for errs in self.error_info_map.values() for info in errs if info.target
         }
 
     def render_messages(self, errors: list[ErrorInfo]) -> list[ErrorTuple]:
@@ -1007,17 +968,7 @@ class Errors:
                     # simplify path.
                     path = remove_path_prefix(path, self.ignore_prefix)
                     result.append(
-                        (
-                            None,
-                            -1,
-                            -1,
-                            -1,
-                            -1,
-                            "note",
-                            fmt.format(path, line),
-                            e.allow_dups,
-                            None,
-                        )
+                        (None, -1, -1, -1, -1, "note", fmt.format(path, line), e.allow_dups, None)
                     )
                     i -= 1
 
@@ -1030,17 +981,7 @@ class Errors:
                 if e.function_or_member is None:
                     if e.type is None:
                         result.append(
-                            (
-                                file,
-                                -1,
-                                -1,
-                                -1,
-                                -1,
-                                "note",
-                                "At top level:",
-                                e.allow_dups,
-                                None,
-                            )
+                            (file, -1, -1, -1, -1, "note", "At top level:", e.allow_dups, None)
                         )
                     else:
                         result.append(
@@ -1090,31 +1031,11 @@ class Errors:
             elif e.type != prev_type:
                 if e.type is None:
                     result.append(
-                        (
-                            file,
-                            -1,
-                            -1,
-                            -1,
-                            -1,
-                            "note",
-                            "At top level:",
-                            e.allow_dups,
-                            None,
-                        )
+                        (file, -1, -1, -1, -1, "note", "At top level:", e.allow_dups, None)
                     )
                 else:
                     result.append(
-                        (
-                            file,
-                            -1,
-                            -1,
-                            -1,
-                            -1,
-                            "note",
-                            f'In class "{e.type}":',
-                            e.allow_dups,
-                            None,
-                        )
+                        (file, -1, -1, -1, -1, "note", f'In class "{e.type}":', e.allow_dups, None)
                     )
 
             if isinstance(e.message, ErrorMessage):
@@ -1221,24 +1142,14 @@ class Errors:
                         conflicts_notes = True
                     j -= 1
                 j = i - 1
-                while (
-                    j >= 0
-                    and errors[j][0] == errors[i][0]
-                    and errors[j][1] == errors[i][1]
-                ):
+                while j >= 0 and errors[j][0] == errors[i][0] and errors[j][1] == errors[i][1]:
                     if (
                         errors[j][5] == errors[i][5]
                         and
                         # Allow duplicate notes in overload conflicts reporting.
                         not (
-                            (
-                                errors[i][5] == "note"
-                                and errors[i][6].strip() in allowed_duplicates
-                            )
-                            or (
-                                errors[i][6].strip().startswith("def ")
-                                and conflicts_notes
-                            )
+                            (errors[i][5] == "note" and errors[i][6].strip() in allowed_duplicates)
+                            or (errors[i][6].strip().startswith("def ") and conflicts_notes)
                         )
                         and errors[j][6] == errors[i][6]
                     ):  # ignore column
@@ -1270,10 +1181,7 @@ class CompileError(Exception):
     module_with_blocker: str | None = None
 
     def __init__(
-        self,
-        messages: list[str],
-        use_stdout: bool = False,
-        module_with_blocker: str | None = None,
+        self, messages: list[str], use_stdout: bool = False, module_with_blocker: str | None = None
     ) -> None:
         super().__init__("\n".join(messages))
         self.messages = messages
@@ -1332,9 +1240,7 @@ def report_internal_error(
         file=stderr,
     )
     if options.show_traceback:
-        print(
-            "Please report a bug at https://github.com/python/mypy/issues", file=stderr
-        )
+        print("Please report a bug at https://github.com/python/mypy/issues", file=stderr)
     else:
         print(
             "If this issue continues with mypy master, "

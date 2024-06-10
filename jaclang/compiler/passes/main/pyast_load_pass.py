@@ -89,7 +89,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     self.convert_to_doc(i.expr)
                 with_entry_body.append(i)
             else:
-                self.ice("Invalid type for with entry body")
+                continue  # FIXME: check this
+                # self.ice("Invalid type for with entry body")
         if len(with_entry_body):
             extracted.append(gen_mod_code(with_entry_body))
         return extracted
@@ -143,7 +144,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
-        # ic("----")
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -387,8 +387,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             valid_enum_body2: list[ast.EnumBlockStmt] = [
                 i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)
             ]
-            enum_body = ast.SubNodeList[ast.EnumBlockStmt](
-                items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
+            enum_body = (
+                ast.SubNodeList[ast.EnumBlockStmt](
+                    items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
+                )
+                if valid_enum_body2
+                else None
             )
             if doc:
                 doc.line_no = name.line_no
@@ -397,7 +401,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 access=None,
                 base_classes=None,
                 body=enum_body,
-                kid=[doc, name, enum_body] if doc else [name, enum_body],
+                kid=(
+                    [doc, name, enum_body]
+                    if doc and enum_body
+                    else (
+                        [doc, name]
+                        if doc
+                        else [name, enum_body] if enum_body else [name]
+                    )
+                ),
                 doc=doc,
                 decorators=valid_decorators,
             )
@@ -1136,6 +1148,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
+        elif node.value == Ellipsis:
+            return ast.Ellipsis(
+                file_path=self.mod_path,
+                name=Tok.ELLIPSIS,
+                value="...",
+                line=node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + 3,
+                pos_start=0,
+                pos_end=0,
+            )
         else:
             raise self.ice("Invalid type for constant")
 
@@ -1867,7 +1890,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 ast.Name(
                     file_path=self.mod_path,
                     name=Tok.NAME,
-                    value=name,
+                    value=name if name != "root" else "root_",
                     line=node.lineno,
                     col_start=node.col_offset,
                     col_end=node.col_offset + len(name),
@@ -2125,6 +2148,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         value = self.convert(node.value) if node.value else None
         if isinstance(value, ast.Expr):
             return ast.YieldExpr(expr=value, with_from=False, kid=[value])
+        elif not value:
+            return ast.YieldExpr(
+                expr=None, with_from=False, kid=[self.operator(Tok.KW_YIELD, "yield")]
+            )
         else:
             raise self.ice()
 

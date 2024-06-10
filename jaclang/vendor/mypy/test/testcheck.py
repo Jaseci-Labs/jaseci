@@ -11,12 +11,7 @@ from mypy.build import Graph
 from mypy.errors import CompileError
 from mypy.modulefinder import BuildSource, FindModuleCache, SearchPaths
 from mypy.test.config import test_data_prefix, test_temp_dir
-from mypy.test.data import (
-    DataDrivenTestCase,
-    DataSuite,
-    FileOperation,
-    module_from_path,
-)
+from mypy.test.data import DataDrivenTestCase, DataSuite, FileOperation, module_from_path
 from mypy.test.helpers import (
     assert_module_equivalence,
     assert_string_arrays_equal,
@@ -89,9 +84,7 @@ class TypeCheckSuite(DataSuite):
         else:
             self.run_case_once(testcase)
 
-    def _sort_output_if_needed(
-        self, testcase: DataDrivenTestCase, a: list[str]
-    ) -> None:
+    def _sort_output_if_needed(self, testcase: DataDrivenTestCase, a: list[str]) -> None:
         idx = testcase.output_inline_start
         if not testcase.files or idx == len(testcase.output):
             return
@@ -99,9 +92,7 @@ class TypeCheckSuite(DataSuite):
         def _filename(_msg: str) -> str:
             return _msg.partition(":")[0]
 
-        file_weights = {
-            file: idx for idx, file in enumerate(_filename(msg) for msg in a)
-        }
+        file_weights = {file: idx for idx, file in enumerate(_filename(msg) for msg in a)}
         testcase.output[idx:] = sorted(
             testcase.output[idx:], key=lambda msg: file_weights.get(_filename(msg), -1)
         )
@@ -163,11 +154,7 @@ class TypeCheckSuite(DataSuite):
         for module_name, program_path, program_text in module_data:
             # Always set to none so we're forced to reread the module in incremental mode
             sources.append(
-                BuildSource(
-                    program_path,
-                    module_name,
-                    None if incremental_step else program_text,
-                )
+                BuildSource(program_path, module_name, None if incremental_step else program_text)
             )
 
         plugin_dir = os.path.join(test_data_prefix, "plugins")
@@ -175,9 +162,7 @@ class TypeCheckSuite(DataSuite):
 
         res = None
         try:
-            res = build.build(
-                sources=sources, options=options, alt_lib_path=test_temp_dir
-            )
+            res = build.build(sources=sources, options=options, alt_lib_path=test_temp_dir)
             a = res.errors
         except CompileError as e:
             a = e.messages
@@ -191,9 +176,7 @@ class TypeCheckSuite(DataSuite):
         # Make sure error messages match
         if incremental_step < 2:
             if incremental_step == 1:
-                msg = (
-                    "Unexpected type checker output in incremental, run 1 ({}, line {})"
-                )
+                msg = "Unexpected type checker output in incremental, run 1 ({}, line {})"
             else:
                 assert incremental_step == 0
                 msg = "Unexpected type checker output ({}, line {})"
@@ -228,18 +211,12 @@ class TypeCheckSuite(DataSuite):
                 assert_target_equivalence(name, expected, actual)
             if incremental_step > 1:
                 suffix = "" if incremental_step == 2 else str(incremental_step - 1)
-                expected_rechecked = testcase.expected_rechecked_modules.get(
-                    incremental_step - 1
-                )
+                expected_rechecked = testcase.expected_rechecked_modules.get(incremental_step - 1)
                 if expected_rechecked is not None:
                     assert_module_equivalence(
-                        "rechecked" + suffix,
-                        expected_rechecked,
-                        res.manager.rechecked_modules,
+                        "rechecked" + suffix, expected_rechecked, res.manager.rechecked_modules
                     )
-                expected_stale = testcase.expected_stale_modules.get(
-                    incremental_step - 1
-                )
+                expected_stale = testcase.expected_stale_modules.get(incremental_step - 1)
                 if expected_stale is not None:
                     assert_module_equivalence(
                         "stale" + suffix, expected_stale, res.manager.stale_modules
@@ -259,9 +236,7 @@ class TypeCheckSuite(DataSuite):
         # for those that had an error in themselves or one of their
         # dependencies.
         error_paths = self.find_error_message_paths(a)
-        busted_paths = {
-            m.path for id, m in manager.modules.items() if graph[id].transitive_error
-        }
+        busted_paths = {m.path for id, m in manager.modules.items() if graph[id].transitive_error}
         modules = self.find_module_files(manager)
         modules.update({module_name: path for module_name, path, text in module_data})
         missing_paths = self.find_missing_cache_files(modules, manager)
@@ -269,13 +244,9 @@ class TypeCheckSuite(DataSuite):
         # but this runs into trouble because while some 'notes' are
         # really errors that cause an error to be marked, many are
         # just notes attached to other errors.
-        assert (
-            error_paths or not busted_paths
-        ), "Some modules reported error despite no errors"
+        assert error_paths or not busted_paths, "Some modules reported error despite no errors"
         if not missing_paths == busted_paths:
-            raise AssertionError(
-                f"cache data discrepancy {missing_paths} != {busted_paths}"
-            )
+            raise AssertionError(f"cache data discrepancy {missing_paths} != {busted_paths}")
         assert os.path.isfile(os.path.join(manager.options.cache_dir, ".gitignore"))
         cachedir_tag = os.path.join(manager.options.cache_dir, "CACHEDIR.TAG")
         assert os.path.isfile(cachedir_tag)
@@ -322,9 +293,7 @@ class TypeCheckSuite(DataSuite):
 
         Return a list of tuples (module name, file name, program text).
         """
-        m = re.search(
-            "# cmd: mypy -m ([a-zA-Z0-9_. ]+)$", program_text, flags=re.MULTILINE
-        )
+        m = re.search("# cmd: mypy -m ([a-zA-Z0-9_. ]+)$", program_text, flags=re.MULTILINE)
         if incremental_step > 1:
             alt_regex = f"# cmd{incremental_step}: mypy -m ([a-zA-Z0-9_. ]+)$"
             alt_m = re.search(alt_regex, program_text, flags=re.MULTILINE)
@@ -344,9 +313,7 @@ class TypeCheckSuite(DataSuite):
             cache = FindModuleCache(search_paths, fscache=None, options=None)
             for module_name in module_names.split(" "):
                 path = cache.find_module(module_name)
-                assert isinstance(
-                    path, str
-                ), f"Can't find ad hoc case file: {module_name}"
+                assert isinstance(path, str), f"Can't find ad hoc case file: {module_name}"
                 with open(path, encoding="utf8") as f:
                     program_text = f.read()
                 out.append((module_name, path, program_text))

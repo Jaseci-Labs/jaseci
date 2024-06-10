@@ -59,9 +59,7 @@ def gen_generator_func(builder: IRBuilder) -> None:
 
 def instantiate_generator_class(builder: IRBuilder) -> Value:
     fitem = builder.fn_info.fitem
-    generator_reg = builder.add(
-        Call(builder.fn_info.generator_class.ir.ctor, [], fitem.line)
-    )
+    generator_reg = builder.add(Call(builder.fn_info.generator_class.ir.ctor, [], fitem.line))
 
     # Get the current environment register. If the current function is nested, then the
     # generator class gets instantiated from the callable class' '__call__' method, and hence
@@ -116,9 +114,7 @@ def populate_switch_for_generator_class(builder: IRBuilder) -> None:
     builder.add(Unreachable())
 
 
-def add_raise_exception_blocks_to_generator_class(
-    builder: IRBuilder, line: int
-) -> None:
+def add_raise_exception_blocks_to_generator_class(builder: IRBuilder, line: int) -> None:
     """Add error handling blocks to a generator class.
 
     Generates blocks to check if error flags are set while calling the
@@ -132,9 +128,7 @@ def add_raise_exception_blocks_to_generator_class(
     # Check to see if an exception was raised.
     error_block = BasicBlock()
     ok_block = BasicBlock()
-    comparison = builder.translate_is_op(
-        exc_type, builder.none_object(), "is not", line
-    )
+    comparison = builder.translate_is_op(exc_type, builder.none_object(), "is not", line)
     builder.add_bool_branch(comparison, error_block, ok_block)
 
     builder.activate_block(error_block)
@@ -151,9 +145,7 @@ def add_methods_to_generator_class(
     blocks: list[BasicBlock],
     is_coroutine: bool,
 ) -> None:
-    helper_fn_decl = add_helper_to_generator_class(
-        builder, arg_regs, blocks, sig, fn_info
-    )
+    helper_fn_decl = add_helper_to_generator_class(builder, arg_regs, blocks, sig, fn_info)
     add_next_to_generator_class(builder, fn_info, helper_fn_decl, sig)
     add_send_to_generator_class(builder, fn_info, helper_fn_decl, sig)
     add_iter_to_generator_class(builder, fn_info)
@@ -182,17 +174,10 @@ def add_helper_to_generator_class(
         sig.ret_type,
     )
     helper_fn_decl = FuncDecl(
-        "__mypyc_generator_helper__",
-        fn_info.generator_class.ir.name,
-        builder.module_name,
-        sig,
+        "__mypyc_generator_helper__", fn_info.generator_class.ir.name, builder.module_name, sig
     )
     helper_fn_ir = FuncIR(
-        helper_fn_decl,
-        arg_regs,
-        blocks,
-        fn_info.fitem.line,
-        traceback_name=fn_info.fitem.name,
+        helper_fn_decl, arg_regs, blocks, fn_info.fitem.line, traceback_name=fn_info.fitem.name
     )
     fn_info.generator_class.ir.methods["__mypyc_generator_helper__"] = helper_fn_ir
     builder.functions.append(helper_fn_ir)
@@ -201,9 +186,7 @@ def add_helper_to_generator_class(
 
 def add_iter_to_generator_class(builder: IRBuilder, fn_info: FuncInfo) -> None:
     """Generates the '__iter__' method for a generator class."""
-    with builder.enter_method(
-        fn_info.generator_class.ir, "__iter__", object_rprimitive, fn_info
-    ):
+    with builder.enter_method(fn_info.generator_class.ir, "__iter__", object_rprimitive, fn_info):
         builder.add(Return(builder.self()))
 
 
@@ -211,9 +194,7 @@ def add_next_to_generator_class(
     builder: IRBuilder, fn_info: FuncInfo, fn_decl: FuncDecl, sig: FuncSignature
 ) -> None:
     """Generates the '__next__' method for a generator class."""
-    with builder.enter_method(
-        fn_info.generator_class.ir, "__next__", object_rprimitive, fn_info
-    ):
+    with builder.enter_method(fn_info.generator_class.ir, "__next__", object_rprimitive, fn_info):
         none_reg = builder.none_object()
         # Call the helper function with error flags set to Py_None, and return that result.
         result = builder.add(
@@ -230,9 +211,7 @@ def add_send_to_generator_class(
     builder: IRBuilder, fn_info: FuncInfo, fn_decl: FuncDecl, sig: FuncSignature
 ) -> None:
     """Generates the 'send' method for a generator class."""
-    with builder.enter_method(
-        fn_info.generator_class.ir, "send", object_rprimitive, fn_info
-    ):
+    with builder.enter_method(fn_info.generator_class.ir, "send", object_rprimitive, fn_info):
         arg = builder.add_argument("arg", object_rprimitive)
         none_reg = builder.none_object()
         # Call the helper function with error flags set to Py_None, and return that result.
@@ -250,9 +229,7 @@ def add_throw_to_generator_class(
     builder: IRBuilder, fn_info: FuncInfo, fn_decl: FuncDecl, sig: FuncSignature
 ) -> None:
     """Generates the 'throw' method for a generator class."""
-    with builder.enter_method(
-        fn_info.generator_class.ir, "throw", object_rprimitive, fn_info
-    ):
+    with builder.enter_method(fn_info.generator_class.ir, "throw", object_rprimitive, fn_info):
         typ = builder.add_argument("type", object_rprimitive)
         val = builder.add_argument("value", object_rprimitive, ARG_OPT)
         tb = builder.add_argument("traceback", object_rprimitive, ARG_OPT)
@@ -268,13 +245,7 @@ def add_throw_to_generator_class(
         result = builder.add(
             Call(
                 fn_decl,
-                [
-                    builder.self(),
-                    builder.read(typ),
-                    builder.read(val),
-                    builder.read(tb),
-                    none_reg,
-                ],
+                [builder.self(), builder.read(typ), builder.read(val), builder.read(tb), none_reg],
                 fn_info.fitem.line,
             )
         )
@@ -283,9 +254,7 @@ def add_throw_to_generator_class(
 
 def add_close_to_generator_class(builder: IRBuilder, fn_info: FuncInfo) -> None:
     """Generates the '__close__' method for a generator class."""
-    with builder.enter_method(
-        fn_info.generator_class.ir, "close", object_rprimitive, fn_info
-    ):
+    with builder.enter_method(fn_info.generator_class.ir, "close", object_rprimitive, fn_info):
         except_block, else_block = BasicBlock(), BasicBlock()
         builder.builder.push_error_handler(except_block)
         builder.goto_and_activate(BasicBlock())
@@ -310,9 +279,7 @@ def add_close_to_generator_class(builder: IRBuilder, fn_info: FuncInfo) -> None:
         stop_iteration = builder.load_module_attr_by_fullname(
             "builtins.StopIteration", fn_info.fitem.line
         )
-        exceptions = builder.add(
-            TupleSet([generator_exit, stop_iteration], fn_info.fitem.line)
-        )
+        exceptions = builder.add(TupleSet([generator_exit, stop_iteration], fn_info.fitem.line))
         matches = builder.call_c(exc_matches_op, [exceptions], fn_info.fitem.line)
 
         match_block, non_match_block = BasicBlock(), BasicBlock()
@@ -341,9 +308,7 @@ def add_close_to_generator_class(builder: IRBuilder, fn_info: FuncInfo) -> None:
 
 def add_await_to_generator_class(builder: IRBuilder, fn_info: FuncInfo) -> None:
     """Generates the '__await__' method for a generator class."""
-    with builder.enter_method(
-        fn_info.generator_class.ir, "__await__", object_rprimitive, fn_info
-    ):
+    with builder.enter_method(fn_info.generator_class.ir, "__await__", object_rprimitive, fn_info):
         builder.add(Return(builder.self()))
 
 

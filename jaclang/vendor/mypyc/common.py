@@ -25,9 +25,7 @@ SELF_NAME: Final = "__mypyc_self__"
 # Max short int we accept as a literal is based on 32-bit platforms,
 # so that we can just always emit the same code.
 
-TOP_LEVEL_NAME: Final = (
-    "__top_level__"  # Special function representing module top level
-)
+TOP_LEVEL_NAME: Final = "__top_level__"  # Special function representing module top level
 
 # Maximal number of subclasses for a class to trigger fast path in isinstance() checks.
 FAST_ISINSTANCE_MAX_SUBCLASSES: Final = 2

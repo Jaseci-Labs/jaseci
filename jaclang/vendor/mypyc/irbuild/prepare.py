@@ -50,13 +50,7 @@ from mypyc.ir.func_ir import (
     RuntimeArg,
 )
 from mypyc.ir.ops import DeserMaps
-from mypyc.ir.rtypes import (
-    RInstance,
-    RType,
-    dict_rprimitive,
-    none_rprimitive,
-    tuple_rprimitive,
-)
+from mypyc.ir.rtypes import RInstance, RType, dict_rprimitive, none_rprimitive, tuple_rprimitive
 from mypyc.irbuild.mapper import Mapper
 from mypyc.irbuild.util import (
     get_func_def,
@@ -87,10 +81,7 @@ def build_type_map(
     # references even if there are import cycles.
     for module, cdef in classes:
         class_ir = ClassIR(
-            cdef.name,
-            module.fullname,
-            is_trait(cdef),
-            is_abstract=cdef.info.is_abstract,
+            cdef.name, module.fullname, is_trait(cdef), is_abstract=cdef.info.is_abstract
         )
         class_ir.is_ext_class = is_extension_class(cdef)
         if class_ir.is_ext_class:
@@ -106,17 +97,13 @@ def build_type_map(
             if mapper.type_to_ir[cdef.info].is_ext_class:
                 prepare_class_def(module.path, module.fullname, cdef, errors, mapper)
             else:
-                prepare_non_ext_class_def(
-                    module.path, module.fullname, cdef, errors, mapper
-                )
+                prepare_non_ext_class_def(module.path, module.fullname, cdef, errors, mapper)
 
     # Prepare implicit attribute accessors as needed if an attribute overrides a property.
     for module, cdef in classes:
         class_ir = mapper.type_to_ir[cdef.info]
         if class_ir.is_ext_class:
-            prepare_implicit_property_accessors(
-                cdef.info, class_ir, module.fullname, mapper
-            )
+            prepare_implicit_property_accessors(cdef.info, class_ir, module.fullname, mapper)
 
     # Collect all the functions also. We collect from the symbol table
     # so that we can easily pick out the right copy of a function that
@@ -133,9 +120,7 @@ def build_type_map(
         for attr in class_ir.attributes:
             for base_ir in class_ir.mro[1:]:
                 if attr in base_ir.attributes:
-                    if not is_same_type(
-                        class_ir.attributes[attr], base_ir.attributes[attr]
-                    ):
+                    if not is_same_type(class_ir.attributes[attr], base_ir.attributes[attr]):
                         node = cdef.info.names[attr].node
                         assert node is not None
                         kind = "trait" if base_ir.is_trait else "class"
@@ -151,9 +136,7 @@ def is_from_module(node: SymbolNode, module: MypyFile) -> bool:
     return node.fullname == module.fullname + "." + node.name
 
 
-def load_type_map(
-    mapper: Mapper, modules: list[MypyFile], deser_ctx: DeserMaps
-) -> None:
+def load_type_map(mapper: Mapper, modules: list[MypyFile], deser_ctx: DeserMaps) -> None:
     """Populate a Mapper with deserialized IR from a list of modules."""
     for module in modules:
         for node in module.names.values():
@@ -174,9 +157,9 @@ def get_module_func_defs(module: MypyFile) -> Iterable[FuncDef]:
         # We need to filter out functions that are imported or
         # aliases.  The best way to do this seems to be by
         # checking that the fullname matches.
-        if isinstance(
-            node.node, (FuncDef, Decorator, OverloadedFuncDef)
-        ) and is_from_module(node.node, module):
+        if isinstance(node.node, (FuncDef, Decorator, OverloadedFuncDef)) and is_from_module(
+            node.node, module
+        ):
             yield get_func_def(node.node)
 
 
@@ -194,26 +177,17 @@ def prepare_func_def(
 
 
 def prepare_method_def(
-    ir: ClassIR,
-    module_name: str,
-    cdef: ClassDef,
-    mapper: Mapper,
-    node: FuncDef | Decorator,
+    ir: ClassIR, module_name: str, cdef: ClassDef, mapper: Mapper, node: FuncDef | Decorator
 ) -> None:
     if isinstance(node, FuncDef):
-        ir.method_decls[node.name] = prepare_func_def(
-            module_name, cdef.name, node, mapper
-        )
+        ir.method_decls[node.name] = prepare_func_def(module_name, cdef.name, node, mapper)
     elif isinstance(node, Decorator):
         # TODO: do something about abstract methods here. Currently, they are handled just like
         # normal methods.
         decl = prepare_func_def(module_name, cdef.name, node.func, mapper)
         if not node.decorators:
             ir.method_decls[node.name] = decl
-        elif (
-            isinstance(node.decorators[0], MemberExpr)
-            and node.decorators[0].name == "setter"
-        ):
+        elif isinstance(node.decorators[0], MemberExpr) and node.decorators[0].name == "setter":
             # Make property setter name different than getter name so there are no
             # name clashes when generating C code, and property lookup at the IR level
             # works correctly.
@@ -224,9 +198,7 @@ def prepare_method_def(
             ir.method_decls[PROPSET_PREFIX + node.name] = decl
 
         if node.func.is_property:
-            assert (
-                node.func.type
-            ), f"Expected return type annotation for property '{node.name}'"
+            assert node.func.type, f"Expected return type annotation for property '{node.name}'"
             decl.is_prop_getter = True
             ir.property_types[node.name] = decl.sig.ret_type
 
@@ -298,17 +270,11 @@ def prepare_class_def(
                 # catch it here! But this should catch a lot of the most
                 # common pitfalls.
                 errors.error(
-                    "Inheriting from most builtin types is unimplemented",
-                    path,
-                    cdef.line,
+                    "Inheriting from most builtin types is unimplemented", path, cdef.line
                 )
 
     # Set up the parent class
-    bases = [
-        mapper.type_to_ir[base.type]
-        for base in info.bases
-        if base.type in mapper.type_to_ir
-    ]
+    bases = [mapper.type_to_ir[base.type] for base in info.bases if base.type in mapper.type_to_ir]
     if len(bases) > 1 and any(not c.is_trait for c in bases) and bases[0].is_trait:
         # If the first base is a non-trait, don't ever error here. While it is correct
         # to error if a trait comes before the next non-trait base (e.g. non-trait, trait,
@@ -350,12 +316,7 @@ def prepare_class_def(
 
 
 def prepare_methods_and_attributes(
-    cdef: ClassDef,
-    ir: ClassIR,
-    path: str,
-    module_name: str,
-    errors: Errors,
-    mapper: Mapper,
+    cdef: ClassDef, ir: ClassIR, path: str, module_name: str, errors: Errors, mapper: Mapper
 ) -> None:
     """Populate attribute and method declarations."""
     info = cdef.info
@@ -385,9 +346,7 @@ def prepare_methods_and_attributes(
                     for item in node.node.items:
                         prepare_method_def(ir, module_name, cdef, mapper, item)
                 else:
-                    errors.error(
-                        "Unsupported property decorator semantics", path, cdef.line
-                    )
+                    errors.error("Unsupported property decorator semantics", path, cdef.line)
 
             # Handle case for regular function overload
             else:
@@ -439,9 +398,7 @@ def add_property_methods_for_attribute_if_needed(
             if isinstance(node, Decorator) and node.name not in ir.method_decls:
                 # Defined as a read-only property in base class/trait
                 add_getter_declaration(ir, attr_name, attr_rtype, module_name)
-            elif isinstance(
-                node, OverloadedFuncDef
-            ) and is_valid_multipart_property_def(node):
+            elif isinstance(node, OverloadedFuncDef) and is_valid_multipart_property_def(node):
                 # Defined as a read-write property in base class/trait
                 add_getter_declaration(ir, attr_name, attr_rtype, module_name)
                 add_setter_declaration(ir, attr_name, attr_rtype, module_name)
@@ -475,9 +432,7 @@ def add_setter_declaration(
     ir.method_decls[setter_name] = decl
 
 
-def prepare_init_method(
-    cdef: ClassDef, ir: ClassIR, module_name: str, mapper: Mapper
-) -> None:
+def prepare_init_method(cdef: ClassDef, ir: ClassIR, module_name: str, mapper: Mapper) -> None:
     # Set up a constructor decl
     init_node = cdef.info["__init__"].node
     if not ir.is_trait and not ir.builtin_base and isinstance(init_node, FuncDef):
@@ -520,25 +475,16 @@ def prepare_non_ext_class_def(
             # Handle case for property with both a getter and a setter
             if node.node.is_property:
                 if not is_valid_multipart_property_def(node.node):
-                    errors.error(
-                        "Unsupported property decorator semantics", path, cdef.line
-                    )
+                    errors.error("Unsupported property decorator semantics", path, cdef.line)
                 for item in node.node.items:
                     prepare_method_def(ir, module_name, cdef, mapper, item)
             # Handle case for regular function overload
             else:
-                prepare_method_def(
-                    ir, module_name, cdef, mapper, get_func_def(node.node)
-                )
+                prepare_method_def(ir, module_name, cdef, mapper, get_func_def(node.node))
 
-    if any(
-        cls in mapper.type_to_ir and mapper.type_to_ir[cls].is_ext_class
-        for cls in info.mro
-    ):
+    if any(cls in mapper.type_to_ir and mapper.type_to_ir[cls].is_ext_class for cls in info.mro):
         errors.error(
-            "Non-extension classes may not inherit from extension classes",
-            path,
-            cdef.line,
+            "Non-extension classes may not inherit from extension classes", path, cdef.line
         )
 
 
@@ -557,9 +503,7 @@ def find_singledispatch_register_impls(
     for module in modules:
         visitor.current_path = module.path
         module.accept(visitor)
-    return SingledispatchInfo(
-        visitor.singledispatch_impls, visitor.decorators_to_remove
-    )
+    return SingledispatchInfo(visitor.singledispatch_impls, visitor.decorators_to_remove)
 
 
 class SingledispatchVisitor(TraverserVisitor):
@@ -569,9 +513,7 @@ class SingledispatchVisitor(TraverserVisitor):
         super().__init__()
 
         # Map of main singledispatch function to list of registered implementations
-        self.singledispatch_impls: defaultdict[FuncDef, list[RegisterImplInfo]] = (
-            defaultdict(list)
-        )
+        self.singledispatch_impls: defaultdict[FuncDef, list[RegisterImplInfo]] = defaultdict(list)
 
         # Map of decorated function to the indices of any decorators to remove
         self.decorators_to_remove: dict[FuncDef, list[int]] = {}

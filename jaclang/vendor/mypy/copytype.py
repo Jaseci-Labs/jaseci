@@ -47,9 +47,7 @@ class TypeShallowCopier(TypeVisitor[ProperType]):
         return t
 
     def visit_any(self, t: AnyType) -> ProperType:
-        return self.copy_common(
-            t, AnyType(t.type_of_any, t.source_any, t.missing_import_name)
-        )
+        return self.copy_common(t, AnyType(t.type_of_any, t.source_any, t.missing_import_name))
 
     def visit_none_type(self, t: NoneType) -> ProperType:
         return self.copy_common(t, NoneType())
@@ -75,13 +73,7 @@ class TypeShallowCopier(TypeVisitor[ProperType]):
 
     def visit_param_spec(self, t: ParamSpecType) -> ProperType:
         dup = ParamSpecType(
-            t.name,
-            t.fullname,
-            t.id,
-            t.flavor,
-            t.upper_bound,
-            t.default,
-            prefix=t.prefix,
+            t.name, t.fullname, t.id, t.flavor, t.upper_bound, t.default, prefix=t.prefix
         )
         return self.copy_common(t, dup)
 
@@ -112,9 +104,7 @@ class TypeShallowCopier(TypeVisitor[ProperType]):
         return self.copy_common(t, t.copy_modified())
 
     def visit_tuple_type(self, t: TupleType) -> ProperType:
-        return self.copy_common(
-            t, TupleType(t.items, t.partial_fallback, implicit=t.implicit)
-        )
+        return self.copy_common(t, TupleType(t.items, t.partial_fallback, implicit=t.implicit))
 
     def visit_typeddict_type(self, t: TypedDictType) -> ProperType:
         return self.copy_common(t, TypedDictType(t.items, t.required_keys, t.fallback))

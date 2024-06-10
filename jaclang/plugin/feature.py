@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Type, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.core.construct import (
-    Architype,
-    EdgeArchitype,
-    NodeArchitype,
-    Root,
-    WalkerArchitype,
-)
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+
+if TYPE_CHECKING:
+    from jaclang.core.construct import (
+        Architype,
+        EdgeArchitype,
+        NodeArchitype,
+        WalkerArchitype,
+        Root,
+    )
+    from jaclang.plugin.default import ExecutionContext
+    from jaclang.core.memory import Memory
 
 
 import pluggy
@@ -28,8 +32,23 @@ class JacFeature:
     """Jac Feature."""
 
     import abc
-    from jaclang.plugin.spec import DSFunc
     from jaclang.compiler.constant import EdgeDir
+    from jaclang.plugin.spec import DSFunc
+
+    @staticmethod
+    def context(session: str = "") -> ExecutionContext:
+        """Create execution context."""
+        return pm.hook.context(session=session)
+
+    @staticmethod
+    def reset_context() -> None:
+        """Reset execution context."""
+        return pm.hook.reset_context()
+
+    @staticmethod
+    def memory_hook() -> Memory | None:
+        """Create memory abstraction."""
+        return pm.hook.memory_hook()
 
     @staticmethod
     def make_architype(

@@ -63,8 +63,7 @@ class RTSubtypeVisitor(RTypeVisitor[bool]):
     def visit_rtuple(self, left: RTuple) -> bool:
         if isinstance(self.right, RTuple):
             return len(self.right.types) == len(left.types) and all(
-                is_runtime_subtype(t1, t2)
-                for t1, t2 in zip(left.types, self.right.types)
+                is_runtime_subtype(t1, t2) for t1, t2 in zip(left.types, self.right.types)
             )
         return False
 
