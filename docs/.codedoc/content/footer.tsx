@@ -5,7 +5,7 @@ import { Footer as _Footer, GitterToggle$, Watermark} from '@codedoc/core/compon
 export function Footer(config: CodedocConfig, renderer: any) {
   let github$;
   if (config.misc?.github)
-    github$ = <a href={`https://github.com/${config.misc.github.user}/${config.misc.github.repo}/`} 
+    github$ = <a href={`https://github.com/${config.misc.github.user}/${config.misc.github.repo}/`}
                 target="_blank">GitHub</a>;
 
   let community$;

@@ -11,7 +11,7 @@ services:
     # This might be re-configured via `.codedoc/config.ts`, in which case
     # you should change it here as well (I would recommend using an environment variable
     # for keeping them in sync if you want to deviate from the standard port 3000)
-    # 
+    #
     ports:
       - 3000:3000
 
