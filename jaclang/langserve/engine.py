@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
-
 from hashlib import md5
+from typing import Sequence
+
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
+from jaclang.compiler.parser import JacParser
+from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol
-from jaclang.langserve.utils import sym_tab_list, log, log_error
+from jaclang.langserve.utils import sym_tab_list
 from jaclang.vendor.pygls.server import LanguageServer
 from jaclang.vendor.pygls.workspace.text_document import TextDocument
 
@@ -70,7 +72,7 @@ class ModuleInfo:
 class JacLangServer(LanguageServer):
     """Class for managing workspace."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize workspace."""
         super().__init__("jac-lsp", "v0.1")
         self.modules: dict[str, ModuleInfo] = {}
@@ -83,45 +85,59 @@ class JacLangServer(LanguageServer):
             == md5(doc.source.encode()).hexdigest()
         )
 
-    def quick_check(self, uri_path: str) -> None:
+    def push_diagnostics(self, file_path: str) -> None:
+        """Push diagnostics for a file."""
+        if file_path in self.modules:
+            self.publish_diagnostics(
+                file_path,
+                self.modules[file_path].diagnostics,
+            )
+
+    def quick_check(self, file_path: str) -> None:
         """Rebuild a file."""
-        document = self.workspace.get_document(uri_path)
+        document = self.workspace.get_document(file_path)
         if self.module_not_diff(document):
             return
         try:
             build = jac_str_to_pass(
-                jac_str=document.source,
-                file_path=document.path,
-                schedule=[],
+                jac_str=document.source, file_path=document.path, schedule=[]
             )
         except Exception as e:
-            log_error(self, f"Error during syntax check: {e}")
+            self.log_error(f"Error during syntax check: {e}")
         if isinstance(build.ir, ast.Module):
-            self.modules[uri_path] = ModuleInfo(
-                ir=build.ir,
-                errors=build.errors_had,
-                warnings=build.warnings_had,
+            self.modules[file_path] = ModuleInfo(
+                ir=build.ir, errors=build.errors_had, warnings=build.warnings_had
             )
 
-    def push_diagnostics(self, uri_path: str) -> None:
-        """Push diagnostics for a file."""
-        if uri_path in self.modules:
-            self.publish_diagnostics(
-                uri_path,
-                self.modules[uri_path].diagnostics,
+    def formatted_jac(self, file_path: str) -> list[lspt.TextEdit]:
+        """Return formatted jac."""
+        try:
+            document = self.workspace.get_document(file_path)
+            format = jac_str_to_pass(
+                jac_str=document.source,
+                file_path=document.path,
+                target=JacFormatPass,
+                schedule=[FuseCommentsPass, JacFormatPass],
             )
-
-    def add_file(self, file_path: str) -> None:
-        """Add a file to the workspace."""
-        self.quick_check(file_path)
-
-    def del_file(self, file_path: str) -> None:
-        """Delete a file from the workspace."""
-        del self.modules[file_path]
-
-    def file_list(self) -> Sequence[str]:
-        """Return a list of files in the workspace."""
-        return list(self.modules.keys())
+            formatted_text = (
+                format.ir.gen.jac
+                if JacParser not in [e.from_pass for e in format.errors_had]
+                else document.source
+            )
+        except Exception as e:
+            self.log_error(f"Error during formatting: {e}")
+            formatted_text = document.source
+        return [
+            lspt.TextEdit(
+                range=lspt.Range(
+                    start=lspt.Position(line=0, character=0),
+                    end=lspt.Position(
+                        line=len(formatted_text.splitlines()) + 1, character=0
+                    ),
+                ),
+                new_text=(formatted_text),
+            )
+        ]
 
     def get_dependencies(
         self, file_path: str, deep: bool = False
@@ -169,3 +185,13 @@ class JacLangServer(LanguageServer):
         for i in self.get_symbols(file_path):
             defs += i.defn
         return defs
+
+    def log_error(self, message: str) -> None:
+        """Log an error message."""
+        self.show_message_log(message, lspt.MessageType.Error)
+        self.show_message(message, lspt.MessageType.Error)
+
+    def log_warning(self, message: str) -> None:
+        """Log a warning message."""
+        self.show_message_log(message, lspt.MessageType.Warning)
+        self.show_message(message, lspt.MessageType.Warning)
