@@ -23,13 +23,13 @@ This is the main source code repository for the [Jac] programming language. It c
 
 ## What and Why Jac?
 
-- **Native Superset of Python** Jac is a native superset of python, meaning the entire python ecosystem is directly interoperable with Jac without any trickery (no interop interface needed). Like Typescript is to Javascript, or C++ is to C, Jac is to Python. (every Jac program can be ejected to pure python, and every python program can be transpiled to a Jac program)
+- **Native Superset of Python** - Jac is a native superset of python, meaning the entire python ecosystem is directly interoperable with Jac without any trickery (no interop interface needed). Like Typescript is to Javascript, or C++ is to C, Jac is to Python. (every Jac program can be ejected to pure python, and every python program can be transpiled to a Jac program)
 
-- **AI as a Programming Language Constructs**  Jac includes a novel (neurosymbolic) language construct that allows replacing code with generative AI models themselves. Jac's philosophy abstracts away prompt engineering. (Imagine taking a function body and swapping it out with a model.)
+- **AI as a Programming Language Constructs** - Jac includes a novel (neurosymbolic) language construct that allows replacing code with generative AI models themselves. Jac's philosophy abstracts away prompt engineering. (Imagine taking a function body and swapping it out with a model.)
 
-- **New Modern Abstractions** Jac introduces a paradigm that reasons about persistence and the notion of users as a language level construct. This enables writing simple programs for which no code changes are needed whether they run in a simple command terminal, or distributed across a large cloud. Jac's philosophy abstracts away dev ops and container/cloud configuration.
+- **New Modern Abstractions** - Jac introduces a paradigm that reasons about persistence and the notion of users as a language level construct. This enables writing simple programs for which no code changes are needed whether they run in a simple command terminal, or distributed across a large cloud. Jac's philosophy abstracts away dev ops and container/cloud configuration.
 
-- **Jac Improves on Python** Jac makes multiple thoughtful quality-of-life improvements/additions to Python. These include new modern operators, new types of comprehensions, new ways of organizing modules (i.e., separating implementations from declarations), etc.
+- **Jac Improves on Python** - Jac makes multiple thoughtful quality-of-life improvements/additions to Python. These include new modern operators, new types of comprehensions, new ways of organizing modules (i.e., separating implementations from declarations), etc.
 
 
 ## Quick Start
