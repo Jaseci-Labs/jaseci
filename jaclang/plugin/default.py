@@ -189,8 +189,8 @@ class JacFeatureDefaults:
 
         @wraps(inner_init)
         def new_init(self: Architype, *args: object, **kwargs: object) -> None:
-            inner_init(self, *args, **kwargs)
             arch_base.__init__(self)
+            inner_init(self, *args, **kwargs)
 
         cls.__init__ = new_init  # type: ignore
         return cls
