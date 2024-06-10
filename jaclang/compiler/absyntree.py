@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+from hashlib import md5
 from types import EllipsisType
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
@@ -4081,6 +4082,7 @@ class JacSource(EmptyToken):
         """Initialize source string."""
         super().__init__()
         self.value = source
+        self.hash = md5(source.encode()).hexdigest()
         self.file_path = mod_path
         self.comments: list[CommentToken] = []
 

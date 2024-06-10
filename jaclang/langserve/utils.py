@@ -1,24 +1,11 @@
 """Utility functions for the language server."""
 
 import asyncio
-import logging
 from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, ParamSpec, TypeVar
 
-from jaclang.vendor.pygls.server import LanguageServer
-
-import lsprotocol.types as lspt
-
-
-def log_error(ls: LanguageServer, message: str) -> None:
-    """Log an error message."""
-    ls.show_message_log(message, lspt.MessageType.Error)
-    ls.show_message(message, lspt.MessageType.Error)
-
-
-def log(info: str) -> None:
-    """Log an info message."""
-    logging.warning(info)
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.symtable import SymbolTable
 
 
 T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
@@ -51,3 +38,18 @@ def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
         return debounced
 
     return decorator
+
+
+def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
+    """Iterate through symbol table."""
+    sym_tabs = (
+        [sym_tab]
+        if not (
+            isinstance(sym_tab.owner, ast.Module)
+            and sym_tab.owner.loc.mod_path != file_path
+        )
+        else []
+    )
+    for i in sym_tab.kid:
+        sym_tabs += sym_tab_list(i, file_path=file_path)
+    return sym_tabs
