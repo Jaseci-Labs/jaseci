@@ -115,11 +115,18 @@ class OpenAICompletion(OpenAI):
             "davinci-002",
         ], "Please use OpenAI for chat completion models."
 
-        output = self.client.completions.create(
+        model_params = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["model_name", "temperature", "max_tokens"]
+        }
+        model_output = self.client.completions.create(
             model=kwargs.get("model_name", self.model_name),
             prompt=meaning_in,
             temperature=kwargs.get("temperature", self.temperature),
             max_tokens=kwargs.get("max_tokens", self.max_tokens),
-            **kwargs
+            **model_params,
         )
-        return output.choices[0].text.strip()
+        output = model_output.choices[0].text.strip()
+        output = f"[Output] {output}" if "[Output]" not in output else output
+        return output
