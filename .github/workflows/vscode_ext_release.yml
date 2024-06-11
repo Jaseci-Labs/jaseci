@@ -19,6 +19,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
+      - run: cd support/vscode_ext/jac/
       - run: npm ci
       - run: npm run vsce-package
       - run: npm install --global @vscode/vsce
