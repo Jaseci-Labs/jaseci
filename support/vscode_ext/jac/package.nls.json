@@ -1,4 +1,4 @@
 {
     "extension.displayName": "Jac",
-    "extension.description": "Jaclang is a graph based programming language for AI and ML. This extension provides syntax highlighting , completion, formatting, and linting for Jaclang."
+    "extension.description": "Jac is a programming language for the era of AI and Cloud that super-sets Python. This extension provides syntax highlighting , completion, formatting, and linting for Jac."
 }
