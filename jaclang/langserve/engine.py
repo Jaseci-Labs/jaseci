@@ -217,7 +217,7 @@ class JacLangServer(LanguageServer):
                 range=lspt.Range(
                     start=lspt.Position(line=0, character=0),
                     end=lspt.Position(
-                        line=len(formatted_text.splitlines()) + 1, character=0
+                        line=len(document.source.splitlines()) + 1, character=0
                     ),
                 ),
                 new_text=(formatted_text),
