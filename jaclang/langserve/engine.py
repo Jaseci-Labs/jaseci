@@ -109,6 +109,32 @@ class JacLangServer(LanguageServer):
                 ir=build.ir, errors=build.errors_had, warnings=build.warnings_had
             )
 
+    def get_completion(
+        self, file_path: str, position: lspt.Position
+    ) -> lspt.CompletionList:
+        """Return completion for a file."""
+        items = []
+        document = self.workspace.get_document(file_path)
+        current_line = document.lines[position.line].strip()
+        if current_line.endswith("hello."):
+
+            items = [
+                lspt.CompletionItem(label="world"),
+                lspt.CompletionItem(label="friend"),
+            ]
+        return lspt.CompletionList(is_incomplete=False, items=items)
+
+    def rename_module(self, old_path: str, new_path: str) -> None:
+        """Rename module."""
+        if old_path in self.modules and new_path != old_path:
+            self.modules[new_path] = self.modules[old_path]
+            del self.modules[old_path]
+
+    def delete_module(self, uri: str) -> None:
+        """Delete module."""
+        if uri in self.modules:
+            del self.modules[uri]
+
     def formatted_jac(self, file_path: str) -> list[lspt.TextEdit]:
         """Return formatted jac."""
         try:
