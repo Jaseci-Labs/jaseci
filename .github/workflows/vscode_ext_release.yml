@@ -1,4 +1,4 @@
-name: Release
+name: VSCE Release
 
 on:
   workflow_dispatch:
