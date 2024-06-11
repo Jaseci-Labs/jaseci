@@ -165,7 +165,7 @@ def hover(ls: JacLangServer, params: lspt.TextDocumentPositionParams) -> None:
                                 if decl_node.signature:
                                     node_info += f" {decl_node.signature.unparse()}"
                                 if decl_node.doc:
-                                    node_info += f"{decl_node.doc.lit_value}"
+                                    node_info += f"\n{decl_node.doc.lit_value}"
                             elif isinstance(decl_node, ast.Name):
                                 node_info = f"{node.value}"
                             elif isinstance(decl_node, ast.HasVar):
