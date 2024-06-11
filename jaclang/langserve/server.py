@@ -129,8 +129,10 @@ def formatting(
     return ls.formatted_jac(params.text_document.uri)
 
 
-@server.feature(lspt.TEXT_DOCUMENT_HOVER, lspt.HoverOptions(work_done_progress=True))
-def hover(ls: JacLangServer, params: lspt.TextDocumentPositionParams) -> None:
+# @server.feature(lspt.TEXT_DOCUMENT_HOVER, lspt.HoverOptions(work_done_progress=True))
+def hover(
+    ls: JacLangServer, params: lspt.TextDocumentPositionParams
+) -> Optional[lspt.Hover]:
     """Provide hover information for the given hover request."""
 
     def get_value() -> Optional[str]:
