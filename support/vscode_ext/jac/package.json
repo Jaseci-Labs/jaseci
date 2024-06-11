@@ -37,7 +37,11 @@
         "extensions": [
           ".jac"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./assets/file-icon.svg",
+          "dark": "./assets/file-icon.svg"
+        }
       }
     ],
     "grammars": [
