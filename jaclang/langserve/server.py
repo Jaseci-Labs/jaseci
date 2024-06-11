@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+from typing import Optional
 
 from jaclang.langserve.engine import JacLangServer
 from jaclang.langserve.utils import debounce
@@ -9,13 +11,41 @@ from jaclang.langserve.utils import debounce
 import lsprotocol.types as lspt
 
 server = JacLangServer()
+analysis_thread: Optional[threading.Thread] = None
+analysis_stop_event = threading.Event()
+
+
+def analyze_and_publish(ls: JacLangServer, uri: str) -> None:
+    """Analyze and publish diagnostics."""
+    global analysis_thread, analysis_stop_event
+
+    def run_analysis() -> None:
+        ls.quick_check(uri)
+        ls.push_diagnostics(uri)
+        ls.deep_check(uri)
+        ls.push_diagnostics(uri)
+        ls.type_check(uri)
+        ls.push_diagnostics(uri)
+
+    analysis_thread = threading.Thread(target=run_analysis)
+    analysis_thread.start()
+    ls.log_info("Analysis restarted")
+
+
+def stop_analysis() -> None:
+    """Stop analysis."""
+    global analysis_thread, analysis_stop_event
+    if analysis_thread is not None:
+        analysis_stop_event.set()
+        analysis_thread.join()
+        analysis_stop_event.clear()
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
-    ls.quick_check(params.text_document.uri)
-    ls.push_diagnostics(params.text_document.uri)
+    stop_analysis()
+    analyze_and_publish(ls, params.text_document.uri)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
@@ -24,15 +54,15 @@ async def did_change(
     ls: JacLangServer, params: lspt.DidChangeTextDocumentParams
 ) -> None:
     """Check syntax on change."""
-    ls.quick_check(params.text_document.uri)
-    ls.push_diagnostics(params.text_document.uri)
+    stop_analysis()
+    analyze_and_publish(ls, params.text_document.uri)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
 async def did_save(ls: JacLangServer, params: lspt.DidSaveTextDocumentParams) -> None:
     """Check syntax on save."""
-    ls.quick_check(params.text_document.uri)
-    ls.push_diagnostics(params.text_document.uri)
+    stop_analysis()
+    analyze_and_publish(ls, params.text_document.uri)
 
 
 @server.feature(

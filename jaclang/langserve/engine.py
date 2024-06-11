@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Sequence
+from typing import Sequence, Type
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_str_to_pass
+from jaclang.compiler.compile import jac_pass_to_pass, jac_str_to_pass
 from jaclang.compiler.parser import JacParser
+from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes.main.schedules import (
+    AccessCheckPass,
+    PyBytecodeGenPass,
+    py_code_gen_typed,
+)
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol
@@ -25,11 +31,13 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
+        to_pass: Pass,
         errors: Sequence[Alert],
         warnings: Sequence[Alert],
     ) -> None:
         """Initialize module info."""
         self.ir = ir
+        self.at_pass = to_pass
         self.errors = errors
         self.warnings = warnings
         self.diagnostics = self.gen_diagnostics()
@@ -85,6 +93,12 @@ class JacLangServer(LanguageServer):
             == md5(doc.source.encode()).hexdigest()
         )
 
+    def module_reached_pass(self, doc: TextDocument, target: Type[Pass]) -> bool:
+        """Check if module reached a pass."""
+        return doc.uri in self.modules and isinstance(
+            self.modules[doc.uri].at_pass, target
+        )
+
     def push_diagnostics(self, file_path: str) -> None:
         """Push diagnostics for a file."""
         if file_path in self.modules:
@@ -106,7 +120,52 @@ class JacLangServer(LanguageServer):
             self.log_error(f"Error during syntax check: {e}")
         if isinstance(build.ir, ast.Module):
             self.modules[file_path] = ModuleInfo(
-                ir=build.ir, errors=build.errors_had, warnings=build.warnings_had
+                ir=build.ir,
+                to_pass=build,
+                errors=build.errors_had,
+                warnings=build.warnings_had,
+            )
+
+    def deep_check(self, file_path: str) -> None:
+        """Rebuild a file and its dependencies."""
+        document = self.workspace.get_document(file_path)
+        if self.module_not_diff(document) and self.module_reached_pass(
+            document, PyBytecodeGenPass
+        ):
+            return
+        try:
+            build = jac_pass_to_pass(in_pass=self.modules[file_path].at_pass)
+        except Exception as e:
+            self.log_error(f"Error during syntax check: {e}")
+        if isinstance(build.ir, ast.Module):
+            self.modules[file_path] = ModuleInfo(
+                ir=build.ir,
+                to_pass=build,
+                errors=build.errors_had,
+                warnings=build.warnings_had,
+            )
+
+    def type_check(self, file_path: str) -> None:
+        """Rebuild a file and its dependencies."""
+        document = self.workspace.get_document(file_path)
+        if self.module_not_diff(document) and self.module_reached_pass(
+            document, AccessCheckPass
+        ):
+            return
+        try:
+            build = jac_pass_to_pass(
+                in_pass=self.modules[file_path].at_pass,
+                target=AccessCheckPass,
+                schedule=py_code_gen_typed,
+            )
+        except Exception as e:
+            self.log_error(f"Error during type check: {e}")
+        if isinstance(build.ir, ast.Module):
+            self.modules[file_path] = ModuleInfo(
+                ir=build.ir,
+                to_pass=build,
+                errors=build.errors_had,
+                warnings=build.warnings_had,
             )
 
     def get_completion(
@@ -221,3 +280,8 @@ class JacLangServer(LanguageServer):
         """Log a warning message."""
         self.show_message_log(message, lspt.MessageType.Warning)
         self.show_message(message, lspt.MessageType.Warning)
+
+    def log_info(self, message: str) -> None:
+        """Log an info message."""
+        self.show_message_log(message, lspt.MessageType.Info)
+        self.show_message(message, lspt.MessageType.Info)
