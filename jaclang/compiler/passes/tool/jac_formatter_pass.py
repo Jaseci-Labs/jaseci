@@ -1161,7 +1161,7 @@ class JacFormatPass(Pass):
         if (
             node.parent
             and node.parent.parent
-            and isinstance(node.parent.parent, (ast.Ability))
+            and not isinstance(node.parent.parent, (ast.Ability, ast.ModuleCode))
             and node.parent.kid[1].gen.jac != "self.jaseci_sdk = {};\n"
         ):
             self.emit_ln(node, "")
@@ -1229,7 +1229,7 @@ class JacFormatPass(Pass):
 
         body: CodeBlock,
         """
-        self.emit(node, "finally")
+        self.emit(node, " finally")
 
         self.emit(node, node.body.gen.jac)
 
