@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Sequence, Type
+from typing import Any, Generator, Sequence, Type
 
 
 import jaclang.compiler.absyntree as ast
@@ -18,7 +18,7 @@ from jaclang.compiler.passes.main.schedules import (
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol
-from jaclang.langserve.utils import sym_tab_list
+from jaclang.langserve.utils import position_within_node, sym_tab_list
 from jaclang.vendor.pygls.server import LanguageServer
 from jaclang.vendor.pygls.workspace.text_document import TextDocument
 
@@ -48,10 +48,10 @@ class ModuleInfo:
             lspt.Diagnostic(
                 range=lspt.Range(
                     start=lspt.Position(
-                        line=error.loc.first_line, character=error.loc.col_start
+                        line=error.loc.first_line - 1, character=error.loc.col_start
                     ),
                     end=lspt.Position(
-                        line=error.loc.last_line,
+                        line=error.loc.last_line - 1,
                         character=error.loc.col_end,
                     ),
                 ),
@@ -270,6 +270,15 @@ class JacLangServer(LanguageServer):
         for i in self.get_symbols(file_path):
             defs += i.defn
         return defs
+
+    def find_deepest_node(
+        self, node: ast.AstNode, line: int, character: int
+    ) -> Generator[Any, Any, Any]:
+        """Find the deepest node that contains the given position."""
+        if position_within_node(node, line, character):
+            yield node
+            for child in node.kid:
+                yield from self.find_deepest_node(child, line, character)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

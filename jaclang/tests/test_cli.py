@@ -114,7 +114,7 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 6)
         self.assertEqual(stdout_value.count("builtins.int"), 2)
-        self.assertEqual(stdout_value.count("builtins.str"), 9)
+        self.assertEqual(stdout_value.count("builtins.str"), 7)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""

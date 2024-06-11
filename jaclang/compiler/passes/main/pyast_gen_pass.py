@@ -42,6 +42,7 @@ class PyastGenPass(Pass):
         """Initialize pass."""
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
+        self.method_sigs: list[ast.FuncSignature | ast.EventSignature] = []
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -658,6 +659,28 @@ class PyastGenPass(Pass):
             )
         ]
 
+    def enter_architype(self, node: ast.Architype) -> None:
+        """Sub objects.
+
+        name: Name,
+        arch_type: Token,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[AtomType]],
+        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        doc: Optional[String],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+        # Record all signatures that are part of methods
+        for i in (
+            node.body.body.items
+            if isinstance(node.body, ast.ArchDef)
+            else node.body.items if node.body else []
+        ):
+            if isinstance(i, ast.Ability) and i.signature:
+                self.method_sigs.append(i.signature)
+        if isinstance(node.body, ast.ArchDef):
+            self.traverse(node.body)
+
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
@@ -821,6 +844,19 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
 
+    def enter_enum(self, node: ast.Enum) -> None:
+        """Sub objects.
+
+        name: Name,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[AtomType]],
+        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        doc: Optional[String],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+        if isinstance(node.body, ast.EnumDef):
+            self.traverse(node.body)
+
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
 
@@ -869,6 +905,23 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+
+    def enter_ability(self, node: ast.Ability) -> None:
+        """Sub objects.
+
+        name_ref: NameType,
+        is_func: bool,
+        is_async: bool,
+        is_static: bool,
+        is_abstract: bool,
+        access: Optional[SubTag[Token]],
+        signature: Optional[FuncSignature | ExprType | EventSignature],
+        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
+        doc: Optional[String],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+        if isinstance(node.body, ast.AbilityDef):
+            self.traverse(node.body)
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -1272,7 +1325,7 @@ class PyastGenPass(Pass):
         """
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
-            if node.is_method and not node.is_static
+            if node in self.method_sigs and not node.is_static
             else []
         )
         vararg = None
@@ -1330,7 +1383,7 @@ class PyastGenPass(Pass):
                     posonlyargs=[],
                     args=(
                         [self.sync(ast3.arg(arg="self", annotation=None)), here]
-                        if node.is_method
+                        if node in self.method_sigs
                         else [here]
                     ),
                     kwonlyargs=[],

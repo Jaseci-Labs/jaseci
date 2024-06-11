@@ -2,7 +2,14 @@
 
 import asyncio
 from functools import wraps
-from typing import Any, Awaitable, Callable, Coroutine, ParamSpec, TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    ParamSpec,
+    TypeVar,
+)
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.symtable import SymbolTable
@@ -53,3 +60,25 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
     for i in sym_tab.kid:
         sym_tabs += sym_tab_list(i, file_path=file_path)
     return sym_tabs
+
+
+def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
+    """Check if the position falls within the node's location."""
+    if node.loc.first_line < line + 1 < node.loc.last_line:
+        return True
+    if (
+        node.loc.first_line == line + 1
+        and node.loc.col_start <= character
+        and (
+            node.loc.last_line == line + 1
+            and node.loc.col_end >= character
+            or node.loc.last_line > line + 1
+        )
+    ):
+        return True
+    if (
+        node.loc.last_line == line + 1
+        and node.loc.col_start <= character <= node.loc.col_end
+    ):
+        return True
+    return False

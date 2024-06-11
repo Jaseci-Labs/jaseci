@@ -3,7 +3,7 @@
 from .sub_node_tab_pass import SubNodeTabPass
 from .import_pass import JacImportPass, PyImportPass  # noqa: I100
 from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100
-from .def_impl_match_pass import DeclDefMatchPass  # noqa: I100
+from .def_impl_match_pass import DeclImplMatchPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
 from .pyast_load_pass import PyastBuildPass  # type: ignore # noqa: I100
@@ -20,7 +20,7 @@ __all__ = [
     "JacImportPass",
     "PyImportPass",
     "SymTabBuildPass",
-    "DeclDefMatchPass",
+    "DeclImplMatchPass",
     "DefUsePass",
     "PyOutPass",
     "PyastBuildPass",
