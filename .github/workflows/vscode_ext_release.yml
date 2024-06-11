@@ -19,10 +19,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: cd jaclang/support/vscode_ext/jac/
-      - run: npm ci
-      - run: npm run vsce-package
-      - run: npm install --global @vscode/vsce
-      - run: vsce publish -p $VSCE_TOKEN
+      - run: |
+          cd support/vscode_ext/jac/
+          npm ci
+          npm run vsce-package
+          npm install --global @vscode/vsce
+          vsce publish -p $VSCE_TOKEN
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
