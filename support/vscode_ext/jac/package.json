@@ -4,7 +4,7 @@
   "displayName": "Jac",
   "description": "Jac Language",
   "engines": {
-    "vscode": "^1.79.0"
+    "vscode": "^1.89.0"
   },
   "categories": [
     "Programming Languages"
@@ -41,12 +41,16 @@
     "compile": "tsc -b",
     "build": "vsce",
     "watch": "tsc -b -w",
-    "deploy": "vsce publish --yarn"
+    "deploy": "vsce publish --yarn",
+    "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
   },
   "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.1",
     "@types/vscode": "^1.89.0",
     "@vscode/vsce": "^2.27.0",
-    "@types/node": "^20.14.1",
-    "vscode-languageclient": "^9.0.1"
+    "typescript": "^5.4.5"
   }
 }
