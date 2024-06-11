@@ -1028,16 +1028,6 @@ class Ability(
         AstAsyncNode.__init__(self, is_async=is_async)
 
     @property
-    def is_method(self) -> bool:
-        """Check if is method."""
-        check = isinstance(self.parent, SubNodeList) and isinstance(
-            self.parent.parent, Architype
-        )
-        if check:
-            self.sym_type = SymbolType.METHOD
-        return check
-
-    @property
     def is_func(self) -> bool:
         """Check if is func."""
         return isinstance(self.body, FuncSignature)
@@ -1152,14 +1142,6 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
         self.set_kids(nodes=new_kid)
         return res
 
-    @property
-    def is_method(self) -> bool:
-        """Check if is method."""
-        return (
-            len(self.target.archs) > 1
-            and self.target.archs[-2].arch.name != Tok.ABILITY_OP
-        )
-
 
 class FuncSignature(AstSemStrNode):
     """FuncSignature node type for Jac Ast."""
@@ -1196,13 +1178,6 @@ class FuncSignature(AstSemStrNode):
             new_kid.append(self.return_type)
         self.set_kids(nodes=new_kid)
         return res
-
-    @property
-    def is_method(self) -> bool:
-        """Check if is method."""
-        return (isinstance(self.parent, Ability) and self.parent.is_method) or (
-            isinstance(self.parent, AbilityDef) and self.parent.is_method
-        )
 
     @property
     def is_static(self) -> bool:
@@ -1255,17 +1230,6 @@ class EventSignature(AstSemStrNode):
             new_kid.append(self.return_type)
         self.set_kids(nodes=new_kid)
         return res
-
-    @property
-    def is_method(self) -> bool:
-        """Check if is method."""
-        if (isinstance(self.parent, Ability) and self.parent.is_method) or (
-            isinstance(self.parent, AbilityDef)
-            and isinstance(self.parent.decl_link, Ability)
-            and self.parent.decl_link.is_method
-        ):
-            return True
-        return False
 
 
 class ArchRefChain(AstNode):

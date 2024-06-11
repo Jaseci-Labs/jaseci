@@ -48,10 +48,10 @@ class ModuleInfo:
             lspt.Diagnostic(
                 range=lspt.Range(
                     start=lspt.Position(
-                        line=error.loc.first_line, character=error.loc.col_start
+                        line=error.loc.first_line - 1, character=error.loc.col_start
                     ),
                     end=lspt.Position(
-                        line=error.loc.last_line,
+                        line=error.loc.last_line - 1,
                         character=error.loc.col_end,
                     ),
                 ),

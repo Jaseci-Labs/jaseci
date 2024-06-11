@@ -29,7 +29,6 @@ def analyze_and_publish(ls: JacLangServer, uri: str) -> None:
 
     analysis_thread = threading.Thread(target=run_analysis)
     analysis_thread.start()
-    ls.log_info("Analysis restarted")
 
 
 def stop_analysis() -> None:

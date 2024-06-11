@@ -10,6 +10,6 @@ obj ServerWrapper {
     self.file = file;
 }
 
-:obj:ServerWrapper:can:get_server{
+:obj:ServerWrapper:can:get_server {
     return pygls.server.LanguageServer("test_server", "1");
 }
