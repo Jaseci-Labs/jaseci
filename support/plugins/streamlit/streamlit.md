@@ -39,6 +39,6 @@ jac dot_view [-h] filename
 >
 >### Output of `jac dot_view examlpe.jac`
 >### With Interactive View
->![image](./assets/interactive view.png)
+>![Interactive](./assets/interactive%20view.png)
 >### With Static View
->![image](./assets/static view.png)
+>![Static](./assets/static%20view.png)
