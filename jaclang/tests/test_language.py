@@ -829,3 +829,12 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("Deep convo is imported", stdout_value)
         settings.py_raise = settings.py_raise_deep = False
+
+    def test_override_walker_inherit(self) -> None:
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("walker_override", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("baz\nbar\n", stdout_value)

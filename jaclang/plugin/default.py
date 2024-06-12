@@ -179,12 +179,24 @@ class JacFeatureDefaults:
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:
-            cls._jac_entry_funcs_ = cls._jac_entry_funcs_ + [
-                x for x in on_entry if x not in cls._jac_entry_funcs_
-            ]
-            cls._jac_exit_funcs_ = cls._jac_exit_funcs_ + [
-                x for x in on_exit if x not in cls._jac_exit_funcs_
-            ]
+            flag = False
+            for i in on_entry:
+                for jdx, j in enumerate(cls._jac_entry_funcs_):
+                    if i.name == j.name:
+                        cls._jac_entry_funcs_[jdx] = i
+                        flag = True
+                        break
+                if not flag:
+                    cls._jac_entry_funcs_.append(i)
+            flag = False
+            for i in on_exit:
+                for jdx, j in enumerate(cls._jac_exit_funcs_):
+                    if i.name == j.name:
+                        cls._jac_exit_funcs_[jdx] = i
+                        flag = True
+                        break
+                if not flag:
+                    cls._jac_exit_funcs_.append(i)
         inner_init = cls.__init__  # type: ignore
 
         @wraps(inner_init)
