@@ -54,6 +54,11 @@ class ModuleInfo:
         """Return uri."""
         return uris.from_fs_path(self.ir.loc.mod_path)
 
+    @property
+    def has_syntax_error(self) -> bool:
+        """Return if there are syntax errors."""
+        return len(self.errors) > 0 and self.alev == ALev.QUICK
+
     def gen_diagnostics(self) -> list[lspt.Diagnostic]:
         """Return diagnostics."""
         return [
@@ -105,7 +110,10 @@ class JacLangServer(LanguageServer):
             doc.uri in self.modules
             and self.modules[doc.uri].ir.source.hash
             == md5(doc.source.encode()).hexdigest()
-            and self.modules[doc.uri].alev >= alev
+            and (
+                self.modules[doc.uri].alev >= alev
+                or self.modules[doc.uri].has_syntax_error
+            )
         )
 
     def push_diagnostics(self, file_path: str) -> None:

@@ -48,3 +48,21 @@ class TestJacLangServer(TestCase):
         lsp.quick_check(circle_file)
         self.assertEqual(len(lsp.modules), 1)
         self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
+
+    def test_doesnt_run_if_syntax_error(self) -> None:
+        """Test that the server doesn't run if there is a syntax error."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_err.jac"))
+        lsp.quick_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
+        lsp.deep_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
+        lsp.type_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
