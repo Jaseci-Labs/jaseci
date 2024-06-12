@@ -37,7 +37,7 @@ class TestJacLangServer(TestCase):
                 ],
             )
 
-    def test_diagnostics(self) -> None:
+    def test_syntax_diagnostics(self) -> None:
         """Test diagnostics."""
         lsp = JacLangServer()
         # Set up the workspace path to "fixtures/"
@@ -46,4 +46,5 @@ class TestJacLangServer(TestCase):
         lsp.lsp._workspace = workspace
         circle_file = uris.from_fs_path(self.fixture_abs_path("circle_err.jac"))
         lsp.quick_check(circle_file)
-        print(lsp.modules[circle_file].diagnostics)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
