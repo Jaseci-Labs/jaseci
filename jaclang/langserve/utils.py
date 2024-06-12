@@ -2,14 +2,7 @@
 
 import asyncio
 from functools import wraps
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    ParamSpec,
-    TypeVar,
-)
+from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.symtable import SymbolTable
@@ -62,23 +55,36 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
     return sym_tabs
 
 
+def find_deepest_node_at_pos(
+    node: ast.AstNode, line: int, character: int
+) -> Optional[ast.AstNode]:
+    """Return the deepest node that contains the given position."""
+    if position_within_node(node, line, character):
+        for i in node.kid:
+            if position_within_node(i, line, character):
+                return find_deepest_node_at_pos(i, line, character)
+        return node
+    else:
+        return None
+
+
 def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
     """Check if the position falls within the node's location."""
     if node.loc.first_line < line + 1 < node.loc.last_line:
         return True
     if (
         node.loc.first_line == line + 1
-        and node.loc.col_start <= character
+        and node.loc.col_start <= character + 1
         and (
             node.loc.last_line == line + 1
-            and node.loc.col_end >= character
+            and node.loc.col_end >= character + 1
             or node.loc.last_line > line + 1
         )
     ):
         return True
     if (
         node.loc.last_line == line + 1
-        and node.loc.col_start <= character <= node.loc.col_end
+        and node.loc.col_start <= character + 1 <= node.loc.col_end
     ):
         return True
     return False
