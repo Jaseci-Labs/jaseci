@@ -40,6 +40,8 @@ class ModuleInfo:
         self.at_pass = to_pass
         self.errors = errors
         self.warnings = warnings
+        self.parents: list[ModuleInfo] = []
+        self.kids: list[ModuleInfo] = []
         self.diagnostics = self.gen_diagnostics()
 
     def gen_diagnostics(self) -> list[lspt.Diagnostic]:
@@ -48,11 +50,11 @@ class ModuleInfo:
             lspt.Diagnostic(
                 range=lspt.Range(
                     start=lspt.Position(
-                        line=error.loc.first_line - 1, character=error.loc.col_start
+                        line=error.loc.first_line - 1, character=error.loc.col_start - 1
                     ),
                     end=lspt.Position(
                         line=error.loc.last_line - 1,
-                        character=error.loc.col_end,
+                        character=error.loc.col_end - 1,
                     ),
                 ),
                 message=error.msg,
@@ -63,11 +65,12 @@ class ModuleInfo:
             lspt.Diagnostic(
                 range=lspt.Range(
                     start=lspt.Position(
-                        line=warning.loc.first_line, character=warning.loc.col_start
+                        line=warning.loc.first_line - 1,
+                        character=warning.loc.col_start - 1,
                     ),
                     end=lspt.Position(
-                        line=warning.loc.last_line,
-                        character=warning.loc.col_end,
+                        line=warning.loc.last_line - 1,
+                        character=warning.loc.col_end - 1,
                     ),
                 ),
                 message=warning.msg,
