@@ -139,7 +139,6 @@ def hover(
     root_node = ls.modules[params.text_document.uri].ir
     deepest_node = ls.find_deepest_node(root_node, line, character)
     value = get_node_info(ls, deepest_node) if deepest_node else None
-    ls.log_warning(f"Hover: {line}, {character}, {deepest_node}, {value}")
     if value:
         return lspt.Hover(
             contents=lspt.MarkupContent(
