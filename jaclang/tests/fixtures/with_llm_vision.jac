@@ -20,6 +20,6 @@ solve_math_question(question_img: 'Image of the Question': Image) -> 'Answer to 
 by llm(method="Chain-of-Thoughts");
 
 with entry {
-    question_img = Image.open(os.path..join(os.path.dirname(__file__), 'math_question.jpg'));
+    question_img = Image.open(os.path.join(os.path.dirname(__file__), 'math_question.jpg'));
     print(solve_math_question(question_img));
 }
