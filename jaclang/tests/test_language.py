@@ -195,11 +195,11 @@ class JacLanguageTests(TestCase):
         )
         self.assertEqual(desired_output_count, 2)
 
-    def test_mtllm_vision(self) -> None:
+    def test_with_llm_vision(self) -> None:
         """Test MTLLLM Vision Implementation."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("math_solver_test", base_path=self.fixture_abs_path("./"))
+        jac_import("with_llm_vision", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
