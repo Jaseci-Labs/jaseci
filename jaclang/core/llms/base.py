@@ -131,7 +131,7 @@ class BaseLLM:
     ) -> str:
         """Resolve the output string to return the reasoning and output."""
         if self.verbose:
-            logger.opt(colors=True).info(f"Meaning Out\n<green>{meaning_out}</green>")
+            logger.info(f"Meaning Out\n{meaning_out}")
         output_match = re.search(r"\[Output\](.*)", meaning_out)
         output = output_match.group(1).strip() if output_match else None
         if not output_match:

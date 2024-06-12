@@ -1,7 +1,7 @@
 import:py from jaclang.core.llms, OpenAI;
 import:py from PIL, Image;
 
-glob llm = OpenAI(verbose=True, model_name="gpt-4o");
+glob llm = OpenAI(model_name="gpt-4o");
 
 obj 'Purchased Item'
 PurchasedItem {
