@@ -20,5 +20,5 @@ solve_math_question(question_img: 'Image of the Question': Image) -> 'Answer to 
 by llm(method="Chain-of-Thoughts");
 
 with entry {
-    print(solve_math_question(Image.open('jaclang/examples/genai/vision/math_question.jpg')));
+    print(solve_math_question(Image.open('../../../../../jaclang/examples/genai/vision/math_question.jpg')));
 }

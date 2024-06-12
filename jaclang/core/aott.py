@@ -248,8 +248,16 @@ class Tool:
 
 def get_input_information(
     inputs: list[tuple[str, str, str, Any]], type_collector: list
-) -> str | list[dict[Any, Any]]:
-    """Get the input information for the AOTT operation."""
+) -> str | list[dict]:
+    """
+    Get the input information for the AOTT operation.
+
+    Returns:
+        str | list[dict]: If the input does not contain images, returns a string with the input information.
+            If the input contains images, returns a list of dictionaries representing the input information,
+            where each dictionary contains either text or image_url.
+
+    """
     contains_imgs = any(get_type_annotation(i[3]) in IMG_FORMATS for i in inputs)
     if not contains_imgs:
         inputs_information_list = []
@@ -259,7 +267,7 @@ def get_input_information(
             inputs_information_list.append(
                 f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
             )
-        inputs_information = "\n".join(inputs_information_list)
+        return "\n".join(inputs_information_list)
     else:
         inputs_information_dict_list = []
         for i in inputs:
@@ -282,12 +290,11 @@ def get_input_information(
                     "text": f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}",
                 }
             )
-        inputs_information = inputs_information_dict_list
-    return inputs_information
+        return inputs_information_dict_list
 
 
 def image_to_base64(image: Image) -> str:
-    """Convert an image to base64."""
+    """Convert an image to base64 expected by OpenAI."""
     img_format = image.format
     with BytesIO() as buffer:
         image.save(buffer, format=img_format, quality=100)
