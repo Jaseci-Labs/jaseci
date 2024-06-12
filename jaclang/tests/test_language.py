@@ -195,6 +195,22 @@ class JacLanguageTests(TestCase):
         )
         self.assertEqual(desired_output_count, 2)
 
+    def test_mtllm_vision(self) -> None:
+        """Test MTLLLM Vision Implementation."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("math_solver_test", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn(
+            "{'type': 'text', 'text': '\\n[System Prompt]\\n", stdout_value[:500]
+        )
+        self.assertNotIn(
+            " {'type': 'text', 'text': 'Image of the Question (question_img) (Image) = '}, "
+            "{'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQAB",
+            stdout_value[:500],
+        )
+
     def test_ignore(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
