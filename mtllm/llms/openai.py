@@ -1,6 +1,6 @@
 """Anthropic API client for MTLLM."""
 
-from jaclang.core.llms import BaseLLM
+from mtllm.llms.base import BaseLLM
 
 
 REASON_SUFFIX = """
@@ -108,12 +108,15 @@ class OpenAICompletion(OpenAI):
         "ReAct": COMPLETION_REACT_SUFFIX,
     }
 
-    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+    def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
-        assert "instruct" in self.model_name or self.model in [
+        assert "instruct" in self.model_name or self.model_name in [
             "babbage-002",
             "davinci-002",
         ], f"Model {self.model_name} is not a instruction model. Please use an instruction model."
+        assert isinstance(
+            meaning_in, str
+        ), "Completion models are not supported with multimodal inputs. Please provide a string input."
 
         model_params = {
             k: v

@@ -1,6 +1,6 @@
 """Huggingface client for MTLLM."""
 
-from jaclang.core.llms import BaseLLM
+from mtllm.llms.base import BaseLLM
 
 
 REASON_SUFFIX = """

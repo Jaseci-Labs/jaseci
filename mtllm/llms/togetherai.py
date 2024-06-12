@@ -1,6 +1,6 @@
 """Anthropic API client for MTLLM."""
 
-from jaclang.core.llms import BaseLLM
+from mtllm.llms.base import BaseLLM
 
 REASON_SUFFIX = """
 Reason and return the output result(s) only, adhering to the provided Type in the following format

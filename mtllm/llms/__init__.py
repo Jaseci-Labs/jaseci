@@ -1,6 +1,7 @@
 """LLM implementations for MTLLM."""
 
 from .anthropic import Anthropic
+from .base import BaseLLM
 from .groq import Groq
 from .huggingface import Huggingface
 from .ollama import Ollama
@@ -15,4 +16,5 @@ __all__ = [
     "Groq",
     "OpenAI",
     "TogetherAI",
+    "BaseLLM",
 ]
