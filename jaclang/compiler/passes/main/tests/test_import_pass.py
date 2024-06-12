@@ -28,3 +28,16 @@ class ImportPassPassTests(TestCase):
         self.assertIn("getme.impl", mod_names)
         self.assertIn("autoimpl.impl", mod_names)
         self.assertIn("autoimpl.something.else.impl", mod_names)
+
+    def test_import_include_auto_impl(self) -> None:
+        """Basic test for pass."""
+        state = jac_file_to_pass(
+            self.fixture_abs_path("incautoimpl.jac"), JacImportPass
+        )
+        num_modules = len(state.ir.get_all_sub_nodes(ast.Module))
+        mod_names = [i.name for i in state.ir.get_all_sub_nodes(ast.Module)]
+        self.assertEqual(num_modules, 4)
+        self.assertIn("getme.impl", mod_names)
+        self.assertIn("autoimpl", mod_names)
+        self.assertIn("autoimpl.impl", mod_names)
+        self.assertIn("autoimpl.something.else.impl", mod_names)

@@ -128,15 +128,13 @@ def auto_generate_refs() -> None:
 
 
 def import_target_to_relative_path(
-    import_level: int,
-    import_target: str,
-    base_path: Optional[str] = None,
+    level: int, target: str, base_path: Optional[str] = None
 ) -> str:
     """Convert an import target string into a relative file path."""
     if not base_path:
         base_path = os.getcwd()
-    parts = import_target.split(".")
-    traversal_levels = import_level - 1 if import_level > 0 else 0
+    parts = target.split(".")
+    traversal_levels = level - 1 if level > 0 else 0
     actual_parts = parts[traversal_levels:]
     for _ in range(traversal_levels):
         base_path = os.path.dirname(base_path)
