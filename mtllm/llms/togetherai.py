@@ -48,8 +48,11 @@ class TogetherAI(BaseLLM):
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)
 
-    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+    def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
+        assert isinstance(
+            meaning_in, str
+        ), "Currently Multimodal models are not supported. Please provide a string input."
         messages = [{"role": "user", "content": meaning_in}]
         output = self.client.chat.completions.create(
             model=kwargs.get("model_name", self.model_name),
