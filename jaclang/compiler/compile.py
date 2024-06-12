@@ -57,6 +57,27 @@ def jac_str_to_pass(
     return ast_ret
 
 
+def jac_ir_to_pass(
+    ir: ast.AstNode,
+    target: Optional[Type[Pass]] = None,
+    schedule: list[Type[Pass]] = pass_schedule,
+) -> Pass:
+    """Convert a Jac file to an AST."""
+    if not target:
+        target = schedule[-1] if schedule else None
+    ast_ret = (
+        Pass(input_ir=ir, prior=None)
+        if not len(schedule)
+        else schedule[0](input_ir=ir, prior=None)
+    )
+    for i in schedule[1:]:
+        if i == target:
+            break
+        ast_ret = i(input_ir=ast_ret.ir, prior=ast_ret)
+    ast_ret = target(input_ir=ast_ret.ir, prior=ast_ret) if target else ast_ret
+    return ast_ret
+
+
 def jac_pass_to_pass(
     in_pass: Pass,
     target: Optional[Type[Pass]] = None,

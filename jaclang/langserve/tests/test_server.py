@@ -1,5 +1,7 @@
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
+from jaclang.vendor.pygls.workspace import Workspace
+from jaclang.langserve.engine import JacLangServer
 from .session import LspSession
 
 
@@ -28,9 +30,39 @@ class TestJacLangServer(TestCase):
                     {
                         "range": {
                             "start": {"line": 0, "character": 0},
-                            "end": {"line": 4, "character": 0},
+                            "end": {"line": 2, "character": 0},
                         },
                         "newText": 'with entry {\n    print("Hello, World!");\n}\n',
                     }
                 ],
             )
+
+    def test_syntax_diagnostics(self) -> None:
+        """Test diagnostics."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_err.jac"))
+        lsp.quick_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
+
+    def test_doesnt_run_if_syntax_error(self) -> None:
+        """Test that the server doesn't run if there is a syntax error."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_err.jac"))
+        lsp.quick_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
+        lsp.deep_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
+        lsp.type_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
