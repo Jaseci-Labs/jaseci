@@ -112,11 +112,11 @@ class BaseLLM:
         self.max_tries = max_tries
         raise NotImplementedError
 
-    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+    def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
         raise NotImplementedError
 
-    def __call__(self, input_text: str, **kwargs: dict) -> str:
+    def __call__(self, input_text: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input text."""
         if self.verbose:
             logger.info(f"Meaning In\n{input_text}")
