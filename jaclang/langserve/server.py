@@ -6,7 +6,7 @@ import threading
 from typing import Optional
 
 from jaclang.langserve.engine import JacLangServer
-from jaclang.langserve.utils import debounce, get_node_info
+from jaclang.langserve.utils import debounce
 
 import lsprotocol.types as lspt
 
@@ -134,18 +134,7 @@ def hover(
     ls: JacLangServer, params: lspt.TextDocumentPositionParams
 ) -> Optional[lspt.Hover]:
     """Provide hover information for the given hover request."""
-    line = params.position.line
-    character = params.position.character
-    root_node = ls.modules[params.text_document.uri].ir
-    deepest_node = ls.find_deepest_node(root_node, line, character)
-    value = get_node_info(ls, deepest_node) if deepest_node else None
-    if value:
-        return lspt.Hover(
-            contents=lspt.MarkupContent(
-                kind=lspt.MarkupKind.PlainText, value=f"{value}"
-            ),
-        )
-    return None
+    return ls.get_hover_info(params.text_document.uri, params.position)
 
 
 def run_lang_server() -> None:

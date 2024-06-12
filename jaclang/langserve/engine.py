@@ -14,8 +14,7 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import type_checker_sched
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
-from jaclang.compiler.symtable import Symbol
-from jaclang.langserve.utils import position_within_node, sym_tab_list
+from jaclang.langserve.utils import find_deepest_node_at_pos
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
 
@@ -256,65 +255,109 @@ class JacLangServer(LanguageServer):
             )
         ]
 
-    def get_dependencies(
-        self, file_path: str, deep: bool = False
-    ) -> list[ast.ModulePath]:
-        """Return a list of dependencies for a file."""
-        mod_ir = self.modules[file_path].ir
-        if deep:
-            return (
-                [
-                    i
-                    for i in mod_ir.get_all_sub_nodes(ast.ModulePath)
-                    if i.parent_of_type(ast.Import).hint.tag.value == "jac"
-                ]
-                if mod_ir
-                else []
+    def get_hover_info(
+        self, file_path: str, position: lspt.Position
+    ) -> Optional[lspt.Hover]:
+        """Return hover information for a file."""
+        node_selected = find_deepest_node_at_pos(
+            self.modules[file_path].ir, position.line, position.character
+        )
+        value = self.get_node_info(node_selected) if node_selected else None
+        if value:
+            return lspt.Hover(
+                contents=lspt.MarkupContent(
+                    kind=lspt.MarkupKind.PlainText, value=f"{value}"
+                ),
             )
-        else:
-            return (
-                [
-                    i
-                    for i in mod_ir.get_all_sub_nodes(ast.ModulePath)
-                    if i.loc.mod_path == file_path
-                    and i.parent_of_type(ast.Import).hint.tag.value == "jac"
-                ]
-                if mod_ir
-                else []
-            )
+        return None
 
-    def get_symbols(self, file_path: str) -> list[Symbol]:
-        """Return a list of symbols for a file."""
-        symbols = []
-        mod_ir = self.modules[file_path].ir
-        if file_path in self.modules:
-            root_table = mod_ir.sym_tab if mod_ir else None
-            if file_path in self.modules and root_table:
-                for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
-                    symbols += list(i.tab.values())
-        return symbols
-
-    def get_definitions(
-        self, file_path: str
-    ) -> Sequence[ast.AstSymbolNode]:  # need test
-        """Return a list of definitions for a file."""
-        defs = []
-        for i in self.get_symbols(file_path):
-            defs += i.defn
-        return defs
-
-    def find_deepest_node(
-        self, node: ast.AstNode, line: int, character: int
-    ) -> Optional[ast.AstNode]:
-        """Return the deepest node that contains the given position."""
-        if position_within_node(node, line, character):
-            for i in node.kid:
-                if position_within_node(i, line, character):
-                    return self.find_deepest_node(i, line, character)
-            return node
-        else:
-            self.log_error("Something Happened : Position not within node.")
-            return None
+    def get_node_info(self, node: ast.AstNode) -> Optional[str]:
+        """Extract meaningful information from the AST node."""
+        try:
+            if isinstance(node, ast.Token):
+                if isinstance(node, ast.AstSymbolNode):
+                    if isinstance(node, ast.String):
+                        return None
+                    if node.sym_link and node.sym_link.decl:
+                        decl_node = node.sym_link.decl
+                        if isinstance(decl_node, ast.Architype):
+                            if decl_node.doc:
+                                node_info = f"({decl_node.arch_type.value}) {node.value} \n{decl_node.doc.lit_value}"
+                            else:
+                                node_info = (
+                                    f"({decl_node.arch_type.value}) {node.value}"
+                                )
+                            if decl_node.semstr:
+                                node_info += f"\n{decl_node.semstr.lit_value}"
+                        elif isinstance(decl_node, ast.Ability):
+                            node_info = f"(ability) can {node.value}"
+                            if decl_node.signature:
+                                node_info += f" {decl_node.signature.unparse()}"
+                            if decl_node.doc:
+                                node_info += f"\n{decl_node.doc.lit_value}"
+                            if decl_node.semstr:
+                                node_info += f"\n{decl_node.semstr.lit_value}"
+                        elif isinstance(decl_node, ast.Name):
+                            if (
+                                decl_node.parent
+                                and isinstance(decl_node.parent, ast.SubNodeList)
+                                and decl_node.parent.parent
+                                and isinstance(decl_node.parent.parent, ast.Assignment)
+                                and decl_node.parent.parent.type_tag
+                            ):
+                                node_info = (
+                                    f"(variable) {decl_node.value}: "
+                                    f"{decl_node.parent.parent.type_tag.unparse()}"
+                                )
+                                if decl_node.parent.parent.semstr:
+                                    node_info += (
+                                        f"\n{decl_node.parent.parent.semstr.lit_value}"
+                                    )
+                            else:
+                                if decl_node.value in [
+                                    "str",
+                                    "int",
+                                    "float",
+                                    "bool",
+                                    "bytes",
+                                    "list",
+                                    "tuple",
+                                    "set",
+                                    "dict",
+                                    "type",
+                                ]:
+                                    node_info = f"({decl_node.value}) Built-in type"
+                                else:
+                                    node_info = f"(variable) {decl_node.value}: None"
+                        elif isinstance(decl_node, ast.HasVar):
+                            if decl_node.type_tag:
+                                node_info = f"(variable) {decl_node.name.value} {decl_node.type_tag.unparse()}"
+                            else:
+                                node_info = f"(variable) {decl_node.name.value}"
+                            if decl_node.semstr:
+                                node_info += f"\n{decl_node.semstr.lit_value}"
+                        elif isinstance(decl_node, ast.ParamVar):
+                            if decl_node.type_tag:
+                                node_info = f"(parameter) {decl_node.name.value} {decl_node.type_tag.unparse()}"
+                            else:
+                                node_info = f"(parameter) {decl_node.name.value}"
+                            if decl_node.semstr:
+                                node_info += f"\n{decl_node.semstr.lit_value}"
+                        elif isinstance(decl_node, ast.ModuleItem):
+                            node_info = (
+                                f"(ModuleItem) {node.value}"  # TODO: Add more info
+                            )
+                        else:
+                            node_info = f"{node.value}"
+                    else:
+                        node_info = f"{node.value}"  # non symbol node
+                else:
+                    return None
+            else:
+                return None
+        except AttributeError as e:
+            self.log_warning(f"Attribute error when accessing node attributes: {e}")
+        return node_info.strip()
 
     def log_error(self, message: str) -> None:
         """Log an error message."""
