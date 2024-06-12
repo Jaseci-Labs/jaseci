@@ -2,27 +2,32 @@
 
 from __future__ import annotations
 
+from enum import IntEnum
 from hashlib import md5
-from typing import Any, Generator, Sequence, Type
+from typing import Any, Generator, Optional, Sequence
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_pass_to_pass, jac_str_to_pass
+from jaclang.compiler.compile import jac_ir_to_pass, jac_str_to_pass
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main.schedules import (
-    AccessCheckPass,
-    PyBytecodeGenPass,
-    py_code_gen_typed,
-)
+from jaclang.compiler.passes.main.schedules import type_checker_sched
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol
 from jaclang.langserve.utils import position_within_node, sym_tab_list
+from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
-from jaclang.vendor.pygls.workspace.text_document import TextDocument
 
 import lsprotocol.types as lspt
+
+
+class ALev(IntEnum):
+    """Analysis Level."""
+
+    QUICK = 1
+    DEEP = 2
+    TYPE = 3
 
 
 class ModuleInfo:
@@ -31,18 +36,28 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        to_pass: Pass,
         errors: Sequence[Alert],
         warnings: Sequence[Alert],
+        alev: ALev,
+        parent: Optional[ModuleInfo] = None,
     ) -> None:
         """Initialize module info."""
         self.ir = ir
-        self.at_pass = to_pass
         self.errors = errors
         self.warnings = warnings
-        self.parents: list[ModuleInfo] = []
-        self.kids: list[ModuleInfo] = []
+        self.alev = alev
+        self.parent: Optional[ModuleInfo] = parent
         self.diagnostics = self.gen_diagnostics()
+
+    @property
+    def uri(self) -> str:
+        """Return uri."""
+        return uris.from_fs_path(self.ir.loc.mod_path)
+
+    @property
+    def has_syntax_error(self) -> bool:
+        """Return if there are syntax errors."""
+        return len(self.errors) > 0 and self.alev == ALev.QUICK
 
     def gen_diagnostics(self) -> list[lspt.Diagnostic]:
         """Return diagnostics."""
@@ -88,18 +103,17 @@ class JacLangServer(LanguageServer):
         super().__init__("jac-lsp", "v0.1")
         self.modules: dict[str, ModuleInfo] = {}
 
-    def module_not_diff(self, doc: TextDocument) -> bool:
+    def module_not_diff(self, uri: str, alev: ALev) -> bool:
         """Check if module was changed."""
+        doc = self.workspace.get_document(uri)
         return (
             doc.uri in self.modules
             and self.modules[doc.uri].ir.source.hash
             == md5(doc.source.encode()).hexdigest()
-        )
-
-    def module_reached_pass(self, doc: TextDocument, target: Type[Pass]) -> bool:
-        """Check if module reached a pass."""
-        return doc.uri in self.modules and isinstance(
-            self.modules[doc.uri].at_pass, target
+            and (
+                self.modules[doc.uri].alev >= alev
+                or self.modules[doc.uri].has_syntax_error
+            )
         )
 
     def push_diagnostics(self, file_path: str) -> None:
@@ -110,66 +124,81 @@ class JacLangServer(LanguageServer):
                 self.modules[file_path].diagnostics,
             )
 
+    def unwind_to_parent(self, file_path: str) -> str:
+        """Unwind to parent."""
+        if file_path in self.modules:
+            while cur := self.modules[file_path].parent:
+                file_path = cur.uri
+        return file_path
+
+    def update_modules(self, file_path: str, build: Pass, alev: ALev) -> None:
+        """Update modules."""
+        if not isinstance(build.ir, ast.Module):
+            self.log_error("Error with module build.")
+            return
+        self.modules[file_path] = ModuleInfo(
+            ir=build.ir,
+            errors=[
+                i
+                for i in build.errors_had
+                if i.loc.mod_path == uris.to_fs_path(file_path)
+            ],
+            warnings=[
+                i
+                for i in build.warnings_had
+                if i.loc.mod_path == uris.to_fs_path(file_path)
+            ],
+            alev=alev,
+        )
+        for p in build.ir.mod_deps.keys():
+            uri = uris.from_fs_path(p)
+            self.modules[uri] = ModuleInfo(
+                ir=build.ir.mod_deps[p],
+                errors=[i for i in build.errors_had if i.loc.mod_path == p],
+                warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
+                alev=alev,
+            )
+
     def quick_check(self, file_path: str) -> None:
         """Rebuild a file."""
-        document = self.workspace.get_document(file_path)
-        if self.module_not_diff(document):
+        if self.module_not_diff(file_path, ALev.QUICK):
             return
         try:
+            document = self.workspace.get_document(file_path)
             build = jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
-        if isinstance(build.ir, ast.Module):
-            self.modules[file_path] = ModuleInfo(
-                ir=build.ir,
-                to_pass=build,
-                errors=build.errors_had,
-                warnings=build.warnings_had,
-            )
+        self.update_modules(file_path, build, ALev.QUICK)
 
     def deep_check(self, file_path: str) -> None:
         """Rebuild a file and its dependencies."""
-        document = self.workspace.get_document(file_path)
-        if self.module_not_diff(document) and self.module_reached_pass(
-            document, PyBytecodeGenPass
-        ):
+        if file_path in self.modules:
+            self.quick_check(file_path)
+        if self.module_not_diff(file_path, ALev.DEEP):
             return
         try:
-            build = jac_pass_to_pass(in_pass=self.modules[file_path].at_pass)
+            file_path = self.unwind_to_parent(file_path)
+            build = jac_ir_to_pass(ir=self.modules[file_path].ir)
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
-        if isinstance(build.ir, ast.Module):
-            self.modules[file_path] = ModuleInfo(
-                ir=build.ir,
-                to_pass=build,
-                errors=build.errors_had,
-                warnings=build.warnings_had,
-            )
+        self.update_modules(file_path, build, ALev.DEEP)
 
     def type_check(self, file_path: str) -> None:
         """Rebuild a file and its dependencies."""
-        document = self.workspace.get_document(file_path)
-        if self.module_not_diff(document) and self.module_reached_pass(
-            document, AccessCheckPass
-        ):
+        if file_path not in self.modules:
+            self.deep_check(file_path)
+        if self.module_not_diff(file_path, ALev.TYPE):
             return
         try:
-            build = jac_pass_to_pass(
-                in_pass=self.modules[file_path].at_pass,
-                target=AccessCheckPass,
-                schedule=py_code_gen_typed,
+            file_path = self.unwind_to_parent(file_path)
+            build = jac_ir_to_pass(
+                ir=self.modules[file_path].ir, schedule=type_checker_sched
             )
         except Exception as e:
             self.log_error(f"Error during type check: {e}")
-        if isinstance(build.ir, ast.Module):
-            self.modules[file_path] = ModuleInfo(
-                ir=build.ir,
-                to_pass=build,
-                errors=build.errors_had,
-                warnings=build.warnings_had,
-            )
+        self.update_modules(file_path, build, ALev.TYPE)
 
     def get_completion(
         self, file_path: str, position: lspt.Position

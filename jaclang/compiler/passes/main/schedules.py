@@ -33,5 +33,6 @@ py_code_gen = [
     PyBytecodeGenPass,
 ]
 
-py_code_gen_typed = [*py_code_gen, JacTypeCheckPass, FuseTypeInfoPass, AccessCheckPass]
+type_checker_sched = [JacTypeCheckPass, FuseTypeInfoPass, AccessCheckPass]
+py_code_gen_typed = [*py_code_gen, *type_checker_sched]
 py_compiler = [*py_code_gen, PyOutPass]
