@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Generator, Sequence, Type
+from typing import Sequence, Type
 
 
 import jaclang.compiler.absyntree as ast
@@ -273,12 +273,13 @@ class JacLangServer(LanguageServer):
 
     def find_deepest_node(
         self, node: ast.AstNode, line: int, character: int
-    ) -> Generator[Any, Any, Any]:
+    ) -> ast.AstNode:
         """Find the deepest node that contains the given position."""
         if position_within_node(node, line, character):
-            yield node
             for child in node.kid:
-                yield from self.find_deepest_node(child, line, character)
+                return self.find_deepest_node(child, line, character)
+
+        return node
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

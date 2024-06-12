@@ -7,13 +7,17 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
+    Optional,
     ParamSpec,
+    TYPE_CHECKING,
     TypeVar,
 )
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.symtable import SymbolTable
 
+if TYPE_CHECKING:
+    from jaclang.langserve.engine import JacLangServer
 
 T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
@@ -82,3 +86,46 @@ def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
     ):
         return True
     return False
+
+
+def get_node_info(ls: "JacLangServer", node: ast.AstNode) -> Optional[str]:
+    """Extract meaningful information from the AST node."""
+    try:
+        if isinstance(node, ast.Token):
+            if isinstance(node, ast.AstSymbolNode):
+                if isinstance(node, ast.String):
+                    return None
+                if node.sym_link and node.sym_link.decl:
+                    decl_node = node.sym_link.decl
+                    if isinstance(decl_node, ast.Architype):
+                        if decl_node.doc:
+                            node_info = (
+                                f"(architype) {node.value} \n{decl_node.doc.lit_value}"
+                            )
+                        else:
+                            node_info = f"(architype) {node.value}"
+                    elif isinstance(decl_node, ast.Ability):
+                        node_info = f"(ability) can {node.value}"
+                        if decl_node.signature:
+                            node_info += f" {decl_node.signature.unparse()}"
+                        if decl_node.doc:
+                            node_info += f"\n{decl_node.doc.lit_value}"
+                    elif isinstance(decl_node, ast.Name):
+                        node_info = f"{node.value}"
+                    elif isinstance(decl_node, ast.HasVar):
+                        if decl_node.type_tag:
+                            node_info = f"(variable) {decl_node.name.value} {decl_node.type_tag.unparse()}"
+                        else:
+                            node_info = f"(variable) {decl_node.name.value}"
+                    else:
+                        ls.log_warning(f"no match found decl node is \n {decl_node}")
+                else:
+                    node_info = f"Name: {node.value}\n"
+            else:
+                return None
+        else:
+            # ls.log_warning(f'Something happened in function -[position_within_node] ')
+            return None
+    except AttributeError as e:
+        ls.log_error(f"Attribute error when accessing node attributes: {e}")
+    return node_info.strip()

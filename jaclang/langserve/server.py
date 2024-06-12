@@ -6,7 +6,7 @@ import threading
 from typing import Optional
 
 from jaclang.langserve.engine import JacLangServer
-from jaclang.langserve.utils import debounce
+from jaclang.langserve.utils import debounce, get_node_info
 
 import lsprotocol.types as lspt
 
@@ -129,71 +129,17 @@ def formatting(
     return ls.formatted_jac(params.text_document.uri)
 
 
-# @server.feature(lspt.TEXT_DOCUMENT_HOVER, lspt.HoverOptions(work_done_progress=True))
+@server.feature(lspt.TEXT_DOCUMENT_HOVER, lspt.HoverOptions(work_done_progress=True))
 def hover(
     ls: JacLangServer, params: lspt.TextDocumentPositionParams
 ) -> Optional[lspt.Hover]:
     """Provide hover information for the given hover request."""
-
-    def get_value() -> Optional[str]:
-        """Get value by using the position to get which AST node it falls under."""
-        line = params.position.line
-        character = params.position.character
-
-        root_node = ls.modules[params.text_document.uri].ir
-        deepest_node = None
-        for node in ls.find_deepest_node(root_node, line, character):
-            deepest_node = node
-
-        import jaclang.compiler.absyntree as ast
-
-        def get_node_info(node: ast.AstNode) -> Optional[str]:
-            """Extract meaningful information from the AST node."""
-            try:
-                if isinstance(node, ast.Token):
-                    if isinstance(node, ast.AstSymbolNode):
-                        if isinstance(node, ast.String):
-                            return None
-                        if node.sym_link and node.sym_link.decl:
-                            decl_node = node.sym_link.decl
-                            if isinstance(decl_node, ast.Architype):
-                                if decl_node.doc:
-                                    node_info = f"(architype) {node.value} \n{decl_node.doc.lit_value}"
-                                else:
-                                    node_info = f"(architype) {node.value}"
-                            elif isinstance(decl_node, ast.Ability):
-                                node_info = f"(ability) can {node.value}"
-                                if decl_node.signature:
-                                    node_info += f" {decl_node.signature.unparse()}"
-                                if decl_node.doc:
-                                    node_info += f"\n{decl_node.doc.lit_value}"
-                            elif isinstance(decl_node, ast.Name):
-                                node_info = f"{node.value}"
-                            elif isinstance(decl_node, ast.HasVar):
-                                if decl_node.type_tag:
-                                    node_info = f"(variable) {decl_node.name.value} {decl_node.type_tag.unparse()}"
-                                else:
-                                    node_info = f"(variable) {decl_node.name.value}"
-                            else:
-                                ls.log_warning(
-                                    f"no match found decl node is \n {decl_node}"
-                                )
-                        else:
-                            node_info = f"Name: {node.value}\n"
-                    else:
-                        return None
-                else:
-                    # ls.log_warning(f'Something happened in function -[position_within_node] ')
-                    return None
-            except AttributeError as e:
-                ls.log_error(f"Attribute error when accessing node attributes: {e}")
-            return node_info.strip()
-
-        if deepest_node:
-            return get_node_info(deepest_node)
-        return None
-
-    value = get_value()
+    line = params.position.line
+    character = params.position.character
+    root_node = ls.modules[params.text_document.uri].ir
+    deepest_node = ls.find_deepest_node(root_node, line, character)
+    value = get_node_info(ls, deepest_node) if deepest_node else None
+    ls.log_warning(f"Hover: {line}, {character}, {deepest_node}, {value}")
     if value:
         return lspt.Hover(
             contents=lspt.MarkupContent(
