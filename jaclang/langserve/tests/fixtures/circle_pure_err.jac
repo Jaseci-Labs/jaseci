@@ -17,8 +17,6 @@ obj Shape {
     can area -> float abs;
 }
 
-glob Shape = 3;
-
 """Circle class inherits from Shape."""
 obj Circle :Shape: {
     has radius: float;
