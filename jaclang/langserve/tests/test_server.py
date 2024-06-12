@@ -1,5 +1,7 @@
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
+from jaclang.vendor.pygls.workspace import Workspace
+from jaclang.langserve.engine import JacLangServer
 from .session import LspSession
 
 
@@ -34,3 +36,15 @@ class TestJacLangServer(TestCase):
                     }
                 ],
             )
+
+    def test_syntax_diagnostics(self) -> None:
+        """Test diagnostics."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_err.jac"))
+        lsp.quick_check(circle_file)
+        self.assertEqual(len(lsp.modules), 1)
+        self.assertEqual(lsp.modules[circle_file].diagnostics[0].range.start.line, 22)
