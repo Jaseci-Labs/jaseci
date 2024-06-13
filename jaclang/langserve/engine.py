@@ -104,7 +104,7 @@ class JacLangServer(LanguageServer):
 
     def module_not_diff(self, uri: str, alev: ALev) -> bool:
         """Check if module was changed."""
-        doc = self.workspace.get_document(uri)
+        doc = self.workspace.get_text_document(uri)
         return (
             doc.uri in self.modules
             and self.modules[doc.uri].ir.source.hash
@@ -135,6 +135,9 @@ class JacLangServer(LanguageServer):
         if not isinstance(build.ir, ast.Module):
             self.log_error("Error with module build.")
             return
+        save_parent = (
+            self.modules[file_path].parent if file_path in self.modules else None
+        )
         self.modules[file_path] = ModuleInfo(
             ir=build.ir,
             errors=[
@@ -149,6 +152,7 @@ class JacLangServer(LanguageServer):
             ],
             alev=alev,
         )
+        self.modules[file_path].parent = save_parent
         for p in build.ir.mod_deps.keys():
             uri = uris.from_fs_path(p)
             self.modules[uri] = ModuleInfo(
@@ -157,13 +161,16 @@ class JacLangServer(LanguageServer):
                 warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
                 alev=alev,
             )
+            self.modules[uri].parent = (
+                self.modules[file_path] if file_path != uri else None
+            )
 
-    def quick_check(self, file_path: str) -> None:
+    def quick_check(self, file_path: str, force: bool = False) -> None:
         """Rebuild a file."""
-        if self.module_not_diff(file_path, ALev.QUICK):
+        if not force and self.module_not_diff(file_path, ALev.QUICK):
             return
         try:
-            document = self.workspace.get_document(file_path)
+            document = self.workspace.get_text_document(file_path)
             build = jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
@@ -171,11 +178,11 @@ class JacLangServer(LanguageServer):
             self.log_error(f"Error during syntax check: {e}")
         self.update_modules(file_path, build, ALev.QUICK)
 
-    def deep_check(self, file_path: str) -> None:
+    def deep_check(self, file_path: str, force: bool = False) -> None:
         """Rebuild a file and its dependencies."""
         if file_path in self.modules:
-            self.quick_check(file_path)
-        if self.module_not_diff(file_path, ALev.DEEP):
+            self.quick_check(file_path, force=force)
+        if not force and self.module_not_diff(file_path, ALev.DEEP):
             return
         try:
             file_path = self.unwind_to_parent(file_path)
@@ -184,11 +191,11 @@ class JacLangServer(LanguageServer):
             self.log_error(f"Error during syntax check: {e}")
         self.update_modules(file_path, build, ALev.DEEP)
 
-    def type_check(self, file_path: str) -> None:
+    def type_check(self, file_path: str, force: bool = False) -> None:
         """Rebuild a file and its dependencies."""
         if file_path not in self.modules:
-            self.deep_check(file_path)
-        if self.module_not_diff(file_path, ALev.TYPE):
+            self.deep_check(file_path, force=force)
+        if not force and self.module_not_diff(file_path, ALev.TYPE):
             return
         try:
             file_path = self.unwind_to_parent(file_path)
@@ -204,7 +211,7 @@ class JacLangServer(LanguageServer):
     ) -> lspt.CompletionList:
         """Return completion for a file."""
         items = []
-        document = self.workspace.get_document(file_path)
+        document = self.workspace.get_text_document(file_path)
         current_line = document.lines[position.line].strip()
         if current_line.endswith("hello."):
 
@@ -228,7 +235,7 @@ class JacLangServer(LanguageServer):
     def formatted_jac(self, file_path: str) -> list[lspt.TextEdit]:
         """Return formatted jac."""
         try:
-            document = self.workspace.get_document(file_path)
+            document = self.workspace.get_text_document(file_path)
             format = jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,

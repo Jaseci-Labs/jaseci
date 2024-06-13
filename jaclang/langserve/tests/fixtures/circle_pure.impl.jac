@@ -1,8 +1,8 @@
 """Enum for shape types"""
 
 :enum:ShapeType {
-    CIRCLE="Circle",
-    UNKNOWN="Unknown"
+    CIRCLE = "Circle",
+    UNKNOWN = "Unknown"
 }
 
 """Function to calculate the area of a circle."""
@@ -23,6 +23,10 @@
 }
 
 :can:main_run {
-    print(f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}");
-    print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");
+    print(
+        f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}"
+    );
+    print(
+        f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}"
+    );
 }

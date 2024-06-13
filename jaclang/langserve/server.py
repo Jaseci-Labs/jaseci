@@ -22,10 +22,12 @@ def analyze_and_publish(ls: JacLangServer, uri: str) -> None:
     def run_analysis() -> None:
         ls.quick_check(uri)
         ls.push_diagnostics(uri)
-        ls.deep_check(uri)
-        ls.push_diagnostics(uri)
-        ls.type_check(uri)
-        ls.push_diagnostics(uri)
+        if not analysis_stop_event.is_set():
+            ls.deep_check(uri)
+            ls.push_diagnostics(uri)
+            if not analysis_stop_event.is_set():
+                ls.type_check(uri)
+                ls.push_diagnostics(uri)
 
     analysis_thread = threading.Thread(target=run_analysis)
     analysis_thread.start()
