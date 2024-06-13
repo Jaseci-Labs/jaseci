@@ -125,9 +125,15 @@ class JacLangServer(LanguageServer):
 
     def unwind_to_parent(self, file_path: str) -> str:
         """Unwind to parent."""
+        orig_file_path = file_path
         if file_path in self.modules:
             while cur := self.modules[file_path].parent:
                 file_path = cur.uri
+            if file_path == orig_file_path and (
+                discover := self.modules[file_path].ir.annexable_by
+            ):
+                file_path = uris.from_fs_path(discover)
+                self.quick_check(file_path)
         return file_path
 
     def update_modules(self, file_path: str, build: Pass, alev: ALev) -> None:
