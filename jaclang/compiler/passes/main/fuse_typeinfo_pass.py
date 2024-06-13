@@ -196,11 +196,6 @@ class FuseTypeInfoPass(Pass):
         """Pass handler for Architype nodes."""
         self.__collect_type_from_symbol(node)
 
-    def exit_architype(self, node: ast.Architype) -> None:
-        """Pass handler for Architype nodes."""
-        if isinstance(node.body, ast.AstImplOnlyNode):
-            self.traverse(node.body)
-
     @__handle_node
     def enter_arch_def(self, node: ast.ArchDef) -> None:
         """Pass handler for ArchDef nodes."""
