@@ -57,15 +57,18 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
 
 def find_deepest_node_at_pos(
     node: ast.AstNode, line: int, character: int
-) -> Optional[ast.AstNode]:
+) -> Optional[ast.AstSymbolNode]:
     """Return the deepest node that contains the given position."""
     if position_within_node(node, line, character):
-        for i in node.kid:
+        for i in [n for n in node.kid if n.loc.mod_path == node.loc.mod_path]:
             if position_within_node(i, line, character):
                 return find_deepest_node_at_pos(i, line, character)
-        return node
-    else:
-        return None
+        return (
+            node
+            if isinstance(node, ast.AstSymbolNode)
+            else node.find_parent_of_type(ast.AstSymbolNode)
+        )
+    return None
 
 
 def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:

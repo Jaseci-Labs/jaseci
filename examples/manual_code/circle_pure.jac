@@ -8,7 +8,6 @@ import:py math;
 enum ShapeType;
 
 can calculate_area(radius: float) -> float;
-
 can main_run;
 
 """Base class for a shape."""

@@ -85,7 +85,7 @@ class TestJacLangServer(TestCase):
         lsp.type_check(circle_file)
         pos = lspt.Position(13, 8)
         self.assertIn(
-            "Circle class inherits from Shape.",
+            "(object) Circle",
             lsp.get_hover_info(circle_file, pos).contents.value,
         )
         lsp.quick_check(circle_impl_file, force=True)
@@ -93,7 +93,7 @@ class TestJacLangServer(TestCase):
         lsp.type_check(circle_impl_file, force=True)
         pos = lspt.Position(8, 11)
         self.assertIn(
-            "(ability) can calculate_area ( radius : float ) -> float",
+            "(ability) calculate_area",
             lsp.get_hover_info(circle_impl_file, pos).contents.value,
         )
 
@@ -112,6 +112,6 @@ class TestJacLangServer(TestCase):
         lsp.type_check(circle_impl_file, force=True)
         pos = lspt.Position(8, 11)
         self.assertIn(
-            "(ability) can calculate_area ( radius : float ) -> float",
+            "(ability) calculate_area",
             lsp.get_hover_info(circle_impl_file, pos).contents.value,
         )
