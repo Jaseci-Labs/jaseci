@@ -41,3 +41,11 @@ class ImportPassPassTests(TestCase):
         self.assertIn("autoimpl", mod_names)
         self.assertIn("autoimpl.impl", mod_names)
         self.assertIn("autoimpl.something.else.impl", mod_names)
+
+    def test_annexalbe_by_discovery(self) -> None:
+        """Basic test for pass."""
+        state = jac_file_to_pass(
+            self.fixture_abs_path("incautoimpl.jac"), JacImportPass
+        )
+        for i in state.ir.get_all_sub_nodes(ast.Module):
+            self.assertEqual(i.annexable_by, self.fixture_abs_path("autoimpl.jac"))

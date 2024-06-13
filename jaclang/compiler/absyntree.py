@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+import os
 from hashlib import md5
 from types import EllipsisType
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
@@ -407,6 +408,29 @@ class Module(AstDocNode):
         self.registry = registry
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
+
+    @property
+    def annexable_by(self) -> Optional[str]:
+        """Get annexable by."""
+        if not self.stub_only and self.loc.mod_path.endswith("impl.jac"):
+            head_mod_name = self.name.split(".")[0]
+            potential_path = os.path.join(
+                os.path.dirname(self.loc.mod_path),
+                f"{head_mod_name}.jac",
+            )
+            if os.path.exists(potential_path):
+                return potential_path
+            if os.path.split(os.path.dirname(self.loc.mod_path))[-1].endswith(".impl"):
+                head_mod_name = os.path.split(os.path.dirname(self.loc.mod_path))[
+                    -1
+                ].split(".")[0]
+                potential_path = os.path.join(
+                    os.path.dirname(os.path.dirname(self.loc.mod_path)),
+                    f"{head_mod_name}.jac",
+                )
+                if os.path.exists(potential_path):
+                    return potential_path
+        return None
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module node."""
