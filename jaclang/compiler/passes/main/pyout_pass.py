@@ -35,7 +35,9 @@ class PyOutPass(Pass):
                 f"Unable to find module {node.loc.mod_path} or no code present.", node
             )
             return
-        mods = [node] + self.get_all_sub_nodes(node, ast.Module)
+        mods = [node] + [
+            i for i in self.get_all_sub_nodes(node, ast.Module) if not i.stub_only
+        ]
         for mod in mods:
             mod_path, out_path_py, out_path_pyc = self.get_output_targets(mod)
             if os.path.exists(out_path_pyc) and os.path.getmtime(

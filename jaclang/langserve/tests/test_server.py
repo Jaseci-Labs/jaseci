@@ -96,3 +96,22 @@ class TestJacLangServer(TestCase):
             "(ability) can calculate_area ( radius : float ) -> float",
             lsp.get_hover_info(circle_impl_file, pos).contents.value,
         )
+
+    def test_impl_auto_discover(self) -> None:
+        """Test that the server doesn't run if there is a syntax error."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_impl_file = uris.from_fs_path(
+            self.fixture_abs_path("circle_pure.impl.jac")
+        )
+        lsp.quick_check(circle_impl_file, force=True)
+        lsp.deep_check(circle_impl_file, force=True)
+        lsp.type_check(circle_impl_file, force=True)
+        pos = lspt.Position(8, 11)
+        self.assertIn(
+            "(ability) can calculate_area ( radius : float ) -> float",
+            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+        )

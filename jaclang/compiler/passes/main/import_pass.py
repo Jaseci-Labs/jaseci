@@ -63,6 +63,8 @@ class JacImportPass(Pass):
 
     def __annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
+        if node.stub_only:
+            return
         if not node.loc.mod_path:
             self.error("Module has no path")
         if not node.loc.mod_path.endswith(".jac"):
@@ -105,7 +107,7 @@ class JacImportPass(Pass):
             ) and cur_file.endswith(".test.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod:
-                    node.test_mod = mod
+                    node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
 
@@ -167,6 +169,7 @@ class JacImportPass(Pass):
                 doc=None,
                 body=[],
                 is_imported=False,
+                stub_only=True,
                 kid=[ast.EmptyToken()],
             )
 

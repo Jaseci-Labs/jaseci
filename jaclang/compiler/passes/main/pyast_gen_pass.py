@@ -325,7 +325,8 @@ class PyastGenPass(Pass):
         for pbody in node.impl_mod:
             pre_body = [*pre_body, *pbody.body]
         pre_body = [*pre_body, *clean_body]
-        pre_body = [*pre_body, *node.test_mod.body] if node.test_mod else pre_body
+        for pbody in node.test_mod:
+            pre_body = [*pre_body, *pbody.body]
         body = (
             [
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc),
