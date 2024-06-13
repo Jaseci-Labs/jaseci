@@ -392,7 +392,7 @@ class Module(AstDocNode):
         body: Sequence[ElementStmt | String | EmptyToken],
         is_imported: bool,
         kid: Sequence[AstNode],
-        test_mod: Optional[Module] = None,
+        stub_only: bool = False,
         registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
@@ -400,8 +400,9 @@ class Module(AstDocNode):
         self.source = source
         self.body = body
         self.is_imported = is_imported
+        self.stub_only = stub_only
         self.impl_mod: list[Module] = []
-        self.test_mod = test_mod
+        self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
         self.registry = registry
         AstNode.__init__(self, kid=kid)
