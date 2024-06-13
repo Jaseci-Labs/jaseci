@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from enum import IntEnum
 from hashlib import md5
 from typing import Optional, Sequence
@@ -292,7 +293,13 @@ class JacLangServer(LanguageServer):
             node_info = f"({node.sym_type.value}) {node.sym_name}"
             if node.sym_info.clean_type:
                 node_info += f": {node.sym_info.clean_type}"
-
+            if isinstance(node, ast.AstSemStrNode) and node.semstr:
+                node_info += f"\n{node.semstr.value}"
+            if isinstance(node, ast.AstDocNode) and node.doc:
+                node_info += f"\n{node.doc.value}"
+            if isinstance(node, ast.Ability) and node.signature:
+                node_info += f"\n{node.signature.unparse()}"
+            self.log_py(node.pp())
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
@@ -311,3 +318,7 @@ class JacLangServer(LanguageServer):
         """Log an info message."""
         self.show_message_log(message, lspt.MessageType.Info)
         self.show_message(message, lspt.MessageType.Info)
+
+    def log_py(self, message: str) -> None:
+        """Log a message."""
+        logging.info(message)
