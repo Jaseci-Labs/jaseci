@@ -30,7 +30,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.assertEqual(x, y)
         except Exception as e:
             print("\n".join(unified_diff(x.splitlines(), y.splitlines())))
-            self.skipTest(f"Test failed, but skipping instead of failing: {e}")
+            raise e
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
@@ -75,7 +75,6 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
 
         except Exception as e:
             raise e
-            # self.skipTest(f"Test failed, but skipping instead of failing: {e}")
 
 
 JacUnparseTests.self_attach_micro_tests()
