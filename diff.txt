@@ -1,0 +1,104 @@
+diff --git a/jaclang/compiler/absyntree.py b/jaclang/compiler/absyntree.py
+index abf61bff..fdcf8750 100644
+--- a/jaclang/compiler/absyntree.py
++++ b/jaclang/compiler/absyntree.py
+@@ -392,7 +392,7 @@ class Module(AstDocNode):
+         body: Sequence[ElementStmt | String | EmptyToken],
+         is_imported: bool,
+         kid: Sequence[AstNode],
+-        test_mod: Optional[Module] = None,
++        stub_only: bool = False,
+         registry: Optional[SemRegistry] = None,
+     ) -> None:
+         """Initialize whole program node."""
+@@ -401,7 +401,8 @@ class Module(AstDocNode):
+         self.body = body
+         self.is_imported = is_imported
+         self.impl_mod: list[Module] = []
+-        self.test_mod = test_mod
++        self.test_mod: list[Module] = []
++        self.stub_only = stub_only
+         self.mod_deps: dict[str, Module] = {}
+         self.registry = registry
+         AstNode.__init__(self, kid=kid)
+diff --git a/jaclang/compiler/passes/main/import_pass.py b/jaclang/compiler/passes/main/import_pass.py
+index 25e21623..974e82a6 100644
+--- a/jaclang/compiler/passes/main/import_pass.py
++++ b/jaclang/compiler/passes/main/import_pass.py
+@@ -63,6 +63,8 @@ class JacImportPass(Pass):
+
+     def __annex_impl(self, node: ast.Module) -> None:
+         """Annex impl and test modules."""
++        if node.stub_only:
++            return
+         if not node.loc.mod_path:
+             self.error("Module has no path")
+         if not node.loc.mod_path.endswith(".jac"):
+@@ -105,7 +107,7 @@ class JacImportPass(Pass):
+             ) and cur_file.endswith(".test.jac"):
+                 mod = self.import_jac_mod_from_file(cur_file)
+                 if mod:
+-                    node.test_mod = mod
++                    node.test_mod.append(mod)
+                     node.add_kids_right([mod], pos_update=False)
+                     mod.parent = node
+
+@@ -167,6 +169,7 @@ class JacImportPass(Pass):
+                 doc=None,
+                 body=[],
+                 is_imported=False,
++                stub_only=True,
+                 kid=[ast.EmptyToken()],
+             )
+
+diff --git a/jaclang/compiler/passes/main/pyast_gen_pass.py b/jaclang/compiler/passes/main/pyast_gen_pass.py
+index a5b74e6c..46517898 100644
+--- a/jaclang/compiler/passes/main/pyast_gen_pass.py
++++ b/jaclang/compiler/passes/main/pyast_gen_pass.py
+@@ -325,7 +325,8 @@ class PyastGenPass(Pass):
+         for pbody in node.impl_mod:
+             pre_body = [*pre_body, *pbody.body]
+         pre_body = [*pre_body, *clean_body]
+-        pre_body = [*pre_body, *node.test_mod.body] if node.test_mod else pre_body
++        for pbody in node.test_mod:
++            pre_body = [*pre_body, *pbody.body]
+         body = (
+             [
+                 self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc),
+diff --git a/jaclang/compiler/passes/main/pyout_pass.py b/jaclang/compiler/passes/main/pyout_pass.py
+index 83731013..03c2bc43 100644
+--- a/jaclang/compiler/passes/main/pyout_pass.py
++++ b/jaclang/compiler/passes/main/pyout_pass.py
+@@ -35,7 +35,9 @@ class PyOutPass(Pass):
+                 f"Unable to find module {node.loc.mod_path} or no code present.", node
+             )
+             return
+-        mods = [node] + self.get_all_sub_nodes(node, ast.Module)
++        mods = [node] + [
++            i for i in self.get_all_sub_nodes(node, ast.Module) if not i.stub_only
++        ]
+         for mod in mods:
+             mod_path, out_path_py, out_path_pyc = self.get_output_targets(mod)
+             if os.path.exists(out_path_pyc) and os.path.getmtime(
+diff --git a/jaclang/compiler/passes/main/sym_tab_build_pass.py b/jaclang/compiler/passes/main/sym_tab_build_pass.py
+index 012f4144..14c95560 100644
+--- a/jaclang/compiler/passes/main/sym_tab_build_pass.py
++++ b/jaclang/compiler/passes/main/sym_tab_build_pass.py
+@@ -274,8 +274,8 @@ class SymTabBuildPass(SymTabPass):
+             isinstance(node.parent, ast.Module)
+             and node
+             in [
+-                node.parent.impl_mod,
+-                node.parent.test_mod,
++                *node.parent.impl_mod,
++                *node.parent.test_mod,
+             ]
+             and node.sym_tab
+         ):
+diff --git a/jaclang/tests/fixtures/deep/deeper/__init__.jac b/jaclang/tests/fixtures/deep/deeper/__init__.jac
+deleted file mode 100644
+index 8251df2e..00000000
+--- a/jaclang/tests/fixtures/deep/deeper/__init__.jac
++++ /dev/null
+@@ -1 +0,0 @@
+-glob inivar = 3;
