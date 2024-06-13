@@ -5,12 +5,17 @@ This has all the necessary functions to perform the AOTT operations.
 """
 
 import base64
+import logging
 import re
 from enum import Enum
 from io import BytesIO
 from typing import Any
 
-from PIL import Image
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 from jaclang.core.llms.base import BaseLLM
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
@@ -269,11 +274,11 @@ def get_input_information(
             )
         return "\n".join(inputs_information_list)
     else:
-        inputs_information_dict_list = []
+        inputs_information_dict_list: list[dict] = []
         for i in inputs:
             if get_type_annotation(i[3]) in IMG_FORMATS:
                 img_base64 = image_to_base64(i[3])
-                image_repr = [
+                image_repr: list[dict] = [
                     {
                         "type": "text",
                         "text": f"{i[0]} ({i[2]}) (Image) = ",
@@ -295,6 +300,10 @@ def get_input_information(
 
 def image_to_base64(image: Image) -> str:
     """Convert an image to base64 expected by OpenAI."""
+    if not Image:
+        log = logging.getLogger(__name__)
+        log.error("Pillow is not installed. Please install Pillow to use images.")
+        return ""
     img_format = image.format
     with BytesIO() as buffer:
         image.save(buffer, format=img_format, quality=100)
