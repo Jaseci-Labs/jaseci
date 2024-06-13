@@ -365,6 +365,42 @@ class JacLangServer(LanguageServer):
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
+    
+    def get_definition(
+        self, file_path: str, position: lspt.Position
+    ) -> Optional[lspt.Location]:
+        """Return definition location for a file."""
+        node_selected = find_deepest_node_at_pos(
+            self.modules[file_path].ir, position.line, position.character
+        )
+        if not node_selected or not isinstance(node_selected, ast.Token):
+            self.log_info("No node selected or node is not a token.")
+            return None
+
+        if node_selected.sym_link and node_selected.sym_link.decl:
+            decl_node = node_selected.sym_link.decl
+            decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
+            decl_range = lspt.Range(
+                start=lspt.Position(
+                    line=decl_node.loc.first_line - 1, character=decl_node.loc.col_start - 1
+                ),
+                end=lspt.Position(
+                    line=decl_node.loc.last_line - 1, character=decl_node.loc.col_end - 1
+                ),
+            )
+            decl_location = lspt.Location(
+                uri=decl_uri,
+                range=decl_range,
+            )
+            self.log_info(f"Definition found at {decl_location.uri}:{decl_range.start.line}:{decl_range.start.character}-{decl_range.end.line}:{decl_range.end.character}")
+            self.log_info(f"Definition : {decl_node.unparse()}")
+            self.log_info(f"decl_location : {decl_location}")
+            return decl_location
+        else: 
+            self.log_info("No declaration found for the selected node.")
+            return None
+
+
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

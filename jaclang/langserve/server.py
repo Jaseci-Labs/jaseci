@@ -138,6 +138,12 @@ def hover(
     """Provide hover information for the given hover request."""
     return ls.get_hover_info(params.text_document.uri, params.position)
 
+@server.feature(lspt.TEXT_DOCUMENT_DEFINITION)
+async def definition(
+    ls: JacLangServer, params: lspt.TextDocumentPositionParams
+) -> Optional[lspt.Location]:
+    """Provide definition."""
+    return ls.get_definition(params.text_document.uri, params.position)
 
 def run_lang_server() -> None:
     """Run the language server."""
