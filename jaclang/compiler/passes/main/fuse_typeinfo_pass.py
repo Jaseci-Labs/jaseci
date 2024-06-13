@@ -196,6 +196,11 @@ class FuseTypeInfoPass(Pass):
         """Pass handler for Architype nodes."""
         self.__collect_type_from_symbol(node)
 
+    def exit_architype(self, node: ast.Architype) -> None:
+        """Pass handler for Architype nodes."""
+        if isinstance(node.body, ast.AstImplOnlyNode):
+            self.traverse(node.body)
+
     @__handle_node
     def enter_arch_def(self, node: ast.ArchDef) -> None:
         """Pass handler for ArchDef nodes."""
@@ -262,6 +267,11 @@ class FuseTypeInfoPass(Pass):
             self.__debug_print(
                 "Getting type of 'HasVar' is only supported with AssignmentStmt"
             )
+
+    def exit_has_var(self, node: ast.HasVar) -> None:
+        """Pass handler for HasVar nodes."""
+        node.sym_info.typ = node.name.sym_info.typ
+        node.sym_info.typ_sym_table = node.name.sym_info.typ_sym_table
 
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:
