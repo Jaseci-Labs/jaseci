@@ -145,8 +145,6 @@ async def document_symbol(
 ) -> list[lspt.DocumentSymbol]:
     """Provide document symbols."""
     return ls.get_document_symbols(params.text_document.uri)
-    # ls.log_py(f'{ls.modules[params.text_document.uri].ir}')
-    # return
 
 
 def run_lang_server() -> None:

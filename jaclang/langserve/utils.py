@@ -98,7 +98,9 @@ def collect_symbols(node: ast.AstNode) -> list[lspt.DocumentSymbol]:
     """Recursively collect symbols from the AST."""
     symbols = []
     for child in node.kid:
-        if isinstance(child, (ast.Architype, ast.Ability, ast.GlobalVars)):
+        if isinstance(
+            child, (ast.Architype, ast.Ability, ast.GlobalVars, ast.ParamVar)
+        ):
             symbol_kind = (
                 lspt.SymbolKind.Class
                 if isinstance(child, ast.Architype)
@@ -121,9 +123,9 @@ def collect_symbols(node: ast.AstNode) -> list[lspt.DocumentSymbol]:
                 ),
             )
             symbol = lspt.DocumentSymbol(
-                name=child,
-                kind=child.name.value if hasattr(child, "name") else "unknown",
-                range=symbol_kind,
+                name=child.sym_name if isinstance(child, ast.AstSymbolNode) else "name",
+                kind=symbol_kind,
+                range=node_range,
                 selection_range=node_range,
                 children=[],
             )
