@@ -11,7 +11,7 @@ can calculate_area(radius: float) -> float;
 can main_run;
 
 """Base class for a shape."""
-obj Shape {
+obj : priv Shape {
     has shape_type: ShapeType;
 
     can area -> float abs;
