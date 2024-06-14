@@ -4,13 +4,25 @@ import {
     LanguageClientOptions,
     ServerOptions
 } from 'vscode-languageclient/node';
+import * as path from 'path';
 
 let client: LanguageClient;
 
+function getCondaEnvironment(): string | undefined {
+    const condaPath = process.env.CONDA_PREFIX;
+    if (condaPath) {
+        return path.join(condaPath, 'bin', 'jac');
+    }
+    return undefined;
+}
+
 export function activate(context: vscode.ExtensionContext) {
+    const condaJac = getCondaEnvironment();
+    const jacCommand = condaJac ? condaJac : 'jac';
+
     let serverOptions: ServerOptions = {
-        run: { command: 'jac', args: ["lsp"] },
-        debug: { command: 'jac', args: ["lsp"] }
+        run: { command: jacCommand, args: ["lsp"] },
+        debug: { command: jacCommand, args: ["lsp"] }
     };
 
     let clientOptions: LanguageClientOptions = {
@@ -31,7 +43,6 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('Failed to start Jac Language Server: ' + error.message);
         console.error('Failed to start Jac Language Server: ', error);
     });
-
 }
 
 export function deactivate(): Thenable<void> | undefined {
