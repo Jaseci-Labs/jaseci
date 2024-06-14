@@ -17,7 +17,7 @@ from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.langserve.utils import (
     collect_symbols,
-    find_deepest_node_at_pos,
+    find_deepest_symbol_node_at_pos,
 )
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
@@ -276,7 +276,7 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover]:
         """Return hover information for a file."""
-        node_selected = find_deepest_node_at_pos(
+        node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir, position.line, position.character
         )
         value = self.get_node_info(node_selected) if node_selected else None
@@ -315,6 +315,52 @@ class JacLangServer(LanguageServer):
         """Return document symbols for a file."""
         root_node = self.modules[file_path].ir
         return collect_symbols(root_node)
+
+    def get_definition(
+        self, file_path: str, position: lspt.Position
+    ) -> Optional[lspt.Location]:
+        """Return definition location for a file."""
+        node_selected: Optional[ast.AstSymbolNode] = find_deepest_symbol_node_at_pos(
+            self.modules[file_path].ir, position.line, position.character
+        )
+        if node_selected:
+            if isinstance(node_selected, (ast.ElementStmt, ast.BuiltinType)):
+                return None
+            decl_node = (
+                node_selected.parent.body.target
+                if node_selected.parent
+                and isinstance(node_selected.parent, ast.AstImplNeedingNode)
+                and isinstance(node_selected.parent.body, ast.AstImplOnlyNode)
+                else (
+                    node_selected.sym_link.decl
+                    if (node_selected.sym_link and node_selected.sym_link.decl)
+                    else node_selected
+                )
+            )
+            self.log_py(f"{node_selected}, {decl_node}")
+            decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
+            try:
+                decl_range = lspt.Range(
+                    start=lspt.Position(
+                        line=decl_node.loc.first_line - 1,
+                        character=decl_node.loc.col_start - 1,
+                    ),
+                    end=lspt.Position(
+                        line=decl_node.loc.last_line - 1,
+                        character=decl_node.loc.col_end - 1,
+                    ),
+                )
+            except ValueError:  # 'print' name has decl in 0,0,0,0
+                return None
+            decl_location = lspt.Location(
+                uri=decl_uri,
+                range=decl_range,
+            )
+
+            return decl_location
+        else:
+            self.log_info("No declaration found for the selected node.")
+            return None
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

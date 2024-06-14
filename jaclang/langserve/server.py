@@ -147,6 +147,14 @@ async def document_symbol(
     return ls.get_document_symbols(params.text_document.uri)
 
 
+@server.feature(lspt.TEXT_DOCUMENT_DEFINITION)
+async def definition(
+    ls: JacLangServer, params: lspt.TextDocumentPositionParams
+) -> Optional[lspt.Location]:
+    """Provide definition."""
+    return ls.get_definition(params.text_document.uri, params.position)
+
+
 def run_lang_server() -> None:
     """Run the language server."""
     server.start_io()
