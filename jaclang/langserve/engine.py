@@ -15,7 +15,10 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import type_checker_sched
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
-from jaclang.langserve.utils import find_deepest_node_at_pos
+from jaclang.langserve.utils import (
+    collect_symbols,
+    find_deepest_node_at_pos,
+)
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
 
@@ -307,6 +310,11 @@ class JacLangServer(LanguageServer):
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
+
+    def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
+        """Return document symbols for a file."""
+        root_node = self.modules[file_path].ir
+        return collect_symbols(root_node)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

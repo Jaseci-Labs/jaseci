@@ -7,6 +7,7 @@ from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, Typ
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.symtable import SymbolTable
 
+import lsprotocol.types as lspt
 
 T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
@@ -91,3 +92,43 @@ def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
     ):
         return True
     return False
+
+
+def collect_symbols(node: ast.AstNode) -> list[lspt.DocumentSymbol]:
+    """Recursively collect symbols from the AST."""
+    symbols = []
+    for child in node.kid:
+        if isinstance(child, (ast.Architype, ast.Ability, ast.GlobalVars)):
+            symbol_kind = (
+                lspt.SymbolKind.Class
+                if isinstance(child, ast.Architype)
+                else (
+                    lspt.SymbolKind.Method
+                    if isinstance(child, ast.Ability)
+                    else (
+                        lspt.SymbolKind.Variable
+                        if isinstance(child, ast.GlobalVars)
+                        else lspt.SymbolKind.Field
+                    )
+                )
+            )
+            node_range = lspt.Range(
+                start=lspt.Position(
+                    line=node.loc.first_line - 1, character=node.loc.col_start - 1
+                ),
+                end=lspt.Position(
+                    line=node.loc.last_line - 1, character=node.loc.col_end - 1
+                ),
+            )
+            symbol = lspt.DocumentSymbol(
+                name=child,
+                kind=child.name.value if hasattr(child, "name") else "unknown",
+                range=symbol_kind,
+                selection_range=node_range,
+                children=[],
+            )
+            symbol.children = collect_symbols(child)
+            symbols.append(symbol)
+        elif hasattr(child, "kid") and child.kid:
+            symbols.extend(collect_symbols(child))
+    return symbols
