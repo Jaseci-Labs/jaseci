@@ -679,7 +679,7 @@ class PyastGenPass(Pass):
         ):
             if isinstance(i, ast.Ability) and i.signature:
                 self.method_sigs.append(i.signature)
-        if isinstance(node.body, ast.ArchDef):
+        if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
 
     def exit_architype(self, node: ast.Architype) -> None:
@@ -855,7 +855,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        if isinstance(node.body, ast.EnumDef):
+        if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
 
     def exit_enum(self, node: ast.Enum) -> None:
@@ -921,7 +921,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        if isinstance(node.body, ast.AbilityDef):
+        if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
 
     def exit_ability(self, node: ast.Ability) -> None:

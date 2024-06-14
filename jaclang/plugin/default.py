@@ -21,8 +21,7 @@ from jaclang.core.aott import (
     extract_non_primary_type,
     get_all_type_explanations,
     get_info_types,
-    get_object_string,
-    get_type_annotation,
+    get_input_information,
 )
 from jaclang.core.construct import (
     Architype,
@@ -707,14 +706,8 @@ class JacFeatureDefaults:
         incl_info = [x for x in incl_info if not isinstance(x[1], type)]
         information, collected_types = get_info_types(_scope, mod_registry, incl_info)
         type_collector.extend(collected_types)
-        inputs_information_list = []
-        for i in inputs:
-            typ_anno = get_type_annotation(i[3])
-            type_collector.extend(extract_non_primary_type(typ_anno))
-            inputs_information_list.append(
-                f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
-            )
-        inputs_information = "\n".join(inputs_information_list)
+
+        inputs_information = get_input_information(inputs, type_collector)
 
         output_information = f"{outputs[0]} ({outputs[1]})"
         type_collector.extend(extract_non_primary_type(outputs[1]))

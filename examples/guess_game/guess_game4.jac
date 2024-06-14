@@ -32,7 +32,6 @@ obj GuessTheNumberGame :Game: {
 The init method sets the number of attempts to 10.
 :ob:Game:can:play method is implemented to run the game. This another way in jaclang to add methods to a existing class.
 """
-
 :obj:Game:can:play {
     raise "Subclasses must implement this method." |> NotImplementedError;
 }
@@ -66,7 +65,7 @@ The init method sets the number of attempts to 10.
         self.attempts = 0;# end the game
         self.won = True;
     }
-    self.attempts-=1;
+    self.attempts -= 1;
     f"You have {self.attempts} attempts left." |> print;
 }
 # Run the game

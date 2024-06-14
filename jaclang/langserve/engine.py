@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from enum import IntEnum
 from hashlib import md5
 from typing import Optional, Sequence
@@ -284,90 +285,25 @@ class JacLangServer(LanguageServer):
             )
         return None
 
-    def get_node_info(self, node: ast.AstNode) -> Optional[str]:
+    def get_node_info(self, node: ast.AstSymbolNode) -> Optional[str]:
         """Extract meaningful information from the AST node."""
         try:
-            if isinstance(node, ast.Token):
-                if isinstance(node, ast.AstSymbolNode):
-                    if isinstance(node, ast.String):
-                        return None
-                    if node.sym_link and node.sym_link.decl:
-                        decl_node = node.sym_link.decl
-                        if isinstance(decl_node, ast.Architype):
-                            if decl_node.doc:
-                                node_info = f"({decl_node.arch_type.value}) {node.value} \n{decl_node.doc.lit_value}"
-                            else:
-                                node_info = (
-                                    f"({decl_node.arch_type.value}) {node.value}"
-                                )
-                            if decl_node.semstr:
-                                node_info += f"\n{decl_node.semstr.lit_value}"
-                        elif isinstance(decl_node, ast.Ability):
-                            node_info = f"(ability) can {node.value}"
-                            if decl_node.signature:
-                                node_info += f" {decl_node.signature.unparse()}"
-                            if decl_node.doc:
-                                node_info += f"\n{decl_node.doc.lit_value}"
-                            if decl_node.semstr:
-                                node_info += f"\n{decl_node.semstr.lit_value}"
-                        elif isinstance(decl_node, ast.Name):
-                            if (
-                                decl_node.parent
-                                and isinstance(decl_node.parent, ast.SubNodeList)
-                                and decl_node.parent.parent
-                                and isinstance(decl_node.parent.parent, ast.Assignment)
-                                and decl_node.parent.parent.type_tag
-                            ):
-                                node_info = (
-                                    f"(variable) {decl_node.value}: "
-                                    f"{decl_node.parent.parent.type_tag.unparse()}"
-                                )
-                                if decl_node.parent.parent.semstr:
-                                    node_info += (
-                                        f"\n{decl_node.parent.parent.semstr.lit_value}"
-                                    )
-                            else:
-                                if decl_node.value in [
-                                    "str",
-                                    "int",
-                                    "float",
-                                    "bool",
-                                    "bytes",
-                                    "list",
-                                    "tuple",
-                                    "set",
-                                    "dict",
-                                    "type",
-                                ]:
-                                    node_info = f"({decl_node.value}) Built-in type"
-                                else:
-                                    node_info = f"(variable) {decl_node.value}: None"
-                        elif isinstance(decl_node, ast.HasVar):
-                            if decl_node.type_tag:
-                                node_info = f"(variable) {decl_node.name.value} {decl_node.type_tag.unparse()}"
-                            else:
-                                node_info = f"(variable) {decl_node.name.value}"
-                            if decl_node.semstr:
-                                node_info += f"\n{decl_node.semstr.lit_value}"
-                        elif isinstance(decl_node, ast.ParamVar):
-                            if decl_node.type_tag:
-                                node_info = f"(parameter) {decl_node.name.value} {decl_node.type_tag.unparse()}"
-                            else:
-                                node_info = f"(parameter) {decl_node.name.value}"
-                            if decl_node.semstr:
-                                node_info += f"\n{decl_node.semstr.lit_value}"
-                        elif isinstance(decl_node, ast.ModuleItem):
-                            node_info = (
-                                f"(ModuleItem) {node.value}"  # TODO: Add more info
-                            )
-                        else:
-                            node_info = f"{node.value}"
-                    else:
-                        node_info = f"{node.value}"  # non symbol node
-                else:
-                    return None
-            else:
-                return None
+            if isinstance(node, ast.NameSpec):
+                node = node.name_of
+            access = node.sym_link.access.value + " " if node.sym_link else None
+            node_info = (
+                f"({access if access else " "}{node.sym_type.value}) {node.sym_name}"
+            )
+            if node.sym_info.clean_type:
+                node_info += f": {node.sym_info.clean_type}"
+            if isinstance(node, ast.AstSemStrNode) and node.semstr:
+                node_info += f"\n{node.semstr.value}"
+            if isinstance(node, ast.AstDocNode) and node.doc:
+                node_info += f"\n{node.doc.value}"
+            if isinstance(node, ast.Ability) and node.signature:
+                node_info += f"\n{node.signature.unparse()}"
+            self.log_py(node.pp())
+            self.log_py(f"mypy_node: {node.gen.mypy_ast}")
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
@@ -435,3 +371,7 @@ class JacLangServer(LanguageServer):
         """Log an info message."""
         self.show_message_log(message, lspt.MessageType.Info)
         self.show_message(message, lspt.MessageType.Info)
+
+    def log_py(self, message: str) -> None:
+        """Log a message."""
+        logging.info(message)

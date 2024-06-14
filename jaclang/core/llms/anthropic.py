@@ -45,12 +45,41 @@ class Anthropic(BaseLLM):
         self.client = anthropic.Anthropic()
         self.verbose = verbose
         self.max_tries = max_tries
-        self.model_name = kwargs.get("model_name", "claude-3-sonnet-20240229")
+        self.model_name = str(kwargs.get("model_name", "claude-3-sonnet-20240229"))
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)
 
-    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+    def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
+        if not isinstance(meaning_in, str):
+            assert self.model_name.startswith(
+                ("claude-3-opus", "claude-3-sonnet", "claude-3-haiku")
+            ), f"Model {self.model_name} is not multimodal, use a multimodal model instead."
+
+            import re
+
+            formatted_meaning_in = []
+            for item in meaning_in:
+                if item["type"] == "image_url":
+                    # "data:image/jpeg;base64,base64_string"
+                    img_match = re.match(
+                        r"data:(image/[a-zA-Z]*);base64,(.*)", item["source"]
+                    )
+                    if img_match:
+                        media_type, base64_string = img_match.groups()
+                    formatted_meaning_in.append(
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": base64_string,
+                            },
+                        }
+                    )
+                    continue
+                formatted_meaning_in.append(item)
+            meaning_in = formatted_meaning_in
         messages = [{"role": "user", "content": meaning_in}]
         output = self.client.messages.create(
             model=kwargs.get("model_name", self.model_name),

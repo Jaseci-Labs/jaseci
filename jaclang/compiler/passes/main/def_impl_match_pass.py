@@ -9,7 +9,7 @@ body field.
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
-from jaclang.compiler.symtable import Symbol, SymbolTable, SymbolType
+from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
 class DeclImplMatchPass(Pass):
@@ -39,11 +39,12 @@ class DeclImplMatchPass(Pass):
     def connect_def_impl(self, sym_tab: SymbolTable) -> None:
         """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
-            if sym.sym_type == SymbolType.IMPL:
+            if isinstance(sym.decl, ast.AstImplOnlyNode):
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
+                name_of_links = []  # to link archref names to decls
                 lookup = sym_tab.lookup(arch_refs[0])
-                # Below may need to be a while instead of if to skip over local
+                # If below may need to be a while instead of if to skip over local
                 # import name collisions (see test: test_impl_decl_resolution_fix)
                 if lookup and not isinstance(lookup.decl, ast.AstImplNeedingNode):
                     lookup = sym_tab.parent.lookup(arch_refs[0])
@@ -52,6 +53,7 @@ class DeclImplMatchPass(Pass):
                     if len(arch_refs) == 1 and lookup
                     else lookup.defn[-1] if lookup else None
                 )
+                name_of_links.append(decl_node) if decl_node else None
                 for name in arch_refs[1:]:
                     if decl_node:
                         lookup = (
@@ -64,6 +66,7 @@ class DeclImplMatchPass(Pass):
                             if len(arch_refs) == 1 and lookup
                             else lookup.defn[-1] if lookup else None
                         )
+                        name_of_links.append(decl_node) if decl_node else None
                     else:
                         break
                 if not decl_node:
@@ -76,6 +79,9 @@ class DeclImplMatchPass(Pass):
                     continue
                 decl_node.body = sym.decl  # type: ignore
                 sym.decl.decl_link = decl_node  # type: ignore
+                for idx, a in enumerate(sym.decl.target.archs):
+                    if isinstance(a.name_ref.sym_name_node, ast.NameSpec):
+                        a.name_ref.sym_name_node.name_of = name_of_links[idx]
                 decl_node.sym_tab.tab = sym.decl.sym_tab.tab  # type: ignore
         for i in sym_tab.kid:
             self.connect_def_impl(i)

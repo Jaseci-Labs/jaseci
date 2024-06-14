@@ -112,11 +112,11 @@ class BaseLLM:
         self.max_tries = max_tries
         raise NotImplementedError
 
-    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+    def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
         raise NotImplementedError
 
-    def __call__(self, input_text: str, **kwargs: dict) -> str:
+    def __call__(self, input_text: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input text."""
         if self.verbose:
             logger.info(f"Meaning In\n{input_text}")
@@ -131,7 +131,7 @@ class BaseLLM:
     ) -> str:
         """Resolve the output string to return the reasoning and output."""
         if self.verbose:
-            logger.opt(colors=True).info(f"Meaning Out\n<green>{meaning_out}</green>")
+            logger.info(f"Meaning Out\n{meaning_out}")
         output_match = re.search(r"\[Output\](.*)", meaning_out)
         output = output_match.group(1).strip() if output_match else None
         if not output_match:

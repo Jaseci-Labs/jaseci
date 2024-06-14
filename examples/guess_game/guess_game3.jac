@@ -10,9 +10,9 @@ as arguments of the right hand side function.
 i.e, "Hello" |> print is equivalent to print("Hello")
 """
 obj Game {
-
     has attempts: int,
         won: bool = False;
+
     can play {
         raise "Subclasses must implement this method." |> NotImplementedError;
     }
@@ -50,7 +50,7 @@ obj GuessTheNumberGame :Game: {
             self.attempts = 0;# end the game
             self.won = True;
         }
-        self.attempts-=1;
+        self.attempts -= 1;
         f"You have {self.attempts} attempts left." |> print;
     }
 }
