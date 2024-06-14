@@ -1,6 +1,6 @@
 {
   "name": "jaclang-extension",
-  "version": "2024.6.13",
+  "version": "2024.6.14",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
   "publisher": "jaseci-labs",
