@@ -1,14 +1,13 @@
 import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
-
 # glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 # glob llm = Groq();
-glob llm = Ollama(model_name="phi3");
 
+glob llm = Ollama(model_name="phi3");
 
 enum 'Personality of the Person'
 Personality {
-   INTROVERT: 'Person who is shy and reticent' = "Introvert",
-   EXTROVERT: 'Person who is outgoing and socially confident' = "Extrovert"
+    INTROVERT: 'Person who is shy and reticent' = "Introvert",
+    EXTROVERT: 'Person who is outgoing and socially confident' = "Extrovert"
 }
 
 obj 'Person'
@@ -24,10 +23,15 @@ glob personality_examples: 'Personality Information of Famous People': dict[str,
 };
 
 can 'Get Person Information use common knowledge'
-get_person_info(name: 'Name of the Person': str) -> 'Person': Person
-by llm(reason= True, temperature=0.0, incl_info=(personality_examples));
+get_person_info(name: 'Name of the Person': str) -> 'Person': Person by llm(
+    reason=True,
+    temperature=0.0,
+    incl_info=(personality_examples)
+);
 
 with entry {
     person_obj = get_person_info('Martin Luther King Jr.');
-    print(f"{person_obj.full_name} was a {person_obj.personality.value} person who died in {person_obj.yod}");
+    print(
+        f"{person_obj.full_name} was a {person_obj.personality.value} person who died in {person_obj.yod}"
+    );
 }
