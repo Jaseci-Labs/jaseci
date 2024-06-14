@@ -335,11 +335,11 @@ class JacLangServer(LanguageServer):
                 decl_range = lspt.Range(
                     start=lspt.Position(
                         line=decl_node.loc.first_line - 1,
-                        character=decl_node.loc.col_start,
+                        character=decl_node.loc.col_start - 1,
                     ),
                     end=lspt.Position(
                         line=decl_node.loc.last_line - 1,
-                        character=decl_node.loc.col_end,
+                        character=decl_node.loc.col_end - 1,
                     ),
                 )
             except ValueError:  # 'print' name has decl in 0,0,0,0
