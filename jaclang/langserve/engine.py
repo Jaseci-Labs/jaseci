@@ -14,7 +14,7 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import type_checker_sched
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
-from jaclang.langserve.utils import find_deepest_node_at_pos
+from jaclang.langserve.utils import find_deepest_symbol_node_at_pos
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
 
@@ -272,7 +272,7 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover]:
         """Return hover information for a file."""
-        node_selected = find_deepest_node_at_pos(
+        node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir, position.line, position.character
         )
         value = self.get_node_info(node_selected) if node_selected else None
@@ -376,45 +376,46 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Location]:
         """Return definition location for a file."""
-        node_selected = find_deepest_node_at_pos(
+        node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir, position.line, position.character
         )
-        if not node_selected or not isinstance(node_selected, ast.Token):
-            self.log_info("No node selected or node is not a token.")
-            return None
-        elif isinstance(node_selected.parent, (ast.ArchRef, ast.SpecialVarRef)):
-            self.log_warning("ArchRef or SpecialVarRef not supported yet.")
-            return None
-        # elif (
-        # isinstance(node_selected, ast.AstSymbolNode)
-        # and node_selected.sym_link and node_selected.sym_link.decl)
-        # or (isinstance(node_selected.parent, ast.AstSymbolNode)
-        # and node_selected.parent.sym_link and node_selected.parent.sym_link.decl):
-        elif (
+        if (
             isinstance(node_selected, ast.AstSymbolNode)
             and node_selected.sym_link
             and node_selected.sym_link.decl
         ):
             decl_node = node_selected.sym_link.decl
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
-            decl_range = lspt.Range(
-                start=lspt.Position(
-                    line=decl_node.loc.first_line - 1,
-                    character=decl_node.loc.col_start - 1,
-                ),
-                end=lspt.Position(
-                    line=decl_node.loc.last_line - 1,
-                    character=decl_node.loc.col_end - 1,
-                ),
-            )
+            if node_selected == decl_node:
+                decl_range = lspt.Range(
+                    start=lspt.Position(
+                        line=decl_node.loc.first_line - 1,
+                        character=decl_node.loc.col_start ,
+                    ),
+                    end=lspt.Position(
+                        line=decl_node.loc.last_line - 1,
+                        character=decl_node.loc.col_end ,
+                    ),
+                )
+            else:
+                decl_range = lspt.Range(
+                    start=lspt.Position(
+                        line=decl_node.loc.first_line - 1 ,
+                        character=decl_node.loc.col_start ,
+                    ),
+                    end=lspt.Position(
+                        line=decl_node.loc.last_line ,
+                        character=decl_node.loc.col_end ,
+                    ),
+                )
             decl_location = lspt.Location(
                 uri=decl_uri,
                 range=decl_range,
             )
-            self.log_info(
-                f"Definition found at {decl_location.uri}:{decl_range.start.line}:\
-                    {decl_range.start.character}-{decl_range.end.line}:{decl_range.end.character}"
-            )
+            # self.log_info(
+            #     f"Definition found at {decl_location.uri}:{decl_range.start.line}:\
+            #         {decl_range.start.character}-{decl_range.end.line}:{decl_range.end.character}"
+            # )
             return decl_location
         else:
             self.log_info("No declaration found for the selected node.")
