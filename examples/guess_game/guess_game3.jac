@@ -25,7 +25,7 @@ obj GuessTheNumberGame :Game: {
     has attempts: int = 10,
         correct_number: int = (1, 100) |> random.randint;
 
-    can play {
+    override can play {
 
         while self.attempts > 0 {
             guess = "Guess a number between 1 and 100: " |> input;
