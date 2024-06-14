@@ -231,7 +231,7 @@ Here,
 |    Parameters    |          Type              |
 |    --------      |         -------            |
 |   model_params   |   kw_pair \| None          |
-|     reason       |    bool \| None            |
+|     method       |    kw_pair \| None         |
 |    incl_info     |    tuple \| None           |
 |    excl_info     |    tuple   \| None         |
 |    context       |    List                    |
