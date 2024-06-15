@@ -1,6 +1,6 @@
 import:py from jaclang.core.llms, OpenAI;
 
-glob llm = OpenAI(verbose=True, model_name="gpt-4o");
+glob llm = OpenAI(model_name="gpt-4o");
 
 obj 'Position (0-Indexed)'
 Position {
@@ -26,7 +26,8 @@ Abs_Map {
 obj 'Game Level'
 Level {
     has name: 'Number of the Level': int,
-        difficulty: 'Difficulty of the Level': int;
+        difficulty: 'Difficulty of the Level': int,
+        time: 'Time to Complete the Level': int;
     has width: 'Width of the Map': int,
         height: 'Height of the Map': int,
         num_wall: 'Number of Walls in the Map': int,
@@ -79,7 +80,7 @@ obj LevelManager {
         }
 
         new_map = self.get_map(new_level_map);
-        return new_level_map;
+        return new_map;
     }
 
     '''Get the map of the level'''
@@ -108,14 +109,3 @@ obj LevelManager {
     }
 
 }
-
-
-# with entry:__main__ {
-#     level_manager = LevelManager();
-#     for _ in range(2) {
-#         level_manager.get_next_level();
-#         (new_level, new_level_map) = level_manager.get_next_level();
-#         print(new_level);
-#         print('\n'.join(get_map(new_level_map)));
-#     }
-# }

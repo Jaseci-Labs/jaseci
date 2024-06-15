@@ -19,32 +19,6 @@ include:jac map;
 include:jac main;
 include:jac level_manager;
 
-# obj 'Consists of the level configuration data of a certain level'
-# Map {
-#     has Level_no:int = 1;
-#     has time_to_win_level:'in seconds':float = 60.0;
-#     has nos_retry:'How many retry attempts before completing the level':int = 0;
-#     has map:
-#     'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space. All outer characters are B. Only one single player character (P) can be in the map.'
-#     :list[str] = [
-#                                 'BBBBBBBBBBBBBBBBBBBB',
-#                                 'B...E..............B',
-#                                 'B.......B..........B',
-#                                 'B....BBBB..........B',
-#                                 'B..................B',
-#                                 'B..................B',
-#                                 'B.........P........B',
-#                                 'B..................B',
-#                                 'B.............E....B',
-#                                 'B..................B',
-#                                 'B..................B',
-#                                 'B.........B........B',
-#                                 'B.........B........B',
-#                                 'B.........B........B',
-#                                 'BBBBBBBBBBBBBBBBBBBB'
-#                             ];
-# }
-
 '''The walker that initiates the game and runs an instance of the game'''
 walker game{
 
@@ -105,23 +79,17 @@ with entry {
         }
         if here.manager.current_level != self.game_level {
             here.manager.current_level = self.game_level;
-            next_level = here.manager.get_next_level();
+            next_level = here.manager.get_next_level(self.game_level);
             self.level_config.map = next_level;
         } else {
-            self.level_config.map = [[<--][0] -->][0].level_config.map;
+            self.level_config.map = [[<--][0] -->][-1].level_config.map;
         }
 
-        # if str(self.game_level) not in here.map_directory.keys(){
-        #     if here.map_directory {
-        #         new_map = here.generate_level(here.map_directory);
-        #         # print(new_map);
-        #         here.map_directory[str(here.current_level)] = Map(map=new_map, Level_no=here.current_level);
-        #     } else {
-        #         here.map_directory[str(here.current_level)] = Map();
-        #     }
-        # }
-
-        here.g.GameMap.map = self.level_config.map;
+        if here.manager.prev_levels && here.manager.prev_levels[-1].name == self.game_level {
+            here.g.GameMap.map = here.manager.get_map(here.manager.prev_level_maps[-1]);
+        } else {
+            here.g.GameMap.map = self.level_config.map;
+        }
         here.g.new();
         print(":-: Playing Level :", self.game_level, "| Level ID :",  self.level_id, "| Played :", str(self.played));
         start_time = time.time();
@@ -129,8 +97,9 @@ with entry {
         end_time = time.time();
         if here.g.won == True{
             self.level_time = end_time - start_time;
-            here.map_directory[str(self.game_level)].time_to_win_level = self.level_time;
-            # print('Time:', self.level_time);
+            if here.manager.prev_levels {
+                here.manager.prev_levels[-1].time = self.level_time;
+            }
             here.g.game_won();
             self.played = True;
             here.g.won = False;
@@ -140,7 +109,7 @@ with entry {
             visit [-:play:level_id==new_ID:->];
         } else {
             here.g.game_over();
-            here.map_directory[str(self.game_level)].nos_retry += 1;
+            # here.map_directory[str(self.game_level)].nos_retry += 1;
             self.played = True;
             here.g.won = False;
             here.fwd_dir = False;
