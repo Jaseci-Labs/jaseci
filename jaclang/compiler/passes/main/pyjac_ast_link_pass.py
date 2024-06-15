@@ -1,4 +1,9 @@
-"""Jac to python ast link pass."""
+"""Jac to python ast link pass.
+
+This pass is needed so cases where there are multiple Jac nodes relevant to a
+single python node can be linked. For example FuncDef doesn't have a Name node
+however Ability does.
+"""
 
 import ast as ast3
 
