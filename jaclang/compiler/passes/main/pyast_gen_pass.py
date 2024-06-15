@@ -54,6 +54,13 @@ class PyastGenPass(Pass):
             )
         ]
 
+    def enter_node(self, node: ast.AstNode) -> None:
+        """Enter node."""
+        if node.gen.py_ast:
+            self.prune()
+            return
+        super().enter_node(node)
+
     def exit_node(self, node: ast.AstNode) -> None:
         """Exit node."""
         super().exit_node(node)

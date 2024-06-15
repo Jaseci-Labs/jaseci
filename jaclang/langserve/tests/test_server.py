@@ -113,3 +113,22 @@ class TestJacLangServer(TestCase):
             "ability) calculate_area: float",
             lsp.get_hover_info(circle_impl_file, pos).contents.value,
         )
+
+    def test_show_type_impl(self) -> None:
+        """Test that the server doesn't run if there is a syntax error."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        target = uris.from_fs_path(
+            self.fixture_abs_path("../../../../examples/guess_game/guess_game4.jac")
+        )
+        lsp.quick_check(target)
+        lsp.deep_check(target)
+        lsp.type_check(target)
+        pos = lspt.Position(43, 18)
+        self.assertIn(
+            "attempts: int",
+            lsp.get_hover_info(target, pos).contents.value,
+        )
