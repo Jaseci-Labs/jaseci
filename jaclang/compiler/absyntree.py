@@ -1037,7 +1037,7 @@ class Ability(
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
-        signature: Optional[FuncSignature | EventSignature],
+        signature: FuncSignature | EventSignature,
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,

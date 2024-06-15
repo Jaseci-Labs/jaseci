@@ -209,6 +209,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         kid = ([doc] if doc else []) + (
             [name, sig, valid_body] if sig else [name, valid_body]
         )
+        if not sig:
+            raise self.ice("Function signature not found")
         ret = ast.Ability(
             name_ref=name,
             is_async=False,
