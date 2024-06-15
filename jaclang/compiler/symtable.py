@@ -17,7 +17,7 @@ class SymbolType(Enum):
 
     MODULE = "module"  # LSP: Module
     MOD_VAR = "mod_var"  # LSP: Variable
-    VAR = "var"  # LSP: Variable
+    VAR = "variable"  # LSP: Variable
     IMM_VAR = "immutable"  # LSP: Constant
     ABILITY = "ability"  # LSP: Function
     OBJECT_ARCH = "object"  # LSP: Class
@@ -53,6 +53,12 @@ class SymbolInfo:
         self.typ = typ
         self.acc_tag: Optional[SymbolAccess] = acc_tag
         self.typ_sym_table: Optional[SymbolTable] = None
+
+    @property
+    def clean_type(self) -> str:
+        """Get clean type."""
+        ret_type = self.typ.replace("builtins.", "").replace("NoType", "")
+        return ret_type
 
 
 class SymbolAccess(Enum):

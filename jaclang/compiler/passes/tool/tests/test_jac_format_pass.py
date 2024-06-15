@@ -44,8 +44,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
             if diff:
                 print(f"Differences found in comparison:\n{diff}")
-                # raise AssertionError("Files differ after formatting.")
-                self.skipTest("Test failed, but skipping instead of failing.")
+                raise AssertionError("Files differ after formatting.")
+
         except FileNotFoundError:
             print(f"File not found: {original_file} or {formatted_file}")
             raise
@@ -135,14 +135,13 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             diff = "\n".join(unified_diff(before.splitlines(), after.splitlines()))
             self.assertFalse(diff, "AST structures differ after formatting.")
 
-        except Exception:
+        except Exception as e:
             print(add_line_numbers(code_gen_pure.ir.source.code))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
             print(add_line_numbers(code_gen_format.ir.gen.jac))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
             print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
-            self.skipTest("Test failed, but skipping instead of failing.")
-            # raise e
+            raise e
 
 
 JacFormatPassTests.self_attach_micro_tests()

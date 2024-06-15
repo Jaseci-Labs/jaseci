@@ -263,6 +263,11 @@ class FuseTypeInfoPass(Pass):
                 "Getting type of 'HasVar' is only supported with AssignmentStmt"
             )
 
+    def exit_has_var(self, node: ast.HasVar) -> None:
+        """Pass handler for HasVar nodes."""
+        node.sym_info.typ = node.name.sym_info.typ
+        node.sym_info.typ_sym_table = node.name.sym_info.typ_sym_table
+
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:
         """Pass handler for MultiString nodes."""

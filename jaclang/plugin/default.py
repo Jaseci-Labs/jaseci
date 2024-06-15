@@ -7,6 +7,7 @@ import html
 import os
 import pickle
 import types
+from collections import OrderedDict
 from contextvars import ContextVar
 from dataclasses import field
 from functools import wraps
@@ -20,8 +21,7 @@ from jaclang.core.aott import (
     extract_non_primary_type,
     get_all_type_explanations,
     get_info_types,
-    get_object_string,
-    get_type_annotation,
+    get_input_information,
 )
 from jaclang.core.construct import (
     Architype,
@@ -179,18 +179,26 @@ class JacFeatureDefaults:
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:
-            cls._jac_entry_funcs_ = cls._jac_entry_funcs_ + [
-                x for x in on_entry if x not in cls._jac_entry_funcs_
-            ]
-            cls._jac_exit_funcs_ = cls._jac_exit_funcs_ + [
-                x for x in on_exit if x not in cls._jac_exit_funcs_
-            ]
+            new_entry_funcs = OrderedDict(zip([i.name for i in on_entry], on_entry))
+            entry_funcs = OrderedDict(
+                zip([i.name for i in cls._jac_entry_funcs_], cls._jac_entry_funcs_)
+            )
+            entry_funcs.update(new_entry_funcs)
+            cls._jac_entry_funcs_ = list(entry_funcs.values())
+
+            new_exit_funcs = OrderedDict(zip([i.name for i in on_exit], on_exit))
+            exit_funcs = OrderedDict(
+                zip([i.name for i in cls._jac_exit_funcs_], cls._jac_exit_funcs_)
+            )
+            exit_funcs.update(new_exit_funcs)
+            cls._jac_exit_funcs_ = list(exit_funcs.values())
+
         inner_init = cls.__init__  # type: ignore
 
         @wraps(inner_init)
         def new_init(self: Architype, *args: object, **kwargs: object) -> None:
-            inner_init(self, *args, **kwargs)
             arch_base.__init__(self)
+            inner_init(self, *args, **kwargs)
 
         cls.__init__ = new_init  # type: ignore
         return cls
@@ -698,14 +706,8 @@ class JacFeatureDefaults:
         incl_info = [x for x in incl_info if not isinstance(x[1], type)]
         information, collected_types = get_info_types(_scope, mod_registry, incl_info)
         type_collector.extend(collected_types)
-        inputs_information_list = []
-        for i in inputs:
-            typ_anno = get_type_annotation(i[3])
-            type_collector.extend(extract_non_primary_type(typ_anno))
-            inputs_information_list.append(
-                f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
-            )
-        inputs_information = "\n".join(inputs_information_list)
+
+        inputs_information = get_input_information(inputs, type_collector)
 
         output_information = f"{outputs[0]} ({outputs[1]})"
         type_collector.extend(extract_non_primary_type(outputs[1]))

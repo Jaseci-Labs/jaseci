@@ -51,8 +51,11 @@ class Ollama(BaseLLM):
             k: v for k, v in kwargs.items() if k not in ["model_name", "host"]
         }
 
-    def __infer__(self, meaning_in: str, **kwargs: dict) -> str:
+    def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
+        assert isinstance(
+            meaning_in, str
+        ), "Currently Multimodal models are not supported. Please provide a string input."
         model = str(kwargs.get("model_name", self.model_name))
         if not self.check_model(model):
             self.download_model(model)

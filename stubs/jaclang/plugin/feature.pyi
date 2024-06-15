@@ -77,17 +77,17 @@ class JacFeature:
     @staticmethod
     def edge_ref(
         node_obj: NodeArchitype | list[NodeArchitype],
+        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        edges_only: bool,
+        edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
-        edges_only: bool,
+        edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]: ...
     @staticmethod
     def disconnect(

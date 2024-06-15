@@ -28,13 +28,20 @@ class DefUsePass(SymTabPass):
         sym_tab: Optional[SymbolTable],
         """
         if node.arch_type.name == Tok.KW_WALKER:
-            for i in (
-                self.get_all_sub_nodes(node, ast.VisitStmt)
-                + self.get_all_sub_nodes(node, ast.IgnoreStmt)
-                + self.get_all_sub_nodes(node, ast.DisengageStmt)
-                + self.get_all_sub_nodes(node, ast.EdgeOpRef)
-            ):
-                i.from_walker = True
+            self.inform_from_walker(node)
+            for i in self.get_all_sub_nodes(node, ast.Ability):
+                if isinstance(i.body, ast.AbilityDef):
+                    self.inform_from_walker(i.body)
+
+    def inform_from_walker(self, node: ast.AstNode) -> None:
+        """Inform all sub nodes that they are from a walker."""
+        for i in (
+            self.get_all_sub_nodes(node, ast.VisitStmt)
+            + self.get_all_sub_nodes(node, ast.IgnoreStmt)
+            + self.get_all_sub_nodes(node, ast.DisengageStmt)
+            + self.get_all_sub_nodes(node, ast.EdgeOpRef)
+        ):
+            i.from_walker = True
 
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.

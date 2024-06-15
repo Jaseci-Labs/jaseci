@@ -4,18 +4,30 @@ AOTT: Automated Operational Type Transformation.
 This has all the necessary functions to perform the AOTT operations.
 """
 
+import base64
+import logging
 import re
 from enum import Enum
+from io import BytesIO
 from typing import Any
+
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 from jaclang.core.llms.base import BaseLLM
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 
 
+IMG_FORMATS = ["PngImageFile", "JpegImageFile"]
+
+
 def aott_raise(
     model: BaseLLM,
     information: str,
-    inputs_information: str,
+    inputs_information: str | list[dict],
     output_information: str,
     type_explanations: str,
     action: str,
@@ -25,18 +37,43 @@ def aott_raise(
     model_params: dict,
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
+    system_prompt = model.MTLLM_SYSTEM_PROMPT
+    meaning_in: str | list[dict]
     if method != "ReAct":
-        system_prompt = model.MTLLM_SYSTEM_PROMPT
-        mtllm_prompt = model.MTLLM_PROMPT.format(
-            information=information,
-            inputs_information=inputs_information,
-            output_information=output_information,
-            type_explanations=type_explanations,
-            action=action,
-            context=context,
-        )
         method_prompt = model.MTLLM_METHOD_PROMPTS[method]
-        meaning_in = f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}"
+        if isinstance(inputs_information, str):
+            mtllm_prompt = model.MTLLM_PROMPT.format(
+                information=information,
+                inputs_information=inputs_information,
+                output_information=output_information,
+                type_explanations=type_explanations,
+                action=action,
+                context=context,
+            ).strip()
+            meaning_in = f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}".strip()
+        else:
+            upper_half = model.MTLLM_PROMPT.split("{inputs_information}")[0]
+            lower_half = model.MTLLM_PROMPT.split("{inputs_information}")[1]
+            upper_half = upper_half.format(
+                information=information,
+                context=context,
+            )
+            lower_half = lower_half.format(
+                output_information=output_information,
+                type_explanations=type_explanations,
+                action=action,
+            )
+            meaning_in = (
+                [
+                    {"type": "text", "text": system_prompt},
+                    {"type": "text", "text": upper_half},
+                ]
+                + inputs_information
+                + [
+                    {"type": "text", "text": lower_half},
+                    {"type": "text", "text": method_prompt},
+                ]
+            )
         return model(meaning_in, **model_params)
     else:
         assert tools, "Tools must be provided for the ReAct method."
@@ -212,3 +249,62 @@ class Tool:
         """Initialize the Tool class."""
         # TODO: Implement the Tool class
         pass
+
+
+def get_input_information(
+    inputs: list[tuple[str, str, str, Any]], type_collector: list
+) -> str | list[dict]:
+    """
+    Get the input information for the AOTT operation.
+
+    Returns:
+        str | list[dict]: If the input does not contain images, returns a string with the input information.
+            If the input contains images, returns a list of dictionaries representing the input information,
+            where each dictionary contains either text or image_url.
+
+    """
+    contains_imgs = any(get_type_annotation(i[3]) in IMG_FORMATS for i in inputs)
+    if not contains_imgs:
+        inputs_information_list = []
+        for i in inputs:
+            typ_anno = get_type_annotation(i[3])
+            type_collector.extend(extract_non_primary_type(typ_anno))
+            inputs_information_list.append(
+                f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
+            )
+        return "\n".join(inputs_information_list)
+    else:
+        inputs_information_dict_list: list[dict] = []
+        for i in inputs:
+            if get_type_annotation(i[3]) in IMG_FORMATS:
+                img_base64 = image_to_base64(i[3])
+                image_repr: list[dict] = [
+                    {
+                        "type": "text",
+                        "text": f"{i[0]} ({i[2]}) (Image) = ",
+                    },
+                    {"type": "image_url", "image_url": {"url": img_base64}},
+                ]
+                inputs_information_dict_list.extend(image_repr)
+                continue
+            typ_anno = get_type_annotation(i[3])
+            type_collector.extend(extract_non_primary_type(typ_anno))
+            inputs_information_dict_list.append(
+                {
+                    "type": "text",
+                    "text": f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}",
+                }
+            )
+        return inputs_information_dict_list
+
+
+def image_to_base64(image: Image) -> str:
+    """Convert an image to base64 expected by OpenAI."""
+    if not Image:
+        log = logging.getLogger(__name__)
+        log.error("Pillow is not installed. Please install Pillow to use images.")
+        return ""
+    img_format = image.format
+    with BytesIO() as buffer:
+        image.save(buffer, format=img_format, quality=100)
+        return f"data:image/{img_format.lower()};base64,{base64.b64encode(buffer.getvalue()).decode()}"

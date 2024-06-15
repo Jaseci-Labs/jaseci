@@ -1,17 +1,30 @@
 {
-  "name": "jac",
-  "version": "0.0.2",
-  "displayName": "Jac",
-  "description": "Jac Language",
-  "engines": {
-    "vscode": "^1.79.0"
-  },
-  "categories": [
-    "Programming Languages"
-  ],
+  "name": "jaclang-extension",
+  "version": "2024.6.14",
+  "displayName": "%extension.displayName%",
+  "description": "%extension.description%",
+  "publisher": "jaseci-labs",
+  "license": "MIT",
+  "icon": "./assets/icon.png",
+  "homepage": "https://www.jac-lang.org/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jaseci-Labs/jaclang.git"
+    "url": "https://github.com/Jaseci-Labs/jaclang/support/vscode_ext/jac"
+  },
+  "galleryBanner": {
+    "color": "#1e415e",
+    "theme": "dark"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Snippets",
+    "Data Science",
+    "Machine Learning"
+  ],
+  "engines": {
+    "vscode": "^1.89.0"
   },
   "contributes": {
     "languages": [
@@ -24,7 +37,11 @@
         "extensions": [
           ".jac"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./assets/file-icon.svg",
+          "dark": "./assets/file-icon.svg"
+        }
       }
     ],
     "grammars": [
@@ -41,12 +58,16 @@
     "compile": "tsc -b",
     "build": "vsce",
     "watch": "tsc -b -w",
-    "deploy": "vsce publish --yarn"
+    "deploy": "vsce publish --yarn",
+    "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
   },
   "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.1",
     "@types/vscode": "^1.89.0",
     "@vscode/vsce": "^2.27.0",
-    "@types/node": "^20.14.1",
-    "vscode-languageclient": "^9.0.1"
+    "typescript": "^5.4.5"
   }
 }
