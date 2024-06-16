@@ -127,7 +127,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_imported=False,
             kid=valid,
         )
-        ret.gen.py_ast = [node]
         return self.nu(ret)
 
     def proc_function_def(
