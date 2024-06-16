@@ -1091,7 +1091,7 @@ class PyastGenPass(Pass):
                                 value=(
                                     node.signature.semstr.lit_value
                                     if node.signature.semstr
-                                    else None
+                                    else ""
                                 )
                             )
                         )

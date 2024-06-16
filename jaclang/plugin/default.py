@@ -709,7 +709,7 @@ class JacFeatureDefaults:
 
         inputs_information = get_input_information(inputs, type_collector)
 
-        output_information = f"{outputs[0]} ({outputs[1]})"
+        output_information = f"{outputs[0]} ({outputs[1]})".strip()
         type_collector.extend(extract_non_primary_type(outputs[1]))
         output_type_explanations = "\n".join(
             list(
