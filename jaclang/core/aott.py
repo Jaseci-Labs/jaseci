@@ -19,7 +19,10 @@ except ImportError:
 
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 
-from mtllm.llms.base import BaseLLM
+try:
+    from mtllm.llms.base import BaseLLM
+except ImportError:
+    BaseLLM = None
 
 
 IMG_FORMATS = ["PngImageFile", "JpegImageFile"]
