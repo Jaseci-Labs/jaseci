@@ -1104,7 +1104,7 @@ class PyastGenPass(Pass):
             action = (
                 node.semstr.gen.py_ast[0]
                 if node.semstr
-                else self.sync(ast3.Constant(value=None))
+                else self.sync(ast3.Constant(value=node.name_ref.sym_name))
             )
             return [
                 self.sync(
