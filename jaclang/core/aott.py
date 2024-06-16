@@ -17,7 +17,7 @@ try:
 except ImportError:
     Image = None
 
-from jaclang.core.llms.base import BaseLLM
+from mtllm.llms.base import BaseLLM
 from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 
 

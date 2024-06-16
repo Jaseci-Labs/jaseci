@@ -1,4 +1,4 @@
-import:py from jaclang.core.llms, BaseLLM;
+import:py from mtllm.llms.base, BaseLLM;
 
 obj model:BaseLLM: {
     can __infer__(meaning_in: str, **kwargs: dict) {

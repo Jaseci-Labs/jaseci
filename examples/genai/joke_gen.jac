@@ -1,4 +1,4 @@
-import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
+import:py from mtllm.llms, Anthropic, Ollama, Groq;
 
 # glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 # glob llm = Ollama(model_name="phi3");
