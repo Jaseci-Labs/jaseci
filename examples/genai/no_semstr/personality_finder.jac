@@ -1,9 +1,6 @@
-import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
+import:py from jaclang.core.llms, Anthropic;
 
 glob llm = Anthropic(verbose=True, model_name="claude-3-sonnet-20240229");
-# glob llm = Groq();
-# glob llm = Ollama(model_name="phi3", verbose=True);
-
 
 enum Personality {
    INTROVERT = "Introvert",
