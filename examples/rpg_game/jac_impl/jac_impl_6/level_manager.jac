@@ -2,14 +2,12 @@ import:py from jaclang.core.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
-obj 'Position (0-Indexed)'
-Position {
+obj Position {
     has x: 'X Coordinate': int,
         y: 'Y Coordinate': int;
 }
 
-obj 'Wall'
-Wall {
+obj Wall {
     has start_pos: 'Start Position of the Wall': Position,
         end_pos: 'End Position of the Wall': Position;
 }
@@ -35,14 +33,14 @@ Level {
 }
 
 obj LevelManager {
-    has current_level: int = 1,
+    has current_level: int = 0,
         current_difficulty: int = 1,
         prev_levels: list[Level] = [],
         prev_level_maps: list[Abs_Map] = [];
 
     can 'Create the Next Level'
     create_next_level(last_levels: 'Last Played Levels': list[Level], difficulty: 'Difficulty of the New Level': int) -> 'Next Level': Level by llm(
-        temperature=1.0,
+        temperature=0.8,
         context=["Use the Input Difficulty as the Level Difficulty."
             "Make Sure the New Level is Different from the Previous Levels."
             "Increase of Decrease the Number of Wall, Enemies, Width, Height of the Map according to the Difficulty."
@@ -65,6 +63,7 @@ obj LevelManager {
 
         # Generating the Map of the New Level
         new_level_map = Abs_Map(level=new_level by llm(
+            temperature=0.8,
             context=["Make Sure the Player is not Stuck in the Map."
                 "Make Sure the Player can Reach the Enemies."
                 "Make Sure Player and Enemies are not in the Same Position and not in the Wall."

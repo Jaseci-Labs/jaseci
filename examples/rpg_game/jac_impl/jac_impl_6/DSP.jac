@@ -23,6 +23,7 @@ include:jac level_manager;
 walker game{
 
     has g:Game = None,
+        last_level_id:str = '1_1000',
         current_level:int = 1,
         fwd_dir:bool = True,
         manager:LevelManager = LevelManager();
@@ -82,19 +83,15 @@ with entry {
             next_level = here.manager.get_next_level(self.game_level);
             self.level_config.map = next_level;
         } else {
-            self.level_config.map = [[<--][0] -->][-1].level_config.map;
+            self.level_config.map = [[<--][0] -->](`?level)(?level_id==here.last_level_id)[0].level_config.map;
         }
-
-        if here.manager.prev_levels && here.manager.prev_levels[-1].name == self.game_level {
-            here.g.GameMap.map = here.manager.get_map(here.manager.prev_level_maps[-1]);
-        } else {
-            here.g.GameMap.map = self.level_config.map;
-        }
+        here.g.GameMap.map = self.level_config.map;
         here.g.new();
         print(":-: Playing Level :", self.game_level, "| Level ID :",  self.level_id, "| Played :", str(self.played));
         start_time = time.time();
         here.g.main();
         end_time = time.time();
+        here.last_level_id = self.level_id;
         if here.g.won == True{
             self.level_time = end_time - start_time;
             if here.manager.prev_levels {
