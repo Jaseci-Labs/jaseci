@@ -187,12 +187,13 @@ class FuseTypeInfoPass(Pass):
         # AtomTrailer Object
         if isinstance(node.parent, ast.AtomTrailer):
             target_node = node.parent.target
-            assert isinstance(target_node, ast.AstSymbolNode)
+            assert isinstance(target_node, ast.AtomExpr)
             parent_symbol_table = target_node.sym_info.typ_sym_table
-            assert isinstance(parent_symbol_table, ast.AstSymbolNode)
             if isinstance(parent_symbol_table, ast.SymbolTable):
-                target_node.sym_link = parent_symbol_table.owner.sym_link
-                node.sym_link = parent_symbol_table.lookup(node.sym_name)
+                owner = parent_symbol_table.owner
+                if isinstance(owner, ast.AstSymbolNode):
+                    target_node.sym_link = owner.sym_link
+                    node.sym_link = parent_symbol_table.lookup(node.sym_name)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
