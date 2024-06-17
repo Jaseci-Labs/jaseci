@@ -6,6 +6,7 @@ import pickle
 import sys
 import sysconfig
 
+
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
@@ -851,3 +852,30 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("baz\nbar\n", stdout_value)
+
+    def test_ds_type_check_pass(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/micro/simple_walk.jac")
+        )
+        self.assertEqual(len(mypass.errors_had), 0)
+        self.assertEqual(len(mypass.warnings_had), 0)
+
+    def test_self_with_no_sig(self) -> None:  # we can get rid of this, isn't?
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("nosigself", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("5"), 2)
+
+    def test_hash_init_check(self) -> None:  # we can get rid of this, isn't?
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("hash_init_check", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Test Passed", stdout_value)

@@ -127,7 +127,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_imported=False,
             kid=valid,
         )
-        ret.gen.py_ast = [node]
         return self.nu(ret)
 
     def proc_function_def(
@@ -209,6 +208,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         kid = ([doc] if doc else []) + (
             [name, sig, valid_body] if sig else [name, valid_body]
         )
+        if not sig:
+            raise self.ice("Function signature not found")
         ret = ast.Ability(
             name_ref=name,
             is_async=False,

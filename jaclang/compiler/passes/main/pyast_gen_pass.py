@@ -54,6 +54,13 @@ class PyastGenPass(Pass):
             )
         ]
 
+    def enter_node(self, node: ast.AstNode) -> None:
+        """Enter node."""
+        if node.gen.py_ast:
+            self.prune()
+            return
+        super().enter_node(node)
+
     def exit_node(self, node: ast.AstNode) -> None:
         """Exit node."""
         super().exit_node(node)
@@ -677,7 +684,7 @@ class PyastGenPass(Pass):
             if isinstance(node.body, ast.ArchDef)
             else node.body.items if node.body else []
         ):
-            if isinstance(i, ast.Ability) and i.signature:
+            if isinstance(i, ast.Ability):
                 self.method_sigs.append(i.signature)
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
@@ -1097,7 +1104,7 @@ class PyastGenPass(Pass):
             action = (
                 node.semstr.gen.py_ast[0]
                 if node.semstr
-                else self.sync(ast3.Constant(value=None))
+                else self.sync(ast3.Constant(value=node.name_ref.sym_name))
             )
             return [
                 self.sync(
