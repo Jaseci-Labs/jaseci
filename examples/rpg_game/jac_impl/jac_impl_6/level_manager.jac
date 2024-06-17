@@ -41,12 +41,15 @@ obj LevelManager {
     can 'Create the Next Level'
     create_next_level(last_levels: 'Last Played Levels': list[Level], difficulty: 'Difficulty of the New Level': int) -> 'Next Level': Level by llm(
         temperature=0.8,
-        context=["Use the Input Difficulty as the Level Difficulty."
-            "Make Sure the New Level is Different from the Previous Levels."
-            "Increase of Decrease the Number of Wall, Enemies, Width, Height of the Map according to the Difficulty."
+        context=["Use the Input Difficulty as the Level Difficulty.",
+            "Make Sure the New Level is Different from the Previous Levels.",
+            "Increase of Decrease the Number of Wall, Enemies, Width, Height of the Map according to the Difficulty.",
             "Increase or Decrease the Time Countdown and Number of Retries Allowed according to the Difficulty."]
     );
-    '''Get the Next Level'''
+
+    '''
+    Get the Next Leve
+    '''
     can get_next_level (current_level: int) -> tuple(Level, Abs_Map) {
 
         # Keeping Only the Last 3 Levels
@@ -84,7 +87,7 @@ obj LevelManager {
 
     '''Get the map of the level'''
     can get_map(map: Abs_Map) -> str {
-        map_tiles = [['.' for _ in range(map.level.width)] for _ in range(map.level.height)];
+        map_tiles:list[list[str]] = [['.' for _ in range(map.level.width)] for _ in range(map.level.height)];
 
         for wall in map.walls {
             for x in range(wall.start_pos.x, wall.end_pos.x + 1) {
@@ -102,8 +105,8 @@ obj LevelManager {
             map_tiles[enemy.y][enemy.x] = 'E';
         }
         map_tiles[map.player_pos.y][map.player_pos.x] = 'P';
-        map_tiles = [['B'] + row + ['B'] for row in map_tiles];
-        map_tiles = [['B' for _ in range(map.level.width + 2)]] + map_tiles + [['B' for _ in range(map.level.width + 2)]];
+        map_tiles:list[list[str]] = [['B'] + row + ['B'] for row in map_tiles];
+        map_tiles:list[list[str]] = [['B' for _ in range(map.level.width + 2)]] + map_tiles + [['B' for _ in range(map.level.width + 2)]];
         return [''.join(row) for row in map_tiles];
     }
 
