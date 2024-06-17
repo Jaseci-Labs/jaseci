@@ -17,6 +17,7 @@ from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.langserve.utils import (
     collect_symbols,
+    create_range,
     find_deepest_symbol_node_at_pos,
 )
 from jaclang.vendor.pygls import uris
@@ -66,31 +67,14 @@ class ModuleInfo:
         """Return diagnostics."""
         return [
             lspt.Diagnostic(
-                range=lspt.Range(
-                    start=lspt.Position(
-                        line=error.loc.first_line - 1, character=error.loc.col_start - 1
-                    ),
-                    end=lspt.Position(
-                        line=error.loc.last_line - 1,
-                        character=error.loc.col_end - 1,
-                    ),
-                ),
+                range=create_range(error.loc),
                 message=error.msg,
                 severity=lspt.DiagnosticSeverity.Error,
             )
             for error in self.errors
         ] + [
             lspt.Diagnostic(
-                range=lspt.Range(
-                    start=lspt.Position(
-                        line=warning.loc.first_line - 1,
-                        character=warning.loc.col_start - 1,
-                    ),
-                    end=lspt.Position(
-                        line=warning.loc.last_line - 1,
-                        character=warning.loc.col_end - 1,
-                    ),
-                ),
+                range=create_range(warning.loc),
                 message=warning.msg,
                 severity=lspt.DiagnosticSeverity.Warning,
             )
@@ -311,10 +295,14 @@ class JacLangServer(LanguageServer):
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
 
-    def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
+    def get_document_symbols(
+        self, file_path: str
+    ) -> list[Optional[lspt.DocumentSymbol]]:
         """Return document symbols for a file."""
-        root_node = self.modules[file_path].ir
-        return collect_symbols(root_node , self)
+        root_node = self.modules[file_path].ir.sym_tab
+        if root_node:
+            return collect_symbols(root_node)
+        return []
 
     def get_definition(
         self, file_path: str, position: lspt.Position
@@ -340,16 +328,7 @@ class JacLangServer(LanguageServer):
             self.log_py(f"{node_selected}, {decl_node}")
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
-                decl_range = lspt.Range(
-                    start=lspt.Position(
-                        line=decl_node.loc.first_line - 1,
-                        character=decl_node.loc.col_start - 1,
-                    ),
-                    end=lspt.Position(
-                        line=decl_node.loc.last_line - 1,
-                        character=decl_node.loc.col_end - 1,
-                    ),
-                )
+                decl_range = create_range(decl_node.loc)
             except ValueError:  # 'print' name has decl in 0,0,0,0
                 return None
             decl_location = lspt.Location(
