@@ -183,6 +183,17 @@ class FuseTypeInfoPass(Pass):
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
 
+        # Assign correct symbols to sym_link in case of
+        # AtomTrailer Object
+        if isinstance(node.parent, ast.AtomTrailer):
+            target_node = node.parent.target
+            assert isinstance(target_node, ast.AstSymbolNode)
+            parent_symbol_table = target_node.sym_info.typ_sym_table
+            assert isinstance(parent_symbol_table, ast.AstSymbolNode)
+            if isinstance(parent_symbol_table, ast.SymbolTable):
+                target_node.sym_link = parent_symbol_table.owner.sym_link
+                node.sym_link = parent_symbol_table.lookup(node.sym_name)
+
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Pass handler for ModulePath nodes."""
