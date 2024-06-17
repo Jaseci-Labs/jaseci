@@ -3996,7 +3996,6 @@ class String(Literal):
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize string."""
-        print(self.loc)
         self.value = r"%s" % self.value
         return True
 
