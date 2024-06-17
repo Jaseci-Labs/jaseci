@@ -8,8 +8,8 @@ from typing import Optional, TYPE_CHECKING
 from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
 
 
-if TYPE_CHECKING:
-    import jaclang.compiler.absyntree as ast
+# if TYPE_CHECKING:
+import jaclang.compiler.absyntree as ast
 
 
 class SymbolType(Enum):
