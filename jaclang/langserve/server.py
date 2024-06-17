@@ -139,6 +139,14 @@ def hover(
     return ls.get_hover_info(params.text_document.uri, params.position)
 
 
+@server.feature(lspt.TEXT_DOCUMENT_DOCUMENT_SYMBOL)
+async def document_symbol(
+    ls: JacLangServer, params: lspt.DocumentSymbolParams
+) -> list[lspt.DocumentSymbol]:
+    """Provide document symbols."""
+    return ls.get_document_symbols(params.text_document.uri)
+
+
 @server.feature(lspt.TEXT_DOCUMENT_DEFINITION)
 async def definition(
     ls: JacLangServer, params: lspt.TextDocumentPositionParams

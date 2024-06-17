@@ -1,12 +1,15 @@
 """Utility functions for the language server."""
 
 import asyncio
+import builtins
 from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.symtable import SymbolTable
+from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.compiler.symtable import Symbol, SymbolTable
 
+import lsprotocol.types as lspt
 
 T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
@@ -94,3 +97,51 @@ def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
     ):
         return True
     return False
+
+
+def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
+    """Recursively collect symbols from the AST."""
+    symbols = []
+    if node is None:
+        return symbols
+    for key, item in node.tab.items():
+        if key in dir(builtins):
+            continue
+        if item in [owner_sym(tab) for tab in node.kid]:
+            continue
+        else:
+            pos = create_range(item.defn[0].loc)
+            symbol = lspt.DocumentSymbol(
+                name=key,
+                kind=lspt.SymbolKind.Field,
+                range=pos,
+                selection_range=pos,
+                children=[],
+            )
+            symbols.append(symbol)
+    for sub_tab in node.kid:
+        sub_pos = create_range(sub_tab.owner.loc)
+        symbol = lspt.DocumentSymbol(
+            name=sub_tab.name,
+            kind=lspt.SymbolKind.Class,
+            range=sub_pos,
+            selection_range=sub_pos,
+            children=collect_symbols(sub_tab),
+        )
+        symbols.append(symbol)
+    return symbols
+
+
+def owner_sym(table: SymbolTable) -> Optional[Symbol]:
+    """Get owner sym."""
+    if table.has_parent() and isinstance(table.owner, ast.AstSymbolNode):
+        return table.parent.lookup(table.owner.sym_name)
+    return None
+
+
+def create_range(loc: CodeLocInfo) -> lspt.Range:
+    """Create an lspt.Range from a location object."""
+    return lspt.Range(
+        start=lspt.Position(line=loc.first_line - 1, character=loc.col_start - 1),
+        end=lspt.Position(line=loc.last_line - 1, character=loc.col_end - 1),
+    )
