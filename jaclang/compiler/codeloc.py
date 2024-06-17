@@ -55,7 +55,7 @@ class CodeLocInfo:
     @property
     def last_line(self) -> int:
         """Get line number."""
-        return self.last_tok.line_no
+        return self.last_tok.end_line
 
     @property
     def col_start(self) -> int:
@@ -107,4 +107,4 @@ class CodeLocInfo:
 
     def __str__(self) -> str:
         """Stringify."""
-        return f"{self.first_tok.line_no}:{self.first_tok.c_start} - {self.last_tok.line_no}:{self.last_tok.c_end}"
+        return f"{self.first_line}:{self.col_start} - {self.last_line}:{self.col_end}"

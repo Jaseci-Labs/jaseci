@@ -246,6 +246,7 @@ class SymTabBuildPass(SymTabPass):
                 name=Tok.NAME,
                 value=str(obj),
                 line=0,
+                end_line=0,
                 col_start=0,
                 col_end=0,
                 pos_start=0,
