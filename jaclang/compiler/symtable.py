@@ -134,6 +134,13 @@ class SymbolTable:
         self.tab: dict[str, Symbol] = {}
         self.uses: list[ast.AstSymbolNode] = []
 
+    @property
+    def owner_sym(self) -> Optional[Symbol]:
+        """Get owner sym."""
+        if self.has_parent() and isinstance(self.owner, ast.AstSymbolNode):
+            return self.parent.lookup(self.owner.sym_name)
+        return None
+
     def has_parent(self) -> bool:
         """Check if has parent."""
         return self.parent != self
