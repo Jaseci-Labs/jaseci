@@ -165,10 +165,27 @@ class TestJacLangServer(TestCase):
         lsp.deep_check(circle_file)
         lsp.type_check(circle_file)
         self.assertIn(
-            r"/jaclang/langserve/tests/fixtures/circle_pure.impl.jac:8:0-8:19",
+            "fixtures/circle_pure.impl.jac:8:0-8:19",
             str(lsp.get_definition(circle_file, lspt.Position(9, 16))),
         )
         self.assertIn(
-            r"jaclang/langserve/tests/fixtures/circle_pure.jac:12:0-17:1",
+            "fixtures/circle_pure.jac:12:0-17:1",
             str(lsp.get_definition(circle_file, lspt.Position(20, 17))),
+        )
+
+    def test_go_to_definition_method(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        guess_game_file = uris.from_fs_path(
+            self.fixture_abs_path("../../../../examples/guess_game/guess_game4.jac")
+        )
+        lsp.quick_check(guess_game_file)
+        lsp.deep_check(guess_game_file)
+        lsp.type_check(guess_game_file)
+        self.assertIn(
+            "guess_game4.jac:27:4-27:34",
+            str(lsp.get_definition(guess_game_file, lspt.Position(46, 45))),
         )

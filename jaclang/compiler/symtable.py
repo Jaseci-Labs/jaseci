@@ -107,6 +107,20 @@ class Symbol:
         """Get sym_type."""
         return self.decl.sym_type
 
+    @property
+    def sym_path_str(self) -> str:
+        """Return a full path of the symbol."""
+        out = [self.defn[0].sym_name]
+        current_tab = self.parent_tab
+        while current_tab is not None:
+            out.append(current_tab.name)
+            if current_tab.has_parent():
+                current_tab = current_tab.parent
+            else:
+                break
+        out.reverse()
+        return ".".join(out)
+
     def add_defn(self, node: ast.AstSymbolNode) -> None:
         """Add defn."""
         self.defn.append(node)
