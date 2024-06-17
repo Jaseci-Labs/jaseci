@@ -40,4 +40,8 @@ Without making significant changes to the existing codebase in [jac_impl_3](./ja
 
 ## LLM Generating Maps! : [jac_impl_5](./jac_impl/jac_impl_5/)
 
-If the previous version was the BOMB this implementation would be an ICBM. This is a replica of [jac_impl_4](./jac_impl/jac_impl_4/) with an addition AI based map generation feature. This simple game is the world's first game having procedurally generated maps using LLMs based on previous gameplays. This specific implementation requires an OpenAI API key to operate which will generate playable maps using 'gpt-4'.
+If the previous version was the BOMB this implementation would be an ICBM. This is a replica of [jac_impl_4](./jac_impl/jac_impl_4/) with an addition AI based map generation feature. This simple game is the world's first game having procedurally generated maps using LLMs based on previous gameplays. This specific implementation requires an OpenAI API key to operate which will generate playable maps using 'gpt-4'. But you can use any model that are [available to use with jac-lang](https://www.jac-lang.org//learn/with_llm/).
+
+## Refined Map Generation! : [jac_impl_6](./jac_impl/jac_impl_6/)
+
+The previous implementation introduced the usage of LLMs to generate each level map. How the LLM implementation is somewhat trivial, and straightforward, which will not be the case of a robust map generator. This is a replica of [jac_impl_5](./jac_impl/jac_impl_5/) with a reimagined version of the map generation feature. In this case we are not generating the entire map, but generated map configurations which allows a symbolic the program to generate the map. This new approach is an object-oriented approach which is less prone to generate unplayable maps.
