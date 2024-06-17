@@ -143,8 +143,6 @@ class TestJacLangServer(TestCase):
         lsp.quick_check(circle_file)
         lsp.deep_check(circle_file)
         lsp.type_check(circle_file)
-        print(f"\n\n{lsp.get_document_symbols(circle_file)}\n\n")
-        print(f"\n\n{(lsp.get_document_symbols(circle_file))[6]}\n\n")
         expected_string = (
             "DocumentSymbol(name='calculate_area', kind=<SymbolKind.Function: 12>, range=9:0-9:43, "
             "selection_range=9:0-9:43, detail=None, tags=None, deprecated=None, children=["
