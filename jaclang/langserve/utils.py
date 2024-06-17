@@ -104,31 +104,43 @@ def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
     symbols = []
     if node is None:
         return symbols
+
     for key, item in node.tab.items():
         if key in dir(builtins):
             continue
         if item in [owner_sym(tab) for tab in node.kid]:
             continue
         else:
+
             pos = create_range(item.defn[0].loc)
             symbol = lspt.DocumentSymbol(
                 name=key,
-                kind=lspt.SymbolKind.Field,
+                kind=kind_map(item.defn[0]),
                 range=pos,
                 selection_range=pos,
                 children=[],
             )
             symbols.append(symbol)
+
     for sub_tab in node.kid:
-        sub_pos = create_range(sub_tab.owner.loc)
-        symbol = lspt.DocumentSymbol(
-            name=sub_tab.name,
-            kind=lspt.SymbolKind.Class,
-            range=sub_pos,
-            selection_range=sub_pos,
-            children=collect_symbols(sub_tab),
-        )
-        symbols.append(symbol)
+        sub_symbols = collect_symbols(sub_tab)
+
+        if isinstance(
+            sub_tab.owner,
+            (ast.IfStmt, ast.ElseStmt, ast.WhileStmt, ast.IterForStmt, ast.InForStmt),
+        ):
+            symbols.extend(sub_symbols)
+        else:
+            sub_pos = create_range(sub_tab.owner.loc)
+            symbol = lspt.DocumentSymbol(
+                name=sub_tab.name,
+                kind=kind_map(sub_tab.owner),
+                range=sub_pos,
+                selection_range=sub_pos,
+                children=sub_symbols,
+            )
+            symbols.append(symbol)
+
     return symbols
 
 
@@ -144,4 +156,25 @@ def create_range(loc: CodeLocInfo) -> lspt.Range:
     return lspt.Range(
         start=lspt.Position(line=loc.first_line - 1, character=loc.col_start - 1),
         end=lspt.Position(line=loc.last_line - 1, character=loc.col_end - 1),
+    )
+
+
+def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
+    """Map the symbol node to an lspt.SymbolKind."""
+    return (
+        lspt.SymbolKind.Function
+        if isinstance(sub_tab, (ast.Ability, ast.AbilityDef))
+        else (
+            lspt.SymbolKind.Class
+            if isinstance(sub_tab, (ast.Architype, ast.ArchDef))
+            else (
+                lspt.SymbolKind.Module
+                if isinstance(sub_tab, ast.Module)
+                else (
+                    lspt.SymbolKind.Enum
+                    if isinstance(sub_tab, (ast.Enum, ast.EnumDef))
+                    else lspt.SymbolKind.Variable
+                )
+            )
+        )
     )
