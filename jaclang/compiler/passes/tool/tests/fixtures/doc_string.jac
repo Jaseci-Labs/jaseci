@@ -7,7 +7,6 @@ class foo {
     }
 
     """this is a
-
     multiline docstring
     to test"""
     can also_print() {
