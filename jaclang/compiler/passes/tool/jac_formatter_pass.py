@@ -421,7 +421,10 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
             if isinstance(i, ast.Token) and i.name == Tok.KW_BY:
-                self.emit(node, f"{i.gen.jac} ")
+                if not node.params:
+                    self.emit(node, f"{i.gen.jac} ")
+                else:
+                    self.emit(node, f" {i.gen.jac} ")
             else:
                 if (
                     line_break_needed
@@ -2402,7 +2405,16 @@ class JacFormatPass(Pass):
             and isinstance(node.parent.parent, ast.FString)
         ):
             self.emit(node, node.value)
-        self.emit(node, node.value)
+        if "\n" in node.value:
+            string_type = node.value[0:3]
+            pure_string = node.value[3:-3]
+            lines = pure_string.split("\n")
+            self.emit(node, string_type)
+            for line in lines[:-1]:
+                self.emit_ln(node, line)
+            self.emit_ln(node, f"{lines[-1]}{string_type}")
+        else:
+            self.emit(node, node.value)
 
     def enter_bool(self, node: ast.Bool) -> None:
         """Sub objects.

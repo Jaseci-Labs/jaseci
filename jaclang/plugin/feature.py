@@ -3,21 +3,19 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, TYPE_CHECKING, Type, Union
+from typing import Any, Callable, Optional, Type, Union
 
 from jaclang.compiler.absyntree import Module
+from jaclang.core.construct import (
+    Architype,
+    EdgeArchitype,
+    Memory,
+    NodeArchitype,
+    Root,
+    WalkerArchitype,
+)
+from jaclang.plugin.default import ExecutionContext
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
-
-if TYPE_CHECKING:
-    from jaclang.core.construct import (
-        Architype,
-        EdgeArchitype,
-        NodeArchitype,
-        WalkerArchitype,
-        Root,
-    )
-    from jaclang.plugin.default import ExecutionContext
-    from jaclang.core.memory import Memory
 
 
 import pluggy
