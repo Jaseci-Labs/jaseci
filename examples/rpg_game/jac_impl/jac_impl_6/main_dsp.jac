@@ -8,64 +8,24 @@ import:py sys;
 import:py os;
 import:py random;
 import:py time;
-import:py from jaclang.core.llms, Anthropic;
-
-glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 # Importing Jac codebase
 include:jac sprites;
 include:jac config;
 include:jac map;
-include:jac main;
-
-glob context:str =  "# These rules must be strictly adhered to while creating a maps."
-                    "- Must have only single Player (P) in map at the middle of the map ."
-                    "- Two consecutive maps should not look alike."
-                    "- Hardness should be slightly increased between consecutive maps."
-                    "- All enemies should be accessible to the player (should not be enclosed with blocks)."
-                    "- Hardnes of a level can be determined by the time taken to complete a level and number of retry attempts.";
-
-obj 'Consists of the level configuration data of a certain level'
-Map {
-    has Level_no:int = 1;
-    has time_to_win_level:'in seconds':float = 60.0;
-    has nos_retry:'How many retry attempts before completing the level':int = 0;
-    has map:
-    'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space. All outer characters are B. Only one single player character (P) can be in the map.'
-    :list[str] = [
-                                'BBBBBBBBBBBBBBBBBBBB',
-                                'B...E..............B',
-                                'B.......B..........B',
-                                'B....BBBB..........B',
-                                'B..................B',
-                                'B..................B',
-                                'B.........P........B',
-                                'B..................B',
-                                'B.............E....B',
-                                'B..................B',
-                                'B..................B',
-                                'B.........B........B',
-                                'B.........B........B',
-                                'B.........B........B',
-                                'BBBBBBBBBBBBBBBBBBBB'
-
-                            ];
-}
+include:jac game_obj;
+include:jac level_manager;
 
 '''The walker that initiates the game and runs an instance of the game'''
 walker game{
 
     has g:Game = None,
+        last_level_id:str = '1_1000',
         current_level:int = 1,
         fwd_dir:bool = True,
-        map_directory:
-        'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game.'
-        :dict={};
+        manager:LevelManager = LevelManager();
 
     can start_game with `root entry;
-
-    can 'Return the map of the next level which is different and incrementally challenging than previous levels. '
-    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.5, incl_info=(context));
 }
 
 edge play{
@@ -108,10 +68,6 @@ with entry {
     visit [-->];
 }
 
-# :walker:game:can:generate_level() {
-
-# }
-
 :node:level:can:run_game {
     # print("Walker Entry ->", self.level_id);
 
@@ -119,26 +75,27 @@ with entry {
         if here.current_level != self.game_level {
             here.current_level = self.game_level;
         }
-        if str(self.game_level) not in here.map_directory.keys(){
-            if here.map_directory {
-                new_map = here.generate_level(here.map_directory);
-                # print(new_map);
-                here.map_directory[str(here.current_level)] = Map(map=new_map, Level_no=here.current_level);
-            } else {
-                here.map_directory[str(here.current_level)] = Map();
+        if here.manager.current_level != self.game_level {
+            if self.game_level != 1 {
+                here.manager.current_level = self.game_level;
+                next_level = here.manager.get_next_level(self.game_level);
+                self.level_config.map = next_level;
             }
+        } else {
+            self.level_config.map = [[<--][0] -->](`?level)(?level_id==here.last_level_id)[0].level_config.map;
         }
-
-        here.g.GameMap.map = here.map_directory[str(self.game_level)].map;
+        here.g.GameMap.map = self.level_config.map;
         here.g.new();
         print(":-: Playing Level :", self.game_level, "| Level ID :",  self.level_id, "| Played :", str(self.played));
         start_time = time.time();
         here.g.main();
         end_time = time.time();
+        here.last_level_id = self.level_id;
         if here.g.won == True{
             self.level_time = end_time - start_time;
-            here.map_directory[str(self.game_level)].time_to_win_level = self.level_time;
-            # print('Time:', self.level_time);
+            if here.manager.prev_levels {
+                here.manager.prev_levels[-1].time = self.level_time;
+            }
             here.g.game_won();
             self.played = True;
             here.g.won = False;
@@ -148,7 +105,7 @@ with entry {
             visit [-:play:level_id==new_ID:->];
         } else {
             here.g.game_over();
-            here.map_directory[str(self.game_level)].nos_retry += 1;
+            # here.map_directory[str(self.game_level)].nos_retry += 1;
             self.played = True;
             here.g.won = False;
             here.fwd_dir = False;

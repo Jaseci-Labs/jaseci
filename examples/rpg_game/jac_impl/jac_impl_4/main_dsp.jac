@@ -1,34 +1,27 @@
-
 """This is the Data Spatial Implementation of the RPG Game"""
 
-# This game is built using the pygame module which is imported here
 
+# This game is built using the pygame module which is imported here
 import:py pygame;
 import:py sys;
-import:py os;
 import:py random;
 import:py time;
-import:py from jaclang.core.llms, Anthropic;
-
-glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 # Importing Jac codebase
 include:jac sprites;
 include:jac config;
 include:jac map;
-include:jac main;
-include:jac level_manager;
+include:jac game_obj;
 
 '''The walker that initiates the game and runs an instance of the game'''
-walker game{
-
+walker game {
     has g:Game = None,
-        last_level_id:str = '1_1000',
         current_level:int = 1,
         fwd_dir:bool = True,
-        manager:LevelManager = LevelManager();
+        map_directory:dict={};
 
     can start_game with `root entry;
+    can generate_level();
 }
 
 edge play{
@@ -38,12 +31,10 @@ edge play{
 
 '''Start screen node which operate as the virtual root node'''
 node start_screen {
-
-    has game_started:bool = False;
+    has game_started: bool = False;
 
     can intro_screen with game entry;
     can exit_game with game exit;
-
 }
 
 '''Level node which (should) have unique (ai generated) attributes'''
@@ -51,7 +42,7 @@ node level{
     has game_level:int = 1,
         level_id:str = '1_1000',
         played:bool = False,
-        level_config:Map = Map(),
+        levelconfig:Map = Map(),
         level_time:float=500000;
 
     can run_game with game entry;
@@ -62,13 +53,16 @@ node level{
 with entry {
     root spawn game();
 }
-
 #=Walker=&=Node=Abilities=======================================
 
 :walker:game:can:start_game {
     self.g = Game();
     here ++> start_screen();
     visit [-->];
+}
+
+:walker:game:can:generate_level {
+    self.map_directory[str(self.current_level)] = Map();
 }
 
 :node:level:can:run_game {
@@ -78,25 +72,22 @@ with entry {
         if here.current_level != self.game_level {
             here.current_level = self.game_level;
         }
-        if here.manager.current_level != self.game_level {
-            here.manager.current_level = self.game_level;
-            next_level = here.manager.get_next_level(self.game_level);
-            self.level_config.map = next_level;
-        } else {
-            self.level_config.map = [[<--][0] -->](`?level)(?level_id==here.last_level_id)[0].level_config.map;
+        if str(self.game_level) not in here.map_directory.keys(){
+            here.generate_level();
         }
-        here.g.GameMap.map = self.level_config.map;
+
+        here.g.GameMap.map = here.map_directory[str(self.game_level)].map;
         here.g.new();
         print(":-: Playing Level :", self.game_level, "| Level ID :",  self.level_id, "| Played :", str(self.played));
         start_time = time.time();
         here.g.main();
         end_time = time.time();
-        here.last_level_id = self.level_id;
         if here.g.won == True{
             self.level_time = end_time - start_time;
-            if here.manager.prev_levels {
-                here.manager.prev_levels[-1].time = self.level_time;
+            if self.level_time < here.map_directory[str(self.game_level)].time_to_win_level {
+                here.map_directory[str(self.game_level)].time_to_win_level = self.level_time;
             }
+            print('Time:', self.level_time);
             here.g.game_won();
             self.played = True;
             here.g.won = False;
@@ -106,7 +97,6 @@ with entry {
             visit [-:play:level_id==new_ID:->];
         } else {
             here.g.game_over();
-            # here.map_directory[str(self.game_level)].nos_retry += 1;
             self.played = True;
             here.g.won = False;
             here.fwd_dir = False;
