@@ -15,17 +15,17 @@ analysis_thread: Optional[threading.Thread] = None
 analysis_stop_event = threading.Event()
 
 
-def analyze_and_publish(ls: JacLangServer, uri: str) -> None:
+def analyze_and_publish(ls: JacLangServer, uri: str, level: int = 2) -> None:
     """Analyze and publish diagnostics."""
     global analysis_thread, analysis_stop_event
 
     def run_analysis() -> None:
         ls.quick_check(uri)
         ls.push_diagnostics(uri)
-        if not analysis_stop_event.is_set():
+        if not analysis_stop_event.is_set() and level > 0:
             ls.deep_check(uri)
             ls.push_diagnostics(uri)
-            if not analysis_stop_event.is_set():
+            if not analysis_stop_event.is_set() and level > 1:
                 ls.type_check(uri)
                 ls.push_diagnostics(uri)
 
@@ -144,6 +144,8 @@ async def document_symbol(
     ls: JacLangServer, params: lspt.DocumentSymbolParams
 ) -> list[lspt.DocumentSymbol]:
     """Provide document symbols."""
+    stop_analysis()
+    analyze_and_publish(ls, params.text_document.uri)
     return ls.get_document_symbols(params.text_document.uri)
 
 
@@ -152,6 +154,8 @@ async def definition(
     ls: JacLangServer, params: lspt.TextDocumentPositionParams
 ) -> Optional[lspt.Location]:
     """Provide definition."""
+    stop_analysis()
+    analyze_and_publish(ls, params.text_document.uri, level=1)
     return ls.get_definition(params.text_document.uri, params.position)
 
 
