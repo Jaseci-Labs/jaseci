@@ -295,9 +295,7 @@ class JacLangServer(LanguageServer):
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
 
-    def get_document_symbols(
-        self, file_path: str
-    ) -> list[Optional[lspt.DocumentSymbol]]:
+    def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
         root_node = self.modules[file_path].ir.sym_tab
         if root_node:
