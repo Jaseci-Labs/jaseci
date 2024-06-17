@@ -870,3 +870,12 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("5"), 2)
+
+    def test_hash_init_check(self) -> None:  # we can get rid of this, isn't?
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("hash_init_check", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Test Passed", stdout_value)
