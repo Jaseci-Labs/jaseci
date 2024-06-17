@@ -68,7 +68,7 @@ class TestCaseMicroSuite(TestCase):
                 os.path.dirname(os.path.dirname(jaclang.__file__))
             )
             for name in files
-            if name.endswith(".jac") and not name.startswith("err")
+            if name.endswith(".jac") and "err" not in name
         ]:
             method_name = (
                 f"test_micro_{filename.replace('.jac', '').replace(os.sep, '_')}"

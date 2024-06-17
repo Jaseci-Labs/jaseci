@@ -104,3 +104,20 @@ class JacFormatPassTests(TestCase):
         file = self.fixture_abs_path("../../../tests/fixtures/pyfunc.py")
         out = AstTool().ir(["unparse", file])
         self.assertIn("can my_print(x: object) -> None", out)
+
+    def test_sym_sym_dot(self) -> None:
+        """Testing for sym, sym. AstTool."""
+        jac_file = os.path.join(
+            os.path.dirname(jaclang.__file__), "../examples/reference/atom.jac"
+        )
+        out = AstTool().ir(["sym", jac_file])
+        self.assertNotIn(
+            "\n|   +-- ConnectionAbortedError\n|   |   +-- public var\n|   +-- ConnectionError\n|",
+            out,
+        )
+        self.assertTrue(
+            out.startswith("SymTable::Module(atom)\n+-- Symbols\n|   +-- (e)x\n|")
+        )
+        out = AstTool().ir(["sym.", jac_file])
+        self.assertEqual('2 [label="(e)x"];', out.split("\n")[4])
+        self.assertNotIn('[label="str"];', out)

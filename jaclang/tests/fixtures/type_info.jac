@@ -1,19 +1,15 @@
-import:py pygame;
+import:py pygls.server;
 
-obj Spritesheet {
+obj ServerWrapper {
     can init(file: str);
-    can get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
+    can get_server(server_ip: str, port: int) -> pygls.server.LanguageServer;
 }
 
-:obj:Spritesheet:can:init
+:obj:ServerWrapper:can:init
 (file: str) {
-    self.sheet = pygame.image.load(file).convert();
+    self.file = file;
 }
 
-:obj:Spritesheet:can:get_sprite
-(x: int, y: int, width: int, height: int) -> pygame.Surface {
-    sprite = pygame.Surface([width, height]);
-    sprite.blit(self.sheet, (0, 0), (x, y, width, height));
-    sprite.set_colorkey(BLACK);
-    return sprite;
+:obj:ServerWrapper:can:get_server {
+    return pygls.server.LanguageServer("test_server", "1");
 }

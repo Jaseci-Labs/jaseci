@@ -9,7 +9,7 @@ from __future__ import annotations
 from .sub_node_tab_pass import SubNodeTabPass  # noqa: I100
 from .import_pass import JacImportPass, PyImportPass  # noqa: I100
 from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100
-from .def_impl_match_pass import DeclDefMatchPass  # noqa: I100
+from .def_impl_match_pass import DeclImplMatchPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
 from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
@@ -25,7 +25,7 @@ py_code_gen = [
     JacImportPass,
     PyImportPass,
     SymTabBuildPass,
-    DeclDefMatchPass,
+    DeclImplMatchPass,
     DefUsePass,
     RegistryPass,
     PyastGenPass,
@@ -33,5 +33,6 @@ py_code_gen = [
     PyBytecodeGenPass,
 ]
 
-py_code_gen_typed = [*py_code_gen, JacTypeCheckPass, FuseTypeInfoPass, AccessCheckPass]
+type_checker_sched = [JacTypeCheckPass, FuseTypeInfoPass, AccessCheckPass]
+py_code_gen_typed = [*py_code_gen, *type_checker_sched]
 py_compiler = [*py_code_gen, PyOutPass]

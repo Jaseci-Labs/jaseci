@@ -16,7 +16,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.settings import settings
-from jaclang.utils.helpers import import_target_to_relative_path
+from jaclang.utils.helpers import import_target_to_relative_path, is_standard_lib_module
 
 
 class JacImportPass(Pass):
@@ -30,7 +30,7 @@ class JacImportPass(Pass):
         """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
-        self.annex_impl(node)
+        self.__annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True
         while self.run_again:
@@ -46,17 +46,25 @@ class JacImportPass(Pass):
         """Process an import."""
         lang = i.parent_of_type(ast.Import).hint.tag.value
         if lang == "jac" and not i.sub_module:
-            mod = self.import_module(
+            self.import_jac_module(
                 node=i,
                 mod_path=node.loc.mod_path,
             )
-            if mod:
-                self.run_again = True
-                i.sub_module = mod
-                i.add_kids_right([mod], pos_update=False)
 
-    def annex_impl(self, node: ast.Module) -> None:
+    def attach_mod_to_node(
+        self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
+    ) -> None:
+        """Attach a module to a node."""
+        if mod:
+            self.run_again = True
+            node.sub_module = mod
+            self.__annex_impl(mod)
+            node.add_kids_right([mod], pos_update=False)
+
+    def __annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
+        if node.stub_only:
+            return
         if not node.loc.mod_path:
             self.error("Module has no path")
         if not node.loc.mod_path.endswith(".jac"):
@@ -88,7 +96,7 @@ class JacImportPass(Pass):
                 cur_file.startswith(f"{base_path}.")
                 or impl_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".impl.jac"):
-                mod = self.import_mod_from_file(cur_file)
+                mod = self.import_jac_mod_from_file(cur_file)
                 if mod:
                     node.impl_mod.append(mod)
                     node.add_kids_left([mod], pos_update=False)
@@ -97,9 +105,9 @@ class JacImportPass(Pass):
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".test.jac"):
-                mod = self.import_mod_from_file(cur_file)
+                mod = self.import_jac_mod_from_file(cur_file)
                 if mod:
-                    node.test_mod = mod
+                    node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
 
@@ -114,18 +122,58 @@ class JacImportPass(Pass):
             node.sub_module.name = node.alias.value
         # Items matched during def/decl pass
 
-    # Utility functions
-    # -----------------
-
-    def import_module(self, node: ast.ModulePath, mod_path: str) -> ast.Module | None:
+    def import_jac_module(self, node: ast.ModulePath, mod_path: str) -> None:
         """Import a module."""
         self.cur_node = node  # impacts error reporting
         target = import_target_to_relative_path(
-            node.level, node.path_str, os.path.dirname(node.loc.mod_path)
+            level=node.level,
+            target=node.path_str,
+            base_path=os.path.dirname(node.loc.mod_path),
         )
-        return self.import_mod_from_file(target)
+        # If the module is a package (dir)
+        if os.path.isdir(target):
+            self.attach_mod_to_node(node, self.import_jac_mod_from_dir(target))
+            import_node = node.parent_of_type(ast.Import)
+            # And the import is a from import and I am the from module
+            if node == import_node.from_loc:
+                # Import all from items as modules or packages
+                for i in import_node.items.items:
+                    if isinstance(i, ast.ModuleItem):
+                        from_mod_target = import_target_to_relative_path(
+                            level=node.level,
+                            target=node.path_str + "." + i.name.value,
+                            base_path=os.path.dirname(node.loc.mod_path),
+                        )
+                        # If package
+                        if os.path.isdir(from_mod_target):
+                            self.attach_mod_to_node(
+                                i, self.import_jac_mod_from_dir(from_mod_target)
+                            )
+                        # Else module
+                        else:
+                            self.attach_mod_to_node(
+                                i, self.import_jac_mod_from_file(from_mod_target)
+                            )
+        else:
+            self.attach_mod_to_node(node, self.import_jac_mod_from_file(target))
 
-    def import_mod_from_file(self, target: str) -> ast.Module | None:
+    def import_jac_mod_from_dir(self, target: str) -> ast.Module | None:
+        """Import a module from a directory."""
+        with_init = os.path.join(target, "__init__.jac")
+        if os.path.exists(with_init):
+            return self.import_jac_mod_from_file(with_init)
+        else:
+            return ast.Module(
+                name=target.split(os.path.sep)[-1],
+                source=ast.JacSource("", mod_path=target),
+                doc=None,
+                body=[],
+                is_imported=False,
+                stub_only=True,
+                kid=[ast.EmptyToken()],
+            )
+
+    def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
         from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
@@ -152,6 +200,26 @@ class JacImportPass(Pass):
             self.error(f"Module {target} is not a valid Jac module.")
             return None
 
+
+class PyImportPass(JacImportPass):
+    """Jac statically imports Python modules."""
+
+    def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
+        """Process an import."""
+        lang = i.parent_of_type(ast.Import).hint.tag.value
+        if (
+            lang == "py"
+            and not i.sub_module
+            and settings.py_raise
+            and not is_standard_lib_module(i.path_str)
+        ):
+            mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
+            if mod:
+                i.sub_module = mod
+                i.add_kids_right([mod], pos_update=False)
+                if settings.py_raise_deep:
+                    self.run_again = True
+
     def import_py_module(
         self, node: ast.ModulePath, mod_path: str
     ) -> Optional[ast.Module]:
@@ -160,7 +228,6 @@ class JacImportPass(Pass):
 
         base_dir = os.path.dirname(mod_path)
         sys.path.append(base_dir)
-
         try:
             # Dynamically import the module
             spec = importlib.util.find_spec(node.path_str)
@@ -183,23 +250,11 @@ class JacImportPass(Pass):
                         f"Failed to import python module {node.path_str}: {spec.origin}"
                     )
         except Exception as e:
+            if "Empty kid for Token ModulePath" in str(e) or "utf-8" in str(e):  # FIXME
+                return None
             self.error(
                 f"Failed to import python module {node.path_str}: {e}",
                 node_override=node,
             )
             raise e
         return None
-
-
-class PyImportPass(JacImportPass):
-    """Jac statically imports Python modules."""
-
-    def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
-        """Process an import."""
-        lang = i.parent_of_type(ast.Import).hint.tag.value
-        if lang == "py" and not i.sub_module and settings.py_raise:
-            mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
-            if mod:
-                # self.run_again = True
-                i.sub_module = mod
-                i.add_kids_right([mod], pos_update=False)

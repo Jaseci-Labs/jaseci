@@ -28,7 +28,7 @@ class JacParser(Pass):
             JacParser.make_dev()
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
-    def transform(self, ir: ast.AstNode) -> ast.AstNode:
+    def transform(self, ir: ast.AstNode) -> ast.Module:
         """Transform input IR."""
         try:
             tree, comments = JacParser.parse(
@@ -36,6 +36,10 @@ class JacParser(Pass):
             )
             mod = JacParser.TreeToAST(parser=self).transform(tree)
             self.source.comments = [self.proc_comment(i, mod) for i in comments]
+            if isinstance(mod, ast.Module):
+                return mod
+            else:
+                raise self.ice()
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
@@ -43,11 +47,16 @@ class JacParser(Pass):
             catch_error.c_start = e.column
             catch_error.c_end = e.column
             self.error(f"Syntax Error: {e}", node_override=catch_error)
-            mod = self.source
         except Exception as e:
-            mod = self.source
             self.error(f"Internal Error: {e}")
-        return mod
+        return ast.Module(
+            name="",
+            source=self.source,
+            doc=None,
+            body=[],
+            is_imported=False,
+            kid=[ast.EmptyToken()],
+        )
 
     @staticmethod
     def proc_comment(token: jl.Token, mod: ast.AstNode) -> ast.CommentToken:
@@ -2454,8 +2463,8 @@ class JacParser(Pass):
             """Grammar rule.
 
             yield_expr:
-                | KW_YIELD KW_FROM expression
-                | KW_YIELD expression
+                | KW_YIELD KW_FROM? expression
+                | KW_YIELD
             """
             if isinstance(kid[-1], ast.Expr):
                 return self.nu(
@@ -2465,6 +2474,19 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
+            elif (
+                len(kid) == 1
+                and isinstance(kid[0], ast.Token)
+                and kid[0].name == Tok.KW_YIELD
+            ):
+                return self.nu(
+                    ast.YieldExpr(
+                        expr=None,
+                        with_from=False,
+                        kid=kid,
+                    )
+                )
+
             else:
                 raise self.ice()
 

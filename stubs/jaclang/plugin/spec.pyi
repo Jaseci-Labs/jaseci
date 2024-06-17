@@ -72,8 +72,8 @@ class JacFeatureSpec:
     @staticmethod
     def edge_ref(
         node_obj: NodeArchitype | list[NodeArchitype],
+        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
-        filter_type: Optional[type],
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]: ...

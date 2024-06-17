@@ -40,7 +40,7 @@ node turn {
         disengage;
     }
 }
-# # Run the game
+# Run the game
 
 with entry {
     root spawn GuessGame();

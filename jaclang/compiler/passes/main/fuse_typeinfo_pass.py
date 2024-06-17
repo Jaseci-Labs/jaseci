@@ -126,7 +126,16 @@ class FuseTypeInfoPass(Pass):
     def __collect_type_from_symbol(self, node: ast.AstSymbolNode) -> None:
         mypy_node = node.gen.mypy_ast[0]
 
-        if hasattr(mypy_node, "node"):
+        if isinstance(mypy_node, MypyNodes.MemberExpr):
+            if mypy_node in self.node_type_hash:
+                t = str(self.node_type_hash[mypy_node])
+                if "->" in t:
+                    t = t.split("->")[1].strip()
+                node.sym_info.typ = t
+            else:
+                self.__debug_print(f"{node.loc} MemberExpr type is not found")
+
+        elif hasattr(mypy_node, "node"):
             # orig_node = mypy_node
             mypy_node = mypy_node.node
 
@@ -253,6 +262,11 @@ class FuseTypeInfoPass(Pass):
             self.__debug_print(
                 "Getting type of 'HasVar' is only supported with AssignmentStmt"
             )
+
+    def exit_has_var(self, node: ast.HasVar) -> None:
+        """Pass handler for HasVar nodes."""
+        node.sym_info.typ = node.name.sym_info.typ
+        node.sym_info.typ_sym_table = node.name.sym_info.typ_sym_table
 
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:

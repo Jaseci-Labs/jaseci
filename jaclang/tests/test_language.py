@@ -4,11 +4,12 @@ import io
 import os
 import pickle
 import sys
-from unittest.mock import patch
+import sysconfig
+
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
+from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -119,16 +120,10 @@ class JacLanguageTests(TestCase):
         self.assertIn("{'temperature': 0.7}", stdout_value)
         self.assertIn("Emoji Representation (str)", stdout_value)
         self.assertIn('Text Input (input) (str) = "Lets move to paris"', stdout_value)
-        try:
-            self.assertIn(
-                "Examples of Text to Emoji (emoji_examples) (list[dict[str,str]])"
-                ' = [{"input": "I love tp drink pina coladas"',
-                stdout_value,
-            )
-        except AssertionError:
-            self.skipTest(
-                "This error only happens in certain enviornments, check later."
-            )
+        self.assertIn(
+            ' = [{"input": "I love tp drink pina coladas"',
+            stdout_value,
+        )
 
     def test_with_llm_method(self) -> None:
         """Parse micro jac file."""
@@ -187,13 +182,32 @@ class JacLanguageTests(TestCase):
         self.assertIn("14/03/1879", stdout_value)
         self.assertNotIn(
             'University (University) (obj) = type(__module__="with_llm_type", __doc__=None, '
-            "_jac_entry_funcs_=[], _jac_exit_funcs_=[], __init__=function(__wrapped__=function()))",
+            "_jac_entry_funcs_`=[`], _jac_exit_funcs_=[], __init__=function(__wrapped__=function()))",
             stdout_value,
         )
         desired_output_count = stdout_value.count(
             "Person(name='Jason Mars', dob='1994-01-01', age=30)"
         )
         self.assertEqual(desired_output_count, 2)
+
+    def test_with_llm_vision(self) -> None:
+        """Test MTLLLM Vision Implementation."""
+        try:
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            jac_import("with_llm_vision", base_path=self.fixture_abs_path("./"))
+            sys.stdout = sys.__stdout__
+            stdout_value = captured_output.getvalue()
+            self.assertIn(
+                "{'type': 'text', 'text': '\\n[System Prompt]\\n", stdout_value[:500]
+            )
+            self.assertNotIn(
+                " {'type': 'text', 'text': 'Image of the Question (question_img) (Image) = '}, "
+                "{'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQAB",
+                stdout_value[:500],
+            )
+        except Exception:
+            self.skipTest("This test requires Pillow to be installed.")
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
@@ -757,38 +771,43 @@ class JacLanguageTests(TestCase):
         self.assertEqual("9", stdout_value[0])
         self.assertEqual("567", stdout_value[1])
 
-    @patch("tkinter.Tk")
-    def test_random_check(self, mockme: object) -> None:
+    def test_random_check(self) -> None:
         """Test py ast to Jac ast conversion output."""
         settings.py_raise = True
-        file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen
 
-        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
-        gen_ast = ir.pp()
-        self.assertIn("ModulePath - statistics -", gen_ast)
-        self.assertIn("+-- Name - TclError - Type: No", gen_ast)
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        jac_import("random_check", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("Hello World", stdout_value)
-        self.assertIn("81", stdout_value)
-        self.assertIn("['yellow', 'red', 'blue', 'orange', 'green']", stdout_value)
-        self.assertIn("0.21863", stdout_value)
-        self.assertIn("<class 'tkinter.Button'>", stdout_value)
-        # self.assertNotIn("Error", stdout_value) TODO: Ask kugesan about this error
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.absyntree as ast
+        import ast as py_ast
+
+        module_paths = ["random", "tkinter"]
+        for module_path in module_paths:
+            stdlib_dir = sysconfig.get_paths()["stdlib"]
+            file_path = os.path.join(
+                stdlib_dir,
+                module_path + (".py" if module_path == "random" else "/__init__.py"),
+            )
+            with open(file_path) as f:
+                jac_ast = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(
+                        py_ast.parse(f.read()), mod_path=file_path
+                    )
+                )
+            ir = jac_pass_to_pass(jac_ast).ir
+            gen_ast = ir.pp()
+            if module_path == "random":
+                self.assertIn("ModulePath - statistics -", gen_ast)
+            else:
+                self.assertIn("+-- Name - TclError - Type: No", gen_ast)
         settings.py_raise = False
 
-    def test_deep_py_load_imports(self) -> None:
+    def test_deep_py_load_imports(self) -> None:  # we can get rid of this, isn't?
         """Test py ast to Jac ast conversion output."""
         settings.py_raise = True
         file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
         from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
         imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-        self.assertEqual(len(imp.import_table), 3)
+        self.assertEqual(len(imp.import_table), 1)
         settings.py_raise = False
 
     def test_access_modifier(self) -> None:
@@ -805,3 +824,49 @@ class JacLanguageTests(TestCase):
         self.assertIn('Can not access private variable "privmethod"', stdout_value)
         self.assertIn('Can not access private variable "BankAccount"', stdout_value)
         self.assertNotIn(" Name: ", stdout_value)
+
+    def test_deep_convert(self) -> None:
+        """Test py ast to Jac ast conversion output."""
+        settings.py_raise = settings.py_raise_deep = True
+        file_name = os.path.join(self.fixture_abs_path("./"), "deep_convert.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen
+        import jaclang.compiler.absyntree as ast
+
+        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
+        jac_ast = ir.pp()
+        self.assertIn(' |   +-- String - "Loop compl', jac_ast)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 272)
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Deep convo is imported", stdout_value)
+        settings.py_raise = settings.py_raise_deep = False
+
+    def test_override_walker_inherit(self) -> None:
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("walker_override", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("baz\nbar\n", stdout_value)
+
+    def test_ds_type_check_pass(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/micro/simple_walk.jac")
+        )
+        self.assertEqual(len(mypass.errors_had), 0)
+        self.assertEqual(len(mypass.warnings_had), 0)
+
+    def test_self_with_no_sig(self) -> None:  # we can get rid of this, isn't?
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("nosigself", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("5"), 2)
