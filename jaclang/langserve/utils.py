@@ -5,7 +5,7 @@ from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.symtable import SymbolTable
+from jaclang.compiler.symtable import Symbol , SymbolTable
 
 import lsprotocol.types as lspt
 
@@ -97,43 +97,96 @@ def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
     return False
 
 
-def collect_symbols(node: ast.AstNode) -> list[lspt.DocumentSymbol]:
+def collect_symbols(node: SymbolTable, ls) -> list[lspt.DocumentSymbol]:
     """Recursively collect symbols from the AST."""
+    import builtins
     symbols = []
-    for child in node.kid:
-        if isinstance(
-            child, (ast.Architype, ast.Ability, ast.GlobalVars, ast.ParamVar)
-        ):
+    if node is None:
+        return symbols
+    ls.log_py(f'kidsss: {node.kid}')
+    for key, item in node.tab.items():
+        if key in dir(builtins):
+            continue
+        ls.log_py(f'key: {key}   \n{item}   \n type ->{type(item)}  typ ---{item.typ}')
+        if isinstance(item.defn[0], (ast.Architype, ast.Ability, ast.GlobalVars)):
+            # Process as a SymbolTable
+            ls.log_py(f'item: {item}')
             symbol_kind = (
-                lspt.SymbolKind.Class
-                if isinstance(child, ast.Architype)
-                else (
-                    lspt.SymbolKind.Method
-                    if isinstance(child, ast.Ability)
-                    else (
-                        lspt.SymbolKind.Variable
-                        if isinstance(child, ast.GlobalVars)
-                        else lspt.SymbolKind.Field
+                lspt.SymbolKind.Class if isinstance(item.defn[0], ast.Architype) else (
+                    lspt.SymbolKind.Method if isinstance(item.defn[0], ast.Ability) else (
+                        lspt.SymbolKind.Variable if isinstance(item.defn[0], ast.GlobalVars) else (
+                            lspt.SymbolKind.Field
+                        )
                     )
                 )
             )
-            node_range = lspt.Range(
-                start=lspt.Position(
-                    line=node.loc.first_line - 1, character=node.loc.col_start - 1
-                ),
-                end=lspt.Position(
-                    line=node.loc.last_line - 1, character=node.loc.col_end - 1
-                ),
-            )
+
+            s1 = item.defn[0].loc.first_line - 1
+            s2 = item.defn[0].loc.col_start - 1
+            s3 = item.defn[0].loc.last_line - 1
+            s4 = item.defn[0].loc.col_end - 1
+
+            try:
+                node_range = lspt.Range(
+                    start=lspt.Position(
+                        line=int(s1) if s1 >= 0 else 0, character=int(s2) if s2 >= 0 else 0
+                    ),
+                    end=lspt.Position(
+                        line=int(s3) if s3 >= 0 else 0, character=int(s4) if s4 >= 0 else 0
+                    ),
+                )
+            except Exception as e:
+                ls.log_py(f'Error11: {e}')
+                node_range = lspt.Range(
+                    start=lspt.Position(line=0, character=0),
+                    end=lspt.Position(line=0, character=0),
+                )
+
             symbol = lspt.DocumentSymbol(
-                name=child.sym_name if isinstance(child, ast.AstSymbolNode) else "name",
+                name=key,
                 kind=symbol_kind,
                 range=node_range,
                 selection_range=node_range,
                 children=[],
             )
-            symbol.children = collect_symbols(child)
+            for kid in node.kid:
+                if kid.name == key:
+                    symbol.children = collect_symbols(kid, ls)
             symbols.append(symbol)
-        elif hasattr(child, "kid") and child.kid:
-            symbols.extend(collect_symbols(child))
+        elif isinstance(item, Symbol) :
+            ls.log_py(f'item: {item}  \n{type(item)}')
+            # Process as a Symbol
+            symbol_kind = lspt.SymbolKind.Field
+
+            s1 = item.defn[0].loc.first_line - 1
+            s2 = item.defn[0].loc.col_start - 1
+            s3 = item.defn[0].loc.last_line - 1
+            s4 = item.defn[0].loc.col_end - 1
+
+            try:
+                node_range = lspt.Range(
+                    start=lspt.Position(
+                        line=int(s1) if s1 >= 0 else 0, character=int(s2) if s2 >= 0 else 0
+                    ),
+                    end=lspt.Position(
+                        line=int(s3) if s3 >= 0 else 0, character=int(s4) if s4 >= 0 else 0
+                    ),
+                )
+            except Exception as e:
+                ls.log_py(f'Error: {e}')
+                node_range = lspt.Range(
+                    start=lspt.Position(line=0, character=0),
+                    end=lspt.Position(line=0, character=0),
+                )
+
+            symbol = lspt.DocumentSymbol(
+                name=item.sym_name,
+                kind=symbol_kind,
+                range=node_range,
+                selection_range=node_range,
+                children=[],
+            )
+            symbols.append(symbol)
+
+    ls.log_py(f'collect_symbols: {symbols}')
     return symbols
