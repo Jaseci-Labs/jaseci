@@ -421,7 +421,10 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                     self.emit_ln(node, i.gen.jac)
             if isinstance(i, ast.Token) and i.name == Tok.KW_BY:
-                self.emit(node, f"{i.gen.jac} ")
+                if not node.params:
+                    self.emit(node, f"{i.gen.jac} ")
+                else:
+                    self.emit(node, f" {i.gen.jac} ")
             else:
                 if (
                     line_break_needed
