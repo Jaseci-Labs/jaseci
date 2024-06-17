@@ -47,9 +47,7 @@ obj LevelManager {
             "Increase or Decrease the Time Countdown and Number of Retries Allowed according to the Difficulty."]
     );
 
-    '''
-    Get the Next Leve
-    '''
+    '''Get the Next Level'''
     can get_next_level (current_level: int) -> tuple(Level, Abs_Map) {
 
         # Keeping Only the Last 3 Levels
