@@ -602,7 +602,7 @@ class JacParser(Pass):
                         | KW_SELF
                         | KW_HERE
             """
-            if isinstance(kid[0], ast.Token):
+            if isinstance(kid[0], ast.Name):
                 return self.nu(
                     ast.SpecialVarRef(
                         var=kid[0],
@@ -3912,6 +3912,15 @@ class JacParser(Pass):
             """Token handler."""
             ret_type = ast.Token
             if token.type in [Tok.NAME, Tok.KWESC_NAME]:
+                ret_type = ast.Name
+            if token.type in [
+                Tok.KW_INIT,
+                Tok.KW_POST_INIT,
+                Tok.KW_ROOT,
+                Tok.KW_SUPER,
+                Tok.KW_SELF,
+                Tok.KW_HERE,
+            ]:
                 ret_type = ast.Name
             elif token.type == Tok.SEMI:
                 ret_type = ast.Semi

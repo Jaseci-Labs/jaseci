@@ -3126,7 +3126,7 @@ class SpecialVarRef(NameSpec):
 
     def __init__(
         self,
-        var: Token,
+        var: Name,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize special var reference expression node."""
