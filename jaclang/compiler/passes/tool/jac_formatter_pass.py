@@ -2002,7 +2002,6 @@ class JacFormatPass(Pass):
         doc: Optional[Token],
         body: CodeBlock,
         """
-        start = True
         for i in node.kid:
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
@@ -2014,13 +2013,9 @@ class JacFormatPass(Pass):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.Name):
                 if not i.value.startswith("test_t"):
-                    self.emit(node, f" {i.value} ")
+                    self.emit(node, f" {i.value}")
             else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
+                self.emit(node, i.gen.jac)
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
