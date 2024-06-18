@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.core.construct import (
@@ -11,7 +11,7 @@ from jaclang.core.construct import (
     EdgeArchitype,
     Memory,
     NodeArchitype,
-    Root,
+    Root as Root,
     WalkerArchitype,
 )
 from jaclang.plugin.default import ExecutionContext
@@ -32,6 +32,11 @@ class JacFeature:
     import abc
     from jaclang.compiler.constant import EdgeDir
     from jaclang.plugin.spec import DSFunc
+
+    RootType: TypeAlias = Root
+    Obj: TypeAlias = Architype
+    Node: TypeAlias = NodeArchitype
+    Edge: TypeAlias = EdgeArchitype
 
     @staticmethod
     def context(session: str = "") -> ExecutionContext:
