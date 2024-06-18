@@ -129,8 +129,10 @@ class FuseTypeInfoPass(Pass):
         if isinstance(mypy_node, MypyNodes.MemberExpr):
             if mypy_node in self.node_type_hash:
                 t = str(self.node_type_hash[mypy_node])
-                if "->" in t:
+                if "def" in t and "->" in t:
                     t = t.split("->")[1].strip()
+                elif "def" in t:
+                    t = "None"
                 node.sym_info.typ = t
             else:
                 self.__debug_print(f"{node.loc} MemberExpr type is not found")
@@ -180,6 +182,18 @@ class FuseTypeInfoPass(Pass):
     def enter_name(self, node: ast.NameSpec) -> None:
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
+
+        # Assign correct symbols to sym_link in case of
+        # AtomTrailer Object
+        if isinstance(node.parent, ast.AtomTrailer):
+            target_node = node.parent.target
+            if isinstance(target_node, ast.AstSymbolNode):
+                parent_symbol_table = target_node.sym_info.typ_sym_table
+                if isinstance(parent_symbol_table, ast.SymbolTable):
+                    owner = parent_symbol_table.owner
+                    if isinstance(owner, ast.AstSymbolNode):
+                        target_node.sym_link = owner.sym_link
+                        node.sym_link = parent_symbol_table.lookup(node.sym_name)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:

@@ -132,3 +132,60 @@ class TestJacLangServer(TestCase):
             "attempts: int",
             lsp.get_hover_info(target, pos).contents.value,
         )
+
+    def test_outline_symbols(self) -> None:
+        """Test that the outline symbols are correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
+        lsp.quick_check(circle_file)
+        lsp.deep_check(circle_file)
+        lsp.type_check(circle_file)
+        expected_string = (
+            "DocumentSymbol(name='calculate_area', kind=<SymbolKind.Function: 12>, range=9:0-9:43, "
+            "selection_range=9:0-9:43, detail=None, tags=None, deprecated=None, children=["
+            "DocumentSymbol(name='radius', kind=<SymbolKind.Variable: 13>, range=9:1-9:14, "
+            "selection_range=9:1-9:14, detail=None, tags=None, deprecated=None, children=[])])"
+        )
+        self.assertEqual(
+            expected_string, str((lsp.get_document_symbols(circle_file))[6])
+        )
+        self.assertEqual(10, len(lsp.get_document_symbols(circle_file)))
+
+    def test_go_to_definition(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
+        lsp.quick_check(circle_file)
+        lsp.deep_check(circle_file)
+        lsp.type_check(circle_file)
+        self.assertIn(
+            "fixtures/circle_pure.impl.jac:8:0-8:19",
+            str(lsp.get_definition(circle_file, lspt.Position(9, 16))),
+        )
+        self.assertIn(
+            "fixtures/circle_pure.jac:12:0-17:1",
+            str(lsp.get_definition(circle_file, lspt.Position(20, 17))),
+        )
+
+    def test_go_to_definition_method(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        guess_game_file = uris.from_fs_path(
+            self.fixture_abs_path("../../../../examples/guess_game/guess_game4.jac")
+        )
+        lsp.quick_check(guess_game_file)
+        lsp.deep_check(guess_game_file)
+        lsp.type_check(guess_game_file)
+        self.assertIn(
+            "guess_game4.jac:27:4-27:34",
+            str(lsp.get_definition(guess_game_file, lspt.Position(46, 45))),
+        )

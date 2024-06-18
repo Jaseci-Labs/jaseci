@@ -76,6 +76,9 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         self.compare_files(
             os.path.join(self.fixture_abs_path(""), "corelib_fmt.jac"),
         )
+        self.compare_files(
+            os.path.join(self.fixture_abs_path(""), "doc_string.jac"),
+        )
 
     def test_compare_myca_fixtures(self) -> None:
         """Tests if files in the myca fixtures directory do not change after being formatted."""
