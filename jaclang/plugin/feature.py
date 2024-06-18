@@ -37,6 +37,7 @@ class JacFeature:
     Obj: TypeAlias = Architype
     Node: TypeAlias = NodeArchitype
     Edge: TypeAlias = EdgeArchitype
+    Walker: TypeAlias = WalkerArchitype
 
     @staticmethod
     def context(session: str = "") -> ExecutionContext:
@@ -165,7 +166,13 @@ class JacFeature:
     @staticmethod
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
         return pm.hook.ignore(walker=walker, expr=expr)
@@ -173,7 +180,13 @@ class JacFeature:
     @staticmethod
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         return pm.hook.visit_node(walker=walker, expr=expr)

@@ -167,7 +167,13 @@ class JacFeatureSpec:
     @hookspec(firstresult=True)
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Jac's ignore stmt feature."""
         raise NotImplementedError
@@ -176,7 +182,13 @@ class JacFeatureSpec:
     @hookspec(firstresult=True)
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         raise NotImplementedError
