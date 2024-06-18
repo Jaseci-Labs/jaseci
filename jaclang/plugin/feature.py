@@ -11,7 +11,7 @@ from jaclang.core.construct import (
     EdgeArchitype,
     Memory,
     NodeArchitype,
-    Root as Root,
+    Root,
     WalkerArchitype,
 )
 from jaclang.plugin.default import ExecutionContext
