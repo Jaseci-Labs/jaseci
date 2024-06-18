@@ -44,8 +44,9 @@ class JacParser(Pass):
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
             catch_error.line_no = e.line
+            catch_error.end_line = e.line
             catch_error.c_start = e.column
-            catch_error.c_end = e.column
+            catch_error.c_end = e.column + 1
             self.error(f"Syntax Error: {e}", node_override=catch_error)
         except Exception as e:
             self.error(f"Internal Error: {e}")
