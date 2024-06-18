@@ -25,9 +25,9 @@ class AccessCheckPass(SymTabPass):
             else None
         )
 
-        if node.sym_link:
+        if node.sym:
             decl_package_path = os.path.dirname(
-                os.path.abspath(node.sym_link.defn[-1].loc.mod_path)
+                os.path.abspath(node.sym.defn[-1].loc.mod_path)
             )
             use_package_path = os.path.dirname(os.path.abspath(node.loc.mod_path))
         else:
@@ -35,7 +35,7 @@ class AccessCheckPass(SymTabPass):
 
         if (
             node_info
-            and node.sym_link
+            and node.sym
             and node_info.access == SymbolAccess.PROTECTED
             and decl_package_path != use_package_path
         ):
@@ -46,12 +46,12 @@ class AccessCheckPass(SymTabPass):
 
         if (
             node_info
-            and node.sym_link
+            and node.sym
             and node_info.access == SymbolAccess.PRIVATE
-            and node.sym_link.defn[-1].loc.mod_path != node.loc.mod_path
+            and node.sym.defn[-1].loc.mod_path != node.loc.mod_path
         ):
             return self.error(
-                f'Can not access private variable "{node.sym_name}" from {node.sym_link.defn[-1].loc.mod_path}'
+                f'Can not access private variable "{node.sym_name}" from {node.sym.defn[-1].loc.mod_path}'
                 f" to {node.loc.mod_path}."
             )
 
@@ -59,7 +59,6 @@ class AccessCheckPass(SymTabPass):
         self, node: ast.AstSymbolNode, acc_tag: Optional[SymbolAccess] = None
     ) -> None:
         """Access register."""
-        node.sym_info.acc_tag = acc_tag
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -167,7 +166,7 @@ class AccessCheckPass(SymTabPass):
         if isinstance(node.parent, ast.FuncCall):
             self.access_check(node)
 
-        if node.sym_link and Pass.has_parent_of_type(
-            node=node.sym_link.defn[-1], typ=ast.GlobalVars
+        if node.sym and Pass.has_parent_of_type(
+            node=node.sym.defn[-1], typ=ast.GlobalVars
         ):
             self.access_check(node)

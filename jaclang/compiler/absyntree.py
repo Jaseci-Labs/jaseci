@@ -179,7 +179,7 @@ class AstSymbolNode(AstNode):
         self, sym_name: str, sym_name_node: AstNode, sym_type: SymbolType
     ) -> None:
         """Initialize ast."""
-        self.sym_link: Optional[Symbol] = None
+        self.sym: Optional[Symbol] = None
         self.sym_name: str = sym_name
         self.sym_name_node = sym_name_node
         if isinstance(self.sym_name_node, NameSpec):
