@@ -110,7 +110,9 @@ class JacFeatureDefaults:
         """Create a new architype."""
         for i in on_entry + on_exit:
             i.resolve(cls)
-        if not issubclass(cls, arch_base):
+        if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
+            cls, "_jac_exit_funcs_"
+        ):
             # Saving the module path and reassign it after creating cls
             # So the jac modules are part of the correct module
             cur_module = cls.__module__
@@ -335,7 +337,13 @@ class JacFeatureDefaults:
     @hookimpl
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Jac's ignore stmt feature."""
         return walker._jac_.ignore_node(expr)
@@ -344,7 +352,13 @@ class JacFeatureDefaults:
     @hookimpl
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchitype):
