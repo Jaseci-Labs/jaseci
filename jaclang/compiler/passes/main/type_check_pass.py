@@ -48,6 +48,7 @@ class JacTypeCheckPass(Pass):
         """Call mypy APIs to implement type checking in Jac."""
         # Creating mypy api objects
         options = myab.myb.Options()
+        options.cache_dir = ".jac_mypy_cache"
         errors = myab.Errors(self, options)
         fs_cache = myab.FileSystemCache()
         search_paths = myab.compute_search_paths([], options, str(self.__path))
