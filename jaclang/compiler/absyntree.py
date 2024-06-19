@@ -186,7 +186,7 @@ class AstSymbolNode(AstNode):
         if isinstance(self.sym_name_node, NameSpec):
             self.sym_name_node.name_of = self
         self.sym_type: SymbolType = sym_type
-        self.sym_info: TypeInfo = TypeInfo()
+        self.type_info: TypeInfo = TypeInfo()
         self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
 

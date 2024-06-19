@@ -281,8 +281,8 @@ class JacLangServer(LanguageServer):
             node_info = (
                 f"({access if access else ''}{node.sym_type.value}) {node.sym_name}"
             )
-            if node.sym_info.clean_type:
-                node_info += f": {node.sym_info.clean_type}"
+            if node.type_info.clean_type:
+                node_info += f": {node.type_info.clean_type}"
             if isinstance(node, ast.AstSemStrNode) and node.semstr:
                 node_info += f"\n{node.semstr.value}"
             if isinstance(node, ast.AstDocNode) and node.doc:
