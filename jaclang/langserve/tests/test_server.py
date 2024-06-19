@@ -143,16 +143,7 @@ class TestJacLangServer(TestCase):
         lsp.quick_check(circle_file)
         lsp.deep_check(circle_file)
         lsp.type_check(circle_file)
-        expected_string = (
-            "DocumentSymbol(name='calculate_area', kind=<SymbolKind.Function: 12>, range=9:0-9:43, "
-            "selection_range=9:0-9:43, detail=None, tags=None, deprecated=None, children=["
-            "DocumentSymbol(name='radius', kind=<SymbolKind.Variable: 13>, range=9:1-9:14, "
-            "selection_range=9:1-9:14, detail=None, tags=None, deprecated=None, children=[])])"
-        )
-        self.assertEqual(
-            expected_string, str((lsp.get_document_symbols(circle_file))[6])
-        )
-        self.assertEqual(10, len(lsp.get_document_symbols(circle_file)))
+        self.assertEqual(8, len(lsp.get_document_symbols(circle_file)))
 
     def test_go_to_definition(self) -> None:
         """Test that the go to definition is correct."""

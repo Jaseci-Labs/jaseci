@@ -106,23 +106,27 @@ def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
         return symbols
 
     for key, item in node.tab.items():
-        if key in dir(builtins):
-            continue
-        if item in [owner_sym(tab) for tab in node.kid]:
+        if (
+            key in dir(builtins)
+            or item in [owner_sym(tab) for tab in node.kid]
+            or item.decl.loc.mod_path != node.owner.loc.mod_path
+        ):
             continue
         else:
 
-            pos = create_range(item.defn[0].loc)
+            pos = create_range(item.decl.loc)
             symbol = lspt.DocumentSymbol(
                 name=key,
-                kind=kind_map(item.defn[0]),
+                kind=kind_map(item.decl),
                 range=pos,
                 selection_range=pos,
                 children=[],
             )
             symbols.append(symbol)
 
-    for sub_tab in node.kid:
+    for sub_tab in [
+        i for i in node.kid if i.owner.loc.mod_path == node.owner.loc.mod_path
+    ]:
         sub_symbols = collect_symbols(sub_tab)
 
         if isinstance(

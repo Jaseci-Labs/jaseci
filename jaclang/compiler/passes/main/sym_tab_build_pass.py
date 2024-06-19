@@ -265,16 +265,16 @@ class SymTabBuildPass(SymTabPass):
         """
         self.pop_scope()
 
-        if (  # TODO: Not sure this is needed
-            isinstance(node.parent, ast.Module)
-            and node
-            in [
-                *node.parent.impl_mod,
-                *node.parent.test_mod,
-            ]
-            and node.sym_tab
-        ):
-            self.inherit_sym_tab(scope=self.cur_scope(), sym_tab=node.sym_tab)
+        # if (  # TODO: Not sure this is needed
+        #     isinstance(node.parent, ast.Module)
+        #     and node
+        #     in [
+        #         *node.parent.impl_mod,
+        #         *node.parent.test_mod,
+        #     ]
+        #     and node.sym_tab
+        # ):
+        #     self.inherit_sym_tab(scope=self.cur_scope(), sym_tab=node.sym_tab)
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
