@@ -7,6 +7,7 @@ import sys
 import sysconfig
 
 
+import jaclang.compiler.passes.main as passes
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
@@ -885,3 +886,21 @@ class JacLanguageTests(TestCase):
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.ir.pp())
+
+    def test_single_impl_annex(self) -> None:
+        """Basic test for pass."""
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
+            target=passes.JacImportPass,
+        )
+
+        self.assertEqual(mypass.ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
+        self.assertIsNone(mypass.ir.sym_tab)
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
+            target=passes.SymTabBuildPass,
+        )
+        self.assertEqual(
+            len([i for i in mypass.ir.sym_tab.kid if i.name == "circle_pure.impl"]),
+            1,
+        )

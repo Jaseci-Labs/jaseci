@@ -237,7 +237,7 @@ class SymTabBuildPass(SymTabPass):
         mod_path: str,
         is_imported: bool,
         """
-        self.push_scope(node.name, node, fresh=True)
+        self.push_scope(node.name, node, fresh=(node == self.ir))
         self.sync_node_to_scope(node)
         for obj in dir(builtins):
             builtin = ast.Name(
@@ -263,19 +263,14 @@ class SymTabBuildPass(SymTabPass):
         mod_path: str,
         is_imported: bool,
         """
-        s = self.pop_scope()
-        # If not the main module add all the other modules symbol table
-        # as a child to the current symbol table
-        if node != self.ir:
-            self.cur_scope().kid.append(s)
-            s.parent = self.cur_scope()
+        self.pop_scope()
 
-        if (
+        if (  # TODO: Not sure this is needed
             isinstance(node.parent, ast.Module)
             and node
             in [
-                node.parent.impl_mod,
-                node.parent.test_mod,
+                *node.parent.impl_mod,
+                *node.parent.test_mod,
             ]
             and node.sym_tab
         ):
