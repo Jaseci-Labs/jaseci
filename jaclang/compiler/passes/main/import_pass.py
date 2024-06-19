@@ -204,15 +204,17 @@ class JacImportPass(Pass):
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
 
+    def before_pass(self) -> None:
+        """Only run pass if settings are set to raise python."""
+        if not settings.py_raise:
+            self.terminate()
+        else:
+            return super().before_pass()
+
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
         lang = i.parent_of_type(ast.Import).hint.tag.value
-        if (
-            lang == "py"
-            and not i.sub_module
-            and settings.py_raise
-            and not is_standard_lib_module(i.path_str)
-        ):
+        if lang == "py" and not i.sub_module and not is_standard_lib_module(i.path_str):
             mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
             if mod:
                 i.sub_module = mod
