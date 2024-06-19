@@ -15,7 +15,11 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import type_checker_sched
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
-from jaclang.langserve.utils import find_deepest_symbol_node_at_pos
+from jaclang.langserve.utils import (
+    collect_symbols,
+    create_range,
+    find_deepest_symbol_node_at_pos,
+)
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
 
@@ -63,31 +67,14 @@ class ModuleInfo:
         """Return diagnostics."""
         return [
             lspt.Diagnostic(
-                range=lspt.Range(
-                    start=lspt.Position(
-                        line=error.loc.first_line - 1, character=error.loc.col_start - 1
-                    ),
-                    end=lspt.Position(
-                        line=error.loc.last_line - 1,
-                        character=error.loc.col_end - 1,
-                    ),
-                ),
+                range=create_range(error.loc),
                 message=error.msg,
                 severity=lspt.DiagnosticSeverity.Error,
             )
             for error in self.errors
         ] + [
             lspt.Diagnostic(
-                range=lspt.Range(
-                    start=lspt.Position(
-                        line=warning.loc.first_line - 1,
-                        character=warning.loc.col_start - 1,
-                    ),
-                    end=lspt.Position(
-                        line=warning.loc.last_line - 1,
-                        character=warning.loc.col_end - 1,
-                    ),
-                ),
+                range=create_range(warning.loc),
                 message=warning.msg,
                 severity=lspt.DiagnosticSeverity.Warning,
             )
@@ -290,12 +277,12 @@ class JacLangServer(LanguageServer):
         try:
             if isinstance(node, ast.NameSpec):
                 node = node.name_of
-            access = node.sym_link.access.value + " " if node.sym_link else None
+            access = node.sym.access.value + " " if node.sym else None
             node_info = (
                 f"({access if access else ''}{node.sym_type.value}) {node.sym_name}"
             )
-            if node.sym_info.clean_type:
-                node_info += f": {node.sym_info.clean_type}"
+            if node.type_info.clean_type:
+                node_info += f": {node.type_info.clean_type}"
             if isinstance(node, ast.AstSemStrNode) and node.semstr:
                 node_info += f"\n{node.semstr.value}"
             if isinstance(node, ast.AstDocNode) and node.doc:
@@ -307,6 +294,13 @@ class JacLangServer(LanguageServer):
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
+
+    def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
+        """Return document symbols for a file."""
+        root_node = self.modules[file_path].ir.sym_tab
+        if root_node:
+            return collect_symbols(root_node)
+        return []
 
     def get_definition(
         self, file_path: str, position: lspt.Position
@@ -324,24 +318,15 @@ class JacLangServer(LanguageServer):
                 and isinstance(node_selected.parent, ast.AstImplNeedingNode)
                 and isinstance(node_selected.parent.body, ast.AstImplOnlyNode)
                 else (
-                    node_selected.sym_link.decl
-                    if (node_selected.sym_link and node_selected.sym_link.decl)
+                    node_selected.sym.decl
+                    if (node_selected.sym and node_selected.sym.decl)
                     else node_selected
                 )
             )
             self.log_py(f"{node_selected}, {decl_node}")
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
-                decl_range = lspt.Range(
-                    start=lspt.Position(
-                        line=decl_node.loc.first_line - 1,
-                        character=decl_node.loc.col_start - 1,
-                    ),
-                    end=lspt.Position(
-                        line=decl_node.loc.last_line - 1,
-                        character=decl_node.loc.col_end - 1,
-                    ),
-                )
+                decl_range = create_range(decl_node.loc)
             except ValueError:  # 'print' name has decl in 0,0,0,0
                 return None
             decl_location = lspt.Location(

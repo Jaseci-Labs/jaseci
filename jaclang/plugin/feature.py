@@ -3,21 +3,19 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, TYPE_CHECKING, Type, Union
+from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
+from jaclang.core.construct import (
+    Architype,
+    EdgeArchitype,
+    Memory,
+    NodeArchitype,
+    Root,
+    WalkerArchitype,
+)
+from jaclang.plugin.default import ExecutionContext
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
-
-if TYPE_CHECKING:
-    from jaclang.core.construct import (
-        Architype,
-        EdgeArchitype,
-        NodeArchitype,
-        WalkerArchitype,
-        Root,
-    )
-    from jaclang.plugin.default import ExecutionContext
-    from jaclang.core.memory import Memory
 
 
 import pluggy
@@ -34,6 +32,12 @@ class JacFeature:
     import abc
     from jaclang.compiler.constant import EdgeDir
     from jaclang.plugin.spec import DSFunc
+
+    RootType: TypeAlias = Root
+    Obj: TypeAlias = Architype
+    Node: TypeAlias = NodeArchitype
+    Edge: TypeAlias = EdgeArchitype
+    Walker: TypeAlias = WalkerArchitype
 
     @staticmethod
     def context(session: str = "") -> ExecutionContext:
@@ -162,7 +166,13 @@ class JacFeature:
     @staticmethod
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
         return pm.hook.ignore(walker=walker, expr=expr)
@@ -170,7 +180,13 @@ class JacFeature:
     @staticmethod
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         return pm.hook.visit_node(walker=walker, expr=expr)

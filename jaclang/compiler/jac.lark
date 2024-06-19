@@ -64,6 +64,7 @@ enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
 enum_stmt: NAME (COLON STRING)? EQ expression
          | NAME (COLON STRING)?
          | py_code_block
+         | free_code
 
 // Abilities
 ability: decorators? ability_def
@@ -444,6 +445,7 @@ any_ref: named_ref
 named_ref: special_ref
          | KWESC_NAME
          | NAME
+
 
 type_ref: TYPE_OP (named_ref | builtin_type)
 

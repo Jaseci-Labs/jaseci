@@ -104,7 +104,6 @@ class TestLarkParser(TestCaseMicroSuite):
             "AstSymbolNode",
             "AstImplNeedingNode",
             "AstAccessNode",
-            "TokenSymbol",
             "Literal",
             "AstDocNode",
             "AstSemStrNode",

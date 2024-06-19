@@ -46,7 +46,7 @@ class FuseTypeInfoPass(Pass):
             )
 
     def __set_sym_table_link(self, node: ast.AstSymbolNode) -> None:
-        typ = node.sym_info.typ.split(".")
+        typ = node.type_info.typ.split(".")
         typ_sym_table = self.ir.sym_tab
 
         if typ[0] == "builtins":
@@ -63,7 +63,7 @@ class FuseTypeInfoPass(Pass):
                     typ_sym_table = f
 
         if typ_sym_table != self.ir.sym_tab:
-            node.sym_info.typ_sym_table = typ_sym_table
+            node.type_info.type_tab_link = typ_sym_table
 
     @staticmethod
     def __handle_node(
@@ -129,9 +129,11 @@ class FuseTypeInfoPass(Pass):
         if isinstance(mypy_node, MypyNodes.MemberExpr):
             if mypy_node in self.node_type_hash:
                 t = str(self.node_type_hash[mypy_node])
-                if "->" in t:
+                if "def" in t and "->" in t:
                     t = t.split("->")[1].strip()
-                node.sym_info.typ = t
+                elif "def" in t:
+                    t = "None"
+                node.type_info.typ = t
             else:
                 self.__debug_print(f"{node.loc} MemberExpr type is not found")
 
@@ -143,16 +145,16 @@ class FuseTypeInfoPass(Pass):
                 self.__call_type_handler(node, mypy_node.type)
 
             elif isinstance(mypy_node, MypyNodes.MypyFile):
-                node.sym_info = ast.SymbolInfo("types.ModuleType")
+                node.type_info = ast.TypeInfo("types.ModuleType")
 
             elif isinstance(mypy_node, MypyNodes.TypeInfo):
-                node.sym_info = ast.SymbolInfo(mypy_node.fullname)
+                node.type_info = ast.TypeInfo(mypy_node.fullname)
 
             elif isinstance(mypy_node, MypyNodes.OverloadedFuncDef):
                 self.__call_type_handler(node, mypy_node.items[0].func.type)
 
             elif mypy_node is None:
-                node.sym_info = ast.SymbolInfo("None")
+                node.type_info = ast.TypeInfo("None")
 
             else:
                 self.__debug_print(
@@ -162,7 +164,7 @@ class FuseTypeInfoPass(Pass):
 
         else:
             if isinstance(mypy_node, MypyNodes.ClassDef):
-                node.sym_info.typ = mypy_node.fullname
+                node.type_info.typ = mypy_node.fullname
                 self.__set_sym_table_link(node)
             elif isinstance(mypy_node, MypyNodes.FuncDef):
                 self.__call_type_handler(node, mypy_node.type)
@@ -180,6 +182,18 @@ class FuseTypeInfoPass(Pass):
     def enter_name(self, node: ast.NameSpec) -> None:
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
+
+        # Assign correct symbols to sym_link in case of
+        # AtomTrailer Object
+        if isinstance(node.parent, ast.AtomTrailer):
+            target_node = node.parent.target
+            if isinstance(target_node, ast.AstSymbolNode):
+                parent_symbol_table = target_node.type_info.type_tab_link
+                if isinstance(parent_symbol_table, ast.SymbolTable):
+                    owner = parent_symbol_table.owner
+                    if isinstance(owner, ast.AstSymbolNode):
+                        target_node.sym = owner.sym
+                        node.sym = parent_symbol_table.lookup(node.sym_name)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -265,13 +279,13 @@ class FuseTypeInfoPass(Pass):
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Pass handler for HasVar nodes."""
-        node.sym_info.typ = node.name.sym_info.typ
-        node.sym_info.typ_sym_table = node.name.sym_info.typ_sym_table
+        node.type_info.typ = node.name.type_info.typ
+        node.type_info.type_tab_link = node.name.type_info.type_tab_link
 
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:
         """Pass handler for MultiString nodes."""
-        node.sym_info = ast.SymbolInfo("builtins.str")
+        node.type_info = ast.TypeInfo("builtins.str")
 
     @__handle_node
     def enter_f_string(self, node: ast.FString) -> None:
@@ -283,48 +297,48 @@ class FuseTypeInfoPass(Pass):
         """Pass handler for ListVal nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
-            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+            node.type_info.typ = str(self.node_type_hash[mypy_node])
         else:
-            node.sym_info.typ = "builtins.list"
+            node.type_info.typ = "builtins.list"
 
     @__handle_node
     def enter_set_val(self, node: ast.SetVal) -> None:
         """Pass handler for SetVal nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
-            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+            node.type_info.typ = str(self.node_type_hash[mypy_node])
         else:
-            node.sym_info.typ = "builtins.set"
+            node.type_info.typ = "builtins.set"
 
     @__handle_node
     def enter_tuple_val(self, node: ast.TupleVal) -> None:
         """Pass handler for TupleVal nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
-            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+            node.type_info.typ = str(self.node_type_hash[mypy_node])
         else:
-            node.sym_info.typ = "builtins.tuple"
+            node.type_info.typ = "builtins.tuple"
 
     @__handle_node
     def enter_dict_val(self, node: ast.DictVal) -> None:
         """Pass handler for DictVal nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
-            node.sym_info.typ = str(self.node_type_hash[mypy_node])
+            node.type_info.typ = str(self.node_type_hash[mypy_node])
         else:
-            node.sym_info.typ = "builtins.dict"
+            node.type_info.typ = "builtins.dict"
 
     @__handle_node
     def enter_list_compr(self, node: ast.ListCompr) -> None:
         """Pass handler for ListCompr nodes."""
         mypy_node = node.gen.mypy_ast[0]
-        node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        node.type_info.typ = str(self.node_type_hash[mypy_node])
 
     @__handle_node
     def enter_dict_compr(self, node: ast.DictCompr) -> None:
         """Pass handler for DictCompr nodes."""
         mypy_node = node.gen.mypy_ast[0]
-        node.sym_info.typ = str(self.node_type_hash[mypy_node])
+        node.type_info.typ = str(self.node_type_hash[mypy_node])
 
     @__handle_node
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
@@ -336,7 +350,7 @@ class FuseTypeInfoPass(Pass):
         """Pass handler for ArchRef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
             mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]
-            node.sym_info.typ = mypy_node.fullname
+            node.type_info.typ = mypy_node.fullname
             self.__set_sym_table_link(node)
         elif isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             mypy_node2: MypyNodes.FuncDef = node.gen.mypy_ast[0]
@@ -370,22 +384,22 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_int(self, node: ast.Int) -> None:
         """Pass handler for Int nodes."""
-        node.sym_info.typ = "builtins.int"
+        node.type_info.typ = "builtins.int"
 
     @__handle_node
     def enter_float(self, node: ast.Float) -> None:
         """Pass handler for Float nodes."""
-        node.sym_info.typ = "builtins.float"
+        node.type_info.typ = "builtins.float"
 
     @__handle_node
     def enter_string(self, node: ast.String) -> None:
         """Pass handler for String nodes."""
-        node.sym_info.typ = "builtins.str"
+        node.type_info.typ = "builtins.str"
 
     @__handle_node
     def enter_bool(self, node: ast.Bool) -> None:
         """Pass handler for Bool nodes."""
-        node.sym_info.typ = "builtins.bool"
+        node.type_info.typ = "builtins.bool"
 
     @__handle_node
     def enter_builtin_type(self, node: ast.BuiltinType) -> None:
@@ -396,13 +410,13 @@ class FuseTypeInfoPass(Pass):
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.Instance
     ) -> None:
         """Get type info from mypy type Instance."""
-        node.sym_info = ast.SymbolInfo(str(mypy_type))
+        node.type_info = ast.TypeInfo(str(mypy_type))
 
     def get_type_from_callable_type(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.CallableType
     ) -> None:
         """Get type info from mypy type CallableType."""
-        node.sym_info = ast.SymbolInfo(str(mypy_type.ret_type))
+        node.type_info = ast.TypeInfo(str(mypy_type.ret_type))
 
     # TODO: Which overloaded function to get the return value from?
     def get_type_from_overloaded(
@@ -415,16 +429,16 @@ class FuseTypeInfoPass(Pass):
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.NoneType
     ) -> None:
         """Get type info from mypy type NoneType."""
-        node.sym_info = ast.SymbolInfo("None")
+        node.type_info = ast.TypeInfo("None")
 
     def get_type_from_any_type(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.AnyType
     ) -> None:
         """Get type info from mypy type NoneType."""
-        node.sym_info = ast.SymbolInfo("Any")
+        node.type_info = ast.TypeInfo("Any")
 
     def get_type_from_tuple_type(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.TupleType
     ) -> None:
         """Get type info from mypy type TupleType."""
-        node.sym_info = ast.SymbolInfo("builtins.tuple")
+        node.type_info = ast.TypeInfo("builtins.tuple")

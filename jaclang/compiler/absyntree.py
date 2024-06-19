@@ -15,9 +15,9 @@ from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
 from jaclang.compiler.symtable import (
     Symbol,
     SymbolAccess,
-    SymbolInfo,
     SymbolTable,
     SymbolType,
+    TypeInfo,
 )
 from jaclang.core.registry import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
@@ -101,6 +101,7 @@ class AstNode:
             col_start=self.loc.col_start,
             col_end=0,
             line=self.loc.first_line,
+            end_line=self.loc.last_line,
             pos_start=0,
             pos_end=0,
         )
@@ -179,13 +180,13 @@ class AstSymbolNode(AstNode):
         self, sym_name: str, sym_name_node: AstNode, sym_type: SymbolType
     ) -> None:
         """Initialize ast."""
-        self.sym_link: Optional[Symbol] = None
+        self.sym: Optional[Symbol] = None
         self.sym_name: str = sym_name
         self.sym_name_node = sym_name_node
         if isinstance(self.sym_name_node, NameSpec):
             self.sym_name_node.name_of = self
         self.sym_type: SymbolType = sym_type
-        self.sym_info: SymbolInfo = SymbolInfo()
+        self.type_info: TypeInfo = TypeInfo()
         self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
 
@@ -527,6 +528,7 @@ class Test(AstSymbolNode, ElementStmt):
                 col_start=name.loc.col_start,
                 col_end=name.loc.col_end,
                 line=name.loc.first_line,
+                end_line=name.loc.last_line,
                 pos_start=name.pos_start,
                 pos_end=name.pos_end,
             )
@@ -3126,7 +3128,7 @@ class SpecialVarRef(NameSpec):
 
     def __init__(
         self,
-        var: Token,
+        var: Name,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize special var reference expression node."""
@@ -3554,6 +3556,7 @@ class MatchWild(MatchPattern):
                     col_start=self.loc.col_start,
                     col_end=self.loc.col_end,
                     line=self.loc.first_line,
+                    end_line=self.loc.last_line,
                     pos_start=self.loc.pos_start,
                     pos_end=self.loc.pos_end,
                 )
@@ -3761,6 +3764,7 @@ class Token(AstNode):
         name: str,
         value: str,
         line: int,
+        end_line: int,
         col_start: int,
         col_end: int,
         pos_start: int,
@@ -3771,6 +3775,7 @@ class Token(AstNode):
         self.name = name
         self.value = value
         self.line_no = line
+        self.end_line = end_line
         self.c_start = col_start
         self.c_end = col_end
         self.pos_start = pos_start
@@ -3795,6 +3800,7 @@ class Name(Token, NameSpec):
         name: str,
         value: str,
         line: int,
+        end_line: int,
         col_start: int,
         col_end: int,
         pos_start: int,
@@ -3811,6 +3817,7 @@ class Name(Token, NameSpec):
             name=name,
             value=value,
             line=line,
+            end_line=end_line,
             col_start=col_start,
             col_end=col_end,
             pos_start=pos_start,
@@ -3856,6 +3863,7 @@ class Literal(Token, AtomExpr):
         name: str,
         value: str,
         line: int,
+        end_line: int,
         col_start: int,
         col_end: int,
         pos_start: int,
@@ -3868,6 +3876,7 @@ class Literal(Token, AtomExpr):
             name=name,
             value=value,
             line=line,
+            end_line=end_line,
             col_start=col_start,
             col_end=col_end,
             pos_start=pos_start,
@@ -3886,42 +3895,6 @@ class Literal(Token, AtomExpr):
     ) -> int | str | float | bool | None | Callable[[], Any] | EllipsisType:
         """Return literal value in its python type."""
         raise NotImplementedError
-
-
-class TokenSymbol(Token, AstSymbolNode):
-    """TokenSymbol node type for Jac Ast."""
-
-    SYMBOL_TYPE = SymbolType.VAR
-
-    def __init__(
-        self,
-        file_path: str,
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-    ) -> None:
-        """Initialize token."""
-        Token.__init__(
-            self,
-            file_path=file_path,
-            name=name,
-            value=value,
-            line=line,
-            col_start=col_start,
-            col_end=col_end,
-            pos_start=pos_start,
-            pos_end=pos_end,
-        )
-        AstSymbolNode.__init__(
-            self,
-            sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
-            sym_type=self.SYMBOL_TYPE,
-        )
 
 
 class BuiltinType(Name, Literal, NameSpec):
@@ -4037,6 +4010,7 @@ class EmptyToken(Token):
             file_path="",
             value="",
             line=0,
+            end_line=0,
             col_start=0,
             col_end=0,
             pos_start=0,

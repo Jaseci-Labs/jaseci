@@ -870,3 +870,18 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("5"), 2)
+
+    def test_hash_init_check(self) -> None:  # we can get rid of this, isn't?
+        """Test py ast to Jac ast conversion output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("hash_init_check", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Test Passed", stdout_value)
+
+    def test_multiline_single_tok(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
+        self.assertIn("2:5 - 4:8", mypass.ir.pp())

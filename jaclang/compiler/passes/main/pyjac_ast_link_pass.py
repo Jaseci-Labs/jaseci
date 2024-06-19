@@ -57,10 +57,10 @@ class PyJacAstLinkPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         for i in node.target.archs:
-            if i.sym_link:
-                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+            if i.sym:
+                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym.decl.gen.py_ast)
                 self.link_jac_py_nodes(
-                    jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
+                    jac_node=i.name_ref, py_nodes=i.sym.decl.gen.py_ast
                 )
 
     def exit_enum(self, node: ast.Enum) -> None:
@@ -85,10 +85,10 @@ class PyJacAstLinkPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         for i in node.target.archs:
-            if i.sym_link:
-                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+            if i.sym:
+                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym.decl.gen.py_ast)
                 self.link_jac_py_nodes(
-                    jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
+                    jac_node=i.name_ref, py_nodes=i.sym.decl.gen.py_ast
                 )
 
     def exit_ability(self, node: ast.Ability) -> None:
@@ -119,10 +119,10 @@ class PyJacAstLinkPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         for i in node.target.archs:
-            if i.sym_link:
-                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym_link.decl.gen.py_ast)
+            if i.sym:
+                self.link_jac_py_nodes(jac_node=i, py_nodes=i.sym.decl.gen.py_ast)
                 self.link_jac_py_nodes(
-                    jac_node=i.name_ref, py_nodes=i.sym_link.decl.gen.py_ast
+                    jac_node=i.name_ref, py_nodes=i.sym.decl.gen.py_ast
                 )
 
         if isinstance(node.parent, ast.Ability) and node.parent.signature:

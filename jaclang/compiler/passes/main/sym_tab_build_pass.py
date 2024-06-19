@@ -25,7 +25,7 @@ class SymTabPass(Pass):
     def seen(self, node: ast.AstSymbolNode) -> bool:
         """Check if seen."""
         result = node in self.linked or node in self.unlinked
-        if node.sym_link and not result:
+        if node.sym and not result:
             self.linked.add(node)
             return True
         return result
@@ -44,15 +44,15 @@ class SymTabPass(Pass):
     ) -> Optional[Symbol]:
         """Insert into symbol table."""
         table = table_override if table_override else node.sym_tab
-        if self.seen(node) and node.sym_link and table == node.sym_link.parent_tab:
-            return node.sym_link
+        if self.seen(node) and node.sym and table == node.sym.parent_tab:
+            return node.sym
         if table:
             table.insert(
                 node=node, single=single_decl is not None, access_spec=access_spec
             )
         self.update_py_ctx_for_def(node)
         self.handle_hit_outcome(node)
-        return node.sym_link
+        return node.sym
 
     def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
         """Update python context for definition."""
@@ -85,18 +85,18 @@ class SymTabPass(Pass):
     ) -> Optional[Symbol]:
         """Link to symbol."""
         if self.seen(node):
-            return node.sym_link
+            return node.sym
         if not sym_table:
             sym_table = node.sym_tab
         if sym_table:
-            node.sym_link = (
+            node.sym = (
                 sym_table.lookup(name=node.sym_name, deep=True) if sym_table else None
             )
             # If successful lookup mark linked, add to table uses, and link others
-            if node.sym_link:
+            if node.sym:
                 sym_table.uses.append(node)
         self.handle_hit_outcome(node)
-        return node.sym_link
+        return node.sym
 
     def chain_def_insert(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
         """Link chain of containing names to symbol."""
@@ -171,16 +171,16 @@ class SymTabPass(Pass):
     ) -> None:
         """Handle outcome of lookup or insert."""
         # If successful lookup mark linked, add to table uses, and link others
-        if node.sym_link:
+        if node.sym:
             self.linked.add(node)
             if isinstance(node.sym_name_node, ast.AstSymbolNode):
-                node.sym_name_node.sym_link = node.sym_link
-        if not node.sym_link:
+                node.sym_name_node.sym = node.sym
+        if not node.sym:
             # Mark nodes that were not successfully linked
             self.unlinked.add(node)
             if (
                 isinstance(node.sym_name_node, ast.AstSymbolNode)
-                and not node.sym_name_node.sym_link
+                and not node.sym_name_node.sym
             ):
                 self.unlinked.add(node.sym_name_node)
 
@@ -246,6 +246,7 @@ class SymTabBuildPass(SymTabPass):
                 name=Tok.NAME,
                 value=str(obj),
                 line=0,
+                end_line=0,
                 col_start=0,
                 col_end=0,
                 pos_start=0,
