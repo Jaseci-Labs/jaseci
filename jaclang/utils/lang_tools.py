@@ -82,7 +82,6 @@ class AstTool:
                 "EmptyToken",
                 "AstSymbolNode",
                 "AstAccessNode",
-                "TokenSymbol",
                 "Literal",
                 "AstDocNode",
                 "AstSemStrNode",

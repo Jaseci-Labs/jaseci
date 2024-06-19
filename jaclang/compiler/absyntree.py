@@ -3888,42 +3888,6 @@ class Literal(Token, AtomExpr):
         raise NotImplementedError
 
 
-class TokenSymbol(Token, AstSymbolNode):
-    """TokenSymbol node type for Jac Ast."""
-
-    SYMBOL_TYPE = SymbolType.VAR
-
-    def __init__(
-        self,
-        file_path: str,
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-    ) -> None:
-        """Initialize token."""
-        Token.__init__(
-            self,
-            file_path=file_path,
-            name=name,
-            value=value,
-            line=line,
-            col_start=col_start,
-            col_end=col_end,
-            pos_start=pos_start,
-            pos_end=pos_end,
-        )
-        AstSymbolNode.__init__(
-            self,
-            sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
-            sym_type=self.SYMBOL_TYPE,
-        )
-
-
 class BuiltinType(Name, Literal, NameSpec):
     """Type node type for Jac Ast."""
 
