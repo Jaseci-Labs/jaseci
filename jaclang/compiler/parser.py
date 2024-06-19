@@ -691,6 +691,7 @@ class JacParser(Pass):
             enum_stmt: NAME (COLON STRING)? EQ expression
                     | NAME (COLON STRING)?
                     | py_code_block
+                    | free_code
             """
             if isinstance(kid[0], ast.PyInlineCode):
                 return self.nu(kid[0])
@@ -739,7 +740,8 @@ class JacParser(Pass):
                             is_enum_stmt=True,
                         )
                     )
-
+            elif isinstance(kid[0], (ast.PyInlineCode, ast.ModuleCode)):
+                return self.nu(kid[0])
             raise self.ice()
 
         def ability(
