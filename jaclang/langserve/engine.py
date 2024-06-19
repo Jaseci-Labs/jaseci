@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from enum import IntEnum
 from hashlib import md5
-from typing import Optional, Sequence
+from typing import Optional
 
 
 import jaclang.compiler.absyntree as ast
@@ -40,8 +40,8 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        errors: Sequence[Alert],
-        warnings: Sequence[Alert],
+        errors: list[Alert],
+        warnings: list[Alert],
         alev: ALev,
         parent: Optional[ModuleInfo] = None,
     ) -> None:
@@ -62,6 +62,14 @@ class ModuleInfo:
     def has_syntax_error(self) -> bool:
         """Return if there are syntax errors."""
         return len(self.errors) > 0 and self.alev == ALev.QUICK
+
+    def update_with(self, new_info: ModuleInfo) -> None:
+        """Update module info."""
+        self.ir = new_info.ir
+        self.errors += new_info.errors
+        self.warnings += new_info.warnings
+        self.alev = new_info.alev
+        self.diagnostics = self.gen_diagnostics()
 
     def gen_diagnostics(self) -> list[lspt.Diagnostic]:
         """Return diagnostics."""
@@ -124,15 +132,14 @@ class JacLangServer(LanguageServer):
                 self.quick_check(file_path)
         return file_path
 
-    def update_modules(self, file_path: str, build: Pass, alev: ALev) -> None:
+    def update_modules(
+        self, file_path: str, build: Pass, alev: ALev, refresh: bool = False
+    ) -> None:
         """Update modules."""
         if not isinstance(build.ir, ast.Module):
             self.log_error("Error with module build.")
             return
-        save_parent = (
-            self.modules[file_path].parent if file_path in self.modules else None
-        )
-        self.modules[file_path] = ModuleInfo(
+        new_mod = ModuleInfo(
             ir=build.ir,
             errors=[
                 i
@@ -146,15 +153,24 @@ class JacLangServer(LanguageServer):
             ],
             alev=alev,
         )
-        self.modules[file_path].parent = save_parent
+        if not refresh and file_path in self.modules:
+            self.log_py(f"Before: {self.modules[file_path].warnings}")
+            self.modules[file_path].update_with(new_mod)
+            self.log_py(f"After: {self.modules[file_path].warnings}")
+        else:
+            self.modules[file_path] = new_mod
         for p in build.ir.mod_deps.keys():
             uri = uris.from_fs_path(p)
-            self.modules[uri] = ModuleInfo(
+            new_mod = ModuleInfo(
                 ir=build.ir.mod_deps[p],
                 errors=[i for i in build.errors_had if i.loc.mod_path == p],
                 warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
                 alev=alev,
             )
+            if not refresh and uri in self.modules:
+                self.modules[uri].update_with(new_mod)
+            else:
+                self.modules[uri] = new_mod
             self.modules[uri].parent = (
                 self.modules[file_path] if file_path != uri else None
             )
@@ -170,7 +186,7 @@ class JacLangServer(LanguageServer):
             )
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
-        self.update_modules(file_path, build, ALev.QUICK)
+        self.update_modules(file_path, build, ALev.QUICK, refresh=True)
 
     def deep_check(self, file_path: str, force: bool = False) -> None:
         """Rebuild a file and its dependencies."""

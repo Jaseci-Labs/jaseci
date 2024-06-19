@@ -18,6 +18,9 @@ class Settings:
     py_raise: bool = False
     py_raise_deep: bool = False
 
+    # LSP configuration
+    lsp_debug: bool = False
+
     def __post_init__(self) -> None:
         """Initialize settings."""
         home_dir = os.path.expanduser("~")

@@ -83,6 +83,7 @@ class Symbol:
     ) -> None:
         """Initialize."""
         self.defn: list[ast.AstSymbolNode] = [defn]
+        self.uses: list[ast.AstSymbolNode] = []
         defn.sym = self
         self.access = access
         self.parent_tab = parent_tab
@@ -123,6 +124,11 @@ class Symbol:
         self.defn.append(node)
         node.sym = self
 
+    def add_use(self, node: ast.AstSymbolNode) -> None:
+        """Add use."""
+        self.uses.append(node)
+        node.sym = self
+
     def __repr__(self) -> str:
         """Repr."""
         return f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, {self.defn})"
@@ -140,7 +146,6 @@ class SymbolTable:
         self.parent = parent if parent else self
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
-        self.uses: list[ast.AstSymbolNode] = []
 
     def has_parent(self) -> bool:
         """Check if has parent."""

@@ -92,9 +92,8 @@ class SymTabPass(Pass):
             node.sym = (
                 sym_table.lookup(name=node.sym_name, deep=True) if sym_table else None
             )
-            # If successful lookup mark linked, add to table uses, and link others
             if node.sym:
-                sym_table.uses.append(node)
+                node.sym.add_use(node)
         self.handle_hit_outcome(node)
         return node.sym
 
