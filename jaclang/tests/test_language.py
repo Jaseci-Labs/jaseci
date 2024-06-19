@@ -879,3 +879,9 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Test Passed", stdout_value)
+
+    def test_multiline_single_tok(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
+        self.assertIn("2:5 - 4:8", mypass.ir.pp())

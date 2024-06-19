@@ -101,6 +101,7 @@ class AstNode:
             col_start=self.loc.col_start,
             col_end=0,
             line=self.loc.first_line,
+            end_line=self.loc.last_line,
             pos_start=0,
             pos_end=0,
         )
@@ -527,6 +528,7 @@ class Test(AstSymbolNode, ElementStmt):
                 col_start=name.loc.col_start,
                 col_end=name.loc.col_end,
                 line=name.loc.first_line,
+                end_line=name.loc.last_line,
                 pos_start=name.pos_start,
                 pos_end=name.pos_end,
             )
@@ -3554,6 +3556,7 @@ class MatchWild(MatchPattern):
                     col_start=self.loc.col_start,
                     col_end=self.loc.col_end,
                     line=self.loc.first_line,
+                    end_line=self.loc.last_line,
                     pos_start=self.loc.pos_start,
                     pos_end=self.loc.pos_end,
                 )
@@ -3761,6 +3764,7 @@ class Token(AstNode):
         name: str,
         value: str,
         line: int,
+        end_line: int,
         col_start: int,
         col_end: int,
         pos_start: int,
@@ -3771,6 +3775,7 @@ class Token(AstNode):
         self.name = name
         self.value = value
         self.line_no = line
+        self.end_line = end_line
         self.c_start = col_start
         self.c_end = col_end
         self.pos_start = pos_start
@@ -3795,6 +3800,7 @@ class Name(Token, NameSpec):
         name: str,
         value: str,
         line: int,
+        end_line: int,
         col_start: int,
         col_end: int,
         pos_start: int,
@@ -3811,6 +3817,7 @@ class Name(Token, NameSpec):
             name=name,
             value=value,
             line=line,
+            end_line=end_line,
             col_start=col_start,
             col_end=col_end,
             pos_start=pos_start,
@@ -3856,6 +3863,7 @@ class Literal(Token, AtomExpr):
         name: str,
         value: str,
         line: int,
+        end_line: int,
         col_start: int,
         col_end: int,
         pos_start: int,
@@ -3868,6 +3876,7 @@ class Literal(Token, AtomExpr):
             name=name,
             value=value,
             line=line,
+            end_line=end_line,
             col_start=col_start,
             col_end=col_end,
             pos_start=pos_start,
@@ -4001,6 +4010,7 @@ class EmptyToken(Token):
             file_path="",
             value="",
             line=0,
+            end_line=0,
             col_start=0,
             col_end=0,
             pos_start=0,
