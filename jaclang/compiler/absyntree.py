@@ -176,13 +176,11 @@ class AstNode:
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
 
-    def __init__(
-        self, sym_name: str, sym_name_node: AstNode, sym_type: SymbolType
-    ) -> None:
+    def __init__(self, sym_name: str, name_spec: AstNode, sym_type: SymbolType) -> None:
         """Initialize ast."""
         self.sym: Optional[Symbol] = None
         self.sym_name: str = sym_name
-        self.name_spec = sym_name_node
+        self.name_spec = name_spec
         if isinstance(self.name_spec, NameSpec):
             self.name_spec.name_of = self
         self.sym_type: SymbolType = sym_type
@@ -542,7 +540,7 @@ class Test(AstSymbolNode, ElementStmt):
         AstSymbolNode.__init__(
             self,
             sym_name=self.name.sym_name,
-            sym_name_node=self.name,
+            name_spec=self.name,
             sym_type=SymbolType.TEST,
         )
         AstDocNode.__init__(self, doc=doc)
@@ -696,7 +694,7 @@ class ModulePath(AstSymbolNode):
         AstSymbolNode.__init__(
             self,
             sym_name=alias.sym_name if alias else self.path_str,
-            sym_name_node=alias if alias else self,
+            name_spec=alias if alias else self,
             sym_type=SymbolType.MODULE,
         )
 
@@ -750,7 +748,7 @@ class ModuleItem(AstSymbolNode):
         AstSymbolNode.__init__(
             self,
             sym_name=alias.sym_name if alias else name.sym_name,
-            sym_name_node=alias if alias else name,
+            name_spec=alias if alias else name,
             sym_type=SymbolType.MOD_VAR,
         )
 
@@ -791,7 +789,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         AstSymbolNode.__init__(
             self,
             sym_name=name.value,
-            sym_name_node=name,
+            name_spec=name,
             sym_type=(
                 SymbolType.OBJECT_ARCH
                 if arch_type.name == Tok.KW_OBJECT
@@ -884,7 +882,7 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
         AstSymbolNode.__init__(
             self,
             sym_name=target.py_resolve_name(),
-            sym_name_node=target,
+            name_spec=target,
             sym_type=SymbolType.IMPL,
         )
         AstDocNode.__init__(self, doc=doc)
@@ -929,7 +927,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         AstSymbolNode.__init__(
             self,
             sym_name=name.value,
-            sym_name_node=name,
+            name_spec=name,
             sym_type=SymbolType.ENUM_ARCH,
         )
         AstImplNeedingNode.__init__(self, body=body)
@@ -994,7 +992,7 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
         AstSymbolNode.__init__(
             self,
             sym_name=target.py_resolve_name(),
-            sym_name_node=target,
+            name_spec=target,
             sym_type=SymbolType.IMPL,
         )
         AstDocNode.__init__(self, doc=doc)
@@ -1059,7 +1057,7 @@ class Ability(
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
-            sym_name_node=name_ref,
+            name_spec=name_ref,
             sym_type=SymbolType.ABILITY,
         )
         AstAccessNode.__init__(self, access=access)
@@ -1154,7 +1152,7 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
         AstSymbolNode.__init__(
             self,
             sym_name=target.py_resolve_name(),
-            sym_name_node=target,
+            name_spec=target,
             sym_type=SymbolType.IMPL,
         )
         AstDocNode.__init__(self, doc=doc)
@@ -1333,7 +1331,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         AstSymbolNode.__init__(
             self,
             sym_name=name.value,
-            sym_name_node=name,
+            name_spec=name,
             sym_type=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
@@ -1429,7 +1427,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         AstSymbolNode.__init__(
             self,
             sym_name=name.value,
-            sym_name_node=name,
+            name_spec=name,
             sym_type=SymbolType.HAS_VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
@@ -2490,7 +2488,7 @@ class MultiString(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.STRING,
         )
 
@@ -2521,7 +2519,7 @@ class FString(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.STRING,
         )
 
@@ -2556,7 +2554,7 @@ class ListVal(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -2589,7 +2587,7 @@ class SetVal(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -2622,7 +2620,7 @@ class TupleVal(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -2670,7 +2668,7 @@ class DictVal(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -2808,7 +2806,7 @@ class ListCompr(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -2888,7 +2886,7 @@ class DictCompr(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -3053,7 +3051,7 @@ class IndexSlice(AtomExpr):
             self,
             sym_name=f"[{self.__class__.__name__}]",
             sym_type=SymbolType.SEQUENCE,
-            sym_name_node=self,
+            name_spec=self,
         )
 
     def normalize(self, deep: bool = True) -> bool:
@@ -3099,7 +3097,7 @@ class ArchRef(NameSpec):
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
-            sym_name_node=name_ref,
+            name_spec=name_ref,
             sym_type=SymbolType.TYPE,
         )
         NameSpec.__init__(self)
@@ -3137,7 +3135,7 @@ class SpecialVarRef(NameSpec):
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
-            sym_name_node=var,
+            name_spec=var,
             sym_type=SymbolType.VAR,
         )
         NameSpec.__init__(self)
@@ -3215,7 +3213,7 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -3349,7 +3347,7 @@ class FilterCompr(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -3391,7 +3389,7 @@ class AssignCompr(AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.SEQUENCE,
         )
 
@@ -3826,7 +3824,7 @@ class Name(Token, NameSpec):
         AstSymbolNode.__init__(
             self,
             sym_name=value,
-            sym_name_node=self,
+            name_spec=self,
             sym_type=SymbolType.VAR,
         )
         NameSpec.__init__(self)
@@ -3885,7 +3883,7 @@ class Literal(Token, AtomExpr):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
+            name_spec=self,
             sym_type=self.SYMBOL_TYPE,
         )
 
