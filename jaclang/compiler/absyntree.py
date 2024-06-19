@@ -182,9 +182,9 @@ class AstSymbolNode(AstNode):
         """Initialize ast."""
         self.sym: Optional[Symbol] = None
         self.sym_name: str = sym_name
-        self.sym_name_node = sym_name_node
-        if isinstance(self.sym_name_node, NameSpec):
-            self.sym_name_node.name_of = self
+        self.name_spec = sym_name_node
+        if isinstance(self.name_spec, NameSpec):
+            self.name_spec.name_of = self
         self.sym_type: SymbolType = sym_type
         self.type_info: TypeInfo = TypeInfo()
         self.py_ctx_func: Type[ast3.AST] = ast3.Load

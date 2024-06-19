@@ -219,5 +219,5 @@ class PyJacAstLinkPass(Pass):
         """
         if node.is_attr and isinstance(node.right, ast.AstSymbolNode):
             self.link_jac_py_nodes(
-                jac_node=node.right.sym_name_node, py_nodes=node.gen.py_ast
+                jac_node=node.right.name_spec, py_nodes=node.gen.py_ast
             )
