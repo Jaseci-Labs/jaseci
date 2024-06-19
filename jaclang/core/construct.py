@@ -232,7 +232,13 @@ class WalkerAnchor(ObjectAnchor):
 
     def visit_node(
         self,
-        nds: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        nds: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Walker visits node."""
         nd_list: list[NodeArchitype | EdgeArchitype]
@@ -254,7 +260,13 @@ class WalkerAnchor(ObjectAnchor):
 
     def ignore_node(
         self,
-        nds: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        nds: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Walker ignores node."""
         nd_list: list[NodeArchitype | EdgeArchitype]

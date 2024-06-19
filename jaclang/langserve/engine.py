@@ -277,7 +277,7 @@ class JacLangServer(LanguageServer):
         try:
             if isinstance(node, ast.NameSpec):
                 node = node.name_of
-            access = node.sym_link.access.value + " " if node.sym_link else None
+            access = node.sym.access.value + " " if node.sym else None
             node_info = (
                 f"({access if access else ''}{node.sym_type.value}) {node.sym_name}"
             )
@@ -318,8 +318,8 @@ class JacLangServer(LanguageServer):
                 and isinstance(node_selected.parent, ast.AstImplNeedingNode)
                 and isinstance(node_selected.parent.body, ast.AstImplOnlyNode)
                 else (
-                    node_selected.sym_link.decl
-                    if (node_selected.sym_link and node_selected.sym_link.decl)
+                    node_selected.sym.decl
+                    if (node_selected.sym and node_selected.sym.decl)
                     else node_selected
                 )
             )

@@ -287,7 +287,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 and isinstance(body_stmt.name_ref, ast.Name)
                 and body_stmt.name_ref.value == "__init__"
             ):
-                tok = ast.Token(
+                tok = ast.Name(
                     file_path=self.mod_path,
                     name=Tok.KW_INIT,
                     value="init",
@@ -377,7 +377,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         converted_stmt.expr, ast.String
                     ):
                         continue
-                    tok = ast.Token(
+                    pintok = ast.Token(
                         file_path=self.mod_path,
                         name=Tok.PYNLINE,
                         value=py_ast.unparse(class_body_stmt),
@@ -388,7 +388,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         pos_start=0,
                         pos_end=0,
                     )
-                    valid_enum_body.append(ast.PyInlineCode(code=tok, kid=[tok]))
+                    valid_enum_body.append(ast.PyInlineCode(code=pintok, kid=[pintok]))
 
             valid_enum_body2: list[ast.EnumBlockStmt] = [
                 i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)
@@ -908,7 +908,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(value.target, ast.Name)
             and value.target.value == "super"
         ):
-            tok = ast.Token(
+            tok = ast.Name(
                 file_path=self.mod_path,
                 name=Tok.KW_SUPER,
                 value="super",
