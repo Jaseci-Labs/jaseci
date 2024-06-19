@@ -46,13 +46,10 @@ class SymbolType(Enum):
 class SymbolInfo:
     """Symbol Info."""
 
-    def __init__(
-        self, typ: str = "NoType", acc_tag: Optional[SymbolAccess] = None
-    ) -> None:  # noqa: ANN401
+    def __init__(self, typ: str = "NoType") -> None:
         """Initialize."""
         self.typ = typ
-        self.acc_tag: Optional[SymbolAccess] = acc_tag
-        self.typ_sym_table: Optional[SymbolTable] = None
+        self.type_tab_link: Optional[SymbolTable] = None
 
     @property
     def clean_type(self) -> str:
@@ -83,14 +80,24 @@ class Symbol:
         defn: ast.AstSymbolNode,
         access: SymbolAccess,
         parent_tab: SymbolTable,
-        typ: Optional[type] = None,
+        typ: Optional[str] = None,
     ) -> None:
         """Initialize."""
         self.typ = typ
         self.defn: list[ast.AstSymbolNode] = [defn]
-        defn.sym_link = self
+        defn.sym = self
         self.access = access
         self.parent_tab = parent_tab
+        self.scope_tab_link: Optional[SymbolTable] = None
+        self.type_tab_link: Optional[SymbolTable] = None
+
+    @property
+    def clean_type(self) -> str:
+        """Get clean type."""
+        ret_type = (
+            self.typ.replace("builtins.", "").replace("NoType", "") if self.typ else ""
+        )
+        return ret_type
 
     @property
     def decl(self) -> ast.AstSymbolNode:
@@ -124,7 +131,7 @@ class Symbol:
     def add_defn(self, node: ast.AstSymbolNode) -> None:
         """Add defn."""
         self.defn.append(node)
-        node.sym_link = self
+        node.sym = self
 
     def __repr__(self) -> str:
         """Repr."""
@@ -194,7 +201,7 @@ class SymbolTable:
             )
         else:
             self.tab[node.sym_name].add_defn(node)
-        node.sym_link = self.tab[node.sym_name]
+        node.sym = self.tab[node.sym_name]
         return collision
 
     def find_scope(self, name: str) -> Optional[SymbolTable]:

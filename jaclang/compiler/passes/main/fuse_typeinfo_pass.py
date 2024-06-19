@@ -63,7 +63,7 @@ class FuseTypeInfoPass(Pass):
                     typ_sym_table = f
 
         if typ_sym_table != self.ir.sym_tab:
-            node.sym_info.typ_sym_table = typ_sym_table
+            node.sym_info.type_tab_link = typ_sym_table
 
     @staticmethod
     def __handle_node(
@@ -188,12 +188,12 @@ class FuseTypeInfoPass(Pass):
         if isinstance(node.parent, ast.AtomTrailer):
             target_node = node.parent.target
             if isinstance(target_node, ast.AstSymbolNode):
-                parent_symbol_table = target_node.sym_info.typ_sym_table
+                parent_symbol_table = target_node.sym_info.type_tab_link
                 if isinstance(parent_symbol_table, ast.SymbolTable):
                     owner = parent_symbol_table.owner
                     if isinstance(owner, ast.AstSymbolNode):
-                        target_node.sym_link = owner.sym_link
-                        node.sym_link = parent_symbol_table.lookup(node.sym_name)
+                        target_node.sym = owner.sym
+                        node.sym = parent_symbol_table.lookup(node.sym_name)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -280,7 +280,7 @@ class FuseTypeInfoPass(Pass):
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Pass handler for HasVar nodes."""
         node.sym_info.typ = node.name.sym_info.typ
-        node.sym_info.typ_sym_table = node.name.sym_info.typ_sym_table
+        node.sym_info.type_tab_link = node.name.sym_info.type_tab_link
 
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:

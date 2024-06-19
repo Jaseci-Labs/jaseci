@@ -96,8 +96,8 @@ def print_ast_tree(
             else ""
         )
         sym_table_link = (
-            f"SymbolTable: {node.sym_info.typ_sym_table.name}"
-            if isinstance(node, AstSymbolNode) and node.sym_info.typ_sym_table
+            f"SymbolTable: {node.sym_info.type_tab_link.name}"
+            if isinstance(node, AstSymbolNode) and node.sym_info.type_tab_link
             else "SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
         )
 
@@ -105,8 +105,8 @@ def print_ast_tree(
             out = f"{node.__class__.__name__} - {node.value} - Type: {node.sym_info.typ}, {access} {sym_table_link}"
             if settings.ast_symbol_info_detailed:
                 symbol = (
-                    node.sym_link.sym_path_str
-                    if node.sym_link
+                    node.sym.sym_path_str
+                    if node.sym
                     else "<No Symbol is associated with this node>"
                 )
                 out += f" SymbolPath: {symbol}"
@@ -117,8 +117,8 @@ def print_ast_tree(
             out = f"{node.__class__.__name__} - {node.sym_name} - Type: {node.sym_info.typ}, {access} {sym_table_link}"
             if settings.ast_symbol_info_detailed:
                 symbol = (
-                    node.sym_link.sym_path_str
-                    if node.sym_link
+                    node.sym.sym_path_str
+                    if node.sym
                     else "<No Symbol is associated with this node>"
                 )
                 out += f" SymbolPath: {symbol}"
