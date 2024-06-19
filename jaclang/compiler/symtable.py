@@ -43,8 +43,8 @@ class SymbolType(Enum):
         return self.value
 
 
-class SymbolInfo:
-    """Symbol Info."""
+class TypeInfo:
+    """Type Info for AstNodes."""
 
     def __init__(self, typ: str = "NoType") -> None:
         """Initialize."""
@@ -80,24 +80,14 @@ class Symbol:
         defn: ast.AstSymbolNode,
         access: SymbolAccess,
         parent_tab: SymbolTable,
-        typ: Optional[str] = None,
     ) -> None:
         """Initialize."""
-        self.typ = typ
         self.defn: list[ast.AstSymbolNode] = [defn]
         defn.sym = self
         self.access = access
         self.parent_tab = parent_tab
         self.scope_tab_link: Optional[SymbolTable] = None
         self.type_tab_link: Optional[SymbolTable] = None
-
-    @property
-    def clean_type(self) -> str:
-        """Get clean type."""
-        ret_type = (
-            self.typ.replace("builtins.", "").replace("NoType", "") if self.typ else ""
-        )
-        return ret_type
 
     @property
     def decl(self) -> ast.AstSymbolNode:
@@ -135,10 +125,7 @@ class Symbol:
 
     def __repr__(self) -> str:
         """Repr."""
-        return (
-            f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, "
-            f"{self.typ}, {self.defn})"
-        )
+        return f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, {self.defn})"
 
 
 class SymbolTable:
