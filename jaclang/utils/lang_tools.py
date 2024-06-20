@@ -82,6 +82,7 @@ class AstTool:
                 "JacSource",
                 "EmptyToken",
                 "AstSymbolNode",
+                "AstSymbolStubNode",
                 "AstAccessNode",
                 "Literal",
                 "AstDocNode",
