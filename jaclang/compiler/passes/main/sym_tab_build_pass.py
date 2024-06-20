@@ -89,11 +89,11 @@ class SymTabPass(Pass):
         if not sym_table:
             sym_table = node.sym_tab
         if sym_table:
-            node.sym = (
+            node.name_spec.sym = (
                 sym_table.lookup(name=node.sym_name, deep=True) if sym_table else None
             )
             if node.sym:
-                node.sym.add_use(node)
+                node.sym.add_use(node.name_spec)
         self.handle_hit_outcome(node)
         return node.sym
 

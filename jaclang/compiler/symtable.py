@@ -77,21 +77,21 @@ class Symbol:
 
     def __init__(
         self,
-        defn: ast.AstSymbolNode,
+        defn: ast.NameSpec,
         access: SymbolAccess,
         parent_tab: SymbolTable,
     ) -> None:
         """Initialize."""
-        self.defn: list[ast.AstSymbolNode] = [defn]
-        self.uses: list[ast.AstSymbolNode] = []
+        self.defn: list[ast.NameSpec] = [defn]
+        self.uses: list[ast.NameSpec] = []
         defn.sym = self
-        self.access = access
+        self.access: SymbolAccess = access
         self.parent_tab = parent_tab
         self.scope_tab_link: Optional[SymbolTable] = None
         self.type_tab_link: Optional[SymbolTable] = None
 
     @property
-    def decl(self) -> ast.AstSymbolNode:
+    def decl(self) -> ast.NameSpec:
         """Get decl."""
         return self.defn[0]
 
@@ -119,12 +119,12 @@ class Symbol:
         out.reverse()
         return ".".join(out)
 
-    def add_defn(self, node: ast.AstSymbolNode) -> None:
+    def add_defn(self, node: ast.NameSpec) -> None:
         """Add defn."""
         self.defn.append(node)
         node.sym = self
 
-    def add_use(self, node: ast.AstSymbolNode) -> None:
+    def add_use(self, node: ast.NameSpec) -> None:
         """Add use."""
         self.uses.append(node)
         node.sym = self
@@ -183,7 +183,7 @@ class SymbolTable:
         )
         if node.sym_name not in self.tab:
             self.tab[node.sym_name] = Symbol(
-                defn=node,
+                defn=node.name_spec,
                 access=(
                     access_spec
                     if isinstance(access_spec, SymbolAccess)
@@ -192,8 +192,8 @@ class SymbolTable:
                 parent_tab=self,
             )
         else:
-            self.tab[node.sym_name].add_defn(node)
-        node.sym = self.tab[node.sym_name]
+            self.tab[node.sym_name].add_defn(node.name_spec)
+        node.name_spec.sym = self.tab[node.sym_name]
         return collision
 
     def find_scope(self, name: str) -> Optional[SymbolTable]:

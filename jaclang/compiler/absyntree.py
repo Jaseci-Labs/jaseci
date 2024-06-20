@@ -180,13 +180,18 @@ class AstSymbolNode(AstNode):
         self, sym_name: str, name_spec: NameSpec, sym_type: SymbolType
     ) -> None:
         """Initialize ast."""
-        self.sym: Optional[Symbol] = None
         self.sym_name: str = sym_name
+        name_spec.sym_name = sym_name
         self.name_spec = name_spec
         self.name_spec.name_of = self
         self.sym_type: SymbolType = sym_type
         self.type_info: TypeInfo = TypeInfo()
         self.py_ctx_func: Type[ast3.AST] = ast3.Load
+
+    @property
+    def sym(self) -> Optional[Symbol]:
+        """Get symbol."""
+        return self.name_spec.sym
 
 
 class AstSymbolStubNode(AstSymbolNode):
@@ -214,8 +219,7 @@ class AstSymbolStubNode(AstSymbolNode):
             pos_start=self.loc.pos_start,
             pos_end=self.loc.pos_end,
         )
-        ret.parent = self
-        ret.sym_tab = self.sym_tab
+        ret.name_of = self
         return ret
 
 
@@ -345,7 +349,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             pos_start=self.target.archs[0].loc.pos_start,
             pos_end=self.target.archs[-1].loc.pos_end,
         )
-        ret.parent = self
+        ret.name_of = self
         return ret
 
 
@@ -368,6 +372,17 @@ class NameSpec(AtomExpr, EnumBlockStmt):
     def __init__(self) -> None:
         """Initialize name spec node."""
         self.name_of: AstSymbolNode = self
+        self._sym: Optional[Symbol] = None
+
+    @property
+    def sym(self) -> Optional[Symbol]:
+        """Get symbol."""
+        return self._sym
+
+    @sym.setter
+    def sym(self, sym: Symbol) -> None:
+        """Set symbol."""
+        self._sym = sym
 
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):

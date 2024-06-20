@@ -28,25 +28,30 @@ class DeclImplMatchPass(Pass):
         """Rebuild sub node table."""
         self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
 
-    def defn_lookup(self, lookup: Symbol) -> ast.AstImplNeedingNode | None:
+    def defn_lookup(self, lookup: Symbol) -> ast.NameSpec | None:
         """Lookup a definition in a symbol table."""
         for defn in range(len(lookup.defn)):
             candidate = lookup.defn[len(lookup.defn) - (defn + 1)]
-            if isinstance(candidate, ast.AstImplNeedingNode) and candidate.needs_impl:
+            if (
+                isinstance(candidate.name_of, ast.AstImplNeedingNode)
+                and candidate.name_of.needs_impl
+            ):
                 return candidate
         return None
 
     def connect_def_impl(self, sym_tab: SymbolTable) -> None:
         """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
-            if isinstance(sym.decl, ast.AstImplOnlyNode):
+            if isinstance(sym.decl.name_of, ast.AstImplOnlyNode):
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
-                name_of_links = []  # to link archref names to decls
+                name_of_links: list[ast.NameSpec] = []  # to link archref names to decls
                 lookup = sym_tab.lookup(arch_refs[0])
                 # If below may need to be a while instead of if to skip over local
                 # import name collisions (see test: test_impl_decl_resolution_fix)
-                if lookup and not isinstance(lookup.decl, ast.AstImplNeedingNode):
+                if lookup and not isinstance(
+                    lookup.decl.name_of, ast.AstImplNeedingNode
+                ):
                     lookup = sym_tab.parent.lookup(arch_refs[0])
                 decl_node = (
                     self.defn_lookup(lookup)
@@ -57,8 +62,8 @@ class DeclImplMatchPass(Pass):
                 for name in arch_refs[1:]:
                     if decl_node:
                         lookup = (
-                            decl_node.sym_tab.lookup(name)
-                            if decl_node.sym_tab
+                            decl_node.name_of.sym_tab.lookup(name)
+                            if decl_node.name_of.sym_tab
                             else None
                         )
                         decl_node = (
@@ -77,11 +82,16 @@ class DeclImplMatchPass(Pass):
                         decl_node,
                     )
                     continue
-                decl_node.body = sym.decl  # type: ignore
-                sym.decl.decl_link = decl_node  # type: ignore
-                for idx, a in enumerate(sym.decl.target.archs):
-                    if isinstance(a.name_ref.name_spec, ast.NameSpec):
-                        a.name_ref.name_spec.name_of = name_of_links[idx]
-                decl_node.sym_tab.tab = sym.decl.sym_tab.tab  # type: ignore
+                if not isinstance(
+                    valid_decl := decl_node.name_of, ast.AstImplNeedingNode
+                ) or not (valid_decl.sym_tab and sym.decl.name_of.sym_tab):
+                    raise self.ice(
+                        f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
+                    )
+                valid_decl.body = sym.decl.name_of
+                sym.decl.name_of.decl_link = valid_decl
+                for idx, a in enumerate(sym.decl.name_of.target.archs):
+                    a.name_of = a.name_spec.name_of = name_of_links[idx].name_of
+                valid_decl.sym_tab.tab = sym.decl.name_of.sym_tab.tab
         for i in sym_tab.kid:
             self.connect_def_impl(i)
