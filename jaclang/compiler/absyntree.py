@@ -713,11 +713,14 @@ class ModulePath(AstSymbolNode):
         self.alias = alias
         self.sub_module = sub_module
 
+        name_spec = alias if alias else path[0] if path else None
+        if not isinstance(name_spec, Name):
+            raise ValueError("ModulePath should have a name spec. Impossible.")
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=alias.sym_name if alias else self.path_str,
-            name_spec=alias if alias else self,
+            sym_name=name_spec.sym_name,
+            name_spec=name_spec,
             sym_type=SymbolType.MODULE,
         )
 
