@@ -105,7 +105,7 @@ def print_ast_tree(
             out = f"{node.__class__.__name__} - {node.value} - Type: {node.type_info.typ}, {access} {sym_table_link}"
             if settings.ast_symbol_info_detailed:
                 symbol = (
-                    node.sym.sym_path_str
+                    node.sym.sym_dotted_name
                     if node.sym
                     else "<No Symbol is associated with this node>"
                 )
@@ -117,7 +117,7 @@ def print_ast_tree(
             out = f"{node.__class__.__name__} - {node.sym_name} - Type: {node.type_info.typ}, {access} {sym_table_link}"
             if settings.ast_symbol_info_detailed:
                 symbol = (
-                    node.sym.sym_path_str
+                    node.sym.sym_dotted_name
                     if node.sym
                     else "<No Symbol is associated with this node>"
                 )
