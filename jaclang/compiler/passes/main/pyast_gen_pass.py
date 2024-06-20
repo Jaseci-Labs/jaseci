@@ -3085,14 +3085,40 @@ class PyastGenPass(Pass):
 
         var: Token,
         """
-        try:
-            var_ast_expr = ast3.parse(node.sym_name).body[0]
-            if not isinstance(var_ast_expr, ast3.Expr):
-                raise self.ice("Invalid special var ref for pyast generation")
-            var_ast = var_ast_expr.value
-        except Exception:
-            raise self.ice("Invalid special var ref for pyast generation")
-        node.gen.py_ast = [self.sync(var_ast, deep=True)]
+        if node.name == Tok.KW_SUPER:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(ast3.Name(id="super", ctx=ast3.Load())),
+                        args=[],
+                        keywords=[],
+                    )
+                )
+            ]
+        elif node.name == Tok.KW_ROOT:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(
+                                        id=Con.JAC_FEATURE.value,
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                                attr="get_root",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[],
+                    )
+                )
+            ]
+
+        else:
+            node.gen.py_ast = [self.sync(ast3.Name(id=node.sym_name, ctx=ast3.Load()))]
 
     def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
         """Sub objects.

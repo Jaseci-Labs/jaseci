@@ -459,6 +459,7 @@ class SymTabBuildPass(SymTabPass):
         self.sync_node_to_scope(node)
         if node.is_method:
             self.def_insert(ast.Name.gen_stub_from_node(node, "self"))
+            self.def_insert(ast.Name.gen_stub_from_node(node, "super"))
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.

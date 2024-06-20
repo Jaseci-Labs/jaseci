@@ -3808,7 +3808,7 @@ class SpecialVarRef(Name):
         if self.orig.name == Tok.KW_SELF:
             return "self"
         elif self.orig.name == Tok.KW_SUPER:
-            return "super()"
+            return "super"
         elif self.orig.name == Tok.KW_ROOT:
             return Con.ROOT.value
         elif self.orig.name == Tok.KW_HERE:
