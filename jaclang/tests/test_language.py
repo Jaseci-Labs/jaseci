@@ -11,6 +11,7 @@ import jaclang.compiler.passes.main as passes
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -858,7 +859,18 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/micro/simple_walk.jac")
+            self.fixture_abs_path("../../../examples/micro/simple_walk.jac"),
+            schedule=py_code_gen_typed,
+        )
+        self.assertEqual(len(mypass.errors_had), 0)
+        self.assertEqual(len(mypass.warnings_had), 0)
+
+    def test_ds_type_check_pass2(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/guess_game/guess_game5.jac"),
+            schedule=py_code_gen_typed,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
