@@ -202,25 +202,9 @@ class AstSymbolStubNode(AstSymbolNode):
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
-            name_spec=self.create_stub_name_node(),
+            name_spec=Name.gen_stub_from_node(self, f"[{self.__class__.__name__}]"),
             sym_type=sym_type,
         )
-
-    def create_stub_name_node(self) -> Name:
-        """Create impl name."""
-        ret = Name(
-            file_path=self.loc.mod_path,
-            name=Tok.NAME.value,
-            value=f"[{self.__class__.__name__}]",
-            col_start=self.loc.col_start,
-            col_end=self.loc.col_end,
-            line=self.loc.first_line,
-            end_line=self.loc.last_line,
-            pos_start=self.loc.pos_start,
-            pos_end=self.loc.pos_end,
-        )
-        ret.name_of = self
-        return ret
 
 
 class AstAccessNode(AstNode):
@@ -3826,6 +3810,24 @@ class Name(Token, NameSpec):
         return (f"<>{self.value}" if self.is_kwesc else self.value) + (
             ",\n" if self.is_enum_singleton else ""
         )
+
+    @staticmethod
+    def gen_stub_from_node(node: AstSymbolNode, name_str: str) -> Name:
+        """Generate name from node."""
+        ret = Name(
+            file_path=node.loc.mod_path,
+            name=Tok.NAME.value,
+            value=name_str,
+            col_start=node.loc.col_start,
+            col_end=node.loc.col_end,
+            line=node.loc.first_line,
+            end_line=node.loc.last_line,
+            pos_start=node.loc.pos_start,
+            pos_end=node.loc.pos_end,
+        )
+        ret.name_of = node
+        ret.sym_tab = node.sym_tab
+        return ret
 
 
 class Literal(Token, AtomExpr):
