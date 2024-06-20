@@ -18,13 +18,8 @@ class DefUsePassTests(TestCase):
             file_path=self.fixture_abs_path("defs_and_uses.jac"),
             target=DefUsePass,
         )
-        # for i in state.unlinked:
-        #     print(f"Unlinked {i.__class__.__name__} {i.sym_name} {i.loc}")
-        # for i in state.linked:
-        #     print(
-        #         f"Linked {i.__class__.__name__} {i.sym_name} {i.loc} "
-        #         f", {i.sym_link.decl.loc if i.sym_link else None}"
-        #     )
-        self.assertGreater(len(state.linked), 5)
-        self.assertLess(len(state.warnings_had), 50)
-        self.assertEqual(len(state.errors_had), 0)
+        uses = [i.uses for i in state.ir.sym_tab.kid[0].tab.values()]
+        self.assertEqual(len(uses[1]), 1)
+        self.assertEqual(len(uses[2]), 1)
+        self.assertIn("output", [uses[1][0].sym_name, uses[2][0].sym_name])
+        self.assertIn("message", [uses[1][0].sym_name, uses[2][0].sym_name])

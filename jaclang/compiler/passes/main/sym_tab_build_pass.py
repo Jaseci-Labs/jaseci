@@ -17,19 +17,6 @@ from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable
 class SymTabPass(Pass):
     """Jac Ast build pass."""
 
-    def before_pass(self) -> None:
-        """Before pass."""
-        self.unlinked: set[ast.AstSymbolNode] = set()  # Failed use lookups
-        self.linked: set[ast.AstSymbolNode] = set()  # Successful use lookups
-
-    def seen(self, node: ast.AstSymbolNode) -> bool:
-        """Check if seen."""
-        result = node in self.linked or node in self.unlinked
-        if node.sym and not result:
-            self.linked.add(node)
-            return True
-        return result
-
     def inherit_sym_tab(self, scope: SymbolTable, sym_tab: SymbolTable) -> None:
         """Inherit symbol table."""
         for i in sym_tab.tab.values():
@@ -44,14 +31,13 @@ class SymTabPass(Pass):
     ) -> Optional[Symbol]:
         """Insert into symbol table."""
         table = table_override if table_override else node.sym_tab
-        if self.seen(node) and node.sym and table == node.sym.parent_tab:
+        if node.sym and table == node.sym.parent_tab:
             return node.sym
         if table:
             table.insert(
                 node=node, single=single_decl is not None, access_spec=access_spec
             )
         self.update_py_ctx_for_def(node)
-        self.handle_hit_outcome(node)
         return node.sym
 
     def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
@@ -84,17 +70,13 @@ class SymTabPass(Pass):
         sym_table: Optional[SymbolTable] = None,
     ) -> Optional[Symbol]:
         """Link to symbol."""
-        if self.seen(node):
+        if node.sym:
             return node.sym
         if not sym_table:
             sym_table = node.sym_tab
         if sym_table:
-            node.name_spec.sym = (
-                sym_table.lookup(name=node.sym_name, deep=True) if sym_table else None
-            )
-            if node.sym:
-                node.sym.add_use(node.name_spec)
-        self.handle_hit_outcome(node)
+            lookup = sym_table.lookup(name=node.sym_name, deep=True)
+            lookup.add_use(node.name_spec) if lookup else None
         return node.sym
 
     def chain_def_insert(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
@@ -163,22 +145,6 @@ class SymTabPass(Pass):
         if isinstance(left, ast.AstSymbolNode):
             trag_list.insert(0, left)
         return trag_list
-
-    def handle_hit_outcome(
-        self,
-        node: ast.AstSymbolNode,
-    ) -> None:
-        """Handle outcome of lookup or insert."""
-        # If successful lookup mark linked, add to table uses, and link others
-        if node.sym:
-            self.linked.add(node)
-            if isinstance(node.name_spec, ast.AstSymbolNode):
-                node.name_spec.sym = node.sym
-        if not node.sym:
-            # Mark nodes that were not successfully linked
-            self.unlinked.add(node)
-            if isinstance(node.name_spec, ast.AstSymbolNode) and not node.name_spec.sym:
-                self.unlinked.add(node.name_spec)
 
     def already_declared_err(
         self,
