@@ -192,7 +192,7 @@ class FuseTypeInfoPass(Pass):
                 if isinstance(parent_symbol_table, ast.SymbolTable):
                     owner = parent_symbol_table.owner
                     if isinstance(owner, ast.AstSymbolNode):
-                        target_node.sym = owner.sym
+                        target_node.name_spec.sym = owner.sym
                         node.sym = parent_symbol_table.lookup(node.sym_name)
 
     @__handle_node
