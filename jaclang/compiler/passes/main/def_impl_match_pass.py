@@ -92,6 +92,7 @@ class DeclImplMatchPass(Pass):
                 sym.decl.name_of.decl_link = valid_decl
                 for idx, a in enumerate(sym.decl.name_of.target.archs):
                     a.name_of = a.name_spec.name_of = name_of_links[idx].name_of
+                    a.sym = a.name_spec.sym = name_of_links[idx].sym
                 valid_decl.sym_tab.tab = sym.decl.name_of.sym_tab.tab
         for i in sym_tab.kid:
             self.connect_def_impl(i)
