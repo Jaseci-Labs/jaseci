@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Optional
-    from jaclang.core.construct import NodeArchitype
+    from jaclang.core.constructs import NodeArchitype
 
 def dotgen(
     node: Optional[NodeArchitype] = None,

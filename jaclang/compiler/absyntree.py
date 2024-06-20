@@ -12,6 +12,7 @@ from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import Constants as Con, EdgeDir
 from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
+from jaclang.compiler.semtable import SemRegistry
 from jaclang.compiler.symtable import (
     Symbol,
     SymbolAccess,
@@ -19,7 +20,6 @@ from jaclang.compiler.symtable import (
     SymbolType,
     TypeInfo,
 )
-from jaclang.core.registry import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 

@@ -1,6 +1,6 @@
 import types
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.construct import (
+from jaclang.core.constructs import (
     Architype as Architype,
     DSFunc as DSFunc,
     EdgeAnchor as EdgeAnchor,

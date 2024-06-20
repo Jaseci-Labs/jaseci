@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import types
-from dataclasses import dataclass
 from typing import Any, Callable, Optional, TYPE_CHECKING, Type, TypeVar, Union
 
 from jaclang.compiler.absyntree import Module
 
 if TYPE_CHECKING:
-    from jaclang.core.construct import EdgeArchitype, NodeArchitype
+    from jaclang.core.constructs import EdgeArchitype, NodeArchitype
     from jaclang.plugin.default import (
         Architype,
         EdgeDir,
         ExecutionContext,
         WalkerArchitype,
         Root,
+        DSFunc,
     )
     from jaclang.core.memory import Memory
 
@@ -24,20 +24,6 @@ import pluggy
 hookspec = pluggy.HookspecMarker("jac")
 
 T = TypeVar("T")
-
-
-# TODO: DSFunc should be moved into jaclang/core
-@dataclass(eq=False)
-class DSFunc:
-    """Data Spatial Function."""
-
-    name: str
-    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
-    func: Callable[[Any, Any], Any] | None = None
-
-    def resolve(self, cls: type) -> None:
-        """Resolve the function."""
-        self.func = getattr(cls, self.name)
 
 
 class JacFeatureSpec:
