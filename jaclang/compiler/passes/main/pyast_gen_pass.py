@@ -42,7 +42,6 @@ class PyastGenPass(Pass):
         """Initialize pass."""
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
-        self.method_sigs: list[ast.FuncSignature | ast.EventSignature] = []
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -678,14 +677,6 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        # Record all signatures that are part of methods
-        for i in (
-            node.body.body.items
-            if isinstance(node.body, ast.ArchDef)
-            else node.body.items if node.body else []
-        ):
-            if isinstance(i, ast.Ability):
-                self.method_sigs.append(i.signature)
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
 
@@ -1345,7 +1336,7 @@ class PyastGenPass(Pass):
         """
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
-            if node in self.method_sigs and not node.is_static
+            if node.is_method and not node.is_static
             else []
         )
         vararg = None
@@ -1403,7 +1394,7 @@ class PyastGenPass(Pass):
                     posonlyargs=[],
                     args=(
                         [self.sync(ast3.arg(arg="self", annotation=None)), here]
-                        if node in self.method_sigs
+                        if node.is_method
                         else [here]
                     ),
                     kwonlyargs=[],

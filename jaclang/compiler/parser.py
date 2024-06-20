@@ -1092,7 +1092,7 @@ class JacParser(Pass):
                         | doc_tag? has_stmt
             """
             if isinstance(kid[0], ast.ArchBlockStmt):
-                return self.nu(kid[0])
+                ret = self.nu(kid[0])
             elif (
                 isinstance(kid[1], ast.ArchBlockStmt)
                 and isinstance(kid[1], ast.AstDocNode)
@@ -1100,10 +1100,12 @@ class JacParser(Pass):
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
-                return self.nu(kid[1])
-
+                ret = self.nu(kid[1])
             else:
                 raise self.ice()
+            if isinstance(ret, ast.Ability):
+                ret.signature.is_method = True
+            return ret
 
         def has_stmt(self, kid: list[ast.AstNode]) -> ast.ArchHas:
             """Grammar rule.

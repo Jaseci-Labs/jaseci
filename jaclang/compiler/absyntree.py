@@ -1120,9 +1120,9 @@ class Ability(
         AstAsyncNode.__init__(self, is_async=is_async)
 
     @property
-    def is_func(self) -> bool:
+    def is_method(self) -> bool:
         """Check if is func."""
-        return isinstance(self.body, FuncSignature)
+        return self.signature.is_method
 
     @property
     def is_genai_ability(self) -> bool:
@@ -1241,6 +1241,7 @@ class FuncSignature(AstSemStrNode):
         """Initialize method signature node."""
         self.params = params
         self.return_type = return_type
+        self.is_method = False
         AstNode.__init__(self, kid=kid)
         AstSemStrNode.__init__(self, semstr=semstr)
 
@@ -1289,6 +1290,7 @@ class EventSignature(AstSemStrNode):
         self.event = event
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
+        self.is_method = False
         AstNode.__init__(self, kid=kid)
         AstSemStrNode.__init__(self, semstr=semstr)
 
