@@ -106,7 +106,7 @@ class Symbol:
         return self.decl.sym_type
 
     @property
-    def sym_path_str(self) -> str:
+    def sym_dotted_name(self) -> str:
         """Return a full path of the symbol."""
         out = [self.defn[0].sym_name]
         current_tab = self.parent_tab

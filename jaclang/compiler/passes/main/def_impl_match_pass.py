@@ -80,8 +80,8 @@ class DeclImplMatchPass(Pass):
                 decl_node.body = sym.decl  # type: ignore
                 sym.decl.decl_link = decl_node  # type: ignore
                 for idx, a in enumerate(sym.decl.target.archs):
-                    if isinstance(a.name_ref.sym_name_node, ast.NameSpec):
-                        a.name_ref.sym_name_node.name_of = name_of_links[idx]
+                    if isinstance(a.name_ref.name_spec, ast.NameSpec):
+                        a.name_ref.name_spec.name_of = name_of_links[idx]
                 decl_node.sym_tab.tab = sym.decl.sym_tab.tab  # type: ignore
         for i in sym_tab.kid:
             self.connect_def_impl(i)

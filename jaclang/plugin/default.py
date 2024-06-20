@@ -14,6 +14,7 @@ from typing import Any, Callable, Optional, Type, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
+from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.core.aott import (
     aott_raise,
     extract_non_primary_type,
@@ -21,7 +22,7 @@ from jaclang.core.aott import (
     get_info_types,
     get_input_information,
 )
-from jaclang.core.construct import (
+from jaclang.core.constructs import (
     Architype,
     DSFunc,
     EdgeAnchor,
@@ -39,7 +40,6 @@ from jaclang.core.construct import (
     exec_context,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.registry import SemInfo, SemRegistry, SemScope
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T

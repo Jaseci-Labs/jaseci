@@ -12,7 +12,7 @@ import pickle
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
-from jaclang.core.registry import SemInfo, SemRegistry
+from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.core.utils import get_sem_scope
 
 

@@ -57,8 +57,8 @@ class SymTabPass(Pass):
     def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
         """Update python context for definition."""
         node.py_ctx_func = ast3.Store
-        if isinstance(node.sym_name_node, ast.AstSymbolNode):
-            node.sym_name_node.py_ctx_func = ast3.Store
+        if isinstance(node.name_spec, ast.AstSymbolNode):
+            node.name_spec.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
             # Handling of UnaryExpr case for item is only necessary for
             # the generation of Starred nodes in the AST for examples
@@ -103,8 +103,8 @@ class SymTabPass(Pass):
             return
         cur_sym_tab = node_list[0].sym_tab
         node_list[-1].py_ctx_func = ast3.Store
-        if isinstance(node_list[-1].sym_name_node, ast.AstSymbolNode):
-            node_list[-1].sym_name_node.py_ctx_func = ast3.Store
+        if isinstance(node_list[-1].name_spec, ast.AstSymbolNode):
+            node_list[-1].name_spec.py_ctx_func = ast3.Store
 
         node_list = node_list[:-1]  # Just performs lookup mappings of pre assign chain
         for i in node_list:
@@ -172,16 +172,13 @@ class SymTabPass(Pass):
         # If successful lookup mark linked, add to table uses, and link others
         if node.sym:
             self.linked.add(node)
-            if isinstance(node.sym_name_node, ast.AstSymbolNode):
-                node.sym_name_node.sym = node.sym
+            if isinstance(node.name_spec, ast.AstSymbolNode):
+                node.name_spec.sym = node.sym
         if not node.sym:
             # Mark nodes that were not successfully linked
             self.unlinked.add(node)
-            if (
-                isinstance(node.sym_name_node, ast.AstSymbolNode)
-                and not node.sym_name_node.sym
-            ):
-                self.unlinked.add(node.sym_name_node)
+            if isinstance(node.name_spec, ast.AstSymbolNode) and not node.name_spec.sym:
+                self.unlinked.add(node.name_spec)
 
     def already_declared_err(
         self,
