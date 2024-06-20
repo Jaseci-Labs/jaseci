@@ -85,7 +85,7 @@ class Symbol:
         self.defn: list[ast.NameSpec] = [defn]
         self.uses: list[ast.NameSpec] = []
         defn.sym = self
-        self.access = access
+        self.access: SymbolAccess = access
         self.parent_tab = parent_tab
         self.scope_tab_link: Optional[SymbolTable] = None
         self.type_tab_link: Optional[SymbolTable] = None
