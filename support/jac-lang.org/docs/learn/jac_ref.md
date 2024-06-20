@@ -1049,7 +1049,7 @@
 ## Atom
 **Grammar Snippet**
 ```yaml linenums="366"
---8<-- "jaclang/compiler/jac.lark:366:388"
+--8<-- "jaclang/compiler/jac.lark:366:391"
 ```
 **Code Example**
 === "Jac"
@@ -1066,8 +1066,8 @@
 
 ## Collection values
 **Grammar Snippet**
-```yaml linenums="391"
---8<-- "jaclang/compiler/jac.lark:391:412"
+```yaml linenums="394"
+--8<-- "jaclang/compiler/jac.lark:394:415"
 ```
 **Code Example**
 === "Jac"
@@ -1084,8 +1084,8 @@
 
 ## Tuples and Jac Tuples
 **Grammar Snippet**
-```yaml linenums="415"
---8<-- "jaclang/compiler/jac.lark:415:422"
+```yaml linenums="418"
+--8<-- "jaclang/compiler/jac.lark:418:425"
 ```
 **Code Example**
 === "Jac"
@@ -1102,8 +1102,8 @@
 
 ## Data Spatial References
 **Grammar Snippet**
-```yaml linenums="425"
---8<-- "jaclang/compiler/jac.lark:425:434"
+```yaml linenums="428"
+--8<-- "jaclang/compiler/jac.lark:428:437"
 ```
 **Code Example**
 === "Jac"
@@ -1120,8 +1120,8 @@
 
 ## Special Comprehensions
 **Grammar Snippet**
-```yaml linenums="437"
---8<-- "jaclang/compiler/jac.lark:437:442"
+```yaml linenums="440"
+--8<-- "jaclang/compiler/jac.lark:440:445"
 ```
 **Code Example**
 === "Jac"
@@ -1138,8 +1138,8 @@
 
 ## Names and references
 **Grammar Snippet**
-```yaml linenums="445"
---8<-- "jaclang/compiler/jac.lark:445:460"
+```yaml linenums="448"
+--8<-- "jaclang/compiler/jac.lark:448:457"
 ```
 **Code Example**
 === "Jac"
@@ -1156,8 +1156,8 @@
 
 ## Builtin types
 **Grammar Snippet**
-```yaml linenums="463"
---8<-- "jaclang/compiler/jac.lark:463:473"
+```yaml linenums="460"
+--8<-- "jaclang/compiler/jac.lark:460:470"
 ```
 **Code Example**
 === "Jac"
@@ -1174,8 +1174,8 @@
 
 ## Lexer Tokens
 **Grammar Snippet**
-```yaml linenums="476"
---8<-- "jaclang/compiler/jac.lark:476:647"
+```yaml linenums="473"
+--8<-- "jaclang/compiler/jac.lark:473:644"
 ```
 **Code Example**
 === "Jac"
@@ -1192,8 +1192,8 @@
 
 ## f-string tokens
 **Grammar Snippet**
-```yaml linenums="650"
---8<-- "jaclang/compiler/jac.lark:650:661"
+```yaml linenums="647"
+--8<-- "jaclang/compiler/jac.lark:647:658"
 ```
 **Code Example**
 === "Jac"

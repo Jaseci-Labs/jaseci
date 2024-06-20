@@ -1412,10 +1412,10 @@ class PyastGenPass(Pass):
         name_ref: NameType,
         arch: Token,
         """
-        if node.arch.name == Tok.TYPE_OP:
+        if node.arch_type.name == Tok.TYPE_OP:
             if (
-                isinstance(node.name_ref, ast.SpecialVarRef)
-                and node.name_ref.var.name == Tok.KW_ROOT
+                isinstance(node.arch_name, ast.SpecialVarRef)
+                and node.arch_name.var.name == Tok.KW_ROOT
             ):
                 node.gen.py_ast = [
                     self.sync(
@@ -1434,13 +1434,13 @@ class PyastGenPass(Pass):
                     self.sync(
                         ast3.Attribute(
                             value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
-                            attr=node.name_ref.sym_name,
+                            attr=node.arch_name.sym_name,
                             ctx=ast3.Load(),
                         )
                     )
                 ]
         else:
-            node.gen.py_ast = node.name_ref.gen.py_ast
+            node.gen.py_ast = node.arch_name.gen.py_ast
 
     def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
@@ -1458,7 +1458,7 @@ class PyastGenPass(Pass):
             attr = self.sync(
                 ast3.Attribute(
                     value=make_attr_chain(arch[:-1]),
-                    attr=cur.name_ref.sym_name,
+                    attr=cur.arch_name.sym_name,
                     ctx=ast3.Load(),
                 ),
                 jac_node=cur,

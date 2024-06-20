@@ -1333,11 +1333,11 @@ class ArchRefChain(AstNode):
         def get_tag(x: ArchRef) -> str:
             return (
                 "en"
-                if x.arch.value == "enum"
-                else "cls" if x.arch.value == "class" else x.arch.value[1]
+                if x.arch_type.value == "enum"
+                else "cls" if x.arch_type.value == "class" else x.arch_type.value[1]
             )
 
-        return ".".join([f"({get_tag(x)}){x.py_resolve_name()}" for x in self.archs])
+        return ".".join([f"({get_tag(x)}){x.sym_name}" for x in self.archs])
 
     def flat_name(self) -> str:
         """Resolve name for python gen."""
@@ -3071,44 +3071,34 @@ class IndexSlice(AtomExpr):
         return res
 
 
-class ArchRef(NameSpec):
+class ArchRef(AtomExpr):
     """ArchRef node type for Jac Ast."""
 
     def __init__(
         self,
-        name_ref: NameSpec,
-        arch: Token,
+        arch_name: NameSpec,
+        arch_type: Token,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize architype reference expression node."""
-        self.name_ref = name_ref
-        self.arch = arch
+        self.arch_name = arch_name
+        self.arch_type = arch_type
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=self.py_resolve_name(),
-            name_spec=name_ref,
+            sym_name=arch_name.sym_name,
+            name_spec=arch_name,
             sym_type=SymbolType.TYPE,
         )
-        NameSpec.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.name_ref.normalize(deep)
-        new_kid: list[AstNode] = [self.arch, self.name_ref]
+            res = self.arch_name.normalize(deep)
+        new_kid: list[AstNode] = [self.arch_type, self.arch_name]
         self.set_kids(nodes=new_kid)
         return res
-
-    def py_resolve_name(self) -> str:
-        """Resolve name."""
-        if isinstance(self.name_ref, Name):
-            return self.name_ref.value
-        elif isinstance(self.name_ref, SpecialVarRef):
-            return self.name_ref.py_resolve_name()
-        else:
-            raise NotImplementedError
 
 
 class SpecialVarRef(NameSpec):
