@@ -30,7 +30,10 @@ sub_name: COLON NAME
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 
 // Architypes
-architype: decorators? (enum | architype_def | architype_decl)
+architype: decorators? architype_decl
+         | architype_def
+         | enum
+
 architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
 decorators: (DECOR_OP atomic_chain)+
@@ -54,8 +57,8 @@ typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_P
 type_tag: COLON expression
 
 // Enumerations
-enum: enum_def
-     | enum_decl
+enum: decorators? enum_decl
+     | enum_def
 
 enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
@@ -64,11 +67,12 @@ enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
 enum_stmt: NAME (COLON STRING)? EQ expression
          | NAME (COLON STRING)?
          | py_code_block
+         | free_code
 
 // Abilities
-ability: decorators? ability_def
-        | decorators? KW_ASYNC? ability_decl
+ability: decorators? KW_ASYNC? ability_decl
         | decorators? genai_ability
+        | ability_def
 
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
@@ -444,6 +448,7 @@ any_ref: named_ref
 named_ref: special_ref
          | KWESC_NAME
          | NAME
+
 
 type_ref: TYPE_OP (named_ref | builtin_type)
 

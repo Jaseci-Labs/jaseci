@@ -8,14 +8,13 @@ import os
 import pickle
 import types
 from collections import OrderedDict
-from contextvars import ContextVar
 from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Optional, Type, Union
-from uuid import UUID
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
+from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.core.aott import (
     aott_raise,
     extract_non_primary_type,
@@ -23,24 +22,24 @@ from jaclang.core.aott import (
     get_info_types,
     get_input_information,
 )
-from jaclang.core.construct import (
+from jaclang.core.constructs import (
     Architype,
     DSFunc,
     EdgeAnchor,
     EdgeArchitype,
+    ExecutionContext,
     GenericEdge,
     JacTestCheck,
+    Memory,
     NodeAnchor,
     NodeArchitype,
     ObjectAnchor,
     Root,
     WalkerAnchor,
     WalkerArchitype,
+    exec_context,
 )
 from jaclang.core.importer import jac_importer
-from jaclang.core.memory import Memory
-from jaclang.core.registry import SemInfo, SemRegistry, SemScope
-from jaclang.core.shelve_storage import ShelveStorage
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -70,65 +69,6 @@ __all__ = [
 hookimpl = pluggy.HookimplMarker("jac")
 
 
-class ExecutionContext:
-    """Default Execution Context implementation."""
-
-    mem: Optional[Memory]
-    root: Optional[Root]
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.mem = ShelveStorage()
-        self.root = None
-
-    def init_memory(self, session: str = "") -> None:
-        if session:
-            self.mem = ShelveStorage(session)
-        else:
-            self.mem = Memory()
-
-    def get_root(self) -> Root:
-        if self.mem is None:
-            raise ValueError("Memory not initialized")
-
-        if not self.root:
-            root = self.mem.get_obj(UUID(int=0))
-            if root is None:
-                self.root = Root()
-                self.mem.save_obj(self.root, persistent=self.root._jac_.persistent)
-            elif not isinstance(root, Root):
-                raise ValueError(f"Invalid root object: {root}")
-            else:
-                self.root = root
-        return self.root
-
-    def get_obj(self, obj_id: UUID) -> Architype | None:
-        """Get object from memory."""
-        if self.mem is None:
-            raise ValueError("Memory not initialized")
-
-        return self.mem.get_obj(obj_id)
-
-    def save_obj(self, item: Architype, persistent: bool) -> None:
-        """Save object to memory."""
-        if self.mem is None:
-            raise ValueError("Memory not initialized")
-
-        self.mem.save_obj(item, persistent)
-
-    def reset(self) -> None:
-        """Reset the execution context."""
-        if self.mem:
-            self.mem.close()
-        self.mem = None
-        self.root = None
-
-
-ExecContext: ContextVar[ExecutionContext | None] = ContextVar(
-    "ExecutionContext", default=None
-)
-
-
 class JacFeatureDefaults:
     """Jac Feature."""
 
@@ -138,20 +78,20 @@ class JacFeatureDefaults:
     @hookimpl
     def context(session: str = "") -> ExecutionContext:
         """Get the execution context."""
-        ctx = ExecContext.get()
+        ctx = exec_context.get()
         if ctx is None:
             ctx = ExecutionContext()
-            ExecContext.set(ctx)
+            exec_context.set(ctx)
         return ctx
 
     @staticmethod
     @hookimpl
     def reset_context() -> None:
         """Reset the execution context."""
-        ctx = ExecContext.get()
+        ctx = exec_context.get()
         if ctx:
             ctx.reset()
-        ExecContext.set(None)
+        exec_context.set(None)
 
     @staticmethod
     @hookimpl
@@ -170,7 +110,9 @@ class JacFeatureDefaults:
         """Create a new architype."""
         for i in on_entry + on_exit:
             i.resolve(cls)
-        if not issubclass(cls, arch_base):
+        if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
+            cls, "_jac_exit_funcs_"
+        ):
             # Saving the module path and reassign it after creating cls
             # So the jac modules are part of the correct module
             cur_module = cls.__module__
@@ -395,7 +337,13 @@ class JacFeatureDefaults:
     @hookimpl
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Jac's ignore stmt feature."""
         return walker._jac_.ignore_node(expr)
@@ -404,7 +352,13 @@ class JacFeatureDefaults:
     @hookimpl
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchitype):

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from enum import IntEnum
 from hashlib import md5
-from typing import Optional, Sequence
+from typing import Optional
 
 
 import jaclang.compiler.absyntree as ast
@@ -15,7 +15,11 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import type_checker_sched
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
-from jaclang.langserve.utils import find_deepest_symbol_node_at_pos
+from jaclang.langserve.utils import (
+    collect_symbols,
+    create_range,
+    find_deepest_symbol_node_at_pos,
+)
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
 
@@ -36,8 +40,8 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        errors: Sequence[Alert],
-        warnings: Sequence[Alert],
+        errors: list[Alert],
+        warnings: list[Alert],
         alev: ALev,
         parent: Optional[ModuleInfo] = None,
     ) -> None:
@@ -59,35 +63,26 @@ class ModuleInfo:
         """Return if there are syntax errors."""
         return len(self.errors) > 0 and self.alev == ALev.QUICK
 
+    def update_with(self, new_info: ModuleInfo) -> None:
+        """Update module info."""
+        self.ir = new_info.ir
+        self.errors += new_info.errors
+        self.warnings += new_info.warnings
+        self.alev = new_info.alev
+        self.diagnostics = self.gen_diagnostics()
+
     def gen_diagnostics(self) -> list[lspt.Diagnostic]:
         """Return diagnostics."""
         return [
             lspt.Diagnostic(
-                range=lspt.Range(
-                    start=lspt.Position(
-                        line=error.loc.first_line - 1, character=error.loc.col_start - 1
-                    ),
-                    end=lspt.Position(
-                        line=error.loc.last_line - 1,
-                        character=error.loc.col_end - 1,
-                    ),
-                ),
+                range=create_range(error.loc),
                 message=error.msg,
                 severity=lspt.DiagnosticSeverity.Error,
             )
             for error in self.errors
         ] + [
             lspt.Diagnostic(
-                range=lspt.Range(
-                    start=lspt.Position(
-                        line=warning.loc.first_line - 1,
-                        character=warning.loc.col_start - 1,
-                    ),
-                    end=lspt.Position(
-                        line=warning.loc.last_line - 1,
-                        character=warning.loc.col_end - 1,
-                    ),
-                ),
+                range=create_range(warning.loc),
                 message=warning.msg,
                 severity=lspt.DiagnosticSeverity.Warning,
             )
@@ -137,15 +132,14 @@ class JacLangServer(LanguageServer):
                 self.quick_check(file_path)
         return file_path
 
-    def update_modules(self, file_path: str, build: Pass, alev: ALev) -> None:
+    def update_modules(
+        self, file_path: str, build: Pass, alev: ALev, refresh: bool = False
+    ) -> None:
         """Update modules."""
         if not isinstance(build.ir, ast.Module):
             self.log_error("Error with module build.")
             return
-        save_parent = (
-            self.modules[file_path].parent if file_path in self.modules else None
-        )
-        self.modules[file_path] = ModuleInfo(
+        new_mod = ModuleInfo(
             ir=build.ir,
             errors=[
                 i
@@ -159,15 +153,24 @@ class JacLangServer(LanguageServer):
             ],
             alev=alev,
         )
-        self.modules[file_path].parent = save_parent
+        if not refresh and file_path in self.modules:
+            self.log_py(f"Before: {self.modules[file_path].warnings}")
+            self.modules[file_path].update_with(new_mod)
+            self.log_py(f"After: {self.modules[file_path].warnings}")
+        else:
+            self.modules[file_path] = new_mod
         for p in build.ir.mod_deps.keys():
             uri = uris.from_fs_path(p)
-            self.modules[uri] = ModuleInfo(
+            new_mod = ModuleInfo(
                 ir=build.ir.mod_deps[p],
                 errors=[i for i in build.errors_had if i.loc.mod_path == p],
                 warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
                 alev=alev,
             )
+            if not refresh and uri in self.modules:
+                self.modules[uri].update_with(new_mod)
+            else:
+                self.modules[uri] = new_mod
             self.modules[uri].parent = (
                 self.modules[file_path] if file_path != uri else None
             )
@@ -183,7 +186,7 @@ class JacLangServer(LanguageServer):
             )
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
-        self.update_modules(file_path, build, ALev.QUICK)
+        self.update_modules(file_path, build, ALev.QUICK, refresh=True)
 
     def deep_check(self, file_path: str, force: bool = False) -> None:
         """Rebuild a file and its dependencies."""
@@ -290,23 +293,29 @@ class JacLangServer(LanguageServer):
         try:
             if isinstance(node, ast.NameSpec):
                 node = node.name_of
-            access = node.sym_link.access.value + " " if node.sym_link else None
+            access = node.sym.access.value + " " if node.sym else None
             node_info = (
                 f"({access if access else ''}{node.sym_type.value}) {node.sym_name}"
             )
-            if node.sym_info.clean_type:
-                node_info += f": {node.sym_info.clean_type}"
+            if node.type_info.clean_type:
+                node_info += f": {node.type_info.clean_type}"
             if isinstance(node, ast.AstSemStrNode) and node.semstr:
                 node_info += f"\n{node.semstr.value}"
             if isinstance(node, ast.AstDocNode) and node.doc:
                 node_info += f"\n{node.doc.value}"
             if isinstance(node, ast.Ability) and node.signature:
                 node_info += f"\n{node.signature.unparse()}"
-            self.log_py(node.pp())
             self.log_py(f"mypy_node: {node.gen.mypy_ast}")
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
+
+    def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
+        """Return document symbols for a file."""
+        root_node = self.modules[file_path].ir.sym_tab
+        if root_node:
+            return collect_symbols(root_node)
+        return []
 
     def get_definition(
         self, file_path: str, position: lspt.Position
@@ -324,24 +333,15 @@ class JacLangServer(LanguageServer):
                 and isinstance(node_selected.parent, ast.AstImplNeedingNode)
                 and isinstance(node_selected.parent.body, ast.AstImplOnlyNode)
                 else (
-                    node_selected.sym_link.decl
-                    if (node_selected.sym_link and node_selected.sym_link.decl)
+                    node_selected.sym.decl
+                    if (node_selected.sym and node_selected.sym.decl)
                     else node_selected
                 )
             )
             self.log_py(f"{node_selected}, {decl_node}")
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
-                decl_range = lspt.Range(
-                    start=lspt.Position(
-                        line=decl_node.loc.first_line - 1,
-                        character=decl_node.loc.col_start - 1,
-                    ),
-                    end=lspt.Position(
-                        line=decl_node.loc.last_line - 1,
-                        character=decl_node.loc.col_end - 1,
-                    ),
-                )
+                decl_range = create_range(decl_node.loc)
             except ValueError:  # 'print' name has decl in 0,0,0,0
                 return None
             decl_location = lspt.Location(

@@ -44,8 +44,9 @@ class JacParser(Pass):
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
             catch_error.line_no = e.line
+            catch_error.end_line = e.line
             catch_error.c_start = e.column
-            catch_error.c_end = e.column
+            catch_error.c_end = e.column + 1
             self.error(f"Syntax Error: {e}", node_override=catch_error)
         except Exception as e:
             self.error(f"Internal Error: {e}")
@@ -437,13 +438,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def architype(self, kid: list[ast.AstNode]) -> ast.ArchSpec:
+        def architype(
+            self, kid: list[ast.AstNode]
+        ) -> ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef:
             """Grammar rule.
 
-            architype: decorators architype
-                    | enum
+            architype: decorators? architype_decl
                     | architype_def
-                    | architype_decl
+                    | enum
             """
             if isinstance(kid[0], ast.SubNodeList):
                 if isinstance(kid[1], ast.ArchSpec):
@@ -452,7 +454,8 @@ class JacParser(Pass):
                     return self.nu(kid[1])
                 else:
                     raise self.ice()
-            elif isinstance(kid[0], ast.ArchSpec):
+
+            elif isinstance(kid[0], (ast.ArchSpec, ast.ArchDef, ast.Enum, ast.EnumDef)):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
@@ -602,7 +605,7 @@ class JacParser(Pass):
                         | KW_SELF
                         | KW_HERE
             """
-            if isinstance(kid[0], ast.Token):
+            if isinstance(kid[0], ast.Name):
                 return self.nu(
                     ast.SpecialVarRef(
                         var=kid[0],
@@ -615,10 +618,17 @@ class JacParser(Pass):
         def enum(self, kid: list[ast.AstNode]) -> ast.Enum | ast.EnumDef:
             """Grammar rule.
 
-            enum: enum_def
-                | enum_decl
+            enum: decorators? enum_decl
+                | enum_def
             """
-            if isinstance(kid[0], (ast.Enum, ast.EnumDef)):
+            if isinstance(kid[0], ast.SubNodeList):
+                if isinstance(kid[1], ast.Enum):
+                    kid[1].decorators = kid[0]
+                    kid[1].add_kids_left([kid[0]])
+                    return self.nu(kid[1])
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], (ast.Enum, ast.EnumDef)):
                 return self.nu(kid[0])
             else:
 
@@ -691,6 +701,7 @@ class JacParser(Pass):
             enum_stmt: NAME (COLON STRING)? EQ expression
                     | NAME (COLON STRING)?
                     | py_code_block
+                    | free_code
             """
             if isinstance(kid[0], ast.PyInlineCode):
                 return self.nu(kid[0])
@@ -739,7 +750,8 @@ class JacParser(Pass):
                             is_enum_stmt=True,
                         )
                     )
-
+            elif isinstance(kid[0], (ast.PyInlineCode, ast.ModuleCode)):
+                return self.nu(kid[0])
             raise self.ice()
 
         def ability(
@@ -747,9 +759,9 @@ class JacParser(Pass):
         ) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
             """Grammer rule.
 
-            ability: decorators? ability_def
-                    | decorators? KW_ASYNC? ability_decl
+            ability: decorators? KW_ASYNC? ability_decl
                     | decorators? genai_ability
+                    | ability_def
             """
             chomp = [*kid]
             decorators = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
@@ -1209,6 +1221,7 @@ class JacParser(Pass):
                         file_path=self.parse_ref.mod_path,
                         value=kid[0].value,
                         line=kid[0].loc.first_line,
+                        end_line=kid[0].loc.last_line,
                         col_start=kid[0].loc.col_start,
                         col_end=kid[0].loc.col_end,
                         pos_start=kid[0].pos_start,
@@ -3913,6 +3926,15 @@ class JacParser(Pass):
             ret_type = ast.Token
             if token.type in [Tok.NAME, Tok.KWESC_NAME]:
                 ret_type = ast.Name
+            if token.type in [
+                Tok.KW_INIT,
+                Tok.KW_POST_INIT,
+                Tok.KW_ROOT,
+                Tok.KW_SUPER,
+                Tok.KW_SELF,
+                Tok.KW_HERE,
+            ]:
+                ret_type = ast.Name
             elif token.type == Tok.SEMI:
                 ret_type = ast.Semi
             elif token.type == Tok.NULL:
@@ -3942,6 +3964,7 @@ class JacParser(Pass):
                 name=token.type,
                 value=token.value[2:] if token.type == Tok.KWESC_NAME else token.value,
                 line=token.line if token.line is not None else 0,
+                end_line=token.end_line if token.end_line is not None else 0,
                 col_start=token.column if token.column is not None else 0,
                 col_end=token.end_column if token.end_column is not None else 0,
                 pos_start=token.start_pos if token.start_pos is not None else 0,

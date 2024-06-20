@@ -25,7 +25,7 @@ class SymTabPass(Pass):
     def seen(self, node: ast.AstSymbolNode) -> bool:
         """Check if seen."""
         result = node in self.linked or node in self.unlinked
-        if node.sym_link and not result:
+        if node.sym and not result:
             self.linked.add(node)
             return True
         return result
@@ -44,21 +44,21 @@ class SymTabPass(Pass):
     ) -> Optional[Symbol]:
         """Insert into symbol table."""
         table = table_override if table_override else node.sym_tab
-        if self.seen(node) and node.sym_link and table == node.sym_link.parent_tab:
-            return node.sym_link
+        if self.seen(node) and node.sym and table == node.sym.parent_tab:
+            return node.sym
         if table:
             table.insert(
                 node=node, single=single_decl is not None, access_spec=access_spec
             )
         self.update_py_ctx_for_def(node)
         self.handle_hit_outcome(node)
-        return node.sym_link
+        return node.sym
 
     def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
         """Update python context for definition."""
         node.py_ctx_func = ast3.Store
-        if isinstance(node.sym_name_node, ast.AstSymbolNode):
-            node.sym_name_node.py_ctx_func = ast3.Store
+        if isinstance(node.name_spec, ast.AstSymbolNode):
+            node.name_spec.py_ctx_func = ast3.Store
         if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
             # Handling of UnaryExpr case for item is only necessary for
             # the generation of Starred nodes in the AST for examples
@@ -85,18 +85,17 @@ class SymTabPass(Pass):
     ) -> Optional[Symbol]:
         """Link to symbol."""
         if self.seen(node):
-            return node.sym_link
+            return node.sym
         if not sym_table:
             sym_table = node.sym_tab
         if sym_table:
-            node.sym_link = (
+            node.name_spec.sym = (
                 sym_table.lookup(name=node.sym_name, deep=True) if sym_table else None
             )
-            # If successful lookup mark linked, add to table uses, and link others
-            if node.sym_link:
-                sym_table.uses.append(node)
+            if node.sym:
+                node.sym.add_use(node.name_spec)
         self.handle_hit_outcome(node)
-        return node.sym_link
+        return node.sym
 
     def chain_def_insert(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
         """Link chain of containing names to symbol."""
@@ -104,8 +103,8 @@ class SymTabPass(Pass):
             return
         cur_sym_tab = node_list[0].sym_tab
         node_list[-1].py_ctx_func = ast3.Store
-        if isinstance(node_list[-1].sym_name_node, ast.AstSymbolNode):
-            node_list[-1].sym_name_node.py_ctx_func = ast3.Store
+        if isinstance(node_list[-1].name_spec, ast.AstSymbolNode):
+            node_list[-1].name_spec.py_ctx_func = ast3.Store
 
         node_list = node_list[:-1]  # Just performs lookup mappings of pre assign chain
         for i in node_list:
@@ -171,18 +170,15 @@ class SymTabPass(Pass):
     ) -> None:
         """Handle outcome of lookup or insert."""
         # If successful lookup mark linked, add to table uses, and link others
-        if node.sym_link:
+        if node.sym:
             self.linked.add(node)
-            if isinstance(node.sym_name_node, ast.AstSymbolNode):
-                node.sym_name_node.sym_link = node.sym_link
-        if not node.sym_link:
+            if isinstance(node.name_spec, ast.AstSymbolNode):
+                node.name_spec.sym = node.sym
+        if not node.sym:
             # Mark nodes that were not successfully linked
             self.unlinked.add(node)
-            if (
-                isinstance(node.sym_name_node, ast.AstSymbolNode)
-                and not node.sym_name_node.sym_link
-            ):
-                self.unlinked.add(node.sym_name_node)
+            if isinstance(node.name_spec, ast.AstSymbolNode) and not node.name_spec.sym:
+                self.unlinked.add(node.name_spec)
 
     def already_declared_err(
         self,
@@ -238,7 +234,7 @@ class SymTabBuildPass(SymTabPass):
         mod_path: str,
         is_imported: bool,
         """
-        self.push_scope(node.name, node, fresh=True)
+        self.push_scope(node.name, node, fresh=(node == self.ir))
         self.sync_node_to_scope(node)
         for obj in dir(builtins):
             builtin = ast.Name(
@@ -246,6 +242,7 @@ class SymTabBuildPass(SymTabPass):
                 name=Tok.NAME,
                 value=str(obj),
                 line=0,
+                end_line=0,
                 col_start=0,
                 col_end=0,
                 pos_start=0,
@@ -263,23 +260,7 @@ class SymTabBuildPass(SymTabPass):
         mod_path: str,
         is_imported: bool,
         """
-        s = self.pop_scope()
-        # If not the main module add all the other modules symbol table
-        # as a child to the current symbol table
-        if node != self.ir:
-            self.cur_scope().kid.append(s)
-            s.parent = self.cur_scope()
-
-        if (
-            isinstance(node.parent, ast.Module)
-            and node
-            in [
-                node.parent.impl_mod,
-                node.parent.test_mod,
-            ]
-            and node.sym_tab
-        ):
-            self.inherit_sym_tab(scope=self.cur_scope(), sym_tab=node.sym_tab)
+        self.pop_scope()
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.

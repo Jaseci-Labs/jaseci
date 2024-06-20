@@ -768,6 +768,18 @@ class PyastGenPass(Pass):
                 )
             )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        if node.arch_type.name != Tok.KW_CLASS:
+            base_classes.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(
+                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                        ),
+                        attr=node.arch_type.value.capitalize(),
+                        ctx=ast3.Load(),
+                    )
+                )
+            )
         if node.is_abstract:
             self.needs_jac_feature()
             base_classes.append(
@@ -1416,20 +1428,12 @@ class PyastGenPass(Pass):
             ):
                 node.gen.py_ast = [
                     self.sync(
-                        ast3.Call(
-                            func=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Name(
-                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
-                                        )
-                                    ),
-                                    attr="get_root_type",
-                                    ctx=ast3.Load(),
-                                )
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                             ),
-                            args=[],
-                            keywords=[],
+                            attr="RootType",
+                            ctx=ast3.Load(),
                         )
                     )
                 ]

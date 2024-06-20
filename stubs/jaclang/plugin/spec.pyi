@@ -60,12 +60,24 @@ class JacFeatureSpec:
     @staticmethod
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool: ...
     @staticmethod
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool: ...
     @staticmethod
     def disengage(walker: WalkerArchitype) -> bool: ...

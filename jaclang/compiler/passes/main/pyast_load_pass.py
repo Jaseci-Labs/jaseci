@@ -150,6 +150,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 node.name if node.name != "root" else "root_"
             ),  # root is a reserved keyword
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.name),
             pos_start=0,
@@ -262,6 +263,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value=node.name,
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.name),
             pos_start=0,
@@ -272,6 +274,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.KW_CLASS,
             value="class",
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=0,
             col_end=0,
             pos_start=0,
@@ -284,11 +287,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 and isinstance(body_stmt.name_ref, ast.Name)
                 and body_stmt.name_ref.value == "__init__"
             ):
-                tok = ast.Token(
+                tok = ast.Name(
                     file_path=self.mod_path,
                     name=Tok.KW_INIT,
                     value="init",
                     line=node.lineno,
+                    end_line=node.end_lineno if node.end_lineno else node.lineno,
                     col_start=node.col_offset,
                     col_end=node.col_offset + len("init"),
                     pos_start=0,
@@ -373,17 +377,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         converted_stmt.expr, ast.String
                     ):
                         continue
-                    tok = ast.Token(
+                    pintok = ast.Token(
                         file_path=self.mod_path,
                         name=Tok.PYNLINE,
                         value=py_ast.unparse(class_body_stmt),
                         line=node.lineno,
+                        end_line=node.end_lineno if node.end_lineno else node.lineno,
                         col_start=node.col_offset,
                         col_end=node.col_offset + len(py_ast.unparse(class_body_stmt)),
                         pos_start=0,
                         pos_end=0,
                     )
-                    valid_enum_body.append(ast.PyInlineCode(code=tok, kid=[tok]))
+                    valid_enum_body.append(ast.PyInlineCode(code=pintok, kid=[pintok]))
 
             valid_enum_body2: list[ast.EnumBlockStmt] = [
                 i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)
@@ -903,11 +908,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and isinstance(value.target, ast.Name)
             and value.target.value == "super"
         ):
-            tok = ast.Token(
+            tok = ast.Name(
                 file_path=self.mod_path,
                 name=Tok.KW_SUPER,
                 value="super",
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len("super"),
                 pos_start=0,
@@ -924,6 +930,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 else "init" if node.attr == "__init__" else node.attr
             ),
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.attr),
             pos_start=0,
@@ -1030,6 +1037,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.KW_BREAK,
             value="break",
             line=0,
+            end_line=0,
             col_start=0,
             col_end=0,
             pos_start=0,
@@ -1144,6 +1152,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     else str(node.value)
                 ),
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(str(node.value)),
                 pos_start=0,
@@ -1155,6 +1164,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.ELLIPSIS,
                 value="...",
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + 3,
                 pos_start=0,
@@ -1170,6 +1180,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.KW_CONTINUE,
             value="continue",
             line=0,
+            end_line=0,
             col_start=0,
             col_end=0,
             pos_start=0,
@@ -1246,6 +1257,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.NAME,
                 value="Exception",
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + 9,
                 pos_start=0,
@@ -1256,6 +1268,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.NAME,
                 value="e",
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + 1,
                 pos_start=0,
@@ -1267,6 +1280,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             #     name=Tok.NAME,
             #     value=no,
             #     line=node.lineno,
+            #     end_line = (node.end_lineno if node.end_lineno else node.lineno,)
             #     col_start=node.col_offset,
             #     col_end=node.col_offset + 9,
             #     pos_start=0,
@@ -1278,6 +1292,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     name=Tok.NAME,
                     value=node.name,
                     line=node.lineno,
+                    end_line=node.end_lineno if node.end_lineno else node.lineno,
                     col_start=node.col_offset,
                     col_end=node.col_offset + len(node.name),
                     pos_start=0,
@@ -1377,6 +1392,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     name=Tok.NAME,
                     value=id,
                     line=node.lineno,
+                    end_line=node.end_lineno if node.end_lineno else node.lineno,
                     col_start=node.col_offset,
                     col_end=node.col_offset + len(id),
                     pos_start=0,
@@ -1439,6 +1455,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value="py",
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=0,
             pos_start=0,
@@ -1468,6 +1485,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value="py",
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=0,
             pos_start=0,
@@ -1482,6 +1500,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         name=Tok.NAME,
                         value=i,
                         line=node.lineno,
+                        end_line=node.end_lineno if node.end_lineno else node.lineno,
                         col_start=0,
                         col_end=0,
                         pos_start=0,
@@ -1643,6 +1662,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value=node.name if node.name else "_",
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=(
                 (node.col_offset + len(node.name))
@@ -1696,6 +1716,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         name=Tok.NAME,
                         value=kwd_attrs,
                         line=node.lineno,
+                        end_line=node.end_lineno if node.end_lineno else node.lineno,
                         col_start=node.col_offset,
                         col_end=node.col_offset + len(kwd_attrs),
                         pos_start=0,
@@ -1755,6 +1776,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.NAME,
                 value=node.rest,
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(node.rest),
                 pos_start=0,
@@ -1799,6 +1821,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=type,
             value=str(node.value),
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(str(node.value)),
             pos_start=0,
@@ -1820,6 +1843,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value=node.name if node.name else "_",
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.name if node.name else "_"),
             pos_start=0,
@@ -1853,6 +1877,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value=node.id if node.id != "root" else "root_",  # reserved word
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.id),
             pos_start=0,
@@ -1893,6 +1918,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     name=Tok.NAME,
                     value=name if name != "root" else "root_",
                     line=node.lineno,
+                    end_line=node.end_lineno if node.end_lineno else node.lineno,
                     col_start=node.col_offset,
                     col_end=node.col_offset + len(name),
                     pos_start=0,
@@ -1909,6 +1935,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.SEMI,
             value=";",
             line=0,
+            end_line=0,
             col_start=0,
             col_end=0,
             pos_start=0,
@@ -2176,6 +2203,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value=node.name,
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.name),
             pos_start=0,
@@ -2187,6 +2215,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.NAME,
                 value=node.asname,
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + len(node.asname),
                 pos_start=0,
@@ -2211,6 +2240,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value=node.arg if node.arg != "root" else "root_",  # reserved word
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.arg),
             pos_start=0,
@@ -2224,6 +2254,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.NAME,
                 value="Any",
                 line=node.lineno,
+                end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
                 col_end=node.col_offset + 3,
                 pos_start=0,
@@ -2257,6 +2288,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.STAR_MUL,
                 value="*",
                 line=vararg.loc.first_line,
+                end_line=vararg.loc.last_line,
                 col_start=vararg.loc.col_start,
                 col_end=vararg.loc.col_end,
                 pos_start=0,
@@ -2282,6 +2314,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 name=Tok.STAR_POW,
                 value="**",
                 line=kwarg.loc.first_line,
+                end_line=kwarg.loc.last_line,
                 col_start=kwarg.loc.col_start,
                 col_end=kwarg.loc.col_end,
                 pos_start=0,
@@ -2327,6 +2360,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=tok,
             value=value,
             line=0,
+            end_line=0,
             col_start=0,
             col_end=0,
             pos_start=0,
@@ -2491,6 +2525,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name=Tok.NAME,
             value=node.arg if node.arg else "_",
             line=node.lineno,
+            end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
             col_end=node.col_offset + len(node.arg if node.arg else "_"),
             pos_start=0,

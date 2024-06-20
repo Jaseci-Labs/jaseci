@@ -8,9 +8,9 @@ import os
 import pathlib
 import sys
 
-
 import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
+from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
 
 
@@ -48,6 +48,7 @@ class JacTypeCheckPass(Pass):
         """Call mypy APIs to implement type checking in Jac."""
         # Creating mypy api objects
         options = myab.myb.Options()
+        options.cache_dir = Con.JAC_MYPY_CACHE
         errors = myab.Errors(self, options)
         fs_cache = myab.FileSystemCache()
         search_paths = myab.compute_search_paths([], options, str(self.__path))
