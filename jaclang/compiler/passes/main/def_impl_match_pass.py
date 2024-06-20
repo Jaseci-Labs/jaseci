@@ -49,7 +49,9 @@ class DeclImplMatchPass(Pass):
                 lookup = sym_tab.lookup(arch_refs[0])
                 # If below may need to be a while instead of if to skip over local
                 # import name collisions (see test: test_impl_decl_resolution_fix)
-                if lookup and not isinstance(lookup.decl, ast.AstImplNeedingNode):
+                if lookup and not isinstance(
+                    lookup.decl.name_of, ast.AstImplNeedingNode
+                ):
                     lookup = sym_tab.parent.lookup(arch_refs[0])
                 decl_node = (
                     self.defn_lookup(lookup)
@@ -60,8 +62,8 @@ class DeclImplMatchPass(Pass):
                 for name in arch_refs[1:]:
                     if decl_node:
                         lookup = (
-                            decl_node.sym_tab.lookup(name)
-                            if decl_node.sym_tab
+                            decl_node.name_of.sym_tab.lookup(name)
+                            if decl_node.name_of.sym_tab
                             else None
                         )
                         decl_node = (

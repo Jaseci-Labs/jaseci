@@ -219,8 +219,7 @@ class AstSymbolStubNode(AstSymbolNode):
             pos_start=self.loc.pos_start,
             pos_end=self.loc.pos_end,
         )
-        ret.parent = self
-        ret.sym_tab = self.sym_tab
+        ret.name_of = self
         return ret
 
 
@@ -350,7 +349,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             pos_start=self.target.archs[0].loc.pos_start,
             pos_end=self.target.archs[-1].loc.pos_end,
         )
-        ret.parent = self
+        ret.name_of = self
         return ret
 
 
