@@ -176,7 +176,9 @@ class AstNode:
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
 
-    def __init__(self, sym_name: str, name_spec: AstNode, sym_type: SymbolType) -> None:
+    def __init__(
+        self, sym_name: str, name_spec: NameSpec, sym_type: SymbolType
+    ) -> None:
         """Initialize ast."""
         self.sym: Optional[Symbol] = None
         self.sym_name: str = sym_name
