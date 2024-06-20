@@ -81,6 +81,7 @@ class AstTool:
                 "WalkerStmtOnlyNode",
                 "JacSource",
                 "EmptyToken",
+                "AstSymbolNode",
                 "AstSymbolStubNode",
                 "AstAccessNode",
                 "Literal",
