@@ -438,13 +438,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def architype(self, kid: list[ast.AstNode]) -> ast.ArchSpec:
+        def architype(
+            self, kid: list[ast.AstNode]
+        ) -> ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef:
             """Grammar rule.
 
-            architype: decorators architype
-                    | enum
+            architype: decorators? architype_decl
                     | architype_def
-                    | architype_decl
+                    | enum
             """
             if isinstance(kid[0], ast.SubNodeList):
                 if isinstance(kid[1], ast.ArchSpec):
@@ -453,7 +454,8 @@ class JacParser(Pass):
                     return self.nu(kid[1])
                 else:
                     raise self.ice()
-            elif isinstance(kid[0], ast.ArchSpec):
+
+            elif isinstance(kid[0], (ast.ArchSpec, ast.ArchDef, ast.Enum, ast.EnumDef)):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
@@ -616,10 +618,17 @@ class JacParser(Pass):
         def enum(self, kid: list[ast.AstNode]) -> ast.Enum | ast.EnumDef:
             """Grammar rule.
 
-            enum: enum_def
-                | enum_decl
+            enum: decorators? enum_decl
+                | enum_def
             """
-            if isinstance(kid[0], (ast.Enum, ast.EnumDef)):
+            if isinstance(kid[0], ast.SubNodeList):
+                if isinstance(kid[1], ast.Enum):
+                    kid[1].decorators = kid[0]
+                    kid[1].add_kids_left([kid[0]])
+                    return self.nu(kid[1])
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], (ast.Enum, ast.EnumDef)):
                 return self.nu(kid[0])
             else:
 
@@ -750,9 +759,9 @@ class JacParser(Pass):
         ) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
             """Grammer rule.
 
-            ability: decorators? ability_def
-                    | decorators? KW_ASYNC? ability_decl
+            ability: decorators? KW_ASYNC? ability_decl
                     | decorators? genai_ability
+                    | ability_def
             """
             chomp = [*kid]
             decorators = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None

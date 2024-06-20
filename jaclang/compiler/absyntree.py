@@ -260,31 +260,6 @@ class WalkerStmtOnlyNode(AstNode):
         self.from_walker: bool = False
 
 
-class AstImplOnlyNode(AstNode):
-    """ImplOnly node type for Jac Ast."""
-
-    def __init__(
-        self, target: ArchRefChain, body: SubNodeList, decl_link: Optional[AstNode]
-    ) -> None:
-        """Initialize impl only node."""
-        self.target = target
-        self.body = body
-        self.decl_link = decl_link
-
-
-class AstImplNeedingNode(AstSymbolNode, Generic[T]):
-    """Impl needing node type for Jac Ast."""
-
-    def __init__(self, body: Optional[T]) -> None:
-        """Initialize impl needing node."""
-        self.body = body
-
-    @property
-    def needs_impl(self) -> bool:
-        """Need impl."""
-        return self.body is None
-
-
 class Expr(AstNode):
     """Expr node type for Jac Ast."""
 
@@ -307,6 +282,54 @@ class EnumBlockStmt(AstNode):
 
 class CodeBlockStmt(AstNode):
     """CodeBlockStmt node type for Jac Ast."""
+
+
+class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
+    """ImplOnly node type for Jac Ast."""
+
+    def __init__(
+        self, target: ArchRefChain, body: SubNodeList, decl_link: Optional[AstNode]
+    ) -> None:
+        """Initialize impl only node."""
+        self.target = target
+        self.body = body
+        self.decl_link = decl_link
+        AstSymbolNode.__init__(
+            self,
+            sym_name=self.target.py_resolve_name(),
+            name_spec=self.create_impl_name_node(),
+            sym_type=SymbolType.IMPL,
+        )
+
+    def create_impl_name_node(self) -> Name:
+        """Create impl name."""
+        ret = Name(
+            file_path=self.target.archs[-1].loc.mod_path,
+            name=Tok.NAME.value,
+            value=self.target.py_resolve_name(),
+            col_start=self.target.archs[0].loc.col_start,
+            col_end=self.target.archs[-1].loc.col_end,
+            line=self.target.archs[0].loc.first_line,
+            end_line=self.target.archs[-1].loc.last_line,
+            pos_start=self.target.archs[0].loc.pos_start,
+            pos_end=self.target.archs[-1].loc.pos_end,
+        )
+        ret.parent = self
+        ret.sym_tab = self.sym_tab
+        return ret
+
+
+class AstImplNeedingNode(AstSymbolNode, Generic[T]):
+    """Impl needing node type for Jac Ast."""
+
+    def __init__(self, body: Optional[T]) -> None:
+        """Initialize impl needing node."""
+        self.body = body
+
+    @property
+    def needs_impl(self) -> bool:
+        """Need impl."""
+        return self.body is None
 
 
 class NameSpec(AtomExpr, EnumBlockStmt):
@@ -865,7 +888,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         return res
 
 
-class ArchDef(ArchSpec, AstImplOnlyNode):
+class ArchDef(AstImplOnlyNode):
     """ArchDef node type for Jac Ast."""
 
     def __init__(
@@ -879,14 +902,7 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
     ) -> None:
         """Initialize arch def node."""
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=target.py_resolve_name(),
-            name_spec=target,
-            sym_type=SymbolType.IMPL,
-        )
         AstDocNode.__init__(self, doc=doc)
-        ArchSpec.__init__(self, decorators=decorators)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -896,7 +912,6 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
             res = self.target.normalize(deep)
             res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
@@ -975,7 +990,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         return res
 
 
-class EnumDef(ArchSpec, AstImplOnlyNode):
+class EnumDef(AstImplOnlyNode):
     """EnumDef node type for Jac Ast."""
 
     def __init__(
@@ -989,14 +1004,7 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
     ) -> None:
         """Initialize arch def node."""
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=target.py_resolve_name(),
-            name_spec=target,
-            sym_type=SymbolType.IMPL,
-        )
         AstDocNode.__init__(self, doc=doc)
-        ArchSpec.__init__(self, decorators=decorators)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -1006,7 +1014,6 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
             res = self.target.normalize(deep)
             res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
@@ -1132,7 +1139,7 @@ class Ability(
         return res
 
 
-class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
+class AbilityDef(AstImplOnlyNode):
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
@@ -1149,12 +1156,6 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
         self.signature = signature
         self.decorators = decorators
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=target.py_resolve_name(),
-            name_spec=target,
-            sym_type=SymbolType.IMPL,
-        )
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
 
