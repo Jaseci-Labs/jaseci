@@ -45,7 +45,7 @@ class DeclImplMatchPass(Pass):
             if isinstance(sym.decl.name_of, ast.AstImplOnlyNode):
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
-                name_of_links = []  # to link archref names to decls
+                name_of_links: list[ast.NameSpec] = []  # to link archref names to decls
                 lookup = sym_tab.lookup(arch_refs[0])
                 # If below may need to be a while instead of if to skip over local
                 # import name collisions (see test: test_impl_decl_resolution_fix)
@@ -92,7 +92,7 @@ class DeclImplMatchPass(Pass):
                 sym.decl.name_of.decl_link = valid_decl
                 for idx, a in enumerate(sym.decl.name_of.target.archs):
                     if isinstance(a.name_ref.name_spec, ast.NameSpec):
-                        a.name_ref.name_spec.name_of = name_of_links[idx]
+                        a.name_ref.name_spec.name_of = name_of_links[idx].name_of
                 valid_decl.sym_tab.tab = sym.decl.name_of.sym_tab.tab
         for i in sym_tab.kid:
             self.connect_def_impl(i)
