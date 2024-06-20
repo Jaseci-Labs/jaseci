@@ -595,12 +595,7 @@ class JacParser(Pass):
                         | KW_HERE
             """
             if isinstance(kid[0], ast.Name):
-                return self.nu(
-                    ast.SpecialVarRef(
-                        var=kid[0],
-                        kid=kid,
-                    )
-                )
+                return self.nu(ast.SpecialVarRef(var=kid[0]))
             else:
                 raise self.ice()
 

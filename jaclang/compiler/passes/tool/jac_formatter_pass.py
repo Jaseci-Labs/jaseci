@@ -484,7 +484,7 @@ class JacFormatPass(Pass):
 
         var: Token,
         """
-        self.emit(node, node.var.value)
+        self.emit(node, node.orig.value)
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.

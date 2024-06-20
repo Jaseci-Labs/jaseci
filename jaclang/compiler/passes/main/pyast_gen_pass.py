@@ -1415,7 +1415,7 @@ class PyastGenPass(Pass):
         if node.arch_type.name == Tok.TYPE_OP:
             if (
                 isinstance(node.arch_name, ast.SpecialVarRef)
-                and node.arch_name.var.name == Tok.KW_ROOT
+                and node.arch_name.orig.name == Tok.KW_ROOT
             ):
                 node.gen.py_ast = [
                     self.sync(

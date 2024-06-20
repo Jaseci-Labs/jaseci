@@ -298,7 +298,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_start=0,
                     pos_end=0,
                 )
-                body_stmt.name_ref = ast.SpecialVarRef(var=tok, kid=[tok])
+                body_stmt.name_ref = ast.SpecialVarRef(var=tok)
             if (
                 isinstance(body_stmt, ast.Ability)
                 and body_stmt.signature
@@ -919,7 +919,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
-            value = ast.SpecialVarRef(var=tok, kid=[tok])
+            value = ast.SpecialVarRef(var=tok)
             # exit()
         attribute = ast.Name(
             file_path=self.mod_path,

@@ -3101,52 +3101,6 @@ class ArchRef(AtomExpr):
         return res
 
 
-class SpecialVarRef(NameSpec):
-    """HereRef node type for Jac Ast."""
-
-    def __init__(
-        self,
-        var: Name,
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize special var reference expression node."""
-        self.var = var
-        AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=self.py_resolve_name(),
-            name_spec=var,
-            sym_type=SymbolType.VAR,
-        )
-        NameSpec.__init__(self)
-
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
-        res = True
-        if deep:
-            res = self.var.normalize(deep)
-        new_kid: list[AstNode] = [self.var]
-        self.set_kids(nodes=new_kid)
-        return res
-
-    def py_resolve_name(self) -> str:
-        """Resolve name."""
-        if self.var.name == Tok.KW_SELF:
-            return "self"
-        elif self.var.name == Tok.KW_SUPER:
-            return "super()"
-        elif self.var.name == Tok.KW_ROOT:
-            return Con.ROOT.value
-        elif self.var.name == Tok.KW_HERE:
-            return Con.HERE.value
-        elif self.var.name == Tok.KW_INIT:
-            return "__init__"
-        elif self.var.name == Tok.KW_POST_INIT:
-            return "__post_init__"
-        else:
-            raise NotImplementedError("ICE: Special var reference not implemented")
-
-
 class EdgeRefTrailer(Expr):
     """EdgeRefTrailer node type for Jac Ast."""
 
@@ -3818,6 +3772,53 @@ class Name(Token, NameSpec):
         ret.name_of = node
         ret.sym_tab = node.sym_tab
         return ret
+
+
+class SpecialVarRef(Name):
+    """HereRef node type for Jac Ast."""
+
+    def __init__(
+        self,
+        var: Name,
+    ) -> None:
+        """Initialize special var reference expression node."""
+        self.orig = var
+        Name.__init__(
+            self,
+            file_path=var.file_path,
+            name=var.name,
+            value=self.py_resolve_name(),  # TODO: This shouldnt be necessary
+            line=var.line_no,
+            end_line=var.end_line,
+            col_start=var.c_start,
+            col_end=var.c_end,
+            pos_start=var.pos_start,
+            pos_end=var.pos_end,
+        )
+        AstSymbolNode.__init__(
+            self,
+            sym_name=self.py_resolve_name(),
+            name_spec=self,
+            sym_type=SymbolType.VAR,
+        )
+        NameSpec.__init__(self)
+
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        if self.orig.name == Tok.KW_SELF:
+            return "self"
+        elif self.orig.name == Tok.KW_SUPER:
+            return "super()"
+        elif self.orig.name == Tok.KW_ROOT:
+            return Con.ROOT.value
+        elif self.orig.name == Tok.KW_HERE:
+            return Con.HERE.value
+        elif self.orig.name == Tok.KW_INIT:
+            return "__init__"
+        elif self.orig.name == Tok.KW_POST_INIT:
+            return "__post_init__"
+        else:
+            raise NotImplementedError("ICE: Special var reference not implemented")
 
 
 class Literal(Token, AtomExpr):
