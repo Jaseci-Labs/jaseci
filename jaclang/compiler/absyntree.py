@@ -180,9 +180,8 @@ class AstSymbolNode(AstNode):
         self, sym_name: str, name_spec: NameSpec, sym_type: SymbolType
     ) -> None:
         """Initialize ast."""
-        self.sym_name: str = sym_name
-        name_spec.sym_name = sym_name
         self.name_spec = name_spec
+        name_spec._sym_name = sym_name
         self.name_spec.name_of = self
         self.sym_type: SymbolType = sym_type
         self.type_info: TypeInfo = TypeInfo()
@@ -192,6 +191,11 @@ class AstSymbolNode(AstNode):
     def sym(self) -> Optional[Symbol]:
         """Get symbol."""
         return self.name_spec.sym
+
+    @property
+    def sym_name(self) -> str:
+        """Get symbol name."""
+        return self.name_spec._sym_name
 
 
 class AstSymbolStubNode(AstSymbolNode):
@@ -357,6 +361,7 @@ class NameSpec(AtomExpr, EnumBlockStmt):
         """Initialize name spec node."""
         self.name_of: AstSymbolNode = self
         self._sym: Optional[Symbol] = None
+        self._sym_name: str = ""
 
     @property
     def sym(self) -> Optional[Symbol]:
@@ -367,6 +372,11 @@ class NameSpec(AtomExpr, EnumBlockStmt):
     def sym(self, sym: Symbol) -> None:
         """Set symbol."""
         self._sym = sym
+
+    @property
+    def sym_name(self) -> str:
+        """Get symbol name."""
+        return self._sym_name
 
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
@@ -591,7 +601,7 @@ class Test(AstSymbolNode, ElementStmt):
             self.add_kids_left([self.name], pos_update=False)
         AstSymbolNode.__init__(
             self,
-            sym_name=self.name.sym_name,
+            sym_name=self.name._sym_name,
             name_spec=self.name,
             sym_type=SymbolType.TEST,
         )
@@ -748,7 +758,7 @@ class ModulePath(AstSymbolNode):
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=name_spec.sym_name,
+            sym_name=name_spec._sym_name,
             name_spec=name_spec,
             sym_type=SymbolType.MODULE,
         )
@@ -802,7 +812,7 @@ class ModuleItem(AstSymbolNode):
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=alias.sym_name if alias else name.sym_name,
+            sym_name=alias._sym_name if alias else name._sym_name,
             name_spec=alias if alias else name,
             sym_type=SymbolType.MOD_VAR,
         )
@@ -3086,7 +3096,7 @@ class ArchRef(AtomExpr):
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=arch_name.sym_name,
+            sym_name=arch_name._sym_name,
             name_spec=arch_name,
             sym_type=SymbolType.TYPE,
         )
@@ -3740,13 +3750,13 @@ class Name(Token, NameSpec):
             pos_start=pos_start,
             pos_end=pos_end,
         )
+        NameSpec.__init__(self)
         AstSymbolNode.__init__(
             self,
             sym_name=value,
             name_spec=self,
             sym_type=SymbolType.VAR,
         )
-        NameSpec.__init__(self)
 
     def unparse(self) -> str:
         """Unparse name."""
@@ -3795,13 +3805,13 @@ class SpecialVarRef(Name):
             pos_start=var.pos_start,
             pos_end=var.pos_end,
         )
+        NameSpec.__init__(self)
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
             name_spec=self,
             sym_type=SymbolType.VAR,
         )
-        NameSpec.__init__(self)
 
     def py_resolve_name(self) -> str:
         """Resolve name."""

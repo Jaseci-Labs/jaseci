@@ -96,7 +96,7 @@ class Symbol:
     @property
     def sym_name(self) -> str:
         """Get name."""
-        return self.decl.sym_name
+        return self.decl._sym_name
 
     @property
     def sym_type(self) -> SymbolType:
@@ -106,7 +106,7 @@ class Symbol:
     @property
     def sym_dotted_name(self) -> str:
         """Return a full path of the symbol."""
-        out = [self.defn[0].sym_name]
+        out = [self.defn[0]._sym_name]
         current_tab = self.parent_tab
         while current_tab is not None:
             out.append(current_tab.name)

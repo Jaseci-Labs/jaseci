@@ -142,7 +142,7 @@ class PyJacAstLinkPass(Pass):
                         and node.parent.signature.params
                     ):
                         for trg_prm in node.parent.signature.params.items:
-                            if src_prm.name.sym_name == trg_prm.name.sym_name:
+                            if src_prm.name._sym_name == trg_prm.name._sym_name:
                                 self.link_jac_py_nodes(
                                     jac_node=src_prm, py_nodes=trg_prm.gen.py_ast
                                 )
