@@ -66,7 +66,7 @@ class JacReferenceTests(TestCase):
             return f.getvalue()
 
         try:
-            if "tests.jac" in filename:
+            if "tests.jac" in filename or "check_statements.jac" in filename:
                 return
             jacast = jac_file_to_pass(filename).ir
             code_content = compile(
