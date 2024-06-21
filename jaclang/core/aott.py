@@ -96,7 +96,7 @@ def get_info_types(
                 else None
             )
             info_str.append(
-                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) = {get_object_string(incl[1])}"
+                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) = {get_object_string(incl[1])}".strip()
             )
     return ("\n".join(info_str), collected_types)
 
@@ -167,7 +167,7 @@ def get_type_explanation(
         if sem_info.type == "Enum" and isinstance(type_info, list):
             for enum_item in type_info:
                 type_info_str.append(
-                    f"{enum_item.semstr} ({enum_item.name}) (EnumItem)"
+                    f"{enum_item.semstr} ({enum_item.name}) (EnumItem)".strip()
                 )
             type_example[0] = type_example[0].replace("(", f".{enum_item.name}")
         elif sem_info.type in ["obj", "class", "node", "edge"] and isinstance(
@@ -177,7 +177,7 @@ def get_type_explanation(
                 if arch_item.type in ["obj", "class", "node", "edge"]:
                     continue
                 type_info_str.append(
-                    f"{arch_item.semstr} ({arch_item.name}) ({arch_item.type})"
+                    f"{arch_item.semstr} ({arch_item.name}) ({arch_item.type})".strip()
                 )
                 type_example.append(f"{arch_item.name}={arch_item.type}, ")
                 if arch_item.type and extract_non_primary_type(arch_item.type):
@@ -187,7 +187,7 @@ def get_type_explanation(
             else:
                 type_example.append(")")
         return (
-            f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {''.join(type_example)} -> {', '.join(type_info_str)}",  # noqa: E501
+            f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {''.join(type_example)} -> {', '.join(type_info_str)}".strip(),  # noqa: E501
             set(type_info_types),
         )
     return None, None
@@ -260,6 +260,7 @@ def get_input_information(
             typ_anno = get_type_annotation(i[3])
             type_collector.extend(extract_non_primary_type(typ_anno))
             inputs_information_list.append(
+                f"{i[0] if i[0] else ''} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip()
                 f"{i[0] if i[0] else ''} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip()
             )
         return "\n".join(inputs_information_list)

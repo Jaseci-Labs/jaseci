@@ -551,7 +551,7 @@ class PyastGenPass(Pass):
                                             arg="mod_bundle",
                                             value=self.sync(
                                                 ast3.Name(
-                                                    id="__jac_mod_bundle__",
+                                                    id="__name__",
                                                     ctx=ast3.Load(),
                                                 )
                                             ),
@@ -1094,7 +1094,7 @@ class PyastGenPass(Pass):
                                 value=(
                                     node.signature.semstr.lit_value
                                     if node.signature.semstr
-                                    else None
+                                    else ""
                                 )
                             )
                         )

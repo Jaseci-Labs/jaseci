@@ -102,7 +102,7 @@ class JacFeature:
         cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        mod_bundle: Optional[Module] = None,
+        mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, bool]]] = None,
     ) -> Optional[types.ModuleType]:

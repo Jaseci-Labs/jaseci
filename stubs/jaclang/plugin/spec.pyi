@@ -41,7 +41,7 @@ class JacFeatureSpec:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module],
+        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]: ...

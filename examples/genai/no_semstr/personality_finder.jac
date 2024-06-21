@@ -1,9 +1,6 @@
-import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
+import:py from jaclang.core.llms, Anthropic;
 
-# glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
-# glob llm = Groq();
-glob llm = Ollama(model_name="phi3", verbose=True);
-
+glob llm = Anthropic(verbose=True, model_name="claude-3-sonnet-20240229");
 
 enum Personality {
    INTROVERT = "Introvert",
@@ -15,11 +12,6 @@ obj Person {
         year_died: int,
         personality: Personality;
 }
-
-# glob personality_examples: dict[str, Personality] = {
-#     'Albert Einstein': Personality.INTROVERT,
-#     'Barack Obama': Personality.EXTROVERT
-# };
 
 can get_person_info(name: str) -> Person
 by llm(reason= True, temperature=0.0);

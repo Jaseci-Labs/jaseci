@@ -216,6 +216,7 @@ class SymTabBuildPass(SymTabPass):
             )
             self.sync_node_to_scope(builtin)
             self.def_insert(builtin)
+        # self.def_insert(ast.Name.gen_stub_from_node(node.name, "root"))
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.

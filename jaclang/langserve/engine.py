@@ -66,8 +66,8 @@ class ModuleInfo:
     def update_with(self, new_info: ModuleInfo) -> None:
         """Update module info."""
         self.ir = new_info.ir
-        self.errors += new_info.errors
-        self.warnings += new_info.warnings
+        self.errors += [i for i in new_info.errors if i not in self.errors]
+        self.warnings += [i for i in new_info.warnings if i not in self.warnings]
         self.alev = new_info.alev
         self.diagnostics = self.gen_diagnostics()
 
@@ -154,9 +154,7 @@ class JacLangServer(LanguageServer):
             alev=alev,
         )
         if not refresh and file_path in self.modules:
-            self.log_py(f"Before: {self.modules[file_path].warnings}")
             self.modules[file_path].update_with(new_mod)
-            self.log_py(f"After: {self.modules[file_path].warnings}")
         else:
             self.modules[file_path] = new_mod
         for p in build.ir.mod_deps.keys():

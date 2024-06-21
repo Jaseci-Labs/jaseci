@@ -62,7 +62,7 @@ class DeclImplMatchPass(Pass):
                 for name in arch_refs[1:]:
                     if decl_node:
                         lookup = (
-                            decl_node.name_of.sym_tab.lookup(name)
+                            decl_node.name_of.sym_tab.lookup(name, deep=False)
                             if decl_node.name_of.sym_tab
                             else None
                         )
@@ -84,11 +84,7 @@ class DeclImplMatchPass(Pass):
                     continue
                 if not isinstance(
                     valid_decl := decl_node.name_of, ast.AstImplNeedingNode
-                ):
-                    raise self.ice(
-                        f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
-                    )
-                if not (valid_decl.sym_tab and sym.decl.name_of.sym_tab):
+                ) or not (valid_decl.sym_tab and sym.decl.name_of.sym_tab):
                     raise self.ice(
                         f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
                     )
