@@ -11,8 +11,6 @@ from typing import Any
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.core.llms.base import BaseLLM
 
-from mtllm import Video
-
 
 def aott_raise(
     model: BaseLLM,
@@ -274,7 +272,7 @@ def get_input_information(
                 image_repr: list[dict] = [
                     {
                         "type": "text",
-                        "text": f"{i[0] if i[0] else ""} ({i[2]}) (Image) = ".strip(),
+                        "text": f"{i[0] if i[0] else ''} ({i[2]}) (Image) = ".strip(),
                     },
                     {
                         "type": "image_url",
@@ -291,7 +289,7 @@ def get_input_information(
                 video_repr: list[dict] = [
                     {
                         "type": "text",
-                        "text": f"{i[0] if i[0] else ""} ({i[2]}) (Video) = Following are the frames of the video".strip(),
+                        "text": f"{i[0] if i[0] else ''} ({i[2]}) (Video) = Following are the frames of the video".strip(),  # noqa: E501
                     },
                     *(
                         {
@@ -311,7 +309,7 @@ def get_input_information(
             inputs_information_dict_list.append(
                 {
                     "type": "text",
-                    "text": f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}",
+                    "text": f"{i[0] if i[0] else ''} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip(),
                 }
             )
         return inputs_information_dict_list
