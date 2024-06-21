@@ -193,7 +193,7 @@ class FuseTypeInfoPass(Pass):
                     owner = parent_symbol_table.owner
                     if isinstance(owner, ast.AstSymbolNode):
                         target_node.name_spec.sym = owner.sym
-                        node.sym = parent_symbol_table.lookup(node._sym_name)
+                        node.sym = parent_symbol_table.lookup(node.sym_name)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:

@@ -195,7 +195,7 @@ class AstSymbolNode(AstNode):
     @property
     def sym_name(self) -> str:
         """Get symbol name."""
-        return self.name_spec._sym_name
+        return self.name_spec.sym_name
 
 
 class AstSymbolStubNode(AstSymbolNode):
@@ -601,7 +601,7 @@ class Test(AstSymbolNode, ElementStmt):
             self.add_kids_left([self.name], pos_update=False)
         AstSymbolNode.__init__(
             self,
-            sym_name=self.name._sym_name,
+            sym_name=self.name.sym_name,
             name_spec=self.name,
             sym_type=SymbolType.TEST,
         )
@@ -758,7 +758,7 @@ class ModulePath(AstSymbolNode):
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=name_spec._sym_name,
+            sym_name=name_spec.sym_name,
             name_spec=name_spec,
             sym_type=SymbolType.MODULE,
         )
@@ -812,7 +812,7 @@ class ModuleItem(AstSymbolNode):
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=alias._sym_name if alias else name._sym_name,
+            sym_name=alias.sym_name if alias else name.sym_name,
             name_spec=alias if alias else name,
             sym_type=SymbolType.MOD_VAR,
         )
@@ -3096,7 +3096,7 @@ class ArchRef(AtomExpr):
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name=arch_name._sym_name,
+            sym_name=arch_name.sym_name,
             name_spec=arch_name,
             sym_type=SymbolType.TYPE,
         )

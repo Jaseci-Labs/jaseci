@@ -22,12 +22,12 @@ class AccessCheckPass(SymTabPass):
         """Exit node."""
         super().exit_node(node)
         if settings.lsp_debug and isinstance(node, ast.NameSpec) and not node.sym:
-            self.warning(f"Name {node._sym_name} not present in symbol table")
+            self.warning(f"Name {node.sym_name} not present in symbol table")
 
     def access_check(self, node: ast.Name) -> None:
         """Access check."""
         node_info = (
-            node.sym_tab.lookup(node._sym_name)
+            node.sym_tab.lookup(node.sym_name)
             if isinstance(node.sym_tab, ast.SymbolTable)
             else None
         )
@@ -47,7 +47,7 @@ class AccessCheckPass(SymTabPass):
             and decl_package_path != use_package_path
         ):
             return self.error(
-                f'Can not access protected variable "{node._sym_name}" from {decl_package_path}'
+                f'Can not access protected variable "{node.sym_name}" from {decl_package_path}'
                 f" to {use_package_path}."
             )
 
@@ -58,7 +58,7 @@ class AccessCheckPass(SymTabPass):
             and node.sym.defn[-1].loc.mod_path != node.loc.mod_path
         ):
             return self.error(
-                f'Can not access private variable "{node._sym_name}" from {node.sym.defn[-1].loc.mod_path}'
+                f'Can not access private variable "{node.sym_name}" from {node.sym.defn[-1].loc.mod_path}'
                 f" to {node.loc.mod_path}."
             )
 

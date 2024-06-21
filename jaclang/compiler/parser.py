@@ -765,7 +765,7 @@ class JacParser(Pass):
                 for dec in decorators.items:
                     if (
                         isinstance(dec, ast.NameSpec)
-                        and dec._sym_name == "staticmethod"
+                        and dec.sym_name == "staticmethod"
                         and isinstance(ability, (ast.Ability))
                     ):
                         ability.is_static = True
@@ -3665,7 +3665,7 @@ class JacParser(Pass):
             if (
                 len(kid) == 1
                 and isinstance(kid[0], ast.Name)
-                and kid[0]._sym_name == "_"
+                and kid[0].sym_name == "_"
             ):
                 return self.nu(
                     ast.MatchWild(
