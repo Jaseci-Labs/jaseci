@@ -23,7 +23,7 @@ pytest = "^8.2.1"
 
 [tool.poetry.extras]
 tools = ["wikipedia"]
-video = ["moviepy", "opencv-python"]
+video = ["moviepy", "opencv-python-headless"]
 image = ["pillow"]
 
 [build-system]
