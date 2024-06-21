@@ -1,5 +1,5 @@
 import:py from jaclang.core.llms, BaseLLM;
-import:py from PIL, Image;
+import:py from mtllm, Image;
 import:py os;
 
 obj model:BaseLLM: {
@@ -20,6 +20,6 @@ solve_math_question(question_img: 'Image of the Question': Image) -> 'Answer to 
 by llm(method="Chain-of-Thoughts");
 
 with entry {
-    question_img = Image.open(os.path.join(os.path.dirname(__file__), 'math_question.jpg'));
+    question_img = Image(os.path.join(os.path.dirname(__file__), 'math_question.jpg'));
     print(solve_math_question(question_img));
 }
