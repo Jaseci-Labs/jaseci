@@ -65,7 +65,7 @@ class Image:
         ), "Please install the required dependencies by running `pip install mtllm[image]`."
         self.file_path = file_path
 
-    def process_image(self) -> tuple[str, str]:
+    def process(self) -> tuple[str, str]:
         """Processes the image and returns a base64 encoded image and its format."""
         image = PILImage.open(self.file_path)
         img_format = image.format
