@@ -49,13 +49,13 @@ class TypeInfo:
 
     def __init__(self, typ: str = "NoType") -> None:
         """Initialize."""
-        self.typ = typ
-        self.type_tab_link: Optional[SymbolTable] = None
+        self.sym_type = typ
+        self.type_sym_tab: Optional[SymbolTable] = None
 
     @property
     def clean_type(self) -> str:
         """Get clean type."""
-        ret_type = self.typ.replace("builtins.", "").replace("NoType", "")
+        ret_type = self.sym_type.replace("builtins.", "").replace("NoType", "")
         return ret_type
 
 

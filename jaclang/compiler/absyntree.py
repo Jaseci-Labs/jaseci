@@ -184,7 +184,6 @@ class AstSymbolNode(AstNode):
         self.name_spec.name_of = self
         self.name_spec._sym_name = sym_name
         self.name_spec._sym_category = sym_category
-
         self.type_info: TypeInfo = TypeInfo()
 
     @property
