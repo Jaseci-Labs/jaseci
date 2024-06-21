@@ -57,6 +57,17 @@ class AstNode:
             self.loc.update_last_token(self.kid[-1].loc.last_tok)
         return self
 
+    def insert_kids_at_pos(
+        self, nodes: Sequence[AstNode], pos: int, pos_update: bool = True
+    ) -> AstNode:
+        """Insert kids at position."""
+        self.kid = [*self.kid[:pos], *nodes, *self.kid[pos:]]
+        if pos_update:
+            for i in nodes:
+                i.parent = self
+            self.loc.update_token_range(*self.resolve_tok_range())
+        return self
+
     def set_kids(self, nodes: Sequence[AstNode]) -> AstNode:
         """Set kids."""
         self.kid = [*nodes]
@@ -645,8 +656,8 @@ class Test(AstSymbolNode, ElementStmt):
             if isinstance(name, Name)
             else Name(
                 file_path=name.file_path,
-                name="NAME",
-                value=f"test_t{Test.TEST_COUNT}",
+                name=Tok.NAME.value,
+                value=f"_jac_gen_{Test.TEST_COUNT}",
                 col_start=name.loc.col_start,
                 col_end=name.loc.col_end,
                 line=name.loc.first_line,
@@ -656,11 +667,15 @@ class Test(AstSymbolNode, ElementStmt):
             )
         )
         self.name.parent = self
-        # kid[0] = self.name  # Index is 0 since Doc string is inserted after init
+        self.name._sym_name = (
+            f"test_{self.name.value}"
+            if not self.name.value.startswith("test_")
+            else self.name.value
+        )
         self.body = body
         AstNode.__init__(self, kid=kid)
         if self.name not in self.kid:
-            self.add_kids_left([self.name], pos_update=False)
+            self.insert_kids_at_pos([self.name], pos=1, pos_update=False)
         AstSymbolNode.__init__(
             self,
             sym_name=self.name.sym_name,
