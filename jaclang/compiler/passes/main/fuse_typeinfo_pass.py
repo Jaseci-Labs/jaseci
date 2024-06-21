@@ -179,7 +179,7 @@ class FuseTypeInfoPass(Pass):
                 )
 
     @__handle_node
-    def enter_name(self, node: ast.NameSpec) -> None:
+    def enter_name(self, node: ast.NameAtom) -> None:
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
 

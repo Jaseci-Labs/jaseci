@@ -176,7 +176,7 @@ class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
 
     def __init__(
-        self, sym_name: str, name_spec: NameSpec, sym_category: SymbolType
+        self, sym_name: str, name_spec: NameAtom, sym_category: SymbolType
     ) -> None:
         """Initialize ast."""
         self.name_spec = name_spec
@@ -371,7 +371,7 @@ class AstImplNeedingNode(AstSymbolNode, Generic[T]):
         return self.body is None
 
 
-class NameSpec(AtomExpr, EnumBlockStmt):
+class NameAtom(AtomExpr, EnumBlockStmt):
     """NameSpec node type for Jac Ast."""
 
     def __init__(self) -> None:
@@ -1142,7 +1142,7 @@ class Ability(
 
     def __init__(
         self,
-        name_ref: NameSpec,
+        name_ref: NameAtom,
         is_async: bool,
         is_override: bool,
         is_static: bool,
@@ -2299,7 +2299,7 @@ class GlobalStmt(CodeBlockStmt):
 
     def __init__(
         self,
-        target: SubNodeList[NameSpec],
+        target: SubNodeList[NameAtom],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize global statement node."""
@@ -2803,7 +2803,7 @@ class KWPair(AstNode):
 
     def __init__(
         self,
-        key: Optional[NameSpec],  # is **value if blank
+        key: Optional[NameAtom],  # is **value if blank
         value: Expr,
         kid: Sequence[AstNode],
     ) -> None:
@@ -3148,7 +3148,7 @@ class ArchRef(AtomExpr):
 
     def __init__(
         self,
-        arch_name: NameSpec,
+        arch_name: NameAtom,
         arch_type: Token,
         kid: Sequence[AstNode],
     ) -> None:
@@ -3506,7 +3506,7 @@ class MatchAs(MatchPattern):
 
     def __init__(
         self,
-        name: NameSpec,
+        name: NameAtom,
         pattern: Optional[MatchPattern],
         kid: Sequence[AstNode],
     ) -> None:
@@ -3655,7 +3655,7 @@ class MatchKVPair(MatchPattern):
 
     def __init__(
         self,
-        key: MatchPattern | NameSpec,
+        key: MatchPattern | NameAtom,
         value: MatchPattern,
         kid: Sequence[AstNode],
     ) -> None:
@@ -3683,7 +3683,7 @@ class MatchStar(MatchPattern):
 
     def __init__(
         self,
-        name: NameSpec,
+        name: NameAtom,
         is_list: bool,
         kid: Sequence[AstNode],
     ) -> None:
@@ -3710,7 +3710,7 @@ class MatchArch(MatchPattern):
 
     def __init__(
         self,
-        name: AtomTrailer | NameSpec,
+        name: AtomTrailer | NameAtom,
         arg_patterns: Optional[SubNodeList[MatchPattern]],
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         kid: Sequence[AstNode],
@@ -3780,7 +3780,7 @@ class Token(AstNode):
         return self.value
 
 
-class Name(Token, NameSpec):
+class Name(Token, NameAtom):
     """Name node type for Jac Ast."""
 
     def __init__(
@@ -3812,7 +3812,7 @@ class Name(Token, NameSpec):
             pos_start=pos_start,
             pos_end=pos_end,
         )
-        NameSpec.__init__(self)
+        NameAtom.__init__(self)
         AstSymbolNode.__init__(
             self,
             sym_name=value,
@@ -3867,7 +3867,7 @@ class SpecialVarRef(Name):
             pos_start=var.pos_start,
             pos_end=var.pos_end,
         )
-        NameSpec.__init__(self)
+        NameAtom.__init__(self)
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
@@ -3946,7 +3946,7 @@ class Literal(Token, AtomExpr):
         raise NotImplementedError
 
 
-class BuiltinType(Name, Literal, NameSpec):
+class BuiltinType(Name, Literal, NameAtom):
     """Type node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR

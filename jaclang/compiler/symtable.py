@@ -63,19 +63,19 @@ class Symbol:
 
     def __init__(
         self,
-        defn: ast.NameSpec,
+        defn: ast.NameAtom,
         access: SymbolAccess,
         parent_tab: SymbolTable,
     ) -> None:
         """Initialize."""
-        self.defn: list[ast.NameSpec] = [defn]
-        self.uses: list[ast.NameSpec] = []
+        self.defn: list[ast.NameAtom] = [defn]
+        self.uses: list[ast.NameAtom] = []
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
 
     @property
-    def decl(self) -> ast.NameSpec:
+    def decl(self) -> ast.NameAtom:
         """Get decl."""
         return self.defn[0]
 
@@ -103,12 +103,12 @@ class Symbol:
         out.reverse()
         return ".".join(out)
 
-    def add_defn(self, node: ast.NameSpec) -> None:
+    def add_defn(self, node: ast.NameAtom) -> None:
         """Add defn."""
         self.defn.append(node)
         node.sym = self
 
-    def add_use(self, node: ast.NameSpec) -> None:
+    def add_use(self, node: ast.NameAtom) -> None:
         """Add use."""
         self.uses.append(node)
         node.sym = self
