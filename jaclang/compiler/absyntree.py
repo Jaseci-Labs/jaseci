@@ -18,7 +18,6 @@ from jaclang.compiler.symtable import (
     SymbolAccess,
     SymbolTable,
     SymbolType,
-    TypeInfo,
 )
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
@@ -184,7 +183,6 @@ class AstSymbolNode(AstNode):
         self.name_spec.name_of = self
         self.name_spec._sym_name = sym_name
         self.name_spec._sym_category = sym_category
-        self.type_info: TypeInfo = TypeInfo()
 
     @property
     def sym(self) -> Optional[Symbol]:
@@ -205,6 +203,16 @@ class AstSymbolNode(AstNode):
     def py_ctx_func(self) -> Type[ast3.AST]:
         """Get python context function."""
         return self.name_spec.py_ctx_func
+
+    @property
+    def sym_type(self) -> str:
+        """Get symbol type."""
+        return self.name_spec.sym_type
+
+    @property
+    def type_sym_tab(self) -> Optional[SymbolTable]:
+        """Get type symbol table."""
+        return self.name_spec.type_sym_tab
 
 
 class AstSymbolStubNode(AstSymbolNode):
@@ -373,6 +381,8 @@ class NameSpec(AtomExpr, EnumBlockStmt):
         self._sym_name: str = ""
         self._sym_category: SymbolType = SymbolType.UNKNOWN
         self._py_ctx_func: Type[ast3.AST] = ast3.Load
+        self._sym_type: str = "NoType"
+        self._type_sym_tab: Optional[SymbolTable] = None
 
     @property
     def sym(self) -> Optional[Symbol]:
@@ -395,6 +405,12 @@ class NameSpec(AtomExpr, EnumBlockStmt):
         return self._sym_category
 
     @property
+    def clean_type(self) -> str:
+        """Get clean type."""
+        ret_type = self.sym_type.replace("builtins.", "").replace("NoType", "")
+        return ret_type
+
+    @property
     def py_ctx_func(self) -> Type[ast3.AST]:
         """Get python context function."""
         return self._py_ctx_func
@@ -403,6 +419,26 @@ class NameSpec(AtomExpr, EnumBlockStmt):
     def py_ctx_func(self, py_ctx_func: Type[ast3.AST]) -> None:
         """Set python context function."""
         self._py_ctx_func = py_ctx_func
+
+    @property
+    def sym_type(self) -> str:
+        """Get symbol type."""
+        return self._sym_type
+
+    @sym_type.setter
+    def sym_type(self, sym_type: str) -> None:
+        """Set symbol type."""
+        self._sym_type = sym_type
+
+    @property
+    def type_sym_tab(self) -> Optional[SymbolTable]:
+        """Get type symbol table."""
+        return self._type_sym_tab
+
+    @type_sym_tab.setter
+    def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
+        """Set type symbol table."""
+        self._type_sym_tab = type_sym_tab
 
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
