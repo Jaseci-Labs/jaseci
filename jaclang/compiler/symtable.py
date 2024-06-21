@@ -37,6 +37,7 @@ class SymbolType(Enum):
     BOOL = "bool"  # LSP: Boolean
     SEQUENCE = "sequence"  # LSP: Array
     NULL = "null"  # LSP: Null
+    UNKNOWN = "unknown"  # LSP: Unknown
 
     def __str__(self) -> str:
         """Stringify."""

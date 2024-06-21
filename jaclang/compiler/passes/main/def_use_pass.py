@@ -327,9 +327,9 @@ class DefUsePass(SymTabPass):
         )
         for i in items:
             if isinstance(i, ast.AtomTrailer):
-                self.unwind_atom_trailer(i)[-1].py_ctx_func = ast3.Del
+                self.unwind_atom_trailer(i)[-1].name_spec.py_ctx_func = ast3.Del
             elif isinstance(i, ast.AstSymbolNode):
-                i.py_ctx_func = ast3.Del
+                i.name_spec.py_ctx_func = ast3.Del
             else:
                 self.error("Delete target not valid")
 

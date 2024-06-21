@@ -181,11 +181,11 @@ class AstSymbolNode(AstNode):
     ) -> None:
         """Initialize ast."""
         self.name_spec = name_spec
-        self.name_spec._sym_name = sym_name
         self.name_spec.name_of = self
-        self.sym_category: SymbolType = sym_category
+        self.name_spec._sym_name = sym_name
+        self.name_spec._sym_category = sym_category
+
         self.type_info: TypeInfo = TypeInfo()
-        self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
     @property
     def sym(self) -> Optional[Symbol]:
@@ -196,6 +196,16 @@ class AstSymbolNode(AstNode):
     def sym_name(self) -> str:
         """Get symbol name."""
         return self.name_spec.sym_name
+
+    @property
+    def sym_category(self) -> SymbolType:
+        """Get symbol category."""
+        return self.name_spec.sym_category
+
+    @property
+    def py_ctx_func(self) -> Type[ast3.AST]:
+        """Get python context function."""
+        return self.name_spec.py_ctx_func
 
 
 class AstSymbolStubNode(AstSymbolNode):
@@ -362,6 +372,8 @@ class NameSpec(AtomExpr, EnumBlockStmt):
         self.name_of: AstSymbolNode = self
         self._sym: Optional[Symbol] = None
         self._sym_name: str = ""
+        self._sym_category: SymbolType = SymbolType.UNKNOWN
+        self._py_ctx_func: Type[ast3.AST] = ast3.Load
 
     @property
     def sym(self) -> Optional[Symbol]:
@@ -377,6 +389,21 @@ class NameSpec(AtomExpr, EnumBlockStmt):
     def sym_name(self) -> str:
         """Get symbol name."""
         return self._sym_name
+
+    @property
+    def sym_category(self) -> SymbolType:
+        """Get symbol category."""
+        return self._sym_category
+
+    @property
+    def py_ctx_func(self) -> Type[ast3.AST]:
+        """Get python context function."""
+        return self._py_ctx_func
+
+    @py_ctx_func.setter
+    def py_ctx_func(self, py_ctx_func: Type[ast3.AST]) -> None:
+        """Set python context function."""
+        self._py_ctx_func = py_ctx_func
 
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
