@@ -261,7 +261,6 @@ def get_input_information(
             type_collector.extend(extract_non_primary_type(typ_anno))
             inputs_information_list.append(
                 f"{i[0] if i[0] else ''} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip()
-                f"{i[0] if i[0] else ''} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip()
             )
         return "\n".join(inputs_information_list)
     else:
