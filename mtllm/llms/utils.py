@@ -25,7 +25,9 @@ class Video:
         self.file_path = file_path
         self.seconds_per_frame = seconds_per_frame
 
-    def process(self, ) -> list:
+    def process(
+        self,
+    ) -> list:
         """Processes the video and returns a list of base64 encoded frames."""
         assert self.seconds_per_frame > 0, "Seconds per frame must be greater than 0"
 
