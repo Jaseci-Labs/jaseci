@@ -1987,4 +1987,4 @@ video = []
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12.0"
-content-hash = "8950fc9c7d0938b1077313eea5139eb6d3cb50430150b55623ebb8f34d75ec23"
+content-hash = "127f00d67563a75c1e144662e02529d44e90697492f8c74220011f66f4a67ae6"
