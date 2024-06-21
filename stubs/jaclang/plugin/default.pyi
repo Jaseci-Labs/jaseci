@@ -1,6 +1,6 @@
 import types
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.construct import (
+from jaclang.core.constructs import (
     Architype as Architype,
     DSFunc as DSFunc,
     EdgeAnchor as EdgeAnchor,
@@ -67,7 +67,7 @@ class JacFeatureDefaults:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module],
+        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]: ...
@@ -86,12 +86,24 @@ class JacFeatureDefaults:
     @staticmethod
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool: ...
     @staticmethod
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool: ...
     @staticmethod
     def disengage(walker: WalkerArchitype) -> bool: ...

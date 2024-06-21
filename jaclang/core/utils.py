@@ -8,10 +8,10 @@ from contextlib import contextmanager
 from typing import Callable, Iterator, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
-from jaclang.core.registry import SemScope
+from jaclang.compiler.semtable import SemScope
 
 if TYPE_CHECKING:
-    from jaclang.core.construct import NodeAnchor, NodeArchitype
+    from jaclang.core.constructs import NodeAnchor, NodeArchitype
 
 
 @contextmanager

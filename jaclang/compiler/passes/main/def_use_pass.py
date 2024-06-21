@@ -19,29 +19,60 @@ class DefUsePass(SymTabPass):
     def after_pass(self) -> None:
         """After pass."""
 
+    def inherit_baseclasses_sym(self, node: ast.Architype | ast.Enum) -> None:
+        """Inherit base classes symbol tables."""
+        if node.base_classes:
+            for cls in node.base_classes.items:
+                if (
+                    isinstance(cls, ast.AstSymbolNode)
+                    and (found := self.use_lookup(cls))
+                    and found
+                    and found.decl.sym_tab
+                    and node.sym_tab
+                ):
+                    node.sym_tab.inherit.append(found.decl.sym_tab)
+
     def enter_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
         name: Name,
-        doc: Optional[Token],
-        body: Optional[SubNodeList[ArchStmt]],
-        sym_tab: Optional[SymbolTable],
+        arch_type: Token,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[Expr]],
+        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        doc: Optional[String] = None,
+        semstr: Optional[String] = None,
+        decorators: Optional[SubNodeList[Expr]] = None,
         """
+        self.inherit_baseclasses_sym(node)
+
+        def inform_from_walker(node: ast.AstNode) -> None:
+            for i in (
+                node.get_all_sub_nodes(ast.VisitStmt)
+                + node.get_all_sub_nodes(ast.IgnoreStmt)
+                + node.get_all_sub_nodes(ast.DisengageStmt)
+                + node.get_all_sub_nodes(ast.EdgeOpRef)
+            ):
+                i.from_walker = True
+
         if node.arch_type.name == Tok.KW_WALKER:
-            self.inform_from_walker(node)
+            inform_from_walker(node)
             for i in self.get_all_sub_nodes(node, ast.Ability):
                 if isinstance(i.body, ast.AbilityDef):
-                    self.inform_from_walker(i.body)
+                    inform_from_walker(i.body)
 
-    def inform_from_walker(self, node: ast.AstNode) -> None:
-        """Inform all sub nodes that they are from a walker."""
-        for i in (
-            self.get_all_sub_nodes(node, ast.VisitStmt)
-            + self.get_all_sub_nodes(node, ast.IgnoreStmt)
-            + self.get_all_sub_nodes(node, ast.DisengageStmt)
-            + self.get_all_sub_nodes(node, ast.EdgeOpRef)
-        ):
-            i.from_walker = True
+    def enter_enum(self, node: ast.Enum) -> None:
+        """Sub objects.
+
+        name: Name,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[Expr]],
+        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        doc: Optional[String] = None,
+        semstr: Optional[String] = None,
+        decorators: Optional[SubNodeList[Expr]] = None,
+        """
+        self.inherit_baseclasses_sym(node)
 
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
@@ -296,9 +327,9 @@ class DefUsePass(SymTabPass):
         )
         for i in items:
             if isinstance(i, ast.AtomTrailer):
-                self.unwind_atom_trailer(i)[-1].py_ctx_func = ast3.Del
+                self.unwind_atom_trailer(i)[-1].name_spec.py_ctx_func = ast3.Del
             elif isinstance(i, ast.AstSymbolNode):
-                i.py_ctx_func = ast3.Del
+                i.name_spec.py_ctx_func = ast3.Del
             else:
                 self.error("Delete target not valid")
 

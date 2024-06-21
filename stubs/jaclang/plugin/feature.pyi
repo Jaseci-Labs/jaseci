@@ -46,7 +46,7 @@ class JacFeature:
         cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        mod_bundle: Optional[Module] = None,
+        mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = None,
         items: Optional[dict[str, Union[str, bool]]] = None,
     ) -> Optional[types.ModuleType]: ...
@@ -65,12 +65,24 @@ class JacFeature:
     @staticmethod
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool: ...
     @staticmethod
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool: ...
     @staticmethod
     def disengage(walker: WalkerArchitype) -> bool: ...

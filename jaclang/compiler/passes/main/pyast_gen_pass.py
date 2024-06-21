@@ -42,7 +42,6 @@ class PyastGenPass(Pass):
         """Initialize pass."""
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
-        self.method_sigs: list[ast.FuncSignature | ast.EventSignature] = []
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -552,7 +551,7 @@ class PyastGenPass(Pass):
                                             arg="mod_bundle",
                                             value=self.sync(
                                                 ast3.Name(
-                                                    id="__jac_mod_bundle__",
+                                                    id="__name__",
                                                     ctx=ast3.Load(),
                                                 )
                                             ),
@@ -678,14 +677,6 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        # Record all signatures that are part of methods
-        for i in (
-            node.body.body.items
-            if isinstance(node.body, ast.ArchDef)
-            else node.body.items if node.body else []
-        ):
-            if isinstance(i, ast.Ability):
-                self.method_sigs.append(i.signature)
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
 
@@ -768,6 +759,18 @@ class PyastGenPass(Pass):
                 )
             )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        if node.arch_type.name != Tok.KW_CLASS:
+            base_classes.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(
+                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                        ),
+                        attr=node.arch_type.value.capitalize(),
+                        ctx=ast3.Load(),
+                    )
+                )
+            )
         if node.is_abstract:
             self.needs_jac_feature()
             base_classes.append(
@@ -1333,7 +1336,7 @@ class PyastGenPass(Pass):
         """
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
-            if node in self.method_sigs and not node.is_static
+            if node.is_method and not node.is_static
             else []
         )
         vararg = None
@@ -1391,7 +1394,7 @@ class PyastGenPass(Pass):
                     posonlyargs=[],
                     args=(
                         [self.sync(ast3.arg(arg="self", annotation=None)), here]
-                        if node in self.method_sigs
+                        if node.is_method
                         else [here]
                     ),
                     kwonlyargs=[],
@@ -1409,27 +1412,19 @@ class PyastGenPass(Pass):
         name_ref: NameType,
         arch: Token,
         """
-        if node.arch.name == Tok.TYPE_OP:
+        if node.arch_type.name == Tok.TYPE_OP:
             if (
-                isinstance(node.name_ref, ast.SpecialVarRef)
-                and node.name_ref.var.name == Tok.KW_ROOT
+                isinstance(node.arch_name, ast.SpecialVarRef)
+                and node.arch_name.orig.name == Tok.KW_ROOT
             ):
                 node.gen.py_ast = [
                     self.sync(
-                        ast3.Call(
-                            func=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Name(
-                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
-                                        )
-                                    ),
-                                    attr="get_root_type",
-                                    ctx=ast3.Load(),
-                                )
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                             ),
-                            args=[],
-                            keywords=[],
+                            attr="RootType",
+                            ctx=ast3.Load(),
                         )
                     )
                 ]
@@ -1439,13 +1434,13 @@ class PyastGenPass(Pass):
                     self.sync(
                         ast3.Attribute(
                             value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
-                            attr=node.name_ref.sym_name,
+                            attr=node.arch_name.sym_name,
                             ctx=ast3.Load(),
                         )
                     )
                 ]
         else:
-            node.gen.py_ast = node.name_ref.gen.py_ast
+            node.gen.py_ast = node.arch_name.gen.py_ast
 
     def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
@@ -1463,7 +1458,7 @@ class PyastGenPass(Pass):
             attr = self.sync(
                 ast3.Attribute(
                     value=make_attr_chain(arch[:-1]),
-                    attr=cur.name_ref.sym_name,
+                    attr=cur.arch_name.sym_name,
                     ctx=ast3.Load(),
                 ),
                 jac_node=cur,
@@ -3090,14 +3085,42 @@ class PyastGenPass(Pass):
 
         var: Token,
         """
-        try:
-            var_ast_expr = ast3.parse(node.sym_name).body[0]
-            if not isinstance(var_ast_expr, ast3.Expr):
-                raise self.ice("Invalid special var ref for pyast generation")
-            var_ast = var_ast_expr.value
-        except Exception:
-            raise self.ice("Invalid special var ref for pyast generation")
-        node.gen.py_ast = [self.sync(var_ast, deep=True)]
+        if node.name == Tok.KW_SUPER:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(ast3.Name(id="super", ctx=node.py_ctx_func())),
+                        args=[],
+                        keywords=[],
+                    )
+                )
+            ]
+        elif node.name == Tok.KW_ROOT:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(
+                                        id=Con.JAC_FEATURE.value,
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                                attr="get_root",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[],
+                    )
+                )
+            ]
+
+        else:
+            node.gen.py_ast = [
+                self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
+            ]
 
     def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
         """Sub objects.
@@ -3577,7 +3600,7 @@ class PyastGenPass(Pass):
                         [
                             x.key.sym_name
                             for x in node.kw_patterns.items
-                            if isinstance(x.key, ast.NameSpec)
+                            if isinstance(x.key, ast.NameAtom)
                         ]
                         if node.kw_patterns
                         else []

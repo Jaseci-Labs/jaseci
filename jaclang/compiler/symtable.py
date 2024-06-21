@@ -37,28 +37,11 @@ class SymbolType(Enum):
     BOOL = "bool"  # LSP: Boolean
     SEQUENCE = "sequence"  # LSP: Array
     NULL = "null"  # LSP: Null
+    UNKNOWN = "unknown"  # LSP: Unknown
 
     def __str__(self) -> str:
         """Stringify."""
         return self.value
-
-
-class SymbolInfo:
-    """Symbol Info."""
-
-    def __init__(
-        self, typ: str = "NoType", acc_tag: Optional[SymbolAccess] = None
-    ) -> None:  # noqa: ANN401
-        """Initialize."""
-        self.typ = typ
-        self.acc_tag: Optional[SymbolAccess] = acc_tag
-        self.typ_sym_table: Optional[SymbolTable] = None
-
-    @property
-    def clean_type(self) -> str:
-        """Get clean type."""
-        ret_type = self.typ.replace("builtins.", "").replace("NoType", "")
-        return ret_type
 
 
 class SymbolAccess(Enum):
@@ -80,20 +63,19 @@ class Symbol:
 
     def __init__(
         self,
-        defn: ast.AstSymbolNode,
+        defn: ast.NameAtom,
         access: SymbolAccess,
         parent_tab: SymbolTable,
-        typ: Optional[type] = None,
     ) -> None:
         """Initialize."""
-        self.typ = typ
-        self.defn: list[ast.AstSymbolNode] = [defn]
-        defn.sym_link = self
-        self.access = access
+        self.defn: list[ast.NameAtom] = [defn]
+        self.uses: list[ast.NameAtom] = []
+        defn.sym = self
+        self.access: SymbolAccess = access
         self.parent_tab = parent_tab
 
     @property
-    def decl(self) -> ast.AstSymbolNode:
+    def decl(self) -> ast.NameAtom:
         """Get decl."""
         return self.defn[0]
 
@@ -105,19 +87,35 @@ class Symbol:
     @property
     def sym_type(self) -> SymbolType:
         """Get sym_type."""
-        return self.decl.sym_type
+        return self.decl.sym_category
 
-    def add_defn(self, node: ast.AstSymbolNode) -> None:
+    @property
+    def sym_dotted_name(self) -> str:
+        """Return a full path of the symbol."""
+        out = [self.defn[0].sym_name]
+        current_tab = self.parent_tab
+        while current_tab is not None:
+            out.append(current_tab.name)
+            if current_tab.has_parent():
+                current_tab = current_tab.parent
+            else:
+                break
+        out.reverse()
+        return ".".join(out)
+
+    def add_defn(self, node: ast.NameAtom) -> None:
         """Add defn."""
         self.defn.append(node)
-        node.sym_link = self
+        node.sym = self
+
+    def add_use(self, node: ast.NameAtom) -> None:
+        """Add use."""
+        self.uses.append(node)
+        node.sym = self
 
     def __repr__(self) -> str:
         """Repr."""
-        return (
-            f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, "
-            f"{self.typ}, {self.defn})"
-        )
+        return f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, {self.defn})"
 
 
 class SymbolTable:
@@ -132,7 +130,7 @@ class SymbolTable:
         self.parent = parent if parent else self
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
-        self.uses: list[ast.AstSymbolNode] = []
+        self.inherit: list[SymbolTable] = []
 
     def has_parent(self) -> bool:
         """Check if has parent."""
@@ -148,6 +146,10 @@ class SymbolTable:
         """Lookup a variable in the symbol table."""
         if name in self.tab:
             return self.tab[name]
+        for i in self.inherit:
+            found = i.lookup(name, deep=False)
+            if found:
+                return found
         if deep and self.has_parent():
             return self.get_parent().lookup(name, deep)
         return None
@@ -170,7 +172,7 @@ class SymbolTable:
         )
         if node.sym_name not in self.tab:
             self.tab[node.sym_name] = Symbol(
-                defn=node,
+                defn=node.name_spec,
                 access=(
                     access_spec
                     if isinstance(access_spec, SymbolAccess)
@@ -179,8 +181,8 @@ class SymbolTable:
                 parent_tab=self,
             )
         else:
-            self.tab[node.sym_name].add_defn(node)
-        node.sym_link = self.tab[node.sym_name]
+            self.tab[node.sym_name].add_defn(node.name_spec)
+        node.name_spec.sym = self.tab[node.sym_name]
         return collision
 
     def find_scope(self, name: str) -> Optional[SymbolTable]:

@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import types
-from dataclasses import dataclass
 from typing import Any, Callable, Optional, TYPE_CHECKING, Type, TypeVar, Union
 
 from jaclang.compiler.absyntree import Module
 
 if TYPE_CHECKING:
-    from jaclang.core.construct import EdgeArchitype, NodeArchitype
+    from jaclang.core.constructs import EdgeArchitype, NodeArchitype
     from jaclang.plugin.default import (
         Architype,
         EdgeDir,
         ExecutionContext,
         WalkerArchitype,
         Root,
+        DSFunc,
     )
     from jaclang.core.memory import Memory
 
@@ -24,20 +24,6 @@ import pluggy
 hookspec = pluggy.HookspecMarker("jac")
 
 T = TypeVar("T")
-
-
-# TODO: DSFunc should be moved into jaclang/core
-@dataclass(eq=False)
-class DSFunc:
-    """Data Spatial Function."""
-
-    name: str
-    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
-    func: Callable[[Any, Any], Any] | None = None
-
-    def resolve(self, cls: type) -> None:
-        """Resolve the function."""
-        self.func = getattr(cls, self.name)
 
 
 class JacFeatureSpec:
@@ -113,7 +99,7 @@ class JacFeatureSpec:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module],
+        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]:
@@ -167,7 +153,13 @@ class JacFeatureSpec:
     @hookspec(firstresult=True)
     def ignore(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Jac's ignore stmt feature."""
         raise NotImplementedError
@@ -176,7 +168,13 @@ class JacFeatureSpec:
     @hookspec(firstresult=True)
     def visit_node(
         walker: WalkerArchitype,
-        expr: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         raise NotImplementedError

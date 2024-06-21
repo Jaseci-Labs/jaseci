@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import unittest
+import types
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 from uuid import UUID, uuid4
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.core.utils import collect_node_connections
-from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.plugin.spec import DSFunc
 
 
 @dataclass(eq=False)
@@ -57,6 +55,8 @@ class NodeAnchor(ObjectAnchor):
 
     def populate_edges(self) -> None:
         """Populate edges from edge ids."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
         if len(self.edges) == 0 and len(self.edge_ids) > 0:
             for e_id in self.edge_ids:
                 edge = Jac.context().get_obj(e_id)
@@ -229,7 +229,13 @@ class WalkerAnchor(ObjectAnchor):
 
     def visit_node(
         self,
-        nds: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        nds: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Walker visits node."""
         nd_list: list[NodeArchitype | EdgeArchitype]
@@ -251,7 +257,13 @@ class WalkerAnchor(ObjectAnchor):
 
     def ignore_node(
         self,
-        nds: list[NodeArchitype | EdgeArchitype] | NodeArchitype | EdgeArchitype,
+        nds: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
     ) -> bool:
         """Walker ignores node."""
         nd_list: list[NodeArchitype | EdgeArchitype]
@@ -354,11 +366,15 @@ class NodeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create node architype."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
         self._jac_: NodeAnchor = NodeAnchor(obj=self)
         Jac.context().save_obj(self, persistent=self._jac_.persistent)
 
     def save(self) -> None:
         """Save the node to the memory/storage hierarchy."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
         self._jac_.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
@@ -383,11 +399,15 @@ class EdgeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create edge architype."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
         self._jac_: EdgeAnchor = EdgeAnchor(obj=self)
         Jac.context().save_obj(self, persistent=self.persistent)
 
     def save(self) -> None:
         """Save the edge to the memory/storage hierarchy."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
         self.persistent = True
         Jac.context().save_obj(self, persistent=True)
 
@@ -405,6 +425,8 @@ class EdgeArchitype(Architype):
 
     def populate_nodes(self) -> None:
         """Populate nodes for the edges from node ids."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
         if self._jac_.source_id:
             obj = Jac.context().get_obj(self._jac_.source_id)
             if obj is None:
@@ -439,6 +461,13 @@ class WalkerArchitype(Architype):
         self._jac_: WalkerAnchor = WalkerAnchor(obj=self)
 
 
+class GenericEdge(EdgeArchitype):
+    """Generic Root Node."""
+
+    _jac_entry_funcs_ = []
+    _jac_exit_funcs_ = []
+
+
 class Root(NodeArchitype):
     """Generic Root Node."""
 
@@ -460,92 +489,14 @@ class Root(NodeArchitype):
         self._jac_.edges = []
 
 
-class GenericEdge(EdgeArchitype):
-    """Generic Root Node."""
+@dataclass(eq=False)
+class DSFunc:
+    """Data Spatial Function."""
 
-    _jac_entry_funcs_ = []
-    _jac_exit_funcs_ = []
+    name: str
+    trigger: type | types.UnionType | tuple[type | types.UnionType, ...] | None
+    func: Callable[[Any, Any], Any] | None = None
 
-
-class JacTestResult(unittest.TextTestResult):
-    """Jac test result class."""
-
-    def __init__(
-        self,
-        stream,  # noqa
-        descriptions,  # noqa
-        verbosity: int,
-        max_failures: Optional[int] = None,
-    ) -> None:
-        """Initialize FailFastTestResult object."""
-        super().__init__(stream, descriptions, verbosity)  # noqa
-        self.failures_count = JacTestCheck.failcount
-        self.max_failures = max_failures
-
-    def addFailure(self, test, err) -> None:  # noqa
-        """Count failures and stop."""
-        super().addFailure(test, err)
-        self.failures_count += 1
-        if self.max_failures is not None and self.failures_count >= self.max_failures:
-            self.stop()
-
-    def stop(self) -> None:
-        """Stop the test execution."""
-        self.shouldStop = True
-
-
-class JacTextTestRunner(unittest.TextTestRunner):
-    """Jac test runner class."""
-
-    def __init__(self, max_failures: Optional[int] = None, **kwargs) -> None:  # noqa
-        """Initialize JacTextTestRunner object."""
-        self.max_failures = max_failures
-        super().__init__(**kwargs)
-
-    def _makeResult(self) -> JacTestResult:  # noqa
-        """Override the method to return an instance of JacTestResult."""
-        return JacTestResult(
-            self.stream,
-            self.descriptions,
-            self.verbosity,
-            max_failures=self.max_failures,
-        )
-
-
-class JacTestCheck:
-    """Jac Testing and Checking."""
-
-    test_case = unittest.TestCase()
-    test_suite = unittest.TestSuite()
-    breaker = False
-    failcount = 0
-
-    @staticmethod
-    def reset() -> None:
-        """Clear the test suite."""
-        JacTestCheck.test_case = unittest.TestCase()
-        JacTestCheck.test_suite = unittest.TestSuite()
-
-    @staticmethod
-    def run_test(xit: bool, maxfail: int | None, verbose: bool) -> None:
-        """Run the test suite."""
-        verb = 2 if verbose else 1
-        runner = JacTextTestRunner(max_failures=maxfail, failfast=xit, verbosity=verb)
-        result = runner.run(JacTestCheck.test_suite)
-        if result.wasSuccessful():
-            print("Passed successfully.")
-        else:
-            fails = len(result.failures)
-            JacTestCheck.failcount += fails
-            JacTestCheck.breaker = (
-                (JacTestCheck.failcount >= maxfail) if maxfail else True
-            )
-
-    @staticmethod
-    def add_test(test_fun: Callable) -> None:
-        """Create a new test."""
-        JacTestCheck.test_suite.addTest(unittest.FunctionTestCase(test_fun))
-
-    def __getattr__(self, name: str) -> object:
-        """Make convenient check.Equal(...) etc."""
-        return getattr(JacTestCheck.test_case, name)
+    def resolve(self, cls: type) -> None:
+        """Resolve the function."""
+        self.func = getattr(cls, self.name)

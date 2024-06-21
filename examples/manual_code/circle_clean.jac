@@ -8,7 +8,6 @@ include:jac circle_clean_impl;
 enum ShapeType;
 
 can calculate_area(radius: float) -> float;
-
 can main_run;
 
 """Base class for a shape."""
