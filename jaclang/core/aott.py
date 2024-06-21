@@ -4,24 +4,12 @@ AOTT: Automated Operational Type Transformation.
 This has all the necessary functions to perform the AOTT operations.
 """
 
-import base64
-import logging
 import re
 from enum import Enum
-from io import BytesIO
 from typing import Any
-
-
-try:
-    from PIL import Image
-except ImportError:
-    Image = None
 
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.core.llms.base import BaseLLM
-
-
-IMG_FORMATS = ["PngImageFile", "JpegImageFile"]
 
 
 def aott_raise(
@@ -263,8 +251,10 @@ def get_input_information(
             where each dictionary contains either text or image_url.
 
     """
-    contains_imgs = any(get_type_annotation(i[3]) in IMG_FORMATS for i in inputs)
-    if not contains_imgs:
+    contains_media = any(
+        get_type_annotation(i[3]) in ["Image", "Video"] for i in inputs
+    )
+    if not contains_media:
         inputs_information_list = []
         for i in inputs:
             typ_anno = get_type_annotation(i[3])
@@ -276,16 +266,41 @@ def get_input_information(
     else:
         inputs_information_dict_list: list[dict] = []
         for i in inputs:
-            if get_type_annotation(i[3]) in IMG_FORMATS:
-                img_base64 = image_to_base64(i[3])
+            input_type = get_type_annotation(i[3])
+            if input_type == "Image":
+                img_base64, img_type = i[3].process()
                 image_repr: list[dict] = [
                     {
                         "type": "text",
                         "text": f"{i[0]} ({i[2]}) (Image) = ",
                     },
-                    {"type": "image_url", "image_url": {"url": img_base64}},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/{img_type};base64,{img_base64}"
+                        },
+                    },
                 ]
                 inputs_information_dict_list.extend(image_repr)
+                continue
+            if input_type == "Video":
+                video_repr: list[dict] = [
+                    {
+                        "type": "text",
+                        "text": f"{i[0]} ({i[2]}) (Video) = Following are the frames of the video",
+                    },
+                    *(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpg;base64,{x}",
+                                "detail": "low",
+                            },
+                        }
+                        for x in i[3].process()
+                    ),
+                ]
+                inputs_information_dict_list.extend(video_repr)
                 continue
             typ_anno = get_type_annotation(i[3])
             type_collector.extend(extract_non_primary_type(typ_anno))
@@ -296,15 +311,3 @@ def get_input_information(
                 }
             )
         return inputs_information_dict_list
-
-
-def image_to_base64(image: Image) -> str:
-    """Convert an image to base64 expected by OpenAI."""
-    if not Image:
-        log = logging.getLogger(__name__)
-        log.error("Pillow is not installed. Please install Pillow to use images.")
-        return ""
-    img_format = image.format
-    with BytesIO() as buffer:
-        image.save(buffer, format=img_format, quality=100)
-        return f"data:image/{img_format.lower()};base64,{base64.b64encode(buffer.getvalue()).decode()}"

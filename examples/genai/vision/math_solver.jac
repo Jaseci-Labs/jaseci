@@ -1,5 +1,5 @@
-import:py from jaclang.core.llms, OpenAI;
-import:py from PIL, Image;
+import:py from mtllm.llms, OpenAI;
+import:py from mtllm, Image;
 
 glob llm = OpenAI(verbose= True, model_name="gpt-4o");
 

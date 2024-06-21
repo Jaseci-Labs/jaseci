@@ -1,5 +1,5 @@
-import:py from jaclang.core.llms, OpenAI;
-import:py from PIL, Image;
+import:py from mtllm.llms, OpenAI;
+import:py from mtllm, Image;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -22,6 +22,6 @@ get_person_info(img_of_person: 'Image of Person': Image) -> 'Person': Person
 by llm();
 
 with entry {
-    person_obj = get_person_info(Image.open("person.png"));
+    person_obj = get_person_info(Image("person.png"));
     print(f"{person_obj.full_name} was a {person_obj.personality.value} person who died in {person_obj.yod}");
 }
