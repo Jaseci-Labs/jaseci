@@ -22,7 +22,7 @@ class Alert:
     def __str__(self) -> str:
         """Return string representation of alert."""
         return (
-            f"{self.loc.mod_path}, line {self.loc.first_line},"
+            f" {self.loc.mod_path}, line {self.loc.first_line},"
             f" col {self.loc.col_start}: {self.msg}"
         )
 
@@ -59,7 +59,6 @@ class Transform(ABC, Generic[T]):
             self.__class__,
         )
         self.errors_had.append(alrt)
-        # print("Error:", str(alrt))
         self.logger.error(str(alrt))
 
     def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
@@ -70,5 +69,4 @@ class Transform(ABC, Generic[T]):
             self.__class__,
         )
         self.warnings_had.append(alrt)
-        # print("Warning:", str(alrt))
         self.logger.warning(str(alrt))

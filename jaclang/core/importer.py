@@ -11,7 +11,6 @@ from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
 from jaclang.core.utils import sys_path_context
-from jaclang.utils.log import logging
 
 
 def jac_importer(
@@ -77,9 +76,8 @@ def jac_importer(
             else:
                 result = compile_jac(full_target, cache_result=cachable)
                 if result.errors_had or not result.ir.gen.py_bytecode:
-                    for e in result.errors_had:
-                        print(e)
-                        logging.error(e)
+                    # for e in result.errors_had:
+                    #     print(e)
                     return None
                 else:
                     codeobj = marshal.loads(result.ir.gen.py_bytecode)
