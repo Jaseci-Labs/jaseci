@@ -11,6 +11,8 @@ from typing import Any
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.core.llms.base import BaseLLM
 
+from mtllm import Video
+
 
 def aott_raise(
     model: BaseLLM,
@@ -260,7 +262,7 @@ def get_input_information(
             typ_anno = get_type_annotation(i[3])
             type_collector.extend(extract_non_primary_type(typ_anno))
             inputs_information_list.append(
-                f"{i[0]} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}"
+                f"{i[0] if i[0] else ""} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip()
             )
         return "\n".join(inputs_information_list)
     else:
@@ -272,7 +274,7 @@ def get_input_information(
                 image_repr: list[dict] = [
                     {
                         "type": "text",
-                        "text": f"{i[0]} ({i[2]}) (Image) = ",
+                        "text": f"{i[0] if i[0] else ""} ({i[2]}) (Image) = ".strip(),
                     },
                     {
                         "type": "image_url",
@@ -284,10 +286,12 @@ def get_input_information(
                 inputs_information_dict_list.extend(image_repr)
                 continue
             if input_type == "Video":
+                video_frames = i[3].process()
+                print(len(video_frames))
                 video_repr: list[dict] = [
                     {
                         "type": "text",
-                        "text": f"{i[0]} ({i[2]}) (Video) = Following are the frames of the video",
+                        "text": f"{i[0] if i[0] else ""} ({i[2]}) (Video) = Following are the frames of the video".strip(),
                     },
                     *(
                         {
@@ -297,7 +301,7 @@ def get_input_information(
                                 "detail": "low",
                             },
                         }
-                        for x in i[3].process()
+                        for x in video_frames
                     ),
                 ]
                 inputs_information_dict_list.extend(video_repr)
