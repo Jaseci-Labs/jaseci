@@ -3089,7 +3089,7 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
-                        func=self.sync(ast3.Name(id="super", ctx=ast3.Load())),
+                        func=self.sync(ast3.Name(id="super", ctx=node.py_ctx_func())),
                         args=[],
                         keywords=[],
                     )
@@ -3118,7 +3118,9 @@ class PyastGenPass(Pass):
             ]
 
         else:
-            node.gen.py_ast = [self.sync(ast3.Name(id=node.sym_name, ctx=ast3.Load()))]
+            node.gen.py_ast = [
+                self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
+            ]
 
     def exit_edge_ref_trailer(self, node: ast.EdgeRefTrailer) -> None:
         """Sub objects.

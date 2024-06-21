@@ -8,6 +8,7 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.sym_tab_build_pass import SymTabPass, SymbolAccess
+from jaclang.settings import settings
 
 
 class AccessCheckPass(SymTabPass):
@@ -16,6 +17,12 @@ class AccessCheckPass(SymTabPass):
     def after_pass(self) -> None:
         """After pass."""
         pass
+
+    def exit_node(self, node: ast.AstNode) -> None:
+        """Exit node."""
+        super().exit_node(node)
+        if settings.lsp_debug and isinstance(node, ast.NameSpec) and not node.sym:
+            self.warning(f"Name {node.sym_name} not present in symbol table")
 
     def access_check(self, node: ast.Name) -> None:
         """Access check."""

@@ -259,6 +259,14 @@ def _build_symbol_tree_common(
                 )
                 for n in sym.defn
             ]
+            uses = SymbolTree(node_name="uses", parent=symbol_node)
+            [
+                SymbolTree(
+                    node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
+                    parent=uses,
+                )
+                for n in sym.uses
+            ]
 
     for k in node.kid:
         _build_symbol_tree_common(k, children)

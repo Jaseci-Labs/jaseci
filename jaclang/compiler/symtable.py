@@ -87,8 +87,6 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
-        self.scope_tab_link: Optional[SymbolTable] = None
-        self.type_tab_link: Optional[SymbolTable] = None
 
     @property
     def decl(self) -> ast.NameSpec:
@@ -146,6 +144,7 @@ class SymbolTable:
         self.parent = parent if parent else self
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
+        self.inherit: list[SymbolTable] = []
 
     def has_parent(self) -> bool:
         """Check if has parent."""
@@ -161,6 +160,10 @@ class SymbolTable:
         """Lookup a variable in the symbol table."""
         if name in self.tab:
             return self.tab[name]
+        for i in self.inherit:
+            found = i.lookup(name, deep=False)
+            if found:
+                return found
         if deep and self.has_parent():
             return self.get_parent().lookup(name, deep)
         return None

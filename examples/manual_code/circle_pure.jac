@@ -22,7 +22,7 @@ obj Circle :Shape: {
     has radius: float;
 
     can init(radius: float);
-    can area -> float;
+    override can area -> float;
 }
 # Radius of the demo circle
 

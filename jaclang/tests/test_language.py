@@ -916,3 +916,21 @@ class JacLanguageTests(TestCase):
             len([i for i in mypass.ir.sym_tab.kid if i.name == "circle_pure.impl"]),
             1,
         )
+
+    def test_inherit_baseclass_sym(self) -> None:
+        """Basic test for symtable support for inheritance."""
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/guess_game/guess_game4.jac"),
+            target=passes.DefUsePass,
+        )
+        table = None
+        for i in mypass.ir.sym_tab.kid:
+            print(i.name)
+            if i.name == "GuessTheNumberGame":
+                for j in i.kid:
+                    if j.name == "play":
+                        table = j
+                        break
+                break
+        self.assertIsNotNone(table)
+        self.assertIsNotNone(table.lookup("attempts"))
