@@ -1876,6 +1876,13 @@ class PyastGenPass(Pass):
             )
         ]
 
+    def exit_check_stmt(self, node: ast.CheckStmt) -> None:
+        """Sub objects.
+
+        condition: ExprType,
+        error_msg: Optional[ExprType],
+        """
+
     def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 
