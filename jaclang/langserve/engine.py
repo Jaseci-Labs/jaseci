@@ -291,14 +291,14 @@ class JacLangServer(LanguageServer):
     def get_node_info(self, node: ast.AstSymbolNode) -> Optional[str]:
         """Extract meaningful information from the AST node."""
         try:
-            if isinstance(node, ast.NameSpec):
+            if isinstance(node, ast.NameAtom):
                 node = node.name_of
             access = node.sym.access.value + " " if node.sym else None
             node_info = (
-                f"({access if access else ''}{node.sym_type.value}) {node.sym_name}"
+                f"({access if access else ''}{node.sym_category.value}) {node.sym_name}"
             )
-            if node.type_info.clean_type:
-                node_info += f": {node.type_info.clean_type}"
+            if node.name_spec.clean_type:
+                node_info += f": {node.name_spec.clean_type}"
             if isinstance(node, ast.AstSemStrNode) and node.semstr:
                 node_info += f"\n{node.semstr.value}"
             if isinstance(node, ast.AstDocNode) and node.doc:

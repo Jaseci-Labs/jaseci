@@ -98,7 +98,7 @@ class AstTool:
                 "ArchBlockStmt",
                 "EnumBlockStmt",
                 "CodeBlockStmt",
-                "NameSpec",
+                "NameAtom",
                 "ArchSpec",
                 "MatchPattern",
             ]

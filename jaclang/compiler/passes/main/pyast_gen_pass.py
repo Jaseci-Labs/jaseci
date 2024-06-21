@@ -3600,7 +3600,7 @@ class PyastGenPass(Pass):
                         [
                             x.key.sym_name
                             for x in node.kw_patterns.items
-                            if isinstance(x.key, ast.NameSpec)
+                            if isinstance(x.key, ast.NameAtom)
                         ]
                         if node.kw_patterns
                         else []

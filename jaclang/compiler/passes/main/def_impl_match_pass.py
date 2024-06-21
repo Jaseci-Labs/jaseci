@@ -28,7 +28,7 @@ class DeclImplMatchPass(Pass):
         """Rebuild sub node table."""
         self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
 
-    def defn_lookup(self, lookup: Symbol) -> ast.NameSpec | None:
+    def defn_lookup(self, lookup: Symbol) -> ast.NameAtom | None:
         """Lookup a definition in a symbol table."""
         for defn in range(len(lookup.defn)):
             candidate = lookup.defn[len(lookup.defn) - (defn + 1)]
@@ -45,7 +45,7 @@ class DeclImplMatchPass(Pass):
             if isinstance(sym.decl.name_of, ast.AstImplOnlyNode):
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
-                name_of_links: list[ast.NameSpec] = []  # to link archref names to decls
+                name_of_links: list[ast.NameAtom] = []  # to link archref names to decls
                 lookup = sym_tab.lookup(arch_refs[0])
                 # If below may need to be a while instead of if to skip over local
                 # import name collisions (see test: test_impl_decl_resolution_fix)

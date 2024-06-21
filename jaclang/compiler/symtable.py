@@ -37,25 +37,11 @@ class SymbolType(Enum):
     BOOL = "bool"  # LSP: Boolean
     SEQUENCE = "sequence"  # LSP: Array
     NULL = "null"  # LSP: Null
+    UNKNOWN = "unknown"  # LSP: Unknown
 
     def __str__(self) -> str:
         """Stringify."""
         return self.value
-
-
-class TypeInfo:
-    """Type Info for AstNodes."""
-
-    def __init__(self, typ: str = "NoType") -> None:
-        """Initialize."""
-        self.typ = typ
-        self.type_tab_link: Optional[SymbolTable] = None
-
-    @property
-    def clean_type(self) -> str:
-        """Get clean type."""
-        ret_type = self.typ.replace("builtins.", "").replace("NoType", "")
-        return ret_type
 
 
 class SymbolAccess(Enum):
@@ -77,19 +63,19 @@ class Symbol:
 
     def __init__(
         self,
-        defn: ast.NameSpec,
+        defn: ast.NameAtom,
         access: SymbolAccess,
         parent_tab: SymbolTable,
     ) -> None:
         """Initialize."""
-        self.defn: list[ast.NameSpec] = [defn]
-        self.uses: list[ast.NameSpec] = []
+        self.defn: list[ast.NameAtom] = [defn]
+        self.uses: list[ast.NameAtom] = []
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
 
     @property
-    def decl(self) -> ast.NameSpec:
+    def decl(self) -> ast.NameAtom:
         """Get decl."""
         return self.defn[0]
 
@@ -101,7 +87,7 @@ class Symbol:
     @property
     def sym_type(self) -> SymbolType:
         """Get sym_type."""
-        return self.decl.sym_type
+        return self.decl.sym_category
 
     @property
     def sym_dotted_name(self) -> str:
@@ -117,12 +103,12 @@ class Symbol:
         out.reverse()
         return ".".join(out)
 
-    def add_defn(self, node: ast.NameSpec) -> None:
+    def add_defn(self, node: ast.NameAtom) -> None:
         """Add defn."""
         self.defn.append(node)
         node.sym = self
 
-    def add_use(self, node: ast.NameSpec) -> None:
+    def add_use(self, node: ast.NameAtom) -> None:
         """Add use."""
         self.uses.append(node)
         node.sym = self
