@@ -177,13 +177,13 @@ class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
 
     def __init__(
-        self, sym_name: str, name_spec: NameSpec, sym_type: SymbolType
+        self, sym_name: str, name_spec: NameSpec, sym_category: SymbolType
     ) -> None:
         """Initialize ast."""
         self.name_spec = name_spec
-        name_spec._sym_name = sym_name
+        self.name_spec._sym_name = sym_name
         self.name_spec.name_of = self
-        self.sym_type: SymbolType = sym_type
+        self.sym_category: SymbolType = sym_category
         self.type_info: TypeInfo = TypeInfo()
         self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
@@ -207,7 +207,7 @@ class AstSymbolStubNode(AstSymbolNode):
             self,
             sym_name=f"[{self.__class__.__name__}]",
             name_spec=Name.gen_stub_from_node(self, f"[{self.__class__.__name__}]"),
-            sym_type=sym_type,
+            sym_category=sym_type,
         )
 
 
@@ -321,7 +321,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             self,
             sym_name=self.target.py_resolve_name(),
             name_spec=self.create_impl_name_node(),
-            sym_type=SymbolType.IMPL,
+            sym_category=SymbolType.IMPL,
         )
 
     def create_impl_name_node(self) -> Name:
@@ -603,7 +603,7 @@ class Test(AstSymbolNode, ElementStmt):
             self,
             sym_name=self.name.sym_name,
             name_spec=self.name,
-            sym_type=SymbolType.TEST,
+            sym_category=SymbolType.TEST,
         )
         AstDocNode.__init__(self, doc=doc)
 
@@ -760,7 +760,7 @@ class ModulePath(AstSymbolNode):
             self,
             sym_name=name_spec.sym_name,
             name_spec=name_spec,
-            sym_type=SymbolType.MODULE,
+            sym_category=SymbolType.MODULE,
         )
 
     @property
@@ -814,7 +814,7 @@ class ModuleItem(AstSymbolNode):
             self,
             sym_name=alias.sym_name if alias else name.sym_name,
             name_spec=alias if alias else name,
-            sym_type=SymbolType.MOD_VAR,
+            sym_category=SymbolType.MOD_VAR,
         )
 
     def normalize(self, deep: bool = False) -> bool:
@@ -855,7 +855,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             self,
             sym_name=name.value,
             name_spec=name,
-            sym_type=(
+            sym_category=(
                 SymbolType.OBJECT_ARCH
                 if arch_type.name == Tok.KW_OBJECT
                 else (
@@ -985,7 +985,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             self,
             sym_name=name.value,
             name_spec=name,
-            sym_type=SymbolType.ENUM_ARCH,
+            sym_category=SymbolType.ENUM_ARCH,
         )
         AstImplNeedingNode.__init__(self, body=body)
         AstAccessNode.__init__(self, access=access)
@@ -1107,7 +1107,7 @@ class Ability(
             self,
             sym_name=self.py_resolve_name(),
             name_spec=name_ref,
-            sym_type=SymbolType.ABILITY,
+            sym_category=SymbolType.ABILITY,
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
@@ -1377,7 +1377,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
             self,
             sym_name=name.value,
             name_spec=name,
-            sym_type=SymbolType.VAR,
+            sym_category=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
         AstSemStrNode.__init__(self, semstr=semstr)
@@ -1473,7 +1473,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
             self,
             sym_name=name.value,
             name_spec=name,
-            sym_type=SymbolType.HAS_VAR,
+            sym_category=SymbolType.HAS_VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
         AstSemStrNode.__init__(self, semstr=semstr)
@@ -3098,7 +3098,7 @@ class ArchRef(AtomExpr):
             self,
             sym_name=arch_name.sym_name,
             name_spec=arch_name,
-            sym_type=SymbolType.TYPE,
+            sym_category=SymbolType.TYPE,
         )
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3755,7 +3755,7 @@ class Name(Token, NameSpec):
             self,
             sym_name=value,
             name_spec=self,
-            sym_type=SymbolType.VAR,
+            sym_category=SymbolType.VAR,
         )
 
     def unparse(self) -> str:
@@ -3810,7 +3810,7 @@ class SpecialVarRef(Name):
             self,
             sym_name=self.py_resolve_name(),
             name_spec=self,
-            sym_type=SymbolType.VAR,
+            sym_category=SymbolType.VAR,
         )
 
     def py_resolve_name(self) -> str:

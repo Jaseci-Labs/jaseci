@@ -101,7 +101,7 @@ class Symbol:
     @property
     def sym_type(self) -> SymbolType:
         """Get sym_type."""
-        return self.decl.sym_type
+        return self.decl.sym_category
 
     @property
     def sym_dotted_name(self) -> str:

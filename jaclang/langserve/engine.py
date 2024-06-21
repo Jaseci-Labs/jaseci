@@ -295,7 +295,7 @@ class JacLangServer(LanguageServer):
                 node = node.name_of
             access = node.sym.access.value + " " if node.sym else None
             node_info = (
-                f"({access if access else ''}{node.sym_type.value}) {node.sym_name}"
+                f"({access if access else ''}{node.sym_category.value}) {node.sym_name}"
             )
             if node.type_info.clean_type:
                 node_info += f": {node.type_info.clean_type}"
