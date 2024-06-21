@@ -232,7 +232,7 @@ raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
 assert_stmt: KW_ASSERT expression (COMMA expression)?
 
 // Check statements
-check_stmt: KW_ASSERT expression (COMMA expression)?
+check_stmt: KW_CHECK expression
 
 // Delete statements
 delete_stmt: KW_DELETE expression
@@ -507,6 +507,7 @@ KW_ASYNC: "async"
 KW_AWAIT: "await"
 KW_TEST: "test"
 KW_ASSERT: "assert"
+KW_CHECK: "check"
 KW_IF: "if"
 KW_ELIF: "elif"
 KW_ELSE: "else"
