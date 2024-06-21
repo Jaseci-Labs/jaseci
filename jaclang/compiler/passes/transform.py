@@ -40,7 +40,7 @@ class Transform(ABC, Generic[T]):
         prior: Optional[Transform] = None,
     ) -> None:
         """Initialize pass."""
-        self.logger = logging.getLogger(self.__class__.__module__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
         self.cur_node: AstNode = input_ir  # tracks current node during traversal
