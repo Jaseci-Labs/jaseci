@@ -17,10 +17,10 @@ from jaclang.compiler.symtable import Symbol, SymbolAccess, SymbolTable
 class SymTabPass(Pass):
     """Jac Ast build pass."""
 
-    def inherit_sym_tab(self, scope: SymbolTable, sym_tab: SymbolTable) -> None:
+    def inherit_sym_tab(self, target_scope: SymbolTable, sym_tab: SymbolTable) -> None:
         """Inherit symbol table."""
         for i in sym_tab.tab.values():
-            self.def_insert(i.decl, access_spec=i.access, table_override=scope)
+            self.def_insert(i.decl, access_spec=i.access, table_override=target_scope)
 
     def def_insert(
         self,
@@ -38,45 +38,6 @@ class SymTabPass(Pass):
                 node=node, single=single_decl is not None, access_spec=access_spec
             )
         self.update_py_ctx_for_def(node)
-        return node.sym
-
-    def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
-        """Update python context for definition."""
-        node.name_spec.py_ctx_func = ast3.Store
-        if isinstance(node.name_spec, ast.AstSymbolNode):
-            node.name_spec.py_ctx_func = ast3.Store
-        if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
-            # Handling of UnaryExpr case for item is only necessary for
-            # the generation of Starred nodes in the AST for examples
-            # like `(a, *b) = (1, 2, 3, 4)`.
-            def fix(item: ast.TupleVal | ast.ListVal | ast.UnaryExpr) -> None:
-                if isinstance(item, ast.UnaryExpr):
-                    if isinstance(item.operand, ast.AstSymbolNode):
-                        item.operand.name_spec.py_ctx_func = ast3.Store
-                elif isinstance(item, (ast.TupleVal, ast.ListVal)):
-                    for i in item.values.items if item.values else []:
-                        if isinstance(i, ast.AstSymbolNode):
-                            i.name_spec.py_ctx_func = ast3.Store
-                        elif isinstance(i, ast.AtomTrailer):
-                            self.chain_def_insert(self.unwind_atom_trailer(i))
-                        if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
-                            fix(i)
-
-            fix(node)
-
-    def use_lookup(
-        self,
-        node: ast.AstSymbolNode,
-        sym_table: Optional[SymbolTable] = None,
-    ) -> Optional[Symbol]:
-        """Link to symbol."""
-        if node.sym:
-            return node.sym
-        if not sym_table:
-            sym_table = node.sym_tab
-        if sym_table:
-            lookup = sym_table.lookup(name=node.sym_name, deep=True)
-            lookup.add_use(node.name_spec) if lookup else None
         return node.sym
 
     def chain_def_insert(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
@@ -103,6 +64,21 @@ class SymTabPass(Pass):
                 else None
             )
 
+    def use_lookup(
+        self,
+        node: ast.AstSymbolNode,
+        sym_table: Optional[SymbolTable] = None,
+    ) -> Optional[Symbol]:
+        """Link to symbol."""
+        if node.sym:
+            return node.sym
+        if not sym_table:
+            sym_table = node.sym_tab
+        if sym_table:
+            lookup = sym_table.lookup(name=node.sym_name, deep=True)
+            lookup.add_use(node.name_spec) if lookup else None
+        return node.sym
+
     def chain_use_lookup(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
         """Link chain of containing names to symbol."""
         if not node_list:
@@ -121,6 +97,30 @@ class SymTabPass(Pass):
                 )
                 else None
             )
+
+    def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
+        """Update python context for definition."""
+        node.name_spec.py_ctx_func = ast3.Store
+        if isinstance(node.name_spec, ast.AstSymbolNode):
+            node.name_spec.py_ctx_func = ast3.Store
+        if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
+            # Handling of UnaryExpr case for item is only necessary for
+            # the generation of Starred nodes in the AST for examples
+            # like `(a, *b) = (1, 2, 3, 4)`.
+            def fix(item: ast.TupleVal | ast.ListVal | ast.UnaryExpr) -> None:
+                if isinstance(item, ast.UnaryExpr):
+                    if isinstance(item.operand, ast.AstSymbolNode):
+                        item.operand.name_spec.py_ctx_func = ast3.Store
+                elif isinstance(item, (ast.TupleVal, ast.ListVal)):
+                    for i in item.values.items if item.values else []:
+                        if isinstance(i, ast.AstSymbolNode):
+                            i.name_spec.py_ctx_func = ast3.Store
+                        elif isinstance(i, ast.AtomTrailer):
+                            self.chain_def_insert(self.unwind_atom_trailer(i))
+                        if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
+                            fix(i)
+
+            fix(node)
 
     def unwind_atom_trailer(self, node: ast.AtomTrailer) -> list[ast.AstSymbolNode]:
         """Sub objects.
@@ -145,23 +145,6 @@ class SymTabPass(Pass):
         if isinstance(left, ast.AstSymbolNode):
             trag_list.insert(0, left)
         return trag_list
-
-    def already_declared_err(
-        self,
-        name: str,
-        typ: str,
-        original: ast.AstNode,
-        other_nodes: Optional[list[ast.AstNode]] = None,
-    ) -> None:
-        """Already declared error."""
-        err_msg = (
-            f"Name used for {typ} '{name}' already declared at "
-            f"{original.loc.mod_path}, line {original.loc.first_line}"
-        )
-        if other_nodes:
-            for i in other_nodes:
-                err_msg += f", also see {i.loc.mod_path}, line {i.loc.first_line}"
-        self.warning(err_msg)
 
 
 class SymTabBuildPass(SymTabPass):
@@ -354,7 +337,7 @@ class SymTabBuildPass(SymTabPass):
                 )
             else:
                 self.inherit_sym_tab(
-                    scope=self.cur_scope(), sym_tab=source.sub_module.sym_tab
+                    target_scope=self.cur_scope(), sym_tab=source.sub_module.sym_tab
                 )
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
