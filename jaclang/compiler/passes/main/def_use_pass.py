@@ -128,7 +128,7 @@ class DefUsePass(SymTabPass):
         """
         for i in node.target.items:
             if isinstance(i, ast.AtomTrailer):
-                self.chain_def_insert(self.unwind_atom_trailer(i))
+                self.chain_def_insert(i.as_attr_list)
             elif isinstance(i, ast.AstSymbolNode):
                 self.def_insert(i)
             else:
@@ -143,7 +143,7 @@ class DefUsePass(SymTabPass):
         conditional: Optional[ExprType],
         """
         if isinstance(node.target, ast.AtomTrailer):
-            self.chain_def_insert(self.unwind_atom_trailer(node.target))
+            self.chain_def_insert(node.target.as_attr_list)
         elif isinstance(node.target, ast.AstSymbolNode):
             self.def_insert(node.target)
         else:
@@ -156,7 +156,7 @@ class DefUsePass(SymTabPass):
         right: AtomType,
         is_scope_contained: bool,
         """
-        chain = self.unwind_atom_trailer(node)
+        chain = node.as_attr_list
         self.chain_use_lookup(chain)
 
     def enter_func_call(self, node: ast.FuncCall) -> None:
@@ -309,7 +309,7 @@ class DefUsePass(SymTabPass):
         else_body: Optional[ElseStmt],
         """
         if isinstance(node.target, ast.AtomTrailer):
-            self.chain_def_insert(self.unwind_atom_trailer(node.target))
+            self.chain_def_insert(node.target.as_attr_list)
         elif isinstance(node.target, ast.AstSymbolNode):
             self.def_insert(node.target)
         else:
@@ -327,7 +327,7 @@ class DefUsePass(SymTabPass):
         )
         for i in items:
             if isinstance(i, ast.AtomTrailer):
-                self.unwind_atom_trailer(i)[-1].name_spec.py_ctx_func = ast3.Del
+                i.as_attr_list[-1].name_spec.py_ctx_func = ast3.Del
             elif isinstance(i, ast.AstSymbolNode):
                 i.name_spec.py_ctx_func = ast3.Del
             else:
@@ -341,7 +341,7 @@ class DefUsePass(SymTabPass):
         """
         if node.alias:
             if isinstance(node.alias, ast.AtomTrailer):
-                self.chain_def_insert(self.unwind_atom_trailer(node.alias))
+                self.chain_def_insert(node.alias.as_attr_list)
             elif isinstance(node.alias, ast.AstSymbolNode):
                 self.def_insert(node.alias)
             else:

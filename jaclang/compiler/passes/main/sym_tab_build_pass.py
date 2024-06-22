@@ -116,35 +116,11 @@ class SymTabPass(Pass):
                         if isinstance(i, ast.AstSymbolNode):
                             i.name_spec.py_ctx_func = ast3.Store
                         elif isinstance(i, ast.AtomTrailer):
-                            self.chain_def_insert(self.unwind_atom_trailer(i))
+                            self.chain_def_insert(i.as_attr_list)
                         if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
                             fix(i)
 
             fix(node)
-
-    def unwind_atom_trailer(self, node: ast.AtomTrailer) -> list[ast.AstSymbolNode]:
-        """Sub objects.
-
-        target: ExprType,
-        right: AtomType,
-        is_scope_contained: bool,
-        """
-        left = node.right if isinstance(node.right, ast.AtomTrailer) else node.target
-        right = node.target if isinstance(node.right, ast.AtomTrailer) else node.right
-        trag_list: list[ast.AstSymbolNode] = (
-            [right] if isinstance(right, ast.AstSymbolNode) else []
-        )
-        if not trag_list:
-            self.ice("Something went very wrong with atom trailer not valid")
-        while isinstance(left, ast.AtomTrailer) and left.is_attr:
-            if isinstance(left.right, ast.AstSymbolNode):
-                trag_list.insert(0, left.right)
-            else:
-                raise self.ice("Something went very wrong with atom trailer not valid")
-            left = left.target
-        if isinstance(left, ast.AstSymbolNode):
-            trag_list.insert(0, left)
-        return trag_list
 
 
 class SymTabBuildPass(SymTabPass):

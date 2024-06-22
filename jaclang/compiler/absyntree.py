@@ -25,10 +25,7 @@ from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 if TYPE_CHECKING:
-    from jaclang.compiler.symtable import (
-        Symbol,
-        SymbolTable,
-    )
+    from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
 class AstNode:
@@ -3059,6 +3056,22 @@ class AtomTrailer(Expr):
             new_kid.append(self.right)
         self.set_kids(nodes=new_kid)
         return res
+
+    @property
+    def as_attr_list(self) -> list[AstSymbolNode]:
+        """Unwind trailer into list of ast symbol nodes."""
+        left = self.right if isinstance(self.right, AtomTrailer) else self.target
+        right = self.target if isinstance(self.right, AtomTrailer) else self.right
+        trag_list: list[AstSymbolNode] = (
+            [right] if isinstance(right, AstSymbolNode) else []
+        )
+        while isinstance(left, AtomTrailer) and left.is_attr:
+            if isinstance(left.right, AstSymbolNode):
+                trag_list.insert(0, left.right)
+            left = left.target
+        if isinstance(left, AstSymbolNode):
+            trag_list.insert(0, left)
+        return trag_list
 
 
 class AtomUnit(Expr):
