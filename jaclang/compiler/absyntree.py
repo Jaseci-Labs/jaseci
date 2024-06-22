@@ -35,11 +35,33 @@ class AstNode:
         """Initialize ast."""
         self.parent: Optional[AstNode] = None
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
-        self.sym_tab: Optional[SymbolTable] = None
+        self._sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+
+    @property
+    def sym_tab(self) -> SymbolTable:
+        """Get symbol table."""
+        # sym_tab should never be accessed without being set in codebase
+        if not self._sym_tab:
+            import traceback
+
+            if self.parent:
+                print(f"Parent: {self.parent.pp()}")
+            print("Node: ", self.pp())
+            stack_trace = traceback.format_stack()
+            print("".join(stack_trace))
+            raise ValueError(
+                f"Symbol table not set for {type(self).__name__}. Impossible."
+            )
+        return self._sym_tab
+
+    @sym_tab.setter
+    def sym_tab(self, sym_tab: SymbolTable) -> None:
+        """Set symbol table."""
+        self._sym_tab = sym_tab
 
     def add_kids_left(
         self, nodes: Sequence[AstNode], pos_update: bool = True
@@ -357,6 +379,17 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             name_spec=self.create_impl_name_node(),
             sym_category=SymbolType.IMPL,
         )
+
+    @property
+    def sym_tab(self) -> SymbolTable:
+        """Get symbol table."""
+        return super().sym_tab
+
+    @sym_tab.setter
+    def sym_tab(self, sym_tab: SymbolTable) -> None:
+        """Set symbol table."""
+        self._sym_tab = sym_tab
+        self.name_spec._sym_tab = sym_tab
 
     def create_impl_name_node(self) -> Name:
         """Create impl name."""
@@ -827,13 +860,12 @@ class ModulePath(AstSymbolNode):
         level: int,
         alias: Optional[Name],
         kid: Sequence[AstNode],
-        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module path node."""
         self.path = path
         self.level = level
         self.alias = alias
-        self.sub_module = sub_module
+        self.sub_module: Optional[Module] = None
 
         name_spec = alias if alias else path[0] if path else None
         if not isinstance(name_spec, Name):
@@ -886,12 +918,11 @@ class ModuleItem(AstSymbolNode):
         name: Name,
         alias: Optional[Name],
         kid: Sequence[AstNode],
-        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module item node."""
         self.name = name
         self.alias = alias
-        self.sub_module = sub_module
+        self.sub_module: Optional[Module] = None
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -3905,7 +3936,8 @@ class Name(Token, NameAtom):
             pos_end=node.loc.pos_end,
         )
         ret.name_of = node
-        ret.sym_tab = node.sym_tab
+        if node._sym_tab:
+            ret.sym_tab = node.sym_tab
         return ret
 
 

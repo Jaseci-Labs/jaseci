@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Optional
+import ast as ast3
+from typing import Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import SymbolAccess, SymbolType
@@ -149,6 +150,113 @@ class SymbolTable:
         """Push a new scope onto the symbol table."""
         self.kid.append(SymbolTable(name, key_node, self))
         return self.kid[-1]
+
+    def inherit_sym_tab(self, target_sym_tab: SymbolTable) -> None:
+        """Inherit symbol table."""
+        for i in target_sym_tab.tab.values():
+            self.def_insert(i.decl, access_spec=i.access)
+
+    def def_insert(
+        self,
+        node: ast.AstSymbolNode,
+        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
+        single_decl: Optional[str] = None,
+    ) -> Optional[Symbol]:
+        """Insert into symbol table."""
+        if node.sym and self == node.sym.parent_tab:
+            return node.sym
+        self.insert(node=node, single=single_decl is not None, access_spec=access_spec)
+        self.update_py_ctx_for_def(node)
+        return node.sym
+
+    def chain_def_insert(self, node_list: list[ast.AstSymbolNode]) -> None:
+        """Link chain of containing names to symbol."""
+        if not node_list:
+            return
+        cur_sym_tab: SymbolTable | None = node_list[0].sym_tab
+        node_list[-1].name_spec.py_ctx_func = ast3.Store
+        if isinstance(node_list[-1].name_spec, ast.AstSymbolNode):
+            node_list[-1].name_spec.py_ctx_func = ast3.Store
+
+        node_list = node_list[:-1]  # Just performs lookup mappings of pre assign chain
+        for i in node_list:
+            cur_sym_tab = (
+                lookup.decl.sym_tab
+                if (
+                    lookup := self.use_lookup(
+                        i,
+                        sym_table=cur_sym_tab,
+                    )
+                )
+                else None
+            )
+
+    def use_lookup(
+        self,
+        node: ast.AstSymbolNode,
+        sym_table: Optional[SymbolTable] = None,
+    ) -> Optional[Symbol]:
+        """Link to symbol."""
+        if node.sym:
+            return node.sym
+        if not sym_table:
+            sym_table = node.sym_tab
+        if sym_table:
+            lookup = sym_table.lookup(name=node.sym_name, deep=True)
+            lookup.add_use(node.name_spec) if lookup else None
+        return node.sym
+
+    def chain_use_lookup(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
+        """Link chain of containing names to symbol."""
+        if not node_list:
+            return
+        cur_sym_tab: SymbolTable | None = node_list[0].sym_tab
+        for i in node_list:
+            if cur_sym_tab is None:
+                break
+            cur_sym_tab = (
+                lookup.decl.sym_tab
+                if (
+                    lookup := self.use_lookup(
+                        i,
+                        sym_table=cur_sym_tab,
+                    )
+                )
+                else None
+            )
+
+    def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
+        """Update python context for definition."""
+        node.name_spec.py_ctx_func = ast3.Store
+        if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
+            # Handling of UnaryExpr case for item is only necessary for
+            # the generation of Starred nodes in the AST for examples
+            # like `(a, *b) = (1, 2, 3, 4)`.
+            def fix(item: ast.TupleVal | ast.ListVal | ast.UnaryExpr) -> None:
+                if isinstance(item, ast.UnaryExpr):
+                    if isinstance(item.operand, ast.AstSymbolNode):
+                        item.operand.name_spec.py_ctx_func = ast3.Store
+                elif isinstance(item, (ast.TupleVal, ast.ListVal)):
+                    for i in item.values.items if item.values else []:
+                        if isinstance(i, ast.AstSymbolNode):
+                            i.name_spec.py_ctx_func = ast3.Store
+                        elif isinstance(i, ast.AtomTrailer):
+                            self.chain_def_insert(i.as_attr_list)
+                        if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
+                            fix(i)
+
+            fix(node)
+
+    def inherit_baseclasses_sym(self, node: ast.Architype | ast.Enum) -> None:
+        """Inherit base classes symbol tables."""
+        if node.base_classes:
+            for base_cls in node.base_classes.items:
+                if (
+                    isinstance(base_cls, ast.AstSymbolNode)
+                    and (found := self.use_lookup(base_cls))
+                    and found
+                ):
+                    self.inherit.append(found.decl.sym_tab)
 
     def pp(self, depth: Optional[int] = None) -> str:
         """Pretty print."""
