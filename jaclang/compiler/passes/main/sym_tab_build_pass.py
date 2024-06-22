@@ -847,6 +847,13 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_check_stmt(self, node: ast.CheckStmt) -> None:
+        """Sub objects.
+
+        target: Expr,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 

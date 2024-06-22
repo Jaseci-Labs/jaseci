@@ -2065,6 +2065,32 @@ class AssertStmt(CodeBlockStmt):
         return res
 
 
+class CheckStmt(CodeBlockStmt):
+    """DeleteStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: Expr,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize delete statement node."""
+        self.target = target
+        AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize delete statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_CHECK),
+            self.target,
+            self.gen_token(Tok.SEMI),
+        ]
+        self.set_kids(nodes=new_kid)
+        return res
+
+
 class CtrlStmt(CodeBlockStmt):
     """CtrlStmt node type for Jac Ast."""
 

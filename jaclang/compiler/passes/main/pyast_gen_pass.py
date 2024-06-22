@@ -392,7 +392,7 @@ class PyastGenPass(Pass):
                 args=self.sync(
                     ast3.arguments(
                         posonlyargs=[],
-                        args=[self.sync(ast3.arg(arg="check", annotation=None))],
+                        args=[self.sync(ast3.arg(arg="_jac_check", annotation=None))],
                         kwonlyargs=[],
                         vararg=None,
                         kwargs=None,
@@ -1875,6 +1875,38 @@ class PyastGenPass(Pass):
                 )
             )
         ]
+
+    def exit_check_stmt(self, node: ast.CheckStmt) -> None:
+        """Sub objects.
+
+        target: ExprType,
+        """
+        if isinstance(node.target, ast.FuncCall) and isinstance(
+            node.target.gen.py_ast[0], ast3.Call
+        ):
+            func = node.target.target.gen.py_ast[0]
+            if isinstance(func, ast3.Name):
+                new_func: ast3.expr = self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="_jac_check", ctx=ast3.Load())),
+                        attr=func.id,
+                        ctx=ast3.Load(),
+                    )
+                )
+                node.target.gen.py_ast[0].func = new_func
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Expr(
+                            value=node.target.gen.py_ast[0],
+                        )
+                    )
+                ]
+                return
+        self.error(
+            "For now, check statements must be function calls "
+            "in the style of assertTrue(), assertEqual(), etc.",
+            node,
+        )
 
     def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
