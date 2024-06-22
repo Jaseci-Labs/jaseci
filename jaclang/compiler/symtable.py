@@ -83,10 +83,6 @@ class SymbolTable:
         self.tab: dict[str, Symbol] = {}
         self.inherit: list[SymbolTable] = []
 
-    def has_parent(self) -> bool:
-        """Check if has parent."""
-        return self.parent != self
-
     def get_parent(self) -> Optional[SymbolTable]:
         """Get parent."""
         return self.parent

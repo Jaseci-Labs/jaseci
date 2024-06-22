@@ -150,8 +150,8 @@ def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
 
 def owner_sym(table: SymbolTable) -> Optional[Symbol]:
     """Get owner sym."""
-    if table.has_parent() and isinstance(table.owner, ast.AstSymbolNode):
-        return table.parent.lookup(table.owner.sym_name) if table.parent else None
+    if table.parent and isinstance(table.owner, ast.AstSymbolNode):
+        return table.parent.lookup(table.owner.sym_name)
     return None
 
 
