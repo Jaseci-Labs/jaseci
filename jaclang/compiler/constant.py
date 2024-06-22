@@ -49,6 +49,50 @@ class Values(int, Enum):
     JAC_ERROR_LINE_RANGE = 3
 
 
+class SymbolAccess(Enum):
+    """Symbol types."""
+
+    PRIVATE = "private"
+    PUBLIC = "public"
+    PROTECTED = "protected"
+
+    def __str__(self) -> str:
+        """Stringify."""
+        return self.value
+
+
+class SymbolType(Enum):
+    """Symbol types."""
+
+    MODULE = "module"  # LSP: Module
+    MOD_VAR = "mod_var"  # LSP: Variable
+    VAR = "variable"  # LSP: Variable
+    IMM_VAR = "immutable"  # LSP: Constant
+    ABILITY = "ability"  # LSP: Function
+    OBJECT_ARCH = "object"  # LSP: Class
+    NODE_ARCH = "node"  # LSP: Class
+    EDGE_ARCH = "edge"  # LSP: Class
+    WALKER_ARCH = "walker"  # LSP: Class
+    ENUM_ARCH = "enum"  # LSP: Enum
+    TEST = "test"  # LSP: Function
+    TYPE = "type"  # LSP: TypeParameter
+    IMPL = "impl"  # LSP: Interface or Property
+    HAS_VAR = "field"  # LSP: Field
+    METHOD = "method"  # LSP: Method
+    CONSTRUCTOR = "constructor"  # LSP: Constructor
+    ENUM_MEMBER = "enum_member"  # LSP: EnumMember
+    NUMBER = "number"  # LSP: Number
+    STRING = "string"  # LSP: String
+    BOOL = "bool"  # LSP: Boolean
+    SEQUENCE = "sequence"  # LSP: Array
+    NULL = "null"  # LSP: Null
+    UNKNOWN = "unknown"  # LSP: Unknown
+
+    def __str__(self) -> str:
+        """Stringify."""
+        return self.value
+
+
 # Done like this for type checker
 # validated synced with test
 class Tokens(str, Enum):

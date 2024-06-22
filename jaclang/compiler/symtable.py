@@ -2,58 +2,11 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import SymbolAccess, SymbolType
 from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
-
-
-if TYPE_CHECKING:
-    import jaclang.compiler.absyntree as ast
-
-
-class SymbolType(Enum):
-    """Symbol types."""
-
-    MODULE = "module"  # LSP: Module
-    MOD_VAR = "mod_var"  # LSP: Variable
-    VAR = "variable"  # LSP: Variable
-    IMM_VAR = "immutable"  # LSP: Constant
-    ABILITY = "ability"  # LSP: Function
-    OBJECT_ARCH = "object"  # LSP: Class
-    NODE_ARCH = "node"  # LSP: Class
-    EDGE_ARCH = "edge"  # LSP: Class
-    WALKER_ARCH = "walker"  # LSP: Class
-    ENUM_ARCH = "enum"  # LSP: Enum
-    TEST = "test"  # LSP: Function
-    TYPE = "type"  # LSP: TypeParameter
-    IMPL = "impl"  # LSP: Interface or Property
-    HAS_VAR = "field"  # LSP: Field
-    METHOD = "method"  # LSP: Method
-    CONSTRUCTOR = "constructor"  # LSP: Constructor
-    ENUM_MEMBER = "enum_member"  # LSP: EnumMember
-    NUMBER = "number"  # LSP: Number
-    STRING = "string"  # LSP: String
-    BOOL = "bool"  # LSP: Boolean
-    SEQUENCE = "sequence"  # LSP: Array
-    NULL = "null"  # LSP: Null
-    UNKNOWN = "unknown"  # LSP: Unknown
-
-    def __str__(self) -> str:
-        """Stringify."""
-        return self.value
-
-
-class SymbolAccess(Enum):
-    """Symbol types."""
-
-    PRIVATE = "private"
-    PUBLIC = "public"
-    PROTECTED = "protected"
-
-    def __str__(self) -> str:
-        """Stringify."""
-        return self.value
 
 
 # Symbols can have mulitple definitions but resolves decl to be the
