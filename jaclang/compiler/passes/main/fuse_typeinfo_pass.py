@@ -11,6 +11,7 @@ from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -189,7 +190,7 @@ class FuseTypeInfoPass(Pass):
             target_node = node.parent.target
             if isinstance(target_node, ast.AstSymbolNode):
                 parent_symbol_table = target_node.type_sym_tab
-                if isinstance(parent_symbol_table, ast.SymbolTable):
+                if isinstance(parent_symbol_table, SymbolTable):
                     owner = parent_symbol_table.owner
                     if isinstance(owner, ast.AstSymbolNode):
                         target_node.name_spec.sym = owner.sym
