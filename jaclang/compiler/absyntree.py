@@ -501,18 +501,19 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     @property
     def sem_token(self) -> Optional[tuple[SemTokType, SemTokMod]]:
         """Resolve semantic token."""
-        if isinstance(self.name_of, ModulePath):
+        name_of = self.sym.decl.name_of if self.sym else self.name_of
+        if isinstance(name_of, ModulePath):
             return SemTokType.NAMESPACE, SemTokMod.DEFINITION
-        elif isinstance(self.name_of, (Architype, BuiltinType)):
+        elif isinstance(name_of, (Architype, BuiltinType)):
             return SemTokType.CLASS, SemTokMod.DECLARATION
-        elif isinstance(self.name_of, Enum):
+        elif isinstance(name_of, Enum):
             return SemTokType.ENUM, SemTokMod.DECLARATION
-        elif isinstance(self.name_of, Ability):
-            if self.name_of.is_method:
+        elif isinstance(name_of, Ability):
+            if name_of.is_method:
                 return SemTokType.METHOD, SemTokMod.DECLARATION
-            else:
-                return SemTokType.FUNCTION, SemTokMod.DECLARATION
-        elif isinstance(self.name_of, ParamVar):
+        elif isinstance(name_of, (Ability, Test)):
+            return SemTokType.FUNCTION, SemTokMod.DECLARATION
+        elif isinstance(name_of, ParamVar):
             return SemTokType.PARAMETER, SemTokMod.DECLARATION
         elif self.sym:
             return SemTokType.PROPERTY, SemTokMod.DECLARATION

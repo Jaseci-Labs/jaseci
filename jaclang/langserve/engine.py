@@ -224,7 +224,7 @@ class JacLangServer(LanguageServer):
         if success and level > 0:
             success = self.deep_check(uri)
             self.push_diagnostics(uri)
-            if success and level > 1:
+            if level > 1:
                 self.type_check(uri)
                 self.push_diagnostics(uri)
 

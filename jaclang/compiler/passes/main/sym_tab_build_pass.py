@@ -124,7 +124,12 @@ class SymTabBuildPass(Pass):
         description: Token,
         body: CodeBlock,
         """
+        self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
+        import unittest
+
+        for i in [j for j in dir(unittest.TestCase()) if j.startswith("assert")]:
+            node.sym_tab.def_insert(ast.Name.gen_stub_from_node(node, i))
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -134,9 +139,6 @@ class SymTabBuildPass(Pass):
         description: Token,
         body: CodeBlock,
         """
-        node.sym_tab.def_insert(node, single_decl="test")
-        self.push_scope(node.name.value, node)
-        self.sync_node_to_scope(node)
         self.pop_scope()
 
     def enter_module_code(self, node: ast.ModuleCode) -> None:
