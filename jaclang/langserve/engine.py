@@ -362,7 +362,6 @@ class JacLangServer(LanguageServer):
 
             return decl_location
         else:
-            self.log_info("No declaration found for the selected node.")
             return None
 
     def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
