@@ -352,6 +352,28 @@ class JacLangServer(LanguageServer):
             self.log_info("No declaration found for the selected node.")
             return None
 
+    def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
+        """Return semantic tokens for a file."""
+        tokens = []
+        prev_line, prev_col = 0, 0
+        for node in self.modules[file_path].ir._in_mod_nodes:
+            if isinstance(node, ast.NameAtom) and node.sem_token:
+                line, col_start, col_end = (
+                    node.loc.first_line - 1,
+                    node.loc.col_start - 1,
+                    node.loc.col_end - 1,
+                )
+                length = col_end - col_start
+                tokens += [
+                    line - prev_line,
+                    col_start if line != prev_line else col_start - prev_col,
+                    length,
+                    *node.sem_token,
+                ]
+                prev_line, prev_col = line, col_start
+
+        return lspt.SemanticTokens(data=tokens)
+
     def log_error(self, message: str) -> None:
         """Log an error message."""
         self.show_message_log(message, lspt.MessageType.Error)

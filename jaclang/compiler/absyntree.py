@@ -17,9 +17,16 @@ from typing import (
     TypeVar,
 )
 
+
 from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
-from jaclang.compiler.constant import Constants as Con, EdgeDir, SymbolType
+from jaclang.compiler.constant import (
+    Constants as Con,
+    EdgeDir,
+    JacSemTokenModifier as SemTokMod,
+    JacSemTokenType as SemTokType,
+    SymbolType,
+)
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
@@ -37,6 +44,7 @@ class AstNode:
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self._sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
+        self._in_mod_nodes: list[AstNode] = []
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
@@ -489,6 +497,26 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
         """Set type symbol table."""
         self._type_sym_tab = type_sym_tab
+
+    @property
+    def sem_token(self) -> Optional[tuple[SemTokType, SemTokMod]]:
+        """Resolve semantic token."""
+        if isinstance(self.name_of, ModulePath):
+            return SemTokType.NAMESPACE, SemTokMod.DEFINITION
+        elif isinstance(self.name_of, (Architype, BuiltinType)):
+            return SemTokType.CLASS, SemTokMod.DECLARATION
+        elif isinstance(self.name_of, Enum):
+            return SemTokType.ENUM, SemTokMod.DECLARATION
+        elif isinstance(self.name_of, Ability):
+            if self.name_of.is_method:
+                return SemTokType.METHOD, SemTokMod.DECLARATION
+            else:
+                return SemTokType.FUNCTION, SemTokMod.DECLARATION
+        elif isinstance(self.name_of, ParamVar):
+            return SemTokType.PARAMETER, SemTokMod.DECLARATION
+        elif self.sym:
+            return SemTokType.PROPERTY, SemTokMod.DECLARATION
+        return None
 
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):

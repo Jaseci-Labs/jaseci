@@ -248,6 +248,7 @@ class SymbolTable:
                     and found
                 ):
                     self.inherit.append(found.decl.sym_tab)
+                    base_cls.name_spec.name_of = found.decl.name_of
 
     def pp(self, depth: Optional[int] = None) -> str:
         """Pretty print."""

@@ -5,6 +5,10 @@ from __future__ import annotations
 import threading
 from typing import Optional
 
+from jaclang.compiler.constant import (
+    JacSemTokenModifier as SemTokMod,
+    JacSemTokenType as SemTokType,
+)
 from jaclang.langserve.engine import JacLangServer
 from jaclang.langserve.utils import debounce
 
@@ -157,6 +161,22 @@ async def definition(
     stop_analysis()
     analyze_and_publish(ls, params.text_document.uri, level=1)
     return ls.get_definition(params.text_document.uri, params.position)
+
+
+@server.feature(
+    lspt.TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    lspt.SemanticTokensLegend(
+        token_types=SemTokType.as_str_list(),
+        token_modifiers=SemTokMod.as_str_list(),
+    ),
+)
+def semantic_tokens_full(
+    ls: JacLangServer, params: lspt.SemanticTokensParams
+) -> lspt.SemanticTokens:
+    """Provide semantic tokens."""
+    stop_analysis()
+    analyze_and_publish(ls, params.text_document.uri)
+    return ls.get_semantic_tokens(params.text_document.uri)
 
 
 def run_lang_server() -> None:
