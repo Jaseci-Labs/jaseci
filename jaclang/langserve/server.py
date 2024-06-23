@@ -17,6 +17,7 @@ import lsprotocol.types as lspt
 server = JacLangServer()
 analysis_thread: Optional[threading.Thread] = None
 analysis_stop_event = threading.Event()
+analysis_lock = threading.Lock()
 
 
 def analyze_and_publish(ls: JacLangServer, uri: str, level: int = 2) -> None:
@@ -24,26 +25,31 @@ def analyze_and_publish(ls: JacLangServer, uri: str, level: int = 2) -> None:
     global analysis_thread, analysis_stop_event
 
     def run_analysis() -> None:
-        ls.quick_check(uri)
-        ls.push_diagnostics(uri)
-        if not analysis_stop_event.is_set() and level > 0:
-            ls.deep_check(uri)
+        with analysis_lock:
+            ls.quick_check(uri)
             ls.push_diagnostics(uri)
-            if not analysis_stop_event.is_set() and level > 1:
-                ls.type_check(uri)
+            if not analysis_stop_event.is_set() and level > 0:
+                ls.deep_check(uri)
                 ls.push_diagnostics(uri)
+                if not analysis_stop_event.is_set() and level > 1:
+                    ls.type_check(uri)
+                    ls.push_diagnostics(uri)
 
-    analysis_thread = threading.Thread(target=run_analysis)
-    analysis_thread.start()
+    with analysis_lock:
+        if analysis_thread is None or not analysis_thread.is_alive():
+            analysis_thread = threading.Thread(target=run_analysis)
+            analysis_thread.start()
 
 
 def stop_analysis() -> None:
     """Stop analysis."""
     global analysis_thread, analysis_stop_event
-    if analysis_thread is not None:
-        analysis_stop_event.set()
-        analysis_thread.join()
-        analysis_stop_event.clear()
+    with analysis_lock:
+        if analysis_thread is not None:
+            analysis_stop_event.set()
+            analysis_thread.join()
+            analysis_stop_event.clear()
+            analysis_thread = None
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
