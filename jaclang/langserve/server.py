@@ -16,37 +16,13 @@ import lsprotocol.types as lspt
 server = JacLangServer()
 
 
-def analyze_and_publish(ls: JacLangServer, uri: str, level: int = 2) -> None:
-    """Analyze and publish diagnostics."""
-    success = ls.quick_check(uri)
-    ls.push_diagnostics(uri)
-    if success and level > 0:
-        success = ls.deep_check(uri)
-        ls.push_diagnostics(uri)
-        if success and level > 1:
-            ls.type_check(uri)
-            ls.push_diagnostics(uri)
-
-
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
-    """Check syntax on change."""
-    analyze_and_publish(ls, params.text_document.uri)
-
-
+@server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
 @debounce(0.1)
-async def did_change(
-    ls: JacLangServer, params: lspt.DidChangeTextDocumentParams
-) -> None:
+async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
-    analyze_and_publish(ls, params.text_document.uri)
-
-
-@server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
-async def did_save(ls: JacLangServer, params: lspt.DidSaveTextDocumentParams) -> None:
-    """Check syntax on save."""
-    analyze_and_publish(ls, params.text_document.uri)
+    ls.analyze_and_publish(params.text_document.uri)
 
 
 @server.feature(
@@ -60,8 +36,7 @@ async def did_save(ls: JacLangServer, params: lspt.DidSaveTextDocumentParams) ->
 async def did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams) -> None:
     """Check syntax on file creation."""
     for file in params.files:
-        ls.quick_check(file.uri)
-        ls.push_diagnostics(file.uri)
+        ls.analyze_and_publish(file.uri)
 
 
 @server.feature(
@@ -78,7 +53,7 @@ async def did_rename_files(ls: JacLangServer, params: lspt.RenameFilesParams) ->
     old_uris = [file.old_uri for file in params.files]
     for i in range(len(new_uris)):
         ls.rename_module(old_uris[i], new_uris[i])
-        ls.quick_check(new_uris[i])
+        ls.analyze_and_publish(new_uris[i])
 
 
 @server.feature(
@@ -127,7 +102,7 @@ async def document_symbol(
     ls: JacLangServer, params: lspt.DocumentSymbolParams
 ) -> list[lspt.DocumentSymbol]:
     """Provide document symbols."""
-    analyze_and_publish(ls, params.text_document.uri)
+    ls.analyze_and_publish(params.text_document.uri)
     return ls.get_document_symbols(params.text_document.uri)
 
 
@@ -136,7 +111,7 @@ async def definition(
     ls: JacLangServer, params: lspt.TextDocumentPositionParams
 ) -> Optional[lspt.Location]:
     """Provide definition."""
-    analyze_and_publish(ls, params.text_document.uri, level=1)
+    ls.analyze_and_publish(params.text_document.uri, level=1)
     return ls.get_definition(params.text_document.uri, params.position)
 
 
@@ -147,11 +122,11 @@ async def definition(
         token_modifiers=SemTokMod.as_str_list(),
     ),
 )
-def semantic_tokens_full(
+async def semantic_tokens_full(
     ls: JacLangServer, params: lspt.SemanticTokensParams
 ) -> lspt.SemanticTokens:
     """Provide semantic tokens."""
-    analyze_and_publish(ls, params.text_document.uri)
+    ls.analyze_and_publish(params.text_document.uri)
     return ls.get_semantic_tokens(params.text_document.uri)
 
 

@@ -217,6 +217,17 @@ class JacLangServer(LanguageServer):
         self.update_modules(file_path, build, ALev.TYPE)
         return len(self.modules[file_path].errors) == 0
 
+    def analyze_and_publish(self, uri: str, level: int = 2) -> None:
+        """Analyze and publish diagnostics."""
+        success = self.quick_check(uri)
+        self.push_diagnostics(uri)
+        if success and level > 0:
+            success = self.deep_check(uri)
+            self.push_diagnostics(uri)
+            if success and level > 1:
+                self.type_check(uri)
+                self.push_diagnostics(uri)
+
     def get_completion(
         self, file_path: str, position: lspt.Position
     ) -> lspt.CompletionList:
