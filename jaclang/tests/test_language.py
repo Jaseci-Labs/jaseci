@@ -934,3 +934,12 @@ class JacLanguageTests(TestCase):
                 break
         self.assertIsNotNone(table)
         self.assertIsNotNone(table.lookup("attempts"))
+
+    def test_edge_expr_not_type(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edgetypeissue", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[x()]", stdout_value)

@@ -115,7 +115,7 @@ class JacFeatureSpec:
     @staticmethod
     def build_edge(
         is_undirected: bool,
-        conn_type: Optional[Type[EdgeArchitype]],
+        conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[], EdgeArchitype]: ...
 
