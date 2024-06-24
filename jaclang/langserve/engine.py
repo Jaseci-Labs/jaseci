@@ -19,6 +19,8 @@ from jaclang.langserve.utils import (
     collect_symbols,
     create_range,
     find_deepest_symbol_node_at_pos,
+    get_item_path,
+    get_mod_path,
 )
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
@@ -336,7 +338,39 @@ class JacLangServer(LanguageServer):
             self.modules[file_path].ir, position.line, position.character
         )
         if node_selected:
-            if isinstance(node_selected, (ast.ElementStmt, ast.BuiltinType)):
+            if (
+                isinstance(node_selected, ast.Name)
+                and node_selected.parent
+                and isinstance(node_selected.parent, ast.ModulePath)
+            ):
+                spec = get_mod_path(node_selected.parent, node_selected)
+                if spec:
+                    return lspt.Location(
+                        uri=uris.from_fs_path(spec),
+                        range=lspt.Range(
+                            start=lspt.Position(line=0, character=0),
+                            end=lspt.Position(line=0, character=0),
+                        ),
+                    )
+                else:
+                    return None
+            elif node_selected.parent and isinstance(
+                node_selected.parent, ast.ModuleItem
+            ):
+                path_range = get_item_path(node_selected.parent)
+                if path_range:
+                    path, range = path_range
+                    if path and range:
+                        return lspt.Location(
+                            uri=uris.from_fs_path(path),
+                            range=lspt.Range(
+                                start=lspt.Position(line=range[0], character=0),
+                                end=lspt.Position(line=range[1], character=5),
+                            ),
+                        )
+                else:
+                    return None
+            elif isinstance(node_selected, (ast.ElementStmt, ast.BuiltinType)):
                 return None
             decl_node = (
                 node_selected.parent.body.target
