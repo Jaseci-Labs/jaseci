@@ -1285,6 +1285,17 @@ class Ability(
         return self.signature.is_method
 
     @property
+    def owner_method(self) -> Optional[Architype | Enum]:
+        """Check if is owner method."""
+        return (
+            self.parent.parent
+            if self.parent
+            and self.parent.parent
+            and isinstance(self.parent.parent, (Architype, Enum))
+            else None
+        )
+
+    @property
     def is_genai_ability(self) -> bool:
         """Check if is genai_ability."""
         return isinstance(self.body, FuncCall)
@@ -3974,7 +3985,9 @@ class Name(Token, NameAtom):
         )
 
     @staticmethod
-    def gen_stub_from_node(node: AstSymbolNode, name_str: str) -> Name:
+    def gen_stub_from_node(
+        node: AstSymbolNode, name_str: str, set_name_of: Optional[AstSymbolNode] = None
+    ) -> Name:
         """Generate name from node."""
         ret = Name(
             file_path=node.loc.mod_path,
@@ -3987,7 +4000,7 @@ class Name(Token, NameAtom):
             pos_start=node.loc.pos_start,
             pos_end=node.loc.pos_end,
         )
-        ret.name_of = node
+        ret.name_of = set_name_of if set_name_of else ret
         if node._sym_tab:
             ret.sym_tab = node.sym_tab
         return ret
