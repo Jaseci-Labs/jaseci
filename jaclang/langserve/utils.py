@@ -239,23 +239,12 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
 def get_item_path(mod_item: ast.ModuleItem) -> tuple[str, tuple[int, int]] | None:
     """Get path."""
     item_name = mod_item.name.value
-    if (
-        mod_item.parent
-        and isinstance(mod_item.parent.parent, ast.Import)
-        and mod_item.parent.parent.hint.tag.value == "py"
-        and mod_item.parent.parent.from_loc
-    ):
-        path = get_mod_path(mod_item.parent.parent.from_loc, mod_item.name)
+    if mod_item.from_parent.hint.tag.value == "py" and mod_item.from_parent.from_loc:
+        path = get_mod_path(mod_item.from_parent.from_loc, mod_item.name)
         if path:
             return get_definition_range(path, item_name)
-    elif (
-        mod_item.parent
-        and isinstance(mod_item.parent.parent, ast.Import)
-        and mod_item.parent.parent.hint.tag.value == "jac"
-    ):
-        mod_node = [
-            mp for mp in mod_item.parent.parent.kid if isinstance(mp, ast.ModulePath)
-        ][0]
+    elif mod_item.from_parent.hint.tag.value == "jac":
+        mod_node = mod_item.from_mod_path
         if mod_node.sub_module and mod_node.sub_module._sym_tab:
             for symbol_name, symbol in mod_node.sub_module._sym_tab.tab.items():
                 if symbol_name == item_name:
@@ -263,7 +252,6 @@ def get_item_path(mod_item: ast.ModuleItem) -> tuple[str, tuple[int, int]] | Non
                         symbol.decl.loc.first_line - 1,
                         symbol.decl.loc.last_line - 1,
                     )
-
     return None
 
 
