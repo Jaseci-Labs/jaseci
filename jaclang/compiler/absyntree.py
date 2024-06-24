@@ -516,7 +516,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         elif isinstance(name_of, ParamVar):
             return SemTokType.PARAMETER, SemTokMod.DECLARATION
         elif self.sym:
-            return SemTokType.PROPERTY, SemTokMod.DECLARATION
+            return SemTokType.PROPERTY, SemTokMod.DEFINITION
         return None
 
 
@@ -1219,6 +1219,7 @@ class Ability(
     ElementStmt,
     AstAsyncNode,
     ArchBlockStmt,
+    EnumBlockStmt,
     CodeBlockStmt,
     AstSemStrNode,
     AstImplNeedingNode,
