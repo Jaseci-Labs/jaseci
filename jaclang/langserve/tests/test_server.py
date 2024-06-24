@@ -209,7 +209,6 @@ class TestJacLangServer(TestCase):
         )
         lsp.quick_check(import_file)
         lsp.deep_check(import_file)
-        lsp.type_check(import_file)
         positions = [
             (2, 16, "datetime.py:0:0-0:0"),
             (3, 17, "base_module_structure.jac:0:0-0:0"),
@@ -224,3 +223,43 @@ class TestJacLangServer(TestCase):
                     expected,
                     str(lsp.get_definition(import_file, lspt.Position(line, char))),
                 )
+
+    def test_sem_tokens(self) -> None:
+        """Test that the Semantic Tokens are generated correctly."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle.jac"))
+        lsp.quick_check(circle_file)
+        lsp.deep_check(circle_file)
+        lsp.type_check(circle_file)
+        sem_list = lsp.get_semantic_tokens(circle_file).data
+        expected_counts = [
+            ("<JacSemTokenType.VARIABLE: 8>, <JacSemTokenModifier.READONLY: 4>", 206),
+            (
+                "<JacSemTokenType.PROPERTY: 9>, <JacSemTokenModifier.DEFINITION: 2>,",
+                120,
+            ),
+            (
+                "<JacSemTokenType.PARAMETER: 7>, <JacSemTokenModifier.DECLARATION: 1>,",
+                56,
+            ),
+            (
+                "<JacSemTokenType.FUNCTION: 12>, <JacSemTokenModifier.DECLARATION: 1>,",
+                25,
+            ),
+            ("<JacSemTokenType.METHOD: 13>, <JacSemTokenModifier.DECLARATION: 1>", 12),
+            ("<JacSemTokenType.ENUM: 3>, <JacSemTokenModifier.DECLARATION: 1>,", 37),
+            ("<JacSemTokenType.CLASS: 2>, <JacSemTokenModifier.DECLARATION: ", 162),
+            (
+                "<JacSemTokenType.NAMESPACE: 0>, <JacSemTokenModifier.DEFINITION: 2>,",
+                10,
+            ),
+            ("0, 0, 4,", 22),
+            ("0, 0, 3,", 192),
+            ("0, 0, 6, ", 65),
+            (" 0, 7, 3,", 3),
+        ]
+        for token_type, expected_count in expected_counts:
+            self.assertEqual(str(sem_list).count(token_type), expected_count)
