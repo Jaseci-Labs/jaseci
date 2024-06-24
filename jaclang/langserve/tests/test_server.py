@@ -209,6 +209,7 @@ class TestJacLangServer(TestCase):
         )
         lsp.quick_check(import_file)
         lsp.deep_check(import_file)
+        lsp.type_check(import_file)
         positions = [
             (2, 16, "datetime.py:0:0-0:0"),
             (3, 17, "base_module_structure.jac:0:0-0:0"),
