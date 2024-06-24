@@ -1,6 +1,6 @@
 """Constants across the project."""
 
-from enum import Enum, IntEnum, StrEnum
+from enum import Enum, IntEnum, IntFlag, StrEnum
 
 
 class SymbolType(Enum):
@@ -67,24 +67,24 @@ class JacSemTokenType(IntEnum):
         return [i.name.lower() for i in JacSemTokenType]
 
 
-class JacSemTokenModifier(IntEnum):
+class JacSemTokenModifier(IntFlag):
     """LSP Token modifiers for Jac."""
 
-    DECLARATION = 0
-    DEFINITION = 1
-    READONLY = 2
-    STATIC = 3
-    DEPRECATED = 4
-    ABSTRACT = 5
-    ASYNC = 6
-    MODIFICATION = 7
-    DOCUMENTATION = 8
-    DEFAULT_LIBRARY = 9
+    DECLARATION = 1 << 0
+    DEFINITION = 1 << 1
+    READONLY = 1 << 2
+    STATIC = 1 << 3
+    DEPRECATED = 1 << 4
+    ABSTRACT = 1 << 5
+    ASYNC = 1 << 6
+    MODIFICATION = 1 << 7
+    DOCUMENTATION = 1 << 8
+    DEFAULT_LIBRARY = 1 << 9
 
     @staticmethod
     def as_str_list() -> list[str]:
         """Return the string representation of the token."""
-        return [i.name.lower() for i in JacSemTokenModifier]
+        return [i.name.lower() for i in JacSemTokenModifier if i.name]
 
 
 class Constants(StrEnum):
