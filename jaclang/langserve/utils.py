@@ -189,7 +189,8 @@ def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
 
 
 def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
-    """Get path."""
+    """Get path for a module import name."""
+    ret_target = None
     module_location_path = mod_path.loc.mod_path
     if mod_path.parent and (
         (
@@ -214,7 +215,7 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
         spec = importlib.util.find_spec(temporary_path_str)
         sys.path.remove(os.path.dirname(module_location_path))
         if spec and spec.origin and spec.origin.endswith(".py"):
-            return spec.origin
+            ret_target = spec.origin
     elif mod_path.parent and (
         (
             isinstance(mod_path.parent.parent, ast.Import)
@@ -226,14 +227,12 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
             and mod_path.parent.hint.tag.value == "jac"
         )
     ):
-        target_path = import_target_to_relative_path(
+        ret_target = import_target_to_relative_path(
             level=mod_path.level,
             target=mod_path.path_str,
             base_path=os.path.dirname(module_location_path),
         )
-        if os.path.isfile(target_path):
-            return target_path
-    return None
+    return ret_target
 
 
 def get_item_path(mod_item: ast.ModuleItem) -> tuple[str, tuple[int, int]] | None:
@@ -275,7 +274,7 @@ def get_definition_range(
                 else node.body[-1].lineno
             )
             if start_line and end_line:
-                return filename, (start_line, end_line)
+                return filename, (start_line - 1, end_line - 1)
         elif isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id == name:
@@ -284,6 +283,6 @@ def get_definition_range(
                         node.end_lineno if hasattr(node, "end_lineno") else node.lineno
                     )
                     if start_line and end_line:
-                        return filename, (start_line, end_line)
+                        return filename, (start_line - 1, end_line - 1)
 
     return None
