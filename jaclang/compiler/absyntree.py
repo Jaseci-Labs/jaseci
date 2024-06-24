@@ -964,6 +964,24 @@ class ModuleItem(AstSymbolNode):
             sym_category=SymbolType.MOD_VAR,
         )
 
+    @property
+    def from_parent(self) -> Import:
+        """Get import parent."""
+        if (
+            not self.parent
+            or not self.parent.parent
+            or not isinstance(self.parent.parent, Import)
+        ):
+            raise ValueError("Import parent not found. Not Possible.")
+        return self.parent.parent
+
+    @property
+    def from_mod_path(self) -> ModulePath:
+        """Get relevant module path."""
+        if not self.from_parent.from_loc:
+            raise ValueError("Module items should have module path. Not Possible.")
+        return self.from_parent.from_loc
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module item node."""
         res = True

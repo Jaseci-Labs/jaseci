@@ -197,3 +197,30 @@ class TestJacLangServer(TestCase):
             "shape_type: circle_pure.ShapeType",
             lsp.get_hover_info(circle_file, pos).contents.value,
         )
+
+    def test_go_to_defintion_import(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(
+            self.fixture_abs_path("import_include_statements.jac")
+        )
+        lsp.quick_check(import_file)
+        lsp.deep_check(import_file)
+        lsp.type_check(import_file)
+        positions = [
+            (2, 16, "datetime.py:0:0-0:0"),
+            (3, 17, "base_module_structure.jac:0:0-0:0"),
+            (3, 74, "base_module_structure.jac:23:0-23:5"),
+            (5, 65, "py_import.py:12:0-20:5"),
+            (5, 35, "py_import.py:3:0-4:5"),
+        ]
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                self.assertIn(
+                    expected,
+                    str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                )
