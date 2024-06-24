@@ -68,6 +68,8 @@ enum_stmt: NAME (COLON STRING)? EQ expression
          | NAME (COLON STRING)?
          | py_code_block
          | free_code
+         | abstract_ability
+         | ability
 
 // Abilities
 ability: decorators? KW_ASYNC? ability_decl
