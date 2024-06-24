@@ -191,6 +191,7 @@ class JacLangServer(LanguageServer):
             )
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
+            return False
         self.update_modules(file_path, build, ALev.QUICK, refresh=True)
         return len(self.modules[file_path].errors) == 0
 
@@ -205,6 +206,7 @@ class JacLangServer(LanguageServer):
             build = jac_ir_to_pass(ir=self.modules[file_path].ir)
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
+            return False
         self.update_modules(file_path, build, ALev.DEEP)
         return len(self.modules[file_path].errors) == 0
 
@@ -221,6 +223,7 @@ class JacLangServer(LanguageServer):
             )
         except Exception as e:
             self.log_error(f"Error during type check: {e}")
+            return False
         self.update_modules(file_path, build, ALev.TYPE)
         return len(self.modules[file_path].errors) == 0
 

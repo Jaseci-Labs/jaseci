@@ -444,9 +444,8 @@ class FuseTypeInfoPass(Pass):
             ):
                 self_obj = target.target
                 right_obj = target.right
-                assert self_obj.type_sym_tab is not None
-                assert isinstance(right_obj, ast.AstSymbolNode)
-                self_obj.type_sym_tab.def_insert(right_obj)
+                if self_obj.type_sym_tab and isinstance(right_obj, ast.AstSymbolNode):
+                    self_obj.type_sym_tab.def_insert(right_obj)
 
     def exit_name(self, node: ast.Name) -> None:
         """Add new symbols in the symbol table in case of atom trailer."""
