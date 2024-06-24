@@ -173,10 +173,10 @@ class JacLangServer(LanguageServer):
                 self.modules[file_path] if file_path != uri else None
             )
 
-    def quick_check(self, file_path: str, force: bool = False) -> None:
+    def quick_check(self, file_path: str, force: bool = False) -> bool:
         """Rebuild a file."""
         if not force and self.module_not_diff(file_path, ALev.QUICK):
-            return
+            return len(self.modules[file_path].errors) == 0
         try:
             document = self.workspace.get_text_document(file_path)
             build = jac_str_to_pass(
@@ -185,26 +185,28 @@ class JacLangServer(LanguageServer):
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
         self.update_modules(file_path, build, ALev.QUICK, refresh=True)
+        return len(self.modules[file_path].errors) == 0
 
-    def deep_check(self, file_path: str, force: bool = False) -> None:
+    def deep_check(self, file_path: str, force: bool = False) -> bool:
         """Rebuild a file and its dependencies."""
         if file_path in self.modules:
             self.quick_check(file_path, force=force)
         if not force and self.module_not_diff(file_path, ALev.DEEP):
-            return
+            return len(self.modules[file_path].errors) == 0
         try:
             file_path = self.unwind_to_parent(file_path)
             build = jac_ir_to_pass(ir=self.modules[file_path].ir)
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
         self.update_modules(file_path, build, ALev.DEEP)
+        return len(self.modules[file_path].errors) == 0
 
-    def type_check(self, file_path: str, force: bool = False) -> None:
+    def type_check(self, file_path: str, force: bool = False) -> bool:
         """Rebuild a file and its dependencies."""
         if file_path not in self.modules:
             self.deep_check(file_path, force=force)
         if not force and self.module_not_diff(file_path, ALev.TYPE):
-            return
+            return len(self.modules[file_path].errors) == 0
         try:
             file_path = self.unwind_to_parent(file_path)
             build = jac_ir_to_pass(
@@ -213,6 +215,18 @@ class JacLangServer(LanguageServer):
         except Exception as e:
             self.log_error(f"Error during type check: {e}")
         self.update_modules(file_path, build, ALev.TYPE)
+        return len(self.modules[file_path].errors) == 0
+
+    def analyze_and_publish(self, uri: str, level: int = 2) -> None:
+        """Analyze and publish diagnostics."""
+        success = self.quick_check(uri)
+        self.push_diagnostics(uri)
+        if success and level > 0:
+            success = self.deep_check(uri)
+            self.push_diagnostics(uri)
+            if level > 1:
+                self.type_check(uri)
+                self.push_diagnostics(uri)
 
     def get_completion(
         self, file_path: str, position: lspt.Position
@@ -310,8 +324,7 @@ class JacLangServer(LanguageServer):
 
     def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
-        root_node = self.modules[file_path].ir.sym_tab
-        if root_node:
+        if root_node := self.modules[file_path].ir._sym_tab:
             return collect_symbols(root_node)
         return []
 
@@ -349,8 +362,29 @@ class JacLangServer(LanguageServer):
 
             return decl_location
         else:
-            self.log_info("No declaration found for the selected node.")
             return None
+
+    def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
+        """Return semantic tokens for a file."""
+        tokens = []
+        prev_line, prev_col = 0, 0
+        for node in self.modules[file_path].ir._in_mod_nodes:
+            if isinstance(node, ast.NameAtom) and node.sem_token:
+                line, col_start, col_end = (
+                    node.loc.first_line - 1,
+                    node.loc.col_start - 1,
+                    node.loc.col_end - 1,
+                )
+                length = col_end - col_start
+                tokens += [
+                    line - prev_line,
+                    col_start if line != prev_line else col_start - prev_col,
+                    length,
+                    *node.sem_token,
+                ]
+                prev_line, prev_col = line, col_start
+
+        return lspt.SemanticTokens(data=tokens)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

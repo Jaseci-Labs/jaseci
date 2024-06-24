@@ -17,9 +17,16 @@ from typing import (
     TypeVar,
 )
 
+
 from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
-from jaclang.compiler.constant import Constants as Con, EdgeDir, SymbolType
+from jaclang.compiler.constant import (
+    Constants as Con,
+    EdgeDir,
+    JacSemTokenModifier as SemTokMod,
+    JacSemTokenType as SemTokType,
+    SymbolType,
+)
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
@@ -37,6 +44,7 @@ class AstNode:
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self._sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
+        self._in_mod_nodes: list[AstNode] = []
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
@@ -490,6 +498,27 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         """Set type symbol table."""
         self._type_sym_tab = type_sym_tab
 
+    @property
+    def sem_token(self) -> Optional[tuple[SemTokType, SemTokMod]]:
+        """Resolve semantic token."""
+        name_of = self.sym.decl.name_of if self.sym else self.name_of
+        if isinstance(name_of, ModulePath):
+            return SemTokType.NAMESPACE, SemTokMod.DEFINITION
+        elif isinstance(name_of, (Architype, BuiltinType)):
+            return SemTokType.CLASS, SemTokMod.DECLARATION
+        elif isinstance(name_of, Enum):
+            return SemTokType.ENUM, SemTokMod.DECLARATION
+        elif isinstance(name_of, Ability):
+            if name_of.is_method:
+                return SemTokType.METHOD, SemTokMod.DECLARATION
+        elif isinstance(name_of, (Ability, Test)):
+            return SemTokType.FUNCTION, SemTokMod.DECLARATION
+        elif isinstance(name_of, ParamVar):
+            return SemTokType.PARAMETER, SemTokMod.DECLARATION
+        elif self.sym:
+            return SemTokType.PROPERTY, SemTokMod.DECLARATION
+        return None
+
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
     """ArchSpec node type for Jac Ast."""
@@ -597,7 +626,10 @@ class Module(AstDocNode):
     @property
     def annexable_by(self) -> Optional[str]:
         """Get annexable by."""
-        if not self.stub_only and self.loc.mod_path.endswith("impl.jac"):
+        if not self.stub_only and (
+            self.loc.mod_path.endswith("impl.jac")
+            or self.loc.mod_path.endswith("test.jac")
+        ):
             head_mod_name = self.name.split(".")[0]
             potential_path = os.path.join(
                 os.path.dirname(self.loc.mod_path),
@@ -605,7 +637,8 @@ class Module(AstDocNode):
             )
             if os.path.exists(potential_path):
                 return potential_path
-            if os.path.split(os.path.dirname(self.loc.mod_path))[-1].endswith(".impl"):
+            annex_dir = os.path.split(os.path.dirname(self.loc.mod_path))[-1]
+            if annex_dir.endswith(".impl") or annex_dir.endswith(".test"):
                 head_mod_name = os.path.split(os.path.dirname(self.loc.mod_path))[
                     -1
                 ].split(".")[0]

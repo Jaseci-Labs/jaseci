@@ -6,7 +6,6 @@ pass and is not required for any other pass to work.
 """
 
 from copy import copy
-from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
@@ -14,10 +13,6 @@ from jaclang.compiler.passes import Pass
 
 class SubNodeTabPass(Pass):
     """AST Enrichment Pass for basic high level semantics."""
-
-    def before_pass(self) -> None:
-        """Initialize pass."""
-        self.cur_module: Optional[ast.Module] = None
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Table builder."""

@@ -47,13 +47,10 @@ class Symbol:
     def sym_dotted_name(self) -> str:
         """Return a full path of the symbol."""
         out = [self.defn[0].sym_name]
-        current_tab = self.parent_tab
+        current_tab: SymbolTable | None = self.parent_tab
         while current_tab is not None:
             out.append(current_tab.name)
-            if current_tab.has_parent():
-                current_tab = current_tab.parent
-            else:
-                break
+            current_tab = current_tab.parent
         out.reverse()
         return ".".join(out)
 
@@ -81,19 +78,13 @@ class SymbolTable:
         """Initialize."""
         self.name = name
         self.owner = owner
-        self.parent = parent if parent else self
+        self.parent = parent
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
         self.inherit: list[SymbolTable] = []
 
-    def has_parent(self) -> bool:
-        """Check if has parent."""
-        return self.parent != self
-
-    def get_parent(self) -> SymbolTable:
+    def get_parent(self) -> Optional[SymbolTable]:
         """Get parent."""
-        if self.parent == self:
-            raise Exception("No parent")
         return self.parent
 
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
@@ -104,8 +95,8 @@ class SymbolTable:
             found = i.lookup(name, deep=False)
             if found:
                 return found
-        if deep and self.has_parent():
-            return self.get_parent().lookup(name, deep)
+        if deep and self.parent:
+            return self.parent.lookup(name, deep)
         return None
 
     def insert(
@@ -257,6 +248,7 @@ class SymbolTable:
                     and found
                 ):
                     self.inherit.append(found.decl.sym_tab)
+                    base_cls.name_spec.name_of = found.decl.name_of
 
     def pp(self, depth: Optional[int] = None) -> str:
         """Pretty print."""

@@ -24,6 +24,7 @@ class JacParser(Pass):
         """Initialize parser."""
         self.source = input_ir
         self.mod_path = input_ir.loc.mod_path
+        self.node_list: list[ast.AstNode] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
         Pass.__init__(self, input_ir=input_ir, prior=None)
@@ -129,6 +130,7 @@ class JacParser(Pass):
         def nu(self, node: ast.T) -> ast.T:
             """Update node."""
             self.parse_ref.cur_node = node
+            self.parse_ref.node_list.append(node)
             return node
 
         def start(self, kid: list[ast.Module]) -> ast.Module:
@@ -136,6 +138,7 @@ class JacParser(Pass):
 
             start: module
             """
+            kid[0]._in_mod_nodes = self.parse_ref.node_list
             return self.nu(kid[0])
 
         def module(

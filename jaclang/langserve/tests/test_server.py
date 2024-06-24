@@ -180,3 +180,20 @@ class TestJacLangServer(TestCase):
             "guess_game4.jac:27:8-27:21",
             str(lsp.get_definition(guess_game_file, lspt.Position(46, 45))),
         )
+
+    def test_test_annex(self) -> None:
+        """Test that the server doesn't run if there is a syntax error."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.test.jac"))
+        lsp.quick_check(circle_file)
+        lsp.deep_check(circle_file)
+        lsp.type_check(circle_file)
+        pos = lspt.Position(13, 29)
+        self.assertIn(
+            "shape_type: circle_pure.ShapeType",
+            lsp.get_hover_info(circle_file, pos).contents.value,
+        )

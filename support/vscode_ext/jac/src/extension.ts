@@ -5,20 +5,36 @@ import {
     ServerOptions
 } from 'vscode-languageclient/node';
 import * as path from 'path';
+import * as fs from 'fs';
 
 let client: LanguageClient;
 
 function getCondaEnvironment(): string | undefined {
     const condaPath = process.env.CONDA_PREFIX;
     if (condaPath) {
-        return path.join(condaPath, 'bin', 'jac');
+        const jacPath = path.join(condaPath, 'bin', 'jac');
+        if (fs.existsSync(jacPath)) {
+            return jacPath;
+        }
+    }
+    return undefined;
+}
+
+function getVenvEnvironment(): string | undefined {
+    const venvPath = process.env.VIRTUAL_ENV;
+    if (venvPath) {
+        const jacPath = path.join(venvPath, 'bin', 'jac');
+        if (fs.existsSync(jacPath)) {
+            return jacPath;
+        }
     }
     return undefined;
 }
 
 export function activate(context: vscode.ExtensionContext) {
     const condaJac = getCondaEnvironment();
-    const jacCommand = condaJac ? condaJac : 'jac';
+    const venvJac = getVenvEnvironment();
+    const jacCommand = condaJac ? condaJac : (venvJac ? venvJac : 'jac');
 
     let serverOptions: ServerOptions = {
         run: { command: jacCommand, args: ["lsp"] },
