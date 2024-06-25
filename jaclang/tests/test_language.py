@@ -192,12 +192,12 @@ class JacLanguageTests(TestCase):
         )
         self.assertEqual(desired_output_count, 2)
 
-    def test_with_llm_vision(self) -> None:
-        """Test MTLLLM Vision Implementation."""
+    def test_with_llm_image(self) -> None:
+        """Test MTLLLM Image Implementation."""
         try:
             captured_output = io.StringIO()
             sys.stdout = captured_output
-            jac_import("with_llm_vision", base_path=self.fixture_abs_path("./"))
+            jac_import("with_llm_image", base_path=self.fixture_abs_path("./"))
             sys.stdout = sys.__stdout__
             stdout_value = captured_output.getvalue()
             self.assertIn(
@@ -210,6 +210,21 @@ class JacLanguageTests(TestCase):
             )
         except Exception:
             self.skipTest("This test requires Pillow to be installed.")
+
+    def test_with_llm_video(self) -> None:
+        """Test MTLLLM Video Implementation."""
+        try:
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            jac_import("with_llm_video", base_path=self.fixture_abs_path("./"))
+            sys.stdout = sys.__stdout__
+            stdout_value = captured_output.getvalue()
+            self.assertIn(
+                "{'type': 'text', 'text': '\\n[System Prompt]\\n", stdout_value[:500]
+            )
+            self.assertEqual(stdout_value.count("data:image/jpeg;base64"), 4)
+        except Exception:
+            self.skipTest("This test requires OpenCV to be installed.")
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""

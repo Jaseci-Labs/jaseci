@@ -1,5 +1,5 @@
 import:py from mtllm.llms, BaseLLM;
-import:py from PIL, Image;
+import:py from mtllm, Video;
 import:py os;
 
 obj model:BaseLLM: {
@@ -15,11 +15,11 @@ obj model:BaseLLM: {
 }
 glob llm = model();
 
-can 'Solve the Given Math Question'
-solve_math_question(question_img: 'Image of the Question': Image) -> 'Answer to the Question': str
-by llm(method="Chain-of-Thoughts");
+can is_aligned(video: Video, text: str) -> bool
+by llm(method="Chain-of-Thoughts", context="Mugen is the moving character");
 
 with entry {
-    question_img = Image(os.path.join(os.path.dirname(__file__), 'math_question.jpg'));
-    print(solve_math_question(question_img));
+    video = Video(os.path.join(os.path.dirname(__file__), "mugen.mp4"), 1);
+    text = "Mugen jumps off and collects few coins.";
+    print(is_aligned(video, text));
 }
