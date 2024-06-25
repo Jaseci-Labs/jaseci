@@ -18,11 +18,21 @@ server = JacLangServer()
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
 @server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
-@server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
-@debounce(0.1)
-async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
+def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
     ls.analyze_and_publish(params.text_document.uri)
+    # token_params = lspt.SemanticTokensParams(
+    #     text_document=lspt.TextDocumentIdentifier(uri=params.text_document.uri)
+    # )
+    # tokens = semantic_tokens_full(ls, token_params)
+    # ls.send_notification("textDocument/publishSemanticTokens", tokens)
+
+
+@server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
+@debounce(0.1)
+async def did_change(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
+    """Check syntax on change."""
+    ls.analyze_and_publish(params.text_document.uri, level=0)
 
 
 @server.feature(
@@ -33,10 +43,8 @@ async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) ->
         ]
     ),
 )
-async def did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams) -> None:
+def did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams) -> None:
     """Check syntax on file creation."""
-    for file in params.files:
-        ls.analyze_and_publish(file.uri)
 
 
 @server.feature(
@@ -47,13 +55,12 @@ async def did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams) ->
         ]
     ),
 )
-async def did_rename_files(ls: JacLangServer, params: lspt.RenameFilesParams) -> None:
+def did_rename_files(ls: JacLangServer, params: lspt.RenameFilesParams) -> None:
     """Check syntax on file rename."""
     new_uris = [file.new_uri for file in params.files]
     old_uris = [file.old_uri for file in params.files]
     for i in range(len(new_uris)):
         ls.rename_module(old_uris[i], new_uris[i])
-        ls.analyze_and_publish(new_uris[i])
 
 
 @server.feature(
@@ -64,7 +71,7 @@ async def did_rename_files(ls: JacLangServer, params: lspt.RenameFilesParams) ->
         ]
     ),
 )
-async def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) -> None:
+def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) -> None:
     """Check syntax on file delete."""
     for file in params.files:
         ls.delete_module(file.uri)
@@ -74,9 +81,7 @@ async def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) ->
     lspt.TEXT_DOCUMENT_COMPLETION,
     lspt.CompletionOptions(trigger_characters=[".", ":", ""]),
 )
-async def completion(
-    ls: JacLangServer, params: lspt.CompletionParams
-) -> lspt.CompletionList:
+def completion(ls: JacLangServer, params: lspt.CompletionParams) -> lspt.CompletionList:
     """Provide completion."""
     return ls.get_completion(params.text_document.uri, params.position)
 
@@ -98,20 +103,18 @@ def hover(
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DOCUMENT_SYMBOL)
-async def document_symbol(
+def document_symbol(
     ls: JacLangServer, params: lspt.DocumentSymbolParams
 ) -> list[lspt.DocumentSymbol]:
     """Provide document symbols."""
-    ls.analyze_and_publish(params.text_document.uri)
     return ls.get_document_symbols(params.text_document.uri)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DEFINITION)
-async def definition(
+def definition(
     ls: JacLangServer, params: lspt.TextDocumentPositionParams
 ) -> Optional[lspt.Location]:
     """Provide definition."""
-    ls.analyze_and_publish(params.text_document.uri, level=1)
     return ls.get_definition(params.text_document.uri, params.position)
 
 
@@ -122,11 +125,10 @@ async def definition(
         token_modifiers=SemTokMod.as_str_list(),
     ),
 )
-async def semantic_tokens_full(
+def semantic_tokens_full(
     ls: JacLangServer, params: lspt.SemanticTokensParams
 ) -> lspt.SemanticTokens:
     """Provide semantic tokens."""
-    ls.analyze_and_publish(params.text_document.uri)
     return ls.get_semantic_tokens(params.text_document.uri)
 
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum
-from hashlib import md5
 from typing import Optional
 
 
@@ -54,7 +53,7 @@ class ModuleInfo:
         self.alev = alev
         self.parent: Optional[ModuleInfo] = parent
         self.diagnostics = self.gen_diagnostics()
-        self.sem_tokens: list[int] = []
+        self.sem_tokens: list[int] = self.gen_sem_tokens()
 
     @property
     def uri(self) -> str:
@@ -77,6 +76,8 @@ class ModuleInfo:
             self.warnings += [i for i in new_info.warnings if i not in self.warnings]
         self.alev = new_info.alev
         self.diagnostics = self.gen_diagnostics()
+        if self.alev == ALev.TYPE:
+            self.sem_tokens = self.gen_sem_tokens()
 
     def gen_diagnostics(self) -> list[lspt.Diagnostic]:
         """Return diagnostics."""
@@ -96,6 +97,27 @@ class ModuleInfo:
             for warning in self.warnings
         ]
 
+    def gen_sem_tokens(self) -> list[int]:
+        """Return semantic tokens."""
+        tokens = []
+        prev_line, prev_col = 0, 0
+        for node in self.ir._in_mod_nodes:
+            if isinstance(node, ast.NameAtom) and node.sem_token:
+                line, col_start, col_end = (
+                    node.loc.first_line - 1,
+                    node.loc.col_start - 1,
+                    node.loc.col_end - 1,
+                )
+                length = col_end - col_start
+                tokens += [
+                    line - prev_line,
+                    col_start if line != prev_line else col_start - prev_col,
+                    length,
+                    *node.sem_token,
+                ]
+                prev_line, prev_col = line, col_start
+        return tokens
+
 
 class JacLangServer(LanguageServer):
     """Class for managing workspace."""
@@ -104,19 +126,6 @@ class JacLangServer(LanguageServer):
         """Initialize workspace."""
         super().__init__("jac-lsp", "v0.1")
         self.modules: dict[str, ModuleInfo] = {}
-
-    def module_not_diff(self, uri: str, alev: ALev) -> bool:
-        """Check if module was changed."""
-        doc = self.workspace.get_text_document(uri)
-        return (
-            doc.uri in self.modules
-            and self.modules[doc.uri].ir.source.hash
-            == md5(doc.source.encode()).hexdigest()
-            and (
-                self.modules[doc.uri].alev >= alev
-                or self.modules[doc.uri].has_syntax_error
-            )
-        )
 
     def push_diagnostics(self, file_path: str) -> None:
         """Push diagnostics for a file."""
@@ -180,10 +189,8 @@ class JacLangServer(LanguageServer):
                 self.modules[file_path] if file_path != uri else None
             )
 
-    def quick_check(self, file_path: str, force: bool = False) -> bool:
+    def quick_check(self, file_path: str) -> bool:
         """Rebuild a file."""
-        if not force and self.module_not_diff(file_path, ALev.QUICK):
-            return len(self.modules[file_path].errors) == 0
         try:
             document = self.workspace.get_text_document(file_path)
             build = jac_str_to_pass(
@@ -195,12 +202,10 @@ class JacLangServer(LanguageServer):
         self.update_modules(file_path, build, ALev.QUICK, refresh=True)
         return len(self.modules[file_path].errors) == 0
 
-    def deep_check(self, file_path: str, force: bool = False) -> bool:
+    def deep_check(self, file_path: str) -> bool:
         """Rebuild a file and its dependencies."""
-        if file_path in self.modules:
-            self.quick_check(file_path, force=force)
-        if not force and self.module_not_diff(file_path, ALev.DEEP):
-            return len(self.modules[file_path].errors) == 0
+        if file_path not in self.modules:
+            self.quick_check(file_path)
         try:
             file_path = self.unwind_to_parent(file_path)
             build = jac_ir_to_pass(ir=self.modules[file_path].ir)
@@ -210,12 +215,10 @@ class JacLangServer(LanguageServer):
         self.update_modules(file_path, build, ALev.DEEP)
         return len(self.modules[file_path].errors) == 0
 
-    def type_check(self, file_path: str, force: bool = False) -> bool:
+    def type_check(self, file_path: str) -> bool:
         """Rebuild a file and its dependencies."""
         if file_path not in self.modules:
-            self.deep_check(file_path, force=force)
-        if not force and self.module_not_diff(file_path, ALev.TYPE):
-            return len(self.modules[file_path].errors) == 0
+            self.deep_check(file_path)
         try:
             file_path = self.unwind_to_parent(file_path)
             build = jac_ir_to_pass(
@@ -229,6 +232,7 @@ class JacLangServer(LanguageServer):
 
     def analyze_and_publish(self, uri: str, level: int = 2) -> None:
         """Analyze and publish diagnostics."""
+        self.log_py(f"Analyzing {uri}...")
         success = self.quick_check(uri)
         self.push_diagnostics(uri)
         if success and level > 0:
@@ -408,29 +412,9 @@ class JacLangServer(LanguageServer):
 
     def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
         """Return semantic tokens for a file."""
-        tokens = self.modules[file_path].sem_tokens
-        # Only update if fully analyzed
-        if self.modules[file_path].alev < ALev.TYPE:
-            return lspt.SemanticTokens(data=tokens)
-        tokens = []
-        prev_line, prev_col = 0, 0
-        for node in self.modules[file_path].ir._in_mod_nodes:
-            if isinstance(node, ast.NameAtom) and node.sem_token:
-                line, col_start, col_end = (
-                    node.loc.first_line - 1,
-                    node.loc.col_start - 1,
-                    node.loc.col_end - 1,
-                )
-                length = col_end - col_start
-                tokens += [
-                    line - prev_line,
-                    col_start if line != prev_line else col_start - prev_col,
-                    length,
-                    *node.sem_token,
-                ]
-                prev_line, prev_col = line, col_start
-        self.modules[file_path].sem_tokens = tokens
-        return lspt.SemanticTokens(data=tokens)
+        if file_path not in self.modules:
+            return lspt.SemanticTokens(data=[])
+        return lspt.SemanticTokens(data=self.modules[file_path].sem_tokens)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""
