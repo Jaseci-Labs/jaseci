@@ -8,7 +8,6 @@ include:jac circle_clean_impl;
 enum ShapeType;
 
 can calculate_area(radius: float) -> float;
-
 can main_run;
 
 """Base class for a shape."""
@@ -23,7 +22,7 @@ obj Circle :Shape: {
     has radius: float;
 
     can init(radius: float);
-    can area -> float;
+    override can area -> float;
 }
 # Radius of the demo circle
 

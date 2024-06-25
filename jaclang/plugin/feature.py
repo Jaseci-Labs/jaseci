@@ -6,7 +6,7 @@ import types
 from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.core.construct import (
+from jaclang.core.constructs import (
     Architype,
     EdgeArchitype,
     Memory,
@@ -31,7 +31,7 @@ class JacFeature:
 
     import abc
     from jaclang.compiler.constant import EdgeDir
-    from jaclang.plugin.spec import DSFunc
+    from jaclang.core.constructs import DSFunc
 
     RootType: TypeAlias = Root
     Obj: TypeAlias = Architype
@@ -102,7 +102,7 @@ class JacFeature:
         cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        mod_bundle: Optional[Module] = None,
+        mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, bool]]] = None,
     ) -> Optional[types.ModuleType]:
@@ -263,7 +263,7 @@ class JacFeature:
     @staticmethod
     def build_edge(
         is_undirected: bool,
-        conn_type: Optional[Type[EdgeArchitype]],
+        conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[], EdgeArchitype]:
         """Jac's root getter."""

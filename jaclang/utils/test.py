@@ -107,6 +107,7 @@ class AstSyncTestMixin:
                 "jac_source",
                 "empty_token",
                 "ast_symbol_node",
+                "ast_symbol_stub_node",
                 "ast_impl_needing_node",
                 "ast_access_node",
                 "token_symbol",
@@ -124,7 +125,7 @@ class AstSyncTestMixin:
                 "arch_block_stmt",
                 "enum_block_stmt",
                 "code_block_stmt",
-                "name_spec",
+                "name_atom",
                 "arch_spec",
                 "match_pattern",
             ]

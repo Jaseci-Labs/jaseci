@@ -12,7 +12,7 @@ import pickle
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
-from jaclang.core.registry import SemInfo, SemRegistry
+from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.core.utils import get_sem_scope
 
 
@@ -48,7 +48,7 @@ class RegistryPass(Pass):
         seminfo = SemInfo(
             node.name.value,
             node.arch_type.value,
-            node.semstr.lit_value if node.semstr else None,
+            node.semstr.lit_value if node.semstr else "",
         )
         if (
             len(self.modules_visited)
@@ -61,7 +61,7 @@ class RegistryPass(Pass):
         """Save enum information."""
         scope = get_sem_scope(node)
         seminfo = SemInfo(
-            node.name.value, "Enum", node.semstr.lit_value if node.semstr else None
+            node.name.value, "Enum", node.semstr.lit_value if node.semstr else ""
         )
         if (
             len(self.modules_visited)
@@ -79,7 +79,7 @@ class RegistryPass(Pass):
         seminfo = SemInfo(
             node.name.value,
             extracted_type,
-            node.semstr.lit_value if node.semstr else None,
+            node.semstr.lit_value if node.semstr else "",
         )
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
@@ -100,7 +100,7 @@ class RegistryPass(Pass):
                 else ""
             ),
             extracted_type,
-            node.semstr.lit_value if node.semstr else None,
+            node.semstr.lit_value if node.semstr else "",
         )
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
@@ -113,7 +113,7 @@ class RegistryPass(Pass):
             and node.parent.parent.__class__.__name__ == "Enum"
         ):
             scope = get_sem_scope(node)
-            seminfo = SemInfo(node.value, None, None)
+            seminfo = SemInfo(node.value, None, "")
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
 

@@ -298,7 +298,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_start=0,
                     pos_end=0,
                 )
-                body_stmt.name_ref = ast.SpecialVarRef(var=tok, kid=[tok])
+                body_stmt.name_ref = ast.SpecialVarRef(var=tok)
             if (
                 isinstance(body_stmt, ast.Ability)
                 and body_stmt.signature
@@ -919,7 +919,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
-            value = ast.SpecialVarRef(var=tok, kid=[tok])
+            value = ast.SpecialVarRef(var=tok)
             # exit()
         attribute = ast.Name(
             file_path=self.mod_path,
@@ -1384,7 +1384,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         class Global(stmt):
             names: list[_Identifier]
         """
-        names: list[ast.NameSpec] = []
+        names: list[ast.NameAtom] = []
         for id in node.names:
             names.append(
                 ast.Name(
@@ -1399,7 +1399,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameSpec](items=names, delim=Tok.COMMA, kid=names)
+        target = ast.SubNodeList[ast.NameAtom](items=names, delim=Tok.COMMA, kid=names)
         return ast.GlobalStmt(target=target, kid=[target])
 
     def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
@@ -1741,7 +1741,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             kid.append(kw_patterns)
         else:
             kw_patterns = None
-        if isinstance(cls, (ast.NameSpec, ast.AtomTrailer)):
+        if isinstance(cls, (ast.NameAtom, ast.AtomTrailer)):
             return ast.MatchArch(
                 name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
             )
@@ -1759,7 +1759,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         values: list[ast.MatchKVPair | ast.MatchStar] = []
         keys = [self.convert(i) for i in node.keys]
         valid_keys = [
-            i for i in keys if isinstance(i, (ast.MatchPattern, ast.NameSpec))
+            i for i in keys if isinstance(i, (ast.MatchPattern, ast.NameAtom))
         ]
         patterns = [self.convert(i) for i in node.patterns]
         valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
@@ -1910,7 +1910,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         class Nonlocal(stmt):
             names: list[_Identifier]
         """
-        names: list[ast.NameSpec] = []
+        names: list[ast.NameAtom] = []
         for name in node.names:
             names.append(
                 ast.Name(
@@ -1925,7 +1925,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameSpec](items=names, delim=Tok.COMMA, kid=names)
+        target = ast.SubNodeList[ast.NameAtom](items=names, delim=Tok.COMMA, kid=names)
         return ast.NonLocalStmt(target=target, kid=names)
 
     def proc_pass(self, node: py_ast.Pass) -> ast.Semi:

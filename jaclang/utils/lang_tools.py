@@ -9,6 +9,7 @@ from typing import List, Optional, Type
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
+from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
@@ -81,6 +82,7 @@ class AstTool:
                 "JacSource",
                 "EmptyToken",
                 "AstSymbolNode",
+                "AstSymbolStubNode",
                 "AstAccessNode",
                 "Literal",
                 "AstDocNode",
@@ -96,7 +98,7 @@ class AstTool:
                 "ArchBlockStmt",
                 "EnumBlockStmt",
                 "CodeBlockStmt",
-                "NameSpec",
+                "NameAtom",
                 "ArchSpec",
                 "MatchPattern",
             ]
@@ -233,8 +235,8 @@ class AstTool:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
                 ir = jac_file_to_pass(
-                    file_name, schedule=py_code_gen_typed
-                ).ir  # Assuming jac_file_to_pass is defined elsewhere
+                    file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
+                ).ir
 
             match output:
                 case "sym":

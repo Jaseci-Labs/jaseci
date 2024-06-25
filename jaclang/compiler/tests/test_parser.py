@@ -102,6 +102,7 @@ class TestLarkParser(TestCaseMicroSuite):
             "JacSource",
             "EmptyToken",
             "AstSymbolNode",
+            "AstSymbolStubNode",
             "AstImplNeedingNode",
             "AstAccessNode",
             "Literal",
@@ -118,7 +119,7 @@ class TestLarkParser(TestCaseMicroSuite):
             "ArchBlockStmt",
             "EnumBlockStmt",
             "CodeBlockStmt",
-            "NameSpec",
+            "NameAtom",
             "ArchSpec",
             "MatchPattern",
         ]

@@ -143,16 +143,7 @@ class TestJacLangServer(TestCase):
         lsp.quick_check(circle_file)
         lsp.deep_check(circle_file)
         lsp.type_check(circle_file)
-        expected_string = (
-            "DocumentSymbol(name='calculate_area', kind=<SymbolKind.Function: 12>, range=9:0-9:43, "
-            "selection_range=9:0-9:43, detail=None, tags=None, deprecated=None, children=["
-            "DocumentSymbol(name='radius', kind=<SymbolKind.Variable: 13>, range=9:1-9:14, "
-            "selection_range=9:1-9:14, detail=None, tags=None, deprecated=None, children=[])])"
-        )
-        self.assertEqual(
-            expected_string, str((lsp.get_document_symbols(circle_file))[6])
-        )
-        self.assertEqual(10, len(lsp.get_document_symbols(circle_file)))
+        self.assertEqual(8, len(lsp.get_document_symbols(circle_file)))
 
     def test_go_to_definition(self) -> None:
         """Test that the go to definition is correct."""
@@ -169,7 +160,7 @@ class TestJacLangServer(TestCase):
             str(lsp.get_definition(circle_file, lspt.Position(9, 16))),
         )
         self.assertIn(
-            "fixtures/circle_pure.jac:12:0-17:1",
+            "fixtures/circle_pure.jac:13:11-13:16",
             str(lsp.get_definition(circle_file, lspt.Position(20, 17))),
         )
 
@@ -186,6 +177,90 @@ class TestJacLangServer(TestCase):
         lsp.deep_check(guess_game_file)
         lsp.type_check(guess_game_file)
         self.assertIn(
-            "guess_game4.jac:27:4-27:34",
+            "guess_game4.jac:27:8-27:21",
             str(lsp.get_definition(guess_game_file, lspt.Position(46, 45))),
         )
+
+    def test_test_annex(self) -> None:
+        """Test that the server doesn't run if there is a syntax error."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.test.jac"))
+        lsp.quick_check(circle_file)
+        lsp.deep_check(circle_file)
+        lsp.type_check(circle_file)
+        pos = lspt.Position(13, 29)
+        self.assertIn(
+            "shape_type: circle_pure.ShapeType",
+            lsp.get_hover_info(circle_file, pos).contents.value,
+        )
+
+    def test_go_to_defintion_import(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(
+            self.fixture_abs_path("import_include_statements.jac")
+        )
+        lsp.quick_check(import_file)
+        lsp.deep_check(import_file)
+        lsp.type_check(import_file)
+        positions = [
+            (2, 16, "datetime.py:0:0-0:0"),
+            (3, 17, "base_module_structure.jac:0:0-0:0"),
+            (3, 74, "base_module_structure.jac:23:0-23:5"),
+            (5, 65, "py_import.py:12:0-20:5"),
+            (5, 35, "py_import.py:3:0-4:5"),
+        ]
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                self.assertIn(
+                    expected,
+                    str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                )
+
+    def test_sem_tokens(self) -> None:
+        """Test that the Semantic Tokens are generated correctly."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle.jac"))
+        lsp.quick_check(circle_file)
+        lsp.deep_check(circle_file)
+        lsp.type_check(circle_file)
+        sem_list = lsp.get_semantic_tokens(circle_file).data
+        expected_counts = [
+            ("<JacSemTokenType.VARIABLE: 8>, <JacSemTokenModifier.READONLY: 4>", 206),
+            (
+                "<JacSemTokenType.PROPERTY: 9>, <JacSemTokenModifier.DEFINITION: 2>,",
+                112,
+            ),
+            (
+                "<JacSemTokenType.PARAMETER: 7>, <JacSemTokenModifier.DECLARATION: 1>,",
+                56,
+            ),
+            (
+                "<JacSemTokenType.FUNCTION: 12>, <JacSemTokenModifier.DECLARATION: 1>,",
+                25,
+            ),
+            ("<JacSemTokenType.METHOD: 13>, <JacSemTokenModifier.DECLARATION: 1>", 12),
+            ("<JacSemTokenType.ENUM: 3>, <JacSemTokenModifier.DECLARATION: 1>,", 37),
+            ("<JacSemTokenType.CLASS: 2>, <JacSemTokenModifier.DECLARATION: ", 162),
+            (
+                "<JacSemTokenType.NAMESPACE: 0>, <JacSemTokenModifier.DEFINITION: 2>,",
+                10,
+            ),
+            ("0, 0, 4,", 22),
+            ("0, 0, 3,", 192),
+            ("0, 0, 6, ", 65),
+            (" 0, 7, 3,", 3),
+        ]
+        for token_type, expected_count in expected_counts:
+            self.assertEqual(str(sem_list).count(token_type), expected_count)

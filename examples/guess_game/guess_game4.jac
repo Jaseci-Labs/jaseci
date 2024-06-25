@@ -24,7 +24,7 @@ obj GuessTheNumberGame :Game: {
     has correct_number: int = (1, 100) |> random.randint;
 
     can init;
-    can play;
+    override can play;
     can process_guess(guess: int);
 }
 

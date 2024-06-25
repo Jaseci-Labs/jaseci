@@ -7,9 +7,11 @@ import sys
 import sysconfig
 
 
+import jaclang.compiler.passes.main as passes
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -857,7 +859,18 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/micro/simple_walk.jac")
+            self.fixture_abs_path("../../../examples/micro/simple_walk.jac"),
+            schedule=py_code_gen_typed,
+        )
+        self.assertEqual(len(mypass.errors_had), 0)
+        self.assertEqual(len(mypass.warnings_had), 0)
+
+    def test_ds_type_check_pass2(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/guess_game/guess_game5.jac"),
+            schedule=py_code_gen_typed,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
@@ -885,3 +898,48 @@ class JacLanguageTests(TestCase):
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.ir.pp())
+
+    def test_single_impl_annex(self) -> None:
+        """Basic test for pass."""
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
+            target=passes.JacImportPass,
+        )
+
+        self.assertEqual(mypass.ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
+        self.assertIsNone(mypass.ir._sym_tab)
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
+            target=passes.SymTabBuildPass,
+        )
+        self.assertEqual(
+            len([i for i in mypass.ir.sym_tab.kid if i.name == "circle_pure.impl"]),
+            1,
+        )
+
+    def test_inherit_baseclass_sym(self) -> None:
+        """Basic test for symtable support for inheritance."""
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/guess_game/guess_game4.jac"),
+            target=passes.DefUsePass,
+        )
+        table = None
+        for i in mypass.ir.sym_tab.kid:
+            print(i.name)
+            if i.name == "GuessTheNumberGame":
+                for j in i.kid:
+                    if j.name == "play":
+                        table = j
+                        break
+                break
+        self.assertIsNotNone(table)
+        self.assertIsNotNone(table.lookup("attempts"))
+
+    def test_edge_expr_not_type(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edgetypeissue", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[x()]", stdout_value)

@@ -10,10 +10,10 @@ import ast as ast3
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes.main.sym_tab_build_pass import SymTabPass
+from jaclang.compiler.passes import Pass
 
 
-class DefUsePass(SymTabPass):
+class DefUsePass(Pass):
     """Jac Ast build pass."""
 
     def after_pass(self) -> None:
@@ -23,25 +23,43 @@ class DefUsePass(SymTabPass):
         """Sub objects.
 
         name: Name,
-        doc: Optional[Token],
-        body: Optional[SubNodeList[ArchStmt]],
-        sym_tab: Optional[SymbolTable],
+        arch_type: Token,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[Expr]],
+        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        doc: Optional[String] = None,
+        semstr: Optional[String] = None,
+        decorators: Optional[SubNodeList[Expr]] = None,
         """
+        node.sym_tab.inherit_baseclasses_sym(node)
+
+        def inform_from_walker(node: ast.AstNode) -> None:
+            for i in (
+                node.get_all_sub_nodes(ast.VisitStmt)
+                + node.get_all_sub_nodes(ast.IgnoreStmt)
+                + node.get_all_sub_nodes(ast.DisengageStmt)
+                + node.get_all_sub_nodes(ast.EdgeOpRef)
+            ):
+                i.from_walker = True
+
         if node.arch_type.name == Tok.KW_WALKER:
-            self.inform_from_walker(node)
+            inform_from_walker(node)
             for i in self.get_all_sub_nodes(node, ast.Ability):
                 if isinstance(i.body, ast.AbilityDef):
-                    self.inform_from_walker(i.body)
+                    inform_from_walker(i.body)
 
-    def inform_from_walker(self, node: ast.AstNode) -> None:
-        """Inform all sub nodes that they are from a walker."""
-        for i in (
-            self.get_all_sub_nodes(node, ast.VisitStmt)
-            + self.get_all_sub_nodes(node, ast.IgnoreStmt)
-            + self.get_all_sub_nodes(node, ast.DisengageStmt)
-            + self.get_all_sub_nodes(node, ast.EdgeOpRef)
-        ):
-            i.from_walker = True
+    def enter_enum(self, node: ast.Enum) -> None:
+        """Sub objects.
+
+        name: Name,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[Expr]],
+        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        doc: Optional[String] = None,
+        semstr: Optional[String] = None,
+        decorators: Optional[SubNodeList[Expr]] = None,
+        """
+        node.sym_tab.inherit_baseclasses_sym(node)
 
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
@@ -49,14 +67,14 @@ class DefUsePass(SymTabPass):
         name_ref: NameType,
         arch: Token,
         """
-        self.use_lookup(node)
+        node.sym_tab.use_lookup(node)
 
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
 
         archs: list[ArchRef],
         """
-        self.chain_use_lookup(node.archs)
+        node.sym_tab.chain_use_lookup(node.archs)
 
     def enter_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
@@ -66,7 +84,7 @@ class DefUsePass(SymTabPass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-        self.def_insert(node)
+        node.sym_tab.def_insert(node)
 
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -78,7 +96,7 @@ class DefUsePass(SymTabPass):
         if isinstance(node.parent, ast.SubNodeList) and isinstance(
             node.parent.parent, ast.ArchHas
         ):
-            self.def_insert(
+            node.sym_tab.def_insert(
                 node,
                 single_decl="has var",
                 access_spec=node.parent.parent,
@@ -97,9 +115,9 @@ class DefUsePass(SymTabPass):
         """
         for i in node.target.items:
             if isinstance(i, ast.AtomTrailer):
-                self.chain_def_insert(self.unwind_atom_trailer(i))
+                i.sym_tab.chain_def_insert(i.as_attr_list)
             elif isinstance(i, ast.AstSymbolNode):
-                self.def_insert(i)
+                i.sym_tab.def_insert(i)
             else:
                 self.error("Assignment target not valid")
 
@@ -112,9 +130,9 @@ class DefUsePass(SymTabPass):
         conditional: Optional[ExprType],
         """
         if isinstance(node.target, ast.AtomTrailer):
-            self.chain_def_insert(self.unwind_atom_trailer(node.target))
+            node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
         elif isinstance(node.target, ast.AstSymbolNode):
-            self.def_insert(node.target)
+            node.target.sym_tab.def_insert(node.target)
         else:
             self.error("Named target not valid")
 
@@ -125,8 +143,8 @@ class DefUsePass(SymTabPass):
         right: AtomType,
         is_scope_contained: bool,
         """
-        chain = self.unwind_atom_trailer(node)
-        self.chain_use_lookup(chain)
+        chain = node.as_attr_list
+        node.sym_tab.chain_use_lookup(chain)
 
     def enter_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -148,7 +166,7 @@ class DefUsePass(SymTabPass):
 
         var: Token,
         """
-        self.use_lookup(node)
+        node.sym_tab.use_lookup(node)
 
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
@@ -201,7 +219,7 @@ class DefUsePass(SymTabPass):
         pos_start: int,
         pos_end: int,
         """
-        self.use_lookup(node)
+        node.sym_tab.use_lookup(node)
 
     def enter_int(self, node: ast.Int) -> None:
         """Sub objects.
@@ -214,7 +232,7 @@ class DefUsePass(SymTabPass):
         pos_start: int,
         pos_end: int,
         """
-        self.use_lookup(node)
+        node.sym_tab.use_lookup(node)
 
     def enter_string(self, node: ast.String) -> None:
         """Sub objects.
@@ -227,7 +245,7 @@ class DefUsePass(SymTabPass):
         pos_start: int,
         pos_end: int,
         """
-        self.use_lookup(node)
+        node.sym_tab.use_lookup(node)
 
     def enter_bool(self, node: ast.Bool) -> None:
         """Sub objects.
@@ -240,7 +258,7 @@ class DefUsePass(SymTabPass):
         pos_start: int,
         pos_end: int,
         """
-        self.use_lookup(node)
+        node.sym_tab.use_lookup(node)
 
     def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.
@@ -254,7 +272,7 @@ class DefUsePass(SymTabPass):
         pos_end: int,
         typ: type,
         """
-        self.use_lookup(node)
+        node.sym_tab.use_lookup(node)
 
     def enter_name(self, node: ast.Name) -> None:
         """Sub objects.
@@ -266,7 +284,8 @@ class DefUsePass(SymTabPass):
         pos_start: int,
         pos_end: int,
         """
-        self.use_lookup(node)
+        if not isinstance(node.parent, ast.AtomTrailer):
+            node.sym_tab.use_lookup(node)
 
     def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
@@ -278,9 +297,9 @@ class DefUsePass(SymTabPass):
         else_body: Optional[ElseStmt],
         """
         if isinstance(node.target, ast.AtomTrailer):
-            self.chain_def_insert(self.unwind_atom_trailer(node.target))
+            node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
         elif isinstance(node.target, ast.AstSymbolNode):
-            self.def_insert(node.target)
+            node.target.sym_tab.def_insert(node.target)
         else:
             self.error("For loop assignment target not valid")
 
@@ -296,9 +315,9 @@ class DefUsePass(SymTabPass):
         )
         for i in items:
             if isinstance(i, ast.AtomTrailer):
-                self.unwind_atom_trailer(i)[-1].py_ctx_func = ast3.Del
+                i.as_attr_list[-1].name_spec.py_ctx_func = ast3.Del
             elif isinstance(i, ast.AstSymbolNode):
-                i.py_ctx_func = ast3.Del
+                i.name_spec.py_ctx_func = ast3.Del
             else:
                 self.error("Delete target not valid")
 
@@ -310,8 +329,8 @@ class DefUsePass(SymTabPass):
         """
         if node.alias:
             if isinstance(node.alias, ast.AtomTrailer):
-                self.chain_def_insert(self.unwind_atom_trailer(node.alias))
+                node.alias.sym_tab.chain_def_insert(node.alias.as_attr_list)
             elif isinstance(node.alias, ast.AstSymbolNode):
-                self.def_insert(node.alias)
+                node.alias.sym_tab.def_insert(node.alias)
             else:
                 self.error("For expr as target not valid")

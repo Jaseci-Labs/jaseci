@@ -30,7 +30,10 @@ sub_name: COLON NAME
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 
 // Architypes
-architype: decorators? (enum | architype_def | architype_decl)
+architype: decorators? architype_decl
+         | architype_def
+         | enum
+
 architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
 decorators: (DECOR_OP atomic_chain)+
@@ -54,8 +57,8 @@ typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_P
 type_tag: COLON expression
 
 // Enumerations
-enum: enum_def
-     | enum_decl
+enum: decorators? enum_decl
+     | enum_def
 
 enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
@@ -65,16 +68,18 @@ enum_stmt: NAME (COLON STRING)? EQ expression
          | NAME (COLON STRING)?
          | py_code_block
          | free_code
+         | abstract_ability
+         | ability
 
 // Abilities
-ability: decorators? ability_def
-        | decorators? KW_ASYNC? ability_decl
+ability: decorators? KW_ASYNC? ability_decl
         | decorators? genai_ability
+        | ability_def
 
-ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? any_ref (func_decl) KW_BY atomic_call SEMI
+abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl) KW_BY atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
 func_decl_params: (param_var COMMA)* param_var
@@ -129,9 +134,10 @@ statement: import_stmt
        | nonlocal_ref SEMI
        | typed_ctx_block
        | return_stmt SEMI
-       | yield_expr SEMI
+       | (yield_expr | KW_YIELD) SEMI
        | raise_stmt SEMI
        | assert_stmt SEMI
+       | check_stmt SEMI
        | assignment SEMI
        | delete_stmt SEMI
        | report_stmt SEMI
@@ -220,13 +226,15 @@ return_stmt: KW_RETURN expression?
 
 // Yield statements
 yield_expr: KW_YIELD KW_FROM? expression
-          | KW_YIELD
 
 // Raise statements
 raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
 
 // Assert statements
 assert_stmt: KW_ASSERT expression (COMMA expression)?
+
+// Check statements
+check_stmt: KW_CHECK expression
 
 // Delete statements
 delete_stmt: KW_DELETE expression
@@ -280,7 +288,7 @@ expression: walrus_assign (KW_IF expression KW_ELSE expression)?
           | lambda_expr
 
 // Walrus assignments
-walrus_assign: (any_ref WALRUS_EQ)? pipe
+walrus_assign: (named_ref WALRUS_EQ)? pipe
 
 // Lambda expressions
 lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
@@ -346,7 +354,7 @@ pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // Subscripted and dotted expressions
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
-            | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
+            | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
             | (atomic_call | atom | edge_ref_chain)
 
 index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
@@ -360,10 +368,11 @@ param_list: expr_list COMMA kw_expr_list
           | expr_list
 
 // Atom
-atom: any_ref
+atom: named_ref
     | LPAREN (expression | yield_expr) RPAREN
     | atom_collection
     | atom_literal
+    | type_ref
 
 atom_literal: builtin_type
             | NULL
@@ -375,6 +384,8 @@ atom_literal: builtin_type
             | BIN
             | HEX
             | INT
+
+type_ref: TYPE_OP (named_ref | builtin_type)
 
 multistring: (fstring | STRING | DOC_STRING)+
 
@@ -416,7 +427,7 @@ tuple_list: expression COMMA expr_list COMMA kw_expr_list
           | kw_expr_list
 
 kw_expr_list: (kw_expr_list COMMA)? kw_expr
-kw_expr: any_ref EQ expression | STAR_POW expression
+kw_expr: named_ref EQ expression | STAR_POW expression
 
 // Data Spatial References
 edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
@@ -439,15 +450,9 @@ typed_filter_compare_list: expression (COLON filter_compare_list)?
 filter_compare_item: named_ref cmp_op expression
 
 // Names and references
-any_ref: named_ref
-       | type_ref
-
 named_ref: special_ref
          | KWESC_NAME
          | NAME
-
-
-type_ref: TYPE_OP (named_ref | builtin_type)
 
 special_ref: KW_INIT
             | KW_POST_INIT
@@ -504,6 +509,7 @@ KW_ASYNC: "async"
 KW_AWAIT: "await"
 KW_TEST: "test"
 KW_ASSERT: "assert"
+KW_CHECK: "check"
 KW_IF: "if"
 KW_ELIF: "elif"
 KW_ELSE: "else"
