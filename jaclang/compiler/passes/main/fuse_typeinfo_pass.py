@@ -454,9 +454,7 @@ class FuseTypeInfoPass(Pass):
             if isinstance(target_node, ast.AstSymbolNode):
                 parent_symbol_table = target_node.type_sym_tab
                 if isinstance(parent_symbol_table, SymbolTable):
-                    owner = parent_symbol_table.owner
-                    if isinstance(owner, ast.AstSymbolNode):
-                        node.sym = parent_symbol_table.lookup(node.sym_name)
+                    node.sym = parent_symbol_table.lookup(node.sym_name)
 
     # def exit_in_for_stmt(self, node: ast.InForStmt):
     #     print(node.loc.mod_path, node.loc)
