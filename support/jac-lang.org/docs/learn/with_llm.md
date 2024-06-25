@@ -6,7 +6,7 @@ GenAI Ability is a powerful feature that enhances interaction with Large Languag
 
 ### Model Initialization
 
-To incorporate a Large Language Model (LLM) into code, initialize it by importing from the ```jaclang.core.llms``` module built into the langauge.
+To incorporate a Large Language Model (LLM) into code, initialize it by importing from the ```mtllm.llms``` module built into the langauge.
 
 To download jac-lang with all required python dependencies to use llms:
     ```bash
@@ -61,7 +61,7 @@ In the jac program that you require to inference an LLM, please code as followin
 
 === "OpenAI"
     ```jac linenums="1"
-    import:py from jaclang.core.llms, OpenAI;
+    import:py from mtllm.llms, OpenAI;
 
     glob llm = OpenAI(
                 model_name = "gpt-4"
@@ -69,7 +69,7 @@ In the jac program that you require to inference an LLM, please code as followin
     ```
 === "Anthropic"
     ```jac linenums="1"
-    import:py from jaclang.core.llms, Anthropic;
+    import:py from mtllm.llms, Anthropic;
 
     glob llm = Anthropic(
                 model_name = "claude-3-sonnet-20240229"
@@ -77,7 +77,7 @@ In the jac program that you require to inference an LLM, please code as followin
     ```
 === "Groq"
     ```jac linenums="1"
-    import:py from jaclang.core.llms, Groq;
+    import:py from mtllm.llms, Groq;
 
     glob llm = Groq(
                 model_name = "llama3-8b-8192", # Go through available models in website
@@ -85,7 +85,7 @@ In the jac program that you require to inference an LLM, please code as followin
     ```
 === "Together AI"
     ```jac linenums="1"
-    import:py from jaclang.core.llms, TogetherAI;
+    import:py from mtllm.llms, TogetherAI;
 
     glob llm = TogetherAI(
                 model_name = "meta-llama/Llama-2-70b-chat-hf" # Go through available models in website
@@ -93,7 +93,7 @@ In the jac program that you require to inference an LLM, please code as followin
     ```
 === "Ollama"
     ```jac linenums="1"
-    import:py from jaclang.core.llms, Ollama;
+    import:py from mtllm.llms, Ollama;
 
     glob llm = Ollama(
                 model_name = "llama3:8b" # Will pull model if does not exists
@@ -101,7 +101,7 @@ In the jac program that you require to inference an LLM, please code as followin
     ```
 === "Hugging Face"
     ```jac linenums="1"
-    import:py from jaclang.core.llms, Huggingface;
+    import:py from mtllm.llms, Huggingface;
 
     glob llm = Huggingface(
                 model_name = "mistralai/Mistral-7B-v0.3" # Will pull model if does not exists

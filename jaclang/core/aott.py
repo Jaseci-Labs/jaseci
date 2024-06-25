@@ -18,14 +18,18 @@ except ImportError:
     Image = None
 
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.core.llms.base import BaseLLM
+
+try:
+    from mtllm.llms import BaseLLM
+except ImportError:
+    BaseLLM = None
 
 
 IMG_FORMATS = ["PngImageFile", "JpegImageFile"]
 
 
 def aott_raise(
-    model: BaseLLM,
+    model: BaseLLM,  # type: ignore
     information: str,
     inputs_information: str | list[dict],
     output_information: str,
@@ -298,7 +302,7 @@ def get_input_information(
         return inputs_information_dict_list
 
 
-def image_to_base64(image: Image) -> str:
+def image_to_base64(image: Image) -> str:  # type: ignore
     """Convert an image to base64 expected by OpenAI."""
     if not Image:
         log = logging.getLogger(__name__)
