@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+import builtins
 import os
 from hashlib import md5
 from types import EllipsisType
@@ -518,6 +519,13 @@ class NameAtom(AtomExpr, EnumBlockStmt):
             return SemTokType.PARAMETER, SemTokMod.DECLARATION
         if self.sym and self.sym_name.isupper():
             return SemTokType.VARIABLE, SemTokMod.READONLY
+        if (
+            self.sym
+            and self.sym.decl.name_of == self.sym.decl
+            and self.sym_name in dir(builtins)
+            and callable(getattr(builtins, self.sym_name))
+        ):
+            return SemTokType.FUNCTION, SemTokMod.DEFINITION
         if self.sym:
             return SemTokType.PROPERTY, SemTokMod.DEFINITION
         return None
