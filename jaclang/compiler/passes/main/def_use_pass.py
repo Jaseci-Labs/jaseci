@@ -284,7 +284,8 @@ class DefUsePass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.sym_tab.use_lookup(node)
+        if not isinstance(node.parent, ast.AtomTrailer):
+            node.sym_tab.use_lookup(node)
 
     def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
