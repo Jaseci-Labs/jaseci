@@ -1,9 +1,6 @@
-import:py from mtllm.llms, Anthropic, Ollama, Groq;
+import:py from mtllm.llms, OpenAI;
 
-glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
-# glob llm = Ollama(model_name="phi3");
-# glob llm = Groq();
-
+glob llm = OpenAI();
 
 can 'Translate English Representation to the given language'
 translate(input: 'English Representation': str, lang: 'Desired Language': str = "French")

@@ -1,4 +1,4 @@
-import:py from mtllm.llms.base, BaseLLM;
+import:py from mtllm.llms, BaseLLM;
 
 obj model:BaseLLM: {
     can init(output_str: str) {

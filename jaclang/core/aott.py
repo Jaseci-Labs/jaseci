@@ -17,7 +17,7 @@ try:
 except ImportError:
     Image = None
 
-from jaclang.core.registry import SemInfo, SemRegistry, SemScope
+from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 
 try:
     import mtllm
