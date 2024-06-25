@@ -20,16 +20,16 @@ except ImportError:
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 
 try:
-    import mtllm
+    from mtllm.llms import BaseLLM
 except ImportError:
-    mtllm = None
+    BaseLLM = None
 
 
 IMG_FORMATS = ["PngImageFile", "JpegImageFile"]
 
 
 def aott_raise(
-    model: mtllm.llms.BaseLLM,  # type: ignore
+    model: BaseLLM,  # type: ignore
     information: str,
     inputs_information: str | list[dict],
     output_information: str,
