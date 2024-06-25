@@ -240,7 +240,7 @@ class TestJacLangServer(TestCase):
             ("<JacSemTokenType.VARIABLE: 8>, <JacSemTokenModifier.READONLY: 4>", 206),
             (
                 "<JacSemTokenType.PROPERTY: 9>, <JacSemTokenModifier.DEFINITION: 2>,",
-                120,
+                112,
             ),
             (
                 "<JacSemTokenType.PARAMETER: 7>, <JacSemTokenModifier.DECLARATION: 1>,",
