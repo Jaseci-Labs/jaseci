@@ -1,17 +1,17 @@
 glob a = 5, b = 2;
 
-test t1 {
+test test1 {
     check assertAlmostEqual(a, 6);
 }
 
-test t2 {
+test test2 {
     check assertTrue(a != b);
 }
 
-test t3 {
+test test3 {
     check assertIn("d", "abc");
 }
 
-test t4 {
+test test4 {
     check assertEqual(a - b, 3);
 }

@@ -1871,6 +1871,32 @@ class JacFormatPass(Pass):
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
+    def exit_check_stmt(self, node: ast.CheckStmt) -> None:
+        """Sub objects.
+
+        target: ExprType,
+        """
+        start = True
+        for i in node.kid:
+            if isinstance(i, ast.CommentToken):
+                if i.is_inline:
+                    self.emit(node, f" {i.gen.jac}")
+                else:
+                    if not node.gen.jac.endswith("\n"):
+                        self.emit_ln(node, "")
+                    self.emit_ln(node, "")
+                    self.emit(node, i.gen.jac)
+            elif isinstance(i, ast.Semi):
+                self.emit(node, i.gen.jac)
+            else:
+                if start:
+                    self.emit(node, i.gen.jac)
+                    start = False
+                else:
+                    self.emit(node, f" {i.gen.jac}")
+        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
+            self.emit_ln(node, "")
+
     def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 

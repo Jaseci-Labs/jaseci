@@ -25,4 +25,4 @@ jobs:
         pip install pytest mtllm[image]
 
     - name: Run tests
-      run: pytest
+      run: pytest -x

@@ -3,23 +3,37 @@
 from __future__ import annotations
 
 import ast as ast3
+import builtins
 import os
 from hashlib import md5
 from types import EllipsisType
-from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    Sequence,
+    TYPE_CHECKING,
+    Type,
+    TypeVar,
+)
+
 
 from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
-from jaclang.compiler.constant import Constants as Con, EdgeDir
-from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
-from jaclang.compiler.semtable import SemRegistry
-from jaclang.compiler.symtable import (
-    Symbol,
-    SymbolAccess,
-    SymbolTable,
+from jaclang.compiler.constant import (
+    Constants as Con,
+    EdgeDir,
+    JacSemTokenModifier as SemTokMod,
+    JacSemTokenType as SemTokType,
     SymbolType,
 )
+from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
+from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
+
+if TYPE_CHECKING:
+    from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
 class AstNode:
@@ -29,11 +43,34 @@ class AstNode:
         """Initialize ast."""
         self.parent: Optional[AstNode] = None
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
-        self.sym_tab: Optional[SymbolTable] = None
+        self._sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
+        self._in_mod_nodes: list[AstNode] = []
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+
+    @property
+    def sym_tab(self) -> SymbolTable:
+        """Get symbol table."""
+        # sym_tab should never be accessed without being set in codebase
+        if not self._sym_tab:
+            import traceback
+
+            if self.parent:
+                print(f"Parent: {self.parent.pp()}")
+            print("Node: ", self.pp())
+            stack_trace = traceback.format_stack()
+            print("".join(stack_trace))
+            raise ValueError(
+                f"Symbol table not set for {type(self).__name__}. Impossible."
+            )
+        return self._sym_tab
+
+    @sym_tab.setter
+    def sym_tab(self, sym_tab: SymbolTable) -> None:
+        """Set symbol table."""
+        self._sym_tab = sym_tab
 
     def add_kids_left(
         self, nodes: Sequence[AstNode], pos_update: bool = True
@@ -352,6 +389,17 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             sym_category=SymbolType.IMPL,
         )
 
+    @property
+    def sym_tab(self) -> SymbolTable:
+        """Get symbol table."""
+        return super().sym_tab
+
+    @sym_tab.setter
+    def sym_tab(self, sym_tab: SymbolTable) -> None:
+        """Set symbol table."""
+        self._sym_tab = sym_tab
+        self.name_spec._sym_tab = sym_tab
+
     def create_impl_name_node(self) -> Name:
         """Create impl name."""
         ret = Name(
@@ -450,6 +498,37 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
         """Set type symbol table."""
         self._type_sym_tab = type_sym_tab
+
+    @property
+    def sem_token(self) -> Optional[tuple[SemTokType, SemTokMod]]:
+        """Resolve semantic token."""
+        if isinstance(self.name_of, BuiltinType):
+            return SemTokType.CLASS, SemTokMod.DECLARATION
+        name_of = self.sym.decl.name_of if self.sym else self.name_of
+        if isinstance(name_of, ModulePath):
+            return SemTokType.NAMESPACE, SemTokMod.DEFINITION
+        if isinstance(name_of, Architype):
+            return SemTokType.CLASS, SemTokMod.DECLARATION
+        if isinstance(name_of, Enum):
+            return SemTokType.ENUM, SemTokMod.DECLARATION
+        if isinstance(name_of, Ability) and name_of.is_method:
+            return SemTokType.METHOD, SemTokMod.DECLARATION
+        if isinstance(name_of, (Ability, Test)):
+            return SemTokType.FUNCTION, SemTokMod.DECLARATION
+        if isinstance(name_of, ParamVar):
+            return SemTokType.PARAMETER, SemTokMod.DECLARATION
+        if self.sym and self.sym_name.isupper():
+            return SemTokType.VARIABLE, SemTokMod.READONLY
+        if (
+            self.sym
+            and self.sym.decl.name_of == self.sym.decl
+            and self.sym_name in dir(builtins)
+            and callable(getattr(builtins, self.sym_name))
+        ):
+            return SemTokType.FUNCTION, SemTokMod.DEFINITION
+        if self.sym:
+            return SemTokType.PROPERTY, SemTokMod.DEFINITION
+        return None
 
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
@@ -558,7 +637,10 @@ class Module(AstDocNode):
     @property
     def annexable_by(self) -> Optional[str]:
         """Get annexable by."""
-        if not self.stub_only and self.loc.mod_path.endswith("impl.jac"):
+        if not self.stub_only and (
+            self.loc.mod_path.endswith("impl.jac")
+            or self.loc.mod_path.endswith("test.jac")
+        ):
             head_mod_name = self.name.split(".")[0]
             potential_path = os.path.join(
                 os.path.dirname(self.loc.mod_path),
@@ -566,7 +648,8 @@ class Module(AstDocNode):
             )
             if os.path.exists(potential_path):
                 return potential_path
-            if os.path.split(os.path.dirname(self.loc.mod_path))[-1].endswith(".impl"):
+            annex_dir = os.path.split(os.path.dirname(self.loc.mod_path))[-1]
+            if annex_dir.endswith(".impl") or annex_dir.endswith(".test"):
                 head_mod_name = os.path.split(os.path.dirname(self.loc.mod_path))[
                     -1
                 ].split(".")[0]
@@ -821,13 +904,12 @@ class ModulePath(AstSymbolNode):
         level: int,
         alias: Optional[Name],
         kid: Sequence[AstNode],
-        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module path node."""
         self.path = path
         self.level = level
         self.alias = alias
-        self.sub_module = sub_module
+        self.sub_module: Optional[Module] = None
 
         name_spec = alias if alias else path[0] if path else None
         if not isinstance(name_spec, Name):
@@ -880,12 +962,11 @@ class ModuleItem(AstSymbolNode):
         name: Name,
         alias: Optional[Name],
         kid: Sequence[AstNode],
-        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize module item node."""
         self.name = name
         self.alias = alias
-        self.sub_module = sub_module
+        self.sub_module: Optional[Module] = None
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -893,6 +974,24 @@ class ModuleItem(AstSymbolNode):
             name_spec=alias if alias else name,
             sym_category=SymbolType.MOD_VAR,
         )
+
+    @property
+    def from_parent(self) -> Import:
+        """Get import parent."""
+        if (
+            not self.parent
+            or not self.parent.parent
+            or not isinstance(self.parent.parent, Import)
+        ):
+            raise ValueError("Import parent not found. Not Possible.")
+        return self.parent.parent
+
+    @property
+    def from_mod_path(self) -> ModulePath:
+        """Get relevant module path."""
+        if not self.from_parent.from_loc:
+            raise ValueError("Module items should have module path. Not Possible.")
+        return self.from_parent.from_loc
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module item node."""
@@ -1149,6 +1248,7 @@ class Ability(
     ElementStmt,
     AstAsyncNode,
     ArchBlockStmt,
+    EnumBlockStmt,
     CodeBlockStmt,
     AstSemStrNode,
     AstImplNeedingNode,
@@ -1194,6 +1294,17 @@ class Ability(
     def is_method(self) -> bool:
         """Check if is func."""
         return self.signature.is_method
+
+    @property
+    def owner_method(self) -> Optional[Architype | Enum]:
+        """Check if is owner method."""
+        return (
+            self.parent.parent
+            if self.parent
+            and self.parent.parent
+            and isinstance(self.parent.parent, (Architype, Enum))
+            else None
+        )
 
     @property
     def is_genai_ability(self) -> bool:
@@ -2061,6 +2172,32 @@ class AssertStmt(CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.COMMA))
             new_kid.append(self.error_msg)
         new_kid.append(self.gen_token(Tok.SEMI))
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+class CheckStmt(CodeBlockStmt):
+    """DeleteStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: Expr,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize delete statement node."""
+        self.target = target
+        AstNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize delete statement node."""
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.KW_CHECK),
+            self.target,
+            self.gen_token(Tok.SEMI),
+        ]
         self.set_kids(nodes=new_kid)
         return res
 
@@ -3025,6 +3162,22 @@ class AtomTrailer(Expr):
         self.set_kids(nodes=new_kid)
         return res
 
+    @property
+    def as_attr_list(self) -> list[AstSymbolNode]:
+        """Unwind trailer into list of ast symbol nodes."""
+        left = self.right if isinstance(self.right, AtomTrailer) else self.target
+        right = self.target if isinstance(self.right, AtomTrailer) else self.right
+        trag_list: list[AstSymbolNode] = (
+            [right] if isinstance(right, AstSymbolNode) else []
+        )
+        while isinstance(left, AtomTrailer) and left.is_attr:
+            if isinstance(left.right, AstSymbolNode):
+                trag_list.insert(0, left.right)
+            left = left.target
+        if isinstance(left, AstSymbolNode):
+            trag_list.insert(0, left)
+        return trag_list
+
 
 class AtomUnit(Expr):
     """AtomUnit node type for Jac Ast."""
@@ -3843,7 +3996,9 @@ class Name(Token, NameAtom):
         )
 
     @staticmethod
-    def gen_stub_from_node(node: AstSymbolNode, name_str: str) -> Name:
+    def gen_stub_from_node(
+        node: AstSymbolNode, name_str: str, set_name_of: Optional[AstSymbolNode] = None
+    ) -> Name:
         """Generate name from node."""
         ret = Name(
             file_path=node.loc.mod_path,
@@ -3856,8 +4011,9 @@ class Name(Token, NameAtom):
             pos_start=node.loc.pos_start,
             pos_end=node.loc.pos_end,
         )
-        ret.name_of = node
-        ret.sym_tab = node.sym_tab
+        ret.name_of = set_name_of if set_name_of else ret
+        if node._sym_tab:
+            ret.sym_tab = node.sym_tab
         return ret
 
 

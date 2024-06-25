@@ -1,18 +1,13 @@
-import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
+import:py from mtllm.llms, OpenAI;
 
-# glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
-# glob llm = Ollama(model_name="phi3");
-glob llm = Groq();
+glob llm = OpenAI();
 
+can get_expert(question: str) -> 'Best Expert to Answer the Question': str by llm(method='Reason');
+can get_answer(question: str, expert: str) -> str by llm();
 
-can 'Finds the best professional to answer the given question'
-get_expert(question: 'Question': str)-> 'Expert Profession': str by llm(reason=True);
-can "Get the answer for the question from expert's perspective"
-get_answer(question:'Question': str, expert: 'Expert': str)-> "Expert's Answer": str by llm(temperature=1.0);
-
-with entry{
+with entry {
     question = "What are Large Language Models?";
     expert = get_expert(question);
     answer = get_answer(question, expert);
-    print(f"For instance, {expert} would answer '{answer}' for the question '{question}'");
+    print(f"{expert} says: '{answer}' ");
 }

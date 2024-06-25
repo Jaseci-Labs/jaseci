@@ -7,11 +7,13 @@ import os
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes.main.sym_tab_build_pass import SymTabPass, SymbolAccess
+from jaclang.compiler.constant import SymbolAccess
+from jaclang.compiler.passes import Pass
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 
 
-class AccessCheckPass(SymTabPass):
+class AccessCheckPass(Pass):
     """Jac Ast Access Check pass."""
 
     def after_pass(self) -> None:
@@ -28,7 +30,7 @@ class AccessCheckPass(SymTabPass):
         """Access check."""
         node_info = (
             node.sym_tab.lookup(node.sym_name)
-            if isinstance(node.sym_tab, ast.SymbolTable)
+            if isinstance(node.sym_tab, SymbolTable)
             else None
         )
 

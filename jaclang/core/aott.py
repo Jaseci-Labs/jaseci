@@ -9,11 +9,18 @@ from enum import Enum
 from typing import Any
 
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.core.llms.base import BaseLLM
+
+try:
+    from mtllm.llms import BaseLLM
+except ImportError:
+    BaseLLM = None
+
+
+IMG_FORMATS = ["PngImageFile", "JpegImageFile"]
 
 
 def aott_raise(
-    model: BaseLLM,
+    model: BaseLLM,  # type: ignore
     information: str,
     inputs_information: str | list[dict],
     output_information: str,

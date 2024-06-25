@@ -495,14 +495,14 @@ class JacFeatureDefaults:
     @hookimpl
     def build_edge(
         is_undirected: bool,
-        conn_type: Optional[Type[EdgeArchitype]],
+        conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[], EdgeArchitype]:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
 
         def builder() -> EdgeArchitype:
-            edge = conn_type()
+            edge = conn_type() if isinstance(conn_type, type) else conn_type
             edge._jac_.is_undirected = is_undirected
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1]):

@@ -907,7 +907,7 @@ class JacLanguageTests(TestCase):
         )
 
         self.assertEqual(mypass.ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.ir.sym_tab)
+        self.assertIsNone(mypass.ir._sym_tab)
         mypass = jac_file_to_pass(
             self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
             target=passes.SymTabBuildPass,
@@ -934,3 +934,12 @@ class JacLanguageTests(TestCase):
                 break
         self.assertIsNotNone(table)
         self.assertIsNotNone(table.lookup("attempts"))
+
+    def test_edge_expr_not_type(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edgetypeissue", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[x()]", stdout_value)

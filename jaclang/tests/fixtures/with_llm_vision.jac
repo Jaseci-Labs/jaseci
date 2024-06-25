@@ -1,5 +1,5 @@
-import:py from jaclang.core.llms, BaseLLM;
-import:py from mtllm, Image;
+import:py from mtllm.llms, BaseLLM;
+import:py from PIL, Image;
 import:py os;
 
 obj model:BaseLLM: {

@@ -24,6 +24,7 @@ class JacParser(Pass):
         """Initialize parser."""
         self.source = input_ir
         self.mod_path = input_ir.loc.mod_path
+        self.node_list: list[ast.AstNode] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
         Pass.__init__(self, input_ir=input_ir, prior=None)
@@ -129,6 +130,7 @@ class JacParser(Pass):
         def nu(self, node: ast.T) -> ast.T:
             """Update node."""
             self.parse_ref.cur_node = node
+            self.parse_ref.node_list.append(node)
             return node
 
         def start(self, kid: list[ast.Module]) -> ast.Module:
@@ -136,6 +138,7 @@ class JacParser(Pass):
 
             start: module
             """
+            kid[0]._in_mod_nodes = self.parse_ref.node_list
             return self.nu(kid[0])
 
         def module(
@@ -1257,7 +1260,7 @@ class JacParser(Pass):
                     | try_stmt
                     | if_stmt
                     | expression SEMI
-                    | yield_expr SEMI
+                    | (yield_expr | KW_YIELD) SEMI
                     | static_assignment
                     | assignment SEMI
                     | global_ref SEMI
@@ -1270,6 +1273,18 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:
                 return self.nu(kid[0])
+            elif isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_YIELD:
+                return ast.ExprStmt(
+                    expr=(
+                        expr := ast.YieldExpr(
+                            expr=None,
+                            with_from=False,
+                            kid=kid,
+                        )
+                    ),
+                    in_fstring=False,
+                    kid=[expr],
+                )
             elif isinstance(kid[0], ast.Expr):
                 return ast.ExprStmt(
                     expr=kid[0],
@@ -1610,6 +1625,21 @@ class JacParser(Pass):
                         error_msg=(
                             error_msg if isinstance(error_msg, ast.Expr) else None
                         ),
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def check_stmt(self, kid: list[ast.AstNode]) -> ast.CheckStmt:
+            """Grammar rule.
+
+            check_stmt: KW_CHECK expression
+            """
+            if isinstance(kid[1], ast.Expr):
+                return self.nu(
+                    ast.CheckStmt(
+                        target=kid[1],
                         kid=kid,
                     )
                 )
@@ -2464,7 +2494,6 @@ class JacParser(Pass):
 
             yield_expr:
                 | KW_YIELD KW_FROM? expression
-                | KW_YIELD
             """
             if isinstance(kid[-1], ast.Expr):
                 return self.nu(
@@ -2474,19 +2503,6 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif (
-                len(kid) == 1
-                and isinstance(kid[0], ast.Token)
-                and kid[0].name == Tok.KW_YIELD
-            ):
-                return self.nu(
-                    ast.YieldExpr(
-                        expr=None,
-                        with_from=False,
-                        kid=kid,
-                    )
-                )
-
             else:
                 raise self.ice()
 

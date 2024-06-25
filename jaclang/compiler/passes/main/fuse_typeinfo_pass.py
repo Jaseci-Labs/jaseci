@@ -11,6 +11,7 @@ from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -182,18 +183,6 @@ class FuseTypeInfoPass(Pass):
     def enter_name(self, node: ast.NameAtom) -> None:
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
-
-        # Assign correct symbols to sym_link in case of
-        # AtomTrailer Object
-        if isinstance(node.parent, ast.AtomTrailer):
-            target_node = node.parent.target
-            if isinstance(target_node, ast.AstSymbolNode):
-                parent_symbol_table = target_node.type_sym_tab
-                if isinstance(parent_symbol_table, ast.SymbolTable):
-                    owner = parent_symbol_table.owner
-                    if isinstance(owner, ast.AstSymbolNode):
-                        target_node.name_spec.sym = owner.sym
-                        node.sym = parent_symbol_table.lookup(node.sym_name)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -442,3 +431,38 @@ class FuseTypeInfoPass(Pass):
     ) -> None:
         """Get type info from mypy type TupleType."""
         node.name_spec.sym_type = "builtins.tuple"
+
+    def exit_assignment(self, node: ast.Assignment) -> None:
+        """Add new symbols in the symbol table in case of self."""
+        # This will fix adding new items to the class through self
+        # self.x = 5  # will add x to self datatype symbol table
+        for target in node.target.items:
+            if (
+                isinstance(target, ast.AtomTrailer)
+                and isinstance(target.target, ast.SpecialVarRef)
+                and target.target.sym_name == "self"
+            ):
+                self_obj = target.target
+                right_obj = target.right
+                if self_obj.type_sym_tab and isinstance(right_obj, ast.AstSymbolNode):
+                    self_obj.type_sym_tab.def_insert(right_obj)
+
+    def exit_name(self, node: ast.Name) -> None:
+        """Add new symbols in the symbol table in case of atom trailer."""
+        if isinstance(node.parent, ast.AtomTrailer):
+            target_node = node.parent.target
+            if isinstance(target_node, ast.AstSymbolNode):
+                parent_symbol_table = target_node.type_sym_tab
+                if isinstance(parent_symbol_table, SymbolTable):
+                    owner = parent_symbol_table.owner
+                    if isinstance(owner, ast.AstSymbolNode):
+                        node.sym = parent_symbol_table.lookup(node.sym_name)
+
+    # def exit_in_for_stmt(self, node: ast.InForStmt):
+    #     print(node.loc.mod_path, node.loc)
+    #     print(node.target, node.target.loc)
+    #     # node.sym_tab.def_insert()
+    #     # exit()
+
+    # def after_pass(self) -> None:
+    #     exit()

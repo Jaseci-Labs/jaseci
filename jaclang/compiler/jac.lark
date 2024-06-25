@@ -68,6 +68,8 @@ enum_stmt: NAME (COLON STRING)? EQ expression
          | NAME (COLON STRING)?
          | py_code_block
          | free_code
+         | abstract_ability
+         | ability
 
 // Abilities
 ability: decorators? KW_ASYNC? ability_decl
@@ -132,9 +134,10 @@ statement: import_stmt
        | nonlocal_ref SEMI
        | typed_ctx_block
        | return_stmt SEMI
-       | yield_expr SEMI
+       | (yield_expr | KW_YIELD) SEMI
        | raise_stmt SEMI
        | assert_stmt SEMI
+       | check_stmt SEMI
        | assignment SEMI
        | delete_stmt SEMI
        | report_stmt SEMI
@@ -223,13 +226,15 @@ return_stmt: KW_RETURN expression?
 
 // Yield statements
 yield_expr: KW_YIELD KW_FROM? expression
-          | KW_YIELD
 
 // Raise statements
 raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
 
 // Assert statements
 assert_stmt: KW_ASSERT expression (COMMA expression)?
+
+// Check statements
+check_stmt: KW_CHECK expression
 
 // Delete statements
 delete_stmt: KW_DELETE expression
@@ -504,6 +509,7 @@ KW_ASYNC: "async"
 KW_AWAIT: "await"
 KW_TEST: "test"
 KW_ASSERT: "assert"
+KW_CHECK: "check"
 KW_IF: "if"
 KW_ELIF: "elif"
 KW_ELSE: "else"

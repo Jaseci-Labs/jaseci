@@ -1,9 +1,93 @@
 """Constants across the project."""
 
-from enum import Enum
+from enum import Enum, IntEnum, IntFlag, StrEnum
 
 
-class Constants(str, Enum):
+class SymbolType(Enum):
+    """Symbol types."""
+
+    MODULE = "module"  # LSP: Module
+    MOD_VAR = "mod_var"  # LSP: Variable
+    VAR = "variable"  # LSP: Variable
+    IMM_VAR = "immutable"  # LSP: Constant
+    ABILITY = "ability"  # LSP: Function
+    OBJECT_ARCH = "object"  # LSP: Class
+    NODE_ARCH = "node"  # LSP: Class
+    EDGE_ARCH = "edge"  # LSP: Class
+    WALKER_ARCH = "walker"  # LSP: Class
+    ENUM_ARCH = "enum"  # LSP: Enum
+    TEST = "test"  # LSP: Function
+    TYPE = "type"  # LSP: TypeParameter
+    IMPL = "impl"  # LSP: Interface or Property
+    HAS_VAR = "field"  # LSP: Field
+    METHOD = "method"  # LSP: Method
+    CONSTRUCTOR = "constructor"  # LSP: Constructor
+    ENUM_MEMBER = "enum_member"  # LSP: EnumMember
+    NUMBER = "number"  # LSP: Number
+    STRING = "string"  # LSP: String
+    BOOL = "bool"  # LSP: Boolean
+    SEQUENCE = "sequence"  # LSP: Array
+    NULL = "null"  # LSP: Null
+    UNKNOWN = "unknown"  # LSP: Unknown
+
+    def __str__(self) -> str:
+        """Stringify."""
+        return self.value
+
+
+class JacSemTokenType(IntEnum):
+    """LSP Token types for Jac."""
+
+    NAMESPACE = 0
+    TYPE = 1
+    CLASS = 2
+    ENUM = 3
+    INTERFACE = 4
+    STRUCT = 5
+    TYPE_PARAMETER = 6
+    PARAMETER = 7
+    VARIABLE = 8
+    PROPERTY = 9
+    ENUM_MEMBER = 10
+    EVENT = 11
+    FUNCTION = 12
+    METHOD = 13
+    MACRO = 14
+    KEYWORD = 15
+    MODIFIER = 16
+    COMMENT = 17
+    STRING = 18
+    NUMBER = 19
+    REGEXP = 20
+    OPERATOR = 21
+
+    @staticmethod
+    def as_str_list() -> list[str]:
+        """Return the string representation of the token."""
+        return [i.name.lower() for i in JacSemTokenType]
+
+
+class JacSemTokenModifier(IntFlag):
+    """LSP Token modifiers for Jac."""
+
+    DECLARATION = 1 << 0
+    DEFINITION = 1 << 1
+    READONLY = 1 << 2
+    STATIC = 1 << 3
+    DEPRECATED = 1 << 4
+    ABSTRACT = 1 << 5
+    ASYNC = 1 << 6
+    MODIFICATION = 1 << 7
+    DOCUMENTATION = 1 << 8
+    DEFAULT_LIBRARY = 1 << 9
+
+    @staticmethod
+    def as_str_list() -> list[str]:
+        """Return the string representation of the token."""
+        return [i.name.lower() for i in JacSemTokenModifier if i.name]
+
+
+class Constants(StrEnum):
     """Token constants for Jac."""
 
     JAC_LANG_IMP = "jac"
@@ -47,6 +131,18 @@ class Values(int, Enum):
     """Token constants for Jac."""
 
     JAC_ERROR_LINE_RANGE = 3
+
+
+class SymbolAccess(Enum):
+    """Symbol types."""
+
+    PRIVATE = "private"
+    PUBLIC = "public"
+    PROTECTED = "protected"
+
+    def __str__(self) -> str:
+        """Stringify."""
+        return self.value
 
 
 # Done like this for type checker
@@ -100,6 +196,7 @@ class Tokens(str, Enum):
     KW_AWAIT = "KW_AWAIT"
     KW_TEST = "KW_TEST"
     KW_ASSERT = "KW_ASSERT"
+    KW_CHECK = "KW_CHECK"
     COLON = "COLON"
     PIPE_FWD = "PIPE_FWD"
     PIPE_BKWD = "PIPE_BKWD"

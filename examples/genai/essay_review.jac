@@ -1,20 +1,14 @@
-import:py from jaclang.core.llms, Anthropic, Ollama, Groq;
+import:py from mtllm.llms, OpenAI;
 
-# glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
-# glob llm = Ollama(model_name="phi3");
-glob llm = Groq();
+glob llm = OpenAI();
 
 obj Essay {
-    has essay: 'Essay': str;
+    has essay: str;
 
     can 'Evaluate the given essay based on the given criteria. Provide Detailed Judgement.'
-    essay_judge(criteria: 'Criteria': str) -> 'Judgement': str by llm(incl_info=(self.essay));
-
-    can 'Generate a summary'
-    generate_summary(judgements: 'Judgements': dict) -> 'Summary': str by llm(incl_info=(self.essay));
-
-    can 'Give essay a letter grade (A-D)'
-    give_grade(summary: 'Summary': str) -> 'Grade': str by llm();
+    essay_judge(criteria: str) -> str by llm(incl_info=(self.essay));
+    can generate_summary(judgements: dict) -> str by llm(incl_info=(self.essay));
+    can give_grade(summary: str) -> 'A to D': str by llm();
 }
 
 with entry{
