@@ -28,9 +28,10 @@ obj Game {
 
     can postinit {
         pygame.<>init();
-        self.font: pygame.font.Font=pygame.font.Font(GENERAL_FONT, 32);
+        self.font: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
     }
     # Generate the map according to the tilemap variable in map.jac
+
     can createTilemap;
     can new;
     can events;
@@ -99,16 +100,32 @@ with entry {
         keys = pygame.key.get_pressed();
         if keys[pygame.K_SPACE] {
             if self.player.facing == 'up' {
-                Attack(self, self.player.rect.x, self.player.rect.y - TILESIZE);
+                Attack(
+                    self,
+                    self.player.rect.x,
+                    self.player.rect.y - TILESIZE
+                );
             }
             if self.player.facing == 'down' {
-                Attack(self, self.player.rect.x, self.player.rect.y + TILESIZE);
+                Attack(
+                    self,
+                    self.player.rect.x,
+                    self.player.rect.y + TILESIZE
+                );
             }
             if self.player.facing == 'right' {
-                Attack(self, self.player.rect.x + TILESIZE, self.player.rect.y);
+                Attack(
+                    self,
+                    self.player.rect.x + TILESIZE,
+                    self.player.rect.y
+                );
             }
             if self.player.facing == 'left' {
-                Attack(self, self.player.rect.x - TILESIZE, self.player.rect.y);
+                Attack(
+                    self,
+                    self.player.rect.x - TILESIZE,
+                    self.player.rect.y
+                );
             }
         }
     }
@@ -145,10 +162,19 @@ with entry {
 # Game over screen
 
 :obj:Game:can:game_over() {
-    self.score-=2;
+    self.score -= 2;
     text = self.font.render('GaMe OvEr', True, RED);
     text_rect = text.get_rect(center=(WIN_WIDTH / 2, WIN_HEIGHT / 2));
-    restart_button = Button(10, WIN_HEIGHT - 135, 120, 125, WHITE, BLACK, 'Restart', 32);
+    restart_button = Button(
+        10,
+        WIN_HEIGHT - 135,
+        120,
+        125,
+        WHITE,
+        BLACK,
+        'Restart',
+        32
+    );
     for sprite in self.all_sprites {
         sprite.kill();
     }
@@ -167,7 +193,10 @@ with entry {
         }
         self.screen.blit(self.go_background, (0, 0));
         self.screen.blit(text, text_rect);
-        self.screen.blit(restart_button.image, restart_button.rect);
+        self.screen.blit(
+            restart_button.image,
+            restart_button.rect
+        );
         self.clock.tick(FPS);
         pygame.display.update();
     }
@@ -178,7 +207,16 @@ with entry {
     intro = True;
     title = self.font.render('Spud-nik : SOLO', True, BLUE);
     title_rect = title.get_rect(x=WIN_WIDTH / 2 - 100, y=100);
-    play_button = Button(int(WIN_WIDTH / 2 - 50), 200, 100, 100, WHITE, BLACK, 'Play', 32);
+    play_button = Button(
+        int(WIN_WIDTH / 2 - 50),
+        200,
+        100,
+        100,
+        WHITE,
+        BLACK,
+        'Play',
+        32
+    );
     while intro {
         for event in pygame.event.get() {
             if event.type == pygame.QUIT {
@@ -201,10 +239,19 @@ with entry {
 # Game won
 
 :obj:Game:can:game_won {
-    self.score+=5;
+    self.score += 5;
     text = self.font.render('YOU WON!', True, BLUE);
     text_rect = text.get_rect(center=(WIN_WIDTH / 2, WIN_HEIGHT / 2));
-    restart_button = Button(10, WIN_HEIGHT - 135, 120, 125, WHITE, BLACK, 'Restart', 32);
+    restart_button = Button(
+        10,
+        WIN_HEIGHT - 135,
+        120,
+        125,
+        WHITE,
+        BLACK,
+        'Restart',
+        32
+    );
     for sprite in self.all_sprites {
         sprite.kill();
     }
@@ -222,7 +269,10 @@ with entry {
         }
         self.screen.blit(self.intro_background, (0, 0));
         self.screen.blit(text, text_rect);
-        self.screen.blit(restart_button.image, restart_button.rect);
+        self.screen.blit(
+            restart_button.image,
+            restart_button.rect
+        );
         self.clock.tick(FPS);
         pygame.display.update();
     }

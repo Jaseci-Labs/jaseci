@@ -504,7 +504,11 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         """Resolve semantic token."""
         if isinstance(self.name_of, BuiltinType):
             return SemTokType.CLASS, SemTokMod.DECLARATION
-        name_of = self.sym.decl.name_of if self.sym else self.name_of
+        name_of = (
+            self.sym.decl.name_of
+            if self.sym and not isinstance(self.sym.decl.name_of, Name)
+            else self.name_of
+        )
         if isinstance(name_of, ModulePath):
             return SemTokType.NAMESPACE, SemTokMod.DEFINITION
         if isinstance(name_of, Architype):

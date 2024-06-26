@@ -45,7 +45,7 @@ def jac_importer(
         if isinstance(mod_bundle, str)
         and mod_bundle in sys.modules
         and "__jac_mod_bundle__" in sys.modules[mod_bundle].__dict__
-        else mod_bundle
+        else None
     )
 
     caller_dir = get_caller_dir(target, base_path, dir_path)

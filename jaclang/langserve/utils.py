@@ -162,8 +162,14 @@ def owner_sym(table: SymbolTable) -> Optional[Symbol]:
 def create_range(loc: CodeLocInfo) -> lspt.Range:
     """Create an lspt.Range from a location object."""
     return lspt.Range(
-        start=lspt.Position(line=loc.first_line - 1, character=loc.col_start - 1),
-        end=lspt.Position(line=loc.last_line - 1, character=loc.col_end - 1),
+        start=lspt.Position(
+            line=loc.first_line - 1 if loc.first_line > 0 else 0,
+            character=loc.col_start - 1 if loc.col_start > 0 else 0,
+        ),
+        end=lspt.Position(
+            line=loc.last_line - 1 if loc.last_line > 0 else 0,
+            character=loc.col_end - 1 if loc.col_end > 0 else 0,
+        ),
     )
 
 
