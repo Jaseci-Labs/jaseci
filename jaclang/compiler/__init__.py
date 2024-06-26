@@ -32,10 +32,10 @@ def generate_static_parser(force: bool = False) -> None:
         try:
             auto_generate_refs()
         except Exception as e:
-            print(f"Error generating reference files: {e}")
+            logging.error(f"Error generating reference files: {e}")
 
 
-generate_static_parser()
+# generate_static_parser()
 try:
     from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
 
