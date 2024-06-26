@@ -68,6 +68,7 @@ class JacParser(Pass):
             name=token.type,
             value=token.value,
             line=token.line if token.line is not None else 0,
+            end_line=token.end_line if token.end_line is not None else 0,
             col_start=token.column if token.column is not None else 0,
             col_end=token.end_column if token.end_column is not None else 0,
             pos_start=token.start_pos if token.start_pos is not None else 0,
