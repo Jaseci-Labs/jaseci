@@ -12,6 +12,7 @@ from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 
 from mtllm.llms.base import BaseLLM
 from mtllm.tools.base import Tool
+from mtllm.utils import Image, Video
 
 
 def aott_raise(
@@ -244,9 +245,7 @@ def get_input_information(
             where each dictionary contains either text or image_url.
 
     """
-    contains_media = any(
-        get_type_annotation(i[3]) in ["Image", "Video"] for i in inputs
-    )
+    contains_media = any(isinstance(i[3], (Image, Video)) for i in inputs)
     if not contains_media:
         inputs_information_list = []
         for i in inputs:
