@@ -6,12 +6,12 @@ import os
 import shutil
 import sys
 
+from jaclang.utils.helpers import auto_generate_refs
+from jaclang.vendor.lark.tools import standalone
+
 
 def generate_static_parser(force: bool = False) -> None:
     """Generate static parser."""
-    from jaclang.utils.helpers import auto_generate_refs
-    from jaclang.vendor.lark.tools import standalone
-
     cur_dir = os.path.dirname(__file__)
     if force or not os.path.exists(os.path.join(cur_dir, "generated", "jac_parser.py")):
         if os.path.exists(os.path.join(cur_dir, "generated")):
@@ -35,17 +35,16 @@ def generate_static_parser(force: bool = False) -> None:
             logging.error(f"Error generating reference files: {e}")
 
 
-# generate_static_parser()
+generate_static_parser()
 try:
     from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
-
-    jac_lark.logger.setLevel(logging.DEBUG)
-except AttributeError:
+except ModuleNotFoundError:
     generate_static_parser(force=True)
     from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
 
-    jac_lark.logger.setLevel(logging.DEBUG)
-contextlib.suppress(AttributeError)
+jac_lark.logger.setLevel(logging.DEBUG)
+contextlib.suppress(ModuleNotFoundError)
+
 TOKEN_MAP = {
     x.name: x.pattern.value
     for x in jac_lark.Lark_StandAlone().parser.lexer_conf.terminals
