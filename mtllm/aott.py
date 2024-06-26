@@ -296,12 +296,11 @@ def get_input_information(
                 ]
                 inputs_information_dict_list.extend(video_repr)
                 continue
-            typ_anno = get_type_annotation(i[3])
-            type_collector.extend(extract_non_primary_type(typ_anno))
+            type_collector.extend(extract_non_primary_type(input_type))
             inputs_information_dict_list.append(
                 {
                     "type": "text",
-                    "text": f"{i[0] if i[0] else ''} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip(),
+                    "text": f"{i[0] if i[0] else ''} ({i[2]}) ({input_type}) = {get_object_string(i[3])}".strip(),
                 }
             )
         return inputs_information_dict_list
