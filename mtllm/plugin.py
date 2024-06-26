@@ -7,11 +7,19 @@ from typing import Any
 from jaclang.compiler.semtable import SemScope
 from jaclang.plugin.default import hookimpl
 
+from mtllm.aott import (
+    aott_raise,
+    extract_non_primary_type,
+    get_all_type_explanations,
+    get_info_types,
+    get_input_information,
+)
 from mtllm.llms.base import BaseLLM
-from mtllm.aott import aott_raise, get_info_types, get_input_information, get_all_type_explanations, extract_non_primary_type
 
 
 class JacFeature:
+    """Jac's with_llm feature."""
+
     @staticmethod
     @hookimpl
     def with_llm(
