@@ -1,7 +1,8 @@
 [tool.poetry]
 name = "mtllm"
-version = "0.1.12"
+version = "0.1.13"
 description = "MTLLM Provides Easy to use APIs for different LLM Providers to be used with Jaseci's Jaclang Programming Language."
+maintainers = ["Chandra Irugalbandara <irugalbandara@ascii.ai>", "Kugesan Sivasothynathan <kugesan.sivasothynathan@jaseci.org>"]
 authors = ["Chandra Irugalbandara <irugalbandara@ascii.ai>", "Kugesan Sivasothynathan <kugesan.sivasothynathan@jaseci.org>"]
 license = "MIT"
 readme = "README.md"
@@ -25,6 +26,9 @@ pytest = "^8.2.1"
 tools = ["wikipedia"]
 video = ["opencv-python-headless"]
 image = ["pillow"]
+
+[tool.poetry.plugins."jac"]
+mtllm = "mtllm.plugin:JacFeature"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
