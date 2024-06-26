@@ -12,6 +12,7 @@ nav:
         - 'learn/jac_ref.md'
         - 'learn/with_llm.md'
         - 'learn/tips_tricks.md'
+        - 'learn/jac_plugins.md'
       - ~/for_contributors:
         - 'learn/contrib.md'
       - ~/w.i.p$:
