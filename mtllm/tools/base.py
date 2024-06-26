@@ -2,8 +2,6 @@
 
 from typing import Callable
 
-import wikipedia as wikipedia_utils
-
 
 class Tool:
     """Base class for tools."""
@@ -32,4 +30,6 @@ class wikipedia(Tool):  # noqa
 
     def forward(self, title: str) -> str:
         """Get the summary of a Wikipedia article."""
+        import wikipedia as wikipedia_utils
+
         return wikipedia_utils.summary(title)
