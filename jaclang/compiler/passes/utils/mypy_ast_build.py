@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import ast
 import os
-import pathlib
 
-import jaclang
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import (
     FuseTypeInfoPass,
-)  # TODO: Put in better place
+)
 
 import mypy.build as myb
 import mypy.checkexpr as mycke
@@ -29,11 +27,6 @@ from mypy.build import load_plugins
 from mypy.build import process_graph
 from mypy.options import Options
 from mypy.semanal_main import semantic_analysis_for_scc
-
-
-os.environ["MYPYPATH"] = str(
-    pathlib.Path(os.path.dirname(jaclang.__file__)).parent / "stubs"
-)
 
 
 mypy_to_jac_node_map: dict[

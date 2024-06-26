@@ -27,7 +27,7 @@ def generate_static_parser(force: bool = False) -> None:
             os.path.join(cur_dir, "generated", "jac_parser.py"),
             "-c",
         ]
-        standalone.main()  # type: ignore
+        standalone.main()
         sys.argv = save_argv
         try:
             auto_generate_refs()
@@ -37,10 +37,10 @@ def generate_static_parser(force: bool = False) -> None:
 
 generate_static_parser()
 try:
-    from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
+    from jaclang.compiler.generated import jac_parser as jac_lark
 except ModuleNotFoundError:
     generate_static_parser(force=True)
-    from jaclang.compiler.generated import jac_parser as jac_lark  # noqa: E402
+    from jaclang.compiler.generated import jac_parser as jac_lark
 
 jac_lark.logger.setLevel(logging.DEBUG)
 contextlib.suppress(ModuleNotFoundError)
