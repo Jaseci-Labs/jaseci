@@ -15,13 +15,6 @@ from typing import Any, Callable, Optional, Type, Union
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.core.aott import (
-    aott_raise,
-    extract_non_primary_type,
-    get_all_type_explanations,
-    get_info_types,
-    get_input_information,
-)
 from jaclang.core.constructs import (
     Architype,
     DSFunc,
@@ -616,7 +609,7 @@ class JacFeatureDefaults:
                     )
         if isinstance(attr_sem_info, SemInfo) and isinstance(attr_scope, SemScope):
             return attr_sem_info.semstr, attr_scope.as_type_str
-        return "", ""  #
+        return "", ""
 
     @staticmethod
     @hookimpl
@@ -632,68 +625,9 @@ class JacFeatureDefaults:
         action: str,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry = pickle.load(f)
-
-        outputs = outputs[0] if isinstance(outputs, list) else outputs
-        _scope = SemScope.get_scope_from_str(scope)
-        assert _scope is not None
-
-        method = model_params.pop("method") if "method" in model_params else "Normal"
-        available_methods = model.MTLLM_METHOD_PROMPTS.keys()
-        assert (
-            method in available_methods
-        ), f"Invalid method: {method}. Select from {available_methods}"
-
-        context = (
-            "\n".join(model_params.pop("context")) if "context" in model_params else ""
+        raise ImportError(
+            "mtllm is not installed. Please install it with `pip install mtllm`."
         )
-
-        type_collector: list = []
-        incl_info = [x for x in incl_info if not isinstance(x[1], type)]
-        information, collected_types = get_info_types(_scope, mod_registry, incl_info)
-        type_collector.extend(collected_types)
-
-        inputs_information = get_input_information(inputs, type_collector)
-
-        output_information = f"{outputs[0]} ({outputs[1]})".strip()
-        type_collector.extend(extract_non_primary_type(outputs[1]))
-        output_type_explanations = "\n".join(
-            list(
-                get_all_type_explanations(
-                    extract_non_primary_type(outputs[1]), mod_registry
-                ).values()
-            )
-        )
-
-        type_explanations_list = list(
-            get_all_type_explanations(type_collector, mod_registry).values()
-        )
-        type_explanations = "\n".join(type_explanations_list)
-
-        meaning_out = aott_raise(
-            model=model,
-            information=information,
-            inputs_information=inputs_information,
-            output_information=output_information,
-            type_explanations=type_explanations,
-            action=action,
-            context=context,
-            method=method,
-            tools=[],
-            model_params=model_params,
-        )
-        output = model.resolve_output(
-            meaning_out, outputs[0], outputs[1], output_type_explanations
-        )
-        return output
 
 
 class JacBuiltin:
