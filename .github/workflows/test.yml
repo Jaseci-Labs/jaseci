@@ -23,7 +23,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry install
-        pip install opencv-python-headless pillow
+        pip install pytest opencv-python-headless pillow
 
     - name: Run tests
       run: pytest -x
