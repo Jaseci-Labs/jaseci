@@ -1,6 +1,6 @@
 # MTLLM API library
 
-[![PyPI version](https://img.shields.io/pypi/v/mtllm.svg)](https://pypi.org/project/mtllm/)
+[![PyPI version](https://img.shields.io/pypi/v/mtllm.svg)](https://pypi.org/project/mtllm/) [![tests](https://github.com/Jaseci-Labs/mtllm/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/mtllm/actions/workflows/test.yml)
 
 The MTLLM Python library provides convenient access to a large number of easy to use and customizable APIs to be used in Jaseci's [Jaclang](https://github.com/Jaseci-Labs/jaclang) by llm feature.
 The Library provides automatic output fixing, output type validation, different prompting techniques, and more.
