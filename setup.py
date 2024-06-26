@@ -5,35 +5,39 @@ from __future__ import annotations
 from setuptools import find_packages, setup
 
 
-VERSION = "0.0.1"
+VERSION = "2.0.0"
 
 setup(
     name="jaclang-jaseci",
     version=VERSION,
     packages=find_packages(include=["jaclang_jaseci", "jaclang_jaseci.*"]),
     install_requires=[
-        "jaclang",
-        "fastapi==0.109.0",
-        "pydantic==2.6.0",
-        "pymongo==4.6.1",
-        "motor==3.3.2",
+        "jaclang==0.7.9",
+        "fastapi==0.111.0",
+        "pydantic==2.8.2",
+        "pymongo==4.8.0",
+        "motor==3.5.0",
         "motor-types==1.0.0b4",
         "python-dotenv==1.0.1",
-        "uvicorn==0.27.0.post1",
+        "uvicorn==0.30.1",
         "pyjwt[crypto]==2.8.0",
-        "passlib[bcrypt]==1.7.4",
-        "email-validator==2.1.0.post1",
-        "orjson==3.9.13",
-        "redis==5.0.1",
-        "types-redis==4.6.0.20240218",
+        "passlib==1.7.4",
+        "types-passlib==1.7.7.20240327",
+        "email-validator==2.2.0",
+        "orjson==3.10.6",
+        "redis==5.0.7",
+        "types-redis==4.6.0.20240425",
         "python-multipart==0.0.9",
         "httpx==0.27.0",
+        "sendgrid==6.11.0",
+        "nest-asyncio==1.6.0",
+        "fastapi-sso==0.15.0",
     ],
     package_data={},
     entry_points={
         "jac": [],
     },
-    author="Jason Mars, Yiping Kang, Alexie Madolid",
+    author="Jason Mars",
     author_email="jason@jaseci.org",
-    url="https://github.com/Jaseci-Labs/jaclang-jaseci",
+    url="https://github.com/Jaseci-Labs/jaclang",
 )
