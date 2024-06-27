@@ -65,21 +65,35 @@ class ModuleInfo:
         """Return uri."""
         return uris.from_fs_path(self.ir.loc.mod_path)
 
-    @property
-    def has_syntax_error(self) -> bool:
-        """Return if there are syntax errors."""
-        return len(self.errors) > 0 and self.alev == ALev.QUICK
-
-    def update_with(self, new_info: ModuleInfo, refresh: bool = False) -> None:
+    def update_with(
+        self,
+        build: Pass,
+        alev: ALev,
+        refresh: bool = False,
+        mod_override: Optional[ast.Module] = None,
+    ) -> None:
         """Update module info."""
-        self.ir = new_info.ir
+        target_mod = mod_override if mod_override else build.ir
+        if not isinstance(target_mod, ast.Module):
+            return
+        self.ir = target_mod  # if alev > ALev.QUICK else self.ir
         if refresh:
-            self.errors = new_info.errors
-            self.warnings = new_info.warnings
+            self.errors = build.errors_had
+            self.warnings = build.warnings_had
         else:
-            self.errors += [i for i in new_info.errors if i not in self.errors]
-            self.warnings += [i for i in new_info.warnings if i not in self.warnings]
-        self.alev = new_info.alev
+            self.errors += [
+                i
+                for i in build.errors_had
+                if i not in self.errors
+                if i.loc.mod_path == target_mod.loc.mod_path
+            ]
+            self.warnings += [
+                i
+                for i in build.warnings_had
+                if i not in self.warnings
+                if i.loc.mod_path == target_mod.loc.mod_path
+            ]
+        self.alev = alev
         self.diagnostics = self.gen_diagnostics()
         if self.alev == ALev.TYPE:
             self.sem_tokens = self.gen_sem_tokens()
@@ -161,36 +175,36 @@ class JacLangServer(LanguageServer):
         if not isinstance(build.ir, ast.Module):
             self.log_error("Error with module build.")
             return
-        new_mod = ModuleInfo(
-            ir=build.ir,
-            errors=[
-                i
-                for i in build.errors_had
-                if i.loc.mod_path == uris.to_fs_path(file_path)
-            ],
-            warnings=[
-                i
-                for i in build.warnings_had
-                if i.loc.mod_path == uris.to_fs_path(file_path)
-            ],
-            alev=alev,
-        )
         if file_path in self.modules:
-            self.modules[file_path].update_with(new_mod, refresh=refresh)
+            self.modules[file_path].update_with(build, alev, refresh=refresh)
         else:
-            self.modules[file_path] = new_mod
-        for p in build.ir.mod_deps.keys():
-            uri = uris.from_fs_path(p)
-            new_mod = ModuleInfo(
-                ir=build.ir.mod_deps[p],
-                errors=[i for i in build.errors_had if i.loc.mod_path == p],
-                warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
+            self.modules[file_path] = ModuleInfo(
+                ir=build.ir,
+                errors=[
+                    i
+                    for i in build.errors_had
+                    if i.loc.mod_path == uris.to_fs_path(file_path)
+                ],
+                warnings=[
+                    i
+                    for i in build.warnings_had
+                    if i.loc.mod_path == uris.to_fs_path(file_path)
+                ],
                 alev=alev,
             )
+        for p in build.ir.mod_deps.keys():
+            uri = uris.from_fs_path(p)
             if not refresh and uri in self.modules:
-                self.modules[uri].update_with(new_mod)
+                self.modules[uri].update_with(
+                    build, alev, mod_override=build.ir.mod_deps[p], refresh=refresh
+                )
             else:
-                self.modules[uri] = new_mod
+                self.modules[uri] = ModuleInfo(
+                    ir=build.ir.mod_deps[p],
+                    errors=[i for i in build.errors_had if i.loc.mod_path == p],
+                    warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
+                    alev=alev,
+                )
             self.modules[uri].parent = (
                 self.modules[file_path] if file_path != uri else None
             )
@@ -491,7 +505,9 @@ class JacLangServer(LanguageServer):
 
     def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
-        if root_node := self.modules[file_path].ir._sym_tab:
+        if file_path in self.modules and (
+            root_node := self.modules[file_path].ir._sym_tab
+        ):
             return collect_symbols(root_node)
         return []
 
