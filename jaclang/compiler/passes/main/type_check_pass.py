@@ -94,42 +94,29 @@ class JacTypeCheckPass(Pass):
             mypy_graph[module.name] = st
             new_modules.append(st)
 
+        def get_stub(mod: str) -> myab.BuildSource:
+            """Get stub file path."""
+            return myab.BuildSource(
+                path=str(
+                    pathlib.Path(os.path.dirname(jaclang.__file__)).parent
+                    / "stubs"
+                    / "jaclang"
+                    / "plugin"
+                    / f"{mod}.pyi"
+                ),
+                module=f"jaclang.plugin.{mod}",
+            )
+
         graph = myab.load_graph(
             [
                 myab.BuildSource(
                     path=str(self.__path / "typeshed" / "stdlib" / "builtins.pyi"),
                     module="builtins",
                 ),
-                myab.BuildSource(
-                    path=str(
-                        pathlib.Path(os.path.dirname(jaclang.__file__)).parent
-                        / "stubs"
-                        / "jaclang"
-                        / "plugin"
-                        / "default.pyi"
-                    ),
-                    module="jaclang.plugin.default",
-                ),
-                myab.BuildSource(
-                    path=str(
-                        pathlib.Path(os.path.dirname(jaclang.__file__)).parent
-                        / "stubs"
-                        / "jaclang"
-                        / "plugin"
-                        / "feature.pyi"
-                    ),
-                    module="jaclang.plugin.feature",
-                ),
-                myab.BuildSource(
-                    path=str(
-                        pathlib.Path(os.path.dirname(jaclang.__file__)).parent
-                        / "stubs"
-                        / "jaclang"
-                        / "plugin"
-                        / "spec.pyi"
-                    ),
-                    module="jaclang.plugin.spec",
-                ),
+                get_stub("default"),
+                get_stub("feature"),
+                get_stub("spec"),
+                get_stub("builtin"),
             ],
             manager,
             old_graph=mypy_graph,
