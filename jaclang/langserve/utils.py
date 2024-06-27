@@ -10,6 +10,7 @@ from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, Typ
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.utils.helpers import import_target_to_relative_path
 
@@ -188,6 +189,49 @@ def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
                     lspt.SymbolKind.Enum
                     if isinstance(sub_tab, (ast.Enum, ast.EnumDef))
                     else lspt.SymbolKind.Variable
+                )
+            )
+        )
+    )
+
+
+def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
+    """Map the symbol node to an lspt.CompletionItemKind."""
+    return (
+        lspt.CompletionItemKind.Function
+        if sub_tab in [SymbolType.ABILITY, SymbolType.TEST]
+        else (
+            lspt.CompletionItemKind.Class
+            if sub_tab
+            in [
+                SymbolType.OBJECT_ARCH,
+                SymbolType.NODE_ARCH,
+                SymbolType.EDGE_ARCH,
+                SymbolType.WALKER_ARCH,
+            ]
+            else (
+                lspt.CompletionItemKind.Module
+                if sub_tab == SymbolType.MODULE
+                else (
+                    lspt.CompletionItemKind.Enum
+                    if sub_tab == SymbolType.ENUM_ARCH
+                    else (
+                        lspt.CompletionItemKind.Field
+                        if sub_tab == SymbolType.HAS_VAR
+                        else (
+                            lspt.CompletionItemKind.Method
+                            if sub_tab == SymbolType.METHOD
+                            else (
+                                lspt.CompletionItemKind.EnumMember
+                                if sub_tab == SymbolType.ENUM_MEMBER
+                                else (
+                                    lspt.CompletionItemKind.Interface
+                                    if sub_tab == SymbolType.IMPL
+                                    else lspt.CompletionItemKind.Variable
+                                )
+                            )
+                        )
+                    )
                 )
             )
         )
