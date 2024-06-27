@@ -8,7 +8,7 @@ import:py sys;
 import:py os;
 import:py random;
 import:py time;
-import:py from jaclang.core.llms, OpenAI;
+import:py from mtllm.llms, OpenAI,Ollama;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
