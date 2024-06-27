@@ -18,16 +18,19 @@ server = JacLangServer()
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
 @server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
-def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
-    """Check syntax on change."""
-    ls.analyze_and_publish(params.text_document.uri)
-
-
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
-@debounce(0.1)
-async def did_change(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
+@debounce(0.3)
+async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
-    ls.analyze_and_publish(params.text_document.uri, level=0)
+    await ls.analyze_and_publish(params.text_document.uri)
+
+
+@server.feature(lspt.TEXT_DOCUMENT_FORMATTING)
+def formatting(
+    ls: JacLangServer, params: lspt.DocumentFormattingParams
+) -> list[lspt.TextEdit]:
+    """Format the given document."""
+    return ls.formatted_jac(params.text_document.uri)
 
 
 @server.feature(
@@ -79,14 +82,6 @@ def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) -> None:
 def completion(ls: JacLangServer, params: lspt.CompletionParams) -> lspt.CompletionList:
     """Provide completion."""
     return ls.get_completion(params.text_document.uri, params.position)
-
-
-@server.feature(lspt.TEXT_DOCUMENT_FORMATTING)
-def formatting(
-    ls: JacLangServer, params: lspt.DocumentFormattingParams
-) -> list[lspt.TextEdit]:
-    """Format the given document."""
-    return ls.formatted_jac(params.text_document.uri)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_HOVER, lspt.HoverOptions(work_done_progress=True))

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from enum import IntEnum
 from typing import Optional
 
@@ -126,8 +128,9 @@ class JacLangServer(LanguageServer):
         """Initialize workspace."""
         super().__init__("jac-lsp", "v0.1")
         self.modules: dict[str, ModuleInfo] = {}
+        self.executor = ThreadPoolExecutor()
 
-    def push_diagnostics(self, file_path: str) -> None:
+    async def push_diagnostics(self, file_path: str) -> None:
         """Push diagnostics for a file."""
         if file_path in self.modules:
             self.publish_diagnostics(
@@ -230,17 +233,23 @@ class JacLangServer(LanguageServer):
         self.update_modules(file_path, build, ALev.TYPE)
         return len(self.modules[file_path].errors) == 0
 
-    def analyze_and_publish(self, uri: str, level: int = 2) -> None:
+    async def analyze_and_publish(self, uri: str, level: int = 2) -> None:
         """Analyze and publish diagnostics."""
         self.log_py(f"Analyzing {uri}...")
-        success = self.quick_check(uri)
-        self.push_diagnostics(uri)
+        success = await asyncio.get_event_loop().run_in_executor(
+            self.executor, self.quick_check, uri
+        )
+        await self.push_diagnostics(uri)
         if success and level > 0:
-            success = self.deep_check(uri)
-            self.push_diagnostics(uri)
+            success = await asyncio.get_event_loop().run_in_executor(
+                self.executor, self.deep_check, uri
+            )
+            await self.push_diagnostics(uri)
             if level > 1:
-                self.type_check(uri)
-                self.push_diagnostics(uri)
+                await asyncio.get_event_loop().run_in_executor(
+                    self.executor, self.type_check, uri
+                )
+                await self.push_diagnostics(uri)
 
     def get_completion(
         self, file_path: str, position: lspt.Position

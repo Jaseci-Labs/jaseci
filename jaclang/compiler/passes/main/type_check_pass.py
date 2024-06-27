@@ -8,6 +8,7 @@ import os
 import pathlib
 import sys
 
+import jaclang
 import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
 from jaclang.compiler.constant import Constants as Con
@@ -98,7 +99,37 @@ class JacTypeCheckPass(Pass):
                 myab.BuildSource(
                     path=str(self.__path / "typeshed" / "stdlib" / "builtins.pyi"),
                     module="builtins",
-                )
+                ),
+                myab.BuildSource(
+                    path=str(
+                        pathlib.Path(os.path.dirname(jaclang.__file__)).parent
+                        / "stubs"
+                        / "jaclang"
+                        / "plugin"
+                        / "default.pyi"
+                    ),
+                    module="jaclang.plugin.default",
+                ),
+                myab.BuildSource(
+                    path=str(
+                        pathlib.Path(os.path.dirname(jaclang.__file__)).parent
+                        / "stubs"
+                        / "jaclang"
+                        / "plugin"
+                        / "feature.pyi"
+                    ),
+                    module="jaclang.plugin.feature",
+                ),
+                myab.BuildSource(
+                    path=str(
+                        pathlib.Path(os.path.dirname(jaclang.__file__)).parent
+                        / "stubs"
+                        / "jaclang"
+                        / "plugin"
+                        / "spec.pyi"
+                    ),
+                    module="jaclang.plugin.spec",
+                ),
             ],
             manager,
             old_graph=mypy_graph,
