@@ -16,7 +16,7 @@ export const config = /*#__PURE__*/configuration({
   },
   misc: {
     github: {
-      user: 'chandralegend',              // --> your github username (where your repo is hosted)
+      user: 'Jaseci-Labs',              // --> your github username (where your repo is hosted)
       repo: 'mtllm',                      // --> your github repo name
     }
   },

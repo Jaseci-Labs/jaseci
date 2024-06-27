@@ -83,6 +83,11 @@
       "hash": "eEn4kdbhsrFbIhF5rFNzng=="
     },
     {
+      "name": "CollapseControl",
+      "filename": "/Users/chandralegend/Desktop/Jaseci/mtllm/docs/.codedoc/node_modules/@codedoc/core/dist/es6/components/collapse/collapse-control.js",
+      "hash": "BR5Z0MA6Aj4P2zER2ZLlUg=="
+    },
+    {
       "name": "GithubSearch",
       "filename": "/Users/chandralegend/Desktop/Jaseci/mtllm/docs/.codedoc/node_modules/@codedoc/core/dist/es6/components/misc/github/search.js",
       "hash": "CEp7LAl0nnWrqHIN8Qnt6g=="
@@ -101,16 +106,6 @@
       "name": "ConfigTransport",
       "filename": "/Users/chandralegend/Desktop/Jaseci/mtllm/docs/.codedoc/node_modules/@codedoc/core/dist/es6/transport/config.js",
       "hash": "3GUK3xGbIE9fCSzaoTX0bA=="
-    },
-    {
-      "name": "TabSelector",
-      "filename": "/Users/chandralegend/Desktop/Jaseci/mtllm/docs/.codedoc/node_modules/@codedoc/core/dist/es6/components/tabs/selector.js",
-      "hash": "U3mNxP3yuRq+EtG14oT75g=="
-    },
-    {
-      "name": "CollapseControl",
-      "filename": "/Users/chandralegend/Desktop/Jaseci/mtllm/docs/.codedoc/node_modules/@codedoc/core/dist/es6/components/collapse/collapse-control.js",
-      "hash": "BR5Z0MA6Aj4P2zER2ZLlUg=="
     }
   ],
   "renderer": {
