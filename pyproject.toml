@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jaclang"
-version = "0.7.8"
+version = "0.7.9"
 description = "Jac is a unique and powerful programming language that runs on top of Python, offering an unprecedented level of intelligence and intuitive understanding."
 authors = ["Jason Mars <jason@jaseci.org>"]
 license = "MIT"
@@ -39,3 +39,6 @@ pre-commit = "^3.7.1"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+# [tool.poetry.package.include]
+# path = "jaclang/py.typed"
