@@ -76,7 +76,7 @@ class ModuleInfo:
         target_mod = mod_override if mod_override else build.ir
         if not isinstance(target_mod, ast.Module):
             return
-        self.ir = target_mod  # if alev > ALev.QUICK else self.ir
+        self.ir = target_mod if alev > ALev.QUICK else self.ir
         if refresh:
             self.errors = build.errors_had
             self.warnings = build.warnings_had
@@ -283,12 +283,12 @@ class JacLangServer(LanguageServer):
             if start == 0:
                 start = 0
             relevant_text = text[start:dot_position]
-
+            
             return relevant_text.split(".")
 
         current_pos = position.character + 2
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-
+        self.log_warning(f"Current symbol path: {current_symbol_path}")
         node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir,
             position.line,
