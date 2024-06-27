@@ -676,7 +676,7 @@ class Module(AstDocNode):
         if self.doc:
             new_kid.append(self.doc)
         new_kid.extend(self.body)
-        self.set_kids(nodes=new_kid)
+        self.set_kids(nodes=new_kid if len(new_kid) else [EmptyToken()])
         return res
 
     def unparse(self) -> str:
