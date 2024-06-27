@@ -347,7 +347,9 @@ class JacLangServer(LanguageServer):
 
     def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
-        if root_node := self.modules[file_path].ir._sym_tab:
+        if file_path in self.modules and (
+            root_node := self.modules[file_path].ir._sym_tab
+        ):
             return collect_symbols(root_node)
         return []
 
