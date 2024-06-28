@@ -326,7 +326,6 @@ class JacLangServer(LanguageServer):
                 visited.add(current_tab)
                 for name, symbol in current_tab.tab.items():
                     if name not in dir(builtins):
-                        self.log_py(f"Symbol: {name},type- {symbol.sym_type}")
                         symbols.append(
                             lspt.CompletionItem(
                                 label=name, kind=label_map(symbol.sym_type)
@@ -347,7 +346,6 @@ class JacLangServer(LanguageServer):
                 visited.add(current_tab)
                 for name, symbol in current_tab.tab.items():
                     if name not in dir(builtins) and name == sym_name:
-                        self.log_py(f"Symbol: {name},type- {symbol.sym_type}")
                         path = symbol.defn[0]._sym_type
                         return path
                 current_tab = (
@@ -409,7 +407,19 @@ class JacLangServer(LanguageServer):
                         pass
                 else:
                     path: str = resolve_symbol_path(obj, current_symbol_table)
-                    current_symbol_table = find_symbol_table(path)
+                    if path:
+                        current_symbol_table = find_symbol_table(path)
+                    else:
+                        if (
+                            isinstance(current_symbol_table.owner, ast.Architype)
+                            and current_symbol_table.owner.base_classes
+                        ):
+                            for (
+                                base_name
+                            ) in current_symbol_table.owner.base_classes.items:
+                                if isinstance(base_name, ast.Name) and base_name.sym:
+                                    path = base_name.sym.sym_dotted_name + "." + obj
+                                    current_symbol_table = find_symbol_table(path)
             if (
                 isinstance(current_symbol_table.owner, ast.Architype)
                 and current_symbol_table.owner.base_classes
