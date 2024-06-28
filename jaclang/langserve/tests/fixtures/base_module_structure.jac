@@ -26,6 +26,7 @@ enum Color {
     GREEN,
     BLUE
 }
+
 obj Colour {
     has color: Color,
         point: int;
@@ -33,12 +34,11 @@ obj Colour {
     can get_color -> Color;
 }
 
-
 :obj:Colour:can:get_color -> Color {
     return self.color;
 }
 
-obj red:Colour:{
+obj red :Colour: {
     has base_color: Color = Color.RED,
         point: int = 10;
 }
@@ -46,6 +46,4 @@ obj red:Colour:{
 with entry:__main__ {
     r = red(color=Color.GREEN, point=20);
     print(r.get_color());
-    
-    red(color=Color.BLUE, point=30).
 }

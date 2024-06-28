@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import builtins
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from enum import IntEnum
 from typing import Optional
@@ -278,17 +279,29 @@ class JacLangServer(LanguageServer):
 
         def parse_symbol_path(text: str, dot_position: int) -> list[str]:
             """Parse text and return a list of symbols."""
-            text = text.strip()
-            start = text.rfind(" ", 0, dot_position) + 1
-            if start == 0:
-                start = 0
-            relevant_text = text[start:dot_position]
-            
-            return relevant_text.split(".")
+            text = text[:dot_position].strip()
+            pattern = re.compile(r"\b\w+\(\)?|\b\w+\b")
+            matches = pattern.findall(text)
+            if text.endswith("."):
+                matches.append("")
+            symbol_path = []
+            i = 0
+            while i < len(matches):
+                if matches[i].endswith("("):
+                    i += 1
+                    continue
+                elif "(" in matches[i]:
+                    symbol_path.append(matches[i])
+                elif matches[i] == "":
+                    pass
+                else:
+                    symbol_path.append(matches[i])
+                i += 1
 
-        current_pos = position.character + 2
+            return symbol_path
+
+        current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        self.log_warning(f"Current symbol path: {current_symbol_path}")
         node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir,
             position.line,
@@ -362,7 +375,6 @@ class JacLangServer(LanguageServer):
 
         current_symbol_table = mod_tab
         if completion_trigger == ".":
-            current_symbol_path.pop()
             current_symbol_table = mod_tab
             for obj in current_symbol_path:
                 if obj == "self":
