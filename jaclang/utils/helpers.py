@@ -108,12 +108,12 @@ def auto_generate_refs() -> None:
         heading = heading.strip()
         heading_snakecase = heading_to_snake(heading)
         content = (
-            f'## {heading}\n**Grammar Snippet**\n```yaml linenums="{lines[0]}"\n--8<-- '
-            f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n```\n'
-            f'**Code Example**\n=== "Jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/'
+            f'## {heading}\n**Code Example**\n=== "Jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/'
             f'{heading_snakecase}.jac"\n'
             f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
             f'{heading_snakecase}.py"\n    ```\n'
+            f'??? ebnf-snippet\n    ```yaml linenums="{lines[0]}"\n    --8<-- '
+            f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n    ```\n'
             "**Description**\n\n--8<-- "
             f'"examples/reference/'
             f'{heading_snakecase}.md"\n'
