@@ -10,14 +10,14 @@ Elements within a Jac module encompass familiar constructs from Python, includin
 
 | Module Item           | Description       |
 |----------------|-------------------|
-| Import Statements    |   Same as python with slightly different syntax, works with both `.jac` and `.py` files (in addition to packages)                |
-| Architypes       |    Includes traditional python `class` construct with equiviant semantics, and additionaly introduces a number of new class-like constructs including `obj`, `node`, `edge`, and `walker` to enable the data spatial programming paradigmn               |
-| Function Abilities | Equivalent to traditional python function semantics with change of keyword `def` to `can`. Type hints are required in parameters and returns |
-| Data Spatial Abilities         |  A function like construct that is triggered by types of `node`s or `walker`s in the data spatial paradigm            |
-| Free Floating Code      |  Construct (`with entry {...}`) to express presence of free floating code within a module that is not part of a function or class-like object. Primarily for code cleanliness, readability, and maintainability.    |
-| Global Variables    |   Module level construct to express global module level variables without using `with entry` syntax. (`glob x=5` is equivalent to `with entry {x=5;}`)                |
-| Test           |   A language level construct for testing, functionality realized with `test` and `check` keywords.                |
-| Inline Python  |  Native python code can be inlined alongside jac code at arbitrary locations in a Jac program using `::py::` directive                 |
+| **Import Statements**    |   Same as python with slightly different syntax, works with both `.jac` and `.py` files (in addition to packages)                |
+| **Architypes**       |    Includes traditional python `class` construct with equiviant semantics, and additionaly introduces a number of new class-like constructs including `obj`, `node`, `edge`, and `walker` to enable the data spatial programming paradigmn               |
+| **Function Abilities** | Equivalent to traditional python function semantics with change of keyword `def` to `can`. Type hints are required in parameters and returns |
+| **Data Spatial Abilities**         |  A function like construct that is triggered by types of `node`s or `walker`s in the data spatial paradigm            |
+| **Free Floating Code**      |  Construct (`with entry {...}`) to express presence of free floating code within a module that is not part of a function or class-like object. Primarily for code cleanliness, readability, and maintainability.    |
+| **Global Variables**    |   Module level construct to express global module level variables without using `with entry` syntax. (`glob x=5` is equivalent to `with entry {x=5;}`)                |
+| **Test**           |   A language level construct for testing, functionality realized with `test` and `check` keywords.                |
+| **Inline Python**  |  Native python code can be inlined alongside jac code at arbitrary locations in a Jac program using `::py::` directive                 |
 
 
 Moreover, Jac requires that any standalone, module-level code be encapsulated within a `with entry {}` block. This design choice aims to enhance the clarity and cleanliness of Jac codebase.
