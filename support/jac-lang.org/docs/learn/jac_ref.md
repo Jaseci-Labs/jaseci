@@ -12,7 +12,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/base_module_structure.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="2"
     --8<-- "jaclang/compiler/jac.lark:2:16"
     ```
@@ -30,7 +30,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/import_include_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="19"
     --8<-- "jaclang/compiler/jac.lark:19:30"
     ```
@@ -48,7 +48,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/architypes.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="33"
     --8<-- "jaclang/compiler/jac.lark:33:49"
     ```
@@ -66,7 +66,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/architype_bodies.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="52"
     --8<-- "jaclang/compiler/jac.lark:52:57"
     ```
@@ -84,7 +84,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/enumerations.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="60"
     --8<-- "jaclang/compiler/jac.lark:60:72"
     ```
@@ -102,7 +102,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/abilities.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="75"
     --8<-- "jaclang/compiler/jac.lark:75:86"
     ```
@@ -120,7 +120,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/global_variables.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="89"
     --8<-- "jaclang/compiler/jac.lark:89:90"
     ```
@@ -138,7 +138,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/free_code.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="93"
     --8<-- "jaclang/compiler/jac.lark:93:93"
     ```
@@ -156,7 +156,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/inline_python.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="96"
     --8<-- "jaclang/compiler/jac.lark:96:96"
     ```
@@ -174,7 +174,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/tests.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="99"
     --8<-- "jaclang/compiler/jac.lark:99:99"
     ```
@@ -192,7 +192,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/implementations.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="102"
     --8<-- "jaclang/compiler/jac.lark:102:119"
     ```
@@ -210,7 +210,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/codeblocks_and_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="122"
     --8<-- "jaclang/compiler/jac.lark:122:149"
     ```
@@ -228,7 +228,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/if_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="152"
     --8<-- "jaclang/compiler/jac.lark:152:154"
     ```
@@ -246,7 +246,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/while_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="157"
     --8<-- "jaclang/compiler/jac.lark:157:157"
     ```
@@ -264,7 +264,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/for_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="160"
     --8<-- "jaclang/compiler/jac.lark:160:161"
     ```
@@ -282,7 +282,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/try_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="164"
     --8<-- "jaclang/compiler/jac.lark:164:167"
     ```
@@ -300,7 +300,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="170"
     --8<-- "jaclang/compiler/jac.lark:170:171"
     ```
@@ -318,7 +318,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_patterns.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="174"
     --8<-- "jaclang/compiler/jac.lark:174:184"
     ```
@@ -336,7 +336,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_litteral_patterns.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="187"
     --8<-- "jaclang/compiler/jac.lark:187:187"
     ```
@@ -354,7 +354,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_singleton_patterns.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="190"
     --8<-- "jaclang/compiler/jac.lark:190:190"
     ```
@@ -372,7 +372,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_capture_patterns.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="193"
     --8<-- "jaclang/compiler/jac.lark:193:193"
     ```
@@ -390,7 +390,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_sequence_patterns.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="196"
     --8<-- "jaclang/compiler/jac.lark:196:197"
     ```
@@ -408,7 +408,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_mapping_patterns.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="200"
     --8<-- "jaclang/compiler/jac.lark:200:202"
     ```
@@ -426,7 +426,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/match_class_patterns.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="205"
     --8<-- "jaclang/compiler/jac.lark:205:209"
     ```
@@ -444,7 +444,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/context_managers.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="212"
     --8<-- "jaclang/compiler/jac.lark:212:214"
     ```
@@ -462,7 +462,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/global_and_nonlocal_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="217"
     --8<-- "jaclang/compiler/jac.lark:217:219"
     ```
@@ -480,7 +480,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/data_spatial_typed_context_blocks.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="222"
     --8<-- "jaclang/compiler/jac.lark:222:222"
     ```
@@ -498,7 +498,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/return_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="225"
     --8<-- "jaclang/compiler/jac.lark:225:225"
     ```
@@ -516,7 +516,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/yield_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="228"
     --8<-- "jaclang/compiler/jac.lark:228:228"
     ```
@@ -534,7 +534,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/raise_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="231"
     --8<-- "jaclang/compiler/jac.lark:231:231"
     ```
@@ -552,7 +552,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/assert_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="234"
     --8<-- "jaclang/compiler/jac.lark:234:234"
     ```
@@ -570,7 +570,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/check_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="237"
     --8<-- "jaclang/compiler/jac.lark:237:237"
     ```
@@ -588,7 +588,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/delete_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="240"
     --8<-- "jaclang/compiler/jac.lark:240:240"
     ```
@@ -606,7 +606,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/report_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="243"
     --8<-- "jaclang/compiler/jac.lark:243:243"
     ```
@@ -624,7 +624,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/control_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="246"
     --8<-- "jaclang/compiler/jac.lark:246:246"
     ```
@@ -642,7 +642,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/data_spatial_walker_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="249"
     --8<-- "jaclang/compiler/jac.lark:249:252"
     ```
@@ -660,7 +660,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/visit_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="255"
     --8<-- "jaclang/compiler/jac.lark:255:255"
     ```
@@ -678,7 +678,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/revisit_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="258"
     --8<-- "jaclang/compiler/jac.lark:258:258"
     ```
@@ -696,7 +696,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/disengage_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="261"
     --8<-- "jaclang/compiler/jac.lark:261:261"
     ```
@@ -714,7 +714,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/ignore_statements.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="264"
     --8<-- "jaclang/compiler/jac.lark:264:264"
     ```
@@ -732,7 +732,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/assignments.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="267"
     --8<-- "jaclang/compiler/jac.lark:267:284"
     ```
@@ -750,7 +750,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="287"
     --8<-- "jaclang/compiler/jac.lark:287:288"
     ```
@@ -768,7 +768,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/walrus_assignments.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="291"
     --8<-- "jaclang/compiler/jac.lark:291:291"
     ```
@@ -786,7 +786,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/lambda_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="294"
     --8<-- "jaclang/compiler/jac.lark:294:294"
     ```
@@ -804,7 +804,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/pipe_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="297"
     --8<-- "jaclang/compiler/jac.lark:297:297"
     ```
@@ -822,7 +822,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/pipe_back_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="300"
     --8<-- "jaclang/compiler/jac.lark:300:300"
     ```
@@ -840,7 +840,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/elvis_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="303"
     --8<-- "jaclang/compiler/jac.lark:303:303"
     ```
@@ -858,7 +858,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/bitwise_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="306"
     --8<-- "jaclang/compiler/jac.lark:306:309"
     ```
@@ -876,7 +876,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/logical_and_compare_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="312"
     --8<-- "jaclang/compiler/jac.lark:312:326"
     ```
@@ -894,7 +894,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/arithmetic_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="329"
     --8<-- "jaclang/compiler/jac.lark:329:332"
     ```
@@ -912,7 +912,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/connect_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="335"
     --8<-- "jaclang/compiler/jac.lark:335:335"
     ```
@@ -930,7 +930,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/atomic_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="338"
     --8<-- "jaclang/compiler/jac.lark:338:338"
     ```
@@ -948,7 +948,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/atomic_pipe_back_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="341"
     --8<-- "jaclang/compiler/jac.lark:341:341"
     ```
@@ -966,7 +966,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/data_spatial_spawn_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="344"
     --8<-- "jaclang/compiler/jac.lark:344:344"
     ```
@@ -984,7 +984,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/unpack_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="347"
     --8<-- "jaclang/compiler/jac.lark:347:347"
     ```
@@ -1002,7 +1002,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/references_(unused).py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="350"
     --8<-- "jaclang/compiler/jac.lark:350:350"
     ```
@@ -1020,7 +1020,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/data_spatial_calls.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="353"
     --8<-- "jaclang/compiler/jac.lark:353:353"
     ```
@@ -1038,7 +1038,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/subscripted_and_dotted_expressions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="356"
     --8<-- "jaclang/compiler/jac.lark:356:361"
     ```
@@ -1056,7 +1056,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/function_calls.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="364"
     --8<-- "jaclang/compiler/jac.lark:364:368"
     ```
@@ -1074,7 +1074,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/atom.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="371"
     --8<-- "jaclang/compiler/jac.lark:371:396"
     ```
@@ -1092,7 +1092,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/collection_values.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="399"
     --8<-- "jaclang/compiler/jac.lark:399:420"
     ```
@@ -1110,7 +1110,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/tuples_and_jac_tuples.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="423"
     --8<-- "jaclang/compiler/jac.lark:423:430"
     ```
@@ -1128,7 +1128,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/data_spatial_references.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="433"
     --8<-- "jaclang/compiler/jac.lark:433:442"
     ```
@@ -1146,7 +1146,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/special_comprehensions.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="445"
     --8<-- "jaclang/compiler/jac.lark:445:450"
     ```
@@ -1164,7 +1164,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/names_and_references.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="453"
     --8<-- "jaclang/compiler/jac.lark:453:462"
     ```
@@ -1182,7 +1182,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/builtin_types.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="465"
     --8<-- "jaclang/compiler/jac.lark:465:475"
     ```
@@ -1200,7 +1200,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/lexer_tokens.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="478"
     --8<-- "jaclang/compiler/jac.lark:478:650"
     ```
@@ -1218,7 +1218,7 @@
     ```python linenums="1"
     --8<-- "examples/reference/f_string_tokens.py"
     ```
-??? ebnf-snippet
+??? example "Jac Grammar Snippet"
     ```yaml linenums="653"
     --8<-- "jaclang/compiler/jac.lark:653:664"
     ```
