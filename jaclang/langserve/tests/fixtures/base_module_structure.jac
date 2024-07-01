@@ -42,12 +42,13 @@ obj red :Colour1: {
     has base_colorred: Colorenum = Color.RED,
         pointred: int = 10;
     obj color2 {
-        has color2: Color = Colorenum.BLUE,
-            point2: int = 20;
+        has color22: Color = Colorenum.BLUE,
+            point22: int = 20;
     }
 }
 
 with entry:__main__ {
     r = red(color1=Color.GREEN, point1=20);
     print(r.get_color1());
+    print(r.color2.color22);
 }

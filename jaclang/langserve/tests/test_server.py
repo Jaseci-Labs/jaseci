@@ -291,6 +291,7 @@ class TestJacLangServer(TestCase):
                 ],
                 6,
             ),
+            (lspt.Position(52, 19), ["color22", "point22"], 2),
         ]
         for position, expected_completions, expected_length in test_cases:
             completions = lsp.get_completion(
