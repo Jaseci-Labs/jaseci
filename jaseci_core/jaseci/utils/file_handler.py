@@ -8,7 +8,6 @@ from tempfile import _TemporaryFileWrapper
 from os.path import basename, exists
 from json import load, dump
 
-
 filename_from_disposition = re.compile(r"filename=(['\"])(.*?)\1")
 
 
@@ -19,12 +18,13 @@ class FileHandler:
 
     def __init__(
         self,
+        id: str = None,
         name: str = None,
         content_type: str = None,
         field: str = None,
         persist: bool = False,
     ):
-        self.id = str(uuid4())
+        self.id = id if id else str(uuid4())
         self.name = name
         self.content_type = content_type or mimetypes.guess_type(name)[0]
         self.field = field
@@ -41,7 +41,7 @@ class FileHandler:
         content_type: str,
         field: str = None,
     ):
-        file_handler = cls(name, content_type, field)
+        file_handler = cls(name=name, content_type=content_type, field=field)
         file_handler.absolute_path = file.name
 
         file._closer.delete = False
@@ -53,7 +53,7 @@ class FileHandler:
     def fromBytesIO(
         cls, file: BytesIO, name: str, content_type: str, field: str = None
     ):
-        file_handler = cls(name, content_type, field)
+        file_handler = cls(name=name, content_type=content_type, field=field)
 
         with open(file_handler.absolute_path, "wb") as f:
             f.write(file.getbuffer())
@@ -68,7 +68,7 @@ class FileHandler:
         if len(searcher.groups()):
             name = searcher.group(2)
 
-        file_handler = cls(name)
+        file_handler = cls(name=name)
 
         with open(file_handler.absolute_path, "wb") as f:
             f.write(content)
@@ -79,7 +79,7 @@ class FileHandler:
     def fromPath(cls, path: str):
         name = basename(path)
 
-        file_handler = cls(name, persist=True)
+        file_handler = cls(name=name, persist=True)
         file_handler.absolute_name = name
         file_handler.absolute_path = path
 

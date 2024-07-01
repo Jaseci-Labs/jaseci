@@ -19,6 +19,7 @@ def load(path: str, meta: dict = {}):
 @jaseci_action(act_group=["fh"])
 def new(
     name: str,
+    id: str = None,
     content_type: str = None,
     field: str = None,
     persist: bool = False,
@@ -28,7 +29,9 @@ def new(
     from jaseci.utils.file_handler import FileHandler
 
     return meta["h"].add_file_handler(
-        FileHandler(name=name, content_type=content_type, field=field, persist=persist)
+        FileHandler(
+            id=id, name=name, content_type=content_type, field=field, persist=persist
+        )
     )
 
 
@@ -175,7 +178,7 @@ def download(url: str, header: dict = {}, meta: dict = {}):
     """Standard built in for download file from url"""
     from jaseci.utils.file_handler import FileHandler
 
-    tmp = FileHandler(path.basename(urlparse(url).path) or "file")
+    tmp = FileHandler(name=path.basename(urlparse(url).path) or "file")
     meta["h"].add_file_handler(tmp)
 
     with get(url, stream=True, headers=header) as res:

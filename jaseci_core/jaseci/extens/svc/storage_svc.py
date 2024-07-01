@@ -69,7 +69,7 @@ class StorageService(JsOrc.CommonService):
             container_name=container or provider["container"].name, object_name=file
         )
 
-        temp_file = FileHandler(file)
+        temp_file = FileHandler(name=file)
         temp_file.open(mode="wb", encoding=None)
         for chunk in provider["driver"].download_object_as_stream(obj):
             temp_file.write(chunk)
