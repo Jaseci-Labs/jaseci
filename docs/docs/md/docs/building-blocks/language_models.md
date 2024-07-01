@@ -64,7 +64,7 @@ my_llm = OpenAI(model_name="gpt-4o", verbose=True);
 
 ## Remote LMs
 
-These language models are provided as managed services. To access them, simply sign up and obtain an API key. Before calling any of the remote language models listed below. 
+These language models are provided as managed services. To access them, simply sign up and obtain an API key. Before calling any of the remote language models listed below.
 
 > **NOTICE**
 >
