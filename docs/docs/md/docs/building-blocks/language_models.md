@@ -64,7 +64,11 @@ my_llm = OpenAI(model_name="gpt-4o", verbose=True);
 
 ## Remote LMs
 
-These language models are provided as managed services. To access them, simply sign up and obtain an API key. Before calling any of the remote language models listed below, make sure to set the corresponding environment variable with your API key. Use Chat models for better performance.
+These language models are provided as managed services. To access them, simply sign up and obtain an API key. Before calling any of the remote language models listed below. 
+
+> **NOTICE**
+>
+> make sure to set the corresponding environment variable with your API key. Use Chat models for better performance.
 
 ```python
 llm = mtllm.llms.{provider_listed_below}(model_name="your model", verbose=True/False);
@@ -96,3 +100,7 @@ import:py from mtllm.llms.huggingface, HuggingFace;
 
 llm = HuggingFace(model_name="microsoft/Phi-3-mini-4k-instruct", verbose=True/False);
 ```
+
+>  **NOTICE**
+>
+> We are constantly adding new LMs to the library. If you want to add a new LM, please open an issue [here](https://github.com/Jaseci-Labs/mtllm/issues).
