@@ -64,7 +64,7 @@ with entry {
 ```
 
 Input Video (mugen.mp4):
-[mugen.mp4](https://user-images.githubusercontent.com/6948633/180064441-90ff735c-08a5-440a-b16f-aa020e165d5b.mp4)
+[mugen.mp4](https://github.com/Jaseci-Labs/mtllm/blob/main/examples/vision/mugen.mp4)
 
 ```python
 # Output
