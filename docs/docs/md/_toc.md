@@ -12,7 +12,7 @@
 > [Semstrings](/docs/building-blocks/semstrings)
 > [Functions and Methods](/docs/building-blocks/functions_methods)
 > [Object Initialization](/docs/building-blocks/object_init)
-> [Image and Video](/docs/building-blocks/image_video)
+> [Multimodality](/docs/building-blocks/multimodality)
 
 > :Collapse label=Tutorials
 >
@@ -27,5 +27,6 @@
 >
 > [When to use Semstrings](/docs/tips_and_tricks/when_to_use_semstrings)
 > [Optimal way of integrating MTLLM](/docs/tips_and_tricks/optimal_way)
+> [Create your own Language Model](/docs/tips_and_tricks/create_own_lm)
 
 [FAQs](/docs/faqs)
