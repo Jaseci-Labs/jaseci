@@ -2,30 +2,30 @@
 
 > :Collapse label=Quick Start
 >
-> [Installation](/docs/quickstart/installation.md)
-> [Minimal Working Example](/docs/quickstart/minimal-working-example.md)
+> [Installation](/docs/quickstart/installation)
+> [Minimal Working Example](/docs/quickstart/minimal-working-example)
 
 > :Collapse label=Building Blocks
 >
-> [Using MTLLM in your existing Application](/docs/building-blocks/existing_application.md)
-> [Language Models](/docs/building-blocks/language_models.md)
-> [Semstrings](/docs/building-blocks/semstrings.md)
-> [Functions and Methods](/docs/building-blocks/functions_methods.md)
-> [Object Initialization](/docs/building-blocks/object_init.md)
-> [Image and Video](/docs/building-blocks/image_video.md)
+> [Using MTLLM in your existing Application](/docs/building-blocks/existing_application)
+> [Language Models](/docs/building-blocks/language_models)
+> [Semstrings](/docs/building-blocks/semstrings)
+> [Functions and Methods](/docs/building-blocks/functions_methods)
+> [Object Initialization](/docs/building-blocks/object_init)
+> [Image and Video](/docs/building-blocks/image_video)
 
 > :Collapse label=Tutorials
 >
-> [RPG Game Level Generation](/docs/tutorials/rpg_game.md)
+> [RPG Game Level Generation](/docs/tutorials/rpg_game)
 
 > :Collapse label=API Reference
 >
-> [MTLLM](/docs/api/mtllm.md)
+> [MTLLM](/docs/api/mtllm)
 
 
 > :Collapse label=Tips and Tricks
 >
-> [When to use Semstrings](/docs/tips_and_tricks/when_to_use_semstrings.md)
-> [Optimal way of integrating MTLLM](/docs/tips_and_tricks/optimal_way.md)
+> [When to use Semstrings](/docs/tips_and_tricks/when_to_use_semstrings)
+> [Optimal way of integrating MTLLM](/docs/tips_and_tricks/optimal_way)
 
-[FAQs](/docs/faqs.md)
+[FAQs](/docs/faqs)

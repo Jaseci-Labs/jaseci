@@ -11,12 +11,6 @@ keywords = ["llm", "jaclang", "jaseci", "mtllm"]
 [tool.poetry.dependencies]
 python = "^3.12.0"
 jaclang = "^0.7.5"
-openai = "^1.30.4"
-anthropic = "^0.26.1"
-ollama = "^0.2.0"
-together = "^1.2.0"
-transformers = "^4.41.1"
-groq = "^0.8.0"
 loguru = "^0.7.2"
 
 [tool.poetry.dev-dependencies]
@@ -26,6 +20,12 @@ pytest = "^8.2.1"
 tools = ["wikipedia"]
 video = ["opencv-python-headless"]
 image = ["pillow"]
+groq = ["groq >= 0.8.0"]
+huggingface = ["transformers >= 4.41.1"]
+ollama = ["ollama >= 0.2.0"]
+anthropic = ["anthropic >= 0.26.1"]
+openai = ["openai >= 1.30.4"]
+together = ["together >= 1.2.0"]
 
 [tool.poetry.plugins."jac"]
 mtllm = "mtllm.plugin:JacFeature"
