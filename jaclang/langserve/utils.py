@@ -4,6 +4,7 @@ import asyncio
 import builtins
 import importlib.util
 import os
+import re
 import sys
 from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
@@ -336,3 +337,155 @@ def get_definition_range(
                         return filename, (start_line - 1, end_line - 1)
 
     return None
+
+
+def collect_all_symbols_in_scope(
+    sym_tab: SymbolTable, up_tree: bool = True
+) -> list[lspt.CompletionItem]:
+    """Return all symbols in scope."""
+    symbols = []
+    visited = set()
+    current_tab: Optional[SymbolTable] = sym_tab
+
+    while current_tab is not None and current_tab not in visited:
+        visited.add(current_tab)
+        for name, symbol in current_tab.tab.items():
+            if name not in dir(builtins):
+                symbols.append(
+                    lspt.CompletionItem(label=name, kind=label_map(symbol.sym_type))
+                )
+        if not up_tree:
+            return symbols
+        current_tab = current_tab.parent if current_tab.parent != current_tab else None
+    return symbols
+
+
+def parse_symbol_path(text: str, dot_position: int) -> list[str]:
+    """Parse text and return a list of symbols."""
+    text = text[:dot_position].strip()
+    pattern = re.compile(r"\b\w+\(\)?|\b\w+\b")
+    matches = pattern.findall(text)
+    if text.endswith("."):
+        matches.append("")
+    symbol_path = []
+    i = 0
+    while i < len(matches):
+        if matches[i].endswith("("):
+            i += 1
+            continue
+        elif "(" in matches[i]:
+            symbol_path.append(matches[i])
+        elif matches[i] == "":
+            pass
+        else:
+            symbol_path.append(matches[i])
+        i += 1
+
+    return symbol_path
+
+
+def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
+    """Resolve symbol path."""
+    visited = set()
+    current_tab: Optional[SymbolTable] = node_tab
+
+    while current_tab is not None and current_tab not in visited:
+        visited.add(current_tab)
+        for name, symbol in current_tab.tab.items():
+            if name not in dir(builtins) and name == sym_name:
+                path = symbol.defn[0]._sym_type
+                return path
+        current_tab = current_tab.parent if current_tab.parent != current_tab else None
+    return ""
+
+
+def find_symbol_table(path: str, current_tab: Optional[SymbolTable]) -> SymbolTable:
+    """Find symbol table."""
+    path = path.lstrip(".")
+    current_table = current_tab
+    if current_table:
+        for segment in path.split("."):
+            current_table = next(
+                (
+                    child_table
+                    for child_table in current_table.kid
+                    if child_table.name == segment
+                ),
+                current_table,
+            )
+    if current_table:
+        return current_table
+    raise ValueError(f"Symbol table not found for path {path}")
+
+
+def resolve_completion_symbol_table(
+    mod_tab: SymbolTable,
+    current_symbol_path: list[str],
+    current_tab: Optional[SymbolTable],
+) -> list[lspt.CompletionItem]:
+    """Resolve symbol table for completion items."""
+    current_symbol_table = mod_tab
+    for obj in current_symbol_path:
+        if obj == "self":
+            try:
+                try:
+                    is_abilitydef = (
+                        mod_tab.owner
+                        if isinstance(mod_tab.owner, ast.AbilityDef)
+                        else mod_tab.owner.parent_of_type(ast.AbilityDef)
+                    )
+                    archi_owner = (
+                        (is_abilitydef.decl_link.parent_of_type(ast.Architype))
+                        if is_abilitydef.decl_link
+                        else None
+                    )
+                    current_symbol_table = (
+                        archi_owner._sym_tab
+                        if archi_owner and archi_owner._sym_tab
+                        else mod_tab
+                    )
+                    continue
+
+                except ValueError:
+                    pass
+                archi_owner = mod_tab.owner.parent_of_type(ast.Architype)
+                current_symbol_table = (
+                    archi_owner._sym_tab
+                    if archi_owner and archi_owner._sym_tab
+                    else mod_tab
+                )
+            except ValueError:
+                pass
+        else:
+            path: str = resolve_symbol_path(obj, current_symbol_table)
+            if path:
+                current_symbol_table = find_symbol_table(path, current_tab)
+            else:
+                if (
+                    isinstance(current_symbol_table.owner, ast.Architype)
+                    and current_symbol_table.owner.base_classes
+                ):
+                    for base_name in current_symbol_table.owner.base_classes.items:
+                        if isinstance(base_name, ast.Name) and base_name.sym:
+                            path = base_name.sym.sym_dotted_name + "." + obj
+                            current_symbol_table = find_symbol_table(path, current_tab)
+    if (
+        isinstance(current_symbol_table.owner, ast.Architype)
+        and current_symbol_table.owner.base_classes
+    ):
+        base = []
+        for base_name in current_symbol_table.owner.base_classes.items:
+            if isinstance(base_name, ast.Name) and base_name.sym:
+                base.append(base_name.sym.sym_dotted_name)
+        for base_ in base:
+            completion_items = collect_all_symbols_in_scope(
+                find_symbol_table(base_, current_tab),
+                up_tree=False,
+            )
+    else:
+        completion_items = []
+
+    completion_items.extend(
+        collect_all_symbols_in_scope(current_symbol_table, up_tree=False)
+    )
+    return completion_items
