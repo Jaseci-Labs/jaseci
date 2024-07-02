@@ -11,7 +11,6 @@ from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
 from jaclang.core.utils import sys_path_context
-from jaclang.utils.log import logging
 
 
 def jac_importer(
@@ -21,7 +20,7 @@ def jac_importer(
     cachable: bool = True,
     mdl_alias: Optional[str] = None,
     override_name: Optional[str] = None,
-    mod_bundle: Optional[Module] = None,
+    mod_bundle: Optional[Module | str] = None,
     lng: Optional[str] = "jac",
     items: Optional[dict[str, Union[str, bool]]] = None,
 ) -> Optional[types.ModuleType]:
@@ -41,6 +40,14 @@ def jac_importer(
     elif not override_name and not package_path and module_name in sys.modules:
         return sys.modules[module_name]
 
+    valid_mod_bundle = (
+        sys.modules[mod_bundle].__jac_mod_bundle__
+        if isinstance(mod_bundle, str)
+        and mod_bundle in sys.modules
+        and "__jac_mod_bundle__" in sys.modules[mod_bundle].__dict__
+        else None
+    )
+
     caller_dir = get_caller_dir(target, base_path, dir_path)
     full_target = path.normpath(path.join(caller_dir, file_name))
 
@@ -51,10 +58,10 @@ def jac_importer(
     else:
         module_name = override_name if override_name else module_name
         module = create_jac_py_module(
-            mod_bundle, module_name, package_path, full_target
+            valid_mod_bundle, module_name, package_path, full_target
         )
-        if mod_bundle:
-            codeobj = mod_bundle.mod_deps[full_target].gen.py_bytecode
+        if valid_mod_bundle:
+            codeobj = valid_mod_bundle.mod_deps[full_target].gen.py_bytecode
             codeobj = marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
         else:
             gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
@@ -69,9 +76,8 @@ def jac_importer(
             else:
                 result = compile_jac(full_target, cache_result=cachable)
                 if result.errors_had or not result.ir.gen.py_bytecode:
-                    for e in result.errors_had:
-                        print(e)
-                        logging.error(e)
+                    # for e in result.errors_had:
+                    #     print(e)
                     return None
                 else:
                     codeobj = marshal.loads(result.ir.gen.py_bytecode)
@@ -84,7 +90,10 @@ def jac_importer(
 
 
 def create_jac_py_module(
-    mod_bundle: Optional[Module], module_name: str, package_path: str, full_target: str
+    mod_bundle: Optional[Module | str],
+    module_name: str,
+    package_path: str,
+    full_target: str,
 ) -> types.ModuleType:
     """Create a module."""
     module = types.ModuleType(module_name)

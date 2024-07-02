@@ -119,7 +119,7 @@ class TestLarkParser(TestCaseMicroSuite):
             "ArchBlockStmt",
             "EnumBlockStmt",
             "CodeBlockStmt",
-            "NameSpec",
+            "NameAtom",
             "ArchSpec",
             "MatchPattern",
         ]

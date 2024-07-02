@@ -2,12 +2,16 @@
 
 import asyncio
 import builtins
+import importlib.util
+import os
+import sys
 from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.codeloc import CodeLocInfo
 from jaclang.compiler.symtable import Symbol, SymbolTable
+from jaclang.utils.helpers import import_target_to_relative_path
 
 import lsprotocol.types as lspt
 
@@ -68,7 +72,7 @@ def find_deepest_symbol_node_at_pos(
         if isinstance(node, ast.AstSymbolNode):
             last_symbol_node = node
 
-        for child in node.kid:
+        for child in [i for i in node.kid if i.loc.mod_path == node.loc.mod_path]:
             if position_within_node(child, line, character):
                 deeper_node = find_deepest_symbol_node_at_pos(child, line, character)
                 if deeper_node is not None:
@@ -150,7 +154,7 @@ def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
 
 def owner_sym(table: SymbolTable) -> Optional[Symbol]:
     """Get owner sym."""
-    if table.has_parent() and isinstance(table.owner, ast.AstSymbolNode):
+    if table.parent and isinstance(table.owner, ast.AstSymbolNode):
         return table.parent.lookup(table.owner.sym_name)
     return None
 
@@ -158,8 +162,14 @@ def owner_sym(table: SymbolTable) -> Optional[Symbol]:
 def create_range(loc: CodeLocInfo) -> lspt.Range:
     """Create an lspt.Range from a location object."""
     return lspt.Range(
-        start=lspt.Position(line=loc.first_line - 1, character=loc.col_start - 1),
-        end=lspt.Position(line=loc.last_line - 1, character=loc.col_end - 1),
+        start=lspt.Position(
+            line=loc.first_line - 1 if loc.first_line > 0 else 0,
+            character=loc.col_start - 1 if loc.col_start > 0 else 0,
+        ),
+        end=lspt.Position(
+            line=loc.last_line - 1 if loc.last_line > 0 else 0,
+            character=loc.col_end - 1 if loc.col_end > 0 else 0,
+        ),
     )
 
 
@@ -182,3 +192,103 @@ def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
             )
         )
     )
+
+
+def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
+    """Get path for a module import name."""
+    ret_target = None
+    module_location_path = mod_path.loc.mod_path
+    if mod_path.parent and (
+        (
+            isinstance(mod_path.parent.parent, ast.Import)
+            and mod_path.parent.parent.hint.tag.value == "py"
+        )
+        or (
+            isinstance(mod_path.parent, ast.Import)
+            and mod_path.parent.from_loc
+            and mod_path.parent.hint.tag.value == "py"
+        )
+    ):
+        if mod_path.path and name_node in mod_path.path:
+            temporary_path_str = ("." * mod_path.level) + ".".join(
+                [p.value for p in mod_path.path[: mod_path.path.index(name_node) + 1]]
+                if mod_path.path
+                else ""
+            )
+        else:
+            temporary_path_str = mod_path.path_str
+        sys.path.append(os.path.dirname(module_location_path))
+        spec = importlib.util.find_spec(temporary_path_str)
+        sys.path.remove(os.path.dirname(module_location_path))
+        if spec and spec.origin and spec.origin.endswith(".py"):
+            ret_target = spec.origin
+    elif mod_path.parent and (
+        (
+            isinstance(mod_path.parent.parent, ast.Import)
+            and mod_path.parent.parent.hint.tag.value == "jac"
+        )
+        or (
+            isinstance(mod_path.parent, ast.Import)
+            and mod_path.parent.from_loc
+            and mod_path.parent.hint.tag.value == "jac"
+        )
+    ):
+        ret_target = import_target_to_relative_path(
+            level=mod_path.level,
+            target=mod_path.path_str,
+            base_path=os.path.dirname(module_location_path),
+        )
+    return ret_target
+
+
+def get_item_path(mod_item: ast.ModuleItem) -> tuple[str, tuple[int, int]] | None:
+    """Get path."""
+    item_name = mod_item.name.value
+    if mod_item.from_parent.hint.tag.value == "py" and mod_item.from_parent.from_loc:
+        path = get_mod_path(mod_item.from_parent.from_loc, mod_item.name)
+        if path:
+            return get_definition_range(path, item_name)
+    elif mod_item.from_parent.hint.tag.value == "jac":
+        mod_node = mod_item.from_mod_path
+        if mod_node.sub_module and mod_node.sub_module._sym_tab:
+            for symbol_name, symbol in mod_node.sub_module._sym_tab.tab.items():
+                if symbol_name == item_name:
+                    return symbol.decl.loc.mod_path, (
+                        symbol.decl.loc.first_line - 1,
+                        symbol.decl.loc.last_line - 1,
+                    )
+    return None
+
+
+def get_definition_range(
+    filename: str, name: str
+) -> tuple[str, tuple[int, int]] | None:
+    """Get the start and end line of a function or class definition in a file."""
+    import ast
+
+    with open(filename, "r") as file:
+        source = file.read()
+
+    tree = ast.parse(source)
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name == name:
+            start_line = node.lineno
+            end_line = (
+                node.body[-1].end_lineno
+                if hasattr(node.body[-1], "end_lineno")
+                else node.body[-1].lineno
+            )
+            if start_line and end_line:
+                return filename, (start_line - 1, end_line - 1)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == name:
+                    start_line = node.lineno
+                    end_line = (
+                        node.end_lineno if hasattr(node, "end_lineno") else node.lineno
+                    )
+                    if start_line and end_line:
+                        return filename, (start_line - 1, end_line - 1)
+
+    return None

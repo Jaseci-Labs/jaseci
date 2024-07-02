@@ -67,7 +67,7 @@ class JacFeatureDefaults:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module],
+        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, bool]]],
     ) -> Optional[types.ModuleType]: ...
@@ -141,7 +141,7 @@ class JacFeatureDefaults:
     @staticmethod
     def build_edge(
         is_undirected: bool,
-        conn_type: Optional[Type[EdgeArchitype]],
+        conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[], EdgeArchitype]: ...
 

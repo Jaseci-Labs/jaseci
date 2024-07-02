@@ -1,9 +1,23 @@
-In Jac, a module is analogous to a Python module, serving as a container for various elements such as functions, classes (referred to as "architypes"), global variables, and other constructs that facilitate code organization and reusability. Each module begins with an optional module-level docstring, which provides a high-level overview of the module's purpose and functionality. This docstring, if present, is positioned at the very start of the module, before any other elements.
+In Jac, a module is analogous to a Python module, serving as a container for various elements such as functions, classes (referred to as "architypes" later in this document), global variables, and other constructs that facilitate code organization and reusability. Each module begins with an optional module-level docstring, which provides a high-level overview of the module's purpose and functionality. This docstring, if present, is positioned at the very start of the module, before any other elements.
 
-Jac adopts a stricter approach to docstring usage compared to Python. It mandates the inclusion of a single docstring at the module level and permits individual docstrings for each element within the module. This ensures that both the module itself and its constituent elements are adequately documented. If only one docstring precedes the first element, it is automatically designated as the module-level docstring.
+???+ Note "Docstrings"
 
-Elements within a Jac module encompass familiar constructs from Python, including functions and classes, with the addition of some unique elements that will be discussed in further detail. The language enforces type annotations in function signatures to promote type safety, a practice that aids in the development of more robust and error-resistant code.
+    Jac adopts a stricter approach to docstring usage compared to Python. It mandates the inclusion of a single docstring at the module level and permits individual docstrings for each element within the module. This ensures that both the module itself and its constituent elements are adequately documented. If only one docstring precedes the first element, it is automatically designated as the module-level docstring.
 
-Moreover, Jac requires that any standalone, module-level code be encapsulated within a `with entry {}` block. This design choice aims to enhance the clarity and cleanliness of the codebase, making it easier for developers to identify the entry point of the module and understand its execution flow.
+    Also Note, that Jac enforces type annotations in function signatures and class fields to promote type safety and ultimately more readable and scalable codebases.
 
-Through these structural and syntactical conventions, Jac facilitates a disciplined and well-documented approach to programming, aligning with best practices in software development and maintenance.
+Elements within a Jac module encompass familiar constructs from Python, including functions and classes, with the addition of some unique elements that will be discussed in further detail. Below is a table of module elements in Jac. These constructs are described in detail later in this document.
+
+| Module Item           | Description       |
+|----------------|-------------------|
+| **Import Statements**    |   Same as python with slightly different syntax, works with both `.jac` and `.py` files (in addition to packages)                |
+| **Architypes**       |    Includes traditional python `class` construct with equiviant semantics, and additionaly introduces a number of new class-like constructs including `obj`, `node`, `edge`, and `walker` to enable the data spatial programming paradigmn               |
+| **Function Abilities** | Equivalent to traditional python function semantics with change of keyword `def` to `can`. Type hints are required in parameters and returns |
+| **Data Spatial Abilities**         |  A function like construct that is triggered by types of `node`s or `walker`s in the data spatial paradigm            |
+| **Free Floating Code**      |  Construct (`with entry {...}`) to express presence of free floating code within a module that is not part of a function or class-like object. Primarily for code cleanliness, readability, and maintainability.    |
+| **Global Variables**    |   Module level construct to express global module level variables without using `with entry` syntax. (`glob x=5` is equivalent to `with entry {x=5;}`)                |
+| **Test**           |   A language level construct for testing, functionality realized with `test` and `check` keywords.                |
+| **Inline Python**  |  Native python code can be inlined alongside jac code at arbitrary locations in a Jac program using `::py::` directive                 |
+
+
+Moreover, Jac requires that any standalone, module-level code be encapsulated within a `with entry {}` block. This design choice aims to enhance the clarity and cleanliness of Jac codebase.

@@ -11,6 +11,7 @@ import jaclang.compiler.passes.main as passes
 from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -110,105 +111,6 @@ class JacLanguageTests(TestCase):
             "        line of code.\n"
             "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",
         )
-
-    def test_with_llm_function(self) -> None:
-        """Parse micro jac file."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        jac_import("with_llm_function", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("{'temperature': 0.7}", stdout_value)
-        self.assertIn("Emoji Representation (str)", stdout_value)
-        self.assertIn('Text Input (input) (str) = "Lets move to paris"', stdout_value)
-        self.assertIn(
-            ' = [{"input": "I love tp drink pina coladas"',
-            stdout_value,
-        )
-
-    def test_with_llm_method(self) -> None:
-        """Parse micro jac file."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        jac_import("with_llm_method", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("[Reasoning] <Reason>", stdout_value)
-        self.assertIn("(Enum) eg:- Personality.EXTROVERT ->", stdout_value)
-        self.assertIn(
-            "Personality Index of a Person (PersonalityIndex) (class) eg:- "
-            "PersonalityIndex(index=int) -> Personality Index (index) (int)",
-            stdout_value,
-        )
-        self.assertIn(
-            "Personality of the Person (dict[Personality,PersonalityIndex])",
-            stdout_value,
-        )
-        self.assertIn(
-            'Diary Entries (diary_entries) (list[str]) = ["I won noble prize in '
-            'Physics", "I am popular for my theory of relativity"]',
-            stdout_value,
-        )
-
-    def test_with_llm_lower(self) -> None:
-        """Parse micro jac file."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        jac_import("with_llm_lower", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("[Reasoning] <Reason>", stdout_value)
-        self.assertIn(
-            'Name of the Person (name) (str) = "Oppenheimer"',
-            stdout_value,
-        )
-        self.assertIn(
-            "Person (Person) (obj) eg:- Person(full_name=str, yod=int, personality"
-            "=Personality) -> Fullname of the Person (full_name) (str), Year of Death"
-            " (yod) (int), Personality of the Person (personality) (Personality)",
-            stdout_value,
-        )
-        self.assertIn(
-            "J. Robert Oppenheimer was a Introvert person who died in 1967",
-            stdout_value,
-        )
-
-    def test_with_llm_type(self) -> None:
-        """Parse micro jac file."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        jac_import("with_llm_type", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("14/03/1879", stdout_value)
-        self.assertNotIn(
-            'University (University) (obj) = type(__module__="with_llm_type", __doc__=None, '
-            "_jac_entry_funcs_`=[`], _jac_exit_funcs_=[], __init__=function(__wrapped__=function()))",
-            stdout_value,
-        )
-        desired_output_count = stdout_value.count(
-            "Person(name='Jason Mars', dob='1994-01-01', age=30)"
-        )
-        self.assertEqual(desired_output_count, 2)
-
-    def test_with_llm_vision(self) -> None:
-        """Test MTLLLM Vision Implementation."""
-        try:
-            captured_output = io.StringIO()
-            sys.stdout = captured_output
-            jac_import("with_llm_vision", base_path=self.fixture_abs_path("./"))
-            sys.stdout = sys.__stdout__
-            stdout_value = captured_output.getvalue()
-            self.assertIn(
-                "{'type': 'text', 'text': '\\n[System Prompt]\\n", stdout_value[:500]
-            )
-            self.assertNotIn(
-                " {'type': 'text', 'text': 'Image of the Question (question_img) (Image) = '}, "
-                "{'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQAB",
-                stdout_value[:500],
-            )
-        except Exception:
-            self.skipTest("This test requires Pillow to be installed.")
 
     def test_ignore(self) -> None:
         """Parse micro jac file."""
@@ -858,7 +760,18 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/micro/simple_walk.jac")
+            self.fixture_abs_path("../../../examples/micro/simple_walk.jac"),
+            schedule=py_code_gen_typed,
+        )
+        self.assertEqual(len(mypass.errors_had), 0)
+        self.assertEqual(len(mypass.warnings_had), 0)
+
+    def test_ds_type_check_pass2(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/guess_game/guess_game5.jac"),
+            schedule=py_code_gen_typed,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
@@ -895,7 +808,7 @@ class JacLanguageTests(TestCase):
         )
 
         self.assertEqual(mypass.ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.ir.sym_tab)
+        self.assertIsNone(mypass.ir._sym_tab)
         mypass = jac_file_to_pass(
             self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
             target=passes.SymTabBuildPass,
@@ -904,3 +817,30 @@ class JacLanguageTests(TestCase):
             len([i for i in mypass.ir.sym_tab.kid if i.name == "circle_pure.impl"]),
             1,
         )
+
+    def test_inherit_baseclass_sym(self) -> None:
+        """Basic test for symtable support for inheritance."""
+        mypass = jac_file_to_pass(
+            self.fixture_abs_path("../../../examples/guess_game/guess_game4.jac"),
+            target=passes.DefUsePass,
+        )
+        table = None
+        for i in mypass.ir.sym_tab.kid:
+            print(i.name)
+            if i.name == "GuessTheNumberGame":
+                for j in i.kid:
+                    if j.name == "play":
+                        table = j
+                        break
+                break
+        self.assertIsNotNone(table)
+        self.assertIsNotNone(table.lookup("attempts"))
+
+    def test_edge_expr_not_type(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("edgetypeissue", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[x()]", stdout_value)

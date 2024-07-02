@@ -12,9 +12,7 @@ from typing import Optional
 class SemInfo:
     """Semantic information class."""
 
-    def __init__(
-        self, name: str, type: Optional[str] = None, semstr: Optional[str] = None
-    ) -> None:
+    def __init__(self, name: str, type: Optional[str] = None, semstr: str = "") -> None:
         """Initialize the class."""
         self.name = name
         self.type = type

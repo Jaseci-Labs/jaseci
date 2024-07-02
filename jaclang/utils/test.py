@@ -125,7 +125,7 @@ class AstSyncTestMixin:
                 "arch_block_stmt",
                 "enum_block_stmt",
                 "code_block_stmt",
-                "name_spec",
+                "name_atom",
                 "arch_spec",
                 "match_pattern",
             ]
