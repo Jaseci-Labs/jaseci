@@ -18,7 +18,7 @@ Here there are no significant changes are required for the code structure other 
 
 ## Less Py more Jac : [jac_impl_2](./jac_impl/jac_impl_2/)
 
-In this iteration of the jac implementation for the RPG, some of the unique features of Jaclang, such as ```has``` variables, were explored. This feature allows for definitions of fields which will self initialize with an auto geneerate ```init```. Furthermore, previously dynamically typed variables has been updated with type annotations.
+In this iteration of the jac implementation for the RPG, some of the unique features of Jaclang, such as ```has``` variables, were explored. This feature allows for definitions of fields which will self initialize with an auto generated ```init```. Another change made was that ```init``` functions has been completely removed from the codebase which means only auto generated initialization functions are used using ```has``` variables. However, as there are requirements to run some initialization operations ```postinit``` function is used which will run at the end of the auto generated ```init```. Furthermore, previously dynamically typed variables has been updated with type annotations.
 
 ![Jac_1 Vs Jac_2](./Diagrams/Jac_impl_2_comparison.png)
 
@@ -27,8 +27,6 @@ In this iteration of the jac implementation for the RPG, some of the unique feat
 This is where we brought out the big guns. Jaclang has a feature where a function definition and its implementation can be coded at two different locations, as long as the .jac files are included on the execution code. This feature allows a cleaner function definition which can make sense without looking at their tedious implementations. Here is a small example of the feature.
 
 ![Jac_2 Vs Jac3](./Diagrams/Jac_impl_3_comparison.png)
-
-Another change made was that ```init``` functions has been completely removed from the codebase which means only auto generated initialization functions are used using ```has``` variables. However, as there are requirements to run some initialization operations ```postinit``` function is used which will run at the end of the auto generated ```init```.
 
 ## Data-Spatial Programming! : [jac_impl_4](./jac_impl/jac_impl_4/)
 
