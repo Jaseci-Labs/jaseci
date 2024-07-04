@@ -4,6 +4,7 @@ from playwright.sync_api import sync_playwright, Page
 
 from jaseci.jsorc.jsorc import JsOrc
 from jac_misc.scraper.utils import (
+    Process,
     add_url,
     add_crawl,
     get_script,
@@ -33,7 +34,7 @@ def notify_client(
         "processing": processing,
         "pending": [p["goto"]["url"] for p in pages],
         "scanned": urls["scanned"],
-        "scraped": urls["scraped"],
+        "scraped": list(urls["scraped"]),
     }
     if content:
         data["content"] = content
@@ -42,18 +43,28 @@ def notify_client(
 
 
 def scrape(
-    pages: list, pre_configs: list = [], detailed: bool = False, target: str = None
+    pages: list,
+    pre_configs: list = [],
+    detailed: bool = False,
+    target: str = None,
+    trigger_id: str = None,
 ):
     content = ""
-    urls = {"scanned": [], "scanned_urls": set(), "scraped": [], "crawled": set()}
+    urls = {
+        "url": pages[0]["goto"]["url"],
+        "scanned": {},
+        "scanned_urls": set(),
+        "scraped": set(),
+        "crawled": set(),
+    }
 
-    trigger_id = uuid4()
+    trigger_id = trigger_id or str(uuid4())
 
     with sync_playwright() as spw:
         browser = spw.chromium.launch()
         page = browser.new_page()
 
-        while pages:
+        while pages and Process.can_continue(trigger_id):
             try:
                 pg: dict = pages.pop(0)
 
@@ -61,19 +72,33 @@ def scrape(
                 url = pg_goto.get("url") or "N/A"
                 page.source = url
 
+                Process.has_to_stop(trigger_id)
+
                 notify_client(
                     target, trigger_id, pages, urls, {"url": url, "status": "started"}
                 )
 
                 goto(page, pg_goto, urls)
 
+                Process.has_to_stop(trigger_id)
+
                 content += getters(page, pg.get("getters") or [], urls)
+
+                Process.has_to_stop(trigger_id)
 
                 crawler(page, pg.get("crawler") or {}, urls, pages, pre_configs)
 
                 notify_client(
                     target, trigger_id, pages, urls, {"url": url, "status": "completed"}
                 )
+            except Process.Stopped as e:
+                add_url(page, urls, error=str(e))
+
+                notify_client(
+                    target, trigger_id, pages, urls, {"url": url, "status": "stopped"}
+                )
+
+                break
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
@@ -89,6 +114,7 @@ def scrape(
 
     if detailed:
         return {
+            "url": urls["url"],
             "content": content,
             "scanned": urls["scanned"],
             "scraped": urls["scraped"],
@@ -104,7 +130,7 @@ def goto(page: Page, specs: dict, urls: dict):
         print(f'[goto]: loading {specs["url"]}')
 
         page.goto(**specs)
-        add_url(page, urls)
+        add_url(page, urls, page.title())
 
         run_scripts(page, post, urls)
 
@@ -139,7 +165,7 @@ def getters(page: Page, specss: list[dict], urls: dict):
             elif method == "custom":
                 expression = f'{{{specs.get("expression")}}}'
             elif method == "none":
-                expression = '""'
+                expression = ""
             else:
                 expression = f"""{{
                     clone = document.body.cloneNode(true);
@@ -150,7 +176,7 @@ def getters(page: Page, specss: list[dict], urls: dict):
             if expression:
                 print(f"[getters]: getting content from {page.url}")
                 content += page.evaluate(f"() =>{expression}")
-            add_url(page, urls, expression)
+            add_url(page, urls, page.title(), expression)
 
             run_scripts(page, post, urls)
 
@@ -204,7 +230,7 @@ def run_scripts(page: Page, scripts: list[dict], urls: dict):
         method = script.pop("method", "evalutate") or "evaluate"
         print(f"[script]: running method {method}\n{str(script)}")
         getattr(page, method)(**script)
-        add_url(page, urls)
+        add_url(page, urls, page.title())
 
 
 def scrape_preview(page: dict, target: str):

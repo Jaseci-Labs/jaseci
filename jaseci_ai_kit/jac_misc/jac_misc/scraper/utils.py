@@ -2,22 +2,47 @@ from re import search
 from copy import deepcopy
 
 
-def add_url(page, urls: dict, scraped: bool = False, error: str = None):
+class Process:
+    queue = set()
+
+    class Stopped(Exception):
+        pass
+
+    @staticmethod
+    def add(trigger_id: str):
+        Process.queue.add(trigger_id)
+
+    @staticmethod
+    def can_continue(trigger_id: str):
+        if can := (trigger_id in Process.queue):
+            Process.queue.remove(trigger_id)
+        return not can
+
+    @staticmethod
+    def has_to_stop(trigger_id: str):
+        if trigger_id in Process.queue:
+            Process.queue.remove(trigger_id)
+            raise Process.Stopped()
+
+
+def add_url(
+    page, urls: dict, title: str = None, scraped: bool = False, error: str = None
+):
     url = page.url
     source = page.source
     if url:
         if url not in urls["scanned_urls"]:
             urls["scanned_urls"].add(url)
 
-            scan = {"url": url}
+            scan = {"title": title}
             if error:
                 scan["error"] = error
             if url != source:
                 scan["source"] = source
-            urls["scanned"].append(scan)
+            urls["scanned"][url] = scan
 
-        if scraped and url not in urls["scraped"]:
-            urls["scraped"].append(url)
+        if scraped:
+            urls["scraped"].add(url)
 
 
 def add_crawl(pages: list, pre_configs: list, urls: dict, url: str, def_crawl: dict):

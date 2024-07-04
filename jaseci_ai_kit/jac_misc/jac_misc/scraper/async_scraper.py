@@ -1,4 +1,3 @@
-import asyncio
 import websocket
 
 from uuid import uuid4, UUID
@@ -6,11 +5,12 @@ from os import getenv
 from re import search
 from orjson import dumps
 from json import loads
-from logging import exception, error
+from logging import exception
 from playwright.async_api import async_playwright, Page
 from websocket import create_connection
 
 from jac_misc.scraper.utils import (
+    Process,
     add_url,
     add_crawl,
     get_script,
@@ -56,7 +56,7 @@ class Client:
             "processing": processing,
             "pending": [p["goto"]["url"] for p in pages],
             "scanned": urls["scanned"],
-            "scraped": urls["scraped"],
+            "scraped": list(urls["scraped"]),
         }
         if content:
             data["content"] = content
@@ -91,19 +91,29 @@ class Client:
 
 
 async def scrape(
-    pages: list, pre_configs: list = [], detailed: bool = False, target: str = None
+    pages: list,
+    pre_configs: list = [],
+    detailed: bool = False,
+    target: str = None,
+    trigger_id: str = None,
 ):
     content = ""
-    urls = {"scanned": [], "scanned_urls": set(), "scraped": [], "crawled": set()}
+    urls = {
+        "url": pages[0]["goto"]["url"],
+        "scanned": {},
+        "scanned_urls": set(),
+        "scraped": set(),
+        "crawled": set(),
+    }
 
     ws = Client()
-    trigger_id = uuid4()
+    trigger_id = trigger_id or str(uuid4())
 
     async with async_playwright() as aspw:
         browser = await aspw.chromium.launch()
         page = await browser.new_page()
 
-        while pages:
+        while pages and Process.can_continue(trigger_id):
             try:
                 pg: dict = pages.pop(0)
 
@@ -111,19 +121,33 @@ async def scrape(
                 url = pg_goto.get("url") or "N/A"
                 page.source = url
 
+                Process.has_to_stop(trigger_id)
+
                 ws.notify_client(
                     target, trigger_id, pages, urls, {"url": url, "status": "started"}
                 )
 
                 await goto(page, pg_goto, urls)
 
+                Process.has_to_stop(trigger_id)
+
                 content += await getters(page, pg.get("getters") or [], urls)
+
+                Process.has_to_stop(trigger_id)
 
                 await crawler(page, pg.get("crawler") or {}, urls, pages, pre_configs)
 
                 ws.notify_client(
                     target, trigger_id, pages, urls, {"url": url, "status": "completed"}
                 )
+            except Process.Stopped as e:
+                add_url(page, urls, error=str(e))
+
+                ws.notify_client(
+                    target, trigger_id, pages, urls, {"url": url, "status": "stopped"}
+                )
+
+                break
             except Exception as e:
                 add_url(page, urls, error=str(e))
 
@@ -140,6 +164,7 @@ async def scrape(
 
     if detailed:
         return {
+            "url": urls["url"],
             "content": content,
             "scanned": urls["scanned"],
             "scraped": urls["scraped"],
@@ -156,7 +181,7 @@ async def goto(page: Page, specs: dict, urls: dict):
         print(f'[goto]: loading {specs["url"]}')
 
         await page.goto(**specs)
-        add_url(page, urls)
+        add_url(page, urls, await page.title())
 
         await run_scripts(page, post, urls)
 
@@ -191,7 +216,7 @@ async def getters(page: Page, specss: list[dict], urls: dict):
             elif method == "custom":
                 expression = f'{{{specs.get("expression")}}}'
             elif method == "none":
-                expression = '""'
+                expression = ""
             else:
                 expression = f"""{{
                     clone = document.body.cloneNode(true);
@@ -202,7 +227,7 @@ async def getters(page: Page, specss: list[dict], urls: dict):
             if expression:
                 print(f"[getters]: getting content from {page.url}")
                 content += await page.evaluate(f"() =>{expression}")
-            add_url(page, urls, expression)
+            add_url(page, urls, await page.title(), expression)
 
             await run_scripts(page, post, urls)
 
@@ -258,7 +283,7 @@ async def run_scripts(page: Page, scripts: list[dict], urls: dict):
         method = script.pop("method", "evalutate") or "evaluate"
         print(f"[script]: running method {method}\n{str(script)}")
         await getattr(page, method)(**script)
-        add_url(page, urls)
+        add_url(page, urls, await page.title())
 
 
 async def scrape_preview(page: dict, target: str = None):
