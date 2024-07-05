@@ -7,7 +7,7 @@ The Library provides automatic output fixing, output type validation, different 
 
 ## Documentation
 
-The documentation on how to use this library with Jaseci's Jaclang can be found [here]().
+The documentation on how to use this library with Jaseci's Jaclang can be found [here](https://jaseci-labs.github.io/mtllm/).
 
 ## Installation
 
@@ -21,7 +21,7 @@ pip install mtllm
 
 ## Usage
 
-The full API of this library can be found [here](docs/api.md).
+Refer the Documentation for detailed usage instructions.
 
 ### Using Different LLMs
 ```py
@@ -48,8 +48,6 @@ glob llm = OpenAI();
 can "Answer History Questions"
 history_qa(question: "History Question": str) -> "Detailed Answer": str by llm(tools=[wikipedia]);
 ```
-## Supported LLMs and Tools
-TBA
 
 ## Contributing
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
