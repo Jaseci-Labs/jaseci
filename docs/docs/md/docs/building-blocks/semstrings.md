@@ -57,7 +57,7 @@ shop {
     has item_dir:'Inventory of shop':dict[str,item];
 
     can 'categorize the edible as fruit, vegetables, sweets etc'
-    categorize(name:str) -> 'Item category':str by llm();
+    categorize(name: str) -> 'Item category': str by llm();
 }
 
 with entry {
@@ -76,12 +76,13 @@ The below examples show different instances where semstrings can be inserted.
 ### Variables / Object Fields Declaration
 
 ```python
-glob name:'semstring': str = 'sample name'
+glob name: 'semstring': str = 'sample value'
 ```
 ### Function / Method Declaration
 
 ```python
-can 'semstring' function_name(arg_1:'semstring':type ...) {
+can 'semstring'
+function_name(arg_1: 'semstring': type ...) {
     #function body
 }
 ```
@@ -98,8 +99,8 @@ obj 'semstring' object_name {
 ### With ```by llm()```
 
 ```python
-can 'semstring_for_action' 
-function_name (
-            arg_1:'semstring_input':type ...
-            ) -> 'semstring_output':type by llm();
+can 'semstring_for_action'
+function_name (arg_1:'semstring_input': type ...)
+-> 'semstring_output': type
+by llm();
 ```

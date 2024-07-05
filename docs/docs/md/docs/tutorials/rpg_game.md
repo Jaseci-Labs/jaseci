@@ -54,7 +54,7 @@ However, filling in the values for fields requires a cognitive capacity, for whi
 
 - **A coordinate system**
 
-```python
+```python | level_manager.jac
 obj Position {
     has x: int,
         y: int;
@@ -65,7 +65,7 @@ As the map we are aiming to generate is a 2D map the position of each object on 
 
 - **Object to Represent a Wall**
 
-```python
+```python | level_manager.jac
 obj Wall {
     has start_pos: Position,
         end_pos: Position;
@@ -76,7 +76,7 @@ The wall object represents a straight wall, as all obstacles in the 2D map can b
 
 - **Map represented using objects**
 
-```python
+```python | level_manager.jac
 obj Map {
     has level: Level;
     has walls: list[Wall],
@@ -92,7 +92,7 @@ This Map object will hold the exact positions of all objects in the map. This is
 
 To manage all the generations we can define a Level manager object which can hold a directory of previous levels configurations and maps, which can be used to feed the LLM to give context about the play style of the player. We will be using the OpenAI GPT-4o as the LLM in this tutorial.
 
-```python
+```python | level_manager.jac
 import:py from mtllm.llms, OpenAI;
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -103,14 +103,14 @@ obj LevelManager {
         prev_level_maps: list[Map] = [];
 
     '''Generates the Next level configuration based upon previous playthroughs'''
-    can create_next_level( last_levels: list[Level], 
-                           difficulty: int, 
-                           level_width: int, 
+    can create_next_level( last_levels: list[Level],
+                           difficulty: int,
+                           level_width: int,
                            level_height: int) -> Level by llm(temperature=1.0);
-    
+
     '''Get the Next Level'''
     can get_next_level -> tuple(Level, Map);
-    
+
     '''Generate the Map as a List of Strings'''
     can get_map(map: Map) -> list[str];
 }
@@ -126,7 +126,7 @@ We have three methods defined under the level manager. Each will handle a separa
 
 The implementation of the above methods are as follows.
 
-```python
+```python | level_manager.jac
 :obj:LevelManager:can:get_next_level {
     self.current_level += 1;
     # Keeping Only the Last 3 Levels
@@ -158,7 +158,7 @@ In the ```get_next_level``` method there are two llm calls which we will discuss
 
 - ```Line 14``` : Here the programmer is initiating a Map object while passing in only the level parameter with the newly generated ```level``` object and ask the LLM to fill in the rest of the fields by generating the relevant types. This nested type approach ensures the output is formatted according to how you expect them to be.
 
-```python
+```python | level_manager.jac
 :obj:LevelManager:can:get_map {
     map_tiles = [['.' for _ in range(map.level.width)] for _ in range(map.level.height)];
     for wall in map.walls {
@@ -171,7 +171,7 @@ In the ```get_next_level``` method there are two llm calls which we will discuss
     for obs in map.small_obstacles {
         map_tiles[obs.y-1][obs.x-1] = 'B';
     }
-    
+
     for enemy in map.enemies {
         map_tiles[enemy.y-1][enemy.x-1] = 'E';
     }
@@ -195,7 +195,7 @@ with entry {
 }
 ```
 
-This program will now generate two consecutive maps and print them on the terminal. by running this jac file using ```jac run``` you can simply test your program.
+This program will now generate two consecutive maps and print them on the terminal. by running this jac file using ```jac run level_manager.jac``` you can simply test your program.
 
 ## A full scale game demo
 
