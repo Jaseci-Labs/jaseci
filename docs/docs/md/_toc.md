@@ -7,7 +7,6 @@
 
 > :Collapse label=Building Blocks
 >
-> [Using MTLLM in your existing Application](/docs/building-blocks/existing_application)
 > [Language Models](/docs/building-blocks/language_models)
 > [Semstrings](/docs/building-blocks/semstrings)
 > [Functions and Methods](/docs/building-blocks/functions_methods)
@@ -25,8 +24,8 @@
 
 > :Collapse label=Tips and Tricks
 >
+> [Using MTLLM in your existing Application](/docs/tips-n-tricks/existing_application)
 > [When to use Semstrings](/docs/tips-n-tricks/when_to_use_semstrings)
-> [Optimal way of integrating MTLLM](/docs/tips-n-tricks/optimal_way)
 > [Create your own Language Model](/docs/tips-n-tricks/create_own_lm)
 
 [FAQs](/docs/faqs)
