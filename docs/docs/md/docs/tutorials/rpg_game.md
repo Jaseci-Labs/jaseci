@@ -201,40 +201,4 @@ This program will now generate two consecutive maps and print them on the termin
 
 For the sake of this tutorial we have not included the entire development of an actual game. The full game is available on our [jac-lang repo](https://github.com/Jaseci-Labs/jaclang/tree/main/examples/rpg_game). A sample demonstration of the game can be viewed below.
 
-[Demo Video.webm](https://github.com/Jayanaka-98/py-game-RPG/assets/110921856/1ac069eb-7a07-462f-82fe-a8c1e3481935)
-
-
-<!-- obj Position {
-    has x: int,
-        y: int;
-}
-
-obj Wall {
-    has start_pos: Position,
-        end_pos: Position;
-}
-
-obj Map_tiles {
-    has level: Level;
-    has walls: list[Wall],
-        small_obstacles: list[Position];
-    has enemies: list[Position];
-    has player_pos: Position;
-}
-
-obj LevelManager {
-    has current_level: int = 0,
-        current_difficulty: int = 1,
-        prev_levels: list[Level] = [],
-        prev_level_maps: list[Map_tiles] = [];
-
-    can create_next_level(last_levels: list[Level], difficulty: int)
-    -> Level by llm(temperature=0.8);
-
-    '''Get the Next Level'''
-    can get_next_level (current_level: int) -> tuple(Level, Map_tiles);
-
-    '''Get the map of the level'''
-    can get_map(map: Map_tiles) -> str;
-
-} -->
+[Demo Video](https://drive.google.com/file/d/1JXyWbmI6vJsjpNUnscRxdnK5vmo8312r/view?usp=sharing)
