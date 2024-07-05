@@ -25,8 +25,8 @@
 
 > :Collapse label=Tips and Tricks
 >
-> [When to use Semstrings](/docs/tips_and_tricks/when_to_use_semstrings)
-> [Optimal way of integrating MTLLM](/docs/tips_and_tricks/optimal_way)
-> [Create your own Language Model](/docs/tips_and_tricks/create_own_lm)
+> [When to use Semstrings](/docs/tips-n-tricks/when_to_use_semstrings)
+> [Optimal way of integrating MTLLM](/docs/tips-n-tricks/optimal_way)
+> [Create your own Language Model](/docs/tips-n-tricks/create_own_lm)
 
 [FAQs](/docs/faqs)
