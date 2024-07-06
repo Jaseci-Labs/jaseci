@@ -56,9 +56,9 @@ class ImportPassPassTests(TestCase):
             self.examples_abs_path("rpg_game/jac_impl/jac_impl_5/main.jac"),
             JacImportPass,
         )
-        self.assertGreater(len(state.resolve_list), 20)
-        self.assertIn("pygame.sprite.Sprite.__init__", state.resolve_list)
-        self.assertIn("pygame.mouse.get_pressed", state.resolve_list)
-        self.assertIn("pygame.K_SPACE", state.resolve_list)
-        self.assertIn("random.randint", state.resolve_list)
-        self.assertIn("pygame.font.Font", state.resolve_list)
+        self.assertGreater(len(state.py_resolve_list), 20)
+        self.assertIn("pygame.sprite.Sprite.__init__", state.py_resolve_list)
+        self.assertIn("pygame.mouse.get_pressed", state.py_resolve_list)
+        self.assertIn("pygame.K_SPACE", state.py_resolve_list)
+        self.assertIn("random.randint", state.py_resolve_list)
+        self.assertIn("pygame.font.Font", state.py_resolve_list)

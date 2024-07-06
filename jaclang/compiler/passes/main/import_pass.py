@@ -26,7 +26,7 @@ class JacImportPass(Pass):
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
         self.__py_imports: set[str] = set()
-        self.resolve_list: set[str] = set()
+        self.py_resolve_list: set[str] = set()
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
@@ -134,7 +134,7 @@ class JacImportPass(Pass):
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Iterate on AtomTrailer nodes to get python paths to resolve."""
         if node.as_attr_list[0].sym_name in self.__py_imports:
-            self.resolve_list.add(".".join([i.sym_name for i in node.as_attr_list]))
+            self.py_resolve_list.add(".".join([i.sym_name for i in node.as_attr_list]))
 
     def import_jac_module(self, node: ast.ModulePath, mod_path: str) -> None:
         """Import a module."""
