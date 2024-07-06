@@ -45,8 +45,7 @@ class JacImportPass(Pass):
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
 
-        all_atom_trailers = self.get_all_sub_nodes(node, ast.AtomTrailer)
-        for i in all_atom_trailers:
+        for i in self.get_all_sub_nodes(node, ast.AtomTrailer):
             self.enter_atom_trailer(i)
 
         node.mod_deps = self.import_table
@@ -215,13 +214,6 @@ class JacImportPass(Pass):
         else:
             self.error(f"Module {target} is not a valid Jac module.")
             return None
-
-    def after_pass(self) -> None:
-        """After pass functionality."""
-        resolve_list = list(self.resolve_list)
-        resolve_list.sort()
-        for i in resolve_list:
-            print("Need to resolve", i)
 
 
 class PyImportPass(JacImportPass):
