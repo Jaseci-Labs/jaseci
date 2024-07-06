@@ -121,9 +121,7 @@ class TestJacLangServer(TestCase):
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
-        target = uris.from_fs_path(
-            self.fixture_abs_path("../../../../examples/guess_game/guess_game4.jac")
-        )
+        target = uris.from_fs_path(self.examples_abs_path("guess_game/guess_game4.jac"))
         lsp.quick_check(target)
         lsp.deep_check(target)
         lsp.type_check(target)
@@ -171,7 +169,7 @@ class TestJacLangServer(TestCase):
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
         guess_game_file = uris.from_fs_path(
-            self.fixture_abs_path("../../../../examples/guess_game/guess_game4.jac")
+            self.examples_abs_path("guess_game/guess_game4.jac")
         )
         lsp.quick_check(guess_game_file)
         lsp.deep_check(guess_game_file)
