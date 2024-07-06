@@ -2,6 +2,7 @@
 
 import io
 import sys
+from contextlib import suppress
 
 from jaclang.cli import cli
 from jaclang.utils.test import TestCase
@@ -114,11 +115,12 @@ class JacCliTests(TestCase):
         sys.stdout = stdio_block
 
         # Execute the function
-        cli.test(
-            self.fixture_abs_path(
-                "../../../examples/manual_code/circle_clean_tests.jac"
+        with suppress(SystemExit):
+            cli.test(
+                self.fixture_abs_path(
+                    "../../../examples/manual_code/circle_clean_tests.jac"
+                )
             )
-        )
 
         sys.stderr = sys.__stderr__
         sys.stdout = sys.__stdout__

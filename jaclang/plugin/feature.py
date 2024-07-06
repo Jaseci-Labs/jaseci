@@ -132,7 +132,7 @@ class JacFeature:
         maxfail: Optional[int] = None,
         directory: Optional[str] = None,
         verbose: bool = False,
-    ) -> bool:
+    ) -> int:
         """Run the test suite in the specified .jac file."""
         return pm.hook.run_test(
             filepath=filepath,
