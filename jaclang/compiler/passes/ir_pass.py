@@ -1,9 +1,11 @@
 """Abstract class for IR Passes for Jac."""
 
+import time
 from typing import Optional, Type, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.transform import Transform
+from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 
 T = TypeVar("T", bound=ast.AstNode)
@@ -104,11 +106,16 @@ class Pass(Transform[T]):
         # Only performs passes on proper ASTs
         if not isinstance(ir, ast.AstNode):
             return ir
+        start_time = time.time()
         self.before_pass()
         if not isinstance(ir, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
         self.traverse(ir)
         self.after_pass()
+        if settings.print_timing_info:
+            print(
+                f"Time taken in {self.__class__.__name__}: {time.time() - start_time}"
+            )
         return self.ir
 
     def traverse(self, node: ast.AstNode) -> ast.AstNode:
