@@ -19,6 +19,7 @@ class Pass(Transform[T]):
         self.term_signal = False
         self.prune_signal = False
         self.ir: ast.AstNode = input_ir
+        self.time_taken = 0.0
         Transform.__init__(self, input_ir, prior)
 
     def before_pass(self) -> None:
@@ -112,9 +113,10 @@ class Pass(Transform[T]):
             raise ValueError("Current node is not an AstNode.")
         self.traverse(ir)
         self.after_pass()
-        if settings.print_timing_info:
+        self.time_taken = time.time() - start_time
+        if settings.pass_timer:
             print(
-                f"Time taken in {self.__class__.__name__}: {time.time() - start_time}"
+                f"Time taken in {self.__class__.__name__}: {self.time_taken:.4f} seconds"
             )
         return self.ir
 
