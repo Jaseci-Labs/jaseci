@@ -13,6 +13,7 @@ class Settings:
     fuse_type_info_debug: bool = False
     filter_sym_builtins: bool = True
     ast_symbol_info_detailed: bool = False
+    pass_timer: bool = False
 
     # Import configuration
     py_raise: bool = False
