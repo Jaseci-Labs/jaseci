@@ -22,14 +22,18 @@ from jaclang.utils.helpers import import_target_to_relative_path, is_standard_li
 class JacImportPass(Pass):
     """Jac statically imports Jac modules."""
 
+    resolve_list: set[str] = set()
+
     def before_pass(self) -> None:
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
+        self.__py_imports: set[str] = set()
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
+        self.__py_imports.clear()
         self.__annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True
@@ -40,6 +44,11 @@ class JacImportPass(Pass):
                 self.process_import(node, i)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
+
+        all_atom_trailers = self.get_all_sub_nodes(node, ast.AtomTrailer)
+        for i in all_atom_trailers:
+            self.enter_atom_trailer(i)
+
         node.mod_deps = self.import_table
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
@@ -50,6 +59,8 @@ class JacImportPass(Pass):
                 node=i,
                 mod_path=node.loc.mod_path,
             )
+        elif lang == "py":
+            self.__py_imports.add(i.path_str)
 
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
@@ -121,6 +132,11 @@ class JacImportPass(Pass):
         if node.alias and node.sub_module:
             node.sub_module.name = node.alias.value
         # Items matched during def/decl pass
+
+    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """Iterate on AtomTrailer nodes to get python paths to resolve."""
+        if node.as_attr_list[0].sym_name in self.__py_imports:
+            self.resolve_list.add(".".join([i.sym_name for i in node.as_attr_list]))
 
     def import_jac_module(self, node: ast.ModulePath, mod_path: str) -> None:
         """Import a module."""
@@ -200,6 +216,13 @@ class JacImportPass(Pass):
             self.error(f"Module {target} is not a valid Jac module.")
             return None
 
+    def after_pass(self) -> None:
+        """After pass functionality."""
+        resolve_list = list(self.resolve_list)
+        resolve_list.sort()
+        for i in resolve_list:
+            print("Need to resolve", i)
+
 
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
@@ -260,3 +283,7 @@ class PyImportPass(JacImportPass):
             )
             raise e
         return None
+
+    def after_pass(self) -> None:
+        """After pass functionality."""
+        pass
