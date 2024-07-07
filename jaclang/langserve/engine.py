@@ -435,6 +435,24 @@ class JacLangServer(LanguageServer):
         else:
             return None
 
+    def get_references(
+        self, file_path: str, position: lspt.Position
+    ) -> list[lspt.Location]:
+        """Return references for a file."""
+        node_selected = find_deepest_symbol_node_at_pos(
+            self.modules[file_path].ir, position.line, position.character
+        )
+        if node_selected and node_selected.sym:
+            list_of_references: list[lspt.Location] = [
+                lspt.Location(
+                    uri=uris.from_fs_path(node.loc.mod_path),
+                    range=create_range(node.loc),
+                )
+                for node in node_selected.sym.uses
+            ]
+            return list_of_references
+        return []
+
     def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
         """Return semantic tokens for a file."""
         if file_path not in self.modules:
