@@ -213,7 +213,7 @@ class TestJacLangServer(TestCase):
         positions = [
             (2, 16, "datetime.py:0:0-0:0"),
             (3, 17, "base_module_structure.jac:0:0-0:0"),
-            (3, 74, "base_module_structure.jac:23:0-23:5"),
+            (3, 87, "base_module_structure.jac:23:0-23:5"),
             (5, 65, "py_import.py:12:0-20:5"),
             (5, 35, "py_import.py:3:0-4:5"),
         ]
