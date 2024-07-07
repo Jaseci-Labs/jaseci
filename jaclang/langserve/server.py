@@ -21,6 +21,13 @@ server = JacLangServer()
 async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
     await ls.analyze_and_publish(params.text_document.uri)
+    ls.send_notification(
+        lspt.TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+        lspt.SemanticTokensLegend(
+            token_types=SemTokType.as_str_list(),
+            token_modifiers=SemTokMod.as_str_list(),
+        ),
+    )
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
