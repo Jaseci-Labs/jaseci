@@ -52,6 +52,14 @@ class TestCase(_TestCase):
         file_path = os.path.join(os.path.dirname(fixture_src), "fixtures", fixture)
         return os.path.abspath(file_path)
 
+    def examples_abs_path(self, example: str) -> str:
+        """Get absolute path of a example from examples directory."""
+        fixture_src = jaclang.__file__
+        file_path = os.path.join(
+            os.path.dirname(os.path.dirname(fixture_src)), "examples", example
+        )
+        return os.path.abspath(file_path)
+
 
 class TestCaseMicroSuite(TestCase):
     """Base test case for Jaseci."""

@@ -48,7 +48,14 @@ class JacFeatureSpec:
     @staticmethod
     def create_test(test_fun: Callable) -> Callable: ...
     @staticmethod
-    def run_test(filename: str) -> None: ...
+    def run_test(
+        filepath: str,
+        filter: Optional[str],
+        xit: bool,
+        maxfail: Optional[int],
+        directory: Optional[str],
+        verbose: bool,
+    ) -> int: ...
     @staticmethod
     def elvis(op1: Optional[T], op2: T) -> T: ...
     @staticmethod

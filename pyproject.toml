@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jaclang"
-version = "0.7.9"
+version = "0.7.10"
 description = "Jac is a unique and powerful programming language that runs on top of Python, offering an unprecedented level of intelligence and intuitive understanding."
 authors = ["Jason Mars <jason@jaseci.org>"]
 license = "MIT"
@@ -8,6 +8,8 @@ readme = "README.md"
 keywords = [
     "jac",
     "jaclang",
+    "jaseci",
+    "python",
     "programming-language",
     "machine-learning",
     "artificial-intelligence",

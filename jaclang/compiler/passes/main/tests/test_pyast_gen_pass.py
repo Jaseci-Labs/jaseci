@@ -36,7 +36,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
     def test_hodge_podge(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_pass(
-            self.fixture_abs_path("../../../../../../examples/micro/hodge_podge.jac"),
+            self.examples_abs_path("micro/hodge_podge.jac"),
             target=PyastGenPass,
         )
 
@@ -45,7 +45,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
     def test_circle_py_ast(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_pass(
-            self.fixture_abs_path("../../../../../../examples/manual_code/circle.jac"),
+            self.examples_abs_path("manual_code/circle.jac"),
             target=PyastGenPass,
         )
         import ast as ast3

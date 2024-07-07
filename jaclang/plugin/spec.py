@@ -121,7 +121,7 @@ class JacFeatureSpec:
         maxfail: Optional[int],
         directory: Optional[str],
         verbose: bool,
-    ) -> bool:
+    ) -> int:
         """Run the test suite in the specified .jac file."""
         raise NotImplementedError
 

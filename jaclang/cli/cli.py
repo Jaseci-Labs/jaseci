@@ -243,7 +243,7 @@ def test(
 
     jac test => jac test -d .
     """
-    Jac.run_test(
+    failcount = Jac.run_test(
         filepath=filepath,
         filter=filter,
         xit=xit,
@@ -251,6 +251,8 @@ def test(
         directory=directory,
         verbose=verbose,
     )
+    if failcount:
+        raise SystemExit(f"Tests failed: {failcount}")
 
 
 @cmd_registry.register

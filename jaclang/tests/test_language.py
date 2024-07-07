@@ -62,9 +62,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import(
-            "micro.simple_walk", base_path=self.fixture_abs_path("../../../examples/")
-        )
+        jac_import("micro.simple_walk", base_path=self.examples_abs_path(""))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -157,7 +155,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
         jac_import(
             "reference.special_comprehensions",
-            base_path=self.fixture_abs_path("../../../examples/"),
+            base_path=self.examples_abs_path(""),
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -389,7 +387,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
         jac_import(
             "micro.typed_filter_compr",
-            base_path=self.fixture_abs_path("../../../examples/"),
+            base_path=self.examples_abs_path(""),
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -602,9 +600,7 @@ class JacLanguageTests(TestCase):
             "ir",
             [
                 "ast",
-                self.fixture_abs_path(
-                    "../../../examples/reference/collection_values.jac"
-                ),
+                self.examples_abs_path("reference/collection_values.jac"),
             ],
         )
 
@@ -760,7 +756,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/micro/simple_walk.jac"),
+            self.examples_abs_path("micro/simple_walk.jac"),
             schedule=py_code_gen_typed,
         )
         self.assertEqual(len(mypass.errors_had), 0)
@@ -770,7 +766,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/guess_game/guess_game5.jac"),
+            self.examples_abs_path("guess_game/guess_game5.jac"),
             schedule=py_code_gen_typed,
         )
         self.assertEqual(len(mypass.errors_had), 0)
@@ -803,14 +799,14 @@ class JacLanguageTests(TestCase):
     def test_single_impl_annex(self) -> None:
         """Basic test for pass."""
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
+            self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.JacImportPass,
         )
 
         self.assertEqual(mypass.ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
         self.assertIsNone(mypass.ir._sym_tab)
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"),
+            self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.SymTabBuildPass,
         )
         self.assertEqual(
@@ -821,7 +817,7 @@ class JacLanguageTests(TestCase):
     def test_inherit_baseclass_sym(self) -> None:
         """Basic test for symtable support for inheritance."""
         mypass = jac_file_to_pass(
-            self.fixture_abs_path("../../../examples/guess_game/guess_game4.jac"),
+            self.examples_abs_path("guess_game/guess_game4.jac"),
             target=passes.DefUsePass,
         )
         table = None

@@ -2,6 +2,7 @@
 
 import io
 import sys
+from contextlib import suppress
 
 from jaclang.cli import cli
 from jaclang.utils.test import TestCase
@@ -20,7 +21,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle.jac"))
+        cli.run(self.examples_abs_path("manual_code/circle.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -43,7 +44,7 @@ class JacCliTests(TestCase):
         sys.stdout = stdout_block
 
         # Execute the function
-        cli.test(self.fixture_abs_path("../../../examples/manual_code/circle.jac"))
+        cli.test(self.examples_abs_path("manual_code/circle.jac"))
 
         sys.stderr = sys.__stderr__
         sys.stdout = sys.__stdout__
@@ -57,7 +58,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle_clean.jac"))
+        cli.run(self.examples_abs_path("manual_code/circle_clean.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -75,7 +76,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("../../../examples/manual_code/circle_pure.jac"))
+        cli.run(self.examples_abs_path("manual_code/circle_pure.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -96,7 +97,7 @@ class JacCliTests(TestCase):
             "ir",
             [
                 "py",
-                f"{self.fixture_abs_path('../../../examples/manual_code/circle_pure.jac')}",
+                f"{self.examples_abs_path('manual_code/circle_pure.jac')}",
             ],
         )
 
@@ -114,11 +115,8 @@ class JacCliTests(TestCase):
         sys.stdout = stdio_block
 
         # Execute the function
-        cli.test(
-            self.fixture_abs_path(
-                "../../../examples/manual_code/circle_clean_tests.jac"
-            )
-        )
+        with suppress(SystemExit):
+            cli.test(self.examples_abs_path("manual_code/circle_clean_tests.jac"))
 
         sys.stderr = sys.__stderr__
         sys.stdout = sys.__stdout__

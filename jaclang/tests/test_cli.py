@@ -219,9 +219,7 @@ class JacCliTests(TestCase):
         """Test for graph CLI cmd."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.dot(
-            f"{self.fixture_abs_path('../../../examples/reference/connect_expressions.jac')}"
-        )
+        cli.dot(f"{self.examples_abs_path('reference/connect_expressions.jac')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         if os.path.exists("connect_expressions.dot"):
