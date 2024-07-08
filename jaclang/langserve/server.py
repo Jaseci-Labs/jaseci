@@ -30,7 +30,11 @@ async def did_change(
     ls: JacLangServer, params: lspt.DidChangeTextDocumentParams
 ) -> None:
     """Check syntax on change."""
-    await ls.analyze_and_publish(params.text_document.uri, level=1)
+    await ls.analyze_and_publish(file_path := params.text_document.uri, level=1)
+    if file_path in ls.modules:
+        ls.log_py("Updating semantic tokens")
+        ls.modules[file_path].update_sem_tokens(params)
+        # ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_FORMATTING)

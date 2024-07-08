@@ -134,6 +134,52 @@ class ModuleInfo:
                 prev_line, prev_col = line, col_start
         return tokens
 
+    def update_sem_tokens(
+        self, content_changes: lspt.DidChangeTextDocumentParams
+    ) -> list[int]:
+        """Update semantic tokens on change."""
+        for change in [
+            x
+            for x in content_changes.content_changes
+            if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
+        ]:
+            logging.info(f"Change: {change}")
+            start_line = change.range.start.line
+            start_character = change.range.start.character
+            end_line = change.range.end.line
+            end_character = change.range.end.character
+
+            # Calculate the change in number of lines and characters
+            line_delta = change.text.count("\n") - (end_line - start_line)
+            if line_delta == 0:
+                char_delta = len(change.text) - (end_character - start_character)
+            else:
+                last_newline_index = change.text.rfind("\n")
+                char_delta = (
+                    len(change.text)
+                    - last_newline_index
+                    - 1
+                    - end_character
+                    + start_character
+                )
+
+            # Update the token list
+            i = 0
+            while i < len(self.sem_tokens):
+                token_line = self.sem_tokens[i]
+                token_start_char = self.sem_tokens[i + 1]
+
+                if token_line > start_line or (
+                    token_line == start_line and token_start_char >= start_character
+                ):
+                    self.sem_tokens[i] += line_delta
+                    if token_line == start_line:
+                        self.sem_tokens[i + 1] += char_delta
+
+                i += 5
+
+        return self.sem_tokens
+
 
 class JacLangServer(LanguageServer):
     """Class for managing workspace."""
