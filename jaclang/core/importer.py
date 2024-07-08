@@ -2,6 +2,7 @@
 
 import importlib
 import marshal
+import os
 import sys
 import types
 from os import getcwd, path
@@ -11,6 +12,121 @@ from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
 from jaclang.core.utils import sys_path_context
+
+
+def handle_directory(
+    module_name: str, full_mod_path: str, mod_bundle: Module
+) -> types.ModuleType:
+    """Import from a directory that potentially contains multiple Jac modules."""
+    module = types.ModuleType(module_name)
+    module.__name__ = module_name
+    module.__path__ = [full_mod_path]
+    module.__dict__["__jac_mod_bundle__"] = mod_bundle
+    if module not in sys.modules:
+        sys.modules[module_name] = module
+    return module
+
+
+def process_items(
+    module: types.ModuleType,
+    items: dict[str, Union[str, bool]],
+    caller_dir: str,
+    mod_bundle: Optional[Module] = None,
+    cachable: bool = True,
+) -> None:
+    """Process items within a module by handling renaming and potentially loading missing attributes."""
+    module_dir = (
+        module.__path__[0]
+        if hasattr(module, "__path__")
+        else os.path.dirname(getattr(module, "__file__", ""))
+    )
+    for name, alias in items.items():
+        try:
+            item = getattr(module, name)
+            if alias and alias != name and not isinstance(alias, bool):
+                setattr(module, alias, item)
+        except AttributeError:
+            jac_file_path = os.path.join(module_dir, f"{name}.jac")
+            if hasattr(module, "__path__") and os.path.isfile(jac_file_path):
+                item = load_jac_file(
+                    module=module,
+                    name=name,
+                    jac_file_path=jac_file_path,
+                    mod_bundle=mod_bundle,
+                    cachable=cachable,
+                    caller_dir=caller_dir,
+                )
+                if item:
+                    setattr(module, name, item)
+                    if alias and alias != name and not isinstance(alias, bool):
+                        setattr(module, alias, item)
+
+
+def load_jac_file(
+    module: types.ModuleType,
+    name: str,
+    jac_file_path: str,
+    mod_bundle: Optional[Module],
+    cachable: bool,
+    caller_dir: str,
+) -> Optional[types.ModuleType]:
+    """Load a single .jac file into the specified module component."""
+    try:
+        package_name = (
+            f"{module.__name__}.{name}"
+            if hasattr(module, "__path__")
+            else module.__name__
+        )
+        new_module = sys.modules.get(
+            package_name,
+            create_jac_py_module(mod_bundle, name, module.__name__, jac_file_path),
+        )
+
+        codeobj = get_codeobj(
+            full_target=jac_file_path,
+            module_name=name,
+            mod_bundle=mod_bundle,
+            cachable=cachable,
+            caller_dir=caller_dir,
+        )
+        if not codeobj:
+            raise ImportError(f"No bytecode found for {jac_file_path}")
+
+        exec(codeobj, new_module.__dict__)
+        return getattr(new_module, name, new_module)
+    except ImportError as e:
+        print(
+            f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
+        )
+        return None
+
+
+def get_codeobj(
+    full_target: str,
+    module_name: str,
+    mod_bundle: Optional[Module],
+    cachable: bool,
+    caller_dir: str,
+) -> Optional[types.CodeType]:
+    """Execcutes the code for a given module."""
+    if mod_bundle:
+        codeobj = mod_bundle.mod_deps[full_target].gen.py_bytecode
+        return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
+    gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
+    pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
+    if cachable and os.path.exists(pyc_file_path):
+        with open(pyc_file_path, "rb") as f:
+            return marshal.load(f)
+
+    result = compile_jac(full_target, cache_result=cachable)
+    if result.errors_had or not result.ir.gen.py_bytecode:
+        for e in result.errors_had:
+            print(e)
+            return None
+    if result.ir.gen.py_bytecode is not None:
+        return marshal.loads(result.ir.gen.py_bytecode)
+    else:
+        return None
 
 
 def jac_importer(
@@ -53,39 +169,46 @@ def jac_importer(
 
     if lng == "py":
         module = py_import(
-            target=target, items=items, absorb=absorb, mdl_alias=mdl_alias
+            target=target,
+            items=items,
+            absorb=absorb,
+            mdl_alias=mdl_alias,
+            caller_dir=caller_dir,
         )
     else:
         module_name = override_name if override_name else module_name
-        module = create_jac_py_module(
-            valid_mod_bundle, module_name, package_path, full_target
-        )
-        if valid_mod_bundle:
-            codeobj = valid_mod_bundle.mod_deps[full_target].gen.py_bytecode
-            codeobj = marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        else:
-            gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
-            pyc_file_path = path.join(gen_dir, module_name + ".jbc")
-            if (
-                cachable
-                and path.exists(pyc_file_path)
-                and path.getmtime(pyc_file_path) > path.getmtime(full_target)
-            ):
-                with open(pyc_file_path, "rb") as f:
-                    codeobj = marshal.load(f)
-            else:
-                result = compile_jac(full_target, cache_result=cachable)
-                if result.errors_had or not result.ir.gen.py_bytecode:
-                    # for e in result.errors_had:
-                    #     print(e)
-                    return None
-                else:
-                    codeobj = marshal.loads(result.ir.gen.py_bytecode)
-        if not codeobj:
-            raise ImportError(f"No bytecode found for {full_target}")
-        with sys_path_context(caller_dir):
-            exec(codeobj, module.__dict__)
 
+        if os.path.isdir(path.splitext(full_target)[0]):
+            module = handle_directory(
+                module_name, path.splitext(full_target)[0], valid_mod_bundle
+            )
+            if items:
+                process_items(
+                    module,
+                    items,
+                    caller_dir,
+                    mod_bundle=valid_mod_bundle,
+                    cachable=cachable,
+                )
+        else:
+            module = create_jac_py_module(
+                valid_mod_bundle, module_name, package_path, full_target
+            )
+            codeobj = get_codeobj(
+                full_target=full_target,
+                module_name=module_name,
+                mod_bundle=valid_mod_bundle,
+                cachable=cachable,
+                caller_dir=caller_dir,
+            )
+            try:
+                if not codeobj:
+                    raise ImportError(f"No bytecode found for {full_target}")
+                with sys_path_context(caller_dir):
+                    exec(codeobj, module.__dict__)
+            except Exception as e:
+                print(f"Error importing {full_target}: {str(e)}")
+                return None
     return module
 
 
@@ -129,14 +252,25 @@ def get_caller_dir(target: str, base_path: str, dir_path: str) -> str:
 
 def py_import(
     target: str,
+    caller_dir: str,
     items: Optional[dict[str, Union[str, bool]]] = None,
     absorb: bool = False,
     mdl_alias: Optional[str] = None,
 ) -> types.ModuleType:
     """Import a Python module."""
     try:
-        target = target.lstrip(".") if target.startswith("..") else target
-        imported_module = importlib.import_module(name=target)
+        if target.startswith("."):
+            target = target.lstrip(".")
+            full_target = path.normpath(path.join(caller_dir, target))
+            spec = importlib.util.spec_from_file_location(target, full_target + ".py")
+            if spec and spec.loader:
+                imported_module = importlib.util.module_from_spec(spec)
+                sys.modules[spec.name] = imported_module
+                spec.loader.exec_module(imported_module)
+            else:
+                raise ImportError(f"Cannot find module {target} at {full_target}")
+        else:
+            imported_module = importlib.import_module(name=target)
         main_module = __import__("__main__")
         if absorb:
             for name in dir(imported_module):
