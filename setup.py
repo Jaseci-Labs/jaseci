@@ -35,7 +35,7 @@ setup(
     ],
     package_data={},
     entry_points={
-        "jac": [],
+        "jac": ["jac = jaclang_jaseci.plugin.jaseci:JacPlugin"],
     },
     author="Jason Mars",
     author_email="jason@jaseci.org",
