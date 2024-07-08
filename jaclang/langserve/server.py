@@ -31,6 +31,7 @@ async def did_change(
 ) -> None:
     """Check syntax on change."""
     await ls.analyze_and_publish(params.text_document.uri, level=1)
+    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_FORMATTING)
