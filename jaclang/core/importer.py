@@ -201,11 +201,14 @@ def jac_importer(
                 cachable=cachable,
                 caller_dir=caller_dir,
             )
-            if not codeobj:
-                raise ImportError(f"No bytecode found for {full_target}")
-            with sys_path_context(caller_dir):
-                exec(codeobj, module.__dict__)
-
+            try:
+                if not codeobj:
+                    raise ImportError(f"No bytecode found for {full_target}")
+                with sys_path_context(caller_dir):
+                    exec(codeobj, module.__dict__)
+            except Exception as e:
+                print(f"Error importing {full_target}: {str(e)}")
+                return None
     return module
 
 
