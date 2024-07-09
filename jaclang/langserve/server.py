@@ -9,7 +9,6 @@ from jaclang.compiler.constant import (
     JacSemTokenType as SemTokType,
 )
 from jaclang.langserve.engine import JacLangServer
-from jaclang.langserve.utils import debounce
 
 import lsprotocol.types as lspt
 
@@ -25,7 +24,6 @@ async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) ->
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
-@debounce(0.3)
 async def did_change(
     ls: JacLangServer, params: lspt.DidChangeTextDocumentParams
 ) -> None:
@@ -34,7 +32,7 @@ async def did_change(
     if file_path in ls.modules:
         ls.log_py("Updating semantic tokens")
         ls.modules[file_path].update_sem_tokens(params)
-        # ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
+        ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_FORMATTING)
@@ -137,6 +135,14 @@ def semantic_tokens_full(
     ls: JacLangServer, params: lspt.SemanticTokensParams
 ) -> lspt.SemanticTokens:
     """Provide semantic tokens."""
+    import logging
+
+    logging.info("\nGetting semantic tokens\n")
+    # logging.info(ls.get_semantic_tokens(params.text_document.uri))
+    i = 0
+    while i < len(ls.get_semantic_tokens(params.text_document.uri).data):
+        logging.info(ls.get_semantic_tokens(params.text_document.uri).data[i : i + 5])
+        i += 5
     return ls.get_semantic_tokens(params.text_document.uri)
 
 
