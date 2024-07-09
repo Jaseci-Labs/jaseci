@@ -23,9 +23,9 @@ from jaclang.langserve.utils import (
     find_deepest_symbol_node_at_pos,
     get_item_path,
     get_mod_path,
-    which_token,
     parse_symbol_path,
     resolve_completion_symbol_table,
+    which_token,
 )
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
