@@ -168,6 +168,7 @@ class ModuleInfo:
                 self.sem_tokens, start_line, start_character, end_line, end_character
             )
             if affected_token_index is not None:
+                logging.info(f"Affected token index: {affected_token_index}")
                 self.sem_tokens[affected_token_index + 2] = max(
                     1, self.sem_tokens[affected_token_index + 2] + char_delta
                 )

@@ -310,16 +310,27 @@ def which_token(
         token_length = tokens[token_index + 2]
         token_end_char = token_start_char + token_length
 
+        # Check if the change is entirely within this token
         if (
-            (
-                token_line == change_start_line
-                and token_start_char <= change_start_char < token_end_char
-            )
-            or (
-                token_line == change_end_line
-                and token_start_char < change_end_char <= token_end_char
-            )
-            or (change_start_line <= token_line <= change_end_line)
+            token_line == change_start_line == change_end_line
+            and token_start_char
+            <= change_start_char
+            < change_end_char
+            <= token_end_char
+        ):
+            return token_index
+
+        # Check if the change starts within this token
+        if (
+            token_line == change_start_line
+            and token_start_char <= change_start_char < token_end_char
+        ):
+            return token_index
+
+        # Check if the change ends within this token
+        if (
+            token_line == change_end_line
+            and token_start_char < change_end_char <= token_end_char
         ):
             return token_index
 
