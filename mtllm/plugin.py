@@ -26,7 +26,7 @@ class JacFeature:
         model: BaseLLM,
         model_params: dict[str, Any],
         scope: str,
-        incl_info: list[tuple[str, str]],
+        incl_info: list[tuple[str, Any]],  # noqa: ANN401
         excl_info: list[tuple[str, str]],
         inputs: list[
             tuple[str, str, str, Any]
