@@ -21,13 +21,17 @@ server = JacLangServer()
 async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
     await ls.analyze_and_publish(params.text_document.uri)
+    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
 @debounce(0.3)
-async def did_change(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
+async def did_change(
+    ls: JacLangServer, params: lspt.DidChangeTextDocumentParams
+) -> None:
     """Check syntax on change."""
     await ls.analyze_and_publish(params.text_document.uri, level=1)
+    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_FORMATTING)
