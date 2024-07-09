@@ -22,6 +22,7 @@ from jaclang.langserve.utils import (
     find_deepest_symbol_node_at_pos,
     get_item_path,
     get_mod_path,
+    which_token,
 )
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
@@ -143,17 +144,13 @@ class ModuleInfo:
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
-            logging.info(f"\ninitial:\n {self.sem_tokens}\n")
-            logging.info(f"Change:\n {change}\n")
+            # logging.info(f"\ninitial:\n {self.sem_tokens}\n")
+            # logging.info(f"Change:\n {change}\n")
             start_line = change.range.start.line
             start_character = change.range.start.character
             end_line = change.range.end.line
             end_character = change.range.end.character
-            logging.info(
-                f"Start: {start_line}, {start_character}, End: {end_line}, {end_character}"
-            )
 
-            # Calculate the change in number of lines and characters
             line_delta = change.text.count("\n") - (end_line - start_line)
             if line_delta == 0:
                 char_delta = len(change.text) - (end_character - start_character)
@@ -167,15 +164,19 @@ class ModuleInfo:
                     + start_character
                 )
 
-            # Update the token list
+            affected_token_index = which_token(
+                self.sem_tokens, start_line, start_character, end_line, end_character
+            )
+            if affected_token_index is not None:
+                self.sem_tokens[affected_token_index + 2] = max(
+                    1, self.sem_tokens[affected_token_index + 2] + char_delta
+                )
+
             token_index = 0
             token_offset = 0
             while token_index < len(self.sem_tokens):
                 token_line = self.sem_tokens[token_index] + token_offset
                 token_start_char = self.sem_tokens[token_index + 1]
-                logging.info(
-                    f"token line: {token_line}, token start char: {token_start_char}"
-                )
 
                 if token_line > start_line or (
                     token_line == start_line and token_start_char >= start_character
@@ -190,7 +191,7 @@ class ModuleInfo:
                 token_offset += self.sem_tokens[token_index]
                 token_index += 5
 
-        logging.info(f"\nfinal: {self.sem_tokens}\n")
+        # logging.info(f"\nfinal: {self.sem_tokens}\n")
         return self.sem_tokens
 
 

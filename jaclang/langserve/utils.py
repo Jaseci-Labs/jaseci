@@ -292,3 +292,37 @@ def get_definition_range(
                         return filename, (start_line - 1, end_line - 1)
 
     return None
+
+
+def which_token(
+    tokens: list[int],
+    change_start_line: int,
+    change_start_char: int,
+    change_end_line: int,
+    change_end_char: int,
+) -> Optional[int]:
+    """Find in which token change is occurring."""
+    token_index = 0
+    token_offset = 0
+    while token_index < len(tokens):
+        token_line = tokens[token_index] + token_offset
+        token_start_char = tokens[token_index + 1]
+        token_length = tokens[token_index + 2]
+        token_end_char = token_start_char + token_length
+
+        if (
+            (
+                token_line == change_start_line
+                and token_start_char <= change_start_char < token_end_char
+            )
+            or (
+                token_line == change_end_line
+                and token_start_char < change_end_char <= token_end_char
+            )
+            or (change_start_line <= token_line <= change_end_line)
+        ):
+            return token_index
+
+        token_offset += tokens[token_index]
+        token_index += 5
+    return None
