@@ -211,7 +211,7 @@ class TestJacLangServer(TestCase):
         positions = [
             (2, 16, "datetime.py:0:0-0:0"),
             (3, 17, "base_module_structure.jac:0:0-0:0"),
-            (3, 74, "base_module_structure.jac:23:0-23:5"),
+            (3, 87, "base_module_structure.jac:23:0-23:5"),
             (5, 65, "py_import.py:12:0-20:5"),
             (5, 35, "py_import.py:3:0-4:5"),
         ]
@@ -263,12 +263,57 @@ class TestJacLangServer(TestCase):
         for token_type, expected_count in expected_counts:
             self.assertEqual(str(sem_list).count(token_type), expected_count)
 
+    def test_completion(self) -> None:
+        """Test that the completions are correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        base_module_file = uris.from_fs_path(
+            self.fixture_abs_path("base_module_structure.jac")
+        )
+        lsp.quick_check(base_module_file)
+        lsp.deep_check(base_module_file)
+        lsp.type_check(base_module_file)
+        test_cases = [
+            (lspt.Position(37, 16), ["get_color1", "color1", "point1"], 3),
+            (
+                lspt.Position(51, 12),
+                [
+                    "get_color1",
+                    "color1",
+                    "point1",
+                    "base_colorred",
+                    "pointred",
+                    "color2",
+                ],
+                6,
+            ),
+            (lspt.Position(52, 19), ["color22", "point22"], 2),
+        ]
+        for position, expected_completions, expected_length in test_cases:
+            completions = lsp.get_completion(
+                base_module_file, position, completion_trigger="."
+            ).items
+            for completion in expected_completions:
+                self.assertIn(completion, str(completions))
+            self.assertEqual(expected_length, len(completions))
+
+            if position == lspt.Position(47, 12):
+                self.assertEqual(
+                    1, str(completions).count("kind=<CompletionItemKind.Function: 3>")
+                )
+                self.assertEqual(
+                    4, str(completions).count("kind=<CompletionItemKind.Field: 5>")
+                )
+
     def test_go_to_reference(self) -> None:
         """Test that the go to reference is correct."""
         lsp = JacLangServer()
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
+
         circle_file = uris.from_fs_path(self.fixture_abs_path("circle.jac"))
         lsp.quick_check(circle_file)
         lsp.deep_check(circle_file)

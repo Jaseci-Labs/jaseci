@@ -21,8 +21,34 @@ with entry:__main__ {
 
 glob x: int = 10;
 
-enum Color {
+enum Colorenum {
     RED,
     GREEN,
     BLUE
+}
+
+obj Colour1 {
+    has color1: Colorenum,
+        point1: int;
+
+    can get_color1 -> Colorenum;
+}
+
+:obj:Colour1:can:get_color1 -> Colorenum {
+    return self.color;
+}
+
+obj red :Colour1: {
+    has base_colorred: Colorenum = Color.RED,
+        pointred: int = 10;
+    obj color2 {
+        has color22: Color = Colorenum.BLUE,
+            point22: int = 20;
+    }
+}
+
+with entry:__main__ {
+    r = red(color1=Color.GREEN, point1=20);
+    print(r.get_color1());
+    print(r.color2.color22);
 }

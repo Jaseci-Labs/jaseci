@@ -86,11 +86,13 @@ def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) -> None:
 
 @server.feature(
     lspt.TEXT_DOCUMENT_COMPLETION,
-    lspt.CompletionOptions(trigger_characters=[".", ":", ""]),
+    lspt.CompletionOptions(trigger_characters=[".", ":", "a-zA-Z0-9"]),
 )
 def completion(ls: JacLangServer, params: lspt.CompletionParams) -> lspt.CompletionList:
     """Provide completion."""
-    return ls.get_completion(params.text_document.uri, params.position)
+    return ls.get_completion(
+        params.text_document.uri, params.position, params.context.trigger_character
+    )
 
 
 @server.feature(lspt.TEXT_DOCUMENT_HOVER, lspt.HoverOptions(work_done_progress=True))

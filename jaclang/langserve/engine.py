@@ -17,11 +17,14 @@ from jaclang.compiler.passes.main.schedules import type_checker_sched
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.langserve.utils import (
+    collect_all_symbols_in_scope,
     collect_symbols,
     create_range,
     find_deepest_symbol_node_at_pos,
     get_item_path,
     get_mod_path,
+    parse_symbol_path,
+    resolve_completion_symbol_table,
 )
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
@@ -73,7 +76,7 @@ class ModuleInfo:
         target_mod = mod_override if mod_override else build.ir
         if not isinstance(target_mod, ast.Module):
             return
-        self.ir = target_mod  # if alev > ALev.QUICK else self.ir
+        self.ir = target_mod if alev > ALev.QUICK else self.ir
         if refresh:
             self.errors = build.errors_had
             self.warnings = build.warnings_had
@@ -266,19 +269,37 @@ class JacLangServer(LanguageServer):
                 await self.push_diagnostics(uri)
 
     def get_completion(
-        self, file_path: str, position: lspt.Position
+        self, file_path: str, position: lspt.Position, completion_trigger: str
     ) -> lspt.CompletionList:
         """Return completion for a file."""
-        items = []
+        completion_items = []
         document = self.workspace.get_text_document(file_path)
-        current_line = document.lines[position.line].strip()
-        if current_line.endswith("hello."):
+        current_line = document.lines[position.line]
+        current_pos = position.character
+        current_symbol_path = parse_symbol_path(current_line, current_pos)
+        node_selected = find_deepest_symbol_node_at_pos(
+            self.modules[file_path].ir,
+            position.line,
+            position.character - 2,
+        )
 
-            items = [
-                lspt.CompletionItem(label="world"),
-                lspt.CompletionItem(label="friend"),
-            ]
-        return lspt.CompletionList(is_incomplete=False, items=items)
+        mod_tab = (
+            self.modules[file_path].ir.sym_tab
+            if not node_selected
+            else node_selected.sym_tab
+        )
+        current_tab = self.modules[file_path].ir._sym_tab
+        current_symbol_table = mod_tab
+        if completion_trigger == ".":
+            completion_items = resolve_completion_symbol_table(
+                mod_tab, current_symbol_path, current_tab
+            )
+        else:
+            try:  # noqa SIM105
+                completion_items = collect_all_symbols_in_scope(current_symbol_table)
+            except AttributeError:
+                pass
+        return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
     def rename_module(self, old_path: str, new_path: str) -> None:
         """Rename module."""
