@@ -152,24 +152,20 @@ class ModuleInfo:
             logging.info(
                 f"Start: {start_line}, {start_character}, End: {end_line}, {end_character}"
             )
+
             # Calculate the change in number of lines and characters
-            if change.text == "\n":
-                line_delta = 1
-                char_delta = -start_character
-                logging.info(f"line_delta: {line_delta}, char_delta: {char_delta}")
+            line_delta = change.text.count("\n") - (end_line - start_line)
+            if line_delta == 0:
+                char_delta = len(change.text) - (end_character - start_character)
             else:
-                line_delta = change.text.count("\n") - (end_line - start_line)
-                if line_delta == 0:
-                    char_delta = len(change.text) - (end_character - start_character)
-                else:
-                    last_newline_index = change.text.rfind("\n")
-                    char_delta = (
-                        len(change.text)
-                        - last_newline_index
-                        - 1
-                        - end_character
-                        + start_character
-                    )
+                last_newline_index = change.text.rfind("\n")
+                char_delta = (
+                    len(change.text)
+                    - last_newline_index
+                    - 1
+                    - end_character
+                    + start_character
+                )
 
             # Update the token list
             token_index = 0
