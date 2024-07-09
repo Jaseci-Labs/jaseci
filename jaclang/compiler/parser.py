@@ -131,7 +131,8 @@ class JacParser(Pass):
         def nu(self, node: ast.T) -> ast.T:
             """Update node."""
             self.parse_ref.cur_node = node
-            self.parse_ref.node_list.append(node)
+            if node not in self.parse_ref.node_list:
+                self.parse_ref.node_list.append(node)
             return node
 
         def start(self, kid: list[ast.Module]) -> ast.Module:

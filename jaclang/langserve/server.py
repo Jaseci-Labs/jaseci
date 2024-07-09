@@ -9,7 +9,6 @@ from jaclang.compiler.constant import (
     JacSemTokenType as SemTokType,
 )
 from jaclang.langserve.engine import JacLangServer
-from jaclang.langserve.utils import debounce
 
 import lsprotocol.types as lspt
 
@@ -20,18 +19,19 @@ server = JacLangServer()
 @server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
 async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
-    await ls.analyze_and_publish(params.text_document.uri)
+    await ls.launch_deep_check(params.text_document.uri)
     ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
-@debounce(0.3)
 async def did_change(
     ls: JacLangServer, params: lspt.DidChangeTextDocumentParams
 ) -> None:
     """Check syntax on change."""
-    await ls.analyze_and_publish(params.text_document.uri, level=1)
-    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
+    await ls.launch_quick_check(file_path := params.text_document.uri)
+    if file_path in ls.modules:
+        ls.modules[file_path].update_sem_tokens(params)
+        ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_FORMATTING)
@@ -91,7 +91,9 @@ def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) -> None:
 def completion(ls: JacLangServer, params: lspt.CompletionParams) -> lspt.CompletionList:
     """Provide completion."""
     return ls.get_completion(
-        params.text_document.uri, params.position, params.context.trigger_character
+        params.text_document.uri,
+        params.position,
+        params.context.trigger_character if params.context else None,
     )
 
 
@@ -136,6 +138,14 @@ def semantic_tokens_full(
     ls: JacLangServer, params: lspt.SemanticTokensParams
 ) -> lspt.SemanticTokens:
     """Provide semantic tokens."""
+    # import logging
+
+    # logging.info("\nGetting semantic tokens\n")
+    # # logging.info(ls.get_semantic_tokens(params.text_document.uri))
+    # i = 0
+    # while i < len(ls.get_semantic_tokens(params.text_document.uri).data):
+    #     logging.info(ls.get_semantic_tokens(params.text_document.uri).data[i : i + 5])
+    #     i += 5
     return ls.get_semantic_tokens(params.text_document.uri)
 
 
