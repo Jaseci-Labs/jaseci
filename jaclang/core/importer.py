@@ -33,8 +33,9 @@ def process_items(
     caller_dir: str,
     mod_bundle: Optional[Module] = None,
     cachable: bool = True,
-) -> None:
+) -> list:
     """Process items within a module by handling renaming and potentially loading missing attributes."""
+    unique_loaded_items = []
     module_dir = (
         module.__path__[0]
         if hasattr(module, "__path__")
@@ -43,6 +44,7 @@ def process_items(
     for name, alias in items.items():
         try:
             item = getattr(module, name)
+            unique_loaded_items.append(item)
             if alias and alias != name and not isinstance(alias, bool):
                 setattr(module, alias, item)
         except AttributeError:
@@ -56,10 +58,23 @@ def process_items(
                     cachable=cachable,
                     caller_dir=caller_dir,
                 )
-                if item:
-                    setattr(module, name, item)
-                    if alias and alias != name and not isinstance(alias, bool):
-                        setattr(module, alias, item)
+            else:
+                jac_file_path = module.__file__ if module.__file__ else ""
+                if os.path.isfile(jac_file_path):
+                    item = load_jac_file(
+                        module=module,
+                        name=name,
+                        jac_file_path=jac_file_path,
+                        mod_bundle=mod_bundle,
+                        cachable=cachable,
+                        caller_dir=caller_dir,
+                    )
+            if item:
+                unique_loaded_items.append(item)
+                setattr(module, name, item)
+                if alias and alias != name and not isinstance(alias, bool):
+                    setattr(module, alias, item)
+    return unique_loaded_items
 
 
 def load_jac_file(
@@ -139,23 +154,22 @@ def jac_importer(
     mod_bundle: Optional[Module | str] = None,
     lng: Optional[str] = "jac",
     items: Optional[dict[str, Union[str, bool]]] = None,
-) -> Optional[types.ModuleType]:
+) -> Optional[tuple[types.ModuleType, ...]]:
     """Core Import Process."""
-    dir_path, file_name = path.split(
-        path.join(*(target.split("."))) + (".jac" if lng == "jac" else ".py")
-    )
+    unique_loaded_items = []
+    dir_path, file_name = path.split(path.join(*(target.split("."))))
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
-
     if (
         not override_name
         and package_path
         and f"{package_path}.{module_name}" in sys.modules
     ):
-        return sys.modules[f"{package_path}.{module_name}"]
+        module = sys.modules[f"{package_path}.{module_name}"]
     elif not override_name and not package_path and module_name in sys.modules:
-        return sys.modules[module_name]
-
+        module = sys.modules[module_name]
+    else:
+        module = None
     valid_mod_bundle = (
         sys.modules[mod_bundle].__jac_mod_bundle__
         if isinstance(mod_bundle, str)
@@ -166,50 +180,57 @@ def jac_importer(
 
     caller_dir = get_caller_dir(target, base_path, dir_path)
     full_target = path.normpath(path.join(caller_dir, file_name))
-
-    if lng == "py":
-        module = py_import(
-            target=target,
-            items=items,
-            absorb=absorb,
-            mdl_alias=mdl_alias,
-            caller_dir=caller_dir,
-        )
-    else:
-        module_name = override_name if override_name else module_name
-
-        if os.path.isdir(path.splitext(full_target)[0]):
-            module = handle_directory(
-                module_name, path.splitext(full_target)[0], valid_mod_bundle
-            )
-            if items:
-                process_items(
-                    module,
-                    items,
-                    caller_dir,
-                    mod_bundle=valid_mod_bundle,
-                    cachable=cachable,
-                )
+    if not module:
+        if os.path.isdir(full_target):
+            module = handle_directory(module_name, full_target, valid_mod_bundle)
         else:
-            module = create_jac_py_module(
-                valid_mod_bundle, module_name, package_path, full_target
-            )
-            codeobj = get_codeobj(
-                full_target=full_target,
-                module_name=module_name,
-                mod_bundle=valid_mod_bundle,
-                cachable=cachable,
-                caller_dir=caller_dir,
-            )
-            try:
-                if not codeobj:
-                    raise ImportError(f"No bytecode found for {full_target}")
-                with sys_path_context(caller_dir):
-                    exec(codeobj, module.__dict__)
-            except Exception as e:
-                print(f"Error importing {full_target}: {str(e)}")
-                return None
-    return module
+            full_target += ".jac" if lng == "jac" else ".py"
+            module_name = path.splitext(file_name)[0]
+            package_path = dir_path.replace(path.sep, ".")
+
+            if lng == "py":
+                module, *unique_loaded_items = py_import(
+                    target=target,
+                    items=items,
+                    absorb=absorb,
+                    mdl_alias=mdl_alias,
+                    caller_dir=caller_dir,
+                )
+            else:
+                module_name = override_name if override_name else module_name
+                module = create_jac_py_module(
+                    valid_mod_bundle,
+                    module_name,
+                    package_path,
+                    full_target,
+                )
+                codeobj = get_codeobj(
+                    full_target,
+                    module_name,
+                    valid_mod_bundle,
+                    cachable,
+                    caller_dir=caller_dir,
+                )
+                try:
+                    if not codeobj:
+                        raise ImportError(f"No bytecode found for {full_target}")
+                    with sys_path_context(caller_dir):
+                        exec(codeobj, module.__dict__)
+                except Exception as e:
+                    print(f"Error importing {full_target}: {str(e)}")
+                    return None
+    unique_loaded_items = (
+        process_items(
+            module,
+            items,
+            caller_dir,
+            mod_bundle=valid_mod_bundle,
+            cachable=cachable,
+        )
+        if items
+        else []
+    )
+    return (module,) if absorb or not items else tuple(unique_loaded_items)
 
 
 def create_jac_py_module(
@@ -256,9 +277,10 @@ def py_import(
     items: Optional[dict[str, Union[str, bool]]] = None,
     absorb: bool = False,
     mdl_alias: Optional[str] = None,
-) -> types.ModuleType:
+) -> tuple[types.ModuleType, ...]:
     """Import a Python module."""
     try:
+        loaded_items: list = []
         if target.startswith("."):
             target = target.lstrip(".")
             full_target = path.normpath(path.join(caller_dir, target))
@@ -279,19 +301,25 @@ def py_import(
 
         elif items:
             for name, alias in items.items():
+                if isinstance(alias, bool):
+                    alias = name
                 try:
-                    setattr(
-                        main_module,
-                        alias if isinstance(alias, str) else name,
-                        getattr(imported_module, name),
-                    )
+                    item = getattr(imported_module, name)
+                    if item not in loaded_items:
+                        setattr(
+                            main_module, alias if isinstance(alias, str) else name, item
+                        )
+                        loaded_items.append(item)
                 except AttributeError as e:
                     if hasattr(imported_module, "__path__"):
-                        setattr(
-                            main_module,
-                            alias if isinstance(alias, str) else name,
-                            importlib.import_module(f"{target}.{name}"),
-                        )
+                        item = importlib.import_module(f"{target}.{name}")
+                        if item not in loaded_items:
+                            setattr(
+                                main_module,
+                                alias if isinstance(alias, str) else name,
+                                item,
+                            )
+                            loaded_items.append(item)
                     else:
                         raise e
 
@@ -301,7 +329,7 @@ def py_import(
                 mdl_alias if isinstance(mdl_alias, str) else target,
                 imported_module,
             )
-        return imported_module
+        return (imported_module, *loaded_items)
+
     except ImportError as e:
-        print(f"Failed to import module {target}")
         raise e

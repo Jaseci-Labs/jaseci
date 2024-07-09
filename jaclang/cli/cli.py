@@ -92,7 +92,7 @@ def run(
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        loaded_mod = jac_import(
+        (loaded_mod,) = jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
@@ -101,7 +101,7 @@ def run(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             ir = pickle.load(f)
-            loaded_mod = jac_import(
+            (loaded_mod,) = jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,

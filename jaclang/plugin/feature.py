@@ -105,7 +105,7 @@ class JacFeature:
         mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, bool]]] = None,
-    ) -> Optional[types.ModuleType]:
+    ) -> Optional[tuple[types.ModuleType, ...]]:
         """Core Import Process."""
         return pm.hook.jac_import(
             target=target,
