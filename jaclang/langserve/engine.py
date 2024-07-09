@@ -140,19 +140,6 @@ class JacLangServer(LanguageServer):
         self.modules: dict[str, ModuleInfo] = {}
         self.executor = ThreadPoolExecutor()
 
-    def unwind_to_parent(self, file_path: str) -> str:
-        """Unwind to parent."""
-        orig_file_path = file_path
-        if file_path in self.modules:
-            while cur := self.modules[file_path].parent:
-                file_path = cur.uri
-            if file_path == orig_file_path and (
-                discover := self.modules[file_path].ir.annexable_by
-            ):
-                file_path = uris.from_fs_path(discover)
-                self.quick_check(file_path)
-        return file_path
-
     def update_modules(
         self, file_path: str, build: Pass, refresh: bool = False
     ) -> None:
@@ -203,7 +190,6 @@ class JacLangServer(LanguageServer):
     def deep_check(self, file_path: str) -> bool:
         """Rebuild a file and its dependencies."""
         try:
-            file_path = self.unwind_to_parent(file_path)
             document = self.workspace.get_text_document(file_path)
             build = jac_str_to_pass(
                 jac_str=document.source,
@@ -211,6 +197,8 @@ class JacLangServer(LanguageServer):
                 schedule=py_code_gen_typed,
             )
             self.update_modules(file_path, build)
+            if discover := self.modules[file_path].ir.annexable_by:
+                return self.deep_check(uris.from_fs_path(discover))
             self.publish_diagnostics(
                 file_path,
                 gen_diagnostics(build.errors_had, build.warnings_had),
