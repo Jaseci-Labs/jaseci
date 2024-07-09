@@ -218,3 +218,40 @@ class OutputHint:
     def get_types(self) -> list:
         """Get the types of the output."""
         return extract_non_primary_type(self.type)
+
+
+class Information:
+    """Class to represent the information."""
+
+    def __init__(
+        self, filtered_registry: SemRegistry, name: str, value: Any  # noqa: ANN401
+    ) -> None:
+        """Initializes the Information class."""
+        self.name = name
+        self.value = value
+        self.registry = filtered_registry
+
+    @property
+    def semstr(self) -> str:
+        """Get the semantic string of the information."""
+        _, sem_info = self.registry.lookup(name=self.name)
+        return sem_info.semstr if sem_info and isinstance(sem_info, SemInfo) else ""
+
+    @property
+    def type(self) -> str:
+        """Get the type of the information."""
+        _, sem_info = self.registry.lookup(name=self.name)
+        return (
+            sem_info.type
+            if sem_info and isinstance(sem_info, SemInfo)
+            else get_type_annotation(self.value)
+        )
+
+    def __str__(self) -> str:
+        """Returns the string representation of the Information class."""
+        type_anno = get_type_annotation(self.value)
+        return f"{self.semstr} ({self.name}) ({type_anno}) = {get_object_string(self.value)}".strip()
+
+    def get_types(self) -> list:
+        """Get the types of the information."""
+        return extract_non_primary_type(self.type)

@@ -10,10 +10,10 @@ from jaclang.plugin.default import hookimpl
 from mtllm.aott import (
     aott_raise,
     get_all_type_explanations,
-    get_info_types,
 )
 from mtllm.llms.base import BaseLLM
-from mtllm.types import InputInformation, OutputHint
+from mtllm.types import Information, InputInformation, OutputHint
+from mtllm.utils import get_filtered_registry
 
 
 class JacFeature:
@@ -60,9 +60,10 @@ class JacFeature:
 
         type_collector: list = []
 
+        filtered_registry = get_filtered_registry(mod_registry, _scope)
         incl_info = [x for x in incl_info if not isinstance(x[1], type)]
-        information, collected_types = get_info_types(_scope, mod_registry, incl_info)
-        type_collector.extend(collected_types)
+        informations = [Information(filtered_registry, x[0], x[1]) for x in incl_info]
+        type_collector.extend([x.get_types() for x in informations])
 
         inputs_information = []
         for input_item in inputs:
@@ -81,7 +82,7 @@ class JacFeature:
 
         meaning_out = aott_raise(
             model,
-            information,
+            informations,
             inputs_information,
             output_hint,
             type_explanations,

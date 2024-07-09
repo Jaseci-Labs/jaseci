@@ -4,17 +4,23 @@ AOTT: Automated Operational Type Transformation.
 This has all the necessary functions to perform the AOTT operations.
 """
 
-from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
+from jaclang.compiler.semtable import SemRegistry
 
 from mtllm.llms.base import BaseLLM
 from mtllm.tools.base import Tool
-from mtllm.types import Image, InputInformation, OutputHint, TypeExplanation, Video
-from mtllm.utils import extract_non_primary_type, get_object_string
+from mtllm.types import (
+    Image,
+    Information,
+    InputInformation,
+    OutputHint,
+    TypeExplanation,
+    Video,
+)
 
 
 def aott_raise(
     model: BaseLLM,
-    information: str,
+    informations: list[Information],
     inputs_information: list[InputInformation],
     output_hint: OutputHint,
     type_explanations: list[TypeExplanation],
@@ -28,6 +34,7 @@ def aott_raise(
     contains_media: bool = any(
         isinstance(x.value, (Image, Video)) for x in inputs_information
     )
+    informations_str = "\n".join([str(x) for x in informations])
     inputs_information_repr: list[dict] | str
     if contains_media:
         inputs_information_repr = []
@@ -44,7 +51,7 @@ def aott_raise(
         method_prompt = model.MTLLM_METHOD_PROMPTS[method]
         if isinstance(inputs_information_repr, str):
             mtllm_prompt = model.MTLLM_PROMPT.format(
-                information=information,
+                information=informations_str,
                 inputs_information=inputs_information_repr,
                 output_information=str(output_hint),
                 type_explanations=type_explanations_str,
@@ -58,7 +65,7 @@ def aott_raise(
             upper_half = model.MTLLM_PROMPT.split("{inputs_information}")[0]
             lower_half = model.MTLLM_PROMPT.split("{inputs_information}")[1]
             upper_half = upper_half.format(
-                information=information,
+                information=informations_str,
                 context=context,
             )
             lower_half = lower_half.format(
@@ -82,38 +89,6 @@ def aott_raise(
         assert tools, "Tools must be provided for the ReAct method."
         # TODO: Implement ReAct method
         return ""
-
-
-def get_info_types(
-    scope: SemScope, mod_registry: SemRegistry, incl_info: list[tuple[str, str]]
-) -> tuple[str, list[str]]:
-    """Filter the registry data based on the scope and return the info string."""
-    collected_types = []
-    avail_scopes = []
-    while True:
-        avail_scopes.append(str(scope))
-        if not scope.parent:
-            break
-        scope = scope.parent
-
-    filtered_registry = SemRegistry()
-    for _scope, sem_info_list in mod_registry.registry.items():
-        if str(_scope) in avail_scopes:
-            filtered_registry.registry[_scope] = sem_info_list
-
-    info_str = []
-    for incl in incl_info:
-        _, sem_info = filtered_registry.lookup(name=incl[0])
-        if sem_info and isinstance(sem_info, SemInfo):
-            (
-                collected_types.extend(extract_non_primary_type(sem_info.type))
-                if sem_info.type
-                else None
-            )
-            info_str.append(
-                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) = {get_object_string(incl[1])}".strip()
-            )
-    return ("\n".join(info_str), collected_types)
 
 
 def get_all_type_explanations(

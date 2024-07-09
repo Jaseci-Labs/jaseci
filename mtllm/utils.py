@@ -4,6 +4,8 @@ import re
 from enum import Enum
 from typing import Any
 
+from jaclang.compiler.semtable import SemRegistry, SemScope
+
 
 def get_object_string(obj: Any) -> str:  # noqa: ANN401
     """Get the string representation of the input object."""
@@ -70,5 +72,28 @@ def get_type_annotation(data: Any) -> str:  # noqa: ANN401
             return f"dict[str, {class_name}]"
         else:
             return "dict[str, Any]"
+    elif isinstance(data, list):
+        if data:
+            class_name = data[0].__class__.__name__
+            return f"list[{class_name}]"
+        else:
+            return "list"
     else:
         return str(type(data).__name__)
+
+
+def get_filtered_registry(mod_registry: SemRegistry, scope: SemScope) -> SemRegistry:
+    """Get the filtered registry based on the scope."""
+    avail_scopes = []
+    while True:
+        avail_scopes.append(str(scope))
+        if not scope.parent:
+            break
+        scope = scope.parent
+
+    filtered_registry = SemRegistry()
+    for _scope, sem_info_list in mod_registry.registry.items():
+        if str(_scope) in avail_scopes:
+            filtered_registry.registry[_scope] = sem_info_list
+
+    return filtered_registry
