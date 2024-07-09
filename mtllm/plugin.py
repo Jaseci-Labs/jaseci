@@ -46,7 +46,7 @@ class JacFeature:
             mod_registry = pickle.load(f)
 
         _scope = SemScope.get_scope_from_str(scope)
-        assert _scope is not None
+        assert _scope is not None, f"Invalid scope: {scope}"
 
         method = model_params.pop("method") if "method" in model_params else "Normal"
         available_methods = model.MTLLM_METHOD_PROMPTS.keys()
