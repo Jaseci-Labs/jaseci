@@ -1,21 +1,19 @@
 """Type classes for the mtllm package."""
 
 import base64
+import importlib
+import importlib.util
 from io import BytesIO
-
-try:
-    import cv2
-except ImportError:
-    cv2 = None
+from typing import Any
 
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 
-from mtllm.utils import extract_non_primary_type
+from mtllm.utils import extract_non_primary_type, get_object_string, get_type_annotation
 
-try:
-    from PIL import Image as PILImage
-except ImportError:
-    PILImage = None
+cv2 = importlib.import_module("cv2") if importlib.util.find_spec("cv2") else None
+PILImage = (
+    importlib.import_module("PIL.Image") if importlib.util.find_spec("PIL") else None
+)
 
 
 class Video:
@@ -33,6 +31,10 @@ class Video:
         self,
     ) -> list:
         """Processes the video and returns a list of base64 encoded frames."""
+        assert (
+            cv2 is not None
+        ), "Please install the required dependencies by running `pip install mtllm[video]`."
+
         assert self.seconds_per_frame > 0, "Seconds per frame must be greater than 0"
 
         base64_frames = []
@@ -74,6 +76,9 @@ class Image:
 
     def process(self) -> tuple[str, str]:
         """Processes the image and returns a base64 encoded image and its format."""
+        assert (
+            PILImage is not None
+        ), "Please install the required dependencies by running `pip install mtllm[image]`."
         image = PILImage.open(self.file_path)
         img_format = image.format
         with BytesIO() as buffer:
@@ -137,3 +142,79 @@ class TypeExplanation:
     def nested_types(self) -> set[str]:
         """Get the nested types of the type."""
         return self._nested_types
+
+
+class InputInformation:
+    """Class to represent the input information."""
+
+    def __init__(self, semstr: str, name: str, value: Any) -> None:  # noqa: ANN401
+        """Initializes the InputInformation class."""
+        self.semstr = semstr
+        self.name = name
+        self.value = value
+
+    def __str__(self) -> str:
+        """Returns the string representation of the InputInformation class."""
+        type_anno = get_type_annotation(self.value)
+        return f"{self.semstr if self.semstr else ''} ({self.name}) ({type_anno}) = {get_object_string(self.value)}".strip()  # noqa: E501
+
+    def to_list_dict(self) -> list[dict]:
+        """Returns the list of dictionaries representation of the InputInformation class."""
+        input_type = get_type_annotation(self.value)
+        if input_type == "Image":
+            img_base64, img_type = self.value.process()
+            return [
+                {
+                    "type": "text",
+                    "text": f"{self.semstr if self.semstr else ''} ({self.name}) (Image) = ".strip(),
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/{img_type};base64,{img_base64}"},
+                },
+            ]
+        elif input_type == "Video":
+            video_frames = self.value.process()
+            return [
+                {
+                    "type": "text",
+                    "text": f"{self.semstr if self.semstr else ''} ({self.name}) (Video) = ".strip(),
+                },
+                *(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{frame}",
+                            "detail": "low",
+                        },
+                    }
+                    for frame in video_frames
+                ),
+            ]
+        return [
+            {
+                "type": "text",
+                "text": str(self),
+            }
+        ]
+
+    def get_types(self) -> list:
+        """Get the types of the input."""
+        return extract_non_primary_type(get_type_annotation(self.value))
+
+
+class OutputHint:
+    """Class to represent the output hint."""
+
+    def __init__(self, semstr: str, type: str) -> None:  # noqa: ANN401
+        """Initializes the OutputHint class."""
+        self.semstr = semstr
+        self.type = type
+
+    def __str__(self) -> str:
+        """Returns the string representation of the OutputHint class."""
+        return f"{self.semstr if self.semstr else ''} ({self.type})".strip()
+
+    def get_types(self) -> list:
+        """Get the types of the output."""
+        return extract_non_primary_type(self.type)
