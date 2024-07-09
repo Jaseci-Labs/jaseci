@@ -12,6 +12,7 @@ from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, Typ
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.codeloc import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
+from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.utils.helpers import import_target_to_relative_path
 
@@ -19,6 +20,27 @@ import lsprotocol.types as lspt
 
 T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
+
+
+def gen_diagnostics(
+    errors: list[Alert], warnings: list[Alert]
+) -> list[lspt.Diagnostic]:
+    """Return diagnostics."""
+    return [
+        lspt.Diagnostic(
+            range=create_range(error.loc),
+            message=error.msg,
+            severity=lspt.DiagnosticSeverity.Error,
+        )
+        for error in errors
+    ] + [
+        lspt.Diagnostic(
+            range=create_range(warning.loc),
+            message=warning.msg,
+            severity=lspt.DiagnosticSeverity.Warning,
+        )
+        for warning in warnings
+    ]
 
 
 def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:

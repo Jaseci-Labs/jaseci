@@ -5,15 +5,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from enum import IntEnum
 from typing import Optional
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_ir_to_pass, jac_str_to_pass
+from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main.schedules import type_checker_sched
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert
 from jaclang.langserve.utils import (
@@ -21,6 +20,7 @@ from jaclang.langserve.utils import (
     collect_symbols,
     create_range,
     find_deepest_symbol_node_at_pos,
+    gen_diagnostics,
     get_item_path,
     get_mod_path,
     parse_symbol_path,
@@ -33,14 +33,6 @@ from jaclang.vendor.pygls.server import LanguageServer
 import lsprotocol.types as lspt
 
 
-class ALev(IntEnum):
-    """Analysis Level successfully completed."""
-
-    QUICK = 1
-    DEEP = 2
-    TYPE = 3
-
-
 class ModuleInfo:
     """Module IR and Stats."""
 
@@ -49,73 +41,18 @@ class ModuleInfo:
         ir: ast.Module,
         errors: list[Alert],
         warnings: list[Alert],
-        alev: ALev,
         parent: Optional[ModuleInfo] = None,
     ) -> None:
         """Initialize module info."""
         self.ir = ir
-        self.errors = errors
-        self.warnings = warnings
-        self.alev = alev
         self.parent: Optional[ModuleInfo] = parent
-        self.diagnostics = self.gen_diagnostics()
+        self.diagnostics = gen_diagnostics(errors, warnings)
         self.sem_tokens: list[int] = self.gen_sem_tokens()
 
     @property
     def uri(self) -> str:
         """Return uri."""
         return uris.from_fs_path(self.ir.loc.mod_path)
-
-    def update_with(
-        self,
-        build: Pass,
-        alev: ALev,
-        refresh: bool = False,
-        mod_override: Optional[ast.Module] = None,
-    ) -> None:
-        """Update module info."""
-        target_mod = mod_override if mod_override else build.ir
-        if not isinstance(target_mod, ast.Module):
-            return
-        self.ir = target_mod if alev > ALev.QUICK else self.ir
-        if refresh:
-            self.errors = build.errors_had
-            self.warnings = build.warnings_had
-        else:
-            self.errors += [
-                i
-                for i in build.errors_had
-                if i not in self.errors
-                if i.loc.mod_path == target_mod.loc.mod_path
-            ]
-            self.warnings += [
-                i
-                for i in build.warnings_had
-                if i not in self.warnings
-                if i.loc.mod_path == target_mod.loc.mod_path
-            ]
-        self.alev = alev
-        self.diagnostics = self.gen_diagnostics()
-        if self.alev == ALev.TYPE:
-            self.sem_tokens = self.gen_sem_tokens()
-
-    def gen_diagnostics(self) -> list[lspt.Diagnostic]:
-        """Return diagnostics."""
-        return [
-            lspt.Diagnostic(
-                range=create_range(error.loc),
-                message=error.msg,
-                severity=lspt.DiagnosticSeverity.Error,
-            )
-            for error in self.errors
-        ] + [
-            lspt.Diagnostic(
-                range=create_range(warning.loc),
-                message=warning.msg,
-                severity=lspt.DiagnosticSeverity.Warning,
-            )
-            for warning in self.warnings
-        ]
 
     def gen_sem_tokens(self) -> list[int]:
         """Return semantic tokens."""
@@ -147,8 +84,6 @@ class ModuleInfo:
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
-            # logging.info(f"\ninitial:\n {self.sem_tokens}\n")
-            # logging.info(f"Change:\n {change}\n")
             start_line = change.range.start.line
             start_character = change.range.start.character
             end_line = change.range.end.line
@@ -171,7 +106,6 @@ class ModuleInfo:
                 self.sem_tokens, start_line, start_character, end_line, end_character
             )
             if affected_token_index is not None:
-                logging.info(f"Affected token index: {affected_token_index}")
                 self.sem_tokens[affected_token_index + 2] = max(
                     1, self.sem_tokens[affected_token_index + 2] + char_delta
                 )
@@ -194,8 +128,6 @@ class ModuleInfo:
                         break
                 token_offset += self.sem_tokens[token_index]
                 token_index += 5
-
-        # logging.info(f"\nfinal: {self.sem_tokens}\n")
         return self.sem_tokens
 
 
@@ -207,14 +139,6 @@ class JacLangServer(LanguageServer):
         super().__init__("jac-lsp", "v0.1")
         self.modules: dict[str, ModuleInfo] = {}
         self.executor = ThreadPoolExecutor()
-
-    async def push_diagnostics(self, file_path: str) -> None:
-        """Push diagnostics for a file."""
-        if file_path in self.modules:
-            self.publish_diagnostics(
-                file_path,
-                self.modules[file_path].diagnostics,
-            )
 
     def unwind_to_parent(self, file_path: str) -> str:
         """Unwind to parent."""
@@ -230,42 +154,32 @@ class JacLangServer(LanguageServer):
         return file_path
 
     def update_modules(
-        self, file_path: str, build: Pass, alev: ALev, refresh: bool = False
+        self, file_path: str, build: Pass, refresh: bool = False
     ) -> None:
         """Update modules."""
         if not isinstance(build.ir, ast.Module):
             self.log_error("Error with module build.")
             return
-        if file_path in self.modules:
-            self.modules[file_path].update_with(build, alev, refresh=refresh)
-        else:
-            self.modules[file_path] = ModuleInfo(
-                ir=build.ir,
-                errors=[
-                    i
-                    for i in build.errors_had
-                    if i.loc.mod_path == uris.to_fs_path(file_path)
-                ],
-                warnings=[
-                    i
-                    for i in build.warnings_had
-                    if i.loc.mod_path == uris.to_fs_path(file_path)
-                ],
-                alev=alev,
-            )
+        self.modules[file_path] = ModuleInfo(
+            ir=build.ir,
+            errors=[
+                i
+                for i in build.errors_had
+                if i.loc.mod_path == uris.to_fs_path(file_path)
+            ],
+            warnings=[
+                i
+                for i in build.warnings_had
+                if i.loc.mod_path == uris.to_fs_path(file_path)
+            ],
+        )
         for p in build.ir.mod_deps.keys():
             uri = uris.from_fs_path(p)
-            if not refresh and uri in self.modules:
-                self.modules[uri].update_with(
-                    build, alev, mod_override=build.ir.mod_deps[p], refresh=refresh
-                )
-            else:
-                self.modules[uri] = ModuleInfo(
-                    ir=build.ir.mod_deps[p],
-                    errors=[i for i in build.errors_had if i.loc.mod_path == p],
-                    warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
-                    alev=alev,
-                )
+            self.modules[uri] = ModuleInfo(
+                ir=build.ir.mod_deps[p],
+                errors=[i for i in build.errors_had if i.loc.mod_path == p],
+                warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
+            )
             self.modules[uri].parent = (
                 self.modules[file_path] if file_path != uri else None
             )
@@ -277,60 +191,50 @@ class JacLangServer(LanguageServer):
             build = jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
+            self.publish_diagnostics(
+                file_path,
+                gen_diagnostics(build.errors_had, build.warnings_had),
+            )
+            return len(build.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
             return False
-        self.update_modules(file_path, build, ALev.QUICK, refresh=True)
-        return len(self.modules[file_path].errors) == 0
 
     def deep_check(self, file_path: str) -> bool:
         """Rebuild a file and its dependencies."""
-        if file_path not in self.modules:
-            self.quick_check(file_path)
         try:
             file_path = self.unwind_to_parent(file_path)
-            build = jac_ir_to_pass(ir=self.modules[file_path].ir)
-        except Exception as e:
-            self.log_error(f"Error during syntax check: {e}")
-            return False
-        self.update_modules(file_path, build, ALev.DEEP)
-        return len(self.modules[file_path].errors) == 0
-
-    def type_check(self, file_path: str) -> bool:
-        """Rebuild a file and its dependencies."""
-        if file_path not in self.modules:
-            self.deep_check(file_path)
-        try:
-            file_path = self.unwind_to_parent(file_path)
-            build = jac_ir_to_pass(
-                ir=self.modules[file_path].ir, schedule=type_checker_sched
+            document = self.workspace.get_text_document(file_path)
+            build = jac_str_to_pass(
+                jac_str=document.source,
+                file_path=document.path,
+                schedule=py_code_gen_typed,
             )
+            self.update_modules(file_path, build)
+            self.publish_diagnostics(
+                file_path,
+                gen_diagnostics(build.errors_had, build.warnings_had),
+            )
+            return len(build.errors_had) == 0
         except Exception as e:
-            self.log_error(f"Error during type check: {e}")
+            self.log_error(f"Error during deep check: {e}")
             return False
-        self.update_modules(file_path, build, ALev.TYPE)
-        return len(self.modules[file_path].errors) == 0
 
-    async def analyze_and_publish(self, uri: str, level: int = 2) -> None:
+    async def launch_quick_check(self, uri: str) -> None:
         """Analyze and publish diagnostics."""
-        self.log_py(f"Analyzing {uri}...")
-        success = await asyncio.get_event_loop().run_in_executor(
+        await asyncio.get_event_loop().run_in_executor(
             self.executor, self.quick_check, uri
         )
-        await self.push_diagnostics(uri)
-        if success and level > 0:
-            success = await asyncio.get_event_loop().run_in_executor(
-                self.executor, self.deep_check, uri
-            )
-            await self.push_diagnostics(uri)
-            if level > 1:
-                await asyncio.get_event_loop().run_in_executor(
-                    self.executor, self.type_check, uri
-                )
-                await self.push_diagnostics(uri)
+
+    async def launch_deep_check(self, uri: str) -> None:
+        """Analyze and publish diagnostics."""
+        self.log_py(f"Analyzing {uri}...")
+        await asyncio.get_event_loop().run_in_executor(
+            self.executor, self.deep_check, uri
+        )
 
     def get_completion(
-        self, file_path: str, position: lspt.Position, completion_trigger: str
+        self, file_path: str, position: lspt.Position, completion_trigger: Optional[str]
     ) -> lspt.CompletionList:
         """Return completion for a file."""
         completion_items = []
@@ -407,6 +311,8 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover]:
         """Return hover information for a file."""
+        if file_path not in self.modules:
+            return None
         node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir, position.line, position.character
         )
@@ -453,6 +359,8 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Location]:
         """Return definition location for a file."""
+        if file_path not in self.modules:
+            return None
         node_selected: Optional[ast.AstSymbolNode] = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir, position.line, position.character
         )
