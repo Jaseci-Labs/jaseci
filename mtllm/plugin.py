@@ -68,24 +68,20 @@ class JacFeature:
         output_information = f"{outputs[0]} ({outputs[1]})".strip()
         type_collector.extend(extract_non_primary_type(outputs[1]))
         output_type_explanations = "\n".join(
-            list(
-                get_all_type_explanations(
+            [
+                str(x)
+                for x in get_all_type_explanations(
                     extract_non_primary_type(outputs[1]), mod_registry
-                ).values()
-            )
+                )
+            ]
         )
-
-        type_explanations_list = list(
-            get_all_type_explanations(type_collector, mod_registry).values()
-        )
-        type_explanations = "\n".join(type_explanations_list)
 
         meaning_out = aott_raise(
             model=model,
             information=information,
             inputs_information=inputs_information,
             output_information=output_information,
-            type_explanations=type_explanations,
+            type_explanations=get_all_type_explanations(type_collector, mod_registry),
             action=action,
             context=context,
             method=method,

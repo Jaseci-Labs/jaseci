@@ -1,5 +1,5 @@
 """MTLLM Package."""
 
-from mtllm.utils import Image, Video
+from mtllm.types import Image, Video
 
 __all__ = ["Image", "Video"]
