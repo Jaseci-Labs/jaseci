@@ -31,36 +31,33 @@ def process_items(
     module: types.ModuleType,
     items: dict[str, Union[str, bool]],
     caller_dir: str,
+    lang: Optional[str],
     mod_bundle: Optional[Module] = None,
     cachable: bool = True,
 ) -> list:
     """Process items within a module by handling renaming and potentially loading missing attributes."""
     unique_loaded_items = []
-    module_dir = (
-        module.__path__[0]
-        if hasattr(module, "__path__")
-        else os.path.dirname(getattr(module, "__file__", ""))
-    )
+
+    def handle_item_loading(item: Union[str, bool], alias: Union[str, bool]) -> None:
+        if item:
+            unique_loaded_items.append(item)
+            setattr(module, name, item)
+            if alias and alias != name and not isinstance(alias, bool):
+                setattr(module, alias, item)
+
     for name, alias in items.items():
         try:
             item = getattr(module, name)
-            unique_loaded_items.append(item)
-            if alias and alias != name and not isinstance(alias, bool):
-                setattr(module, alias, item)
+            handle_item_loading(item, alias)
         except AttributeError:
-            jac_file_path = os.path.join(module_dir, f"{name}.jac")
-            if hasattr(module, "__path__") and os.path.isfile(jac_file_path):
-                item = load_jac_file(
-                    module=module,
-                    name=name,
-                    jac_file_path=jac_file_path,
-                    mod_bundle=mod_bundle,
-                    cachable=cachable,
-                    caller_dir=caller_dir,
+            if lang == "jac":
+                jac_file_path = (
+                    os.path.join(module.__path__[0], f"{name}.jac")
+                    if hasattr(module, "__path__")
+                    else module.__file__
                 )
-            else:
-                jac_file_path = module.__file__ if module.__file__ else ""
-                if os.path.isfile(jac_file_path):
+
+                if jac_file_path and os.path.isfile(jac_file_path):
                     item = load_jac_file(
                         module=module,
                         name=name,
@@ -69,11 +66,12 @@ def process_items(
                         cachable=cachable,
                         caller_dir=caller_dir,
                     )
-            if item:
-                unique_loaded_items.append(item)
-                setattr(module, name, item)
-                if alias and alias != name and not isinstance(alias, bool):
-                    setattr(module, alias, item)
+                    handle_item_loading(item, alias)
+            else:
+                if hasattr(module, "__path__"):
+                    full_module_name = f"{module.__name__}.{name}"
+                    item = importlib.import_module(full_module_name)
+                    handle_item_loading(item, alias)
     return unique_loaded_items
 
 
@@ -221,11 +219,12 @@ def jac_importer(
                     return None
     unique_loaded_items = (
         process_items(
-            module,
-            items,
-            caller_dir,
+            module=module,
+            items=items,
+            caller_dir=caller_dir,
             mod_bundle=valid_mod_bundle,
             cachable=cachable,
+            lang=lng,
         )
         if items
         else []
