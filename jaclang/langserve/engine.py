@@ -143,41 +143,58 @@ class ModuleInfo:
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
-            logging.info(f"Change: {change}")
+            logging.info(f"\ninitial:\n {self.sem_tokens}\n")
+            logging.info(f"Change:\n {change}\n")
             start_line = change.range.start.line
             start_character = change.range.start.character
             end_line = change.range.end.line
             end_character = change.range.end.character
-
+            logging.info(
+                f"Start: {start_line}, {start_character}, End: {end_line}, {end_character}"
+            )
             # Calculate the change in number of lines and characters
-            line_delta = change.text.count("\n") - (end_line - start_line)
-            if line_delta == 0:
-                char_delta = len(change.text) - (end_character - start_character)
+            if change.text == "\n":
+                line_delta = 1
+                char_delta = -start_character
+                logging.info(f"line_delta: {line_delta}, char_delta: {char_delta}")
             else:
-                last_newline_index = change.text.rfind("\n")
-                char_delta = (
-                    len(change.text)
-                    - last_newline_index
-                    - 1
-                    - end_character
-                    + start_character
-                )
+                line_delta = change.text.count("\n") - (end_line - start_line)
+                if line_delta == 0:
+                    char_delta = len(change.text) - (end_character - start_character)
+                else:
+                    last_newline_index = change.text.rfind("\n")
+                    char_delta = (
+                        len(change.text)
+                        - last_newline_index
+                        - 1
+                        - end_character
+                        + start_character
+                    )
 
             # Update the token list
-            i = 0
-            while i < len(self.sem_tokens):
-                token_line = self.sem_tokens[i]
-                token_start_char = self.sem_tokens[i + 1]
+            token_index = 0
+            token_offset = 0
+            while token_index < len(self.sem_tokens):
+                token_line = self.sem_tokens[token_index] + token_offset
+                token_start_char = self.sem_tokens[token_index + 1]
+                logging.info(
+                    f"token line: {token_line}, token start char: {token_start_char}"
+                )
 
                 if token_line > start_line or (
                     token_line == start_line and token_start_char >= start_character
                 ):
-                    self.sem_tokens[i] += line_delta
+                    self.sem_tokens[token_index] += line_delta
                     if token_line == start_line:
-                        self.sem_tokens[i + 1] += char_delta
+                        self.sem_tokens[token_index + 1] += char_delta
+                    if token_line > end_line or (
+                        token_line == end_line and token_start_char >= end_character
+                    ):
+                        break
+                token_offset += self.sem_tokens[token_index]
+                token_index += 5
 
-                i += 5
-
+        logging.info(f"\nfinal: {self.sem_tokens}\n")
         return self.sem_tokens
 
 
