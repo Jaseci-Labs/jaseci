@@ -50,7 +50,15 @@ class PyastGenPass(Pass):
                     level=0,
                 ),
                 jac_node=self.ir,
-            )
+            ),
+            self.sync(
+                ast3.ImportFrom(
+                    module="typing",
+                    names=[self.sync(ast3.alias(name="TYPE_CHECKING", asname=None))],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            ),
         ]
 
     def enter_node(self, node: ast.AstNode) -> None:
@@ -488,12 +496,6 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         sub_module: Optional[Module],
         """
-        py_nodes: list[ast3.AST] = []
-
-        if node.doc:
-            py_nodes.append(
-                self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
-            )
         path_alias: dict[str, Optional[str]] = (
             {node.from_loc.path_str: None} if node.from_loc else {}
         )
@@ -516,6 +518,15 @@ class PyastGenPass(Pass):
             item_values.append(self.sync(ast3.Constant(value=v)))
         self.needs_jac_import()
         path_named_value: str
+        py_nodes: list[ast3.AST] = []
+        typecheck_nodes: list[ast3.AST] = []
+        runtime_nodes: list[ast3.AST] = []
+
+        if node.doc:
+            py_nodes.append(
+                self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
+            )
+
         for path, alias in path_alias.items():
             path_named_value = ("_jac_inc_" if node.is_absorb else "") + (
                 alias if alias else path
@@ -525,7 +536,7 @@ class PyastGenPass(Pass):
             #     target_named_value += i if i else "."
             #     if i:
             #         break
-            py_nodes.append(
+            runtime_nodes.append(
                 self.sync(
                     ast3.Assign(
                         targets=(
@@ -644,7 +655,7 @@ class PyastGenPass(Pass):
             )
         if node.is_absorb:
             absorb_exec = f"={path_named_value}.__dict__['"
-            py_nodes.append(
+            runtime_nodes.append(
                 self.sync(
                     ast3.For(
                         target=self.sync(ast3.Name(id="i", ctx=ast3.Store())),
@@ -793,7 +804,7 @@ class PyastGenPass(Pass):
             source = node.items.items[0]
             if not isinstance(source, ast.ModulePath):
                 raise self.ice()
-            py_nodes.append(
+            typecheck_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
                         module=(source.path_str.lstrip(".") if source else None),
@@ -804,9 +815,9 @@ class PyastGenPass(Pass):
                 )
             )
         elif not node.from_loc:
-            py_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
+            typecheck_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
         else:
-            py_nodes.append(
+            typecheck_nodes.append(
                 self.sync(
                     ast3.ImportFrom(
                         module=(
@@ -819,6 +830,15 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        py_nodes.append(
+            self.sync(
+                ast3.If(
+                    test=self.sync(ast3.Name(id="TYPE_CHECKING", ctx=ast3.Load())),
+                    body=typecheck_nodes,
+                    orelse=runtime_nodes,
+                )
+            )
+        )
         node.gen.py_ast = py_nodes
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
