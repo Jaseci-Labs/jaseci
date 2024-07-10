@@ -104,7 +104,7 @@ class JacFeature:
         override_name: Optional[str] = None,
         mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
-        items: Optional[dict[str, Union[str, bool]]] = None,
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         return pm.hook.jac_import(

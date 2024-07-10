@@ -29,7 +29,7 @@ def handle_directory(
 
 def process_items(
     module: types.ModuleType,
-    items: dict[str, Union[str, bool]],
+    items: dict[str, Union[str, Optional[str]]],
     caller_dir: str,
     lang: Optional[str],
     mod_bundle: Optional[Module] = None,
@@ -38,7 +38,7 @@ def process_items(
     """Process items within a module by handling renaming and potentially loading missing attributes."""
     unique_loaded_items = []
 
-    def handle_item_loading(item: Union[str, bool], alias: Union[str, bool]) -> None:
+    def handle_item_loading(item: str, alias: Union[str, Optional[str]]) -> None:
         if item:
             unique_loaded_items.append(item)
             setattr(module, name, item)
@@ -151,7 +151,7 @@ def jac_importer(
     override_name: Optional[str] = None,
     mod_bundle: Optional[Module | str] = None,
     lng: Optional[str] = "jac",
-    items: Optional[dict[str, Union[str, bool]]] = None,
+    items: Optional[dict[str, Union[str, Optional[str]]]] = None,
 ) -> tuple[types.ModuleType, ...]:
     """Core Import Process."""
     unique_loaded_items = []
@@ -272,7 +272,7 @@ def get_caller_dir(target: str, base_path: str, dir_path: str) -> str:
 def py_import(
     target: str,
     caller_dir: str,
-    items: Optional[dict[str, Union[str, bool]]] = None,
+    items: Optional[dict[str, Union[str, Optional[str]]]] = None,
     absorb: bool = False,
     mdl_alias: Optional[str] = None,
 ) -> tuple[types.ModuleType, ...]:
