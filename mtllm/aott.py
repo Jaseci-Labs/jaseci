@@ -4,23 +4,26 @@ AOTT: Automated Operational Type Transformation.
 This has all the necessary functions to perform the AOTT operations.
 """
 
-import re
-from enum import Enum
-from typing import Any
-
-from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
+from jaclang.compiler.semtable import SemRegistry
 
 from mtllm.llms.base import BaseLLM
 from mtllm.tools.base import Tool
-from mtllm.utils import Image, Video
+from mtllm.types import (
+    Image,
+    Information,
+    InputInformation,
+    OutputHint,
+    TypeExplanation,
+    Video,
+)
 
 
 def aott_raise(
     model: BaseLLM,
-    information: str,
-    inputs_information: str | list[dict],
-    output_information: str,
-    type_explanations: str,
+    informations: list[Information],
+    inputs_information: list[InputInformation],
+    output_hint: OutputHint,
+    type_explanations: list[TypeExplanation],
     action: str,
     context: str,
     method: str,
@@ -28,279 +31,82 @@ def aott_raise(
     model_params: dict,
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
+    contains_media: bool = any(
+        isinstance(x.value, (Image, Video)) for x in inputs_information
+    )
+    informations_str = "\n".join([str(x) for x in informations])
+    inputs_information_repr: list[dict] | str
+    if contains_media:
+        inputs_information_repr = []
+        for x in inputs_information:
+            inputs_information_repr.extend(x.to_list_dict())
+    else:
+        inputs_information_repr = "\n".join([str(x) for x in inputs_information])
+
+    type_explanations_str = "\n".join([str(x) for x in type_explanations])
+
     system_prompt = model.MTLLM_SYSTEM_PROMPT
-    meaning_in: str | list[dict]
+    meaning_typed_input: str | list[dict]
     if method != "ReAct":
         method_prompt = model.MTLLM_METHOD_PROMPTS[method]
-        if isinstance(inputs_information, str):
+        if isinstance(inputs_information_repr, str):
             mtllm_prompt = model.MTLLM_PROMPT.format(
-                information=information,
-                inputs_information=inputs_information,
-                output_information=output_information,
-                type_explanations=type_explanations,
+                information=informations_str,
+                inputs_information=inputs_information_repr,
+                output_information=str(output_hint),
+                type_explanations=type_explanations_str,
                 action=action,
                 context=context,
             ).strip()
-            meaning_in = f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}".strip()
+            meaning_typed_input = (
+                f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}".strip()
+            )
         else:
             upper_half = model.MTLLM_PROMPT.split("{inputs_information}")[0]
             lower_half = model.MTLLM_PROMPT.split("{inputs_information}")[1]
             upper_half = upper_half.format(
-                information=information,
+                information=informations_str,
                 context=context,
             )
             lower_half = lower_half.format(
-                output_information=output_information,
-                type_explanations=type_explanations,
+                output_information=str(output_hint),
+                type_explanations=type_explanations_str,
                 action=action,
             )
-            meaning_in = (
+            meaning_typed_input = [
+                {"type": "text", "text": system_prompt},
+                {"type": "text", "text": upper_half},
+            ]
+            meaning_typed_input.extend(inputs_information_repr)
+            meaning_typed_input.extend(
                 [
-                    {"type": "text", "text": system_prompt},
-                    {"type": "text", "text": upper_half},
-                ]
-                + inputs_information
-                + [
                     {"type": "text", "text": lower_half},
                     {"type": "text", "text": method_prompt},
                 ]
             )
-        return model(meaning_in, **model_params)
+        return model(meaning_typed_input, **model_params)
     else:
         assert tools, "Tools must be provided for the ReAct method."
         # TODO: Implement ReAct method
         return ""
 
 
-def get_info_types(
-    scope: SemScope, mod_registry: SemRegistry, incl_info: list[tuple[str, str]]
-) -> tuple[str, list[str]]:
-    """Filter the registry data based on the scope and return the info string."""
-    collected_types = []
-    avail_scopes = []
-    while True:
-        avail_scopes.append(str(scope))
-        if not scope.parent:
-            break
-        scope = scope.parent
-
-    filtered_registry = SemRegistry()
-    for _scope, sem_info_list in mod_registry.registry.items():
-        if str(_scope) in avail_scopes:
-            filtered_registry.registry[_scope] = sem_info_list
-
-    info_str = []
-    for incl in incl_info:
-        _, sem_info = filtered_registry.lookup(name=incl[0])
-        if sem_info and isinstance(sem_info, SemInfo):
-            (
-                collected_types.extend(extract_non_primary_type(sem_info.type))
-                if sem_info.type
-                else None
-            )
-            info_str.append(
-                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) = {get_object_string(incl[1])}".strip()
-            )
-    return ("\n".join(info_str), collected_types)
-
-
-def get_object_string(obj: Any) -> str:  # noqa: ANN401
-    """Get the string representation of the input object."""
-    if isinstance(obj, str):
-        return f'"{obj}"'
-    elif isinstance(obj, (int, float, bool)):
-        return str(obj)
-    elif isinstance(obj, list):
-        return "[" + ", ".join(get_object_string(item) for item in obj) + "]"
-    elif isinstance(obj, tuple):
-        return "(" + ", ".join(get_object_string(item) for item in obj) + ")"
-    elif isinstance(obj, dict):
-        return (
-            "{"
-            + ", ".join(
-                f"{get_object_string(key)}: {get_object_string(value)}"
-                for key, value in obj.items()
-            )
-            + "}"
-        )
-    elif isinstance(obj, Enum):
-        return f"{obj.__class__.__name__}.{obj.name}"
-    elif hasattr(obj, "__dict__"):
-        args = ", ".join(
-            f"{key}={get_object_string(value)}"
-            for key, value in vars(obj).items()
-            if key != "_jac_"
-        )
-        return f"{obj.__class__.__name__}({args})"
-    else:
-        return str(obj)
-
-
-def get_all_type_explanations(type_list: list, mod_registry: SemRegistry) -> dict:
+def get_all_type_explanations(
+    type_list: list, mod_registry: SemRegistry
+) -> list[TypeExplanation]:
     """Get all type explanations from the input type list."""
     collected_type_explanations = {}
     for type_item in type_list:
-        type_explanation_str, nested_types = get_type_explanation(
-            type_item, mod_registry
-        )
-        if type_explanation_str is not None:
-            if type_item not in collected_type_explanations:
-                collected_type_explanations[type_item] = type_explanation_str
-            if nested_types:
-                nested_collected_type_explanations = get_all_type_explanations(
-                    list(nested_types), mod_registry
-                )
-                for k, v in nested_collected_type_explanations.items():
-                    if k not in collected_type_explanations:
-                        collected_type_explanations[k] = v
-    return collected_type_explanations
-
-
-def get_type_explanation(
-    type_str: str, mod_registry: SemRegistry
-) -> tuple[str | None, set[str] | None]:
-    """Get the type explanation of the input type string."""
-    scope, sem_info = mod_registry.lookup(name=type_str)
-    if isinstance(sem_info, SemInfo) and sem_info.type:
-        sem_info_scope = SemScope(sem_info.name, sem_info.type, scope)
-        _, type_info = mod_registry.lookup(scope=sem_info_scope)
-        type_info_str = []
-        type_info_types = []
-        type_example = [f"{sem_info.name}("]
-        if sem_info.type == "Enum" and isinstance(type_info, list):
-            for enum_item in type_info:
-                type_info_str.append(
-                    f"{enum_item.semstr} ({enum_item.name}) (EnumItem)".strip()
-                )
-            type_example[0] = type_example[0].replace("(", f".{enum_item.name}")
-        elif sem_info.type in ["obj", "class", "node", "edge"] and isinstance(
-            type_info, list
-        ):
-            for arch_item in type_info:
-                if arch_item.type in ["obj", "class", "node", "edge"]:
-                    continue
-                type_info_str.append(
-                    f"{arch_item.semstr} ({arch_item.name}) ({arch_item.type})".strip()
-                )
-                type_example.append(f"{arch_item.name}={arch_item.type}, ")
-                if arch_item.type and extract_non_primary_type(arch_item.type):
-                    type_info_types.extend(extract_non_primary_type(arch_item.type))
-            if len(type_example) > 1:
-                type_example[-1] = type_example[-1].replace(", ", ")")
-            else:
-                type_example.append(")")
-        return (
-            f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {''.join(type_example)} -> {', '.join(type_info_str)}".strip(),  # noqa: E501
-            set(type_info_types),
-        )
-    return None, None
-
-
-def extract_non_primary_type(type_str: str) -> list:
-    """Extract non-primary types from the type string."""
-    if not type_str:
-        return []
-    pattern = r"(?:\[|,\s*|\|)([a-zA-Z_][a-zA-Z0-9_]*)|([a-zA-Z_][a-zA-Z0-9_]*)"
-    matches = re.findall(pattern, type_str)
-    primary_types = [
-        "str",
-        "int",
-        "float",
-        "bool",
-        "list",
-        "dict",
-        "tuple",
-        "set",
-        "Any",
-        "None",
-    ]
-    non_primary_types = [m for t in matches for m in t if m and m not in primary_types]
-    return non_primary_types
-
-
-def get_type_annotation(data: Any) -> str:  # noqa: ANN401
-    """Get the type annotation of the input data."""
-    if isinstance(data, dict):
-        class_name = next(
-            (value.__class__.__name__ for value in data.values() if value is not None),
-            None,
-        )
-        if class_name:
-            return f"dict[str, {class_name}]"
-        else:
-            return "dict[str, Any]"
-    else:
-        return str(type(data).__name__)
-
-
-def get_input_information(
-    inputs: list[tuple[str, str, str, Any]], type_collector: list
-) -> str | list[dict]:
-    """
-    Get the input information for the AOTT operation.
-
-    Returns:
-        str | list[dict]: If the input does not contain images, returns a string with the input information.
-            If the input contains images, returns a list of dictionaries representing the input information,
-            where each dictionary contains either text or image_url.
-
-    """
-    contains_media = any(isinstance(i[3], (Image, Video)) for i in inputs)
-    if not contains_media:
-        inputs_information_list = []
-        for i in inputs:
-            typ_anno = get_type_annotation(i[3])
-            type_collector.extend(extract_non_primary_type(typ_anno))
-            inputs_information_list.append(
-                f"{i[0] if i[0] else ''} ({i[2]}) ({typ_anno}) = {get_object_string(i[3])}".strip()
+        type_explanation = TypeExplanation(type_item, mod_registry)
+        if str(type_explanation) and type_item not in collected_type_explanations:
+            collected_type_explanations[type_item] = type_explanation
+        if type_explanation.nested_types:
+            nested_collected_type_explanations = get_all_type_explanations(
+                list(type_explanation.nested_types), mod_registry
             )
-        return "\n".join(inputs_information_list)
-    else:
-        inputs_information_dict_list: list[dict] = []
-        for i in inputs:
-            input_type = get_type_annotation(i[3])
-            if input_type == "Image":
-                img_base64, img_type = i[3].process()
-                image_repr: list[dict] = [
-                    {
-                        "type": "text",
-                        "text": f"{i[0] if i[0] else ''} ({i[2]}) (Image) = ".strip(),
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/{img_type};base64,{img_base64}"
-                        },
-                    },
-                ]
-                inputs_information_dict_list.extend(image_repr)
-                continue
-            if input_type == "Video":
-                video_frames = i[3].process()
-                print(len(video_frames))
-                video_repr: list[dict] = [
-                    {
-                        "type": "text",
-                        "text": f"{i[0] if i[0] else ''} ({i[2]}) (Video) = Following are the frames of the video".strip(),  # noqa: E501
-                    },
-                    *(
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpg;base64,{x}",
-                                "detail": "low",
-                            },
-                        }
-                        for x in video_frames
-                    ),
-                ]
-                inputs_information_dict_list.extend(video_repr)
-                continue
-            type_collector.extend(extract_non_primary_type(input_type))
-            inputs_information_dict_list.append(
-                {
-                    "type": "text",
-                    "text": f"{i[0] if i[0] else ''} ({i[2]}) ({input_type}) = {get_object_string(i[3])}".strip(),
-                }
-            )
-        return inputs_information_dict_list
+            for nested_type_explanation in nested_collected_type_explanations:
+                if nested_type_explanation.type_item not in collected_type_explanations:
+                    collected_type_explanations[nested_type_explanation.type_item] = (
+                        nested_type_explanation
+                    )
+    return list(collected_type_explanations.values())

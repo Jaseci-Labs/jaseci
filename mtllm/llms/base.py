@@ -5,6 +5,8 @@ import re
 
 from loguru import logger
 
+from mtllm.types import OutputHint, TypeExplanation
+
 
 httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
@@ -125,9 +127,8 @@ class BaseLLM:
     def resolve_output(
         self,
         meaning_out: str,
-        output_semstr: str,
-        output_type: str,
-        output_type_info: str,
+        output_hint: OutputHint,
+        output_type_explanations: list[TypeExplanation],
     ) -> str:
         """Resolve the output string to return the reasoning and output."""
         if self.verbose:
@@ -137,9 +138,9 @@ class BaseLLM:
         if not output_match:
             output = self._extract_output(
                 meaning_out,
-                output_semstr,
-                output_type,
-                output_type_info,
+                output_hint.semstr,
+                output_hint.type,
+                "\n".join([str(x) for x in output_type_explanations]),
                 self.max_tries,
             )
         return str(output)
