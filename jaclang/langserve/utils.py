@@ -364,7 +364,7 @@ def get_definition_range(
     return None
 
 
-def which_token(
+def locate_affected_token(
     tokens: list[int],
     change_start_line: int,
     change_start_char: int,
@@ -373,38 +373,37 @@ def which_token(
 ) -> Optional[int]:
     """Find in which token change is occurring."""
     token_index = 0
-    token_offset = 0
+    current_line = 0
+    line_char_offset = 0
+
     while token_index < len(tokens):
-        token_line = tokens[token_index] + token_offset
+        token_line_delta = tokens[token_index]
         token_start_char = tokens[token_index + 1]
         token_length = tokens[token_index + 2]
-        token_end_char = token_start_char + token_length
 
-        # Check if the change is entirely within this token
+        if token_line_delta > 0:
+            current_line += token_line_delta
+            line_char_offset = 0
+        token_abs_start_char = line_char_offset + token_start_char
+        token_abs_end_char = token_abs_start_char + token_length
         if (
-            token_line == change_start_line == change_end_line
-            and token_start_char
-            <= change_start_char
-            < change_end_char
-            <= token_end_char
+            current_line == change_start_line == change_end_line
+            and token_abs_start_char <= change_start_char
+            and change_end_char <= token_abs_end_char
+        ):
+            return token_index
+        if (
+            current_line == change_start_line
+            and token_abs_start_char <= change_start_char < token_abs_end_char
+        ):
+            return token_index
+        if (
+            current_line == change_end_line
+            and token_abs_start_char < change_end_char <= token_abs_end_char
         ):
             return token_index
 
-        # Check if the change starts within this token
-        if (
-            token_line == change_start_line
-            and token_start_char <= change_start_char < token_end_char
-        ):
-            return token_index
-
-        # Check if the change ends within this token
-        if (
-            token_line == change_end_line
-            and token_start_char < change_end_char <= token_end_char
-        ):
-            return token_index
-
-        token_offset += tokens[token_index]
+        line_char_offset += token_start_char
         token_index += 5
     return None
 
