@@ -23,9 +23,9 @@ from jaclang.langserve.utils import (
     gen_diagnostics,
     get_item_path,
     get_mod_path,
+    locate_affected_token,
     parse_symbol_path,
     resolve_completion_symbol_table,
-    which_token,
 )
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
@@ -83,73 +83,65 @@ class ModuleInfo:
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
-            # logging.info("\n\n    initial : ")
-            # for i in range(0, len(self.sem_tokens), 5):
-            #     logging.info(self.sem_tokens[i : i + 5])
-            # logging.info(f"\n\nchange: {change} ")
+            change_start_line = change.range.start.line
+            change_start_char = change.range.start.character
+            change_end_line = change.range.end.line
+            change_end_char = change.range.end.character
 
-            start_line = change.range.start.line
-            start_character = change.range.start.character
-            end_line = change.range.end.line
-            end_character = change.range.end.character
-
-            line_delta = change.text.count("\n") - (end_line - start_line)
+            line_delta = change.text.count("\n") - (change_end_line - change_start_line)
             if line_delta == 0:
-                char_delta = len(change.text) - (end_character - start_character)
+                char_delta = len(change.text) - (change_end_char - change_start_char)
             else:
                 last_newline_index = change.text.rfind("\n")
                 char_delta = (
                     len(change.text)
                     - last_newline_index
                     - 1
-                    - end_character
-                    + start_character
+                    - change_end_char
+                    + change_start_char
                 )
 
-            affected_token_index = which_token(
-                self.sem_tokens, start_line, start_character, end_line, end_character
+            changed_token_index = locate_affected_token(
+                self.sem_tokens,
+                change_start_line,
+                change_start_char,
+                change_end_line,
+                change_end_char,
             )
-            if affected_token_index is not None:
-                # logging.info(
-                #     f"affected_token_index: {affected_token_index} \nchar_delta: {char_delta} "
-                # )
-                self.sem_tokens[affected_token_index + 2] = max(
-                    1, self.sem_tokens[affected_token_index + 2] + char_delta
+            if changed_token_index:
+                self.sem_tokens[changed_token_index + 2] = max(
+                    1, self.sem_tokens[changed_token_index + 2] + char_delta
                 )
                 if (
-                    len(self.sem_tokens) > affected_token_index + 5
-                    and self.sem_tokens[affected_token_index + 5] == 0
+                    len(self.sem_tokens) > changed_token_index + 5
+                    and self.sem_tokens[changed_token_index + 5] == 0
                 ):
-                    next_token_index = affected_token_index + 5
-                    # logging.info(
-                    #     f"next_token_index: {next_token_index} \nchar_delta: {char_delta} "
-                    # )
+                    next_token_index = changed_token_index + 5
                     self.sem_tokens[next_token_index + 1] = max(
                         0, self.sem_tokens[next_token_index + 1] + char_delta
                     )
                     return self.sem_tokens
 
-            token_index = 0
-            token_offset = 0
-            while token_index < len(self.sem_tokens):
-                token_line = self.sem_tokens[token_index] + token_offset
-                token_start_char = self.sem_tokens[token_index + 1]
+            current_token_index = 0
+            line_offset = 0
+            while current_token_index < len(self.sem_tokens):
+                token_line_number = self.sem_tokens[current_token_index] + line_offset
+                token_start_pos = self.sem_tokens[current_token_index + 1]
 
-                if token_line > start_line or (
-                    token_line == start_line and token_start_char >= start_character
+                if token_line_number > change_start_line or (
+                    token_line_number == change_start_line
+                    and token_start_pos >= change_start_char
                 ):
-                    self.sem_tokens[token_index] += line_delta
-                    if token_line == start_line:
-                        self.sem_tokens[token_index + 1] += char_delta
-                    if token_line > end_line or (
-                        token_line == end_line and token_start_char >= end_character
+                    self.sem_tokens[current_token_index] += line_delta
+                    if token_line_number == change_start_line:
+                        self.sem_tokens[current_token_index + 1] += char_delta
+                    if token_line_number > change_end_line or (
+                        token_line_number == change_end_line
+                        and token_start_pos >= change_end_char
                     ):
                         break
-                token_offset += self.sem_tokens[token_index]
-                token_index += 5
-            # logging.info("\n\n   final  : ")
-            # for i in range(0, len(self.sem_tokens), 5):
-            #     logging.info(self.sem_tokens[i : i + 5])
+                line_offset += self.sem_tokens[current_token_index]
+                current_token_index += 5
         return self.sem_tokens
 
 
