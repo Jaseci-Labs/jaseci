@@ -1,16 +1,26 @@
 """Jac Language Features."""
 
-from __future__ import annotations
-
 from collections import OrderedDict
+from dataclasses import Field, _MISSING_TYPE, is_dataclass
 from functools import wraps
-from typing import Any, Callable, Optional, Type, cast
+from os import getenv
+from pydoc import locate
+from re import compile
+from typing import Any, Callable, Optional, Type, TypeVar, Union, cast
+
+from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
+from fastapi.responses import ORJSONResponse
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.core.context import ContextOptions, ExecutionContext
 from jaclang.plugin.default import hookimpl
 from jaclang.plugin.feature import JacFeature as Jac
 
+from orjson import loads
+
+from pydantic import BaseModel, Field as pyField, ValidationError, create_model
+
+from starlette.datastructures import UploadFile as BaseUploadFile
 
 from ..core.architype import (
     Anchor,
@@ -22,6 +32,192 @@ from ..core.architype import (
     Root,
     WalkerArchitype,
 )
+from ..core.security import authenticator
+from ..core.utils import make_optional
+
+
+T = TypeVar("T")
+DISABLE_AUTO_ENDPOINT = getenv("DISABLE_AUTO_ENDPOINT") == "true"
+PATH_VARIABLE_REGEX = compile(r"{([^\}]+)}")
+FILE = {
+    "File": UploadFile,
+    "Files": list[UploadFile],
+    "OptFile": Optional[UploadFile],
+    "OptFiles": Optional[list[UploadFile]],
+}
+
+walker_router = APIRouter(prefix="/walker", tags=["walker"])
+
+
+def get_specs(cls: type) -> Optional[Type["DefaultSpecs"]]:
+    """Get Specs and inherit from DefaultSpecs."""
+    specs = getattr(cls, "Specs", None)
+    if specs is None:
+        if DISABLE_AUTO_ENDPOINT:
+            return None
+        specs = DefaultSpecs
+
+    if not issubclass(specs, DefaultSpecs):
+        specs = type(specs.__name__, (specs, DefaultSpecs), {})
+
+    return specs
+
+
+def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[type, Any]:
+    """Generate Specs for Model Field."""
+    if not isinstance(field.default, _MISSING_TYPE):
+        consts = (make_optional(cls), pyField(default=field.default))
+    elif callable(field.default_factory):
+        consts = (make_optional(cls), pyField(default_factory=field.default_factory))
+    else:
+        consts = (cls, File(...) if is_file else ...)
+
+    return consts
+
+
+def populate_apis(cls: type) -> None:
+    """Generate FastAPI endpoint based on WalkerArchitype class."""
+    if (specs := get_specs(cls)) and not specs.private:
+        path: str = specs.path or ""
+        methods: list = specs.methods or []
+        as_query: Union[str, list] = specs.as_query or []
+        auth: bool = specs.auth or False
+
+        query: dict[str, Any] = {}
+        body: dict[str, Any] = {}
+        files: dict[str, Any] = {}
+
+        if path:
+            if not path.startswith("/"):
+                path = f"/{path}"
+            if isinstance(as_query, list):
+                as_query += PATH_VARIABLE_REGEX.findall(path)
+
+        if is_dataclass(cls):
+            fields: dict[str, Field] = cls.__dataclass_fields__
+            for key, val in fields.items():
+                if file_type := FILE.get(cast(str, val.type)):  # type: ignore[arg-type]
+                    files[key] = gen_model_field(file_type, val, True)  # type: ignore[arg-type]
+                else:
+                    consts = gen_model_field(locate(val.type), val)  # type: ignore[arg-type]
+
+                    if as_query == "*" or key in as_query:
+                        query[key] = consts
+                    else:
+                        body[key] = consts
+
+        payload: dict[str, Any] = {
+            "query": (
+                create_model(f"{cls.__name__.lower()}_query_model", **query),
+                Depends(),
+            ),
+            "files": (
+                create_model(f"{cls.__name__.lower()}_files_model", **files),
+                Depends(),
+            ),
+        }
+
+        body_model = None
+        if body:
+            body_model = create_model(f"{cls.__name__.lower()}_body_model", **body)
+
+            if files:
+                payload["body"] = (UploadFile, File(...))
+            else:
+                payload["body"] = (body_model, ...)
+
+        payload_model = create_model(f"{cls.__name__.lower()}_request_model", **payload)
+
+        async def api_entry(
+            request: Request,
+            node: Optional[str],
+            payload: payload_model = Depends(),  # type: ignore # noqa: B008
+        ) -> ORJSONResponse:
+            pl = cast(BaseModel, payload).model_dump()
+            body = pl.get("body", {})
+
+            if isinstance(body, BaseUploadFile) and body_model:
+                body = loads(await body.read())
+                try:
+                    body = body_model(**body).model_dump()
+                except ValidationError as e:
+                    return ORJSONResponse({"detail": e.errors()})
+
+            # jctx = JacContext(request=request, entry=node)
+            # JCONTEXT.set(jctx)
+
+            # wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
+            # await wlk.spawn_call(await jctx.get_entry())
+            # await jctx.clean_up()
+            # return ORJSONResponse(jctx.response(wlk.returns))
+
+            return ORJSONResponse({})
+
+        async def api_root(
+            request: Request,
+            payload: payload_model = Depends(),  # type: ignore # noqa: B008
+        ) -> Response:
+            return await api_entry(request, None, payload)
+
+        for method in methods:
+            method = method.lower()
+
+            walker_method = getattr(walker_router, method)
+
+            settings: dict[str, list[Any]] = {"tags": ["walker"]}
+            if auth:
+                settings["dependencies"] = cast(list, authenticator)
+
+            walker_method(url := f"/{cls.__name__}{path}", summary=url, **settings)(
+                api_root
+            )
+            walker_method(
+                url := f"/{cls.__name__}/{{node}}{path}", summary=url, **settings
+            )(api_entry)
+
+
+def specs(
+    cls: Optional[Type[T]] = None,
+    *,
+    path: str = "",
+    methods: list[str] = ["post"],  # noqa: B006
+    as_query: Union[str, list] = [],  # noqa: B006
+    auth: bool = True,
+) -> Callable:
+    """Walker Decorator."""
+
+    def wrapper(cls: Type[T]) -> Type[T]:
+        if get_specs(cls) is None:
+            p = path
+            m = methods
+            aq = as_query
+            a = auth
+
+            class Specs(DefaultSpecs):
+                path: str = p
+                methods: list[str] = m
+                as_query: Union[str, list] = aq
+                auth: bool = a
+
+            cls.Specs = Specs  # type: ignore[attr-defined]
+
+            populate_apis(cls)
+        return cls
+
+    if cls:
+        return wrapper(cls)
+
+    return wrapper
+
+
+class DefaultSpecs:
+    """Default API specs."""
+
+    path: str = ""
+    methods: list[str] = ["post"]
+    as_query: Union[str, list[str]] = []
+    auth: bool = True
+    private: bool = False
 
 
 class JacPlugin:
@@ -146,18 +342,19 @@ class JacPlugin:
             cls = JacPlugin.make_architype(
                 cls=cls, arch_base=WalkerArchitype, on_entry=on_entry, on_exit=on_exit
             )
+            populate_apis(cls)
             return cls
 
         return decorator
 
     @staticmethod
     @hookimpl
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    async def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
-            return op1.__jac__.spawn_call(op2.__jac__)
+            return await op1.__jac__.spawn_call(op2.__jac__)
         elif isinstance(op2, WalkerArchitype):
-            return op2.__jac__.spawn_call(op1.__jac__)
+            return await op2.__jac__.spawn_call(op1.__jac__)
         else:
             raise TypeError("Invalid walker object")
 
