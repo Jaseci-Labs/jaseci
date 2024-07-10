@@ -789,6 +789,41 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        if node.is_absorb:
+            source = node.items.items[0]
+            if not isinstance(source, ast.ModulePath):
+                raise self.ice()
+            py_nodes.append(
+                self.sync(
+                    py_node=ast3.ImportFrom(
+                        module=(source.path_str.lstrip(".") if source else None),
+                        names=[self.sync(ast3.alias(name="*"), node)],
+                        level=0,
+                    ),
+                    jac_node=node,
+                )
+            )
+            if node.items:
+                pass
+                # self.warning(
+                #     "Includes import * in target module into current namespace."
+                # )
+        if not node.from_loc:
+            py_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
+        else:
+            py_nodes.append(
+                self.sync(
+                    ast3.ImportFrom(
+                        module=(
+                            node.from_loc.path_str.lstrip(".")
+                            if node.from_loc
+                            else None
+                        ),
+                        names=node.items.gen.py_ast,
+                        level=0,
+                    )
+                )
+            )
         node.gen.py_ast = py_nodes
 
     def exit_module_path(self, node: ast.ModulePath) -> None:

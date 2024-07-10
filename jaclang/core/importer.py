@@ -152,7 +152,7 @@ def jac_importer(
     mod_bundle: Optional[Module | str] = None,
     lng: Optional[str] = "jac",
     items: Optional[dict[str, Union[str, bool]]] = None,
-) -> Optional[tuple[types.ModuleType, ...]]:
+) -> tuple[types.ModuleType, ...]:
     """Core Import Process."""
     unique_loaded_items = []
     dir_path, file_name = path.split(path.join(*(target.split("."))))
@@ -215,8 +215,7 @@ def jac_importer(
                     with sys_path_context(caller_dir):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
-                    print(f"Error importing {full_target}: {str(e)}")
-                    return None
+                    raise ImportError(f"Error importing {full_target}: {str(e)}")
     unique_loaded_items = (
         process_items(
             module=module,
