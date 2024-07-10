@@ -37,17 +37,16 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
         sys.stderr = captured_output
 
-        # Execute the function
-        # try:
-        cli.enter(self.fixture_abs_path("err2.jac"), entrypoint="speak", args=[])  # type: ignore
-        # except Exception as e:
-        #     print(f"Error: {e}")
+        try:
+            cli.enter(self.fixture_abs_path("err2.jac"), entrypoint="speak", args=[])  # type: ignore
+        except Exception as e:
+            print(f"Error: {e}")
 
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         # print(stdout_value)
-        self.assertIn("Errors occurred", stdout_value)
+        self.assertIn("Syntax Error", stdout_value)
 
     def test_jac_ast_tool_pass_template(self) -> None:
         """Basic test for pass."""

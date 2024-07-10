@@ -803,12 +803,7 @@ class PyastGenPass(Pass):
                     jac_node=node,
                 )
             )
-            if node.items:
-                pass
-                # self.warning(
-                #     "Includes import * in target module into current namespace."
-                # )
-        if not node.from_loc:
+        elif not node.from_loc:
             py_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
         else:
             py_nodes.append(
