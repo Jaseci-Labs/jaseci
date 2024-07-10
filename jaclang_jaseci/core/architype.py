@@ -6,8 +6,10 @@ from dataclasses import dataclass, field
 from pickle import dumps
 from re import IGNORECASE, compile
 from typing import (
+    Any,
     Callable,
     Iterable,
+    Mapping,
     Optional,
     TypeVar,
     cast,
@@ -24,6 +26,10 @@ from jaclang.core.architype import (
     Permission,
 )
 from jaclang.core.utils import collect_node_connections
+
+from pymongo import ASCENDING
+
+from .collection import Collection as BaseCollection
 
 
 GENERIC_ID_REGEX = compile(r"^(g|n|e|w):([^:]*):([a-f\d]{24})$", IGNORECASE)
@@ -68,6 +74,33 @@ class NodeAnchor(Anchor):
     type: ObjectType = ObjectType.node
     architype: Optional[NodeArchitype] = None
     edges: list[EdgeAnchor] = field(default_factory=list)
+
+    class Collection(BaseCollection["NodeAnchor"]):
+        """NodeAnchor collection interface."""
+
+        __collection__: Optional[str] = "node"
+        __default_indexes__: list[dict] = [
+            {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]}
+        ]
+
+        @classmethod
+        def __document__(cls, doc: Mapping[str, Any]) -> "NodeAnchor":
+            """Parse document to NodeAnchor."""
+            doc = cast(dict, doc)
+            name = cast(str, doc.get("name"))
+            architype = doc.pop("architype")
+            access = Permission.deserialize(doc.pop("access"))
+
+            anchor = NodeAnchor(
+                edges=[e for edge in doc.pop("edges") if (e := EdgeAnchor.ref(edge))],
+                access=access,
+                **doc,
+            )
+            anchor.architype = NodeArchitype.get(name or "Root")(
+                __jac__=anchor, **architype
+            )
+
+            return anchor
 
     @classmethod
     def ref(cls, ref_id: str) -> Optional[NodeAnchor]:
@@ -234,6 +267,33 @@ class EdgeAnchor(Anchor):
     source: Optional[NodeAnchor] = None
     target: Optional[NodeAnchor] = None
     is_undirected: bool = False
+
+    class Collection(BaseCollection["EdgeAnchor"]):
+        """EdgeAnchor collection interface."""
+
+        __collection__: Optional[str] = "edge"
+        __default_indexes__: list[dict] = [
+            {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]}
+        ]
+
+        @classmethod
+        def __document__(cls, doc: Mapping[str, Any]) -> "EdgeAnchor":
+            """Parse document to EdgeAnchor."""
+            doc = cast(dict, doc)
+            name = cast(str, doc.get("name"))
+            architype = doc.pop("architype")
+            access = Permission.deserialize(doc.pop("access"))
+
+            anchor = EdgeAnchor(
+                source=NodeAnchor.ref(doc.pop("source")),
+                target=NodeAnchor.ref(doc.pop("target")),
+                access=access,
+                **doc,
+            )
+            anchor.architype = EdgeArchitype.get(name or "GenericEdge")(
+                __jac__=anchor, **architype
+            )
+            return anchor
 
     @classmethod
     def ref(cls, ref_id: str) -> Optional[EdgeAnchor]:
