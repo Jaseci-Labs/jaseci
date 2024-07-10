@@ -3,12 +3,12 @@
 from os import getenv
 from typing import Any, Optional, Union, cast
 
-from jaclang.vendor.lark import logger
-
 from orjson import dumps, loads
 
 from redis import asyncio as aioredis
 from redis.asyncio.client import Redis as _Redis
+
+from .utils import logger
 
 
 class Redis:

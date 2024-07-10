@@ -15,8 +15,6 @@ from typing import (
 
 from bson import ObjectId
 
-from jaclang.vendor.lark import logger
-
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
     AsyncIOMotorClientSession,
@@ -27,6 +25,8 @@ from motor.motor_asyncio import (
 
 from pymongo import DeleteMany, DeleteOne, IndexModel, InsertOne, UpdateMany, UpdateOne
 from pymongo.server_api import ServerApi
+
+from .utils import logger
 
 T = TypeVar("T")
 
