@@ -83,10 +83,10 @@ class ModuleInfo:
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
-            logging.info("\n\ninitial : ")
-            for i in range(0, len(self.sem_tokens), 5):
-                logging.info(self.sem_tokens[i : i + 5])
-            logging.info(f"\n\nchange: {change} ")
+            # logging.info("\n\n    initial : ")
+            # for i in range(0, len(self.sem_tokens), 5):
+            #     logging.info(self.sem_tokens[i : i + 5])
+            # logging.info(f"\n\nchange: {change} ")
 
             start_line = change.range.start.line
             start_character = change.range.start.character
@@ -110,9 +110,9 @@ class ModuleInfo:
                 self.sem_tokens, start_line, start_character, end_line, end_character
             )
             if affected_token_index is not None:
-                logging.info(
-                    f"affected_token_index: {affected_token_index} \nchar_delta: {char_delta} "
-                )
+                # logging.info(
+                #     f"affected_token_index: {affected_token_index} \nchar_delta: {char_delta} "
+                # )
                 self.sem_tokens[affected_token_index + 2] = max(
                     1, self.sem_tokens[affected_token_index + 2] + char_delta
                 )
@@ -121,12 +121,13 @@ class ModuleInfo:
                     and self.sem_tokens[affected_token_index + 5] == 0
                 ):
                     next_token_index = affected_token_index + 5
-                    logging.info(
-                        f"next_token_index: {next_token_index} \nchar_delta: {char_delta} "
-                    )
+                    # logging.info(
+                    #     f"next_token_index: {next_token_index} \nchar_delta: {char_delta} "
+                    # )
                     self.sem_tokens[next_token_index + 1] = max(
                         0, self.sem_tokens[next_token_index + 1] + char_delta
                     )
+                    return self.sem_tokens
 
             token_index = 0
             token_offset = 0
@@ -146,10 +147,9 @@ class ModuleInfo:
                         break
                 token_offset += self.sem_tokens[token_index]
                 token_index += 5
-
-            logging.info("\n\nfinal : ")
-            for i in range(0, len(self.sem_tokens), 5):
-                logging.info(self.sem_tokens[i : i + 5])
+            # logging.info("\n\n   final  : ")
+            # for i in range(0, len(self.sem_tokens), 5):
+            #     logging.info(self.sem_tokens[i : i + 5])
         return self.sem_tokens
 
 
