@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from typing import Callable, Optional
 
 
 import jaclang.compiler.absyntree as ast
@@ -46,7 +46,6 @@ class ModuleInfo:
         """Initialize module info."""
         self.ir = ir
         self.parent: Optional[ModuleInfo] = parent
-        self.diagnostics = gen_diagnostics(errors, warnings)
         self.sem_tokens: list[int] = self.gen_sem_tokens()
 
     @property
@@ -139,6 +138,7 @@ class JacLangServer(LanguageServer):
         super().__init__("jac-lsp", "v0.1")
         self.modules: dict[str, ModuleInfo] = {}
         self.executor = ThreadPoolExecutor()
+        self.tasks: dict[str, asyncio.Task] = {}
 
     def update_modules(
         self, file_path: str, build: Pass, refresh: bool = False
@@ -180,14 +180,14 @@ class JacLangServer(LanguageServer):
             )
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(build.errors_had, build.warnings_had),
+                gen_diagnostics(file_path, build.errors_had, build.warnings_had),
             )
             return len(build.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
             return False
 
-    def deep_check(self, file_path: str) -> bool:
+    def deep_check(self, file_path: str, annex_view: Optional[str] = None) -> bool:
         """Rebuild a file and its dependencies."""
         try:
             document = self.workspace.get_text_document(file_path)
@@ -198,10 +198,16 @@ class JacLangServer(LanguageServer):
             )
             self.update_modules(file_path, build)
             if discover := self.modules[file_path].ir.annexable_by:
-                return self.deep_check(uris.from_fs_path(discover))
+                return self.deep_check(
+                    uris.from_fs_path(discover), annex_view=file_path
+                )
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(build.errors_had, build.warnings_had),
+                gen_diagnostics(
+                    annex_view if annex_view else file_path,
+                    build.errors_had,
+                    build.warnings_had,
+                ),
             )
             return len(build.errors_had) == 0
         except Exception as e:
@@ -216,10 +222,23 @@ class JacLangServer(LanguageServer):
 
     async def launch_deep_check(self, uri: str) -> None:
         """Analyze and publish diagnostics."""
+
+        async def run_in_executor(
+            func: Callable[[str, Optional[str]], bool],
+            file_path: str,
+            annex_view: Optional[str] = None,
+        ) -> None:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(self.executor, func, file_path, annex_view)
+
+        if uri in self.tasks and not self.tasks[uri].done():
+            self.log_py(f"Canceling {uri} deep check...")
+            self.tasks[uri].cancel()
+            del self.tasks[uri]
         self.log_py(f"Analyzing {uri}...")
-        await asyncio.get_event_loop().run_in_executor(
-            self.executor, self.deep_check, uri
-        )
+        task = asyncio.create_task(run_in_executor(self.deep_check, uri))
+        self.tasks[uri] = task
+        await task
 
     def get_completion(
         self, file_path: str, position: lspt.Position, completion_trigger: Optional[str]

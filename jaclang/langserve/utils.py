@@ -15,6 +15,7 @@ from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.utils.helpers import import_target_to_relative_path
+from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
 
@@ -23,7 +24,7 @@ P = ParamSpec("P")
 
 
 def gen_diagnostics(
-    errors: list[Alert], warnings: list[Alert]
+    from_path: str, errors: list[Alert], warnings: list[Alert]
 ) -> list[lspt.Diagnostic]:
     """Return diagnostics."""
     return [
@@ -33,6 +34,7 @@ def gen_diagnostics(
             severity=lspt.DiagnosticSeverity.Error,
         )
         for error in errors
+        if error.loc.mod_path == uris.to_fs_path(from_path)
     ] + [
         lspt.Diagnostic(
             range=create_range(warning.loc),
@@ -40,6 +42,7 @@ def gen_diagnostics(
             severity=lspt.DiagnosticSeverity.Warning,
         )
         for warning in warnings
+        if warning.loc.mod_path == uris.to_fs_path(from_path)
     ]
 
 
