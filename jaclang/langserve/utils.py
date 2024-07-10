@@ -372,11 +372,12 @@ def which_token(
     change_end_char: int,
 ) -> Optional[int]:
     """Find in which token change is occurring."""
-    # import logging
-    # logging.info(
-    #     f""" change_start_line: {change_start_line}, \nchange_start_char:
-    # {change_start_char},\n change_end_line: {change_end_line},\n change_end_char: {change_end_char}"""
-    # )
+    import logging
+
+    logging.info(
+        f""" change_start_line: {change_start_line}, \nchange_start_char:
+    {change_start_char},\n change_end_line: {change_end_line},\n change_end_char: {change_end_char}"""
+    )
     token_index = 0
     current_line = 0
     line_char_offset = 0
@@ -389,12 +390,14 @@ def which_token(
         if token_line_delta > 0:
             current_line += token_line_delta
             line_char_offset = 0
-        # logging.info(f"line {current_line}, char {line_char_offset}")
+        logging.info(f"line {current_line}, char {line_char_offset}")
         token_abs_start_char = line_char_offset + token_start_char
         token_abs_end_char = token_abs_start_char + token_length
 
-        # logging.info(f"""Token: line {current_line}, start {token_abs_start_char},
-        # length {token_length} ,end {token_abs_end_char}""")
+        logging.info(
+            f"""Token: line {current_line}, start {token_abs_start_char},
+        length {token_length} ,end {token_abs_end_char}"""
+        )
 
         # Check if the change is entirely within this token
         if (

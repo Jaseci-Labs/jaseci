@@ -110,15 +110,20 @@ class ModuleInfo:
                 self.sem_tokens, start_line, start_character, end_line, end_character
             )
             if affected_token_index is not None:
+                logging.info(
+                    f"affected_token_index: {affected_token_index} \nchar_delta: {char_delta} "
+                )
                 self.sem_tokens[affected_token_index + 2] = max(
                     1, self.sem_tokens[affected_token_index + 2] + char_delta
                 )
-
-                if self.sem_tokens[affected_token_index + 5] == 0:
+                if (
+                    len(self.sem_tokens) > affected_token_index + 5
+                    and self.sem_tokens[affected_token_index + 5] == 0
+                ):
                     next_token_index = affected_token_index + 5
-                    # logging.info(
-                    #     f"next_token_index: {next_token_index} \nchar_delta: {char_delta} "
-                    # )
+                    logging.info(
+                        f"next_token_index: {next_token_index} \nchar_delta: {char_delta} "
+                    )
                     self.sem_tokens[next_token_index + 1] = max(
                         0, self.sem_tokens[next_token_index + 1] + char_delta
                     )
