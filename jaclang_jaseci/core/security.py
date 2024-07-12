@@ -87,8 +87,8 @@ async def authenticate(request: Request) -> None:
             and (root := await Root.__collection__.find_by_id(user.root_id))
         ):
             root.__jac__.current_access_level = 1
-            request.auth_user = user  # type: ignore[attr-defined]
-            request.auth_root = root  # type: ignore[attr-defined]
+            request._user = user  # type: ignore[attr-defined]
+            request._root = root  # type: ignore[attr-defined]
             return
 
     raise HTTPException(status_code=401)

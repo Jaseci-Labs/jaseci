@@ -27,7 +27,7 @@ walker create_sample_graph {
         return True;
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 @specs
@@ -73,7 +73,7 @@ walker update_sample_graph {
         report ([-->])[0];
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker delete_sample_graph {
@@ -94,7 +94,7 @@ walker delete_sample_graph {
         report ([-->])[0];
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker create_list_field {
@@ -103,7 +103,7 @@ walker create_list_field {
         root ++> a;
         report a;
     }
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker update_list_field {
@@ -114,7 +114,7 @@ walker update_list_field {
         visit [-->];
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker get_list_field {
@@ -123,7 +123,7 @@ walker get_list_field {
         report [-->];
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker allow_other {
@@ -139,7 +139,7 @@ walker allow_other {
         report here;
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker disallow_other {
@@ -156,7 +156,7 @@ walker disallow_other {
         report here;
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker connect_other_node {
@@ -171,7 +171,7 @@ walker connect_other_node {
         report here;
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 @specs
@@ -182,7 +182,7 @@ walker post_with_body {
 }
 
 walker get_no_body {
-    obj Specs {
+    obj __specs__ {
         static has methods: list = ["get"];
     }
 }
@@ -190,7 +190,7 @@ walker get_no_body {
 walker get_with_query {
     has a: str;
 
-    obj Specs {
+    obj __specs__ {
         static has methods: list = ["get"], as_query: list = ["a"];
     }
 }
@@ -199,7 +199,7 @@ walker get_all_query {
     has a: str;
     has b: str;
 
-    obj Specs {
+    obj __specs__ {
         static has methods: list = ["get"], as_query: list = "*", auth: bool = False;
     }
 }
@@ -209,7 +209,7 @@ walker combination {
     has b: str;
     has c: str;
 
-    obj Specs {
+    obj __specs__ {
         static has methods: list = ["post", "get"], as_query: list = ["a", "b"];
     }
 }
@@ -217,7 +217,7 @@ walker combination {
 walker post_path_var {
     has a: str;
 
-    obj Specs {
+    obj __specs__ {
         static has path: str = "/{a}", methods: list = ["post", "get"];
     }
 }
@@ -227,7 +227,7 @@ walker combination2 {
     has b: str;
     has c: str;
 
-    obj Specs {
+    obj __specs__ {
         static has path: str = "/{a}", methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"], as_query: list = ["b"];
     }
 }
@@ -246,7 +246,7 @@ walker post_with_file {
         print(self.multipleOptional);
     }
 
-    obj Specs {}
+    obj __specs__ {}
 }
 
 walker post_with_body_and_file {
@@ -262,7 +262,7 @@ walker post_with_body_and_file {
         print(self.multiple);
     }
 
-    obj Specs {
+    obj __specs__ {
         static has auth: bool = False;
     }
 }
@@ -273,7 +273,7 @@ walker nested1 {
         self.sample = "nested1";
     }
 
-    obj Specs {
+    obj __specs__ {
         static has private: bool = True;
     }
 }
@@ -285,8 +285,21 @@ walker nested2 {
         report "nested2";
     }
 
-    obj Specs {
+    obj __specs__ {
         static has auth: bool = False;
+    }
+}
+
+walker report {
+
+    can enter with `root entry {
+        report here;
+        report boy(val1="1", val2="2");
+        report girl(val="g").__jac__;
+    }
+
+    obj __specs__ {
+        static has methods: list = ["get"], auth: bool = False;
     }
 }
 

@@ -12,7 +12,6 @@ from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 from fastapi.responses import ORJSONResponse
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.context import ContextOptions, ExecutionContext
 from jaclang.plugin.default import hookimpl
 from jaclang.plugin.feature import JacFeature as Jac
 
@@ -30,8 +29,10 @@ from ..core.architype import (
     GenericEdge,
     NodeArchitype,
     Root,
+    WalkerAnchor,
     WalkerArchitype,
 )
+from ..core.context import JaseciContext
 from ..core.security import authenticator
 from ..core.utils import make_optional
 
@@ -51,7 +52,7 @@ walker_router = APIRouter(prefix="/walker", tags=["walker"])
 
 def get_specs(cls: type) -> Optional[Type["DefaultSpecs"]]:
     """Get Specs and inherit from DefaultSpecs."""
-    specs = getattr(cls, "Specs", None)
+    specs = getattr(cls, "__specs__", None)
     if specs is None:
         if DISABLE_AUTO_ENDPOINT:
             return None
@@ -143,15 +144,13 @@ def populate_apis(cls: type) -> None:
                 except ValidationError as e:
                     return ORJSONResponse({"detail": e.errors()})
 
-            # jctx = JacContext(request=request, entry=node)
-            # JCONTEXT.set(jctx)
+            jctx = JaseciContext.get({"request": request, "entry": node})
 
-            # wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
-            # await wlk.spawn_call(await jctx.get_entry())
-            # await jctx.clean_up()
-            # return ORJSONResponse(jctx.response(wlk.returns))
+            wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
+            await wlk.spawn_call(jctx.entry)
 
-            return ORJSONResponse({})
+            jctx.close()
+            return ORJSONResponse(jctx.response(wlk.returns))
 
         async def api_root(
             request: Request,
@@ -183,6 +182,7 @@ def specs(
     methods: list[str] = ["post"],  # noqa: B006
     as_query: Union[str, list] = [],  # noqa: B006
     auth: bool = True,
+    private: bool = False,
 ) -> Callable:
     """Walker Decorator."""
 
@@ -192,14 +192,16 @@ def specs(
             m = methods
             aq = as_query
             a = auth
+            pv = private
 
-            class Specs(DefaultSpecs):
+            class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = p
                 methods: list[str] = m
                 as_query: Union[str, list] = aq
                 auth: bool = a
+                private: bool = pv
 
-            cls.Specs = Specs  # type: ignore[attr-defined]
+            cls.__specs__ = __specs__  # type: ignore[attr-defined]
 
             populate_apis(cls)
         return cls
@@ -221,15 +223,13 @@ class DefaultSpecs:
 
 
 class JacPlugin:
-    """Jac Feature."""
+    """Jaseci Implementations."""
 
     @staticmethod
     @hookimpl
-    def context(
-        session: Optional[str], options: Optional[ContextOptions]
-    ) -> ExecutionContext:
+    def context(options: Optional[dict[str, Any]]) -> JaseciContext:
         """Get the execution context."""
-        return ExecutionContext.get(session, options)
+        return JaseciContext.get(options)
 
     @staticmethod
     @hookimpl
@@ -362,6 +362,7 @@ class JacPlugin:
     @hookimpl
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
+        JaseciContext.get().reports.append(expr)
 
     @staticmethod
     @hookimpl
@@ -507,7 +508,7 @@ class JacPlugin:
     @hookimpl
     def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        if architype := Jac.context().root.sync():
+        if architype := JaseciContext.get().root.sync():
             return cast(Root, architype)
         raise Exception("No Available Root!")
 
@@ -539,3 +540,14 @@ class JacPlugin:
             return edge
 
         return builder
+
+
+##########################################################
+#               NEED TO TRANSFER TO PLUGIN               #
+##########################################################
+
+Jac.RootType = Root  # type: ignore[assignment]
+Jac.Obj = Architype  # type: ignore[assignment]
+Jac.Node = NodeArchitype  # type: ignore[assignment]
+Jac.Edge = EdgeArchitype  # type: ignore[assignment]
+Jac.Walker = WalkerArchitype  # type: ignore[assignment]
