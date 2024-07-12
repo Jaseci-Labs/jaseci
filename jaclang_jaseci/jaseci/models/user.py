@@ -9,7 +9,7 @@ from passlib.hash import pbkdf2_sha512
 from pydantic import BaseModel, EmailStr, Field, create_model
 from pydantic.fields import FieldInfo
 
-from .collection import Collection as BaseCollection
+from ..datasources.collection import Collection as BaseCollection
 
 NULL_BYTES = bytes()
 

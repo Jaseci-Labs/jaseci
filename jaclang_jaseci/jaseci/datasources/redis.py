@@ -8,7 +8,7 @@ from orjson import dumps, loads
 from redis import asyncio as aioredis
 from redis.asyncio.client import Redis as _Redis
 
-from .utils import logger
+from ..utils import logger
 
 
 class Redis:

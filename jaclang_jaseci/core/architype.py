@@ -30,7 +30,7 @@ from jaclang.core.utils import collect_node_connections
 
 from pymongo import ASCENDING
 
-from .collection import Collection as BaseCollection
+from ..jaseci.datasources import Collection as BaseCollection
 
 
 GENERIC_ID_REGEX = compile(r"^(g|n|e|w):([^:]*):([a-f\d]{24})$", IGNORECASE)
@@ -44,9 +44,9 @@ TA = TypeVar("TA", bound="type[Architype]")
 class Anchor(_Anchor):
     """Object Anchor."""
 
-    id: ObjectId = field(default_factory=ObjectId)
-    root: Optional[ObjectId] = None
-    access: Permission[ObjectId] = field(default_factory=Permission[ObjectId])
+    id: ObjectId = field(default_factory=ObjectId)  # type: ignore[assignment]
+    root: Optional[ObjectId] = None  # type: ignore[assignment]
+    access: Permission[ObjectId] = field(default_factory=Permission[ObjectId])  # type: ignore[assignment]
     architype: Optional[Architype] = None
     connected: bool = False
 
@@ -67,7 +67,7 @@ class Anchor(_Anchor):
             return cls(name=matched.group(2), id=ObjectId(matched.group(3)))
         return None
 
-    def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[Architype]:
+    async def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[Architype]:  # type: ignore[override]
         """Retrieve the Architype from db and return."""
         if architype := self.architype:
             if (node or self).has_read_access(self):
@@ -77,12 +77,20 @@ class Anchor(_Anchor):
         from .context import JaseciContext
 
         jsrc = JaseciContext.get().datasource
-        anchor = jsrc.find_one(self.id)
+        anchor = jsrc.find_one(self.id)  # type: ignore[assignment]
 
         if anchor and (node or self).has_read_access(anchor):
             self.__dict__.update(anchor.__dict__)
 
         return self.architype
+
+    async def save(self) -> None:  # type: ignore[override]
+        """Save Anchor."""
+        raise NotImplementedError("save must be implemented in subclasses")
+
+    async def destroy(self) -> None:  # type: ignore[override]
+        """Save Anchor."""
+        raise NotImplementedError("destroy must be implemented in subclasses")
 
 
 @dataclass(eq=False)
@@ -130,49 +138,51 @@ class NodeAnchor(Anchor):
             )
         return None
 
-    def _save(self) -> None:
+    async def _save(self) -> None:
         from .context import JaseciContext
 
         jsrc = JaseciContext.get().datasource
 
         for edge in self.edges:
-            edge.save()
+            await edge.save()
 
         jsrc.set(self)
 
-    def save(self) -> None:
+    async def save(self) -> None:  # type: ignore[override]
         """Save Anchor."""
         if self.architype:
             if not self.connected:
                 self.connected = True
                 self.hash = hash(dumps(self))
-                self._save()
+                await self._save()
             elif self.current_access_level > 0 and self.hash != (
                 _hash := hash(dumps(self))
             ):
                 self.hash = _hash
-                self._save()
+                await self._save()
 
-    def destroy(self) -> None:
+    async def destroy(self) -> None:  # type: ignore[override]
         """Delete Anchor."""
         if self.architype and self.current_access_level > 1:
             from .context import JaseciContext
 
             jsrc = JaseciContext.get().datasource
             for edge in self.edges:
-                edge.destroy()
+                await edge.destroy()
 
             jsrc.remove(self)
 
-    def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[NodeArchitype]:
+    async def sync(  # type: ignore[override]
+        self, node: Optional["NodeAnchor"] = None
+    ) -> Optional[NodeArchitype]:
         """Retrieve the Architype from db and return."""
-        return cast(Optional[NodeArchitype], super().sync(node))
+        return cast(Optional[NodeArchitype], await super().sync(node))
 
     def connect_node(self, nd: NodeAnchor, edg: EdgeAnchor) -> None:
         """Connect a node with given edge."""
         edg.attach(self, nd)
 
-    def get_edges(
+    async def get_edges(
         self,
         dir: EdgeDir,
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
@@ -182,13 +192,13 @@ class NodeAnchor(Anchor):
         ret_edges: list[EdgeArchitype] = []
         for anchor in self.edges:
             if (
-                (architype := anchor.sync(self))
+                (architype := await anchor.sync(self))
                 and (source := anchor.source)
                 and (target := anchor.target)
                 and (not filter_func or filter_func([architype]))
             ):
-                src_arch = source.sync()
-                trg_arch = target.sync()
+                src_arch = await source.sync()
+                trg_arch = await target.sync()
 
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
@@ -208,7 +218,7 @@ class NodeAnchor(Anchor):
                     ret_edges.append(architype)
         return ret_edges
 
-    def edges_to_nodes(
+    async def edges_to_nodes(
         self,
         dir: EdgeDir,
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
@@ -218,13 +228,13 @@ class NodeAnchor(Anchor):
         ret_edges: list[NodeArchitype] = []
         for anchor in self.edges:
             if (
-                (architype := anchor.sync(self))
+                (architype := await anchor.sync(self))
                 and (source := anchor.source)
                 and (target := anchor.target)
                 and (not filter_func or filter_func([architype]))
             ):
-                src_arch = source.sync()
-                trg_arch = target.sync()
+                src_arch = await source.sync()
+                trg_arch = await target.sync()
 
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
@@ -250,7 +260,7 @@ class NodeAnchor(Anchor):
         connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
         unique_node_id_dict = {}
 
-        collect_node_connections(self, visited_nodes, connections)
+        collect_node_connections(self, visited_nodes, connections)  # type: ignore[arg-type]
         dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
         for idx, i in enumerate([nodes_.architype for nodes_ in visited_nodes]):
             unique_node_id_dict[i] = (i.__class__.__name__, str(idx))
@@ -323,33 +333,33 @@ class EdgeAnchor(Anchor):
             )
         return None
 
-    def _save(self) -> None:
+    async def _save(self) -> None:
         from .context import JaseciContext
 
         jsrc = JaseciContext.get().datasource
 
         if source := self.source:
-            source.save()
+            await source.save()
 
         if target := self.target:
-            target.save()
+            await target.save()
 
         jsrc.set(self)
 
-    def save(self) -> None:
+    async def save(self) -> None:  # type: ignore[override]
         """Save Anchor."""
         if self.architype:
             if not self.connected:
                 self.connected = True
                 self.hash = hash(dumps(self))
-                self._save()
+                await self._save()
             elif self.current_access_level == 1 and self.hash != (
                 _hash := hash(dumps(self))
             ):
                 self.hash = _hash
-                self._save()
+                await self._save()
 
-    def destroy(self) -> None:
+    async def destroy(self) -> None:  # type: ignore[override]
         """Delete Anchor."""
         if self.architype and self.current_access_level == 1:
             from .context import JaseciContext
@@ -361,15 +371,17 @@ class EdgeAnchor(Anchor):
             self.detach()
 
             if source:
-                source.save()
+                await source.save()
             if target:
-                target.save()
+                await target.save()
 
             jsrc.remove(self)
 
-    def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[EdgeArchitype]:
+    async def sync(  # type: ignore[override]
+        self, node: Optional["NodeAnchor"] = None
+    ) -> Optional[EdgeArchitype]:
         """Retrieve the Architype from db and return."""
-        return cast(Optional[EdgeArchitype], super().sync(node))
+        return cast(Optional[EdgeArchitype], await super().sync(node))
 
     def attach(
         self, src: NodeAnchor, trg: NodeAnchor, is_undirected: bool = False
@@ -431,36 +443,36 @@ class WalkerAnchor(Anchor):
             )
         return None
 
-    def _save(self) -> None:
+    async def _save(self) -> None:
         from .context import JaseciContext
 
         JaseciContext.get().datasource.set(self)
 
-    def save(self) -> None:
+    async def save(self) -> None:  # type: ignore[override]
         """Save Anchor."""
         if self.architype:
             if not self.connected:
                 self.connected = True
                 self.hash = hash(dumps(self))
-                self._save()
+                await self._save()
             elif self.current_access_level > 1 and self.hash != (
                 _hash := hash(dumps(self))
             ):
                 self.hash = _hash
-                self._save()
+                await self._save()
 
-    def destroy(self) -> None:
+    async def destroy(self) -> None:  # type: ignore[override]
         """Delete Anchor."""
         if self.architype and self.current_access_level > 1:
             from .context import JaseciContext
 
             JaseciContext.get().datasource.remove(self)
 
-    def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[WalkerArchitype]:
+    async def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[WalkerArchitype]:  # type: ignore[override]
         """Retrieve the Architype from db and return."""
-        return cast(Optional[WalkerArchitype], super().sync(node))
+        return cast(Optional[WalkerArchitype], await super().sync(node))
 
-    def visit_node(self, anchors: Iterable[NodeAnchor | EdgeAnchor]) -> bool:
+    async def visit_node(self, anchors: Iterable[NodeAnchor | EdgeAnchor]) -> bool:
         """Walker visits node."""
         before_len = len(self.next)
         for anchor in anchors:
@@ -468,13 +480,13 @@ class WalkerAnchor(Anchor):
                 if isinstance(anchor, NodeAnchor):
                     self.next.append(anchor)
                 elif isinstance(anchor, EdgeAnchor):
-                    if anchor.sync() and (target := anchor.target):
+                    if await anchor.sync() and (target := anchor.target):
                         self.next.append(target)
                     else:
                         raise ValueError("Edge has no target.")
         return len(self.next) > before_len
 
-    def ignore_node(self, anchors: Iterable[NodeAnchor | EdgeAnchor]) -> bool:
+    async def ignore_node(self, anchors: Iterable[NodeAnchor | EdgeAnchor]) -> bool:
         """Walker ignores node."""
         before_len = len(self.ignores)
         for anchor in anchors:
@@ -482,7 +494,7 @@ class WalkerAnchor(Anchor):
                 if isinstance(anchor, NodeAnchor):
                     self.ignores.append(anchor)
                 elif isinstance(anchor, EdgeAnchor):
-                    if anchor.sync() and (target := anchor.target):
+                    if await anchor.sync() and (target := anchor.target):
                         self.ignores.append(target)
                     else:
                         raise ValueError("Edge has no target.")
@@ -503,12 +515,12 @@ class WalkerAnchor(Anchor):
 
     async def spawn_call(self, nd: Anchor) -> WalkerArchitype:
         """Invoke data spatial call."""
-        if walker := self.sync():
+        if walker := await self.sync():
             self.path = []
             self.next = [nd]
             self.returns = []
             while len(self.next):
-                if node := self.next.pop(0).sync():
+                if node := await self.next.pop(0).sync():
                     for i in node._jac_entry_funcs_:
                         if not i.trigger or isinstance(walker, i.trigger):
                             if i.func:

@@ -11,10 +11,10 @@ from fastapi.security import HTTPBearer
 
 from jwt import decode, encode
 
-from .architype import Root
-from .model import User as BaseUser
-from .redis import CodeRedis, TokenRedis
-from .utils import logger, random_string, utc_timestamp
+from ..datasources.redis import CodeRedis, TokenRedis
+from ..models.user import User as BaseUser
+from ..utils import logger, random_string, utc_timestamp
+from ...core.architype import NodeAnchor
 
 
 TOKEN_SECRET = getenv("TOKEN_SECRET", random_string(50))
@@ -83,10 +83,10 @@ async def authenticate(request: Request) -> None:
             decrypted
             and decrypted["expiration"] > utc_timestamp()
             and await TokenRedis.hget(key=token)
-            and (user := await User.__collection__.find_by_id(decrypted["id"]))
-            and (root := await Root.__collection__.find_by_id(user.root_id))
+            and (user := await User.Collection.find_by_id(decrypted["id"]))
+            and (root := await NodeAnchor.Collection.find_by_id(user.root_id))
         ):
-            root.__jac__.current_access_level = 1
+            root.current_access_level = 1
             request._user = user  # type: ignore[attr-defined]
             request._root = root  # type: ignore[attr-defined]
             return

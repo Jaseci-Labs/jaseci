@@ -1,9 +1,9 @@
 """Example of simple walker walking nodes."""
 import:py from jaclang_jaseci, FastAPI;
 import:py from jaclang_jaseci.core.types, File, Files, OptFile, OptFiles;
-import:py from jaclang_jaseci.core.model, User as BaseUser;
-import:py from jaclang_jaseci.plugin.jaseci, specs;
-import:py from jaclang_jaseci.core.mail, SendGridEmailer;
+import:py from jaclang_jaseci.jaseci.models, User as BaseUser;
+import:py from jaclang_jaseci.plugin, specs;
+import:py from jaclang_jaseci.jaseci.utils, SendGridEmailer;
 
 node boy {
     has val1: str, val2: str;

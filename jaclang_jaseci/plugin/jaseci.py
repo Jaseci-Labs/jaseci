@@ -33,8 +33,8 @@ from ..core.architype import (
     WalkerArchitype,
 )
 from ..core.context import JaseciContext
-from ..core.security import authenticator
-from ..core.utils import make_optional
+from ..jaseci.security import authenticator
+from ..jaseci.utils import make_optional
 
 
 T = TypeVar("T")
@@ -366,7 +366,7 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def ignore(
+    async def ignore(
         walker: WalkerArchitype,
         expr: (
             list[NodeArchitype | EdgeArchitype]
@@ -378,7 +378,7 @@ class JacPlugin:
     ) -> bool:
         """Jac's ignore stmt feature."""
         if isinstance(walker, WalkerArchitype):
-            return walker.__jac__.ignore_node(
+            return await walker.__jac__.ignore_node(
                 (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
             )
         else:
@@ -386,7 +386,7 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def visit_node(
+    async def visit_node(
         walker: WalkerArchitype,
         expr: (
             list[NodeArchitype | EdgeArchitype]
@@ -398,7 +398,7 @@ class JacPlugin:
     ) -> bool:
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchitype):
-            return walker.__jac__.visit_node(
+            return await walker.__jac__.visit_node(
                 (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
             )
         else:
@@ -406,7 +406,7 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def edge_ref(
+    async def edge_ref(
         node_obj: NodeArchitype | list[NodeArchitype],
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
@@ -424,7 +424,7 @@ class JacPlugin:
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
-                connected_edges += node.__jac__.get_edges(
+                connected_edges += await node.__jac__.get_edges(
                     dir, filter_func, target_obj=targ_obj_set
                 )
             return list(set(connected_edges))
@@ -432,7 +432,7 @@ class JacPlugin:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
-                    node.__jac__.edges_to_nodes(
+                    await node.__jac__.edges_to_nodes(
                         dir, filter_func, target_obj=targ_obj_set
                     )
                 )
@@ -463,7 +463,7 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def disconnect(
+    async def disconnect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
@@ -477,13 +477,13 @@ class JacPlugin:
             node = i.__jac__
             for anchor in set(node.edges):
                 if (
-                    (architype := anchor.sync(node))
+                    (architype := await anchor.sync(node))
                     and (source := anchor.source)
                     and (target := anchor.target)
                     and (not filter_func or filter_func([architype]))
                 ):
-                    src_arch = source.sync()
-                    trg_arch = target.sync()
+                    src_arch = await source.sync()
+                    trg_arch = await target.sync()
 
                     if (
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
@@ -506,9 +506,9 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def get_root() -> Root:
+    async def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        if architype := JaseciContext.get().root.sync():
+        if architype := await JaseciContext.get().root.sync():
             return cast(Root, architype)
         raise Exception("No Available Root!")
 

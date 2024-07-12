@@ -26,7 +26,7 @@ from motor.motor_asyncio import (
 from pymongo import DeleteMany, DeleteOne, IndexModel, InsertOne, UpdateMany, UpdateOne
 from pymongo.server_api import ServerApi
 
-from .utils import logger
+from ..utils import logger
 
 T = TypeVar("T")
 

@@ -1,4 +1,4 @@
-"""Jaseci DTOs."""
+"""Jaseci User DTOs."""
 
 from pydantic import BaseModel, EmailStr
 
@@ -14,17 +14,3 @@ class UserVerification(BaseModel):
     """User Verification Request Model."""
 
     code: str
-
-
-class AttachSSO(BaseModel):
-    """Attach SSO Request Model."""
-
-    platform: str
-    id: str
-    email: str
-
-
-class DetachSSO(BaseModel):
-    """Attach SSO Request Model."""
-
-    platform: str
