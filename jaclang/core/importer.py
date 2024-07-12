@@ -1,17 +1,21 @@
 """Special Imports for Jac Code."""
 
+from __future__ import annotations
+
 import importlib
 import marshal
 import os
 import sys
 import types
 from os import getcwd, path
-from typing import Optional, Union
+from typing import Dict, Optional, Type, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
 from jaclang.core.utils import sys_path_context
+
+loaded_programs: Dict[str, types.ModuleType] = {}
 
 
 def handle_directory(
@@ -22,8 +26,8 @@ def handle_directory(
     module.__name__ = module_name
     module.__path__ = [full_mod_path]
     module.__dict__["__jac_mod_bundle__"] = mod_bundle
-    if module not in sys.modules:
-        sys.modules[module_name] = module
+    if module_name not in loaded_programs:
+        loaded_programs[module_name] = module
     return module
 
 
@@ -90,7 +94,7 @@ def load_jac_file(
             if hasattr(module, "__path__")
             else module.__name__
         )
-        new_module = sys.modules.get(
+        new_module = loaded_programs.get(
             package_name,
             create_jac_py_module(mod_bundle, name, module.__name__, jac_file_path),
         )
@@ -161,18 +165,18 @@ def jac_importer(
     if (
         not override_name
         and package_path
-        and f"{package_path}.{module_name}" in sys.modules
+        and f"{package_path}.{module_name}" in loaded_programs
     ):
-        module = sys.modules[f"{package_path}.{module_name}"]
-    elif not override_name and not package_path and module_name in sys.modules:
-        module = sys.modules[module_name]
+        module = loaded_programs[f"{package_path}.{module_name}"]
+    elif not override_name and not package_path and module_name in loaded_programs:
+        module = loaded_programs[module_name]
     else:
         module = None
     valid_mod_bundle = (
-        sys.modules[mod_bundle].__jac_mod_bundle__
+        loaded_programs[mod_bundle].__jac_mod_bundle__
         if isinstance(mod_bundle, str)
-        and mod_bundle in sys.modules
-        and "__jac_mod_bundle__" in sys.modules[mod_bundle].__dict__
+        and mod_bundle in loaded_programs
+        and "__jac_mod_bundle__" in loaded_programs[mod_bundle].__dict__
         else None
     )
 
@@ -212,7 +216,7 @@ def jac_importer(
                 try:
                     if not codeobj:
                         raise ImportError(f"No bytecode found for {full_target}")
-                    with sys_path_context(caller_dir):
+                    with SysModulesPatch(loaded_programs), sys_path_context(caller_dir):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
                     raise ImportError(f"Error importing {full_target}: {str(e)}")
@@ -246,12 +250,12 @@ def create_jac_py_module(
         parts = package_path.split(".")
         for i in range(len(parts)):
             package_name = ".".join(parts[: i + 1])
-            if package_name not in sys.modules:
-                sys.modules[package_name] = types.ModuleType(package_name)
+            if package_name not in loaded_programs:
+                loaded_programs[package_name] = types.ModuleType(package_name)
 
-        setattr(sys.modules[package_path], module_name, module)
-        sys.modules[f"{package_path}.{module_name}"] = module
-    sys.modules[module_name] = module
+        setattr(loaded_programs[package_path], module_name, module)
+        loaded_programs[f"{package_path}.{module_name}"] = module
+    loaded_programs[module_name] = module
     return module
 
 
@@ -285,7 +289,7 @@ def py_import(
             spec = importlib.util.spec_from_file_location(target, full_target + ".py")
             if spec and spec.loader:
                 imported_module = importlib.util.module_from_spec(spec)
-                sys.modules[spec.name] = imported_module
+                loaded_programs[spec.name] = imported_module
                 spec.loader.exec_module(imported_module)
             else:
                 raise ImportError(f"Cannot find module {target} at {full_target}")
@@ -331,3 +335,27 @@ def py_import(
 
     except ImportError as e:
         raise e
+
+
+class SysModulesPatch:
+    """Context manager to temporarily patch the sys.modules dictionary."""
+
+    def __init__(self, loaded_programs: dict[str, types.ModuleType]) -> None:
+        """Initialize the SysModulesPatch context manager with the provided modules."""
+        self.loaded_programs = loaded_programs
+        self.original_sys_modules: dict[str, types.ModuleType]
+
+    def __enter__(self) -> None:
+        """Enter the runtime context and patch sys.modules."""
+        self.original_sys_modules = sys.modules.copy()
+        sys.modules.update(self.loaded_programs)
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[Type[BaseException]],
+        exc_tb: Optional[types.TracebackType],
+    ) -> None:
+        """Exit the runtime context and restore the original sys.modules."""
+        sys.modules.clear()
+        sys.modules.update(self.original_sys_modules)
