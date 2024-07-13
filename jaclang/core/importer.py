@@ -15,14 +15,15 @@ from jaclang.core.utils import sys_path_context
 
 
 def handle_directory(
-    module_name: str, full_mod_path: str, mod_bundle: Module
+    module_name: str, full_mod_path: str, mod_bundle: Optional[Module]
 ) -> types.ModuleType:
     """Import from a directory that potentially contains multiple Jac modules."""
     module = types.ModuleType(module_name)
     module.__name__ = module_name
     module.__path__ = [full_mod_path]
+    module.__file__ = None
     module.__dict__["__jac_mod_bundle__"] = mod_bundle
-    if module not in sys.modules:
+    if module_name not in sys.modules:
         sys.modules[module_name] = module
     return module
 
@@ -56,7 +57,6 @@ def process_items(
                     if hasattr(module, "__path__")
                     else module.__file__
                 )
-
                 if jac_file_path and os.path.isfile(jac_file_path):
                     item = load_jac_file(
                         module=module,
@@ -66,6 +66,9 @@ def process_items(
                         cachable=cachable,
                         caller_dir=caller_dir,
                     )
+                    handle_item_loading(item, alias)
+                elif jac_file_path and os.path.isdir(jac_file_path[:-4]):
+                    item = handle_directory(name, jac_file_path[:-4], mod_bundle)
                     handle_item_loading(item, alias)
             else:
                 if hasattr(module, "__path__"):
@@ -232,7 +235,7 @@ def jac_importer(
 
 
 def create_jac_py_module(
-    mod_bundle: Optional[Module | str],
+    mod_bundle: Optional[Module],
     module_name: str,
     package_path: str,
     full_target: str,
@@ -244,10 +247,18 @@ def create_jac_py_module(
     module.__dict__["__jac_mod_bundle__"] = mod_bundle
     if package_path:
         parts = package_path.split(".")
+        base_path = full_target.split(package_path.replace(".", path.sep))[0]
         for i in range(len(parts)):
             package_name = ".".join(parts[: i + 1])
             if package_name not in sys.modules:
-                sys.modules[package_name] = types.ModuleType(package_name)
+                full_mod_path = path.join(
+                    base_path, package_name.replace(".", path.sep)
+                )
+                handle_directory(
+                    module_name=package_name,
+                    full_mod_path=full_mod_path,
+                    mod_bundle=mod_bundle,
+                )
 
         setattr(sys.modules[package_path], module_name, module)
         sys.modules[f"{package_path}.{module_name}"] = module
