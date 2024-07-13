@@ -916,9 +916,17 @@ class ModulePath(AstSymbolNode):
         self.sub_module: Optional[Module] = None
 
         name_spec = alias if alias else path[0] if path else None
+
+        AstNode.__init__(self, kid=kid)
+        if not name_spec:
+            pkg_name = self.loc.mod_path
+            for _ in range(self.level):
+                pkg_name = os.path.dirname(pkg_name)
+            pkg_name = pkg_name.split(os.sep)[-1]
+            name_spec = Name.gen_stub_from_node(self, pkg_name)
+            self.level += 1
         if not isinstance(name_spec, Name):
             raise ValueError("ModulePath should have a name spec. Impossible.")
-        AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
             sym_name=name_spec.sym_name,
@@ -930,7 +938,7 @@ class ModulePath(AstSymbolNode):
     def path_str(self) -> str:
         """Get path string."""
         return ("." * self.level) + ".".join(
-            [p.value for p in self.path] if self.path else ""
+            [p.value for p in self.path] if self.path else [self.name_spec.sym_name]
         )
 
     def normalize(self, deep: bool = False) -> bool:
