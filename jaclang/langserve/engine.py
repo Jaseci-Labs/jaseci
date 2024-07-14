@@ -5,8 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, Optional
-
+from typing import Callable, List, Optional, Tuple
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
@@ -19,7 +18,7 @@ from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
     collect_symbols,
     create_range,
-    find_deepest_symbol_node_at_pos,
+    find_node_by_position,
     gen_diagnostics,
     get_item_path,
     get_mod_path,
@@ -47,6 +46,9 @@ class ModuleInfo:
         self.ir = ir
         self.parent: Optional[ModuleInfo] = parent
         self.sem_tokens: list[int] = self.gen_sem_tokens()
+        self.sem_tokens_ori: List[Tuple[int, int, int, ast.AstSymbolNode, int]] = (
+            self.gen_sem_tokens2()
+        )
 
     @property
     def uri(self) -> str:
@@ -74,6 +76,28 @@ class ModuleInfo:
                 prev_line, prev_col = line, col_start
         return tokens
 
+    def gen_sem_tokens2(self) -> List[Tuple[int, int, int, ast.AstSymbolNode, int]]:
+        """Return semantic tokens."""
+        tokens: List[Tuple[int, int, int, ast.AstSymbolNode, int]] = []
+        for node in self.ir._in_mod_nodes:
+            if isinstance(node, ast.NameAtom) and node.sem_token:
+                logging.info(f"in_mod_nodes: wwww {node}")
+                logging.info(
+                    f" start line: {node.loc.first_line} start col: {node.loc.col_start}"
+                )
+                logging.info(
+                    f" end line: {node.loc.first_line} end col: {node.loc.col_end}"
+                )
+                line, col_start, col_end = (
+                    node.loc.first_line - 1,
+                    node.loc.col_start - 1,
+                    node.loc.col_end - 1,
+                )
+                length = col_end - col_start
+                tokens += [(line, col_start, col_end, node, length)]
+        logging.info(f"gen_sem_tokens2: {tokens}")
+        return tokens
+
     def update_sem_tokens(
         self, content_changes: lspt.DidChangeTextDocumentParams
     ) -> list[int]:
@@ -83,6 +107,8 @@ class ModuleInfo:
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
+
+            logging.info(f"Change: .\n{change.text}\n.")
             change_start_line = change.range.start.line
             change_start_char = change.range.start.character
             change_end_line = change.range.end.line
@@ -264,8 +290,8 @@ class JacLangServer(LanguageServer):
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        node_selected = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir,
+        node_selected = find_node_by_position(
+            self.modules[file_path].sem_tokens_ori,
             position.line,
             position.character - 2,
         )
@@ -329,14 +355,24 @@ class JacLangServer(LanguageServer):
             )
         ]
 
+    def map_to_old_pos(self, position: lspt.Position, file_path: str) -> lspt.Position:
+        """Map position."""
+        # if ...
+
+        return lspt.Position(
+            line=position.line,
+            character=position.character,
+        )
+
     def get_hover_info(
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover]:
         """Return hover information for a file."""
         if file_path not in self.modules:
             return None
-        node_selected = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir, position.line, position.character
+        old_pos = self.map_to_old_pos(position, file_path)
+        node_selected = find_node_by_position(
+            self.modules[file_path].sem_tokens_ori, old_pos.line, old_pos.character
         )
         value = self.get_node_info(node_selected) if node_selected else None
         if value:
@@ -383,8 +419,8 @@ class JacLangServer(LanguageServer):
         """Return definition location for a file."""
         if file_path not in self.modules:
             return None
-        node_selected: Optional[ast.AstSymbolNode] = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir, position.line, position.character
+        node_selected: Optional[ast.AstSymbolNode] = find_node_by_position(
+            self.modules[file_path].sem_tokens_ori, position.line, position.character
         )
         if node_selected:
             if (
@@ -451,8 +487,10 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> list[lspt.Location]:
         """Return references for a file."""
-        node_selected = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir, position.line, position.character
+        if file_path not in self.modules:
+            return []
+        node_selected = find_node_by_position(
+            self.modules[file_path].sem_tokens_ori, position.line, position.character
         )
         if node_selected and node_selected.sym:
             list_of_references: list[lspt.Location] = [
