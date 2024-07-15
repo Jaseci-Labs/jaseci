@@ -1,1 +1,0 @@
-* * * * * cd /jaclang/ && git pull && cp -r /jaclang/docs/* /docusaurus/jaseci-docs/

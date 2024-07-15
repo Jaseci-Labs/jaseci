@@ -1507,11 +1507,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         pos_end=0,
                     )
                 )
+        moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
+        modparts = moddots + modpaths
         path = ast.ModulePath(
             path=modpaths,
             level=node.level,
             alias=None,
-            kid=modpaths,
+            kid=modparts,
         )
         names = [self.convert(name) for name in node.names]
         valid_names = []
