@@ -420,49 +420,6 @@ def collect_all_symbols_in_scope(
         current_tab = current_tab.parent if current_tab.parent != current_tab else None
     return symbols
 
-def find_surrounding_tokens(
-    change_start_line: int,
-    change_start_char: int,
-    change_end_line: int,
-    change_end_char: int,
-) -> tuple[int | None, int | None, bool]:
-    """Find the indices of the previous and next tokens surrounding the change."""
-    prev_token_index = None
-    next_token_index = None
-    inside_tok = False
-    for i, tok in enumerate(
-        [
-            self.get_token_start(i)
-            for i in range(0, len(self.sem_tokens), 5)
-        ][0:]
-    ):
-        if (
-            not (prev_token_index is None or next_token_index is None)
-        ) and (
-            tok[0] > change_end_line
-            or (tok[0] == change_end_line and tok[1] > change_end_char)
-        ):
-            prev_token_index = i * 5
-            break
-        elif (
-            change_start_line == tok[0] == change_end_line
-            and tok[1] <= change_start_char
-            and tok[2] >= change_end_char
-        ):
-            prev_token_index = i * 5
-            inside_tok = True
-            break
-        elif (tok[0] < change_start_line) or (
-            tok[0] == change_start_line and tok[1] < change_start_char
-        ):
-            prev_token_index = i * 5
-        elif (tok[0] > change_end_line) or (
-            tok[0] == change_end_line and tok[1] > change_end_char
-        ):
-            next_token_index = i * 5
-            break
-
-    return prev_token_index, next_token_index, inside_tok
 
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
