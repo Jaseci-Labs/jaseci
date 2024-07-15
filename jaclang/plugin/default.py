@@ -32,7 +32,7 @@ from jaclang.core.constructs import (
     WalkerArchitype,
     exec_context,
 )
-from jaclang.core.importer import jac_importer
+from jaclang.core.importer import JacMachine
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -216,7 +216,8 @@ class JacFeatureDefaults:
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
-        result = jac_importer(
+        jac_machine = JacMachine()
+        result = jac_machine.jac_importer(
             target=target,
             base_path=base_path,
             absorb=absorb,
