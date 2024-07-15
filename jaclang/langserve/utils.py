@@ -90,14 +90,11 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
 
 
 def find_node_by_position(
-    tokens: list[tuple[int, int, int, ast.AstSymbolNode, int]], line: int, position: int
+    tokens: list[tuple[int, int, int, int, ast.AstSymbolNode]], line: int, position: int
 ) -> Optional[ast.AstSymbolNode]:
     """Return the deepest symbol node that contains the given position."""
-    import logging
-
-    logging.info(f"tokens123: {tokens}")
     for token in tokens:
-        token_line, token_start, token_end, node, length = token
+        token_line, token_start, token_end, length, node = token
         if token_line == line and token_start <= position < token_end:
             return node
     return None
