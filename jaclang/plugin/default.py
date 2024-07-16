@@ -54,7 +54,6 @@ __all__ = [
     "WalkerArchitype",
     "Architype",
     "DSFunc",
-    "jac_importer",
     "T",
 ]
 
@@ -216,7 +215,7 @@ class JacFeatureDefaults:
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
-        jac_machine = JacMachine()
+        jac_machine = JacMachine(base_path=base_path)
         result = jac_machine.jac_importer(
             target=target,
             base_path=base_path,

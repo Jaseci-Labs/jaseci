@@ -20,12 +20,13 @@ from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.core.constructs import Architype
+from jaclang.core.importer import JacMachine
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
-from jaclang.core.importer import JacMachine
+
 
 Cmd.create_cmd()
 
@@ -85,12 +86,12 @@ def run(
             and cmd_registry.args.session
             else ""
         )
-    jac_machine = JacMachine()
     Jac.context().init_memory(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    jac_machine = JacMachine(base)
     if filename.endswith(".jac"):
         ret_module = jac_machine.jac_importer(
             target=mod,
