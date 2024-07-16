@@ -238,7 +238,7 @@ def scrape_preview(page: dict, target: str):
         browser = spw.chromium.launch()
         b_page = browser.new_page()
         pg_goto = page.get("goto") or {}
-        post_scripts = pg_goto.pop("post_scripts") or []
+        post_scripts = pg_goto.pop("post_scripts", None) or []
 
         custom_notify_client(
             target,

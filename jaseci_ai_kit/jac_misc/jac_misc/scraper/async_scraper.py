@@ -293,7 +293,7 @@ async def scrape_preview(page: dict, target: str = None):
         browser = await aspw.chromium.launch()
         b_page = await browser.new_page()
         pg_goto = page.get("goto") or {}
-        post_scripts = pg_goto.pop("post_scripts") or []
+        post_scripts = pg_goto.pop("post_scripts", None) or []
 
         ws.custom_notify_client(
             target,
