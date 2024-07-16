@@ -20,6 +20,7 @@ from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.core.constructs import Architype
+from jaclang.core.importer import JacMachine
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
@@ -85,14 +86,14 @@ def run(
             and cmd_registry.args.session
             else ""
         )
-
     Jac.context().init_memory(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    jac_machine = JacMachine(base)
     if filename.endswith(".jac"):
-        ret_module = jac_import(
+        ret_module = jac_machine.jac_importer(
             target=mod,
             base_path=base,
             cachable=cache,
@@ -105,7 +106,7 @@ def run(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             ir = pickle.load(f)
-            ret_module = jac_import(
+            ret_module = jac_machine.jac_importer(
                 target=mod,
                 base_path=base,
                 cachable=cache,
