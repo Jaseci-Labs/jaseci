@@ -28,10 +28,10 @@ class FastAPI:
 
             cls.__app__ = _FaststAPI(lifespan=lifespan)
 
-            # from .core.router import healthz_router, sso_router, user_router
+            from .routers import healthz_router, sso_router, user_router
             from ..plugin.jaseci import walker_router
 
-            for router in [walker_router]:
+            for router in [healthz_router, sso_router, user_router, walker_router]:
                 cls.__app__.include_router(router)
 
         return cls.__app__

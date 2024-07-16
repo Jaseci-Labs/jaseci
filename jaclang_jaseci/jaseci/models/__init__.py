@@ -1,5 +1,5 @@
 """Jaseci Models."""
 
-from .user import User
+from .user import NULL_BYTES, User
 
-__all__ = ["User"]
+__all__ = ["NULL_BYTES", "User"]

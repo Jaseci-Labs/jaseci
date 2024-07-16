@@ -12,7 +12,7 @@ from ..dtos import UserRequest, UserVerification
 from ..models import User as BaseUser
 from ..security import create_code, create_token, verify_code
 from ..utils import Emailer, logger
-from ...core.architype import NodeAnchor, Root
+from ...core.architype import Root
 from ...core.context import JaseciContext
 
 router = APIRouter(prefix="/user", tags=["user"])
@@ -23,14 +23,16 @@ User = BaseUser.model()  # type: ignore[misc]
 @router.post("/register", status_code=status.HTTP_200_OK)
 async def register(request: Request, req: User.register_type()) -> ORJSONResponse:  # type: ignore
     """Register user API."""
-    jcxt = JaseciContext.get({"request": request})
-    async with await NodeAnchor.Collection.get_session() as session:
+    jcxt = JaseciContext.get()
+    await jcxt.build()
+
+    async with await User.Collection.get_session() as session:
         async with session.start_transaction():
             try:
                 root = Root()
                 anchor = root.__jac__
                 anchor.root = None
-                await anchor.save()
+                await anchor.save(session)
 
                 req_obf: dict = req.obfuscate()
                 req_obf["root_id"] = root.__jac__.id
@@ -45,7 +47,8 @@ async def register(request: Request, req: User.register_type()) -> ORJSONRespons
                 result = None
 
                 await session.abort_transaction()
-    jcxt.close()
+
+    await jcxt.close()
     if result:
         return ORJSONResponse({"message": "Successfully Registered!"}, 201)
     else:

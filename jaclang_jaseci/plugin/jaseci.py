@@ -27,6 +27,7 @@ from ..core.architype import (
     DSFunc,
     EdgeArchitype,
     GenericEdge,
+    NodeAnchor,
     NodeArchitype,
     Root,
     WalkerAnchor,
@@ -144,12 +145,14 @@ def populate_apis(cls: type) -> None:
                 except ValidationError as e:
                     return ORJSONResponse({"detail": e.errors()})
 
-            jctx = JaseciContext.get({"request": request, "entry": node})
+            jctx = JaseciContext.get()
+            await jctx.build(request, NodeAnchor.ref(node or ""))
 
             wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
-            await wlk.spawn_call(jctx.entry)
+            if jctx.validate_access() and (entry := jctx.entry):
+                await wlk.spawn_call(entry)
 
-            jctx.close()
+            await jctx.close()
             return ORJSONResponse(jctx.response(wlk.returns))
 
         async def api_root(
@@ -224,12 +227,6 @@ class DefaultSpecs:
 
 class JacPlugin:
     """Jaseci Implementations."""
-
-    @staticmethod
-    @hookimpl
-    def context(options: Optional[dict[str, Any]]) -> JaseciContext:
-        """Get the execution context."""
-        return JaseciContext.get(options)
 
     @staticmethod
     @hookimpl
@@ -508,7 +505,7 @@ class JacPlugin:
     @hookimpl
     async def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        if architype := await JaseciContext.get().root.sync():
+        if (root := JaseciContext.get().root) and (architype := await root.sync()):
             return cast(Root, architype)
         raise Exception("No Available Root!")
 
