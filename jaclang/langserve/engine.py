@@ -94,7 +94,7 @@ class ModuleInfo:
         if token_index is None or token_index >= len(self.sem_tokens):
             logging.info(f"Token index: {token_index} is None or out of range")
             return 0, 0, 0
-        
+
         current_line = 0
         current_char = 0
         current_tok_index = 0
@@ -197,9 +197,11 @@ class ModuleInfo:
                     change_end_char,
                 )
             )
-            if prev_token_index is not  None or next_token_index is not  None:
-                prev_tok_pos = self.get_token_start(prev_token_index)
-                nxt_tok_pos = self.get_token_start(next_token_index)
+            if prev_token_index is None and next_token_index is None:
+                return self.sem_tokens
+            prev_tok_pos = self.get_token_start(prev_token_index)
+            nxt_tok_pos = self.get_token_start(next_token_index)
+            both_tokens_in_same_line = prev_tok_pos[0] == nxt_tok_pos[0]
             changing_line_text = ls.get_line_of_code(
                 content_changes.text_document.uri, change_start_line
             )
@@ -210,8 +212,7 @@ class ModuleInfo:
                     or (
                         change_start_line == prev_tok_pos[0]
                         and change_start_char
-                        > prev_tok_pos[1]
-                        + self.sem_tokens[prev_token_index + 2]
+                        > prev_tok_pos[1] + self.sem_tokens[prev_token_index + 2]
                         if prev_token_index
                         and prev_token_index + 2 < len(self.sem_tokens)
                         else 0
@@ -232,9 +233,7 @@ class ModuleInfo:
                     else next_token_index
                 )
                 is_single = change_end_line == change_start_line
-                is_next_token_same_line = (
-                    change_end_line == nxt_tok_pos[0]
-                )
+                is_next_token_same_line = change_end_line == nxt_tok_pos[0]
                 if is_single and insert_inside_token:
                     self.sem_tokens[prev_token_index + 2] -= change.range_length
                 elif is_single and insert_between_tokens:
@@ -246,14 +245,11 @@ class ModuleInfo:
                         )
                 elif insert_between_tokens:
                     if is_next_token_same_line:
-                        char_del = (
-                            nxt_tok_pos[1] - change_end_char
-                        )
+                        char_del = nxt_tok_pos[1] - change_end_char
                         total_char_del = change_start_char + char_del
                         self.sem_tokens[next_token_index + 1] = (
                             (total_char_del - prev_tok_pos[1])
-                            if prev_tok_pos[0]
-                            == change_start_line
+                            if prev_tok_pos[0] == change_start_line
                             else total_char_del
                         )
                     self.sem_tokens[next_token_index] -= (
@@ -264,13 +260,13 @@ class ModuleInfo:
             text = r"%s" % change.text
             line_delta = len(text.split("\n")) - 1
             multi_line_insertion = line_delta > 0
+            logging.info(
+                f"insert bl {insert_between_tokens} ins {insert_inside_token} mi {multi_line_insertion} bt {both_tokens_in_same_line} isdel {is_delete}"
+            )
             if insert_inside_token and prev_token_index is not None:
                 for i in ["\n", " ", "\t"]:
                     if i in change.text:
-                        if (
-                            prev_tok_pos[1]
-                            == change_start_char
-                        ):
+                        if prev_tok_pos[1] == change_start_char:
                             if i == "\n":
                                 self.sem_tokens[prev_token_index] += 1
                                 self.sem_tokens[prev_token_index + 1] = (
@@ -285,54 +281,48 @@ class ModuleInfo:
                             return self.sem_tokens
                 index_offset = 2
                 self.sem_tokens[prev_token_index + index_offset] += len(change.text)
-                if (
-                    prev_tok_pos[0]
-                    == self.get_token_start(prev_token_index + 5)[0]
-                ):
+                if prev_tok_pos[0] == self.get_token_start(prev_token_index + 5)[0]:
                     self.sem_tokens[prev_token_index + index_offset + 4] += len(
                         change.text
                     )
+            logging.info(f"change {change}")
             if insert_between_tokens:
-                both_tokens_in_same_line = (
-                    prev_tok_pos[0]
-                    == nxt_tok_pos[0]
-                )
                 if insert_between_tokens and multi_line_insertion:
                     if both_tokens_in_same_line:
-                        char_del = (
-                            nxt_tok_pos[1] - change_end_char
-                        )
+                        char_del = nxt_tok_pos[1] - change_end_char
                         total_char_del = changing_line_text[1] + char_del
+                        logging.info(
+                            f"0.0 {char_del} = {nxt_tok_pos[1]} - {change_end_char}"
+                        )
+                        logging.info(
+                            f"0.0 {total_char_del} = {changing_line_text[1]} + {char_del}"
+                        )
+                        logging.info(
+                            f"0.1 total_char_del: {total_char_del} line_delta: {line_delta}"
+                        )
                     else:
-                        is_prev_token_same_line = (
-                            change_end_line == prev_tok_pos[0]
-                        )
-                        is_next_token_same_line = (
-                            change_start_line
-                            == nxt_tok_pos[0]
-                        )
+                        is_prev_token_same_line = change_end_line == prev_tok_pos[0]
+                        is_next_token_same_line = change_start_line == nxt_tok_pos[0]
                         if is_prev_token_same_line:
                             total_char_del = nxt_tok_pos[1]
                         elif is_next_token_same_line:
-                            char_del = (
-                                nxt_tok_pos[1]
-                                - change_end_char
-                            )
+                            char_del = nxt_tok_pos[1] - change_end_char
                             total_char_del = changing_line_text[1] + char_del
                         else:
                             total_char_del = self.sem_tokens[next_token_index + 1]
                             line_delta -= change_end_line - change_start_line
+                        logging.info(
+                            f"0.2 total_char_del: {total_char_del} line_delta: {line_delta}"
+                        )
                     self.sem_tokens[next_token_index + 1] = total_char_del
                     self.sem_tokens[next_token_index] += line_delta
                 elif insert_between_tokens:
+                    logging.info(f"0.4 line_delta: {line_delta}")
                     if both_tokens_in_same_line:
                         self.sem_tokens[next_token_index + 1] += len(change.text)
                         self.sem_tokens[next_token_index] += line_delta
                     else:
-                        is_next_token_same_line = (
-                            change_start_line
-                            == nxt_tok_pos[0]
-                        )
+                        is_next_token_same_line = change_start_line == nxt_tok_pos[0]
                         if is_next_token_same_line:
                             self.sem_tokens[next_token_index] += line_delta
                             self.sem_tokens[next_token_index + 1] += len(change.text)
