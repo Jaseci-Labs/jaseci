@@ -1,10 +1,3 @@
-import:py from openai, ChatCompletion;
-import:py openai;
-import:py re;
-import:py ast;
-
-# include:jac _secrets;
-
 glob WIN_WIDTH = 640;
 glob WIN_HEIGHT = 480;
 glob TILESIZE = 32;
