@@ -45,8 +45,8 @@ class ModuleInfo:
         self.ir = ir
         self.parent: Optional[ModuleInfo] = parent
         self.sem_tokens: list[int] = self.gen_sem_tokens()
-        self.sem_tokens_ori: List[Tuple[int, int, int, int, ast.AstSymbolNode]] = (
-            self.gen_sem_tokens2()
+        self.static_sem_tokens: List[Tuple[int, int, int, int, ast.AstSymbolNode]] = (
+            self.gen_sem_tok_node()
         )
 
     @property
@@ -75,18 +75,11 @@ class ModuleInfo:
                 prev_line, prev_col = line, col_start
         return tokens
 
-    def gen_sem_tokens2(self) -> List[Tuple[int, int, int, int, ast.AstSymbolNode]]:
+    def gen_sem_tok_node(self) -> List[Tuple[int, int, int, int, ast.AstSymbolNode]]:
         """Return semantic tokens."""
         tokens: List[Tuple[int, int, int, int, ast.AstSymbolNode]] = []
         for node in self.ir._in_mod_nodes:
             if isinstance(node, ast.NameAtom) and node.sem_token:
-                # logging.info(f"in_mod_nodes: wwww {node}")
-                # logging.info(
-                #     f" start line: {node.loc.first_line} start col: {node.loc.col_start}"
-                # )
-                # logging.info(
-                #     f" end line: {node.loc.first_line} end col: {node.loc.col_end}"
-                # )
                 line, col_start, col_end = (
                     node.loc.first_line - 1,
                     node.loc.col_start - 1,
@@ -97,14 +90,11 @@ class ModuleInfo:
         return tokens
 
     def get_token_start(self, token_index: int | None) -> tuple[int, int, int]:
-        """Return the start line and start char of the token."""
+        """Return the starting position of a token."""
         if token_index is None or token_index >= len(self.sem_tokens):
             logging.info(f"Token index: {token_index} is None or out of range")
-            return (
-                0,
-                0,
-                0,
-            )
+            return 0, 0, 0
+        
         current_line = 0
         current_char = 0
         current_tok_index = 0
@@ -207,17 +197,20 @@ class ModuleInfo:
                     change_end_char,
                 )
             )
+            if prev_token_index is not  None or next_token_index is not  None:
+                prev_tok_pos = self.get_token_start(prev_token_index)
+                nxt_tok_pos = self.get_token_start(next_token_index)
             changing_line_text = ls.get_line_of_code(
                 content_changes.text_document.uri, change_start_line
             )
 
             insert_between_tokens = bool(
                 (
-                    change_start_line > self.get_token_start(prev_token_index)[0]
+                    change_start_line > prev_tok_pos[0]
                     or (
-                        change_start_line == self.get_token_start(prev_token_index)[0]
+                        change_start_line == prev_tok_pos[0]
                         and change_start_char
-                        > self.get_token_start(prev_token_index)[1]
+                        > prev_tok_pos[1]
                         + self.sem_tokens[prev_token_index + 2]
                         if prev_token_index
                         and prev_token_index + 2 < len(self.sem_tokens)
@@ -225,10 +218,10 @@ class ModuleInfo:
                     )
                 )
                 and (
-                    change_end_line < self.get_token_start(next_token_index)[0]
+                    change_end_line < nxt_tok_pos[0]
                     or (
-                        change_end_line == self.get_token_start(next_token_index)[0]
-                        and change_end_char < self.get_token_start(next_token_index)[1]
+                        change_end_line == nxt_tok_pos[0]
+                        and change_end_char < nxt_tok_pos[1]
                     )
                 )
             )
@@ -240,7 +233,7 @@ class ModuleInfo:
                 )
                 is_single = change_end_line == change_start_line
                 is_next_token_same_line = (
-                    change_end_line == self.get_token_start(next_token_index)[0]
+                    change_end_line == nxt_tok_pos[0]
                 )
                 if is_single and insert_inside_token:
                     self.sem_tokens[prev_token_index + 2] -= change.range_length
@@ -254,12 +247,12 @@ class ModuleInfo:
                 elif insert_between_tokens:
                     if is_next_token_same_line:
                         char_del = (
-                            self.get_token_start(next_token_index)[1] - change_end_char
+                            nxt_tok_pos[1] - change_end_char
                         )
                         total_char_del = change_start_char + char_del
                         self.sem_tokens[next_token_index + 1] = (
-                            (total_char_del - self.get_token_start(prev_token_index)[1])
-                            if self.get_token_start(prev_token_index)[0]
+                            (total_char_del - prev_tok_pos[1])
+                            if prev_tok_pos[0]
                             == change_start_line
                             else total_char_del
                         )
@@ -275,7 +268,7 @@ class ModuleInfo:
                 for i in ["\n", " ", "\t"]:
                     if i in change.text:
                         if (
-                            self.get_token_start(prev_token_index)[1]
+                            prev_tok_pos[1]
                             == change_start_char
                         ):
                             if i == "\n":
@@ -293,7 +286,7 @@ class ModuleInfo:
                 index_offset = 2
                 self.sem_tokens[prev_token_index + index_offset] += len(change.text)
                 if (
-                    self.get_token_start(prev_token_index)[0]
+                    prev_tok_pos[0]
                     == self.get_token_start(prev_token_index + 5)[0]
                 ):
                     self.sem_tokens[prev_token_index + index_offset + 4] += len(
@@ -301,28 +294,28 @@ class ModuleInfo:
                     )
             if insert_between_tokens:
                 both_tokens_in_same_line = (
-                    self.get_token_start(prev_token_index)[0]
-                    == self.get_token_start(next_token_index)[0]
+                    prev_tok_pos[0]
+                    == nxt_tok_pos[0]
                 )
                 if insert_between_tokens and multi_line_insertion:
                     if both_tokens_in_same_line:
                         char_del = (
-                            self.get_token_start(next_token_index)[1] - change_end_char
+                            nxt_tok_pos[1] - change_end_char
                         )
                         total_char_del = changing_line_text[1] + char_del
                     else:
                         is_prev_token_same_line = (
-                            change_end_line == self.get_token_start(prev_token_index)[0]
+                            change_end_line == prev_tok_pos[0]
                         )
                         is_next_token_same_line = (
                             change_start_line
-                            == self.get_token_start(next_token_index)[0]
+                            == nxt_tok_pos[0]
                         )
                         if is_prev_token_same_line:
-                            total_char_del = self.get_token_start(next_token_index)[1]
+                            total_char_del = nxt_tok_pos[1]
                         elif is_next_token_same_line:
                             char_del = (
-                                self.get_token_start(next_token_index)[1]
+                                nxt_tok_pos[1]
                                 - change_end_char
                             )
                             total_char_del = changing_line_text[1] + char_del
@@ -338,7 +331,7 @@ class ModuleInfo:
                     else:
                         is_next_token_same_line = (
                             change_start_line
-                            == self.get_token_start(next_token_index)[0]
+                            == nxt_tok_pos[0]
                         )
                         if is_next_token_same_line:
                             self.sem_tokens[next_token_index] += line_delta
@@ -481,7 +474,7 @@ class JacLangServer(LanguageServer):
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
         node_selected = find_node_by_position(
-            self.modules[file_path].sem_tokens_ori,
+            self.modules[file_path].static_sem_tokens,
             position.line,
             position.character - 2,
         )
@@ -575,7 +568,7 @@ class JacLangServer(LanguageServer):
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].sem_tokens_ori[token_index][4]
+        node_selected = self.modules[file_path].static_sem_tokens[token_index][4]
         value = self.get_node_info(node_selected) if node_selected else None
         if value:
             return lspt.Hover(
@@ -629,7 +622,7 @@ class JacLangServer(LanguageServer):
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].sem_tokens_ori[token_index][4]
+        node_selected = self.modules[file_path].static_sem_tokens[token_index][4]
         if node_selected:
             if (
                 isinstance(node_selected, ast.Name)
@@ -706,7 +699,7 @@ class JacLangServer(LanguageServer):
         logging.info(f"index1:.... {index1}")
         if index1 is None:
             return []
-        node_selected = self.modules[file_path].sem_tokens_ori[index1][4]
+        node_selected = self.modules[file_path].static_sem_tokens[index1][4]
         if node_selected and node_selected.sym:
             list_of_references: list[lspt.Location] = [
                 lspt.Location(

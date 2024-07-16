@@ -138,14 +138,6 @@ def semantic_tokens_full(
     ls: JacLangServer, params: lspt.SemanticTokensParams
 ) -> lspt.SemanticTokens:
     """Provide semantic tokens."""
-    # import logging
-
-    # logging.info("\nGetting semantic tokens\n")
-    # # logging.info(ls.get_semantic_tokens(params.text_document.uri))
-    # i = 0
-    # while i < len(ls.get_semantic_tokens(params.text_document.uri).data):
-    #     logging.info(ls.get_semantic_tokens(params.text_document.uri).data[i : i + 5])
-    #     i += 5
     return ls.get_semantic_tokens(params.text_document.uri)
 
 
