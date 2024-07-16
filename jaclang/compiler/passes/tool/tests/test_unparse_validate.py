@@ -18,10 +18,9 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def test_double_unparse(self) -> None:
         """Parse micro jac file."""
-        filename = "../../../../../../examples/manual_code/circle.jac"
         try:
             code_gen_pure = jac_file_to_pass(
-                self.fixture_abs_path(filename),
+                self.examples_abs_path("manual_code/circle.jac"),
                 target=PyastGenPass,
                 schedule=without_format,
             )

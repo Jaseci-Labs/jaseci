@@ -104,8 +104,8 @@ class JacFeature:
         override_name: Optional[str] = None,
         mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
-        items: Optional[dict[str, Union[str, bool]]] = None,
-    ) -> Optional[types.ModuleType]:
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+    ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         return pm.hook.jac_import(
             target=target,
@@ -132,7 +132,7 @@ class JacFeature:
         maxfail: Optional[int] = None,
         directory: Optional[str] = None,
         verbose: bool = False,
-    ) -> bool:
+    ) -> int:
         """Run the test suite in the specified .jac file."""
         return pm.hook.run_test(
             filepath=filepath,

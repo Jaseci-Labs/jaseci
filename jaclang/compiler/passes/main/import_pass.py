@@ -25,11 +25,14 @@ class JacImportPass(Pass):
     def before_pass(self) -> None:
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
+        self.__py_imports: set[str] = set()
+        self.py_resolve_list: set[str] = set()
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
+        self.__py_imports.clear()
         self.__annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True
@@ -40,6 +43,10 @@ class JacImportPass(Pass):
                 self.process_import(node, i)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
+
+        for i in self.get_all_sub_nodes(node, ast.AtomTrailer):
+            self.enter_atom_trailer(i)
+
         node.mod_deps = self.import_table
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
@@ -50,6 +57,8 @@ class JacImportPass(Pass):
                 node=i,
                 mod_path=node.loc.mod_path,
             )
+        elif lang == "py":
+            self.__py_imports.add(i.path_str)
 
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
@@ -121,6 +130,11 @@ class JacImportPass(Pass):
         if node.alias and node.sub_module:
             node.sub_module.name = node.alias.value
         # Items matched during def/decl pass
+
+    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """Iterate on AtomTrailer nodes to get python paths to resolve."""
+        if node.as_attr_list[0].sym_name in self.__py_imports:
+            self.py_resolve_list.add(".".join([i.sym_name for i in node.as_attr_list]))
 
     def import_jac_module(self, node: ast.ModulePath, mod_path: str) -> None:
         """Import a module."""
@@ -206,10 +220,9 @@ class PyImportPass(JacImportPass):
 
     def before_pass(self) -> None:
         """Only run pass if settings are set to raise python."""
+        super().before_pass()
         if not settings.py_raise:
             self.terminate()
-        else:
-            return super().before_pass()
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""

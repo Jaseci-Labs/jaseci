@@ -101,8 +101,8 @@ class JacFeatureSpec:
         override_name: Optional[str],
         mod_bundle: Optional[Module | str],
         lng: Optional[str],
-        items: Optional[dict[str, Union[str, bool]]],
-    ) -> Optional[types.ModuleType]:
+        items: Optional[dict[str, Union[str, Optional[str]]]],
+    ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         raise NotImplementedError
 
@@ -121,7 +121,7 @@ class JacFeatureSpec:
         maxfail: Optional[int],
         directory: Optional[str],
         verbose: bool,
-    ) -> bool:
+    ) -> int:
         """Run the test suite in the specified .jac file."""
         raise NotImplementedError
 

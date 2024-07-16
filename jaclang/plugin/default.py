@@ -213,8 +213,8 @@ class JacFeatureDefaults:
         override_name: Optional[str],
         mod_bundle: Optional[Module | str],
         lng: Optional[str],
-        items: Optional[dict[str, Union[str, bool]]],
-    ) -> Optional[types.ModuleType]:
+        items: Optional[dict[str, Union[str, Optional[str]]]],
+    ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         result = jac_importer(
             target=target,
@@ -251,9 +251,10 @@ class JacFeatureDefaults:
         maxfail: Optional[int],
         directory: Optional[str],
         verbose: bool,
-    ) -> bool:
+    ) -> int:
         """Run the test suite in the specified .jac file."""
         test_file = False
+        ret_count = 0
         if filepath:
             if filepath.endswith(".jac"):
                 base, mod_name = os.path.split(filepath)
@@ -262,6 +263,7 @@ class JacFeatureDefaults:
                 JacTestCheck.reset()
                 Jac.jac_import(target=mod_name, base_path=base)
                 JacTestCheck.run_test(xit, maxfail, verbose)
+                ret_count = JacTestCheck.failcount
             else:
                 print("Not a .jac file.")
         else:
@@ -293,10 +295,11 @@ class JacFeatureDefaults:
                 if JacTestCheck.breaker and (xit or maxfail):
                     break
             JacTestCheck.breaker = False
+            ret_count += JacTestCheck.failcount
             JacTestCheck.failcount = 0
             print("No test files found.") if not test_file else None
 
-        return True
+        return ret_count
 
     @staticmethod
     @hookimpl

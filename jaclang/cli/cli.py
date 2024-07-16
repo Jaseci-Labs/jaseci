@@ -92,22 +92,30 @@ def run(
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        loaded_mod = jac_import(
+        ret_module = jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
             override_name="__main__" if main else None,
         )
+        if ret_module is None:
+            loaded_mod = None
+        else:
+            (loaded_mod,) = ret_module
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             ir = pickle.load(f)
-            loaded_mod = jac_import(
+            ret_module = jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
                 mod_bundle=ir,
             )
+            if ret_module is None:
+                loaded_mod = None
+            else:
+                (loaded_mod,) = ret_module
     else:
         print("Not a .jac file.")
         return
@@ -243,7 +251,7 @@ def test(
 
     jac test => jac test -d .
     """
-    Jac.run_test(
+    failcount = Jac.run_test(
         filepath=filepath,
         filter=filter,
         xit=xit,
@@ -251,6 +259,8 @@ def test(
         directory=directory,
         verbose=verbose,
     )
+    if failcount:
+        raise SystemExit(f"Tests failed: {failcount}")
 
 
 @cmd_registry.register

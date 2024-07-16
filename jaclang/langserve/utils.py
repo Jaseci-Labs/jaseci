@@ -4,19 +4,46 @@ import asyncio
 import builtins
 import importlib.util
 import os
+import re
 import sys
 from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.compiler.constant import SymbolType
+from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.utils.helpers import import_target_to_relative_path
+from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
 
 T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
+
+
+def gen_diagnostics(
+    from_path: str, errors: list[Alert], warnings: list[Alert]
+) -> list[lspt.Diagnostic]:
+    """Return diagnostics."""
+    return [
+        lspt.Diagnostic(
+            range=create_range(error.loc),
+            message=error.msg,
+            severity=lspt.DiagnosticSeverity.Error,
+        )
+        for error in errors
+        if error.loc.mod_path == uris.to_fs_path(from_path)
+    ] + [
+        lspt.Diagnostic(
+            range=create_range(warning.loc),
+            message=warning.msg,
+            severity=lspt.DiagnosticSeverity.Warning,
+        )
+        for warning in warnings
+        if warning.loc.mod_path == uris.to_fs_path(from_path)
+    ]
 
 
 def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
@@ -194,6 +221,49 @@ def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
     )
 
 
+def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
+    """Map the symbol node to an lspt.CompletionItemKind."""
+    return (
+        lspt.CompletionItemKind.Function
+        if sub_tab in [SymbolType.ABILITY, SymbolType.TEST]
+        else (
+            lspt.CompletionItemKind.Class
+            if sub_tab
+            in [
+                SymbolType.OBJECT_ARCH,
+                SymbolType.NODE_ARCH,
+                SymbolType.EDGE_ARCH,
+                SymbolType.WALKER_ARCH,
+            ]
+            else (
+                lspt.CompletionItemKind.Module
+                if sub_tab == SymbolType.MODULE
+                else (
+                    lspt.CompletionItemKind.Enum
+                    if sub_tab == SymbolType.ENUM_ARCH
+                    else (
+                        lspt.CompletionItemKind.Field
+                        if sub_tab == SymbolType.HAS_VAR
+                        else (
+                            lspt.CompletionItemKind.Method
+                            if sub_tab == SymbolType.METHOD
+                            else (
+                                lspt.CompletionItemKind.EnumMember
+                                if sub_tab == SymbolType.ENUM_MEMBER
+                                else (
+                                    lspt.CompletionItemKind.Interface
+                                    if sub_tab == SymbolType.IMPL
+                                    else lspt.CompletionItemKind.Variable
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+
+
 def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
     """Get path for a module import name."""
     ret_target = None
@@ -292,3 +362,199 @@ def get_definition_range(
                         return filename, (start_line - 1, end_line - 1)
 
     return None
+
+
+def locate_affected_token(
+    tokens: list[int],
+    change_start_line: int,
+    change_start_char: int,
+    change_end_line: int,
+    change_end_char: int,
+) -> Optional[int]:
+    """Find in which token change is occurring."""
+    token_index = 0
+    current_line = 0
+    line_char_offset = 0
+
+    while token_index < len(tokens):
+        token_line_delta = tokens[token_index]
+        token_start_char = tokens[token_index + 1]
+        token_length = tokens[token_index + 2]
+
+        if token_line_delta > 0:
+            current_line += token_line_delta
+            line_char_offset = 0
+        token_abs_start_char = line_char_offset + token_start_char
+        token_abs_end_char = token_abs_start_char + token_length
+        if (
+            current_line == change_start_line == change_end_line
+            and token_abs_start_char <= change_start_char
+            and change_end_char <= token_abs_end_char
+        ):
+            return token_index
+        if (
+            current_line == change_start_line
+            and token_abs_start_char <= change_start_char < token_abs_end_char
+        ):
+            return token_index
+        if (
+            current_line == change_end_line
+            and token_abs_start_char < change_end_char <= token_abs_end_char
+        ):
+            return token_index
+
+        line_char_offset += token_start_char
+        token_index += 5
+    return None
+
+
+def collect_all_symbols_in_scope(
+    sym_tab: SymbolTable, up_tree: bool = True
+) -> list[lspt.CompletionItem]:
+    """Return all symbols in scope."""
+    symbols = []
+    visited = set()
+    current_tab: Optional[SymbolTable] = sym_tab
+
+    while current_tab is not None and current_tab not in visited:
+        visited.add(current_tab)
+        for name, symbol in current_tab.tab.items():
+            if name not in dir(builtins):
+                symbols.append(
+                    lspt.CompletionItem(label=name, kind=label_map(symbol.sym_type))
+                )
+        if not up_tree:
+            return symbols
+        current_tab = current_tab.parent if current_tab.parent != current_tab else None
+    return symbols
+
+
+def parse_symbol_path(text: str, dot_position: int) -> list[str]:
+    """Parse text and return a list of symbols."""
+    text = text[:dot_position].strip()
+    pattern = re.compile(r"\b\w+\(\)?|\b\w+\b")
+    matches = pattern.findall(text)
+    if text.endswith("."):
+        matches.append("")
+    symbol_path = []
+    i = 0
+    while i < len(matches):
+        if matches[i].endswith("("):
+            i += 1
+            continue
+        elif "(" in matches[i]:
+            symbol_path.append(matches[i])
+        elif matches[i] == "":
+            pass
+        else:
+            symbol_path.append(matches[i])
+        i += 1
+
+    return symbol_path
+
+
+def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
+    """Resolve symbol path."""
+    visited = set()
+    current_tab: Optional[SymbolTable] = node_tab
+
+    while current_tab is not None and current_tab not in visited:
+        visited.add(current_tab)
+        for name, symbol in current_tab.tab.items():
+            if name not in dir(builtins) and name == sym_name:
+                path = symbol.defn[0]._sym_type
+                return path
+        current_tab = current_tab.parent if current_tab.parent != current_tab else None
+    return ""
+
+
+def find_symbol_table(path: str, current_tab: Optional[SymbolTable]) -> SymbolTable:
+    """Find symbol table."""
+    path = path.lstrip(".")
+    current_table = current_tab
+    if current_table:
+        for segment in path.split("."):
+            current_table = next(
+                (
+                    child_table
+                    for child_table in current_table.kid
+                    if child_table.name == segment
+                ),
+                current_table,
+            )
+    if current_table:
+        return current_table
+    raise ValueError(f"Symbol table not found for path {path}")
+
+
+def resolve_completion_symbol_table(
+    mod_tab: SymbolTable,
+    current_symbol_path: list[str],
+    current_tab: Optional[SymbolTable],
+) -> list[lspt.CompletionItem]:
+    """Resolve symbol table for completion items."""
+    current_symbol_table = mod_tab
+    for obj in current_symbol_path:
+        if obj == "self":
+            try:
+                try:
+                    is_abilitydef = (
+                        mod_tab.owner
+                        if isinstance(mod_tab.owner, ast.AbilityDef)
+                        else mod_tab.owner.parent_of_type(ast.AbilityDef)
+                    )
+                    archi_owner = (
+                        (is_abilitydef.decl_link.parent_of_type(ast.Architype))
+                        if is_abilitydef.decl_link
+                        else None
+                    )
+                    current_symbol_table = (
+                        archi_owner._sym_tab
+                        if archi_owner and archi_owner._sym_tab
+                        else mod_tab
+                    )
+                    continue
+
+                except ValueError:
+                    pass
+                archi_owner = mod_tab.owner.parent_of_type(ast.Architype)
+                current_symbol_table = (
+                    archi_owner._sym_tab
+                    if archi_owner and archi_owner._sym_tab
+                    else mod_tab
+                )
+            except ValueError:
+                pass
+        else:
+            path: str = resolve_symbol_path(obj, current_symbol_table)
+            if path:
+                current_symbol_table = find_symbol_table(path, current_tab)
+            else:
+                if (
+                    isinstance(current_symbol_table.owner, ast.Architype)
+                    and current_symbol_table.owner.base_classes
+                ):
+                    for base_name in current_symbol_table.owner.base_classes.items:
+                        if isinstance(base_name, ast.Name) and base_name.sym:
+                            path = base_name.sym.sym_dotted_name + "." + obj
+                            current_symbol_table = find_symbol_table(path, current_tab)
+    if (
+        isinstance(current_symbol_table.owner, ast.Architype)
+        and current_symbol_table.owner.base_classes
+    ):
+        base = []
+        for base_name in current_symbol_table.owner.base_classes.items:
+            if isinstance(base_name, ast.Name) and base_name.sym:
+                base.append(base_name.sym.sym_dotted_name)
+        for base_ in base:
+            completion_items = collect_all_symbols_in_scope(
+                find_symbol_table(base_, current_tab),
+                up_tree=False,
+            )
+    else:
+        completion_items = []
+
+    completion_items.extend(
+        collect_all_symbols_in_scope(current_symbol_table, up_tree=False)
+    )
+    return completion_items
