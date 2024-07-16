@@ -1,6 +1,6 @@
 # **Getting Started with Jac-Lang**
 
-Embark on a Graph-Based programming Journey: Explore the World of Data Spatial Programming with Jac Lang - Where Elegance Meets Innovation.
+Welcome to Jac, if you know python, there's near zero learning curve to get started.
 
 <div class="grid cards" markdown>
 

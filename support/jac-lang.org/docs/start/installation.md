@@ -1,25 +1,10 @@
 # **Installing Jac-Lang**
 
-- Firstly make sure that this prerequisite is fulfilled.
-    - Python 3.12 or higher
+Firstly make sure that Python 3.12 or higher is installed in your environment, then simply install Jac using pip:
 
-- It is recommended to use a Python environment when installing and running Jac Lang. You can simply follow these steps to set up your environment:
-    - Open a Linux bash terminal. [It is recommended to use WSL (Windows Subsystem for Linux) if you are a windows OS user.]
-
-    - Create a virtual environment with Python version 3.12 or higher. Feel free to use your own environment name here.
-
-    ```bash
-    conda create -n <env_name> python=3.12 -y
-	conda activate <env_name>
-    ```
-    - Now you can simply install Jac Lang using pypi.
-
-    ```bash
-    python -m pip install -U jaclang
-    ```
-> **Note:**
->
-> If you have installed Jac Lang a while back, it may be outdated due to frequent updates. Ensure you have the latest Jac Lang version by executing the same command.
+```bash
+python -m pip install -U jaclang
+```
 
 Once you've got Jaclang installed, just give the Jac CLI a try to make sure everything's up and running smoothly.
 
