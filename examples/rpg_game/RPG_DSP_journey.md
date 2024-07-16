@@ -407,7 +407,7 @@ This is a direct copy of the main.jac file in previous implementations. The only
 
 No changes are required on these files as well.
 
-### Runtime Logic of the program : [main_dsp.jac](.//jac_impl/jac_impl_4/main_dsp.jac)
+### Runtime Logic of the program : [main.jac](.//jac_impl/jac_impl_4/main.jac)
 
 This new file will include the supporting architecture for the build of the data-spatial implementation and the runtime logic for graph traversal.
 
