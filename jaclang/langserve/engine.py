@@ -93,7 +93,9 @@ class ModuleInfo:
         return tokens
 
     def update_sem_tokens(
-        self, content_changes: lspt.DidChangeTextDocumentParams, lines: List[str]
+        self,
+        content_changes: lspt.DidChangeTextDocumentParams,
+        document_lines: List[str],
     ) -> list[int]:
         """Update semantic tokens on change."""
         for change in [
@@ -119,8 +121,10 @@ class ModuleInfo:
             )
             prev_tok_pos = get_token_start(prev_token_index, self.sem_tokens)
             nxt_tok_pos = get_token_start(next_token_index, self.sem_tokens)
-            changing_line_text = get_line_of_code(change_start_line, lines)
-            insert_between_tokens = bool(
+            changing_line_text = get_line_of_code(change_start_line, document_lines)
+            if not changing_line_text:
+                return self.sem_tokens
+            is_edit_between_tokens = bool(
                 (
                     change_start_line > prev_tok_pos[0]
                     or (
@@ -142,14 +146,18 @@ class ModuleInfo:
             )
             text = r"%s" % change.text
             line_delta = len(text.split("\n")) - 1
-            multi_line_insertion = line_delta > 0
-            # logging.info(f'''\n\nprev_token_index: {prev_token_index}, next_token_index:
-            # {next_token_index},\n insert_inside_token: {insert_inside_token}, insert_between_tokens:
-            # {insert_between_tokens},\n multi_line_insertion:  {multi_line_insertion}\n\n''')
+            is_multiline_insertion = line_delta > 0
+            logging.info(f"chnge text: {change}")
+            logging.info(
+                f"""\n\nprev_token_index: {prev_token_index}, next_token_index:{next_token_index}
+                ,\n insert_inside_token: {insert_inside_token}, insert_between_tokens:
+            {is_edit_between_tokens},\n multi_line_insertion:  {is_multiline_insertion}\n\n"""
+            )
             if is_delete:
                 next_token_index = (
                     prev_token_index + 5
                     if insert_inside_token
+                    and prev_token_index is not None
                     or (
                         next_token_index
                         and prev_token_index is not None
@@ -158,14 +166,20 @@ class ModuleInfo:
                     )
                     else next_token_index
                 )
+                if next_token_index is None:
+                    return self.sem_tokens
                 nxt_tok_pos = get_token_start(next_token_index, self.sem_tokens)
-                is_single = change_end_line == change_start_line
+                is_single_line_change = change_end_line == change_start_line
                 is_next_token_same_line = change_end_line == nxt_tok_pos[0]
-                if is_single and insert_inside_token:
+                if (
+                    is_single_line_change
+                    and insert_inside_token
+                    and prev_token_index is not None
+                ):
                     self.sem_tokens[prev_token_index + 2] -= change.range_length
                     if is_next_token_same_line:
                         self.sem_tokens[next_token_index + 1] -= change.range_length
-                elif is_single and insert_between_tokens:
+                elif is_single_line_change and is_edit_between_tokens:
                     if is_next_token_same_line:
                         self.sem_tokens[next_token_index + 1] -= change.range_length
 
@@ -188,12 +202,12 @@ class ModuleInfo:
                 return self.sem_tokens
 
             if insert_inside_token and prev_token_index is not None:
-                on_boundary = False
+                is_token_boundary_edit = False
                 for i in ["\n", " ", "\t"]:
                     if i in change.text:
                         if prev_tok_pos[1] == change_start_char:
                             if i == "\n":
-                                self.sem_tokens[prev_token_index] += 1
+                                self.sem_tokens[prev_token_index] += line_delta
                                 self.sem_tokens[prev_token_index + 1] = (
                                     changing_line_text[1]
                                 )
@@ -204,13 +218,13 @@ class ModuleInfo:
 
                             return self.sem_tokens
                         else:
-                            on_boundary = True
+                            is_token_boundary_edit = True
                             next_token_index = prev_token_index + 5
                             nxt_tok_pos = get_token_start(
                                 next_token_index, self.sem_tokens
                             )
                             break
-                if not on_boundary:
+                if not is_token_boundary_edit:
                     selected_region = change_end_char - change_start_char
                     index_offset = 2
                     self.sem_tokens[prev_token_index + index_offset] += (
@@ -224,10 +238,12 @@ class ModuleInfo:
                             len(change.text) - selected_region
                         )
 
-            both_tokens_in_same_line = prev_tok_pos[0] == nxt_tok_pos[0]
-            if insert_between_tokens or on_boundary:
-                if multi_line_insertion:
-                    if both_tokens_in_same_line:
+            tokens_on_same_line = prev_tok_pos[0] == nxt_tok_pos[0]
+            if (
+                is_edit_between_tokens or is_token_boundary_edit
+            ) and next_token_index is not None:
+                if is_multiline_insertion:
+                    if tokens_on_same_line:
                         char_del = nxt_tok_pos[1] - change_end_char
                         total_char_del = changing_line_text[1] + char_del
 
@@ -245,7 +261,7 @@ class ModuleInfo:
                     self.sem_tokens[next_token_index + 1] = total_char_del
                     self.sem_tokens[next_token_index] += line_delta
                 else:
-                    if both_tokens_in_same_line:
+                    if tokens_on_same_line:
                         self.sem_tokens[next_token_index + 1] += len(change.text)
                         self.sem_tokens[next_token_index] += line_delta
                     else:

@@ -590,9 +590,7 @@ def find_surrounding_tokens(
     return prev_token_index, next_token_index, inside_tok
 
 
-def get_line_of_code(
-    line_number: int, lines: list[str]
-) -> tuple[str | None, int | None]:
+def get_line_of_code(line_number: int, lines: list[str]) -> Optional[tuple[str, int]]:
     """Get the line of code, and the first non-space character index."""
     if 0 <= line_number < len(lines):
         line = lines[line_number].rstrip("\n")
@@ -602,4 +600,4 @@ def get_line_of_code(
             if line.strip().endswith(("(", "{", "["))
             else first_non_space
         )
-    return None, None
+    return None
