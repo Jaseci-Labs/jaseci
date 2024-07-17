@@ -1,7 +1,7 @@
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.workspace import Workspace
-from jaclang.langserve.engine import JacLangServer
+from jaclang.langserve.engine import JacLangServer, ModuleInfo
 from .session import LspSession
 
 import lsprotocol.types as lspt
@@ -295,3 +295,271 @@ class TestJacLangServer(TestCase):
             references = str(lsp.get_references(circle_file, lspt.Position(line, char)))
             for expected in expected_refs:
                 self.assertIn(expected, references)
+
+    def test_update_sem_tok_1(self) -> None:
+        """Test when change is in between tokens ."""
+        import copy
+
+        initial_sem_tokens = [
+            1,
+            10,
+            4,
+            0,
+            2,
+            3,
+            4,
+            14,
+            12,
+            1,
+            0,
+            15,
+            6,
+            7,
+            1,
+            0,
+            8,
+            5,
+            2,
+            1,
+            0,
+            10,
+            5,
+            2,
+            1,
+            1,
+            11,
+            4,
+            0,
+            2,
+            0,
+            10,
+            6,
+            7,
+            1,
+            0,
+            9,
+            6,
+            7,
+            1,
+        ]
+        x = [
+            (
+                0,
+                0,
+                0,
+                0,
+                "\n",
+                0,
+                "Multiline before first token (Basic)",
+                "2, 10, 4, 0, 2, 3, 4, 14,",
+            ),
+            (
+                5,
+                19,
+                5,
+                19,
+                "\n    ",
+                0,
+                "Multiline between tokens (Basic)",
+                "2, 1, 6, 6, 7, 1, ",
+            ),
+            (
+                4,
+                37,
+                4,
+                37,
+                "\n",
+                0,
+                "Multiline at end of line",
+                " 2, 1, 1, 0, 5, 2, 1, ",
+            ),
+            (
+                5,
+                20,
+                5,
+                20,
+                " ",
+                0,
+                "Sameline space between tokens (Basic)",
+                " 0, 11, 6, 7, 1,",
+            ),
+            (
+                5,
+                20,
+                5,
+                20,
+                "    ",
+                0,
+                "Sameline tab between tokens (Basic)",
+                "0, 14, 6, 7, 1",
+            ),
+            (5, 21, 5, 21, "   ", 0, "Tab at start of a token", "0, 13, 6, 7, 1, "),
+            (
+                5,
+                13,
+                5,
+                13,
+                "calculate",
+                0,
+                "insert inside a token",
+                " 1, 11, 13, 0, 2, 0, 19, 6, 7, 1",
+            ),
+            (
+                5,
+                12,
+                5,
+                14,
+                "calculate",
+                2,
+                "insert inside a token in a selected range",
+                "1, 11, 11, 0, 2, 0, 17, 6, 7, 1,",
+            ),
+            (
+                5,
+                21,
+                5,
+                21,
+                "\n    ",
+                0,
+                "Newline at start of a token",
+                "0, 2, 1, 4, 6, 7, 1, 0",
+            ),
+            (
+                4,
+                19,
+                4,
+                19,
+                "\n    ",
+                0,
+                "Newline after parenthesis ",
+                "12, 1, 1, 4, 6, 7, 1, 0, 8",
+            ),
+            (
+                5,
+                27,
+                5,
+                27,
+                "\n    ",
+                0,
+                "Insert Newline at end of a token",
+                "7, 1, 1, 7, 6, 7, ",
+            ),
+            (5, 4, 5, 4, "", 4, "Deletion Basic ", "0, 10, 5, 2, 1, 1, 7, 4, 0, 2, 0"),
+            (3, 49, 4, 0, "", 4, "Multiline Deletion ", ", 2, 2, 53, 14, 12, 1, 0"),
+            (
+                5,
+                12,
+                5,
+                13,
+                "",
+                1,
+                "single Deletion inside token ",
+                "1, 1, 11, 3, 0, 2, 0, 9, 6,",
+            ),
+            (
+                4,
+                10,
+                4,
+                15,
+                "",
+                5,
+                "Deletion inside token- selectedrange ",
+                " 4, 9, 12, 1, 0, 10, 6,",
+            ),
+            (
+                4,
+                44,
+                5,
+                4,
+                "",
+                5,
+                "selected Multi line Deletion ",
+                " 4, 0, 2, 3, 4, 14, 12, 1, 0, 15, ",
+            ),
+            (
+                4,
+                26,
+                4,
+                27,
+                ':= a + a // 2) > 5 {\n        print("b is grater than 5");\n    }',
+                1,
+                "multi line insert on selected region ",
+                " 2, 1, 2, 14, 5, 2, 1, 1, ",
+            ),
+        ]
+        document_lines = [
+            "",
+            "import:py math;",
+            "",
+            '"""Function to calculate the area of a circle."""',
+            "can calculate_area(radius: float) -> float {",
+            "    return math.pi * radius * radius;",
+            "}",
+            " ",
+        ]
+
+        for j, k in enumerate(x):
+            doc_lines = copy.deepcopy(document_lines)
+            if j == 0:
+                doc_lines.insert(1, "")
+            elif j == 1:
+                doc_lines[5] = "    return math.pi "
+                doc_lines.insert(6, "    * radius * radius;")
+            elif j == 2:
+                doc_lines[4] = "can calculate_area(radius: float) -> "
+                doc_lines.insert(5, "float {")
+            elif j == 8:
+                doc_lines[5] = "    return math.pi * "
+                doc_lines.insert(6, "    radius * radius;")
+            elif j == 9:
+                doc_lines[4] = "can calculate_area("
+                doc_lines.insert(5, "    radius: float) -> float {")
+            elif j == 10:
+                doc_lines[5] = "    return math.pi * radius"
+                doc_lines.insert(6, "     * radius;")
+            elif j == 12:
+                doc_lines[3] = (
+                    '"""Function to calculate the area of a circle."""can calculate_area(radius: float) -> float {'
+                )
+                del doc_lines[4]
+            elif j == 15:
+                doc_lines[3] = (
+                    "can calculate_area(radius: float) -> float {return math.pi * radius * radius;"
+                )
+                del doc_lines[4]
+            elif j == 16:
+                doc_lines = [
+                    "",
+                    "import:py math;",
+                    "",
+                    '"""Function to calculate the area of a circle."""',
+                    "can calculate_area(radius::= a + a // 2) > 5 {",
+                    '        print("b is grater than 5");',
+                    "    }float) -> float {",
+                    "    return math.pi * radius * radius;",
+                    "}",
+                    " ",
+                ]
+
+            mod = ModuleInfo.update_sem_tokens(
+                "circle_ir",
+                lspt.DidChangeTextDocumentParams(
+                    text_document=lspt.VersionedTextDocumentIdentifier(
+                        version=32,
+                        uri="file:///home/acer/Desktop/jac_kug/jaclang/examples/manual_code/circle.jac",
+                    ),
+                    content_changes=[
+                        lspt.TextDocumentContentChangeEvent_Type1(
+                            range=lspt.Range(
+                                start=lspt.Position(line=k[0], character=k[1]),
+                                end=lspt.Position(line=k[2], character=k[3]),
+                            ),
+                            text=k[4],
+                            range_length=k[5],
+                        )
+                    ],
+                ),
+                sem_tokens=copy.deepcopy(initial_sem_tokens),
+                document_lines=doc_lines,
+            )
+            self.assertIn(k[7], str(mod), f"\nFailed for case: {k[6]}")

@@ -17,6 +17,7 @@ from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
     collect_symbols,
     create_range,
+    find_index,
     find_node_by_position,
     find_surrounding_tokens,
     gen_diagnostics,
@@ -96,13 +97,11 @@ class ModuleInfo:
         document_lines: List[str],
     ) -> list[int]:
         """Update semantic tokens on change."""
-        logging.info(f"content change \n\n{content_changes}")
         for change in [
             x
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
-            logging.info(f"hmm :  {sem_tokens}")
             change_start_line = change.range.start.line
             change_start_char = change.range.start.character
             change_end_line = change.range.end.line
@@ -145,12 +144,12 @@ class ModuleInfo:
             text = r"%s" % change.text
             line_delta = len(text.split("\n")) - 1
             is_multiline_insertion = line_delta > 0
-            logging.info(f"chnge text: {change}")
-            logging.info(
-                f"""\n\nprev_token_index: {prev_token_index}, next_token_index:{next_token_index}
-                ,\n insert_inside_token: {insert_inside_token}, insert_between_tokens:
-            {is_edit_between_tokens},\n multi_line_insertion:  {is_multiline_insertion}\n\n"""
-            )
+            # logging.info(f"chnge text: {change}")
+            # logging.info(
+            #     f"""\n\nprev_token_index: {prev_token_index}, next_token_index:{next_token_index}
+            #     ,\n insert_inside_token: {insert_inside_token}, insert_between_tokens:
+            # {is_edit_between_tokens},\n multi_line_insertion:  {is_multiline_insertion}\n\n"""
+            # )
             if is_delete:
                 next_token_index = (
                     prev_token_index + 5
@@ -197,8 +196,8 @@ class ModuleInfo:
                     sem_tokens[next_token_index] -= change_end_line - change_start_line
                 return sem_tokens
 
+            is_token_boundary_edit = False
             if insert_inside_token and prev_token_index is not None:
-                is_token_boundary_edit = False
                 for i in ["\n", " ", "\t"]:
                     if i in change.text:
                         if prev_tok_pos[1] == change_start_char:
@@ -207,7 +206,6 @@ class ModuleInfo:
                                 sem_tokens[prev_token_index + 1] = changing_line_text[1]
                             else:
                                 sem_tokens[prev_token_index + 1] += len(change.text)
-
                             return sem_tokens
                         else:
                             is_token_boundary_edit = True
@@ -230,7 +228,9 @@ class ModuleInfo:
 
             tokens_on_same_line = prev_tok_pos[0] == nxt_tok_pos[0]
             if (
-                is_edit_between_tokens or is_token_boundary_edit
+                is_edit_between_tokens
+                or is_token_boundary_edit
+                or is_multiline_insertion
             ) and next_token_index is not None:
                 if is_multiline_insertion:
                     if tokens_on_same_line:
@@ -443,30 +443,16 @@ class JacLangServer(LanguageServer):
             )
         ]
 
-    def find_index(
-        self, sem_tokens: list[int], line: int, char: int, file_path: str
-    ) -> Optional[int]:
-        """Find index."""
-        index = None
-        for i, j in enumerate(
-            [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
-        ):
-            if j[0] == line and j[1] <= char <= j[2]:
-                return i
-
-        return index
-
     def get_hover_info(
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover]:
         """Return hover information for a file."""
         if file_path not in self.modules:
             return None
-        token_index = self.find_index(
+        token_index = find_index(
             self.modules[file_path].sem_tokens,
             position.line,
             position.character,
-            file_path,
         )
         if token_index is None:
             return None
@@ -516,11 +502,10 @@ class JacLangServer(LanguageServer):
         """Return definition location for a file."""
         if file_path not in self.modules:
             return None
-        token_index = self.find_index(
+        token_index = find_index(
             self.modules[file_path].sem_tokens,
             position.line,
             position.character,
-            file_path,
         )
         if token_index is None:
             return None
@@ -592,13 +577,11 @@ class JacLangServer(LanguageServer):
         """Return references for a file."""
         if file_path not in self.modules:
             return []
-        index1 = self.find_index(
+        index1 = find_index(
             self.modules[file_path].sem_tokens,
             position.line,
             position.character,
-            file_path,
         )
-        logging.info(f"index1:.... {index1}")
         if index1 is None:
             return []
         node_selected = self.modules[file_path].static_sem_tokens[index1][4]

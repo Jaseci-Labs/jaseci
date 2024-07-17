@@ -100,26 +100,20 @@ def find_node_by_position(
     return None
 
 
-def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
-    """Check if the position falls within the node's location."""
-    if node.loc.first_line < line + 1 < node.loc.last_line:
-        return True
-    if (
-        node.loc.first_line == line + 1
-        and node.loc.col_start <= character + 1
-        and (
-            node.loc.last_line == line + 1
-            and node.loc.col_end >= character + 1
-            or node.loc.last_line > line + 1
-        )
+def find_index(
+    sem_tokens: list[int],
+    line: int,
+    char: int,
+) -> Optional[int]:
+    """Find index."""
+    index = None
+    for i, j in enumerate(
+        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
     ):
-        return True
-    if (
-        node.loc.last_line == line + 1
-        and node.loc.col_start <= character + 1 <= node.loc.col_end
-    ):
-        return True
-    return False
+        if j[0] == line and j[1] <= char <= j[2]:
+            return i
+
+    return index
 
 
 def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
