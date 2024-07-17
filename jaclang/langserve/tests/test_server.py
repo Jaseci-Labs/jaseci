@@ -424,7 +424,7 @@ class TestJacLangServer(TestCase):
                 lspt.Position(line=4, character=15),
                 "",
                 5,
-                "Deletion inside token- selectedrange ",
+                "Deletion inside token- selected range ",
                 " 4, 9, 12, 1, 0, 10, 6,",
             ),
             (
@@ -503,7 +503,7 @@ class TestJacLangServer(TestCase):
                 lspt.DidChangeTextDocumentParams(
                     text_document=lspt.VersionedTextDocumentIdentifier(
                         version=32,
-                        uri="file:///home/acer/Desktop/jac_kug/jaclang/examples/manual_code/circle.jac",
+                        uri="...jaclang/examples/manual_code/circle.jac",
                     ),
                     content_changes=[
                         lspt.TextDocumentContentChangeEvent_Type1(
