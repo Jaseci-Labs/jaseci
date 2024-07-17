@@ -8,36 +8,12 @@ import os
 import sys
 import types
 from os import getcwd, path
-from typing import Dict, Optional, Type, Union
+from typing import Dict, Optional, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
 from jaclang.core.utils import sys_path_context
-
-
-class SysModulesPatch:
-    """Context manager to temporarily patch the sys.modules dictionary."""
-
-    def __init__(self, loaded_programs: dict[str, types.ModuleType]) -> None:
-        """Initialize the SysModulesPatch context manager with the provided modules."""
-        self.loaded_programs = loaded_programs
-        self.original_sys_modules: dict[str, types.ModuleType]
-
-    def __enter__(self) -> None:
-        """Enter the runtime context and patch sys.modules."""
-        self.original_sys_modules = sys.modules.copy()
-        sys.modules.update(self.loaded_programs)
-
-    def __exit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[Type[BaseException]],
-        exc_tb: Optional[types.TracebackType],
-    ) -> None:
-        """Exit the runtime context and restore the original sys.modules."""
-        sys.modules.clear()
-        sys.modules.update(self.original_sys_modules)
 
 
 class ImportPathSpec:
@@ -167,13 +143,12 @@ class ImportReturn:
                 else module.__name__
             )
             if isinstance(self.importer, JacImporter):
-                new_module = self.importer.jac_machine.loaded_programs.get(
+                new_module = sys.modules.get(
                     package_name,
                     self.importer.create_jac_py_module(
                         mod_bundle, name, module.__name__, jac_file_path
                     ),
                 )
-
             codeobj = self.importer.get_codeobj(
                 full_target=jac_file_path,
                 module_name=name,
@@ -207,8 +182,8 @@ class Importer:
 
     def update_sys(self, module: types.ModuleType, spec: ImportPathSpec) -> None:
         """Update sys.modules with the newly imported module."""
-        if spec.module_name not in self.jac_machine.loaded_programs:
-            self.jac_machine.loaded_programs[spec.module_name] = module
+        if spec.module_name not in sys.modules:
+            sys.modules[spec.module_name] = module
 
     def get_codeobj(
         self,
@@ -258,7 +233,7 @@ class PythonImporter(Importer):
                 )
                 if imp_spec and imp_spec.loader:
                     imported_module = importlib.util.module_from_spec(imp_spec)
-                    self.jac_machine.loaded_programs[imp_spec.name] = imported_module
+                    sys.modules[imp_spec.name] = imported_module
                     imp_spec.loader.exec_module(imported_module)
                 else:
                     raise ImportError(
@@ -330,14 +305,15 @@ class JacImporter(Importer):
         self, module_name: str, full_mod_path: str, mod_bundle: Optional[Module | str]
     ) -> types.ModuleType:
         """Import from a directory that potentially contains multiple Jac modules."""
+        module_name = self.get_sys_mod_name(full_mod_path)
         module = types.ModuleType(module_name)
         module.__name__ = module_name
         module.__path__ = [full_mod_path]
         module.__file__ = None
         module.__dict__["__jac_mod_bundle__"] = mod_bundle
 
-        if module_name not in self.jac_machine.loaded_programs:
-            self.jac_machine.loaded_programs[module_name] = module
+        if module_name not in sys.modules:
+            sys.modules[module_name] = module
         return module
 
     def create_jac_py_module(
@@ -352,7 +328,7 @@ class JacImporter(Importer):
         module.__file__ = full_target
         module.__name__ = module_name
         module.__dict__["__jac_mod_bundle__"] = mod_bundle
-        self.jac_machine.loaded_programs[module_name] = module
+        sys.modules[module_name] = module
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")
@@ -367,10 +343,9 @@ class JacImporter(Importer):
                         full_mod_path=full_mod_path,
                         mod_bundle=mod_bundle,
                     )
+            setattr(sys.modules[package_path], module_name, module)
+            sys.modules[f"{package_path}.{module_name}"] = module
 
-            setattr(self.jac_machine.loaded_programs[package_path], module_name, module)
-            self.jac_machine.loaded_programs[f"{package_path}.{module_name}"] = module
-        self.jac_machine.loaded_programs[module_name] = module
         return module
 
     def run_import(self, spec: ImportPathSpec) -> ImportReturn:
@@ -378,11 +353,10 @@ class JacImporter(Importer):
         unique_loaded_items: list[types.ModuleType] = []
         module = None
         valid_mod_bundle = (
-            self.jac_machine.loaded_programs[spec.mod_bundle].__jac_mod_bundle__
+            sys.modules[spec.mod_bundle].__jac_mod_bundle__
             if isinstance(spec.mod_bundle, str)
-            and spec.mod_bundle in self.jac_machine.loaded_programs
-            and "__jac_mod_bundle__"
-            in self.jac_machine.loaded_programs[spec.mod_bundle].__dict__
+            and spec.mod_bundle in sys.modules
+            and "__jac_mod_bundle__" in sys.modules[spec.mod_bundle].__dict__
             else None
         )
 
@@ -413,9 +387,7 @@ class JacImporter(Importer):
                 try:
                     if not codeobj:
                         raise ImportError(f"No bytecode found for {spec.full_target}")
-                    with SysModulesPatch(
-                        self.jac_machine.loaded_programs
-                    ), sys_path_context(spec.caller_dir):
+                    with sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
                     raise ImportError(f"Error importing {spec.full_target}: {str(e)}")
@@ -451,30 +423,6 @@ class JacMachine:
         self.loaded_programs: Dict[str, types.ModuleType] = {}
         self.base_path = base_path
         self.main_base_dir = self.initialize_base_dir(base_path)
-
-    def create_jac_py_module(
-        self,
-        mod_bundle: Optional[Module | str],
-        module_name: str,
-        package_path: str,
-        full_target: str,
-    ) -> types.ModuleType:
-        """Create a module."""
-        module = types.ModuleType(module_name)
-        module.__file__ = full_target
-        module.__name__ = module_name
-        module.__dict__["__jac_mod_bundle__"] = mod_bundle
-        if package_path:
-            parts = package_path.split(".")
-            for i in range(len(parts)):
-                package_name = ".".join(parts[: i + 1])
-                if package_name not in self.loaded_programs:
-                    self.loaded_programs[package_name] = types.ModuleType(package_name)
-
-            setattr(self.loaded_programs[package_path], module_name, module)
-            self.loaded_programs[f"{package_path}.{module_name}"] = module
-        self.loaded_programs[module_name] = module
-        return module
 
     def jac_importer(
         self,
