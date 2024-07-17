@@ -240,9 +240,7 @@ class JacFormatPass(Pass):
                 elif stmt.name == Tok.RBRACE:
                     if self.indent_level > 0:
                         self.indent_level -= 1
-                    if stmt.parent and stmt.parent.gen.jac.strip() == "{":
-                        self.emit_ln(node, stmt.gen.jac.strip())
-                    elif (
+                    if (stmt.parent and stmt.parent.gen.jac.strip() == "{") or (
                         stmt.parent
                         and stmt.parent.parent
                         and isinstance(
@@ -263,9 +261,7 @@ class JacFormatPass(Pass):
                         ):
                             self.emit(node, f" {stmt.value}")
                         elif not (node.gen.jac).endswith("\n"):
-                            self.indent_level -= 1
                             self.emit_ln(node, "")
-                            self.indent_level += 1
                             self.emit(node, f"{stmt.value}")
                         else:
                             self.emit(node, f"{stmt.value}")
