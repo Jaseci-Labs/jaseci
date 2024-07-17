@@ -1,15 +1,10 @@
 """Jaclang setup file."""
 
-from __future__ import annotations
-
 from setuptools import find_packages, setup
-
-
-VERSION = "2.0.0"
 
 setup(
     name="jaclang-jaseci",
-    version=VERSION,
+    version="2.0.0",
     packages=find_packages(include=["jaclang_jaseci", "jaclang_jaseci.*"]),
     install_requires=[
         "jaclang==0.7.9",

@@ -1,7 +1,5 @@
 """Core constructs for Jac Language."""
 
-from __future__ import annotations
-
 from contextvars import ContextVar
 from os import getenv
 from typing import Any, Callable, cast
@@ -87,7 +85,7 @@ class JaseciContext:
         await self.datasource.close()
 
     @staticmethod
-    def get(options: dict[str, Any] | None = None) -> JaseciContext:
+    def get(options: dict[str, Any] | None = None) -> "JaseciContext":
         """Get or create execution context."""
         if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
             JASECI_CONTEXT.set(ctx := JaseciContext(**options or {}))
