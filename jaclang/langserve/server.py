@@ -32,7 +32,9 @@ async def did_change(
     if file_path in ls.modules:
         document = ls.workspace.get_text_document(file_path)
         lines = document.source.splitlines()
-        ls.modules[file_path].update_sem_tokens(params, lines)
+        ls.modules[file_path].update_sem_tokens(
+            params, ls.modules[file_path].sem_tokens, lines
+        )
         ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 

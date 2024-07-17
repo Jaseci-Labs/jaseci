@@ -92,15 +92,17 @@ class ModuleInfo:
     def update_sem_tokens(
         self,
         content_changes: lspt.DidChangeTextDocumentParams,
+        sem_tokens: list[int],
         document_lines: List[str],
     ) -> list[int]:
         """Update semantic tokens on change."""
+        logging.info(f"content change \n\n{content_changes}")
         for change in [
             x
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
-            logging.info(f"hmm :  {self.sem_tokens}")
+            logging.info(f"hmm :  {sem_tokens}")
             change_start_line = change.range.start.line
             change_start_char = change.range.start.character
             change_end_line = change.range.end.line
@@ -113,23 +115,22 @@ class ModuleInfo:
                     change_start_char,
                     change_end_line,
                     change_end_char,
-                    self.sem_tokens,
+                    sem_tokens,
                 )
             )
-            prev_tok_pos = get_token_start(prev_token_index, self.sem_tokens)
-            nxt_tok_pos = get_token_start(next_token_index, self.sem_tokens)
+            prev_tok_pos = get_token_start(prev_token_index, sem_tokens)
+            nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
             changing_line_text = get_line_of_code(change_start_line, document_lines)
             if not changing_line_text:
-                return self.sem_tokens
+                return sem_tokens
             is_edit_between_tokens = bool(
                 (
                     change_start_line > prev_tok_pos[0]
                     or (
                         change_start_line == prev_tok_pos[0]
                         and change_start_char
-                        > prev_tok_pos[1] + self.sem_tokens[prev_token_index + 2]
-                        if prev_token_index
-                        and prev_token_index + 2 < len(self.sem_tokens)
+                        > prev_tok_pos[1] + sem_tokens[prev_token_index + 2]
+                        if prev_token_index and prev_token_index + 2 < len(sem_tokens)
                         else 0
                     )
                 )
@@ -164,8 +165,8 @@ class ModuleInfo:
                     else next_token_index
                 )
                 if next_token_index is None:
-                    return self.sem_tokens
-                nxt_tok_pos = get_token_start(next_token_index, self.sem_tokens)
+                    return sem_tokens
+                nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
                 is_single_line_change = change_end_line == change_start_line
                 is_next_token_same_line = change_end_line == nxt_tok_pos[0]
                 if (
@@ -173,30 +174,28 @@ class ModuleInfo:
                     and insert_inside_token
                     and prev_token_index is not None
                 ):
-                    self.sem_tokens[prev_token_index + 2] -= change.range_length
+                    sem_tokens[prev_token_index + 2] -= change.range_length
                     if is_next_token_same_line:
-                        self.sem_tokens[next_token_index + 1] -= change.range_length
+                        sem_tokens[next_token_index + 1] -= change.range_length
                 elif is_single_line_change and is_edit_between_tokens:
                     if is_next_token_same_line:
-                        self.sem_tokens[next_token_index + 1] -= change.range_length
+                        sem_tokens[next_token_index + 1] -= change.range_length
 
                     else:
-                        self.sem_tokens[next_token_index] -= (
+                        sem_tokens[next_token_index] -= (
                             change_end_line - change_start_line
                         )
                 else:
                     if is_next_token_same_line:
                         char_del = nxt_tok_pos[1] - change_end_char
                         total_char_del = change_start_char + char_del
-                        self.sem_tokens[next_token_index + 1] = (
+                        sem_tokens[next_token_index + 1] = (
                             (total_char_del - prev_tok_pos[1])
                             if prev_tok_pos[0] == change_start_line
                             else total_char_del
                         )
-                    self.sem_tokens[next_token_index] -= (
-                        change_end_line - change_start_line
-                    )
-                return self.sem_tokens
+                    sem_tokens[next_token_index] -= change_end_line - change_start_line
+                return sem_tokens
 
             if insert_inside_token and prev_token_index is not None:
                 is_token_boundary_edit = False
@@ -204,34 +203,28 @@ class ModuleInfo:
                     if i in change.text:
                         if prev_tok_pos[1] == change_start_char:
                             if i == "\n":
-                                self.sem_tokens[prev_token_index] += line_delta
-                                self.sem_tokens[prev_token_index + 1] = (
-                                    changing_line_text[1]
-                                )
+                                sem_tokens[prev_token_index] += line_delta
+                                sem_tokens[prev_token_index + 1] = changing_line_text[1]
                             else:
-                                self.sem_tokens[prev_token_index + 1] += len(
-                                    change.text
-                                )
+                                sem_tokens[prev_token_index + 1] += len(change.text)
 
-                            return self.sem_tokens
+                            return sem_tokens
                         else:
                             is_token_boundary_edit = True
                             next_token_index = prev_token_index + 5
-                            nxt_tok_pos = get_token_start(
-                                next_token_index, self.sem_tokens
-                            )
+                            nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
                             break
                 if not is_token_boundary_edit:
                     selected_region = change_end_char - change_start_char
                     index_offset = 2
-                    self.sem_tokens[prev_token_index + index_offset] += (
+                    sem_tokens[prev_token_index + index_offset] += (
                         len(change.text) - selected_region
                     )
                     if (
                         prev_tok_pos[0]
-                        == get_token_start(prev_token_index + 5, self.sem_tokens)[0]
+                        == get_token_start(prev_token_index + 5, sem_tokens)[0]
                     ):
-                        self.sem_tokens[prev_token_index + index_offset + 4] += (
+                        sem_tokens[prev_token_index + index_offset + 4] += (
                             len(change.text) - selected_region
                         )
 
@@ -253,22 +246,22 @@ class ModuleInfo:
                             char_del = nxt_tok_pos[1] - change_end_char
                             total_char_del = changing_line_text[1] + char_del
                         else:
-                            total_char_del = self.sem_tokens[next_token_index + 1]
+                            total_char_del = sem_tokens[next_token_index + 1]
                             line_delta -= change_end_line - change_start_line
-                    self.sem_tokens[next_token_index + 1] = total_char_del
-                    self.sem_tokens[next_token_index] += line_delta
+                    sem_tokens[next_token_index + 1] = total_char_del
+                    sem_tokens[next_token_index] += line_delta
                 else:
                     if tokens_on_same_line:
-                        self.sem_tokens[next_token_index + 1] += len(change.text)
-                        self.sem_tokens[next_token_index] += line_delta
+                        sem_tokens[next_token_index + 1] += len(change.text)
+                        sem_tokens[next_token_index] += line_delta
                     else:
                         is_next_token_same_line = change_start_line == nxt_tok_pos[0]
                         if is_next_token_same_line:
-                            self.sem_tokens[next_token_index] += line_delta
-                            self.sem_tokens[next_token_index + 1] += len(change.text)
+                            sem_tokens[next_token_index] += line_delta
+                            sem_tokens[next_token_index + 1] += len(change.text)
                         else:
-                            self.sem_tokens[next_token_index] += line_delta
-        return self.sem_tokens
+                            sem_tokens[next_token_index] += line_delta
+        return sem_tokens
 
 
 class JacLangServer(LanguageServer):
