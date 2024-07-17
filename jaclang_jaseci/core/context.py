@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextvars import ContextVar
 from os import getenv
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Callable, cast
 
 from bson import ObjectId
 
@@ -15,7 +15,7 @@ from .memory import MongoDB
 
 
 SHOW_ENDPOINT_RETURNS = getenv("SHOW_ENDPOINT_RETURNS") == "true"
-JASECI_CONTEXT = ContextVar[Optional["JaseciContext"]]("JaseciContext")
+JASECI_CONTEXT = ContextVar["JaseciContext | None"]("JaseciContext")
 SUPER_ROOT = ObjectId("000000000000000000000000")
 PUBLIC_ROOT = ObjectId("000000000000000000000001")
 
@@ -30,12 +30,12 @@ class JaseciContext:
         """Create JacContext."""
         self.datasource: MongoDB = MongoDB()
         self.reports: list[Any] = []
-        self.super_root: Optional[NodeAnchor] = None
-        self.root: Optional[NodeAnchor] = None
-        self.entry: Optional[NodeAnchor] = None
+        self.super_root: NodeAnchor | None = None
+        self.root: NodeAnchor | None = None
+        self.entry: NodeAnchor | None = None
 
     async def build(
-        self, request: Optional[Request] = None, entry: Optional[NodeAnchor] = None
+        self, request: Request | None = None, entry: NodeAnchor | None = None
     ) -> None:
         """Async build JacContext."""
         self.request = request
@@ -65,8 +65,8 @@ class JaseciContext:
 
     async def load(
         self,
-        anchor: Optional[NodeAnchor],
-        default: Union[NodeAnchor, Callable[[], NodeAnchor]],
+        anchor: NodeAnchor | None,
+        default: NodeAnchor | Callable[[], NodeAnchor],
     ) -> NodeAnchor:
         """Load initial anchors."""
         if anchor and (
@@ -87,7 +87,7 @@ class JaseciContext:
         await self.datasource.close()
 
     @staticmethod
-    def get(options: Optional[dict[str, Any]] = None) -> JaseciContext:
+    def get(options: dict[str, Any] | None = None) -> JaseciContext:
         """Get or create execution context."""
         if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
             JASECI_CONTEXT.set(ctx := JaseciContext(**options or {}))
@@ -114,7 +114,7 @@ class JaseciContext:
         return resp
 
     def clean_response(
-        self, key: Union[str, int], val: Any, obj: Union[list, dict]  # noqa: ANN401
+        self, key: str | int, val: Any, obj: list | dict  # noqa: ANN401
     ) -> None:
         """Cleanup and override current object."""
         match val:

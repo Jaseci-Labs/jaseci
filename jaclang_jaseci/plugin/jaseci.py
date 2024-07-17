@@ -6,7 +6,7 @@ from functools import wraps
 from os import getenv
 from pydoc import locate
 from re import compile
-from typing import Any, Callable, Optional, Type, TypeVar, Union, cast
+from typing import Any, Callable, Type, TypeVar, cast
 
 from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 from fastapi.responses import ORJSONResponse
@@ -44,14 +44,14 @@ PATH_VARIABLE_REGEX = compile(r"{([^\}]+)}")
 FILE = {
     "File": UploadFile,
     "Files": list[UploadFile],
-    "OptFile": Optional[UploadFile],
-    "OptFiles": Optional[list[UploadFile]],
+    "OptFile": UploadFile | None,
+    "OptFiles": list[UploadFile | None],
 }
 
 walker_router = APIRouter(prefix="/walker", tags=["walker"])
 
 
-def get_specs(cls: type) -> Optional[Type["DefaultSpecs"]]:
+def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
     """Get Specs and inherit from DefaultSpecs."""
     specs = getattr(cls, "__specs__", None)
     if specs is None:
@@ -82,7 +82,7 @@ def populate_apis(cls: type) -> None:
     if (specs := get_specs(cls)) and not specs.private:
         path: str = specs.path or ""
         methods: list = specs.methods or []
-        as_query: Union[str, list] = specs.as_query or []
+        as_query: str | list = specs.as_query or []
         auth: bool = specs.auth or False
 
         query: dict[str, Any] = {}
@@ -132,7 +132,7 @@ def populate_apis(cls: type) -> None:
 
         async def api_entry(
             request: Request,
-            node: Optional[str],
+            node: str | None,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
         ) -> ORJSONResponse:
             pl = cast(BaseModel, payload).model_dump()
@@ -179,11 +179,11 @@ def populate_apis(cls: type) -> None:
 
 
 def specs(
-    cls: Optional[Type[T]] = None,
+    cls: Type[T] | None = None,
     *,
     path: str = "",
     methods: list[str] = ["post"],  # noqa: B006
-    as_query: Union[str, list] = [],  # noqa: B006
+    as_query: str | list = [],  # noqa: B006
     auth: bool = True,
     private: bool = False,
 ) -> Callable:
@@ -200,7 +200,7 @@ def specs(
             class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = p
                 methods: list[str] = m
-                as_query: Union[str, list] = aq
+                as_query: str | list = aq
                 auth: bool = a
                 private: bool = pv
 
@@ -220,7 +220,7 @@ class DefaultSpecs:
 
     path: str = ""
     methods: list[str] = ["post"]
-    as_query: Union[str, list[str]] = []
+    as_query: str | list[str] = []
     auth: bool = True
     private: bool = False
 
@@ -270,7 +270,7 @@ class JacPlugin:
         def new_init(
             self: Architype,
             *args: object,
-            __jac__: Optional[Anchor] = None,
+            __jac__: Anchor | None = None,
             **kwargs: object,
         ) -> None:
             arch_base.__init__(self, __jac__)
@@ -405,15 +405,15 @@ class JacPlugin:
     @hookimpl
     async def edge_ref(
         node_obj: NodeArchitype | list[NodeArchitype],
-        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
+        target_obj: NodeArchitype | list[NodeArchitype] | None,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
             node_obj = [node_obj]
-        targ_obj_set: Optional[list[NodeArchitype]] = (
+        targ_obj_set: list[NodeArchitype] | None = (
             [target_obj]
             if isinstance(target_obj, NodeArchitype)
             else target_obj if target_obj else None
@@ -464,7 +464,7 @@ class JacPlugin:
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
         disconnect_occurred = False
@@ -519,8 +519,8 @@ class JacPlugin:
     @hookimpl
     def build_edge(
         is_undirected: bool,
-        conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
-        conn_assign: Optional[tuple[tuple, tuple]],
+        conn_type: Type[EdgeArchitype] | EdgeArchitype | None,
+        conn_assign: tuple[tuple, tuple] | None,
     ) -> Callable[[], EdgeArchitype]:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge

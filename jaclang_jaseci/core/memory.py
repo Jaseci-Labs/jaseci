@@ -1,15 +1,7 @@
 """Memory abstraction for jaseci plugin."""
 
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    AsyncGenerator,
-    Callable,
-    Generator,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, AsyncGenerator, Callable, Generator, Type
 
 from bson import ObjectId
 
@@ -30,7 +22,7 @@ from .architype import (
 from ..jaseci.datasources import Collection
 from ..jaseci.utils import logger
 
-IDS = Union[ObjectId, list[ObjectId]]
+IDS = ObjectId | list[ObjectId]
 
 
 @dataclass
@@ -46,7 +38,7 @@ class Memory:
         self.__gc__.clear()
 
     def find(
-        self, ids: IDS, filter: Optional[Callable[[Anchor], Anchor]] = None
+        self, ids: IDS, filter: Callable[[Anchor], Anchor] | None = None
     ) -> Generator[Anchor, None, None]:
         """Find anchors from memory by ids with filter."""
         if not isinstance(ids, list):
@@ -61,12 +53,12 @@ class Memory:
     def find_one(
         self,
         ids: IDS,
-        filter: Optional[Callable[[Anchor], Anchor]] = None,
-    ) -> Optional[Anchor]:
+        filter: Callable[[Anchor], Anchor] | None = None,
+    ) -> Anchor | None:
         """Find one anchor from memory by ids with filter."""
         return next(self.find(ids, filter), None)
 
-    def set(self, data: Union[Anchor, list[Anchor]]) -> None:
+    def set(self, data: Anchor | list[Anchor]) -> None:
         """Save anchor/s to memory."""
         if isinstance(data, list):
             for d in data:
@@ -75,7 +67,7 @@ class Memory:
         elif data not in self.__gc__:
             self.__mem__[data.id] = data
 
-    def remove(self, data: Union[Anchor, list[Anchor]]) -> None:
+    def remove(self, data: Anchor | list[Anchor]) -> None:
         """Remove anchor/s from memory."""
         if isinstance(data, list):
             for d in data:
@@ -90,14 +82,14 @@ class Memory:
 class MongoDB(Memory):
     """Shelf Handler."""
 
-    __session__: Optional[AsyncIOMotorClientSession] = None
+    __session__: AsyncIOMotorClientSession | None = None
 
     async def find(  # type: ignore[override]
         self,
         type: AnchorType,
         ids: IDS,
-        filter: Optional[Callable[[Anchor], Anchor]] = None,
-        session: Optional[AsyncIOMotorClientSession] = None,
+        filter: Callable[[Anchor], Anchor] | None = None,
+        session: AsyncIOMotorClientSession | None = None,
     ) -> AsyncGenerator[Anchor, None]:
         """Find anchors from datasource by ids with filter."""
         if not isinstance(ids, list):
@@ -130,13 +122,13 @@ class MongoDB(Memory):
         self,
         type: AnchorType,
         ids: IDS,
-        filter: Optional[Callable[[Anchor], Anchor]] = None,
-        session: Optional[AsyncIOMotorClientSession] = None,
-    ) -> Optional[Anchor]:
+        filter: Callable[[Anchor], Anchor] | None = None,
+        session: AsyncIOMotorClientSession | None = None,
+    ) -> Anchor | None:
         """Find one anchor from memory by ids with filter."""
         return await anext(self.find(type, ids, filter, session), None)
 
-    def remove(self, data: Union[Anchor, list[Anchor]]) -> None:
+    def remove(self, data: Anchor | list[Anchor]) -> None:
         """Remove anchor/s from datasource."""
         super().remove(data)
 

@@ -1,7 +1,7 @@
 """Jaseci Securities."""
 
 from os import getenv
-from typing import Any, Optional
+from typing import Any
 
 from bson import ObjectId
 
@@ -27,7 +27,7 @@ def encrypt(data: dict) -> str:
     return encode(data, key=TOKEN_SECRET, algorithm=TOKEN_ALGORITHM)
 
 
-def decrypt(token: str) -> Optional[dict]:
+def decrypt(token: str) -> dict | None:
     """Decrypt data."""
     try:
         return decode(token, key=TOKEN_SECRET, algorithms=[TOKEN_ALGORITHM])
@@ -51,7 +51,7 @@ async def create_code(user_id: ObjectId) -> str:
     raise HTTPException(500, "Verification Creation Failed!")
 
 
-async def verify_code(code: str) -> Optional[str]:
+async def verify_code(code: str) -> str | None:
     """Verify Code."""
     decrypted = decrypt(code)
     if (

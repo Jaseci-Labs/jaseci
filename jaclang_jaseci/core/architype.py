@@ -12,7 +12,6 @@ from typing import (
     ClassVar,
     Iterable,
     Mapping,
-    Optional,
     TypeVar,
     cast,
 )
@@ -51,8 +50,8 @@ class Anchor(_Anchor):
     """Object Anchor."""
 
     id: ObjectId = field(default_factory=ObjectId)  # type: ignore[assignment]
-    root: Optional[ObjectId] = None  # type: ignore[assignment]
-    architype: Optional[Architype] = None
+    root: ObjectId | None = None  # type: ignore[assignment]
+    architype: Architype | None = None
     connected: bool = False
 
     # checker if needs to update on db
@@ -71,7 +70,7 @@ class Anchor(_Anchor):
         pass
 
     @staticmethod
-    def ref(ref_id: str) -> Optional[Anchor]:
+    def ref(ref_id: str) -> Anchor | None:
         """Return ObjectAnchor instance if ."""
         if matched := GENERIC_ID_REGEX.search(ref_id):
             cls: type = Anchor
@@ -333,7 +332,7 @@ class Anchor(_Anchor):
 
     # ------------------------------------------------ #
 
-    async def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[Architype]:  # type: ignore[override]
+    async def sync(self, node: "NodeAnchor | None" = None) -> Architype | None:  # type: ignore[override]
         """Retrieve the Architype from db and return."""
         if architype := self.architype:
             if (node or self).has_read_access(self):
@@ -359,7 +358,7 @@ class Anchor(_Anchor):
                 self.root = jctx.root.id
             jctx.datasource.set(self)
 
-    async def save(self, session: Optional[AsyncIOMotorClientSession] = None) -> None:  # type: ignore[override]
+    async def save(self, session: AsyncIOMotorClientSession | None = None) -> None:  # type: ignore[override]
         """Save Anchor."""
         if self.architype:
             if session:
@@ -384,11 +383,11 @@ class Anchor(_Anchor):
                     logger.exception("Error saving Anchor!")
                     raise
 
-    async def insert(self, session: Optional[AsyncIOMotorClientSession] = None) -> None:
+    async def insert(self, session: AsyncIOMotorClientSession | None = None) -> None:
         """Insert Anchor."""
         await self.Collection.insert_one(self.serialize(), session)
 
-    async def update(self, session: Optional[AsyncIOMotorClientSession] = None) -> None:
+    async def update(self, session: AsyncIOMotorClientSession | None = None) -> None:
         """Update Anchor."""
         if changes := await self.pull_changes():
             try:
@@ -449,7 +448,7 @@ class NodeAnchor(Anchor):
     """Node Anchor."""
 
     type: ClassVar[AnchorType] = AnchorType.node
-    architype: Optional[NodeArchitype] = None
+    architype: NodeArchitype | None = None
     edges: list[EdgeAnchor] = field(default_factory=list)
 
     edges_hashes: dict[str, int] = field(default_factory=dict)
@@ -458,7 +457,7 @@ class NodeAnchor(Anchor):
     class Collection(BaseCollection["NodeAnchor"]):
         """NodeAnchor collection interface."""
 
-        __collection__: Optional[str] = "node"
+        __collection__: str | None = "node"
         __default_indexes__: list[dict] = [
             {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]}
         ]
@@ -483,7 +482,7 @@ class NodeAnchor(Anchor):
             return anchor
 
     @classmethod
-    def ref(cls, ref_id: str) -> Optional[NodeAnchor]:
+    def ref(cls, ref_id: str) -> NodeAnchor | None:
         """Return NodeAnchor instance if existing."""
         if match := NODE_ID_REGEX.search(ref_id):
             return cls(
@@ -492,7 +491,7 @@ class NodeAnchor(Anchor):
             )
         return None
 
-    async def insert(self, session: Optional[AsyncIOMotorClientSession] = None) -> None:
+    async def insert(self, session: AsyncIOMotorClientSession | None = None) -> None:
         """Insert Anchor."""
         for edge in self.edges:
             await edge.save(session)
@@ -511,10 +510,10 @@ class NodeAnchor(Anchor):
             jsrc.remove(self)
 
     async def sync(  # type: ignore[override]
-        self, node: Optional["NodeAnchor"] = None
-    ) -> Optional[NodeArchitype]:
+        self, node: "NodeAnchor | None" = None
+    ) -> NodeArchitype | None:
         """Retrieve the Architype from db and return."""
-        return cast(Optional[NodeArchitype], await super().sync(node))
+        return cast(NodeArchitype | None, await super().sync(node))
 
     def connect_node(self, nd: NodeAnchor, edg: EdgeAnchor) -> None:
         """Connect a node with given edge."""
@@ -523,8 +522,8 @@ class NodeAnchor(Anchor):
     async def get_edges(
         self,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
+        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
+        target_obj: list[NodeArchitype] | None,
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
         ret_edges: list[EdgeArchitype] = []
@@ -559,8 +558,8 @@ class NodeAnchor(Anchor):
     async def edges_to_nodes(
         self,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
+        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
+        target_obj: list[NodeArchitype] | None,
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
         ret_edges: list[NodeArchitype] = []
@@ -592,7 +591,7 @@ class NodeAnchor(Anchor):
                     ret_edges.append(src_arch)
         return ret_edges
 
-    def gen_dot(self, dot_file: Optional[str] = None) -> str:
+    def gen_dot(self, dot_file: str | None = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         visited_nodes: set[NodeAnchor] = set()
         connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
@@ -632,15 +631,15 @@ class EdgeAnchor(Anchor):
     """Edge Anchor."""
 
     type: ClassVar[AnchorType] = AnchorType.edge
-    architype: Optional[EdgeArchitype] = None
-    source: Optional[NodeAnchor] = None
-    target: Optional[NodeAnchor] = None
+    architype: EdgeArchitype | None = None
+    source: NodeAnchor | None = None
+    target: NodeAnchor | None = None
     is_undirected: bool = False
 
     class Collection(BaseCollection["EdgeAnchor"]):
         """EdgeAnchor collection interface."""
 
-        __collection__: Optional[str] = "edge"
+        __collection__: str | None = "edge"
         __default_indexes__: list[dict] = [
             {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]}
         ]
@@ -665,7 +664,7 @@ class EdgeAnchor(Anchor):
             return anchor
 
     @classmethod
-    def ref(cls, ref_id: str) -> Optional[EdgeAnchor]:
+    def ref(cls, ref_id: str) -> EdgeAnchor | None:
         """Return EdgeAnchor instance if existing."""
         if match := EDGE_ID_REGEX.search(ref_id):
             return cls(
@@ -674,7 +673,7 @@ class EdgeAnchor(Anchor):
             )
         return None
 
-    async def insert(self, session: Optional[AsyncIOMotorClientSession] = None) -> None:
+    async def insert(self, session: AsyncIOMotorClientSession | None = None) -> None:
         """Insert Anchor."""
         if source := self.source:
             await source.save(session)
@@ -703,10 +702,10 @@ class EdgeAnchor(Anchor):
             jsrc.remove(self)
 
     async def sync(  # type: ignore[override]
-        self, node: Optional["NodeAnchor"] = None
-    ) -> Optional[EdgeArchitype]:
+        self, node: "NodeAnchor | None" = None
+    ) -> EdgeArchitype | None:
         """Retrieve the Architype from db and return."""
-        return cast(Optional[EdgeArchitype], await super().sync(node))
+        return cast(EdgeArchitype | None, await super().sync(node))
 
     def attach(
         self, src: NodeAnchor, trg: NodeAnchor, is_undirected: bool = False
@@ -754,7 +753,7 @@ class WalkerAnchor(Anchor):
     """Walker Anchor."""
 
     type: ClassVar[AnchorType] = AnchorType.walker
-    architype: Optional[WalkerArchitype] = None
+    architype: WalkerArchitype | None = None
     path: list[Anchor] = field(default_factory=list)
     next: list[Anchor] = field(default_factory=list)
     returns: list[Any] = field(default_factory=list)
@@ -765,7 +764,7 @@ class WalkerAnchor(Anchor):
     class Collection(BaseCollection["WalkerAnchor"]):
         """WalkerAnchor collection interface."""
 
-        __collection__: Optional[str] = "walker"
+        __collection__: str | None = "walker"
         __default_indexes__: list[dict] = [
             {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]}
         ]
@@ -789,7 +788,7 @@ class WalkerAnchor(Anchor):
             return anchor
 
     @classmethod
-    def ref(cls, ref_id: str) -> Optional[WalkerAnchor]:
+    def ref(cls, ref_id: str) -> WalkerAnchor | None:
         """Return EdgeAnchor instance if existing."""
         if ref_id and (match := WALKER_ID_REGEX.search(ref_id)):
             return cls(
@@ -805,9 +804,9 @@ class WalkerAnchor(Anchor):
 
             JaseciContext.get().datasource.remove(self)
 
-    async def sync(self, node: Optional["NodeAnchor"] = None) -> Optional[WalkerArchitype]:  # type: ignore[override]
+    async def sync(self, node: "NodeAnchor | None" = None) -> WalkerArchitype | None:  # type: ignore[override]
         """Retrieve the Architype from db and return."""
-        return cast(Optional[WalkerArchitype], await super().sync(node))
+        return cast(WalkerArchitype | None, await super().sync(node))
 
     async def visit_node(self, anchors: Iterable[NodeAnchor | EdgeAnchor]) -> bool:
         """Walker visits node."""
@@ -900,7 +899,7 @@ class Architype(_Architype):
 
     __jac__: Anchor
 
-    def __init__(self, __jac__: Optional[Anchor] = None) -> None:
+    def __init__(self, __jac__: Anchor | None = None) -> None:
         """Create default architype."""
         self.__jac__ = __jac__ or Anchor(architype=self)
         self.__jac__.allocate()
@@ -916,7 +915,7 @@ class NodeArchitype(Architype):
 
     __jac__: NodeAnchor
 
-    def __init__(self, __jac__: Optional[NodeAnchor] = None) -> None:
+    def __init__(self, __jac__: NodeAnchor | None = None) -> None:
         """Create node architype."""
         self.__jac__ = __jac__ or NodeAnchor(
             name=self.__class__.__name__, architype=self
@@ -934,7 +933,7 @@ class EdgeArchitype(Architype):
 
     __jac__: EdgeAnchor
 
-    def __init__(self, __jac__: Optional[EdgeAnchor] = None) -> None:
+    def __init__(self, __jac__: EdgeAnchor | None = None) -> None:
         """Create edge architype."""
         self.__jac__ = __jac__ or EdgeAnchor(
             name=self.__class__.__name__, architype=self
@@ -952,7 +951,7 @@ class WalkerArchitype(Architype):
 
     __jac__: WalkerAnchor
 
-    def __init__(self, __jac__: Optional[WalkerAnchor] = None) -> None:
+    def __init__(self, __jac__: WalkerAnchor | None = None) -> None:
         """Create walker architype."""
         self.__jac__ = __jac__ or WalkerAnchor(
             name=self.__class__.__name__, architype=self
@@ -971,7 +970,7 @@ class GenericEdge(EdgeArchitype):
     _jac_entry_funcs_: list[DSFunc] = []
     _jac_exit_funcs_: list[DSFunc] = []
 
-    def __init__(self, __jac__: Optional[EdgeAnchor] = None) -> None:
+    def __init__(self, __jac__: EdgeAnchor | None = None) -> None:
         """Create walker architype."""
         self.__jac__ = __jac__ or EdgeAnchor(architype=self)
         self.__jac__.allocate()
@@ -985,7 +984,7 @@ class Root(NodeArchitype):
     reachable_nodes: list[NodeArchitype] = []
     connections: set[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = set()
 
-    def __init__(self, __jac__: Optional[NodeAnchor] = None) -> None:
+    def __init__(self, __jac__: NodeAnchor | None = None) -> None:
         """Create walker architype."""
         self.__jac__ = __jac__ or NodeAnchor(architype=self)
         self.__jac__.allocate()

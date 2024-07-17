@@ -1,7 +1,7 @@
 """Jaseci Redis."""
 
 from os import getenv
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from orjson import dumps, loads
 
@@ -30,7 +30,7 @@ class Redis:
     ##########################################
 
     # Singleton redis client instance
-    __redis__: Optional[_Redis] = None
+    __redis__: _Redis | None = None
 
     @staticmethod
     def get_rd() -> _Redis:
@@ -65,7 +65,7 @@ class Redis:
             return []
 
     @classmethod
-    async def set(cls, key: str, data: Union[dict, bool]) -> bool:
+    async def set(cls, key: str, data: dict | bool) -> bool:
         """Push key value pair."""
         try:
             redis = cls.get_rd()
@@ -104,7 +104,7 @@ class Redis:
             return []
 
     @classmethod
-    async def hset(cls, key: str, data: Union[dict, bool]) -> bool:
+    async def hset(cls, key: str, data: dict | bool) -> bool:
         """Push key value pair to group."""
         try:
             redis = cls.get_rd()

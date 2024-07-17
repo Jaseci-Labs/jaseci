@@ -2,7 +2,7 @@
 
 from contextlib import asynccontextmanager
 from os import getenv
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI as _FaststAPI
 
@@ -39,8 +39,8 @@ class FastAPI:
     @classmethod
     def start(
         cls,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
+        host: str | None = None,
+        port: int | None = None,
         **kwargs: Any  # noqa ANN401
     ) -> None:
         """Run FastAPI Handler via Uvicorn."""

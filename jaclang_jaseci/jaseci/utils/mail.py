@@ -1,7 +1,7 @@
 """Mail Handler."""
 
 from os import getenv
-from typing import Optional, cast
+from typing import cast
 
 from sendgrid import SendGridAPIClient
 
@@ -9,7 +9,7 @@ from sendgrid import SendGridAPIClient
 class Emailer:
     """Email Handler."""
 
-    __client__: Optional[object] = None
+    __client__: object | None = None
 
     @classmethod
     def start(cls) -> None:
@@ -23,12 +23,12 @@ class Emailer:
         return bool(Emailer.__client__)
 
     @classmethod
-    def generate_client(cls) -> Optional[object]:
+    def generate_client(cls) -> object | None:
         """Generate client."""
         pass
 
     @classmethod
-    def get_client(cls) -> Optional[object]:
+    def get_client(cls) -> object | None:
         """Retrieve client."""
         if Emailer.__client__:
             return Emailer.__client__
@@ -58,7 +58,7 @@ class SendGridEmailer(Emailer):
     __host__: str = getenv("HOST") or "http://localhost:8000"
 
     @classmethod
-    def generate_client(cls) -> Optional[SendGridAPIClient]:
+    def generate_client(cls) -> SendGridAPIClient | None:
         """Generate client."""
         if sendgrid_api_key := getenv("SENDGRID_API_KEY"):
             return SendGridAPIClient(api_key=sendgrid_api_key)

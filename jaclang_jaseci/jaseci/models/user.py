@@ -1,6 +1,6 @@
 """Jaseci Models."""
 
-from typing import Any, Mapping, Optional, Type, cast
+from typing import Any, Mapping, Type, cast
 
 from fastapi_sso import OpenID
 
@@ -49,7 +49,7 @@ class User(UserCommon):
         You may override this if you wish to implement different structure
         """
 
-        __collection__: Optional[str] = "user"
+        __collection__: str | None = "user"
         __excluded__: list[str] = ["password"]
         __indexes__: list[dict] = [{"keys": ["email"], "unique": True}]
 
@@ -70,7 +70,7 @@ class User(UserCommon):
             )
 
         @classmethod
-        async def find_by_email(cls, email: str) -> Optional["User"]:
+        async def find_by_email(cls, email: str) -> "User | None":
             """Retrieve user via email."""
             return await cls.find_one(filter={"email": email}, projection={})
 

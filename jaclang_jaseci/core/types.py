@@ -1,13 +1,13 @@
 """Jaseci FastAPI Types."""
 
 from dataclasses import field
-from typing import List, Optional
+from typing import List
 
 from fastapi import UploadFile as File
 
-OptFile = Optional[File]
+OptFile = File | None
 Files = List[File]
-OptFiles = Optional[Files]
+OptFiles = Files | None
 
 
 class Defaults:

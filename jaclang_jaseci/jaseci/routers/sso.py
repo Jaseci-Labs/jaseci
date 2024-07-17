@@ -1,7 +1,7 @@
 """SSO APIs."""
 
 from os import getenv
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from bson import ObjectId
 
@@ -76,7 +76,7 @@ for platform, cls in SUPPORTED_PLATFORMS.items():
 
 @router.get("/{platform}/{operation}")
 async def sso_operation(
-    platform: str, operation: str, redirect_uri: Optional[str] = None
+    platform: str, operation: str, redirect_uri: str | None = None
 ) -> Response:
     """SSO Login API."""
     if sso := SSO.get(platform):
