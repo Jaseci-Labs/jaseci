@@ -30,7 +30,9 @@ async def did_change(
     """Check syntax on change."""
     await ls.launch_quick_check(file_path := params.text_document.uri)
     if file_path in ls.modules:
-        ls.modules[file_path].update_sem_tokens(params, ls)
+        document = ls.workspace.get_text_document(file_path)
+        lines = document.source.splitlines()
+        ls.modules[file_path].update_sem_tokens(params, lines)
         ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 

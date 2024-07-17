@@ -356,50 +356,6 @@ def get_definition_range(
     return None
 
 
-def locate_affected_token(
-    tokens: list[int],
-    change_start_line: int,
-    change_start_char: int,
-    change_end_line: int,
-    change_end_char: int,
-) -> Optional[int]:
-    """Find in which token change is occurring."""
-    token_index = 0
-    current_line = 0
-    line_char_offset = 0
-
-    while token_index < len(tokens):
-        token_line_delta = tokens[token_index]
-        token_start_char = tokens[token_index + 1]
-        token_length = tokens[token_index + 2]
-
-        if token_line_delta > 0:
-            current_line += token_line_delta
-            line_char_offset = 0
-        token_abs_start_char = line_char_offset + token_start_char
-        token_abs_end_char = token_abs_start_char + token_length
-        if (
-            current_line == change_start_line == change_end_line
-            and token_abs_start_char <= change_start_char
-            and change_end_char <= token_abs_end_char
-        ):
-            return token_index
-        if (
-            current_line == change_start_line
-            and token_abs_start_char <= change_start_char < token_abs_end_char
-        ):
-            return token_index
-        if (
-            current_line == change_end_line
-            and token_abs_start_char < change_end_char <= token_abs_end_char
-        ):
-            return token_index
-
-        line_char_offset += token_start_char
-        token_index += 5
-    return None
-
-
 def collect_all_symbols_in_scope(
     sym_tab: SymbolTable, up_tree: bool = True
 ) -> list[lspt.CompletionItem]:
@@ -550,3 +506,100 @@ def resolve_completion_symbol_table(
         collect_all_symbols_in_scope(current_symbol_table, up_tree=False)
     )
     return completion_items
+
+
+def get_token_start(
+    token_index: int | None, sem_tokens: list[int]
+) -> tuple[int, int, int]:
+    """Return the starting position of a token."""
+    if token_index is None or token_index >= len(sem_tokens):
+        return 0, 0, 0
+
+    current_line = 0
+    current_char = 0
+    current_tok_index = 0
+
+    while current_tok_index < len(sem_tokens):
+        token_line_delta = sem_tokens[current_tok_index]
+        token_start_char = sem_tokens[current_tok_index + 1]
+
+        if token_line_delta > 0:
+            current_line += token_line_delta
+            current_char = 0
+        if current_tok_index == token_index:
+            if token_line_delta > 0:
+                return (
+                    current_line,
+                    token_start_char,
+                    token_start_char + sem_tokens[current_tok_index + 2],
+                )
+            return (
+                current_line,
+                current_char + token_start_char,
+                current_char + token_start_char + sem_tokens[current_tok_index + 2],
+            )
+
+        current_char += token_start_char
+        current_tok_index += 5
+
+    return (
+        current_line,
+        current_char,
+        current_char + sem_tokens[current_tok_index + 2],
+    )
+
+
+def find_surrounding_tokens(
+    change_start_line: int,
+    change_start_char: int,
+    change_end_line: int,
+    change_end_char: int,
+    sem_tokens: list[int],
+) -> tuple[int | None, int | None, bool]:
+    """Find the indices of the previous and next tokens surrounding the change."""
+    prev_token_index = None
+    next_token_index = None
+    inside_tok = False
+    for i, tok in enumerate(
+        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)][0:]
+    ):
+        if (not (prev_token_index is None or next_token_index is None)) and (
+            tok[0] > change_end_line
+            or (tok[0] == change_end_line and tok[1] > change_end_char)
+        ):
+            prev_token_index = i * 5
+            break
+        elif (
+            change_start_line == tok[0] == change_end_line
+            and tok[1] <= change_start_char
+            and tok[2] >= change_end_char
+        ):
+            prev_token_index = i * 5
+            inside_tok = True
+            break
+        elif (tok[0] < change_start_line) or (
+            tok[0] == change_start_line and tok[1] < change_start_char
+        ):
+            prev_token_index = i * 5
+        elif (tok[0] > change_end_line) or (
+            tok[0] == change_end_line and tok[1] > change_end_char
+        ):
+            next_token_index = i * 5
+            break
+
+    return prev_token_index, next_token_index, inside_tok
+
+
+def get_line_of_code(
+    line_number: int, lines: list[str]
+) -> tuple[str | None, int | None]:
+    """Get the line of code, and the first non-space character index."""
+    if 0 <= line_number < len(lines):
+        line = lines[line_number].rstrip("\n")
+        first_non_space = len(line) - len(line.lstrip())
+        return line, (
+            first_non_space + 4
+            if line.strip().endswith(("(", "{", "["))
+            else first_non_space
+        )
+    return None, None

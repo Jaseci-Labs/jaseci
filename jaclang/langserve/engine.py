@@ -19,9 +19,12 @@ from jaclang.langserve.utils import (
     collect_symbols,
     create_range,
     find_node_by_position,
+    find_surrounding_tokens,
     gen_diagnostics,
     get_item_path,
+    get_line_of_code,
     get_mod_path,
+    get_token_start,
     parse_symbol_path,
     resolve_completion_symbol_table,
 )
@@ -89,49 +92,8 @@ class ModuleInfo:
                 tokens += [(line, col_start, col_end, length, node)]
         return tokens
 
-    def get_token_start(self, token_index: int | None) -> tuple[int, int, int]:
-        """Return the starting position of a token."""
-        if token_index is None or token_index >= len(self.sem_tokens):
-            logging.info(f"Token index: {token_index} is None or out of range")
-            return 0, 0, 0
-
-        current_line = 0
-        current_char = 0
-        current_tok_index = 0
-
-        while current_tok_index < len(self.sem_tokens):
-            token_line_delta = self.sem_tokens[current_tok_index]
-            token_start_char = self.sem_tokens[current_tok_index + 1]
-
-            if token_line_delta > 0:
-                current_line += token_line_delta
-                current_char = 0
-            if current_tok_index == token_index:
-                if token_line_delta > 0:
-                    return (
-                        current_line,
-                        token_start_char,
-                        token_start_char + self.sem_tokens[current_tok_index + 2],
-                    )
-                return (
-                    current_line,
-                    current_char + token_start_char,
-                    current_char
-                    + token_start_char
-                    + self.sem_tokens[current_tok_index + 2],
-                )
-
-            current_char += token_start_char
-            current_tok_index += 5
-
-        return (
-            current_line,
-            current_char,
-            current_char + self.sem_tokens[current_tok_index + 2],
-        )
-
     def update_sem_tokens(
-        self, content_changes: lspt.DidChangeTextDocumentParams, ls
+        self, content_changes: lspt.DidChangeTextDocumentParams, lines: List[str]
     ) -> list[int]:
         """Update semantic tokens on change."""
         for change in [
@@ -139,72 +101,25 @@ class ModuleInfo:
             for x in content_changes.content_changes
             if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
         ]:
+            logging.info(f"hmm :  {self.sem_tokens}")
             change_start_line = change.range.start.line
             change_start_char = change.range.start.character
             change_end_line = change.range.end.line
             change_end_char = change.range.end.character
+
             is_delete = change.text == ""
-
-            def find_surrounding_tokens(
-                change_start_line: int,
-                change_start_char: int,
-                change_end_line: int,
-                change_end_char: int,
-            ) -> tuple[int | None, int | None, bool]:
-                """Find the indices of the previous and next tokens surrounding the change."""
-                prev_token_index = None
-                next_token_index = None
-                inside_tok = False
-                for i, tok in enumerate(
-                    [
-                        self.get_token_start(i)
-                        for i in range(0, len(self.sem_tokens), 5)
-                    ][0:]
-                ):
-                    if (
-                        not (prev_token_index is None or next_token_index is None)
-                    ) and (
-                        tok[0] > change_end_line
-                        or (tok[0] == change_end_line and tok[1] > change_end_char)
-                    ):
-                        prev_token_index = i * 5
-                        break
-                    elif (
-                        change_start_line == tok[0] == change_end_line
-                        and tok[1] <= change_start_char
-                        and tok[2] >= change_end_char
-                    ):
-                        prev_token_index = i * 5
-                        inside_tok = True
-                        break
-                    elif (tok[0] < change_start_line) or (
-                        tok[0] == change_start_line and tok[1] < change_start_char
-                    ):
-                        prev_token_index = i * 5
-                    elif (tok[0] > change_end_line) or (
-                        tok[0] == change_end_line and tok[1] > change_end_char
-                    ):
-                        next_token_index = i * 5
-                        break
-
-                return prev_token_index, next_token_index, inside_tok
-
             prev_token_index, next_token_index, insert_inside_token = (
                 find_surrounding_tokens(
                     change_start_line,
                     change_start_char,
                     change_end_line,
                     change_end_char,
+                    self.sem_tokens,
                 )
             )
-            if prev_token_index is None and next_token_index is None:
-                return self.sem_tokens
-            prev_tok_pos = self.get_token_start(prev_token_index)
-            nxt_tok_pos = self.get_token_start(next_token_index)
-            changing_line_text = ls.get_line_of_code(
-                content_changes.text_document.uri, change_start_line
-            )
-            logging.info(f' change is there : {bool(change.text)}')
+            prev_tok_pos = get_token_start(prev_token_index, self.sem_tokens)
+            nxt_tok_pos = get_token_start(next_token_index, self.sem_tokens)
+            changing_line_text = get_line_of_code(change_start_line, lines)
             insert_between_tokens = bool(
                 (
                     change_start_line > prev_tok_pos[0]
@@ -228,27 +143,24 @@ class ModuleInfo:
             text = r"%s" % change.text
             line_delta = len(text.split("\n")) - 1
             multi_line_insertion = line_delta > 0
-            logging.info(f' change : {change}')
-            logging.info(
-                f"""\n\ninsert between tokens   -  {insert_between_tokens}\n 
-                inside tokens     {insert_inside_token} \n multiline     {multi_line_insertion}
-                               isdelete   {is_delete}\n\n"""
-            )
-            logging.info(f' \n\nprev {prev_token_index}  nxt {next_token_index}\n\n')
+            # logging.info(f'''\n\nprev_token_index: {prev_token_index}, next_token_index:
+            # {next_token_index},\n insert_inside_token: {insert_inside_token}, insert_between_tokens:
+            # {insert_between_tokens},\n multi_line_insertion:  {multi_line_insertion}\n\n''')
             if is_delete:
                 next_token_index = (
                     prev_token_index + 5
-                    if insert_inside_token or( next_token_index  and prev_token_index is not None and next_token_index >= 10  and  next_token_index - prev_token_index == 10)
+                    if insert_inside_token
+                    or (
+                        next_token_index
+                        and prev_token_index is not None
+                        and next_token_index >= 10
+                        and next_token_index - prev_token_index == 10
+                    )
                     else next_token_index
                 )
-                nxt_tok_pos = self.get_token_start(next_token_index)
-                logging.info(f"0.1 prev_token_index: {prev_token_index}")
-                logging.info(f"0.2 next_token_index: {next_token_index}")
+                nxt_tok_pos = get_token_start(next_token_index, self.sem_tokens)
                 is_single = change_end_line == change_start_line
                 is_next_token_same_line = change_end_line == nxt_tok_pos[0]
-                logging.info(f"0.5 is_single: {is_single}")
-                logging.info(f"0.6 is_next_token_same_line: {is_next_token_same_line}\n\n")
-
                 if is_single and insert_inside_token:
                     self.sem_tokens[prev_token_index + 2] -= change.range_length
                     if is_next_token_same_line:
@@ -263,41 +175,22 @@ class ModuleInfo:
                         )
                 else:
                     if is_next_token_same_line:
-                        is_delend_startofnexttoken = change_end_char == self.get_token_start(
-                            next_token_index
-                        )[1]
-                        logging.info(
-                            f'change_end_char: {change_end_char} nxt_tok_pos[1]: {self.get_token_start(next_token_index)[1]}'
-                        )
-                        logging.info(
-                            f"0.7 is_delend_startofnexttoken: {is_delend_startofnexttoken}"
-                        )
                         char_del = nxt_tok_pos[1] - change_end_char
                         total_char_del = change_start_char + char_del
-                        logging.info(
-                            f"0.0 {char_del} = {nxt_tok_pos[1]} - {change_end_char}"
-                        )
-                        logging.info(
-                            f"0.0 {total_char_del} = {change_start_char} + {char_del}"
-                        )
                         self.sem_tokens[next_token_index + 1] = (
                             (total_char_del - prev_tok_pos[1])
                             if prev_tok_pos[0] == change_start_line
-                                else total_char_del
+                            else total_char_del
                         )
                     self.sem_tokens[next_token_index] -= (
                         change_end_line - change_start_line
                     )
-                for i in range(0, len(self.sem_tokens), 5):
-                   logging.info(self.sem_tokens[i : i + 5])
-                logging.info(f"\n\n")
                 return self.sem_tokens
 
             if insert_inside_token and prev_token_index is not None:
-                pp=False
+                on_boundary = False
                 for i in ["\n", " ", "\t"]:
                     if i in change.text:
-                        logging.info(f'match found {i}')
                         if prev_tok_pos[1] == change_start_char:
                             if i == "\n":
                                 self.sem_tokens[prev_token_index] += 1
@@ -308,42 +201,36 @@ class ModuleInfo:
                                 self.sem_tokens[prev_token_index + 1] += len(
                                     change.text
                                 )
+
                             return self.sem_tokens
                         else:
-                            pp = True
-                            logging.info(f'guess pilaikathu ')
+                            on_boundary = True
                             next_token_index = prev_token_index + 5
-                            nxt_tok_pos = self.get_token_start(next_token_index)
+                            nxt_tok_pos = get_token_start(
+                                next_token_index, self.sem_tokens
+                            )
                             break
-                if not pp:
-                    logging.info(f'god !!!')
+                if not on_boundary:
                     selected_region = change_end_char - change_start_char
-                    # we need to update the length of the token
+                    index_offset = 2
+                    self.sem_tokens[prev_token_index + index_offset] += (
+                        len(change.text) - selected_region
+                    )
+                    if (
+                        prev_tok_pos[0]
+                        == get_token_start(prev_token_index + 5, self.sem_tokens)[0]
+                    ):
+                        self.sem_tokens[prev_token_index + index_offset + 4] += (
+                            len(change.text) - selected_region
+                        )
 
-                    index_offset = 2 
-                    self.sem_tokens[prev_token_index + index_offset] += len(change.text) - selected_region
-                    if prev_tok_pos[0] == self.get_token_start(prev_token_index + 5)[0]:
-                        self.sem_tokens[prev_token_index + index_offset + 4] += len(
-                            change.text
-                        ) - selected_region
-
-            logging.info(f"change {change}")
             both_tokens_in_same_line = prev_tok_pos[0] == nxt_tok_pos[0]
-            if insert_between_tokens or pp:
+            if insert_between_tokens or on_boundary:
                 if multi_line_insertion:
                     if both_tokens_in_same_line:
-                        changing_line_text[1] = 4 if changing_line_text[2] else changing_line_text[1]
                         char_del = nxt_tok_pos[1] - change_end_char
                         total_char_del = changing_line_text[1] + char_del
-                        logging.info(
-                            f"0.0 {changing_line_text} {char_del} = {nxt_tok_pos[1]} - {change_end_char}"
-                        )
-                        logging.info(
-                            f"0.0 {total_char_del} = {changing_line_text[1]} + {char_del}"
-                        )
-                        logging.info(
-                            f"0.1 total_char_del: {total_char_del} line_delta: {line_delta}"
-                        )
+
                     else:
                         is_prev_token_same_line = change_end_line == prev_tok_pos[0]
                         is_next_token_same_line = change_start_line == nxt_tok_pos[0]
@@ -355,13 +242,9 @@ class ModuleInfo:
                         else:
                             total_char_del = self.sem_tokens[next_token_index + 1]
                             line_delta -= change_end_line - change_start_line
-                        logging.info(
-                            f"0.2 total_char_del: {total_char_del} line_delta: {line_delta}"
-                        )
                     self.sem_tokens[next_token_index + 1] = total_char_del
                     self.sem_tokens[next_token_index] += line_delta
                 else:
-                    logging.info(f"0.4 line_delta: {line_delta}")
                     if both_tokens_in_same_line:
                         self.sem_tokens[next_token_index + 1] += len(change.text)
                         self.sem_tokens[next_token_index] += line_delta
@@ -384,19 +267,6 @@ class JacLangServer(LanguageServer):
         self.modules: dict[str, ModuleInfo] = {}
         self.executor = ThreadPoolExecutor()
         self.tasks: dict[str, asyncio.Task] = {}
-
-    def get_line_of_code(
-        self, file_path: str, line_number: int
-    ) -> Optional[list[str | None, int | None, int | None]]:
-        """Return the line of code , first non-space character position and bool (whether it ends with curly brace) before space."""  
-        document = self.workspace.get_text_document(file_path)
-        lines = document.source.splitlines()
-        if 0 <= line_number < len(lines):
-            line = lines[line_number].rstrip("\n")
-            first_non_space_char_pos = len(line) - len(line.lstrip())
-            return [line, first_non_space_char_pos, line.strip().endswith('{')]
-
-        return [None, None , None]
 
     def update_modules(
         self, file_path: str, build: Pass, refresh: bool = False
@@ -578,10 +448,7 @@ class JacLangServer(LanguageServer):
         """Find index."""
         index = None
         for i, j in enumerate(
-            [
-                self.modules[file_path].get_token_start(i)
-                for i in range(0, len(sem_tokens), 5)
-            ]
+            [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
         ):
             if j[0] == line and j[1] <= char <= j[2]:
                 return i
