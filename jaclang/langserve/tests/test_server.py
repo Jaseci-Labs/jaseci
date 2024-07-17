@@ -137,30 +137,29 @@ class TestJacLangServer(TestCase):
             str(lsp.get_definition(guess_game_file, lspt.Position(46, 45))),
         )
 
-    # WHY IS THIS TEST HANGING?
-    # def test_go_to_definition_method_manual_impl(self) -> None:
-    #     """Test that the go to definition is correct."""
-    #     lsp = JacLangServer()
-    #     workspace_path = self.fixture_abs_path("")
-    #     workspace = Workspace(workspace_path, lsp)
-    #     lsp.lsp._workspace = workspace
-    #     decldef_file = uris.from_fs_path(
-    #         self.examples_abs_path("micro/decl_defs_impl.jac")
-    #     )
-    #     lsp.deep_check(decldef_file)
-    #     self.assertNotIn(
-    #         "decl_defs_main.jac:8:8-8:17",
-    #         str(lsp.get_definition(decldef_file, lspt.Position(2, 24))),
-    #     )
-    #     decldef_main_file = uris.from_fs_path(
-    #         self.examples_abs_path("micro/decl_defs_impl.jac")
-    #     )
-    #     lsp.deep_check(decldef_main_file)
-    #     lsp.deep_check(decldef_file)
-    #     self.assertIn(
-    #         "decl_defs_main.jac:8:8-8:17",
-    #         str(lsp.get_definition(decldef_file, lspt.Position(2, 24))),
-    #     )
+    def test_go_to_definition_method_manual_impl(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        decldef_file = uris.from_fs_path(
+            self.examples_abs_path("micro/decl_defs_impl.jac")
+        )
+        lsp.deep_check(decldef_file)
+        self.assertNotIn(
+            "decl_defs_main.jac:8:8-8:17",
+            str(lsp.get_definition(decldef_file, lspt.Position(2, 24))),
+        )
+        decldef_main_file = uris.from_fs_path(
+            self.examples_abs_path("micro/decl_defs_main.jac")
+        )
+        lsp.deep_check(decldef_main_file)
+        lsp.deep_check(decldef_file)
+        self.assertIn(
+            "decl_defs_main.jac:8:8-8:17",
+            str(lsp.get_definition(decldef_file, lspt.Position(2, 24))),
+        )
 
     def test_test_annex(self) -> None:
         """Test that the server doesn't run if there is a syntax error."""
