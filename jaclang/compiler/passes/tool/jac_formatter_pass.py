@@ -212,7 +212,7 @@ class JacFormatPass(Pass):
         items: list[T],
         """
         prev_token = None
-        for i, stmt in enumerate(node.kid):
+        for stmt in node.kid:
             if isinstance(node.parent, (ast.EnumDef, ast.Enum)) and stmt.gen.jac == ",":
                 self.indent_level -= 1
                 self.emit_ln(node, f"{stmt.gen.jac}")
@@ -240,27 +240,10 @@ class JacFormatPass(Pass):
                 elif stmt.name == Tok.RBRACE:
                     if self.indent_level > 0:
                         self.indent_level -= 1
-                    if (stmt.parent and stmt.parent.gen.jac.strip() == "{") or (
-                        stmt.parent
-                        and stmt.parent.parent
-                        and isinstance(
-                            stmt.parent.parent,
-                            (ast.ElseIf, ast.IfStmt, ast.IterForStmt, ast.TryStmt),
-                        )
-                    ):
+                    if stmt.parent and stmt.parent.gen.jac.strip() == "{":
                         self.emit(node, f"{stmt.value}")
                     else:
-                        next_kid = (
-                            node.kid[i + 1]
-                            if i < (len(node.kid) - 1)
-                            else ast.EmptyToken()
-                        )
-                        if (
-                            isinstance(next_kid, ast.CommentToken)
-                            and next_kid.is_inline
-                        ):
-                            self.emit(node, f" {stmt.value}")
-                        elif not (node.gen.jac).endswith("\n"):
+                        if not (node.gen.jac).endswith("\n"):
                             self.emit_ln(node, "")
                             self.emit(node, f"{stmt.value}")
                         else:
