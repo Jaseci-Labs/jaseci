@@ -621,6 +621,7 @@ class Module(AstDocNode):
         doc: Optional[String],
         body: Sequence[ElementStmt | String | EmptyToken],
         is_imported: bool,
+        terminals: list[Token],
         kid: Sequence[AstNode],
         stub_only: bool = False,
         registry: Optional[SemRegistry] = None,
@@ -635,6 +636,7 @@ class Module(AstDocNode):
         self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
         self.registry = registry
+        self.terminals: list[Token] = terminals
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -642,15 +644,15 @@ class Module(AstDocNode):
     def annexable_by(self) -> Optional[str]:
         """Get annexable by."""
         if not self.stub_only and (
-            self.loc.mod_path.endswith("impl.jac")
-            or self.loc.mod_path.endswith("test.jac")
+            self.loc.mod_path.endswith(".impl.jac")
+            or self.loc.mod_path.endswith(".test.jac")
         ):
             head_mod_name = self.name.split(".")[0]
             potential_path = os.path.join(
                 os.path.dirname(self.loc.mod_path),
                 f"{head_mod_name}.jac",
             )
-            if os.path.exists(potential_path):
+            if os.path.exists(potential_path) and potential_path != self.loc.mod_path:
                 return potential_path
             annex_dir = os.path.split(os.path.dirname(self.loc.mod_path))[-1]
             if annex_dir.endswith(".impl") or annex_dir.endswith(".test"):
@@ -661,7 +663,10 @@ class Module(AstDocNode):
                     os.path.dirname(os.path.dirname(self.loc.mod_path)),
                     f"{head_mod_name}.jac",
                 )
-                if os.path.exists(potential_path):
+                if (
+                    os.path.exists(potential_path)
+                    and potential_path != self.loc.mod_path
+                ):
                     return potential_path
         return None
 

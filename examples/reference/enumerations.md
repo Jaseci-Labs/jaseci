@@ -1,0 +1,3 @@
+Jac has enumerations directly in the language. The `enum Color` defines an enumeration called `Color`, which includes two members: `RED` assigned the value `1` and `pencil` which implicitly takes the next integer value, `2` (effectively the same as a typical `pencil = auto()` in Python's enum).
+
+The entry point of the program is defined with `with entry`, which serves as the main function or starting point for execution. Inside this block, the code prints the value of the `RED` enumeration member using `print(Color.RED.value);`. Since `RED` is assigned the value `1`, this statement will output `1` to the console when the program runs.
