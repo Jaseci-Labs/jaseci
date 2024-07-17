@@ -27,6 +27,22 @@ class JacFormatPass(Pass):
         node.gen.jac = ""
         super().enter_node(node)
 
+    def token_before(self, node: ast.Token) -> Optional[ast.Token]:
+        """Token before."""
+        if not isinstance(self.ir, ast.Module):
+            raise self.ice("IR must be module. Impossible")
+        if self.ir.terminals.index(node) == 0:
+            return None
+        return self.ir.terminals[self.ir.terminals.index(node) - 1]
+
+    def token_after(self, node: ast.Token) -> Optional[ast.Token]:
+        """Token after."""
+        if not isinstance(self.ir, ast.Module):
+            raise self.ice("IR must be module. Impossible")
+        if self.ir.terminals.index(node) == len(self.ir.terminals) - 1:
+            return None
+        return self.ir.terminals[self.ir.terminals.index(node) + 1]
+
     def indent_str(self) -> str:
         """Return string for indent."""
         return " " * self.indent_size * self.indent_level
@@ -220,11 +236,7 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                     self.indent_level += 1
                 if stmt.name == Tok.LBRACE:
-                    next_kid = node.kid[i + 1]
-                    if isinstance(next_kid, ast.CommentToken) and next_kid.is_inline:
-                        self.emit(node, f" {stmt.value}")
-                    else:
-                        self.emit(node, f" {stmt.value}")
+                    self.emit(node, f" {stmt.value}")
                 elif stmt.name == Tok.RBRACE:
                     if self.indent_level > 0:
                         self.indent_level -= 1
@@ -1392,8 +1404,12 @@ class JacFormatPass(Pass):
                     self.emit(node, i.gen.jac)
                     if isinstance(prev_token, ast.Semi):
                         self.emit_ln(node, "")
+                elif (tok := self.token_before(i)) and (i.line_no - tok.line_no > 1):
+                    self.emit_ln(node, "")
+                    self.emit_ln(node, i.gen.jac)
                 else:
                     self.emit_ln(node, i.gen.jac)
+                    self.emit_ln(node, "")
             elif isinstance(i, ast.Semi):
                 self.emit(node, f"{i.gen.jac} ")
             elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):

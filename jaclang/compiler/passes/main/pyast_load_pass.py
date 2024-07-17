@@ -124,6 +124,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             source=ast.JacSource("", mod_path=self.mod_path),
             doc=doc_str,
             body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
+            terminals=[],
             is_imported=False,
             kid=valid,
         )
