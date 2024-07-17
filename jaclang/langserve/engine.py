@@ -46,9 +46,9 @@ class ModuleInfo:
         self.ir = ir
         self.impl_parent: Optional[ModuleInfo] = impl_parent
         self.sem_tokens: list[int] = self.gen_sem_tokens()
-        self.static_sem_tokens: List[Tuple[int, int, int, int, ast.AstSymbolNode]] = (
-            self.gen_sem_tok_node()
-        )
+        self.static_sem_tokens: List[
+            Tuple[lspt.Position, int, int, ast.AstSymbolNode]
+        ] = self.gen_sem_tok_node()
 
     @property
     def uri(self) -> str:
@@ -76,9 +76,11 @@ class ModuleInfo:
                 prev_line, prev_col = line, col_start
         return tokens
 
-    def gen_sem_tok_node(self) -> List[Tuple[int, int, int, int, ast.AstSymbolNode]]:
+    def gen_sem_tok_node(
+        self,
+    ) -> List[Tuple[lspt.Position, int, int, ast.AstSymbolNode]]:
         """Return semantic tokens."""
-        tokens: List[Tuple[int, int, int, int, ast.AstSymbolNode]] = []
+        tokens: List[Tuple[lspt.Position, int, int, ast.AstSymbolNode]] = []
         for node in self.ir._in_mod_nodes:
             if isinstance(node, ast.NameAtom) and node.sem_token:
                 line, col_start, col_end = (
@@ -87,7 +89,8 @@ class ModuleInfo:
                     node.loc.col_end - 1,
                 )
                 length = col_end - col_start
-                tokens += [(line, col_start, col_end, length, node)]
+                pos = lspt.Position(line, col_start)
+                tokens += [(pos, col_end, length, node)]
         return tokens
 
     def update_sem_tokens(
@@ -456,7 +459,7 @@ class JacLangServer(LanguageServer):
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].static_sem_tokens[token_index][4]
+        node_selected = self.modules[file_path].static_sem_tokens[token_index][3]
         value = self.get_node_info(node_selected) if node_selected else None
         if value:
             return lspt.Hover(
@@ -509,7 +512,7 @@ class JacLangServer(LanguageServer):
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].static_sem_tokens[token_index][4]
+        node_selected = self.modules[file_path].static_sem_tokens[token_index][3]
         if node_selected:
             if (
                 isinstance(node_selected, ast.Name)
@@ -584,7 +587,7 @@ class JacLangServer(LanguageServer):
         )
         if index1 is None:
             return []
-        node_selected = self.modules[file_path].static_sem_tokens[index1][4]
+        node_selected = self.modules[file_path].static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
             list_of_references: list[lspt.Location] = [
                 lspt.Location(
