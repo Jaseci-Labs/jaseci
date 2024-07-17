@@ -13,7 +13,6 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
-from jaclang.compiler.passes.transform import Alert
 from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
     collect_symbols,
@@ -40,13 +39,11 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        errors: list[Alert],
-        warnings: list[Alert],
-        parent: Optional[ModuleInfo] = None,
+        impl_parent: Optional[ModuleInfo] = None,
     ) -> None:
         """Initialize module info."""
         self.ir = ir
-        self.parent: Optional[ModuleInfo] = parent
+        self.impl_parent: Optional[ModuleInfo] = impl_parent
         self.sem_tokens: list[int] = self.gen_sem_tokens()
         self.static_sem_tokens: List[Tuple[int, int, int, int, ast.AstSymbolNode]] = (
             self.gen_sem_tok_node()
@@ -291,29 +288,17 @@ class JacLangServer(LanguageServer):
         if not isinstance(build.ir, ast.Module):
             self.log_error("Error with module build.")
             return
-        self.modules[file_path] = ModuleInfo(
-            ir=build.ir,
-            errors=[
-                i
-                for i in build.errors_had
-                if i.loc.mod_path == uris.to_fs_path(file_path)
-            ],
-            warnings=[
-                i
-                for i in build.warnings_had
-                if i.loc.mod_path == uris.to_fs_path(file_path)
-            ],
+        keep_parent = (
+            self.modules[file_path].impl_parent if file_path in self.modules else None
         )
+        self.modules[file_path] = ModuleInfo(ir=build.ir, impl_parent=keep_parent)
         for p in build.ir.mod_deps.keys():
             uri = uris.from_fs_path(p)
-            self.modules[uri] = ModuleInfo(
-                ir=build.ir.mod_deps[p],
-                errors=[i for i in build.errors_had if i.loc.mod_path == p],
-                warnings=[i for i in build.warnings_had if i.loc.mod_path == p],
-            )
-            self.modules[uri].parent = (
-                self.modules[file_path] if file_path != uri else None
-            )
+            if file_path != uri:
+                self.modules[uri] = ModuleInfo(
+                    ir=build.ir.mod_deps[p],
+                    impl_parent=self.modules[file_path],
+                )
 
     def quick_check(self, file_path: str) -> bool:
         """Rebuild a file."""
@@ -335,6 +320,12 @@ class JacLangServer(LanguageServer):
         """Rebuild a file and its dependencies."""
         try:
             document = self.workspace.get_text_document(file_path)
+            if file_path in self.modules and (
+                parent := self.modules[file_path].impl_parent
+            ):
+                return self.deep_check(
+                    uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
+                )
             build = jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
@@ -345,6 +336,7 @@ class JacLangServer(LanguageServer):
                 return self.deep_check(
                     uris.from_fs_path(discover), annex_view=file_path
                 )
+
             self.publish_diagnostics(
                 file_path,
                 gen_diagnostics(

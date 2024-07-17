@@ -7,7 +7,7 @@ def print_base_classes(cls: type) -> type:
 
 
 @jac.make_obj(on_entry=[], on_exit=[])
-class Animal(jac.Obj):
+class Animal:
     pass
 
 
@@ -18,21 +18,21 @@ class Domesticated(jac.Obj):
 
 @print_base_classes
 @jac.make_node(on_entry=[], on_exit=[])
-class Mammal(Animal, Domesticated, jac.Node):
+class Pet(Animal, Domesticated, jac.Node):
     pass
 
 
 @jac.make_walker(on_entry=[], on_exit=[])
-class Dog(Mammal, jac.Walker):
+class Person(Animal, jac.Walker):
     pass
 
 
 @jac.make_walker(on_entry=[], on_exit=[])
-class Labrador(Dog, jac.Walker):
+class Feeder(Person, jac.Walker):
     pass
 
 
 @print_base_classes
 @jac.make_walker(on_entry=[], on_exit=[])
-class DecoratedLabrador(Labrador, jac.Walker):
+class Zoologist(Feeder, jac.Walker):
     pass

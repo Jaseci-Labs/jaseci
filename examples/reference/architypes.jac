@@ -3,16 +3,16 @@ can print_base_classes(cls: type) -> type {
     return cls;
 }
 
-obj Animal {}
+class Animal {}
 
 obj Domesticated {}
 
 @print_base_classes
-node Mammal :Animal, Domesticated: {}
+node Pet :Animal, Domesticated: {}
 
-walker Dog :Mammal: {}
+walker Person :Animal: {}
 
-walker Labrador :Dog: {}
+walker Feeder :Person: {}
 
 @print_base_classes
-walker DecoratedLabrador :Labrador: {}
+walker Zoologist :Feeder: {}
