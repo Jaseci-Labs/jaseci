@@ -535,13 +535,13 @@ class JacLangServer(LanguageServer):
             ):
                 path_range = get_item_path(node_selected.parent)
                 if path_range:
-                    path, range = path_range
-                    if path and range:
+                    path, loc_range = path_range
+                    if path and loc_range:
                         return lspt.Location(
                             uri=uris.from_fs_path(path),
                             range=lspt.Range(
-                                start=lspt.Position(line=range[0], character=0),
-                                end=lspt.Position(line=range[1], character=5),
+                                start=lspt.Position(line=loc_range[0], character=0),
+                                end=lspt.Position(line=loc_range[1], character=5),
                             ),
                         )
                 else:
