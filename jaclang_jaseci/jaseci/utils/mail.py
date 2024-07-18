@@ -51,6 +51,11 @@ class Emailer:
         """Send Verification Code."""
         raise Exception("send_verification_code not implemented yet.")
 
+    @classmethod
+    def send_reset_code(cls, code: str, email: str) -> None:
+        """Send Verification Code."""
+        raise Exception("send_reset_code not implemented yet.")
+
 
 class SendGridEmailer(Emailer):
     """SendGrid Handler."""
@@ -70,7 +75,7 @@ class SendGridEmailer(Emailer):
         subject: str,
         recipients: list[dict],
         content: list[dict],
-        sender: str = "no-reply@jac-lang.org",
+        sender: str = "no-reply@proptech.ph",
     ) -> None:
         """Send Email."""
         if client := cast(SendGridAPIClient, cls.get_client()):
@@ -97,6 +102,25 @@ class SendGridEmailer(Emailer):
                 {
                     "type": "text/html",
                     "value": f'{code}<br><a href="{url}">Verify</a>',
+                },
+            ],
+        )
+
+    @classmethod
+    def send_reset_code(cls, code: str, email: str) -> None:
+        """Send Reset Code."""
+        url = f"{cls.__host__}/reset_password?code={code}"
+        cls.send_email(
+            subject="Password Reset",
+            recipients=[{"email": email}],
+            content=[
+                {
+                    "type": "text/plain",
+                    "value": f"{code}\n\n{url}",
+                },
+                {
+                    "type": "text/html",
+                    "value": f'{code}<br><a href="{url}">Reset Password</a>',
                 },
             ],
         )

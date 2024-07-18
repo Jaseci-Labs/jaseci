@@ -4,27 +4,20 @@ from copy import copy, deepcopy
 from dataclasses import asdict, dataclass, field, is_dataclass
 from inspect import iscoroutine
 from re import IGNORECASE, compile
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Iterable,
-    Mapping,
-    TypeVar,
-    cast,
-)
+from typing import Any, Callable, ClassVar, Iterable, Mapping, Type, TypeVar, cast
 
 from bson import ObjectId
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.architype import (
+from jaclang.runtimelib.architype import (
     Anchor as _Anchor,
     AnchorType,
     Architype as _Architype,
     DSFunc,
     Permission,
+    populate_dataclasses,
 )
-from jaclang.core.utils import collect_node_connections
+from jaclang.runtimelib.utils import collect_node_connections
 
 from motor.motor_asyncio import AsyncIOMotorClientSession
 
@@ -449,9 +442,6 @@ class NodeAnchor(Anchor):
     architype: "NodeArchitype | None" = None
     edges: list["EdgeAnchor"] = field(default_factory=list)
 
-    edges_hashes: dict[str, int] = field(default_factory=dict)
-    architype_hashes: dict[str, int] = field(default_factory=dict)
-
     class Collection(BaseCollection["NodeAnchor"]):
         """NodeAnchor collection interface."""
 
@@ -473,8 +463,9 @@ class NodeAnchor(Anchor):
                 hashes={key: hash(dumps(val)) for key, val in architype.items()},
                 **doc,
             )
-            anchor.architype = NodeArchitype.get(doc.get("name") or "Root")(
-                __jac__=anchor, **architype
+            architype_cls = NodeArchitype.__get_class__(doc.get("name") or "Root")
+            anchor.architype = architype_cls(
+                __jac__=anchor, **populate_dataclasses(architype_cls, architype)
             )
             anchor.sync_hash()
             return anchor
@@ -521,7 +512,7 @@ class NodeAnchor(Anchor):
         self,
         dir: EdgeDir,
         filter_func: Callable[[list["EdgeArchitype"]], list["EdgeArchitype"]] | None,
-        target_obj: list["NodeArchitype"] | None,
+        target_cls: list[Type["NodeArchitype"]] | None,
     ) -> list["EdgeArchitype"]:
         """Get edges connected to this node."""
         ret_edges: list[EdgeArchitype] = []
@@ -539,7 +530,7 @@ class NodeAnchor(Anchor):
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
                     and trg_arch
-                    and (not target_obj or trg_arch in target_obj)
+                    and (not target_cls or trg_arch.__class__ in target_cls)
                     and source.has_read_access(target)
                 ):
                     ret_edges.append(architype)
@@ -547,7 +538,7 @@ class NodeAnchor(Anchor):
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
                     and src_arch
-                    and (not target_obj or src_arch in target_obj)
+                    and (not target_cls or src_arch.__class__ in target_cls)
                     and target.has_read_access(source)
                 ):
                     ret_edges.append(architype)
@@ -557,7 +548,7 @@ class NodeAnchor(Anchor):
         self,
         dir: EdgeDir,
         filter_func: Callable[[list["EdgeArchitype"]], list["EdgeArchitype"]] | None,
-        target_obj: list["NodeArchitype"] | None,
+        target_cls: list[Type["NodeArchitype"]] | None,
     ) -> list["NodeArchitype"]:
         """Get set of nodes connected to this node."""
         ret_edges: list[NodeArchitype] = []
@@ -575,7 +566,7 @@ class NodeAnchor(Anchor):
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
                     and trg_arch
-                    and (not target_obj or trg_arch in target_obj)
+                    and (not target_cls or trg_arch.__class__ in target_cls)
                     and source.has_read_access(target)
                 ):
                     ret_edges.append(trg_arch)
@@ -583,11 +574,18 @@ class NodeAnchor(Anchor):
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
                     and src_arch
-                    and (not target_obj or src_arch in target_obj)
+                    and (not target_cls or src_arch.__class__ in target_cls)
                     and target.has_read_access(source)
                 ):
                     ret_edges.append(src_arch)
         return ret_edges
+
+    def remove_edge(self, edge: "EdgeAnchor") -> None:
+        """Remove reference without checking sync status."""
+        for idx, ed in enumerate(self.edges):
+            if ed.id == edge.id:
+                self.edges.pop(idx)
+                break
 
     def gen_dot(self, dot_file: str | None = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
@@ -656,9 +654,13 @@ class EdgeAnchor(Anchor):
                 hashes={key: hash(dumps(val)) for key, val in architype.items()},
                 **doc,
             )
-            anchor.architype = EdgeArchitype.get(doc.get("name") or "GenericEdge")(
-                __jac__=anchor, **architype
+            architype_cls = EdgeArchitype.__get_class__(
+                doc.get("name") or "GenericEdge"
             )
+            anchor.architype = architype_cls(
+                __jac__=anchor, **populate_dataclasses(architype_cls, architype)
+            )
+            anchor.sync_hash()
             return anchor
 
     @classmethod
@@ -721,10 +723,10 @@ class EdgeAnchor(Anchor):
     def detach(self) -> None:
         """Detach edge from nodes."""
         if source := self.source:
-            source.edges.remove(self)
+            source.remove_edge(self)
             source.disconnect_edge(self)
         if target := self.target:
-            target.edges.remove(self)
+            target.remove_edge(self)
             target.disconnect_edge(self)
 
         self.source = None
@@ -779,8 +781,9 @@ class WalkerAnchor(Anchor):
                 hashes={key: hash(dumps(val)) for key, val in architype.items()},
                 **doc,
             )
-            anchor.architype = WalkerArchitype.get(doc.get("name") or "")(
-                __jac__=anchor, **architype
+            architype_cls = WalkerArchitype.__get_class__(doc.get("name") or "")
+            anchor.architype = architype_cls(
+                __jac__=anchor, **populate_dataclasses(architype_cls, architype)
             )
             anchor.sync_hash()
             return anchor
@@ -962,11 +965,12 @@ class WalkerArchitype(Architype):
         return f"w:{cls.__name__}"
 
 
+@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_: list[DSFunc] = []
-    _jac_exit_funcs_: list[DSFunc] = []
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
 
     def __init__(self, __jac__: EdgeAnchor | None = None) -> None:
         """Create walker architype."""
@@ -974,21 +978,14 @@ class GenericEdge(EdgeArchitype):
         self.__jac__.allocate()
 
 
+@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_: list[DSFunc] = []
-    _jac_exit_funcs_: list[DSFunc] = []
-    reachable_nodes: list[NodeArchitype] = []
-    connections: set[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = set()
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
 
     def __init__(self, __jac__: NodeAnchor | None = None) -> None:
         """Create walker architype."""
         self.__jac__ = __jac__ or NodeAnchor(architype=self)
         self.__jac__.allocate()
-
-    def reset(self) -> None:
-        """Reset the root."""
-        self.reachable_nodes = []
-        self.connections = set()
-        self.__jac__.edges = []

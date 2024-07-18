@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Callable, Generator, Type
 
 from bson import ObjectId
 
-from jaclang.core.architype import MANUAL_SAVE
+from jaclang.runtimelib.architype import MANUAL_SAVE
 
 
 from motor.motor_asyncio import AsyncIOMotorClientSession

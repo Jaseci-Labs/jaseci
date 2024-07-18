@@ -1,6 +1,7 @@
 """Core constructs for Jac Language."""
 
 from contextvars import ContextVar
+from dataclasses import asdict, is_dataclass
 from os import getenv
 from typing import Any, Callable, cast
 
@@ -40,8 +41,9 @@ class JaseciContext:
         self.super_root = await self.load(
             NodeAnchor(id=SUPER_ROOT), self.generate_super_root
         )
-        self.root = getattr(request, "_root", None) or await self.load(
-            NodeAnchor(id=PUBLIC_ROOT), self.generate_public_root
+        self.root = await self.load(
+            getattr(request, "_root", None) or NodeAnchor(id=PUBLIC_ROOT),
+            self.generate_public_root,
         )
         self.entry = await self.load(entry, self.root)
 
@@ -67,11 +69,14 @@ class JaseciContext:
         default: NodeAnchor | Callable[[], NodeAnchor],
     ) -> NodeAnchor:
         """Load initial anchors."""
-        if anchor and (
-            _anchor := await self.datasource.find_one(AnchorType.node, anchor.id)
-        ):
-            anchor.__dict__.update(_anchor.__dict__)
-            anchor.current_access_level = 2
+        if anchor:
+            if not anchor.connected and (
+                _anchor := await self.datasource.find_one(AnchorType.node, anchor.id)
+            ):
+                anchor.__dict__.update(_anchor.__dict__)
+                anchor.current_access_level = 2
+            else:
+                self.datasource.set(anchor)
         else:
             anchor = default() if callable(default) else default
         return anchor
@@ -97,14 +102,11 @@ class JaseciContext:
 
         if self.reports:
             for key, val in enumerate(self.reports):
-                match val:
-                    case Anchor():
-                        self.reports[key] = val.report()
-                    case Architype():
-                        self.reports[key] = val.__jac__.report()
-                    case _:
-                        self.clean_response(key, val, self.reports)
+                self.clean_response(key, val, self.reports)
             resp["reports"] = self.reports
+
+        for key, val in enumerate(returns):
+            self.clean_response(key, val, returns)
 
         if not SHOW_ENDPOINT_RETURNS:
             resp.pop("returns")
@@ -126,5 +128,7 @@ class JaseciContext:
                 cast(dict, obj)[key] = val.report()
             case Architype():
                 cast(dict, obj)[key] = val.__jac__.report()
+            case val if is_dataclass(val) and not isinstance(val, type):
+                cast(dict, obj)[key] = asdict(val)
             case _:
                 pass

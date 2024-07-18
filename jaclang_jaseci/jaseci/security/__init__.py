@@ -36,11 +36,12 @@ def decrypt(token: str) -> dict | None:
         return None
 
 
-async def create_code(user_id: ObjectId) -> str:
+async def create_code(user_id: ObjectId, reset: bool = False) -> str:
     """Generate Verification Code."""
     verification = encrypt(
         {
             "user_id": str(user_id),
+            "reset": reset,
             "expiration": utc_timestamp(
                 hours=int(getenv("VERIFICATION_TIMEOUT") or "24")
             ),
@@ -51,14 +52,16 @@ async def create_code(user_id: ObjectId) -> str:
     raise HTTPException(500, "Verification Creation Failed!")
 
 
-async def verify_code(code: str) -> str | None:
+async def verify_code(code: str, reset: bool = False) -> str | None:
     """Verify Code."""
     decrypted = decrypt(code)
     if (
         decrypted
+        and decrypted["reset"] == reset
         and decrypted["expiration"] > utc_timestamp()
         and await CodeRedis.hget(key=code)
     ):
+        await CodeRedis.hdelete(code)
         return decrypted["user_id"]
     return None
 
@@ -68,9 +71,14 @@ async def create_token(user: dict[str, Any]) -> str:
     user["expiration"] = utc_timestamp(hours=int(getenv("TOKEN_TIMEOUT") or "12"))
     user["state"] = random_string(8)
     token = encrypt(user)
-    if await TokenRedis.hset(key=token, data=True):
+    if await TokenRedis.hset(f"{user['id']}:{token}", True):
         return token
     raise HTTPException(500, "Token Creation Failed!")
+
+
+async def invalidate_token(user_id: str) -> None:
+    """Invalidate token of current user."""
+    await TokenRedis.hdelete_rgx(f"{user_id}:*")
 
 
 async def authenticate(request: Request) -> None:
@@ -82,7 +90,7 @@ async def authenticate(request: Request) -> None:
         if (
             decrypted
             and decrypted["expiration"] > utc_timestamp()
-            and await TokenRedis.hget(key=token)
+            and await TokenRedis.hget(f"{decrypted['id']}:{token}")
             and (user := await User.Collection.find_by_id(decrypted["id"]))
             and (root := await NodeAnchor.Collection.find_by_id(user.root_id))
         ):

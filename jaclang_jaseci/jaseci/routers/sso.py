@@ -25,7 +25,7 @@ from fastapi_sso.sso.twitter import TwitterSSO
 from fastapi_sso.sso.yandex import YandexSSO
 
 from ..dtos import AttachSSO, DetachSSO
-from ..models import NULL_BYTES, User as BaseUser
+from ..models import NO_PASSWORD, User as BaseUser
 from ..security import authenticator, create_code, create_token
 from ..utils import logger
 from ...core.context import JaseciContext, NodeAnchor, Root
@@ -205,7 +205,7 @@ async def register(request: Request, platform: str, open_id: OpenID) -> Response
 
                 ureq: dict[str, object] = User.register_type()(
                     email=f"{anchor.id}-sso@jac-lang.org",
-                    password=NULL_BYTES,
+                    password=NO_PASSWORD,
                     **User.sso_mapper(open_id),
                 ).obfuscate()
                 ureq["root_id"] = anchor.id

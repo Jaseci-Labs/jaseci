@@ -7,7 +7,7 @@ setup(
     version="2.0.0",
     packages=find_packages(include=["jaclang_jaseci", "jaclang_jaseci.*"]),
     install_requires=[
-        "jaclang==0.7.9",
+        "jaclang==0.7.15",
         "fastapi==0.111.0",
         "pydantic==2.8.2",
         "pymongo==4.8.0",
@@ -25,7 +25,6 @@ setup(
         "python-multipart==0.0.9",
         "httpx==0.27.0",
         "sendgrid==6.11.0",
-        "nest-asyncio==1.6.0",
         "fastapi-sso==0.15.0",
     ],
     package_data={},

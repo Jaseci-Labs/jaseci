@@ -3,6 +3,7 @@
 from collections import OrderedDict
 from dataclasses import Field, _MISSING_TYPE, is_dataclass
 from functools import wraps
+from inspect import iscoroutinefunction
 from os import getenv
 from pydoc import locate
 from re import compile
@@ -11,7 +12,9 @@ from typing import Any, Callable, Type, TypeVar, cast
 from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 from fastapi.responses import ORJSONResponse
 
+from jaclang.compiler.absyntree import AstAsyncNode
 from jaclang.compiler.constant import EdgeDir
+from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.plugin.default import hookimpl
 from jaclang.plugin.feature import JacFeature as Jac
 
@@ -405,7 +408,7 @@ class JacPlugin:
     @hookimpl
     async def edge_ref(
         node_obj: NodeArchitype | list[NodeArchitype],
-        target_obj: NodeArchitype | list[NodeArchitype] | None,
+        target_cls: Type[NodeArchitype] | list[Type[NodeArchitype]] | None,
         dir: EdgeDir,
         filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
         edges_only: bool,
@@ -413,16 +416,14 @@ class JacPlugin:
         """Jac's apply_dir stmt feature."""
         if isinstance(node_obj, NodeArchitype):
             node_obj = [node_obj]
-        targ_obj_set: list[NodeArchitype] | None = (
-            [target_obj]
-            if isinstance(target_obj, NodeArchitype)
-            else target_obj if target_obj else None
+        targ_cls_set: list[Type[NodeArchitype]] | None = (
+            [target_cls] if isinstance(target_cls, type) else target_cls
         )
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
                 connected_edges += await node.__jac__.get_edges(
-                    dir, filter_func, target_obj=targ_obj_set
+                    dir, filter_func, target_cls=targ_cls_set
                 )
             return list(set(connected_edges))
         else:
@@ -430,7 +431,7 @@ class JacPlugin:
             for node in node_obj:
                 connected_nodes.extend(
                     await node.__jac__.edges_to_nodes(
-                        dir, filter_func, target_obj=targ_obj_set
+                        dir, filter_func, target_cls=targ_cls_set
                     )
                 )
             return list(set(connected_nodes))
@@ -548,3 +549,18 @@ Jac.Obj = Architype  # type: ignore[assignment]
 Jac.Node = NodeArchitype  # type: ignore[assignment]
 Jac.Edge = EdgeArchitype  # type: ignore[assignment]
 Jac.Walker = WalkerArchitype  # type: ignore[assignment]
+
+
+def overrided_init(self: AstAsyncNode, is_async: bool) -> None:
+    """Initialize ast."""
+    self.is_async = True
+
+
+AstAsyncNode.__init__ = overrided_init  # type: ignore[method-assign]
+PyastGenPass.set(
+    [
+        name
+        for name, func in JacPlugin.__dict__.items()
+        if isinstance(func, staticmethod) and iscoroutinefunction(func.__func__)
+    ]
+)

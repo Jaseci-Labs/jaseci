@@ -125,6 +125,18 @@ class Redis:
             logger.exception(f"Error deleting key {keys} from {cls.__table__}")
             return False
 
+    @classmethod
+    async def hdelete_rgx(cls, key: str) -> bool:
+        """Delete via key pattern from group."""
+        try:
+            redis = cls.get_rd()
+            async for hkeys in redis.hscan_iter(cls.__table__, key):
+                await redis.hdel(cls.__table__, *hkeys)
+            return True
+        except Exception:
+            logger.exception(f"Error deleting key {key} from {cls.__table__}")
+            return False
+
 
 class CodeRedis(Redis):
     """Code Memory Interface.
