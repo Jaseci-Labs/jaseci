@@ -1,15 +1,15 @@
 """Test Semantic Tokens Update."""
 
-import unittest
 import copy
 import lsprotocol.types as lspt
 
 from jaclang.langserve.engine import ModuleInfo
+from jaclang.utils.test import TestCase
 
 from typing import Tuple
 
 
-class TestUpdateSemTokens(unittest.TestCase):
+class TestUpdateSemTokens(TestCase):
     """Test update semantic tokens"""
 
     def setUp(self) -> None:
