@@ -187,7 +187,7 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(import_file)
         positions = [
-            (2, 16, "datetime.py:0:0-0:0"),
+            (2, 24, "datetime.py:0:0-0:0"),
             (3, 17, "base_module_structure.jac:0:0-0:0"),
             (3, 87, "base_module_structure.jac:23:0-23:5"),
             (5, 65, "py_import.py:12:0-20:5"),
