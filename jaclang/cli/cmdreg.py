@@ -40,6 +40,9 @@ class CommandRegistry:
         self.parser.add_argument(
             "--session", help="Session file path", nargs="?", default=""
         )
+        self.parser.add_argument(
+            "-V", "--version", action="store_true", help="Show the Jac version"
+        )
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
         self.args = argparse.Namespace()
 
