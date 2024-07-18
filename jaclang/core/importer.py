@@ -8,11 +8,12 @@ import os
 import sys
 import types
 from os import getcwd, path
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
+from jaclang.core.jac_machine import JacMachine
 from jaclang.core.utils import sys_path_context
 
 
@@ -404,56 +405,3 @@ class JacImporter(Importer):
             )
         self.result = import_return
         return self.result
-
-
-class JacMachine:
-    """JacMachine to handle the VM-related functionalities and loaded programs."""
-
-    def initialize_base_dir(self, base_path: str) -> str:
-        """Compute and set the main base directory."""
-        if not os.path.isdir(base_path):
-            return os.path.dirname(base_path)
-        elif os.path.isfile(base_path):
-            return base_path
-        else:
-            return os.path.abspath(base_path)
-
-    def __init__(self, base_path: str) -> None:
-        """Initialize the JacMachine object."""
-        self.loaded_modules: Dict[str, types.ModuleType] = {}
-        self.base_path = base_path
-        self.main_base_dir = self.initialize_base_dir(base_path)
-
-    def jac_importer(
-        self,
-        target: str,
-        base_path: str,
-        absorb: bool = False,
-        cachable: bool = True,
-        mdl_alias: Optional[str] = None,
-        override_name: Optional[str] = None,
-        mod_bundle: Optional[Module | str] = None,
-        lng: Optional[str] = "jac",
-        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
-    ) -> tuple[types.ModuleType, ...]:
-        """Import a module based on the provided specifications."""
-        spec = ImportPathSpec(
-            target,
-            base_path,
-            absorb,
-            cachable,
-            mdl_alias,
-            override_name,
-            mod_bundle,
-            lng,
-            items,
-        )
-        if spec.language == "py":
-            import_result = PythonImporter(self).run_import(spec)
-        else:
-            import_result = JacImporter(self).run_import(spec)
-        return (
-            (import_result.ret_mod,)
-            if absorb or not items
-            else tuple(import_result.ret_items)
-        )
