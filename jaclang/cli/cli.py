@@ -448,8 +448,6 @@ def start_cli() -> None:
         args_dict = vars(args)
         args_dict.pop("command")
         args_dict.pop("version", None)
-        if command not in ["run"]:
-            args_dict.pop("session")
         ret = command.call(**args_dict)
         if ret:
             print(ret)
