@@ -14,9 +14,6 @@ include:jac settings.config;
 include:jac settings.map;
 include:jac utils.level_manager;
 
-# Including Implementations
-include:jac impl.main_dsp_impl;
-
 '''The walker that initiates the game and runs an instance of the game'''
 walker game{
 

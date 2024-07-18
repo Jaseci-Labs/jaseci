@@ -22,7 +22,7 @@
     }
 }
 
-    # Start a new game
+# Start a new game
 :obj:Game:can:new{
     self.playing = True;
     self.won = False;
@@ -32,8 +32,8 @@
     self.attacks = pygame.sprite.LayeredUpdates();
     self.createTilemap();
 }
-# Update pygame events to check if the game is quitted or attacked.
 
+# Update pygame events to check if the game is quitted or attacked.
 :obj:Game:can:events{
     for events in pygame.event.get() {
         if events.type == pygame.QUIT {

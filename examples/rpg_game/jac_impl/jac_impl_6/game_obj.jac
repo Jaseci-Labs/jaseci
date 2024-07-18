@@ -8,9 +8,6 @@ include:jac sprites;
 include:jac settings.config;
 include:jac settings.map;
 
-# Including Implementations
-include:jac impl.game_obj_impl;
-
 """
 The Game base class
 """

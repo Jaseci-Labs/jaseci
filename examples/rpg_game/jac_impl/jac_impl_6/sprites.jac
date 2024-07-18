@@ -8,9 +8,6 @@ import:py from pygame.sprite, AbstractGroup;
 include:jac settings.config;
 include:jac settings.map;
 
-# Including Implementations
-include:jac impl.sprites_impl;
-
 """
 Object for impoting sprite character images.
 """

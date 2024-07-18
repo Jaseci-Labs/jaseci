@@ -1,5 +1,4 @@
 import:py from mtllm.llms, OpenAI;
-include:jac level_manager_impl;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
