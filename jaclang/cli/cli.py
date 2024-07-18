@@ -437,10 +437,17 @@ def start_cli() -> None:
     parser = cmd_registry.parser
     args = parser.parse_args()
     cmd_registry.args = args
+
+    if args.version:
+        version = importlib.metadata.version("jaclang")
+        print(f"Jac version {version}")
+        return
+
     command = cmd_registry.get(args.command)
     if command:
         args_dict = vars(args)
         args_dict.pop("command")
+        args_dict.pop("version", None)
         if command not in ["run"]:
             args_dict.pop("session")
         ret = command.call(**args_dict)
