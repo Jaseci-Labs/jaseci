@@ -334,7 +334,7 @@ class JacImporter(Importer):
             parts = package_path.split(".")
             for i in range(len(parts)):
                 package_name = ".".join(parts[: i + 1])
-                if package_name not in self.jac_machine.loaded_programs:
+                if package_name not in self.jac_machine.loaded_modules:
                     full_mod_path = path.join(
                         base_path, package_name.replace(".", path.sep)
                     )
@@ -420,7 +420,7 @@ class JacMachine:
 
     def __init__(self, base_path: str) -> None:
         """Initialize the JacMachine object."""
-        self.loaded_programs: Dict[str, types.ModuleType] = {}
+        self.loaded_modules: Dict[str, types.ModuleType] = {}
         self.base_path = base_path
         self.main_base_dir = self.initialize_base_dir(base_path)
 
@@ -437,7 +437,6 @@ class JacMachine:
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
     ) -> tuple[types.ModuleType, ...]:
         """Import a module based on the provided specifications."""
-        importer: Importer
         spec = ImportPathSpec(
             target,
             base_path,
@@ -449,13 +448,10 @@ class JacMachine:
             lng,
             items,
         )
-
         if spec.language == "py":
-            importer = PythonImporter(self)
+            import_result = PythonImporter(self).run_import(spec)
         else:
-            importer = JacImporter(self)
-
-        import_result = importer.run_import(spec)
+            import_result = JacImporter(self).run_import(spec)
         return (
             (import_result.ret_mod,)
             if absorb or not items
