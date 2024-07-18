@@ -434,14 +434,7 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
         """
-        if node.doc:
-            doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
-            if isinstance(node.body.gen.py_ast, list):
-                node.gen.py_ast = [doc] + node.body.gen.py_ast
-            else:
-                raise self.ice()
-        else:
-            node.gen.py_ast = node.body.gen.py_ast
+        node.gen.py_ast = self.resolve_stmt_block(node.body, doc=node.doc)
         if node.name:
             node.gen.py_ast = [
                 self.sync(

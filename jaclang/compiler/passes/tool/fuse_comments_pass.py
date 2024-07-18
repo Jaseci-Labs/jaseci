@@ -27,7 +27,12 @@ class FuseCommentsPass(Pass):
         """Insert comment tokens into all_tokens."""
         comment_stream = iter(self.comments)  # Iterator for comments
         code_stream = iter(self.all_tokens)  # Iterator for code tokens
-        new_stream: list[ast.AstNode] = []  # New stream to hold ordered tokens
+        new_stream: list[ast.Token] = []  # New stream to hold ordered tokens
+
+        if not isinstance(self.ir, ast.Module):
+            raise self.ice(
+                f"FuseCommentsPass can only be run on a Module, not a {type(self.ir)}"
+            )
 
         try:
             next_comment = next(comment_stream)  # Get the first comment
@@ -39,12 +44,20 @@ class FuseCommentsPass(Pass):
         except StopIteration:
             next_code = None
 
+        if next_comment and (not next_code or is_comment_next(next_comment, next_code)):
+            self.ir.terminals.insert(0, next_comment)
+
         while next_comment or next_code:
             if next_comment and (
                 not next_code or is_comment_next(next_comment, next_code)
             ):
                 # Add the comment to the new stream
+                last_tok = new_stream[-1] if len(new_stream) else None
                 new_stream.append(next_comment)
+                if last_tok:
+                    self.ir.terminals.insert(
+                        self.ir.terminals.index(last_tok) + 1, next_comment
+                    )
                 try:
                     next_comment = next(comment_stream)
                 except StopIteration:
@@ -70,7 +83,6 @@ class FuseCommentsPass(Pass):
                         parent_kids.insert(insert_index, token)
                         prev_token.parent.set_kids(parent_kids)
                     else:
-                        prev_token.pp()
                         raise self.ice(
                             "Token without parent in AST should be impossible"
                         )

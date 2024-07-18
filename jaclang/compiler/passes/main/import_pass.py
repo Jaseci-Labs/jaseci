@@ -182,6 +182,7 @@ class JacImportPass(Pass):
                 source=ast.JacSource("", mod_path=target),
                 doc=None,
                 body=[],
+                terminals=[],
                 is_imported=False,
                 stub_only=True,
                 kid=[ast.EmptyToken()],

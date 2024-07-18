@@ -124,6 +124,23 @@ class JacCliTests(TestCase):
         # Assertions or verifications
         self.assertIn("Ran 3 tests", stderr_value)
 
+    def test_pure_circle_jac_test(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        stdio_block = io.StringIO()
+        sys.stderr = captured_output
+        sys.stdout = stdio_block
+
+        # Execute the function
+        with suppress(SystemExit):
+            cli.test(self.examples_abs_path("manual_code/circle_pure.test.jac"))
+
+        sys.stderr = sys.__stderr__
+        sys.stdout = sys.__stdout__
+        stderr_value = captured_output.getvalue()
+        # Assertions or verifications
+        self.assertIn("Ran 3 tests", stderr_value)
+
     def test_jac_name_in_sys_mods(self) -> None:
         """Basic test for pass."""
         captured_output = io.StringIO()

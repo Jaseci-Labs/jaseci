@@ -260,6 +260,8 @@ class JacFeatureDefaults:
                 base, mod_name = os.path.split(filepath)
                 base = base if base else "./"
                 mod_name = mod_name[:-4]
+                if mod_name.endswith(".test"):
+                    mod_name = mod_name[:-5]
                 JacTestCheck.reset()
                 Jac.jac_import(target=mod_name, base_path=base)
                 JacTestCheck.run_test(xit, maxfail, verbose)

@@ -56,6 +56,7 @@ class JacParser(Pass):
             source=self.source,
             doc=None,
             body=[],
+            terminals=[],
             is_imported=False,
             kid=[ast.EmptyToken()],
         )
@@ -120,6 +121,7 @@ class JacParser(Pass):
             """Initialize transformer."""
             super().__init__(*args, **kwargs)
             self.parse_ref = parser
+            self.terminals: list[ast.Token] = []
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
@@ -160,6 +162,7 @@ class JacParser(Pass):
                 doc=doc,
                 body=body,
                 is_imported=False,
+                terminals=self.terminals,
                 kid=kid if len(kid) else [ast.EmptyToken()],
             )
             return self.nu(mod)
@@ -3983,4 +3986,5 @@ class JacParser(Pass):
                     err.line = ret.loc.first_line
                     err.column = ret.loc.col_start
                     raise err
+            self.terminals.append(ret)
             return self.nu(ret)
