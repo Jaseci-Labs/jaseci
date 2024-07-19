@@ -118,12 +118,9 @@ def find_index(
     return index
 
 
-def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
+def get_symbols_for_outline(node: SymbolTable) -> list[lspt.DocumentSymbol]:
     """Recursively collect symbols from the AST."""
     symbols = []
-    if node is None:
-        return symbols
-
     for key, item in node.tab.items():
         if (
             key in dir(builtins)
@@ -131,23 +128,20 @@ def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
             or item.decl.loc.mod_path != node.owner.loc.mod_path
         ):
             continue
-        else:
-
-            pos = create_range(item.decl.loc)
-            symbol = lspt.DocumentSymbol(
-                name=key,
-                kind=kind_map(item.decl),
-                range=pos,
-                selection_range=pos,
-                children=[],
-            )
-            symbols.append(symbol)
+        pos = create_range(item.decl.loc)
+        symbol = lspt.DocumentSymbol(
+            name=key,
+            kind=kind_map(item.decl),
+            range=pos,
+            selection_range=pos,
+            children=[],
+        )
+        symbols.append(symbol)
 
     for sub_tab in [
         i for i in node.kid if i.owner.loc.mod_path == node.owner.loc.mod_path
     ]:
-        sub_symbols = collect_symbols(sub_tab)
-
+        sub_symbols = get_symbols_for_outline(sub_tab)
         if isinstance(
             sub_tab.owner,
             (ast.IfStmt, ast.ElseStmt, ast.WhileStmt, ast.IterForStmt, ast.InForStmt),

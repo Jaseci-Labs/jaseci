@@ -15,7 +15,6 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
-    collect_symbols,
     create_range,
     find_index,
     find_node_by_position,
@@ -24,6 +23,7 @@ from jaclang.langserve.utils import (
     get_item_path,
     get_line_of_code,
     get_mod_path,
+    get_symbols_for_outline,
     get_token_start,
     parse_symbol_path,
     resolve_completion_symbol_table,
@@ -491,12 +491,12 @@ class JacLangServer(LanguageServer):
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
 
-    def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
+    def get_outline(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
         if file_path in self.modules and (
             root_node := self.modules[file_path].ir._sym_tab
         ):
-            return collect_symbols(root_node)
+            return get_symbols_for_outline(root_node)
         return []
 
     def get_definition(

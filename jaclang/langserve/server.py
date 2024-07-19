@@ -114,7 +114,7 @@ def document_symbol(
     ls: JacLangServer, params: lspt.DocumentSymbolParams
 ) -> list[lspt.DocumentSymbol]:
     """Provide document symbols."""
-    return ls.get_document_symbols(params.text_document.uri)
+    return ls.get_outline(params.text_document.uri)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DEFINITION)
