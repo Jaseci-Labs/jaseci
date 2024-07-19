@@ -216,7 +216,6 @@ class JacFeatureDefaults:
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
-        jac_machine = JacMachine(base_path=base_path)
         spec = ImportPathSpec(
             target,
             base_path,
@@ -229,9 +228,9 @@ class JacFeatureDefaults:
             items,
         )
         if lng == "py":
-            import_result = PythonImporter(jac_machine).run_import(spec)
+            import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
         else:
-            import_result = JacImporter(jac_machine).run_import(spec)
+            import_result = JacImporter(Jac.context().jac_machine).run_import(spec)
         return (
             (import_result.ret_mod,)
             if absorb or not items

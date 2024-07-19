@@ -20,6 +20,7 @@ from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.core.constructs import Architype
+from jaclang.core.jac_machine import JacMachine
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
@@ -85,11 +86,12 @@ def run(
             and cmd_registry.args.session
             else ""
         )
-    Jac.context().init_memory(session)
 
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    jac_machine = JacMachine(base)
+    Jac.context().init_memory(jac_machine, session)
     if filename.endswith(".jac"):
         ret_module = jac_import(
             target=mod,
@@ -356,11 +358,11 @@ def dot(
             else ""
         )
 
-    Jac.context().init_memory(session)
-
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    jac_machine = JacMachine(base)
+    Jac.context().init_memory(jac_machine, session)
     if filename.endswith(".jac"):
         jac_import(
             target=mod,
