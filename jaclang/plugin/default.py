@@ -32,7 +32,7 @@ from jaclang.core.constructs import (
     WalkerArchitype,
     exec_context,
 )
-from jaclang.core.importer import jac_importer
+from jaclang.core.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
@@ -54,7 +54,6 @@ __all__ = [
     "WalkerArchitype",
     "Architype",
     "DSFunc",
-    "jac_importer",
     "T",
 ]
 
@@ -216,18 +215,26 @@ class JacFeatureDefaults:
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
-        result = jac_importer(
-            target=target,
-            base_path=base_path,
-            absorb=absorb,
-            cachable=cachable,
-            mdl_alias=mdl_alias,
-            override_name=override_name,
-            mod_bundle=mod_bundle,
-            lng=lng,
-            items=items,
+        spec = ImportPathSpec(
+            target,
+            base_path,
+            absorb,
+            cachable,
+            mdl_alias,
+            override_name,
+            mod_bundle,
+            lng,
+            items,
         )
-        return result
+        if lng == "py":
+            import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
+        else:
+            import_result = JacImporter(Jac.context().jac_machine).run_import(spec)
+        return (
+            (import_result.ret_mod,)
+            if absorb or not items
+            else tuple(import_result.ret_items)
+        )
 
     @staticmethod
     @hookimpl

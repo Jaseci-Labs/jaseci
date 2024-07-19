@@ -12,6 +12,7 @@ from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.core.jac_machine import JacMachine
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -60,6 +61,8 @@ class JacLanguageTests(TestCase):
 
     def test_simple_jac_red(self) -> None:
         """Parse micro jac file."""
+        jac_machine = JacMachine(self.examples_abs_path(""))
+        Jac.context().init_memory(jac_machine)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("micro.simple_walk", base_path=self.examples_abs_path(""))
@@ -151,6 +154,8 @@ class JacLanguageTests(TestCase):
 
     def test_filter_compr(self) -> None:
         """Testing filter comprehension."""
+        jac_machine = JacMachine(self.examples_abs_path("./"))
+        Jac.context().init_memory(jac_machine)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import(
@@ -207,8 +212,11 @@ class JacLanguageTests(TestCase):
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
+        jac_machine = JacMachine(self.fixture_abs_path("./"))
+        Jac.context().init_memory(jac_machine)
         captured_output = io.StringIO()
         sys.stdout = captured_output
+
         jac_import("deep_import", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -217,6 +225,8 @@ class JacLanguageTests(TestCase):
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
+        jac_machine = JacMachine(self.fixture_abs_path("./"))
+        Jac.context().init_memory(jac_machine)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import(
@@ -230,6 +240,8 @@ class JacLanguageTests(TestCase):
     def test_deep_outer_imports_from_loc(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
+        jac_machine = JacMachine(self.fixture_abs_path("./deep/deeper/"))
+        Jac.context().init_memory(jac_machine)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         os.chdir(self.fixture_abs_path("./deep/deeper/"))
@@ -383,6 +395,8 @@ class JacLanguageTests(TestCase):
 
     def test_typed_filter_compr(self) -> None:
         """Parse micro jac file."""
+        jac_machine = JacMachine(self.examples_abs_path(""))
+        Jac.context().init_memory(jac_machine)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import(
