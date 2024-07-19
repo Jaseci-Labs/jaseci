@@ -33,7 +33,9 @@ class JacCmd:
                 ), "Please use another name for the .jac file. It conflicts with a Python package."
                 py_lines = [
                     "from jaclang import jac_import",
-                    f"st_app = jac_import('{basename}', base_path='{dirname}')",
+                    "from jaclang.plugin.feature import JacFeature as Jac",
+                    f"Jac.context().init_memory(base_path='{dirname}')"
+                    f"(st_app,) = jac_import('{basename}', base_path='{dirname}')",
                     "if hasattr(st_app, 'main'):",
                     "    st_app.main()",
                     "else:",

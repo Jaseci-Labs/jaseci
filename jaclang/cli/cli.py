@@ -20,7 +20,6 @@ from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.core.constructs import Architype
-from jaclang.core.jac_machine import JacMachine
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
@@ -90,8 +89,7 @@ def run(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    jac_machine = JacMachine(base)
-    Jac.context().init_memory(jac_machine, session)
+    Jac.context().init_memory(base_path=base, session=session)
     if filename.endswith(".jac"):
         ret_module = jac_import(
             target=mod,
@@ -147,7 +145,7 @@ def get_object(id: str, session: str = "") -> dict:
     if session == "":
         session = cmd_registry.args.session if "session" in cmd_registry.args else ""
 
-    Jac.context().init_memory(machine=JacMachine(), session=session)
+    Jac.context().init_memory(session=session)
 
     if id == "root":
         id_uuid = UUID(int=0)
@@ -361,8 +359,7 @@ def dot(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    jac_machine = JacMachine(base)
-    Jac.context().init_memory(jac_machine, session)
+    Jac.context().init_memory(base_path=base, session=session)
     if filename.endswith(".jac"):
         jac_import(
             target=mod,
