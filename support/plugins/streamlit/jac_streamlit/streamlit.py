@@ -34,7 +34,7 @@ class JacCmd:
                 py_lines = [
                     "from jaclang import jac_import",
                     "from jaclang.plugin.feature import JacFeature as Jac",
-                    f"Jac.context().init_memory(base_path='{dirname}')"
+                    f"Jac.context().init_memory(base_path='{dirname}')",
                     f"(st_app,) = jac_import('{basename}', base_path='{dirname}')",
                     "if hasattr(st_app, 'main'):",
                     "    st_app.main()",
