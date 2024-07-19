@@ -297,7 +297,7 @@ class JacImporter(Importer):
 
     def get_sys_mod_name(self, full_target: str) -> str:
         """Generate the system module name based on full target path and package path."""
-        relative_path = path.relpath(full_target, start=self.jac_machine.main_base_dir)
+        relative_path = path.relpath(full_target, start=self.jac_machine.base_path_dir)
         base_name = path.splitext(relative_path)[0]
         sys_mod_name = base_name.replace(os.sep, ".").strip(".")
         return sys_mod_name
@@ -335,7 +335,7 @@ class JacImporter(Importer):
             parts = package_path.split(".")
             for i in range(len(parts)):
                 package_name = ".".join(parts[: i + 1])
-                if package_name not in self.jac_machine.loaded_modules:
+                if package_name not in sys.modules:
                     full_mod_path = path.join(
                         base_path, package_name.replace(".", path.sep)
                     )

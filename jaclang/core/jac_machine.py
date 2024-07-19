@@ -1,8 +1,6 @@
 """Jac Machine module."""
 
 import os
-import types
-from typing import Dict
 
 
 class JacMachine:
@@ -17,8 +15,8 @@ class JacMachine:
         else:
             return os.path.abspath(base_path)
 
-    def __init__(self, base_path: str) -> None:
+    def __init__(self, base_path: str = "") -> None:
         """Initialize the JacMachine object."""
-        self.loaded_modules: Dict[str, types.ModuleType] = {}
+        # self.loaded_modules: Dict[str, types.ModuleType] = {}
         self.base_path = base_path
-        self.main_base_dir = self.initialize_base_dir(base_path)
+        self.base_path_dir = self.initialize_base_dir(base_path)

@@ -147,7 +147,7 @@ def get_object(id: str, session: str = "") -> dict:
     if session == "":
         session = cmd_registry.args.session if "session" in cmd_registry.args else ""
 
-    Jac.context().init_memory(session)
+    Jac.context().init_memory(machine=JacMachine(), session=session)
 
     if id == "root":
         id_uuid = UUID(int=0)

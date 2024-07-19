@@ -33,7 +33,6 @@ from jaclang.core.constructs import (
     exec_context,
 )
 from jaclang.core.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.core.jac_machine import JacMachine
 from jaclang.core.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.plugin.spec import T
