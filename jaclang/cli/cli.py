@@ -86,11 +86,10 @@ def run(
             else ""
         )
 
-    Jac.context().init_memory(session)
-
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    Jac.context().init_memory(base_path=base, session=session)
     if filename.endswith(".jac"):
         ret_module = jac_import(
             target=mod,
@@ -146,7 +145,7 @@ def get_object(id: str, session: str = "") -> dict:
     if session == "":
         session = cmd_registry.args.session if "session" in cmd_registry.args else ""
 
-    Jac.context().init_memory(session)
+    Jac.context().init_memory(session=session)
 
     if id == "root":
         id_uuid = UUID(int=0)
@@ -357,11 +356,10 @@ def dot(
             else ""
         )
 
-    Jac.context().init_memory(session)
-
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    Jac.context().init_memory(base_path=base, session=session)
     if filename.endswith(".jac"):
         jac_import(
             target=mod,
@@ -437,12 +435,17 @@ def start_cli() -> None:
     parser = cmd_registry.parser
     args = parser.parse_args()
     cmd_registry.args = args
+
+    if args.version:
+        version = importlib.metadata.version("jaclang")
+        print(f"Jac version {version}")
+        return
+
     command = cmd_registry.get(args.command)
     if command:
         args_dict = vars(args)
         args_dict.pop("command")
-        if command not in ["run"]:
-            args_dict.pop("session")
+        args_dict.pop("version", None)
         ret = command.call(**args_dict)
         if ret:
             print(ret)

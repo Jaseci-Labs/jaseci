@@ -38,7 +38,7 @@ class CommandRegistry:
         self.registry = {}
         self.parser = argparse.ArgumentParser(prog="jac")
         self.parser.add_argument(
-            "--session", help="Session file path", nargs="?", default=""
+            "-V", "--version", action="store_true", help="Show the Jac version"
         )
         self.sub_parsers = self.parser.add_subparsers(title="commands", dest="command")
         self.args = argparse.Namespace()

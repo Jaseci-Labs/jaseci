@@ -8,6 +8,7 @@ from typing import Callable, Optional
 from uuid import UUID
 
 from .architype import Architype, Root
+from .jac_machine import JacMachine
 from .memory import Memory, ShelveStorage
 
 
@@ -22,13 +23,15 @@ class ExecutionContext:
         super().__init__()
         self.mem = ShelveStorage()
         self.root = None
+        self.jac_machine = JacMachine()
 
-    def init_memory(self, session: str = "") -> None:
+    def init_memory(self, base_path: str = "", session: str = "") -> None:
         """Initialize memory."""
         if session:
             self.mem = ShelveStorage(session)
         else:
             self.mem = Memory()
+        self.jac_machine = JacMachine(base_path)
 
     def get_root(self) -> Root:
         """Get the root object."""

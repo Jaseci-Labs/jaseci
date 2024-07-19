@@ -60,6 +60,7 @@ class JacLanguageTests(TestCase):
 
     def test_simple_jac_red(self) -> None:
         """Parse micro jac file."""
+        Jac.context().init_memory(base_path=self.examples_abs_path(""))
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("micro.simple_walk", base_path=self.examples_abs_path(""))
@@ -151,6 +152,7 @@ class JacLanguageTests(TestCase):
 
     def test_filter_compr(self) -> None:
         """Testing filter comprehension."""
+        Jac.context().init_memory(base_path=self.examples_abs_path("./"))
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import(
@@ -207,8 +209,10 @@ class JacLanguageTests(TestCase):
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
+        Jac.context().init_memory(base_path=self.fixture_abs_path("./"))
         captured_output = io.StringIO()
         sys.stdout = captured_output
+
         jac_import("deep_import", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -217,6 +221,7 @@ class JacLanguageTests(TestCase):
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
+        Jac.context().init_memory(base_path=self.fixture_abs_path("./"))
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import(
@@ -230,6 +235,7 @@ class JacLanguageTests(TestCase):
     def test_deep_outer_imports_from_loc(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
+        Jac.context().init_memory(base_path=self.fixture_abs_path("./deep/deeper/"))
         captured_output = io.StringIO()
         sys.stdout = captured_output
         os.chdir(self.fixture_abs_path("./deep/deeper/"))
@@ -383,6 +389,7 @@ class JacLanguageTests(TestCase):
 
     def test_typed_filter_compr(self) -> None:
         """Parse micro jac file."""
+        Jac.context().init_memory(base_path=self.examples_abs_path(""))
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import(
