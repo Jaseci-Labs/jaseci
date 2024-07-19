@@ -559,7 +559,6 @@ class JacLangServer(LanguageServer):
                     else node_selected
                 )
             )
-            self.log_py(f"{node_selected}, {decl_node}")
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
                 decl_range = create_range(decl_node.loc)
