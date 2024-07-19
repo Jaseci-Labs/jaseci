@@ -1,7 +1,7 @@
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.workspace import Workspace
-from jaclang.langserve.engine import JacLangServer
+from jaclang.langserve.engine import JacLangServer, ModuleInfo
 from .session import LspSession
 
 import lsprotocol.types as lspt
@@ -103,7 +103,7 @@ class TestJacLangServer(TestCase):
         lsp.lsp._workspace = workspace
         circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
         lsp.deep_check(circle_file)
-        self.assertEqual(8, len(lsp.get_document_symbols(circle_file)))
+        self.assertEqual(8, len(lsp.get_outline(circle_file)))
 
     def test_go_to_definition(self) -> None:
         """Test that the go to definition is correct."""
@@ -119,7 +119,7 @@ class TestJacLangServer(TestCase):
         )
         self.assertIn(
             "fixtures/circle_pure.jac:13:11-13:16",
-            str(lsp.get_definition(circle_file, lspt.Position(20, 17))),
+            str(lsp.get_definition(circle_file, lspt.Position(20, 16))),
         )
 
     def test_go_to_definition_method(self) -> None:
@@ -187,7 +187,7 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(import_file)
         positions = [
-            (2, 16, "datetime.py:0:0-0:0"),
+            (2, 24, "datetime.py:0:0-0:0"),
             (3, 17, "base_module_structure.jac:0:0-0:0"),
             (3, 87, "base_module_structure.jac:23:0-23:5"),
             (5, 65, "py_import.py:12:0-20:5"),

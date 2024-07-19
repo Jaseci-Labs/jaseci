@@ -89,53 +89,38 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
     return sym_tabs
 
 
-def find_deepest_symbol_node_at_pos(
-    node: ast.AstNode, line: int, character: int
+def find_node_by_position(
+    tokens: list[tuple[lspt.Position, int, int, ast.AstSymbolNode]],
+    line: int,
+    position: int,
 ) -> Optional[ast.AstSymbolNode]:
     """Return the deepest symbol node that contains the given position."""
-    last_symbol_node = None
-
-    if position_within_node(node, line, character):
-        if isinstance(node, ast.AstSymbolNode):
-            last_symbol_node = node
-
-        for child in [i for i in node.kid if i.loc.mod_path == node.loc.mod_path]:
-            if position_within_node(child, line, character):
-                deeper_node = find_deepest_symbol_node_at_pos(child, line, character)
-                if deeper_node is not None:
-                    last_symbol_node = deeper_node
-
-    return last_symbol_node
+    for token in tokens:
+        pos, token_end, length, node = token
+        if pos.line == line and pos.character <= position < token_end:
+            return node
+    return None
 
 
-def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
-    """Check if the position falls within the node's location."""
-    if node.loc.first_line < line + 1 < node.loc.last_line:
-        return True
-    if (
-        node.loc.first_line == line + 1
-        and node.loc.col_start <= character + 1
-        and (
-            node.loc.last_line == line + 1
-            and node.loc.col_end >= character + 1
-            or node.loc.last_line > line + 1
-        )
+def find_index(
+    sem_tokens: list[int],
+    line: int,
+    char: int,
+) -> Optional[int]:
+    """Find index."""
+    index = None
+    for i, j in enumerate(
+        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
     ):
-        return True
-    if (
-        node.loc.last_line == line + 1
-        and node.loc.col_start <= character + 1 <= node.loc.col_end
-    ):
-        return True
-    return False
+        if j[0] == line and j[1] <= char <= j[2]:
+            return i
+
+    return index
 
 
-def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
+def get_symbols_for_outline(node: SymbolTable) -> list[lspt.DocumentSymbol]:
     """Recursively collect symbols from the AST."""
     symbols = []
-    if node is None:
-        return symbols
-
     for key, item in node.tab.items():
         if (
             key in dir(builtins)
@@ -143,23 +128,20 @@ def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
             or item.decl.loc.mod_path != node.owner.loc.mod_path
         ):
             continue
-        else:
-
-            pos = create_range(item.decl.loc)
-            symbol = lspt.DocumentSymbol(
-                name=key,
-                kind=kind_map(item.decl),
-                range=pos,
-                selection_range=pos,
-                children=[],
-            )
-            symbols.append(symbol)
+        pos = create_range(item.decl.loc)
+        symbol = lspt.DocumentSymbol(
+            name=key,
+            kind=kind_map(item.decl),
+            range=pos,
+            selection_range=pos,
+            children=[],
+        )
+        symbols.append(symbol)
 
     for sub_tab in [
         i for i in node.kid if i.owner.loc.mod_path == node.owner.loc.mod_path
     ]:
-        sub_symbols = collect_symbols(sub_tab)
-
+        sub_symbols = get_symbols_for_outline(sub_tab)
         if isinstance(
             sub_tab.owner,
             (ast.IfStmt, ast.ElseStmt, ast.WhileStmt, ast.IterForStmt, ast.InForStmt),
@@ -364,50 +346,6 @@ def get_definition_range(
     return None
 
 
-def locate_affected_token(
-    tokens: list[int],
-    change_start_line: int,
-    change_start_char: int,
-    change_end_line: int,
-    change_end_char: int,
-) -> Optional[int]:
-    """Find in which token change is occurring."""
-    token_index = 0
-    current_line = 0
-    line_char_offset = 0
-
-    while token_index < len(tokens):
-        token_line_delta = tokens[token_index]
-        token_start_char = tokens[token_index + 1]
-        token_length = tokens[token_index + 2]
-
-        if token_line_delta > 0:
-            current_line += token_line_delta
-            line_char_offset = 0
-        token_abs_start_char = line_char_offset + token_start_char
-        token_abs_end_char = token_abs_start_char + token_length
-        if (
-            current_line == change_start_line == change_end_line
-            and token_abs_start_char <= change_start_char
-            and change_end_char <= token_abs_end_char
-        ):
-            return token_index
-        if (
-            current_line == change_start_line
-            and token_abs_start_char <= change_start_char < token_abs_end_char
-        ):
-            return token_index
-        if (
-            current_line == change_end_line
-            and token_abs_start_char < change_end_char <= token_abs_end_char
-        ):
-            return token_index
-
-        line_char_offset += token_start_char
-        token_index += 5
-    return None
-
-
 def collect_all_symbols_in_scope(
     sym_tab: SymbolTable, up_tree: bool = True
 ) -> list[lspt.CompletionItem]:
@@ -558,3 +496,98 @@ def resolve_completion_symbol_table(
         collect_all_symbols_in_scope(current_symbol_table, up_tree=False)
     )
     return completion_items
+
+
+def get_token_start(
+    token_index: int | None, sem_tokens: list[int]
+) -> tuple[int, int, int]:
+    """Return the starting position of a token."""
+    if token_index is None or token_index >= len(sem_tokens):
+        return 0, 0, 0
+
+    current_line = 0
+    current_char = 0
+    current_tok_index = 0
+
+    while current_tok_index < len(sem_tokens):
+        token_line_delta = sem_tokens[current_tok_index]
+        token_start_char = sem_tokens[current_tok_index + 1]
+
+        if token_line_delta > 0:
+            current_line += token_line_delta
+            current_char = 0
+        if current_tok_index == token_index:
+            if token_line_delta > 0:
+                return (
+                    current_line,
+                    token_start_char,
+                    token_start_char + sem_tokens[current_tok_index + 2],
+                )
+            return (
+                current_line,
+                current_char + token_start_char,
+                current_char + token_start_char + sem_tokens[current_tok_index + 2],
+            )
+
+        current_char += token_start_char
+        current_tok_index += 5
+
+    return (
+        current_line,
+        current_char,
+        current_char + sem_tokens[current_tok_index + 2],
+    )
+
+
+def find_surrounding_tokens(
+    change_start_line: int,
+    change_start_char: int,
+    change_end_line: int,
+    change_end_char: int,
+    sem_tokens: list[int],
+) -> tuple[int | None, int | None, bool]:
+    """Find the indices of the previous and next tokens surrounding the change."""
+    prev_token_index = None
+    next_token_index = None
+    inside_tok = False
+    for i, tok in enumerate(
+        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)][0:]
+    ):
+        if (not (prev_token_index is None or next_token_index is None)) and (
+            tok[0] > change_end_line
+            or (tok[0] == change_end_line and tok[1] > change_end_char)
+        ):
+            prev_token_index = i * 5
+            break
+        elif (
+            change_start_line == tok[0] == change_end_line
+            and tok[1] <= change_start_char
+            and tok[2] >= change_end_char
+        ):
+            prev_token_index = i * 5
+            inside_tok = True
+            break
+        elif (tok[0] < change_start_line) or (
+            tok[0] == change_start_line and tok[1] < change_start_char
+        ):
+            prev_token_index = i * 5
+        elif (tok[0] > change_end_line) or (
+            tok[0] == change_end_line and tok[1] > change_end_char
+        ):
+            next_token_index = i * 5
+            break
+
+    return prev_token_index, next_token_index, inside_tok
+
+
+def get_line_of_code(line_number: int, lines: list[str]) -> Optional[tuple[str, int]]:
+    """Get the line of code, and the first non-space character index."""
+    if 0 <= line_number < len(lines):
+        line = lines[line_number].rstrip("\n")
+        first_non_space = len(line) - len(line.lstrip())
+        return line, (
+            first_non_space + 4
+            if line.strip().endswith(("(", "{", "["))
+            else first_non_space
+        )
+    return None

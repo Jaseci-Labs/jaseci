@@ -35,7 +35,7 @@ obj Colour1 {
 }
 
 :obj:Colour1:can:get_color1 -> Colorenum {
-    return self.color;
+    return self.color1;
 }
 
 obj red :Colour1: {

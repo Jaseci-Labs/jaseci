@@ -30,7 +30,11 @@ async def did_change(
     """Check syntax on change."""
     await ls.launch_quick_check(file_path := params.text_document.uri)
     if file_path in ls.modules:
-        ls.modules[file_path].update_sem_tokens(params)
+        document = ls.workspace.get_text_document(file_path)
+        lines = document.source.splitlines()
+        ls.modules[file_path].update_sem_tokens(
+            params, ls.modules[file_path].sem_tokens, lines
+        )
         ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
@@ -110,7 +114,7 @@ def document_symbol(
     ls: JacLangServer, params: lspt.DocumentSymbolParams
 ) -> list[lspt.DocumentSymbol]:
     """Provide document symbols."""
-    return ls.get_document_symbols(params.text_document.uri)
+    return ls.get_outline(params.text_document.uri)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DEFINITION)
@@ -138,14 +142,6 @@ def semantic_tokens_full(
     ls: JacLangServer, params: lspt.SemanticTokensParams
 ) -> lspt.SemanticTokens:
     """Provide semantic tokens."""
-    # import logging
-
-    # logging.info("\nGetting semantic tokens\n")
-    # # logging.info(ls.get_semantic_tokens(params.text_document.uri))
-    # i = 0
-    # while i < len(ls.get_semantic_tokens(params.text_document.uri).data):
-    #     logging.info(ls.get_semantic_tokens(params.text_document.uri).data[i : i + 5])
-    #     i += 5
     return ls.get_semantic_tokens(params.text_document.uri)
 
 
