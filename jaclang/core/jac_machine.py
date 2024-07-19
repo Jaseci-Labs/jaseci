@@ -11,5 +11,7 @@ class JacMachine:
         # self.loaded_modules: Dict[str, types.ModuleType] = {}
         self.base_path = base_path
         self.base_path_dir = (
-            os.path.dirname(base_path) if not os.path.isdir(base_path) else base_path
+            os.path.dirname(base_path)
+            if not os.path.isdir(base_path)
+            else os.path.abspath(base_path)
         )

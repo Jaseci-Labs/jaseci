@@ -46,7 +46,7 @@ class ImportPathSpec:
         self.module_name = path.splitext(self.file_name)[0]
         self.package_path = self.dir_path.replace(path.sep, ".")
         self.caller_dir = self.get_caller_dir()
-        self.full_target = path.normpath(path.join(self.caller_dir, self.file_name))
+        self.full_target = path.abspath(path.join(self.caller_dir, self.file_name))
 
     def get_caller_dir(self) -> str:
         """Get the directory of the caller."""
@@ -297,6 +297,8 @@ class JacImporter(Importer):
 
     def get_sys_mod_name(self, full_target: str) -> str:
         """Generate the system module name based on full target path and package path."""
+        if full_target == self.jac_machine.base_path_dir:
+            return path.basename(self.jac_machine.base_path_dir)
         relative_path = path.relpath(full_target, start=self.jac_machine.base_path_dir)
         base_name = path.splitext(relative_path)[0]
         sys_mod_name = base_name.replace(os.sep, ".").strip(".")
