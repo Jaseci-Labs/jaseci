@@ -19,10 +19,10 @@ from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.core.constructs import Architype
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.constructs import Architype
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 

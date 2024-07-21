@@ -127,9 +127,11 @@ class SemRegistry:
                 break
         return i
 
-    def pp(self) -> None:
+    def pp(self) -> str:
         """Pretty print the registry."""
+        ret_str = ""
         for k, v in self.registry.items():
-            print(k)
+            ret_str += f"{k}\n"
             for i in v:
-                print(f"  {i.name} {i.type} {i.semstr}")
+                ret_str += f"  {i.name} {i.type} {i.semstr}\n"
+        return ret_str

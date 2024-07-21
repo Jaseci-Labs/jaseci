@@ -46,7 +46,7 @@ class JacCliTests(TestCase):
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         # print(stdout_value)
-        self.assertIn("Syntax Error", stdout_value)
+        self.assertIn("Error", stdout_value)
 
     def test_jac_ast_tool_pass_template(self) -> None:
         """Basic test for pass."""

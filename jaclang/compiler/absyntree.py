@@ -55,15 +55,10 @@ class AstNode:
         """Get symbol table."""
         # sym_tab should never be accessed without being set in codebase
         if not self._sym_tab:
-            import traceback
-
-            if self.parent:
-                print(f"Parent: {self.parent.pp()}")
-            print("Node: ", self.pp())
-            stack_trace = traceback.format_stack()
-            print("".join(stack_trace))
             raise ValueError(
-                f"Symbol table not set for {type(self).__name__}. Impossible."
+                f"Symbol table not set for {type(self).__name__}. Impossible.\n"
+                f"Node: {self.pp()}\n"
+                f"Parent: {self.parent.pp() if self.parent else None}\n"
             )
         return self._sym_tab
 

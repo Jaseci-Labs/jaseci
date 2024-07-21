@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional
 from uuid import UUID, uuid4
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.core.utils import collect_node_connections
+from jaclang.runtimelib.utils import collect_node_connections
 
 
 @dataclass(eq=False)

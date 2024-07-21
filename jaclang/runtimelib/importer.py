@@ -13,8 +13,11 @@ from typing import Optional, Union
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
-from jaclang.core.jac_machine import JacMachine
-from jaclang.core.utils import sys_path_context
+from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.utils import sys_path_context
+from jaclang.utils.log import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ImportPathSpec:
@@ -163,7 +166,7 @@ class ImportReturn:
             exec(codeobj, new_module.__dict__)
             return getattr(new_module, name, new_module)
         except ImportError as e:
-            print(
+            logger.error(
                 f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
             )
             return None
@@ -206,8 +209,10 @@ class Importer:
 
         result = compile_jac(full_target, cache_result=cachable)
         if result.errors_had or not result.ir.gen.py_bytecode:
-            for e in result.errors_had:
-                print(e)
+            logger.error(
+                f"While importing {len(result.errors_had)} errors"
+                f" found in {full_target}"
+            )
             return None
         if result.ir.gen.py_bytecode is not None:
             return marshal.loads(result.ir.gen.py_bytecode)

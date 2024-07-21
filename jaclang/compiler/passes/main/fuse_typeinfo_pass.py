@@ -6,7 +6,6 @@ mypy apis into Jac and use jac py ast in it.
 
 from __future__ import annotations
 
-import traceback
 from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
@@ -32,7 +31,7 @@ class FuseTypeInfoPass(Pass):
 
     def __debug_print(self, *argv: object) -> None:
         if settings.fuse_type_info_debug:
-            print("FuseTypeInfo::", *argv)
+            self.log_info("FuseTypeInfo::", *argv)
 
     def __call_type_handler(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.ProperType
@@ -72,7 +71,9 @@ class FuseTypeInfoPass(Pass):
     ) -> Callable[[FuseTypeInfoPass, T], None]:
         def node_handler(self: FuseTypeInfoPass, node: T) -> None:
             if not isinstance(node, ast.AstSymbolNode):
-                print(f"Warning {node.__class__.__name__} is not an AstSymbolNode")
+                self.__debug_print(
+                    f"Warning {node.__class__.__name__} is not an AstSymbolNode"
+                )
 
             try:
                 jac_node_str = f'jac node "{node.loc}::{node.__class__.__name__}'
@@ -119,8 +120,6 @@ class FuseTypeInfoPass(Pass):
                 self.__debug_print(
                     f'Internal error happened while parsing "{e.obj.__class__.__name__}"'
                 )
-                traceback.print_exc()
-                print(e)
 
         return node_handler
 

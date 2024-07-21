@@ -8,7 +8,7 @@ from typing import Callable, Optional
 from uuid import UUID
 
 from .architype import Architype, Root
-from .jac_machine import JacMachine
+from .machine import JacMachine
 from .memory import Memory, ShelveStorage
 
 

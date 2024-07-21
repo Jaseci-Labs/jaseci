@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, TYPE_CHECKING, Type, TypeVar, Union
 from jaclang.compiler.absyntree import Module
 
 if TYPE_CHECKING:
-    from jaclang.core.constructs import EdgeArchitype, NodeArchitype
+    from jaclang.runtimelib.constructs import EdgeArchitype, NodeArchitype
     from jaclang.plugin.default import (
         Architype,
         EdgeDir,
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         Root,
         DSFunc,
     )
-    from jaclang.core.memory import Memory
+    from jaclang.runtimelib.memory import Memory
 
 import pluggy
 

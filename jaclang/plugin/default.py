@@ -15,7 +15,7 @@ from typing import Any, Callable, Optional, Type, Union
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.core.constructs import (
+from jaclang.runtimelib.constructs import (
     Architype,
     DSFunc,
     EdgeAnchor,
@@ -32,9 +32,9 @@ from jaclang.core.constructs import (
     WalkerArchitype,
     exec_context,
 )
-from jaclang.core.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.core.utils import traverse_graph
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
+from jaclang.runtimelib.utils import traverse_graph
+from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
 from jaclang.plugin.spec import T
 
 

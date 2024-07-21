@@ -6,7 +6,9 @@ import types
 from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.core.constructs import (
+from jaclang.plugin.default import ExecutionContext
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+from jaclang.runtimelib.constructs import (
     Architype,
     EdgeArchitype,
     Memory,
@@ -14,9 +16,6 @@ from jaclang.core.constructs import (
     Root,
     WalkerArchitype,
 )
-from jaclang.plugin.default import ExecutionContext
-from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
-
 
 import pluggy
 
@@ -31,7 +30,7 @@ class JacFeature:
 
     import abc
     from jaclang.compiler.constant import EdgeDir
-    from jaclang.core.constructs import DSFunc
+    from jaclang.runtimelib.constructs import DSFunc
 
     RootType: TypeAlias = Root
     Obj: TypeAlias = Architype

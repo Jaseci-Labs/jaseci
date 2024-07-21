@@ -13,7 +13,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
-from jaclang.core.utils import get_sem_scope
+from jaclang.runtimelib.utils import get_sem_scope
 
 
 class RegistryPass(Pass):

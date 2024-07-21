@@ -11,7 +11,7 @@ from typing import Optional, Sequence, TypeVar
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
 from jaclang.compiler.passes import Pass
-from jaclang.core.utils import extract_params, extract_type, get_sem_scope
+from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
 T = TypeVar("T", bound=ast3.AST)
 
@@ -19,24 +19,25 @@ T = TypeVar("T", bound=ast3.AST)
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
 
-    @staticmethod
-    def node_compilable_test(node: ast3.AST) -> None:
-        """Convert any AST node to a compilable module node."""
-        if isinstance(node, ast3.Module):
-            pass
-        elif isinstance(node, (ast3.Expr, ast3.stmt)):
-            node = ast3.Module(body=[node], type_ignores=[])
-        elif isinstance(node, list) and all(isinstance(n, ast3.stmt) for n in node):
-            node = ast3.Module(body=node, type_ignores=[])
-        else:
-            node = ast3.Module(body=[], type_ignores=[])
-        try:
-            compile(node, "<ast>", "exec")
-        except TypeError as e:
-            print(ast3.dump(node, indent=2))
-            raise e
-        except Exception:
-            pass
+    # TODO: This should live in utils and perhaps a test added using it
+    # @staticmethod
+    # def node_compilable_test(node: ast3.AST) -> None:
+    #     """Convert any AST node to a compilable module node."""
+    #     if isinstance(node, ast3.Module):
+    #         pass
+    #     elif isinstance(node, (ast3.Expr, ast3.stmt)):
+    #         node = ast3.Module(body=[node], type_ignores=[])
+    #     elif isinstance(node, list) and all(isinstance(n, ast3.stmt) for n in node):
+    #         node = ast3.Module(body=node, type_ignores=[])
+    #     else:
+    #         node = ast3.Module(body=[], type_ignores=[])
+    #     try:
+    #         compile(node, "<ast>", "exec")
+    #     except TypeError as e:
+    #         print(ast3.dump(node, indent=2))
+    #         raise e
+    #     except Exception:
+    #         pass
 
     def before_pass(self) -> None:
         """Initialize pass."""
@@ -80,7 +81,7 @@ class PyastGenPass(Pass):
 
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
-        if "jimport" in self.already_added:
+        if self.needs_jac_import.__name__ in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -96,11 +97,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("jimport")
+        self.already_added.append(self.needs_jac_import.__name__)
 
     def needs_typing(self) -> None:
         """Check if enum is needed."""
-        if "typing" in self.already_added:
+        if self.needs_typing.__name__ in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -115,11 +116,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("typing")
+        self.already_added.append(self.needs_typing.__name__)
 
     def needs_enum(self) -> None:
         """Check if enum is needed."""
-        if "enum" in self.already_added:
+        if self.needs_enum.__name__ in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -134,11 +135,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("enum")
+        self.already_added.append(self.needs_enum.__name__)
 
     def needs_jac_feature(self) -> None:
         """Check if enum is needed."""
-        if "jac_feature" in self.already_added:
+        if self.needs_jac_feature.__name__ in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -164,11 +165,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("jac_feature")
+        self.already_added.append(self.needs_jac_feature.__name__)
 
     def needs_dataclass(self) -> None:
         """Check if enum is needed."""
-        if "dataclass" in self.already_added:
+        if self.needs_dataclass.__name__ in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -184,11 +185,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("dataclass")
+        self.already_added.append(self.needs_dataclass.__name__)
 
     def needs_dataclass_field(self) -> None:
         """Check if enum is needed."""
-        if "dataclass_field" in self.already_added:
+        if self.needs_dataclass_field.__name__ in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -202,7 +203,7 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("dataclass_field")
+        self.already_added.append(self.needs_dataclass_field.__name__)
 
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""

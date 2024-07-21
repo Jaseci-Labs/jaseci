@@ -17,6 +17,9 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.settings import settings
 from jaclang.utils.helpers import import_target_to_relative_path, is_standard_lib_module
+from jaclang.utils.log import logging
+
+logger = logging.getLogger(__name__)
 
 
 class JacImportPass(Pass):
@@ -204,7 +207,7 @@ class JacImportPass(Pass):
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
         except Exception as e:
-            print(e)
+            logger.info(e)
             mod = None
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
@@ -252,7 +255,6 @@ class PyImportPass(JacImportPass):
                 if spec.origin in self.import_table:
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
-                    # print(f"\nImporting python module {node.path_str}")
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
                             py_ast.parse(f.read()), mod_path=spec.origin

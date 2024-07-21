@@ -70,3 +70,7 @@ class Transform(ABC, Generic[T]):
         )
         self.warnings_had.append(alrt)
         self.logger.warning(str(alrt))
+
+    def log_info(self, msg: str) -> None:
+        """Log info."""
+        self.logger.info(msg)

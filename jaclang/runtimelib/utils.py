@@ -11,7 +11,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.semtable import SemScope
 
 if TYPE_CHECKING:
-    from jaclang.core.constructs import NodeAnchor, NodeArchitype
+    from jaclang.runtimelib.constructs import NodeAnchor, NodeArchitype
 
 
 @contextmanager
