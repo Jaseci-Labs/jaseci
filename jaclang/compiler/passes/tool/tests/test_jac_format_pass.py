@@ -102,6 +102,17 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 file_path = os.path.join(fixtures_dir, file_name)
                 self.compare_files(file_path)
 
+    def test_general_format_fixtures(self) -> None:
+        """Tests if files in the general fixtures directory do not change after being formatted."""
+        fixtures_dir = os.path.join(self.fixture_abs_path(""), "general_format_checks")
+        fixture_files = os.listdir(fixtures_dir)
+        for file_name in fixture_files:
+            if file_name == "__jac_gen__":
+                continue
+            with self.subTest(file=file_name):
+                file_path = os.path.join(fixtures_dir, file_name)
+                self.compare_files(file_path)
+
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen_pure = jac_file_to_pass(
