@@ -43,7 +43,7 @@ class ModuleInfo:
         """Initialize module info."""
         self.ir = ir
         self.impl_parent: Optional[ModuleInfo] = impl_parent
-        self.sem_manger = SemManager(ir=ir)
+        self.sem_manager = SemManager(ir=ir)
 
     @property
     def uri(self) -> str:
@@ -166,7 +166,7 @@ class JacLangServer(LanguageServer):
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
         node_selected = find_node_by_position(
-            self.modules[file_path].sem_manger.static_sem_tokens,
+            self.modules[file_path].sem_manager.static_sem_tokens,
             position.line,
             position.character - 2,
         )
@@ -237,13 +237,13 @@ class JacLangServer(LanguageServer):
         if file_path not in self.modules:
             return None
         token_index = find_index(
-            self.modules[file_path].sem_manger.sem_tokens,
+            self.modules[file_path].sem_manager.sem_tokens,
             position.line,
             position.character,
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].sem_manger.static_sem_tokens[
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
             token_index
         ][3]
         value = self.get_node_info(node_selected) if node_selected else None
@@ -292,13 +292,13 @@ class JacLangServer(LanguageServer):
         if file_path not in self.modules:
             return None
         token_index = find_index(
-            self.modules[file_path].sem_manger.sem_tokens,
+            self.modules[file_path].sem_manager.sem_tokens,
             position.line,
             position.character,
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].sem_manger.static_sem_tokens[
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
             token_index
         ][3]
         if node_selected:
@@ -368,13 +368,13 @@ class JacLangServer(LanguageServer):
         if file_path not in self.modules:
             return []
         index1 = find_index(
-            self.modules[file_path].sem_manger.sem_tokens,
+            self.modules[file_path].sem_manager.sem_tokens,
             position.line,
             position.character,
         )
         if index1 is None:
             return []
-        node_selected = self.modules[file_path].sem_manger.static_sem_tokens[index1][3]
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
             list_of_references: list[lspt.Location] = [
                 lspt.Location(
@@ -390,7 +390,7 @@ class JacLangServer(LanguageServer):
         """Return semantic tokens for a file."""
         if file_path not in self.modules:
             return lspt.SemanticTokens(data=[])
-        return lspt.SemanticTokens(data=self.modules[file_path].sem_manger.sem_tokens)
+        return lspt.SemanticTokens(data=self.modules[file_path].sem_manager.sem_tokens)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""
