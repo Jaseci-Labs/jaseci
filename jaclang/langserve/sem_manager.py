@@ -1,4 +1,4 @@
-"""Sem manager module."""
+"""Semantic Token Manager module."""
 
 from __future__ import annotations
 
@@ -14,11 +14,11 @@ from jaclang.langserve.utils import (
 import lsprotocol.types as lspt
 
 
-class SemManager:
-    """Semantic manager class."""
+class SemTokManager:
+    """Semantic Token Manager class."""
 
     def __init__(self, ir: ast.Module) -> None:
-        """Initialize semantic manager."""
+        """Initialize semantic token manager."""
         self.sem_tokens: List[int] = self.gen_sem_tokens(ir)
         self.static_sem_tokens: List[
             Tuple[lspt.Position, int, int, ast.AstSymbolNode]
@@ -142,7 +142,7 @@ class SemManager:
                     and insert_inside_token
                     and prev_token_index is not None
                 ):
-                    sem_tokens = SemManager.handle_single_line_delete(
+                    sem_tokens = SemTokManager.handle_single_line_delete(
                         sem_tokens,
                         next_token_index,
                         prev_token_index,
@@ -150,7 +150,7 @@ class SemManager:
                         change,
                     )
                 elif is_single_line_change and is_edit_between_tokens:
-                    sem_tokens = SemManager.handle_single_line_delete_between_tokens(
+                    sem_tokens = SemTokManager.handle_single_line_delete_between_tokens(
                         sem_tokens,
                         next_token_index,
                         is_next_token_same_line,
@@ -159,7 +159,7 @@ class SemManager:
                         change_end_line,
                     )
                 else:
-                    sem_tokens = SemManager.handle_multi_line_delete(
+                    sem_tokens = SemTokManager.handle_multi_line_delete(
                         sem_tokens,
                         next_token_index,
                         nxt_tok_pos,
@@ -175,7 +175,7 @@ class SemManager:
             is_token_boundary_edit = False
             if insert_inside_token and prev_token_index is not None:
                 sem_tokens, is_token_boundary_edit, nxt_tok_pos, next_token_index = (
-                    SemManager.handle_insert_inside_token(
+                    SemTokManager.handle_insert_inside_token(
                         change,
                         sem_tokens,
                         prev_token_index,
@@ -195,7 +195,7 @@ class SemManager:
                 or is_multiline_insertion
             ) and next_token_index is not None:
                 if is_multiline_insertion:
-                    sem_tokens = SemManager.handle_multi_line_insertion(
+                    sem_tokens = SemTokManager.handle_multi_line_insertion(
                         sem_tokens,
                         next_token_index,
                         nxt_tok_pos,
@@ -208,7 +208,7 @@ class SemManager:
                         line_delta,
                     )
                 else:
-                    sem_tokens = SemManager.handle_single_line_insertion(
+                    sem_tokens = SemTokManager.handle_single_line_insertion(
                         sem_tokens,
                         next_token_index,
                         is_next_token_same_line,

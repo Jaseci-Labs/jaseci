@@ -3,7 +3,7 @@
 import copy
 import lsprotocol.types as lspt
 
-from jaclang.langserve.sem_manager import SemManager
+from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.utils.test import TestCase
 
 from typing import Tuple
@@ -36,7 +36,7 @@ class TestUpdateSemTokens(TestCase):
         """Check semantic token update."""
         doc_lines = copy.deepcopy(self.document_lines)
 
-        updated_semtokens = SemManager.update_sem_tokens(
+        updated_semtokens = SemTokManager.update_sem_tokens(
             "circle_ir",
             lspt.DidChangeTextDocumentParams(
                 text_document=lspt.VersionedTextDocumentIdentifier(

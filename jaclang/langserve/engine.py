@@ -13,7 +13,7 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
-from jaclang.langserve.sem_manager import SemManager
+from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
     create_range,
@@ -43,7 +43,7 @@ class ModuleInfo:
         """Initialize module info."""
         self.ir = ir
         self.impl_parent: Optional[ModuleInfo] = impl_parent
-        self.sem_manager = SemManager(ir=ir)
+        self.sem_manager = SemTokManager(ir=ir)
 
     @property
     def uri(self) -> str:
