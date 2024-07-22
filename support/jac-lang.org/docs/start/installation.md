@@ -1,4 +1,4 @@
-# **Installing Jac-Lang**
+# <span style="color: orange; font-weight: bold">Installing Jac-Lang</span>
 
 Firstly make sure that Python 3.12 or higher is installed in your environment, then simply install Jac using pip:
 
@@ -25,7 +25,8 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
 >
 > If these commands prints ```hello world``` you are good to go.
 
-## Supportive Jac CLI commands
+## <span style="color: orange">Supportive Jac CLI commands
+</span>
 
 - Clean cached files (recommended after each run):
     ```bash
@@ -37,7 +38,8 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
     ```
     - Visit [https://dreampuf.github.io/GraphvizOnline/](https://dreampuf.github.io/GraphvizOnline/) to visualize the graph.
 
-## Installing the VS Code Extention
+## <span style="color: orange">Installing the VS Code Extention
+</span>
 
 In addition to setting up JacLang itself, you may also want to take advantage of the JacLang language extension for Visual Studio Code (VSCode). This will give you enhanced code highlighting, autocomplete, and other useful language features within your VSCode environment.
 

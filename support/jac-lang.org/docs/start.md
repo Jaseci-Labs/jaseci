@@ -1,6 +1,6 @@
-# **Getting Started with Jac-Lang**
+# <span style="color: orange; font-weight: bold">Getting Started with Jac-Lang</span>
 
-Welcome to Jac, if you know python, there's near zero learning curve to get started.
+If you know python, there's near zero learning curve to get started.
 
 <div class="grid cards" markdown>
 
@@ -24,29 +24,29 @@ Welcome to Jac, if you know python, there's near zero learning curve to get star
 
 </div>
 
-## Features in Jac-Lang
+## <span style="color: orange">Features in Jac-Lang</span>
 
 While Python is widely regarded for its simplicity and versatility, jac lang offers several advantages, particularly in terms of readability, flexibility, and type safety. By addressing some of the shortcomings of Python, jac lang provides developers with a more robust and scalable alternative for building modern applications.
 
 <!-- - Full-stack programming language
     - Jaclang empowers developers to create both front-end and back-end components of their applications using a single language. This eliminates the need to switch between different programming languages and frameworks, resulting in a more cohesive and efficient development experience. -->
 
-- Supersets Python
+- **Supersets Python**
     - As TypeScript supersets JavaScript, Jac-Lang is a language which was built on top of python which all pythony goodness available to all jac-lang programmers while including the entire python ecosystem, available to use.
 
-- Offers more readable code
+- **Offers more readable code**
     - By adopting a clean and intuitive syntax, Jac Lang makes it easier for developers and coders to write code that is easy to understand and maintain.
 
-- More flexible than python, in terms of styling the code
+- **More flexible than python, in terms of styling the code**
     - As jac lang uses syntax where multiline comments, multiline function declerations and more, which allows the user to arrange arguments, lists, dictionaties and other list-like objects in a readable format.
 
-- Type safe to support large codebases
+- **Type safe to support large codebases**
     - Jac lang prioritizes type safety to support the development of large-scale applications. By enforcing strict type checking, jac lang helps identify potential errors at compile time, rather than runtime, leading to more robust and reliable code.
 
-- Data Spatial Programming
+- **Data Spatial Programming**
     - Jac Lang's programming approach focuses on data-spatial constructs, enhancing the handling and visualization of data in ways traditional programming paradigms might not support.
 
-- Programming with Large Language Models
+- **Programming with Large Language Models**
     - Jac-lang has an up & coming feature which allows programmers to integrate LLMs into their programming pipeline seamlessly without the need for learning extensive libraries and complicated new syntaxes.
 <!-- ## Integrating Jac into Python Modules
 
