@@ -144,12 +144,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
+        from jaclang.compiler import RESERVED_KEYWORD_LIST
+
+        value = node.name if node.name not in RESERVED_KEYWORD_LIST else f"{node.name}_"
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=(
-                node.name if node.name != "root" else "root_"
-            ),  # root is a reserved keyword
+            value=value,
             line=node.lineno,
             end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
@@ -1875,10 +1876,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         id: _Identifier
         ctx: expr_context
         """
+        from jaclang.compiler import RESERVED_KEYWORD_LIST
+
+        value = node.id if node.id not in RESERVED_KEYWORD_LIST else f"{node.id}_"
         ret = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.id if node.id != "root" else "root_",  # reserved word
+            value=value,
             line=node.lineno,
             end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
@@ -1913,13 +1917,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         class Nonlocal(stmt):
             names: list[_Identifier]
         """
+        from jaclang.compiler import RESERVED_KEYWORD_LIST
+
         names: list[ast.NameAtom] = []
         for name in node.names:
+            value = name if name not in RESERVED_KEYWORD_LIST else f"{name}_"
             names.append(
                 ast.Name(
                     file_path=self.mod_path,
                     name=Tok.NAME,
-                    value=name if name != "root" else "root_",
+                    value=value,
                     line=node.lineno,
                     end_line=node.end_lineno if node.end_lineno else node.lineno,
                     col_start=node.col_offset,
@@ -2238,10 +2245,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             arg: _Identifier
             annotation: expr | None
         """
+        from jaclang.compiler import RESERVED_KEYWORD_LIST
+
+        value = node.arg if node.arg not in RESERVED_KEYWORD_LIST else f"{node.arg}_"
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
-            value=node.arg if node.arg != "root" else "root_",  # reserved word
+            value=value,
             line=node.lineno,
             end_line=node.end_lineno if node.end_lineno else node.lineno,
             col_start=node.col_offset,
