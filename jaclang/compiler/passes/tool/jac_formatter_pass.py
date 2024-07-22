@@ -10,6 +10,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
+from jaclang.settings import settings
 
 
 class JacFormatPass(Pass):
@@ -20,7 +21,7 @@ class JacFormatPass(Pass):
         self.comments: list[ast.CommentToken] = []
         self.indent_size = 4
         self.indent_level = 0
-        self.MAX_LINE_LENGTH = 44
+        self.MAX_LINE_LENGTH = int(float(settings.max_line_length) / 2)
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Enter node."""
