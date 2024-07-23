@@ -1,6 +1,6 @@
 import:py from mtllm.llms, OpenAI;
 
-glob llm = OpenAI();
+glob llm = OpenAI(model_name="gpt-4o");
 
 obj Essay {
     has essay: str;
@@ -11,7 +11,7 @@ obj Essay {
     can give_grade(summary: str) -> 'A to D': str by llm();
 }
 
-with entry{
+with entry {
     essay = "With a population of approximately 45 million Spaniards and 3.5 million immigrants,"
             "Spain is a country of contrasts where the richness of its culture blends it up with"
             "the variety of languages and dialects used. Being one of the largest economies worldwide,"
