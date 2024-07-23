@@ -144,9 +144,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
-        from jaclang.compiler import RESERVED_KEYWORD_LIST
+        from jaclang.compiler import TOKEN_MAP
 
-        value = node.name if node.name not in RESERVED_KEYWORD_LIST else f"{node.name}_"
+        reserved_keywords = [v for _, v in TOKEN_MAP.items()]
+
+        value = node.name if node.name not in reserved_keywords else f"{node.name}_"
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -1876,9 +1878,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         id: _Identifier
         ctx: expr_context
         """
-        from jaclang.compiler import RESERVED_KEYWORD_LIST
+        from jaclang.compiler import TOKEN_MAP
 
-        value = node.id if node.id not in RESERVED_KEYWORD_LIST else f"{node.id}_"
+        reserved_keywords = [
+            v
+            for _, v in TOKEN_MAP.items()
+            if v not in ["float", "int", "str", "bool", "self"]
+        ]
+
+        value = node.id if node.id not in reserved_keywords else f"{node.id}_"
         ret = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -1917,11 +1925,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         class Nonlocal(stmt):
             names: list[_Identifier]
         """
-        from jaclang.compiler import RESERVED_KEYWORD_LIST
+        from jaclang.compiler import TOKEN_MAP
+
+        reserved_keywords = [v for _, v in TOKEN_MAP.items()]
 
         names: list[ast.NameAtom] = []
         for name in node.names:
-            value = name if name not in RESERVED_KEYWORD_LIST else f"{name}_"
+            value = name if name not in reserved_keywords else f"{name}_"
             names.append(
                 ast.Name(
                     file_path=self.mod_path,
@@ -2245,9 +2255,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             arg: _Identifier
             annotation: expr | None
         """
-        from jaclang.compiler import RESERVED_KEYWORD_LIST
+        from jaclang.compiler import TOKEN_MAP
 
-        value = node.arg if node.arg not in RESERVED_KEYWORD_LIST else f"{node.arg}_"
+        reserved_keywords = [
+            v
+            for _, v in TOKEN_MAP.items()
+            if v not in ["float", "int", "str", "bool", "self"]
+        ]
+
+        value = node.arg if node.arg not in reserved_keywords else f"{node.arg}_"
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,

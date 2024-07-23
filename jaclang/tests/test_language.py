@@ -548,6 +548,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
         self.assertIn("class Circle {\n    can init(radius: float", output)
+        self.assertIn("node_ = 90;    \n    print(node_) ;\n}\n", output)
 
     def test_needs_import_3(self) -> None:
         """Test py ast to Jac ast conversion output."""

@@ -76,13 +76,3 @@ TOKEN_MAP.update(
 
 
 __all__ = ["jac_lark", "TOKEN_MAP"]
-
-# fmt: off
-RESERVED_KEYWORD_LIST = [
-    'let', 'abs', 'obj', 'enum', 'node', 'ignore', 'visit',
-    'revisit', 'spawn', 'entry', 'include', 'as', 'edge',
-    'walker', 'test', 'assert', 'check', 'by', 'disengage',
-    'skip', 'report', 'except', 'finally', 'raise', 'in', 'is',
-    'can', 'static', 'override', 'match', 'case', 'super', 'root'
-]
-# fmt: on
