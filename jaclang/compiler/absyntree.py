@@ -878,21 +878,41 @@ class Import(ElementStmt, CodeBlockStmt):
         """Check if import is python."""
         if self.hint and self.hint.tag.value == "py":
             return True
+        if not self.hint:
+            return not self.__jac_detected
         return False
 
     @property
     def is_jac(self) -> bool:
         """Check if import is jac."""
-        if not self.hint or self.hint.tag.value == "jac":
+        if self.hint and self.hint.tag.value == "jac":
             return True
+        if not self.hint:
+            return self.__jac_detected
         return False
 
-    # @property
-    # def __jac_detected(self) -> bool:
-    #     """Check if import is jac."""
-    #     if not self.hint or self.hint.tag.value == "jac":
-    #         return True
-    #     return False
+    @property
+    def __jac_detected(self) -> bool:
+        """Check if import is jac."""
+        if self.from_loc:
+            if self.from_loc.resolve_relative_path().endswith(".jac"):
+                return True
+            if os.path.isdir(self.from_loc.resolve_relative_path()):
+                if os.path.exists(
+                    os.path.join(self.from_loc.resolve_relative_path(), "__init__.jac")
+                ):
+                    return True
+                for i in self.items.items:
+                    if isinstance(
+                        i, ModuleItem
+                    ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
+                        ".jac"
+                    ):
+                        return True
+        return any(
+            isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
+            for i in self.items.items
+        )
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize import node."""

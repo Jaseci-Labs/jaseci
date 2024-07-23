@@ -313,9 +313,9 @@ class JacParser(Pass):
             else:
                 paths = [i for i in kid if isinstance(i, ast.ModulePath)]
                 items = ast.SubNodeList[ast.ModulePath](
-                    items=paths, delim=Tok.COMMA, kid=kid[2:-1]
+                    items=paths, delim=Tok.COMMA, kid=kid[2 if lang else 1 : -1]
                 )
-                kid = (kid[:2] if lang else kid[1:]) + [items] + kid[-1:]
+                kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
 
             is_absorb = False
             if isinstance(items, ast.SubNodeList):
@@ -372,7 +372,7 @@ class JacParser(Pass):
             items = ast.SubNodeList[ast.ModulePath](
                 items=[from_path], delim=Tok.COMMA, kid=[from_path]
             )
-            kid = (kid[:2] if lang else kid[1:]) + [items] + kid[-1:]
+            kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
             is_absorb = True
             return self.nu(
                 ast.Import(
