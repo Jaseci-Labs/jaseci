@@ -21,7 +21,7 @@ jobs:
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry build
           poetry publish
-      - run: pip install githubrelease
+      - run: pip install githubrelease markdown-to-json
       - run: python scripts/gh_release.py
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
