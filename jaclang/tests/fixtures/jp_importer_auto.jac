@@ -1,4 +1,4 @@
-import from math, sin as s, cos, sqrt as sq;
+import from math { sin as s, cos, sqrt as sq }
 include random;
 import from ..test_cli, JacCliTests as Jac;
 import from deep.mycode, code as c;

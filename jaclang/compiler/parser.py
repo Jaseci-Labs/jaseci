@@ -298,7 +298,8 @@ class JacParser(Pass):
         def import_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
 
-            import_stmt: KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI
+            import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
+                    | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
                     | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
                     | include_stmt
             """
@@ -319,7 +320,7 @@ class JacParser(Pass):
 
             is_absorb = False
             if isinstance(items, ast.SubNodeList):
-                return self.nu(
+                ret = self.nu(
                     ast.Import(
                         hint=lang,
                         from_loc=from_path,
@@ -328,6 +329,15 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
+                if (
+                    from_path
+                    and isinstance(kid[-1], ast.Token)
+                    and kid[-1].name == Tok.SEMI
+                ):
+                    self.parse_ref.warning(
+                        "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
+                    )
+                return ret
             else:
                 raise self.ice()
 
