@@ -288,7 +288,7 @@ class JacFormatPass(Pass):
                 elif stmt.value == "=":
                     self.emit(node, f" {stmt.value} ")
                 else:
-                    self.emit(node, f"{stmt.value}")
+                    self.emit(node, f"{stmt.gen.jac}")
                 prev_token = stmt
                 continue
             elif isinstance(stmt, ast.Semi):
