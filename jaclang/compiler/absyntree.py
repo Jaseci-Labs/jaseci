@@ -858,7 +858,7 @@ class Import(ElementStmt, CodeBlockStmt):
 
     def __init__(
         self,
-        hint: SubTag[Name],
+        hint: Optional[SubTag[Name]],
         from_loc: Optional[ModulePath],
         items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
         is_absorb: bool,  # For includes
@@ -873,11 +873,25 @@ class Import(ElementStmt, CodeBlockStmt):
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
+    @property
+    def is_py(self) -> bool:
+        """Check if import is python."""
+        if self.hint and self.hint.tag.value == "py":
+            return True
+        return False
+
+    @property
+    def is_jac(self) -> bool:
+        """Check if import is jac."""
+        if not self.hint or self.hint.tag.value == "jac":
+            return True
+        return False
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize import node."""
         res = True
         if deep:
-            res = self.hint.normalize(deep)
+            res = self.hint.normalize(deep) if self.hint else res
             res = res and self.from_loc.normalize(deep) if self.from_loc else res
             res = res and self.items.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
@@ -888,7 +902,8 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_INCLUDE))
         else:
             new_kid.append(self.gen_token(Tok.KW_IMPORT))
-        new_kid.append(self.hint)
+        if self.hint:
+            new_kid.append(self.hint)
         if self.from_loc:
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
