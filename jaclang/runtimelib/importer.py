@@ -171,7 +171,7 @@ class ImportReturn:
                 else module.__name__
             )
             if isinstance(self.importer, JacImporter):
-                new_module = JacMachine.loaded_modules.get(
+                new_module = self.importer.jac_machine.loaded_modules.get(
                     package_name,
                     self.importer.create_jac_py_module(
                         mod_bundle, name, module.__name__, jac_file_path
@@ -210,8 +210,8 @@ class Importer:
 
     def update_sys(self, module: types.ModuleType, spec: ImportPathSpec) -> None:
         """Update sys.modules with the newly imported module."""
-        if spec.module_name not in JacMachine.loaded_modules:
-            JacMachine.loaded_modules[spec.module_name] = module
+        if spec.module_name not in self.jac_machine.loaded_modules:
+            self.jac_machine.loaded_modules[spec.module_name] = module
 
     def get_codeobj(
         self,
@@ -344,8 +344,8 @@ class JacImporter(Importer):
         module.__file__ = None
         module.__dict__["__jac_mod_bundle__"] = mod_bundle
 
-        if module_name not in JacMachine.loaded_modules:
-            JacMachine.loaded_modules[module_name] = module
+        if module_name not in self.jac_machine.loaded_modules:
+            self.jac_machine.loaded_modules[module_name] = module
         return module
 
     def create_jac_py_module(
@@ -360,13 +360,13 @@ class JacImporter(Importer):
         module.__file__ = full_target
         module.__name__ = module_name
         module.__dict__["__jac_mod_bundle__"] = mod_bundle
-        JacMachine.loaded_modules[module_name] = module
+        self.jac_machine.loaded_modules[module_name] = module
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")
             for i in range(len(parts)):
                 package_name = ".".join(parts[: i + 1])
-                if package_name not in JacMachine.loaded_modules:
+                if package_name not in self.jac_machine.loaded_modules:
                     full_mod_path = path.join(
                         base_path, package_name.replace(".", path.sep)
                     )
@@ -375,8 +375,8 @@ class JacImporter(Importer):
                         full_mod_path=full_mod_path,
                         mod_bundle=mod_bundle,
                     )
-            setattr(JacMachine.loaded_modules[package_path], module_name, module)
-            JacMachine.loaded_modules[f"{package_path}.{module_name}"] = module
+            setattr(self.jac_machine.loaded_modules[package_path], module_name, module)
+            self.jac_machine.loaded_modules[f"{package_path}.{module_name}"] = module
 
         return module
 
@@ -385,11 +385,11 @@ class JacImporter(Importer):
         unique_loaded_items: list[types.ModuleType] = []
         module = None
         valid_mod_bundle = (
-            JacMachine.loaded_modules[spec.mod_bundle].__jac_mod_bundle__
+            self.jac_machine.loaded_modules[spec.mod_bundle].__jac_mod_bundle__
             if isinstance(spec.mod_bundle, str)
-            and spec.mod_bundle in JacMachine.loaded_modules
+            and spec.mod_bundle in self.jac_machine.loaded_modules
             and "__jac_mod_bundle__"
-            in JacMachine.loaded_modules[spec.mod_bundle].__dict__
+            in self.jac_machine.loaded_modules[spec.mod_bundle].__dict__
             else None
         )
 
@@ -420,9 +420,9 @@ class JacImporter(Importer):
                 try:
                     if not codeobj:
                         raise ImportError(f"No bytecode found for {spec.full_target}")
-                    with SysModulesPatch(JacMachine.loaded_modules), sys_path_context(
-                        spec.caller_dir
-                    ):
+                    with SysModulesPatch(
+                        self.jac_machine.loaded_modules
+                    ), sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
                     raise ImportError(f"Error importing {spec.full_target}: {str(e)}")
