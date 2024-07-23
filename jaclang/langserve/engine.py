@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
@@ -13,18 +13,16 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
     create_range,
     find_index,
     find_node_by_position,
-    find_surrounding_tokens,
     gen_diagnostics,
     get_item_path,
-    get_line_of_code,
     get_mod_path,
     get_symbols_for_outline,
-    get_token_start,
     parse_symbol_path,
     resolve_completion_symbol_table,
 )
@@ -45,226 +43,12 @@ class ModuleInfo:
         """Initialize module info."""
         self.ir = ir
         self.impl_parent: Optional[ModuleInfo] = impl_parent
-        self.sem_tokens: list[int] = self.gen_sem_tokens()
-        self.static_sem_tokens: List[
-            Tuple[lspt.Position, int, int, ast.AstSymbolNode]
-        ] = self.gen_sem_tok_node()
+        self.sem_manager = SemTokManager(ir=ir)
 
     @property
     def uri(self) -> str:
         """Return uri."""
         return uris.from_fs_path(self.ir.loc.mod_path)
-
-    def gen_sem_tokens(self) -> list[int]:
-        """Return semantic tokens."""
-        tokens = []
-        prev_line, prev_col = 0, 0
-        for node in self.ir._in_mod_nodes:
-            if isinstance(node, ast.NameAtom) and node.sem_token:
-                line, col_start, col_end = (
-                    node.loc.first_line - 1,
-                    node.loc.col_start - 1,
-                    node.loc.col_end - 1,
-                )
-                length = col_end - col_start
-                tokens += [
-                    line - prev_line,
-                    col_start if line != prev_line else col_start - prev_col,
-                    length,
-                    *node.sem_token,
-                ]
-                prev_line, prev_col = line, col_start
-        return tokens
-
-    def gen_sem_tok_node(
-        self,
-    ) -> List[Tuple[lspt.Position, int, int, ast.AstSymbolNode]]:
-        """Return semantic tokens."""
-        tokens: List[Tuple[lspt.Position, int, int, ast.AstSymbolNode]] = []
-        for node in self.ir._in_mod_nodes:
-            if isinstance(node, ast.NameAtom) and node.sem_token:
-                line, col_start, col_end = (
-                    node.loc.first_line - 1,
-                    node.loc.col_start - 1,
-                    node.loc.col_end - 1,
-                )
-                length = col_end - col_start
-                pos = lspt.Position(line, col_start)
-                tokens += [(pos, col_end, length, node)]
-        return tokens
-
-    def update_sem_tokens(
-        self,
-        content_changes: lspt.DidChangeTextDocumentParams,
-        sem_tokens: list[int],
-        document_lines: List[str],
-    ) -> list[int]:
-        """Update semantic tokens on change."""
-        for change in [
-            x
-            for x in content_changes.content_changes
-            if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
-        ]:
-            change_start_line = change.range.start.line
-            change_start_char = change.range.start.character
-            change_end_line = change.range.end.line
-            change_end_char = change.range.end.character
-
-            is_delete = change.text == ""
-            prev_token_index, next_token_index, insert_inside_token = (
-                find_surrounding_tokens(
-                    change_start_line,
-                    change_start_char,
-                    change_end_line,
-                    change_end_char,
-                    sem_tokens,
-                )
-            )
-            prev_tok_pos = get_token_start(prev_token_index, sem_tokens)
-            nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
-            changing_line_text = get_line_of_code(change_start_line, document_lines)
-            if not changing_line_text:
-                return sem_tokens
-            is_edit_between_tokens = bool(
-                (
-                    change_start_line > prev_tok_pos[0]
-                    or (
-                        change_start_line == prev_tok_pos[0]
-                        and change_start_char
-                        > prev_tok_pos[1] + sem_tokens[prev_token_index + 2]
-                        if prev_token_index and prev_token_index + 2 < len(sem_tokens)
-                        else 0
-                    )
-                )
-                and (
-                    change_end_line < nxt_tok_pos[0]
-                    or (
-                        change_end_line == nxt_tok_pos[0]
-                        and change_end_char < nxt_tok_pos[1]
-                    )
-                )
-            )
-            text = r"%s" % change.text
-            line_delta = len(text.split("\n")) - 1
-            is_multiline_insertion = line_delta > 0
-            # logging.info(f"chnge text: {change}")
-            # logging.info(
-            #     f"""\n\nprev_token_index: {prev_token_index}, next_token_index:{next_token_index}
-            #     ,\n insert_inside_token: {insert_inside_token}, insert_between_tokens:
-            # {is_edit_between_tokens},\n multi_line_insertion:  {is_multiline_insertion}\n\n"""
-            # )
-            if is_delete:
-                next_token_index = (
-                    prev_token_index + 5
-                    if insert_inside_token
-                    and prev_token_index is not None
-                    or (
-                        next_token_index
-                        and prev_token_index is not None
-                        and next_token_index >= 10
-                        and next_token_index - prev_token_index == 10
-                    )
-                    else next_token_index
-                )
-                if next_token_index is None:
-                    return sem_tokens
-                nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
-                is_single_line_change = change_end_line == change_start_line
-                is_next_token_same_line = change_end_line == nxt_tok_pos[0]
-                if (
-                    is_single_line_change
-                    and insert_inside_token
-                    and prev_token_index is not None
-                ):
-                    sem_tokens[prev_token_index + 2] -= change.range_length
-                    if is_next_token_same_line:
-                        sem_tokens[next_token_index + 1] -= change.range_length
-                elif is_single_line_change and is_edit_between_tokens:
-                    if is_next_token_same_line:
-                        sem_tokens[next_token_index + 1] -= change.range_length
-
-                    else:
-                        sem_tokens[next_token_index] -= (
-                            change_end_line - change_start_line
-                        )
-                else:
-                    if is_next_token_same_line:
-                        char_del = nxt_tok_pos[1] - change_end_char
-                        total_char_del = change_start_char + char_del
-                        sem_tokens[next_token_index + 1] = (
-                            (total_char_del - prev_tok_pos[1])
-                            if prev_tok_pos[0] == change_start_line
-                            else total_char_del
-                        )
-                    sem_tokens[next_token_index] -= change_end_line - change_start_line
-                return sem_tokens
-
-            is_token_boundary_edit = False
-            if insert_inside_token and prev_token_index is not None:
-                for i in ["\n", " ", "\t"]:
-                    if i in change.text:
-                        if prev_tok_pos[1] == change_start_char:
-                            if i == "\n":
-                                sem_tokens[prev_token_index] += line_delta
-                                sem_tokens[prev_token_index + 1] = changing_line_text[1]
-                            else:
-                                sem_tokens[prev_token_index + 1] += len(change.text)
-                            return sem_tokens
-                        else:
-                            is_token_boundary_edit = True
-                            next_token_index = prev_token_index + 5
-                            nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
-                            break
-                if not is_token_boundary_edit:
-                    selected_region = change_end_char - change_start_char
-                    index_offset = 2
-                    sem_tokens[prev_token_index + index_offset] += (
-                        len(change.text) - selected_region
-                    )
-                    if (
-                        prev_tok_pos[0]
-                        == get_token_start(prev_token_index + 5, sem_tokens)[0]
-                    ):
-                        sem_tokens[prev_token_index + index_offset + 4] += (
-                            len(change.text) - selected_region
-                        )
-
-            tokens_on_same_line = prev_tok_pos[0] == nxt_tok_pos[0]
-            if (
-                is_edit_between_tokens
-                or is_token_boundary_edit
-                or is_multiline_insertion
-            ) and next_token_index is not None:
-                if is_multiline_insertion:
-                    if tokens_on_same_line:
-                        char_del = nxt_tok_pos[1] - change_end_char
-                        total_char_del = changing_line_text[1] + char_del
-
-                    else:
-                        is_prev_token_same_line = change_end_line == prev_tok_pos[0]
-                        is_next_token_same_line = change_start_line == nxt_tok_pos[0]
-                        if is_prev_token_same_line:
-                            total_char_del = nxt_tok_pos[1]
-                        elif is_next_token_same_line:
-                            char_del = nxt_tok_pos[1] - change_end_char
-                            total_char_del = changing_line_text[1] + char_del
-                        else:
-                            total_char_del = sem_tokens[next_token_index + 1]
-                            line_delta -= change_end_line - change_start_line
-                    sem_tokens[next_token_index + 1] = total_char_del
-                    sem_tokens[next_token_index] += line_delta
-                else:
-                    if tokens_on_same_line:
-                        sem_tokens[next_token_index + 1] += len(change.text)
-                        sem_tokens[next_token_index] += line_delta
-                    else:
-                        is_next_token_same_line = change_start_line == nxt_tok_pos[0]
-                        if is_next_token_same_line:
-                            sem_tokens[next_token_index] += line_delta
-                            sem_tokens[next_token_index + 1] += len(change.text)
-                        else:
-                            sem_tokens[next_token_index] += line_delta
-        return sem_tokens
 
 
 class JacLangServer(LanguageServer):
@@ -382,7 +166,7 @@ class JacLangServer(LanguageServer):
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
         node_selected = find_node_by_position(
-            self.modules[file_path].static_sem_tokens,
+            self.modules[file_path].sem_manager.static_sem_tokens,
             position.line,
             position.character - 2,
         )
@@ -453,13 +237,15 @@ class JacLangServer(LanguageServer):
         if file_path not in self.modules:
             return None
         token_index = find_index(
-            self.modules[file_path].sem_tokens,
+            self.modules[file_path].sem_manager.sem_tokens,
             position.line,
             position.character,
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].static_sem_tokens[token_index][3]
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
+            token_index
+        ][3]
         value = self.get_node_info(node_selected) if node_selected else None
         if value:
             return lspt.Hover(
@@ -506,13 +292,15 @@ class JacLangServer(LanguageServer):
         if file_path not in self.modules:
             return None
         token_index = find_index(
-            self.modules[file_path].sem_tokens,
+            self.modules[file_path].sem_manager.sem_tokens,
             position.line,
             position.character,
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].static_sem_tokens[token_index][3]
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
+            token_index
+        ][3]
         if node_selected:
             if (
                 isinstance(node_selected, ast.Name)
@@ -580,13 +368,13 @@ class JacLangServer(LanguageServer):
         if file_path not in self.modules:
             return []
         index1 = find_index(
-            self.modules[file_path].sem_tokens,
+            self.modules[file_path].sem_manager.sem_tokens,
             position.line,
             position.character,
         )
         if index1 is None:
             return []
-        node_selected = self.modules[file_path].static_sem_tokens[index1][3]
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
             list_of_references: list[lspt.Location] = [
                 lspt.Location(
@@ -602,7 +390,7 @@ class JacLangServer(LanguageServer):
         """Return semantic tokens for a file."""
         if file_path not in self.modules:
             return lspt.SemanticTokens(data=[])
-        return lspt.SemanticTokens(data=self.modules[file_path].sem_tokens)
+        return lspt.SemanticTokens(data=self.modules[file_path].sem_manager.sem_tokens)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

@@ -54,13 +54,10 @@ class JacImportPass(Pass):
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
-        lang = i.parent_of_type(ast.Import).hint.tag.value
-        if lang == "jac" and not i.sub_module:
-            self.import_jac_module(
-                node=i,
-                mod_path=node.loc.mod_path,
-            )
-        elif lang == "py":
+        imp_node = i.parent_of_type(ast.Import)
+        if imp_node.is_jac and not i.sub_module:
+            self.import_jac_module(node=i)
+        elif imp_node.is_py:
             self.__py_imports.add(i.path_str)
 
     def attach_mod_to_node(
@@ -139,7 +136,7 @@ class JacImportPass(Pass):
         if node.as_attr_list[0].sym_name in self.__py_imports:
             self.py_resolve_list.add(".".join([i.sym_name for i in node.as_attr_list]))
 
-    def import_jac_module(self, node: ast.ModulePath, mod_path: str) -> None:
+    def import_jac_module(self, node: ast.ModulePath) -> None:
         """Import a module."""
         self.cur_node = node  # impacts error reporting
         target = import_target_to_relative_path(
@@ -230,8 +227,12 @@ class PyImportPass(JacImportPass):
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
-        lang = i.parent_of_type(ast.Import).hint.tag.value
-        if lang == "py" and not i.sub_module and not is_standard_lib_module(i.path_str):
+        imp_node = i.parent_of_type(ast.Import)
+        if (
+            imp_node.is_py
+            and not i.sub_module
+            and not is_standard_lib_module(i.path_str)
+        ):
             mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
             if mod:
                 i.sub_module = mod

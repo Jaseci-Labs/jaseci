@@ -35,7 +35,6 @@ def generate_static_parser(force: bool = False) -> None:
             logging.error(f"Error generating reference files: {e}")
 
 
-generate_static_parser()
 try:
     from jaclang.compiler.generated import jac_parser as jac_lark
 except ModuleNotFoundError:
