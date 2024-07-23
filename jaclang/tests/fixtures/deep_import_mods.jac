@@ -11,7 +11,3 @@ with entry {
     after_mod = [m for m in sys.modules.keys() if m not in before_mod];
     print(after_mod);
 }
-
-with entry {
-    print(olprint());
-}
