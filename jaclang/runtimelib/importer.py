@@ -353,9 +353,7 @@ class JacImporter(Importer):
                         full_mod_path=full_mod_path,
                         mod_bundle=mod_bundle,
                     )
-            sys.modules[module_name] = module
-        else:
-            sys.modules[module_name] = module
+        sys.modules[module_name] = module
         return module
 
     def run_import(self, spec: ImportPathSpec) -> ImportReturn:
