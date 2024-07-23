@@ -14,7 +14,6 @@ from jaclang.compiler.codeloc import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
-from jaclang.utils.helpers import import_target_to_relative_path
 from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
@@ -249,7 +248,6 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
 def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
     """Get path for a module import name."""
     ret_target = None
-    module_location_path = mod_path.loc.mod_path
     if mod_path.parent and (
         (
             isinstance(mod_path.parent.parent, ast.Import)
@@ -269,9 +267,9 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
             )
         else:
             temporary_path_str = mod_path.path_str
-        sys.path.append(os.path.dirname(module_location_path))
+        sys.path.append(os.path.dirname(mod_path.loc.mod_path))
         spec = importlib.util.find_spec(temporary_path_str)
-        sys.path.remove(os.path.dirname(module_location_path))
+        sys.path.remove(os.path.dirname(mod_path.loc.mod_path))
         if spec and spec.origin and spec.origin.endswith(".py"):
             ret_target = spec.origin
     elif mod_path.parent and (
@@ -285,11 +283,7 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
             and mod_path.parent.is_jac
         )
     ):
-        ret_target = import_target_to_relative_path(
-            level=mod_path.level,
-            target=mod_path.path_str,
-            base_path=os.path.dirname(module_location_path),
-        )
+        ret_target = mod_path.resolve_relative_path()
     return ret_target
 
 
