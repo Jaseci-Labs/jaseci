@@ -10,6 +10,22 @@ from jaclang.plugin.default import hookimpl
 import streamlit.web.bootstrap as bootstrap
 
 
+def run_streamlit(basename: str, dirname: str) -> None:
+    """Run the Streamlit application."""
+    from jaclang import jac_import
+    from jaclang.plugin.feature import JacFeature as Jac
+
+    Jac.context().init_memory(base_path=dirname)
+    (st_app,) = jac_import(basename, base_path=dirname)
+
+    if hasattr(st_app, "main"):
+        st_app.main()
+    else:
+        print(
+            "No main function found. Please define a main function in your .jac file or put in a with entrypoint block."
+        )
+
+
 class JacCmd:
     """Jac CLI."""
 
@@ -32,20 +48,13 @@ class JacCmd:
                     basename not in sys.modules
                 ), "Please use another name for the .jac file. It conflicts with a Python package."
                 py_lines = [
-                    "from jaclang import jac_import",
-                    "from jaclang.plugin.feature import JacFeature as Jac",
-                    f"Jac.context().init_memory(base_path='{dirname}')",
-                    f"(st_app,) = jac_import('{basename}', base_path='{dirname}')",
-                    "if hasattr(st_app, 'main'):",
-                    "    st_app.main()",
-                    "else:",
-                    "   print('No main function found. Please define a main function in your .jac file or put in a with entrypoint block.')",  # noqa: E501
+                    "from jac_streamlit.streamlit import run_streamlit",
+                    f'run_streamlit("{basename}", "{dirname}")',
                 ]
                 with tempfile.NamedTemporaryFile(
                     mode="w", suffix=".py", delete=False
                 ) as temp_file:
                     file_name = temp_file.name
-                    print(f"Temp file: {file_name}")
                     temp_file.write("\n".join(py_lines))
                 bootstrap.run(file_name, is_hello=False, args=[], flag_options={})
             else:
