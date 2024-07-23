@@ -34,5 +34,5 @@ gh_release_create(
     publish=True,
     name=f"v{version}",
     asset_pattern="dist/*",
-    body="Release notes for MTLLM",
+    body=get_release_info(version),
 )
