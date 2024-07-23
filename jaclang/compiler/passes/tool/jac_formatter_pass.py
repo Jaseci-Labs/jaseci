@@ -1327,7 +1327,7 @@ class JacFormatPass(Pass):
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
-    def handle_long_assignment(self, node: ast.AstNode, kid: ast.AstNode) -> None:
+    def handle_long_assignment(self, node: ast.Assignment, kid: ast.AstNode) -> None:
         """Handle long assignment lines."""
         parts = re.split(r"(=)", kid.gen.jac)
         first_part = parts.pop(0).strip()
@@ -1367,11 +1367,13 @@ class JacFormatPass(Pass):
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        target: SubNodeList[AtomType],
-        value: Optional[ExprType | YieldStmt],
-        type_tag: Optional[SubTag[ExprType]],
+        target: SubNodeList[Expr],
+        value: Optional[Expr | YieldExpr],
+        type_tag: Optional[SubTag[Expr]],
         mutable: bool = True,
-        aug_op: Optional[Token] = None
+        aug_op: Optional[Token] = None,
+        semstr: Optional[String] = None,
+        is_enum_stmt: bool = False,
         """
         prev_token = None
         for kid in node.kid:
