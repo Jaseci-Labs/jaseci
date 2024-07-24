@@ -1,5 +1,5 @@
 import:py random;
-import:py from typing, Tuple;
+import:py from typing { Tuple }
 
 obj Button {
     can is_pressed(pos: tuple, pressed: str) -> bool {

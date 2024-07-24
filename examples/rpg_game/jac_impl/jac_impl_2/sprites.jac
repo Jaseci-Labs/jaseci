@@ -30,21 +30,23 @@ obj Spritesheet {
 Object for the player with type pygame.sprite.Sprite
 """
 obj Player :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
     has _layer: int = PLAYER_LAYER,
         width: int = TILESIZE,
         height: int = TILESIZE,
         x_change: int = 0,
         y_change: int = 0,
         facing: str = 'down',
-        animation_loop: int = 1;
+        animation_loop: float = 1;
 
-    can init(game: None, x: int, y: int) {
-        self.game = game;
+    can postinit() {
         self._layer = PLAYER_LAYER;
-        self.groups = self.game.all_sprites;
-        pygame.sprite.Sprite.init(self, self.groups);
-        self.x = x * TILESIZE;
-        self.y = y * TILESIZE;
+        self._groups = self.game.all_sprites;
+        pygame.sprite.Sprite.init(self, self._groups);
+        self.x*=TILESIZE;
+        self.y*=TILESIZE;
         self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height);
         self.rect = self.image.get_rect();
         self.rect.x = self.x;
@@ -201,20 +203,22 @@ obj Player :pygame.sprite.Sprite: {
 Object for enemies with type pygame.sprite.Sprite
 """
 obj Enemy :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
     has _layer: int = ENEMY_LAYER,
         width: inr = TILESIZE,
         height: int = TILESIZE,
         x_change: int = 0,
         y_change: int = 0,
-        animation_loop: int = 0,
+        animation_loop: float = 0,
         movement_loop: int = 0;
 
-    can init(game: None, x: int, y: int) {
-        self.game = game;
-        self.groups = (self.game.all_sprites, self.game.enemies);
-        pygame.sprite.Sprite.__init__(self, self.groups);
-        self.x = x * TILESIZE;
-        self.y = y * TILESIZE;
+    can postinit() {
+        self._groups = (self.game.all_sprites, self.game.enemies);
+        pygame.sprite.Sprite.__init__(self, self._groups);
+        self.x*=TILESIZE;
+        self.y*=TILESIZE;
         self.image = self.game.enemy_spritesheet.get_sprite(3, 2, self.width, self.height);
         self.facing = random.choice(['up', 'down', 'left', 'right']);
         self.max_travel = random.randint(7, 30);
@@ -334,16 +338,18 @@ obj Enemy :pygame.sprite.Sprite: {
 Object for blocks (Walls) with type pygame.sprite.Sprite
 """
 obj Block :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
     has _layer: int = BLOCK_LAYER,
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can init(game: None, x: int, y: int) {
-        self.game = game;
-        self.groups = (self.game.all_sprites, self.game.blocks);
-        pygame.sprite.Sprite.init(self, self.groups);
-        self.x = x * TILESIZE;
-        self.y = y * TILESIZE;
+    can postinit() {
+        self._groups = (self.game.all_sprites, self.game.blocks);
+        pygame.sprite.Sprite.init(self, self._groups);
+        self.x*=TILESIZE;
+        self.y*=TILESIZE;
         self.image = self.game.terrain_spritesheet.get_sprite(960, 448, self.width, self.height);
         self.rect = self.image.get_rect();
         self.rect.x = self.x;
@@ -355,16 +361,18 @@ obj Block :pygame.sprite.Sprite: {
 Object for ground with type pygame.sprite.Sprite
 """
 obj Ground :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
     has _layer: int = GROUND_LAYER,
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can init(game: None, x: int, y: int) {
-        self.game = game;
-        self.groups = self.game.all_sprites;
-        pygame.sprite.Sprite.init(self, self.groups);
-        self.x = x * TILESIZE;
-        self.y = y * TILESIZE;
+    can postinit() {
+        self._groups = self.game.all_sprites;
+        pygame.sprite.Sprite.init(self, self._groups);
+        self.x*=TILESIZE;
+        self.y*=TILESIZE;
         self.image = self.game.terrain_spritesheet.get_sprite(64, 352, self.width, self.height);
         self.rect = self.image.get_rect();
         self.rect.x = self.x;
@@ -376,15 +384,17 @@ obj Ground :pygame.sprite.Sprite: {
 Object class for buttons used in the game (Start, Restart)
 """
 obj Button {
-    can init(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int) {
-        self.font = pygame.font.Font(GENERAL_FONT, fontsize);
-        self.content = content;
-        self.x = x;
-        self.y = y;
-        self.width = width;
-        self.height = height;
-        self.fg = fg;
-        self.bg = bg;
+        has x: int,
+        y: int,
+        width: int,
+        height: int,
+        fg: tuple,
+        bg: tuple,
+        content: str,
+        fontsize: int;
+
+    can postinit() {
+        self.font = pygame.font.Font(GENERAL_FONT, self.fontsize);
         self.image = pygame.Surface((self.width, self.height));
         self.image.fill(self.bg);
         self.rect = self.image.get_rect();
@@ -411,17 +421,17 @@ obj Button {
 Object class for attacks by the player
 """
 obj Attack :pygame.sprite.Sprite: {
+    has game: Game,
+        x: int,
+        y: int;
     has _layer: int = ATTACK_LAYER,
         width: int = TILESIZE,
         height: int = TILESIZE,
-        animation_loop: int = 0;
+        animation_loop: float = 0;
 
-    can init(game: None, x: int, y: int) {
-        self.game = game;
-        self.groups = (self.game.all_sprites, self.game.attacks);
-        pygame.sprite.Sprite.init(self, self.groups);
-        self.x = x;
-        self.y = y;
+    can postinit() {
+        self._groups = (self.game.all_sprites, self.game.attacks);
+        pygame.sprite.Sprite.init(self, self._groups);
         self.image = self.game.attack_spritesheet.get_sprite(0, 0, self.width, self.height);
         self.rect = self.image.get_rect();
         self.rect.x = self.x;

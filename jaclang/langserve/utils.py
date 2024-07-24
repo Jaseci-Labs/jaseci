@@ -14,7 +14,6 @@ from jaclang.compiler.codeloc import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
-from jaclang.utils.helpers import import_target_to_relative_path
 from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
@@ -249,16 +248,15 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
 def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
     """Get path for a module import name."""
     ret_target = None
-    module_location_path = mod_path.loc.mod_path
     if mod_path.parent and (
         (
             isinstance(mod_path.parent.parent, ast.Import)
-            and mod_path.parent.parent.hint.tag.value == "py"
+            and mod_path.parent.parent.is_py
         )
         or (
             isinstance(mod_path.parent, ast.Import)
             and mod_path.parent.from_loc
-            and mod_path.parent.hint.tag.value == "py"
+            and mod_path.parent.is_py
         )
     ):
         if mod_path.path and name_node in mod_path.path:
@@ -269,38 +267,34 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
             )
         else:
             temporary_path_str = mod_path.path_str
-        sys.path.append(os.path.dirname(module_location_path))
+        sys.path.append(os.path.dirname(mod_path.loc.mod_path))
         spec = importlib.util.find_spec(temporary_path_str)
-        sys.path.remove(os.path.dirname(module_location_path))
+        sys.path.remove(os.path.dirname(mod_path.loc.mod_path))
         if spec and spec.origin and spec.origin.endswith(".py"):
             ret_target = spec.origin
     elif mod_path.parent and (
         (
             isinstance(mod_path.parent.parent, ast.Import)
-            and mod_path.parent.parent.hint.tag.value == "jac"
+            and mod_path.parent.parent.is_jac
         )
         or (
             isinstance(mod_path.parent, ast.Import)
             and mod_path.parent.from_loc
-            and mod_path.parent.hint.tag.value == "jac"
+            and mod_path.parent.is_jac
         )
     ):
-        ret_target = import_target_to_relative_path(
-            level=mod_path.level,
-            target=mod_path.path_str,
-            base_path=os.path.dirname(module_location_path),
-        )
+        ret_target = mod_path.resolve_relative_path()
     return ret_target
 
 
 def get_item_path(mod_item: ast.ModuleItem) -> tuple[str, tuple[int, int]] | None:
     """Get path."""
     item_name = mod_item.name.value
-    if mod_item.from_parent.hint.tag.value == "py" and mod_item.from_parent.from_loc:
+    if mod_item.from_parent.is_py and mod_item.from_parent.from_loc:
         path = get_mod_path(mod_item.from_parent.from_loc, mod_item.name)
         if path:
             return get_definition_range(path, item_name)
-    elif mod_item.from_parent.hint.tag.value == "jac":
+    elif mod_item.from_parent.is_jac:
         mod_node = mod_item.from_mod_path
         if mod_node.sub_module and mod_node.sub_module._sym_tab:
             for symbol_name, symbol in mod_node.sub_module._sym_tab.tab.items():
