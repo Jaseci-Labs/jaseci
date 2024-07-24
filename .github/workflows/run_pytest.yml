@@ -1,4 +1,4 @@
-name: Run Tests
+name: jaclang Tests
 
 on:
   pull_request:
@@ -25,4 +25,4 @@ jobs:
         pip install pytest
 
     - name: Run tests
-      run: pytest -x -k test_jaseci
+      run: pytest -x
