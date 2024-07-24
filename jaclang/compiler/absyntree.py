@@ -858,7 +858,7 @@ class Import(ElementStmt, CodeBlockStmt):
 
     def __init__(
         self,
-        hint: SubTag[Name],
+        hint: Optional[SubTag[Name]],
         from_loc: Optional[ModulePath],
         items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
         is_absorb: bool,  # For includes
@@ -873,11 +873,52 @@ class Import(ElementStmt, CodeBlockStmt):
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
+    @property
+    def is_py(self) -> bool:
+        """Check if import is python."""
+        if self.hint and self.hint.tag.value == "py":
+            return True
+        if not self.hint:
+            return not self.__jac_detected
+        return False
+
+    @property
+    def is_jac(self) -> bool:
+        """Check if import is jac."""
+        if self.hint and self.hint.tag.value == "jac":
+            return True
+        if not self.hint:
+            return self.__jac_detected
+        return False
+
+    @property
+    def __jac_detected(self) -> bool:
+        """Check if import is jac."""
+        if self.from_loc:
+            if self.from_loc.resolve_relative_path().endswith(".jac"):
+                return True
+            if os.path.isdir(self.from_loc.resolve_relative_path()):
+                if os.path.exists(
+                    os.path.join(self.from_loc.resolve_relative_path(), "__init__.jac")
+                ):
+                    return True
+                for i in self.items.items:
+                    if isinstance(
+                        i, ModuleItem
+                    ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
+                        ".jac"
+                    ):
+                        return True
+        return any(
+            isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
+            for i in self.items.items
+        )
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize import node."""
         res = True
         if deep:
-            res = self.hint.normalize(deep)
+            res = self.hint.normalize(deep) if self.hint else res
             res = res and self.from_loc.normalize(deep) if self.from_loc else res
             res = res and self.items.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
@@ -888,7 +929,8 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_INCLUDE))
         else:
             new_kid.append(self.gen_token(Tok.KW_IMPORT))
-        new_kid.append(self.hint)
+        if self.hint:
+            new_kid.append(self.hint)
         if self.from_loc:
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
@@ -940,6 +982,26 @@ class ModulePath(AstSymbolNode):
         return ("." * self.level) + ".".join(
             [p.value for p in self.path] if self.path else [self.name_spec.sym_name]
         )
+
+    def resolve_relative_path(self, target_item: Optional[str] = None) -> str:
+        """Convert an import target string into a relative file path."""
+        target = self.path_str
+        if target_item:
+            target += f".{target_item}"
+        base_path = os.path.dirname(self.loc.mod_path)
+        base_path = base_path if base_path else os.getcwd()
+        parts = target.split(".")
+        traversal_levels = self.level - 1 if self.level > 0 else 0
+        actual_parts = parts[traversal_levels:]
+        for _ in range(traversal_levels):
+            base_path = os.path.dirname(base_path)
+        relative_path = os.path.join(base_path, *actual_parts)
+        relative_path = (
+            relative_path + ".jac"
+            if os.path.exists(relative_path + ".jac")
+            else relative_path
+        )
+        return relative_path
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module path node."""
@@ -1127,7 +1189,6 @@ class ArchDef(AstImplOnlyNode):
         body: SubNodeList[ArchBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
         decl_link: Optional[Architype] = None,
     ) -> None:
         """Initialize arch def node."""

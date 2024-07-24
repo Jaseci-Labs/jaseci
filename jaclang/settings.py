@@ -19,6 +19,9 @@ class Settings:
     py_raise: bool = False
     py_raise_deep: bool = False
 
+    # Formatter configuration
+    max_line_length: int = 88
+
     # LSP configuration
     lsp_debug: bool = False
 

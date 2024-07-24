@@ -193,7 +193,7 @@ class SymTabBuildPass(Pass):
         if not node.is_absorb:
             for i in node.items.items:
                 i.sym_tab.def_insert(i, single_decl="import item")
-        elif node.is_absorb and node.hint.tag.value == "jac":
+        elif node.is_absorb and node.is_jac:
             source = node.items.items[0]
             if not isinstance(source, ast.ModulePath) or not source.sub_module:
                 self.error(

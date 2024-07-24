@@ -609,7 +609,7 @@ class PyastGenPass(Pass):
                                             arg="lng",
                                             value=self.sync(
                                                 ast3.Constant(
-                                                    value=node.hint.tag.value
+                                                    value="py" if node.is_py else "jac"
                                                 ),
                                                 node.hint,
                                             ),
