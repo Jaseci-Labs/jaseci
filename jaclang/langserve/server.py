@@ -9,6 +9,7 @@ from jaclang.compiler.constant import (
     JacSemTokenType as SemTokType,
 )
 from jaclang.langserve.engine import JacLangServer
+from jaclang.settings import settings
 
 import lsprotocol.types as lspt
 
@@ -147,6 +148,7 @@ def semantic_tokens_full(
 
 def run_lang_server() -> None:
     """Run the language server."""
+    settings.pass_timer = True
     server.start_io()
 
 
