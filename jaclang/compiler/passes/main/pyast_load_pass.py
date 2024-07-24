@@ -148,7 +148,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         reserved_keywords = [v for _, v in TOKEN_MAP.items()]
 
-        value = node.name if node.name not in reserved_keywords else f"{node.name}_"
+        value = node.name if node.name not in reserved_keywords else f"<>{node.name}"
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -1886,7 +1886,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if v not in ["float", "int", "str", "bool", "self"]
         ]
 
-        value = node.id if node.id not in reserved_keywords else f"{node.id}_"
+        value = node.id if node.id not in reserved_keywords else f"<>{node.id}"
         ret = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
@@ -1931,7 +1931,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         names: list[ast.NameAtom] = []
         for name in node.names:
-            value = name if name not in reserved_keywords else f"{name}_"
+            value = name if name not in reserved_keywords else f"<>{name}"
             names.append(
                 ast.Name(
                     file_path=self.mod_path,
@@ -2263,7 +2263,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if v not in ["float", "int", "str", "bool", "self"]
         ]
 
-        value = node.arg if node.arg not in reserved_keywords else f"{node.arg}_"
+        value = node.arg if node.arg not in reserved_keywords else f"<>{node.arg}"
         name = ast.Name(
             file_path=self.mod_path,
             name=Tok.NAME,
