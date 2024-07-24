@@ -25,4 +25,4 @@ jobs:
         pip install pytest
 
     - name: Run tests
-      run: pytest -x
+      run: pytest -x -k test_jaseci

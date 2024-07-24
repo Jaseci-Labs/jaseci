@@ -19,6 +19,7 @@ class TestJaseciPlugin(TestCase):
         """Tear down test."""
         super().tearDown()
         sys.stdout = sys.__stdout__
+        cli.Jac.get_root()._jac_.edges.clear()
 
     def _output2buffer(self) -> None:
         """Start capturing output."""
