@@ -22,7 +22,8 @@ def run_streamlit(basename: str, dirname: str) -> None:
         st_app.main()
     else:
         print(
-            "No main function found. Please define a main function in your .jac file or put in a with entrypoint block."
+            "No main function found. Please define a main function in your "
+            ".jac file or put in a with entrypoint block."
         )
 
 
