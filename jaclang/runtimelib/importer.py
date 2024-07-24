@@ -392,13 +392,10 @@ class JacImporter(Importer):
                     spec.cachable,
                     caller_dir=spec.caller_dir,
                 )
-                try:
-                    if not codeobj:
-                        raise ImportError(f"No bytecode found for {spec.full_target}")
-                    with sys_path_context(spec.caller_dir):
-                        exec(codeobj, module.__dict__)
-                except Exception as e:
-                    raise ImportError(f"Error importing {spec.full_target}: {str(e)}")
+                if not codeobj:
+                    raise ImportError(f"No bytecode found for {spec.full_target}")
+                with sys_path_context(spec.caller_dir):
+                    exec(codeobj, module.__dict__)
 
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
