@@ -19,6 +19,9 @@ from ...core.architype import NodeAnchor
 
 TOKEN_SECRET = getenv("TOKEN_SECRET", random_string(50))
 TOKEN_ALGORITHM = getenv("TOKEN_ALGORITHM", "HS256")
+VERIFICATION_CODE_TIMEOUT = int(getenv("VERIFICATION_CODE_TIMEOUT") or "24")
+RESET_CODE_TIMEOUT = int(getenv("RESET_CODE_TIMEOUT") or "24")
+TOKEN_TIMEOUT = int(getenv("TOKEN_TIMEOUT") or "12")
 User = BaseUser.model()
 
 
@@ -43,7 +46,7 @@ async def create_code(user_id: ObjectId, reset: bool = False) -> str:
             "user_id": str(user_id),
             "reset": reset,
             "expiration": utc_timestamp(
-                hours=int(getenv("VERIFICATION_TIMEOUT") or "24")
+                hours=RESET_CODE_TIMEOUT if reset else VERIFICATION_CODE_TIMEOUT
             ),
         }
     )
@@ -68,7 +71,7 @@ async def verify_code(code: str, reset: bool = False) -> str | None:
 
 async def create_token(user: dict[str, Any]) -> str:
     """Generate token for current user."""
-    user["expiration"] = utc_timestamp(hours=int(getenv("TOKEN_TIMEOUT") or "12"))
+    user["expiration"] = utc_timestamp(hours=TOKEN_TIMEOUT)
     user["state"] = random_string(8)
     token = encrypt(user)
     if await TokenRedis.hset(f"{user['id']}:{token}", True):

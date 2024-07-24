@@ -27,6 +27,7 @@ from fastapi_sso.sso.yandex import YandexSSO
 from ..dtos import AttachSSO, DetachSSO
 from ..models import NO_PASSWORD, User as BaseUser
 from ..security import authenticator, create_code, create_token
+from ..sso import AppleSSO
 from ..utils import logger
 from ...core.context import JaseciContext, NodeAnchor, Root
 
@@ -35,6 +36,7 @@ router = APIRouter(prefix="/sso", tags=["sso"])
 User = BaseUser.model()  # type: ignore[misc]
 
 SUPPORTED_PLATFORMS: dict[str, type[SSOBase]] = {
+    "APPLE": AppleSSO,
     "FACEBOOK": FacebookSSO,
     "FITBIT": FitbitSSO,
     "GITHUB": GithubSSO,
@@ -76,29 +78,42 @@ for platform, cls in SUPPORTED_PLATFORMS.items():
 
 @router.get("/{platform}/{operation}")
 async def sso_operation(
-    platform: str, operation: str, redirect_uri: str | None = None
+    request: Request,
+    platform: str,
+    operation: str,
+    redirect_uri: str | None = None,
+    state: str | None = None,
 ) -> Response:
     """SSO Login API."""
     if sso := SSO.get(platform):
         with sso:
+            params = request.query_params._dict
             return await sso.get_login_redirect(
-                redirect_uri=redirect_uri
-                or f"{SSO_HOST}/{platform}/{operation}/callback"
+                redirect_uri=params.pop("redirect_uri", None)
+                or f"{SSO_HOST}/{platform}/{operation}/callback",
+                state=params.pop("state", None),
+                params=params,
             )
     return ORJSONResponse({"message": "Feature not yet implemented!"}, 501)
 
 
 @router.get("/{platform}/{operation}/callback")
-async def sso_callback(request: Request, platform: str, operation: str) -> Response:
+async def sso_callback(
+    request: Request, platform: str, operation: str, redirect_uri: str | None = None
+) -> Response:
     """SSO Login API."""
     if sso := SSO.get(platform):
         with sso:
-            if open_id := await sso.verify_and_process(request):
+            if open_id := await sso.verify_and_process(
+                request,
+                redirect_uri=redirect_uri
+                or f"{SSO_HOST}/{platform}/{operation}/callback",
+            ):
                 match operation:
                     case "login":
                         return await login(platform, open_id)
                     case "register":
-                        return await register(request, platform, open_id)
+                        return await register(platform, open_id)
                     case "attach":
                         return await attach(platform, open_id)
                     case _:
@@ -180,7 +195,7 @@ async def login(platform: str, open_id: OpenID) -> Response:
     return ORJSONResponse({"message": "Not Existing!"}, 403)
 
 
-async def register(request: Request, platform: str, open_id: OpenID) -> Response:
+async def register(platform: str, open_id: OpenID) -> Response:
     """Register user method."""
     if user := await User.Collection.find_one(
         {

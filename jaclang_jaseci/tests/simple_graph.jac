@@ -152,8 +152,8 @@ walker create_nested_node {
                 json={"a": 1},
                 child=Child(
                     val=2,
-                    arr=[2],
-                    json={"B": 2}
+                    arr=[1, 2],
+                    json={"a": 1, "b": 2}
                 )
             ));
         here ++> n;
@@ -165,8 +165,21 @@ walker update_nested_node {
     can enter_root with `root entry {
         nested = [-->Nested][0];
         nested.parent.child.json["c"] = 3;
+        nested.parent.child.arr.append(3);
+        nested.parent.child.val = 3;
+        nested.parent.json["b"] = 2;
+        nested.parent.arr.append(2);
+        nested.parent.val = 2;
+        nested.json["a"] = 1;
+        nested.arr.append(1);
+        nested.val = 1;
+        return nested;
+    }
+}
 
-        report nested;
+walker visit_nested_node {
+    can enter_root with `root entry {
+        return [-->Nested][0];
     }
 }
 
