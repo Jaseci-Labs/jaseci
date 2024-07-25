@@ -35,7 +35,7 @@ from jaclang.runtimelib.constructs import (
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
-from jaclang.plugin.spec import T
+from jaclang.plugin.spec import P, T
 
 
 import pluggy
@@ -203,10 +203,12 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def make_impl_ability(file_loc: str) -> Callable:
+    def make_impl_ability(
+        file_loc: str,
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]:
         """Update impl file location."""
 
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: Callable[P, T]) -> Callable[P, T]:
             code = func.__code__
             new_code = types.CodeType(
                 code.co_argcount,
