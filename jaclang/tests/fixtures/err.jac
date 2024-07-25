@@ -2,6 +2,6 @@ obj HasFault {
     can init;
 }
 
-with entry {
+can speak {
     HasFault();
 }

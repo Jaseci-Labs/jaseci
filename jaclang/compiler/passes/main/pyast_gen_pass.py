@@ -426,6 +426,33 @@ class PyastGenPass(Pass):
                 type_params=[],
             ),
         )
+        if node.loc.mod_path != self.ir.loc.mod_path:
+            func.decorator_list.append(
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="make_impl_ability",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="file_loc",
+                                    value=self.sync(
+                                        ast3.Constant(value=node.body.loc.mod_path)
+                                    ),
+                                )
+                            ),
+                        ],
+                    )
+                )
+            )
         node.gen.py_ast = [func]
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
