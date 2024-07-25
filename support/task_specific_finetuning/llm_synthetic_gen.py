@@ -68,8 +68,8 @@ class LogCapture(contextlib.AbstractContextManager):
 def run(args: argparse.Namespace) -> None:
     """Run the program with different arguments and log the output."""
     # specify the program argument change logic here
-    current_level_range = range(1, 6)
-    level_difficulty_range = range(1, 6)
+    current_level_range = range(1, 100)
+    level_difficulty_range = range(1, 10)
 
     for current_level, level_difficulty in itertools.product(
         current_level_range, level_difficulty_range
@@ -86,7 +86,7 @@ def run(args: argparse.Namespace) -> None:
 
         with LogCapture() as log_capture:
             try:
-                jac_import("program", args.program_dir)
+                jac_import(args.program, args.program_dir)
             except Exception as e:
                 logger.error(e)
 
@@ -166,6 +166,12 @@ def push_to_hf(df: pd.DataFrame, args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--program",
+        type=str,
+        required=True,
+        help="Name of the program to run",
+    )
     parser.add_argument(
         "--output_name",
         type=str,
