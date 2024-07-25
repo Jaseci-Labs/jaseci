@@ -115,7 +115,7 @@ class ImportReturn:
                     )
 
                     if jac_file_path and os.path.isfile(jac_file_path):
-                        item = self.load_jac_file(
+                        item = self.load_jac_mod_as_item(
                             module=module,
                             name=name,
                             jac_file_path=jac_file_path,
@@ -130,7 +130,7 @@ class ImportReturn:
                         item = importlib.import_module(full_module_name)
                         handle_item_loading(item, alias)
 
-    def load_jac_file(
+    def load_jac_mod_as_item(
         self,
         module: types.ModuleType,
         name: str,
@@ -140,36 +140,29 @@ class ImportReturn:
         caller_dir: str,
     ) -> Optional[types.ModuleType]:
         """Load a single .jac file into the specified module component."""
-        try:
-            package_name = (
-                f"{module.__name__}.{name}"
-                if hasattr(module, "__path__")
-                else module.__name__
+        package_name = (
+            f"{module.__name__}.{name}"
+            if hasattr(module, "__path__")
+            else module.__name__
+        )
+        if isinstance(self.importer, JacImporter):
+            new_module = sys.modules.get(
+                package_name,
+                self.importer.create_jac_py_module(
+                    mod_bundle, name, module.__name__, jac_file_path
+                ),
             )
-            if isinstance(self.importer, JacImporter):
-                new_module = sys.modules.get(
-                    package_name,
-                    self.importer.create_jac_py_module(
-                        mod_bundle, name, module.__name__, jac_file_path
-                    ),
-                )
-            codeobj = self.importer.get_codeobj(
-                full_target=jac_file_path,
-                module_name=name,
-                mod_bundle=mod_bundle,
-                cachable=cachable,
-                caller_dir=caller_dir,
-            )
-            if not codeobj:
-                raise ImportError(f"No bytecode found for {jac_file_path}")
-
-            exec(codeobj, new_module.__dict__)
-            return getattr(new_module, name, new_module)
-        except ImportError as e:
-            logger.error(
-                f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
-            )
-            return None
+        codeobj = self.importer.get_codeobj(
+            full_target=jac_file_path,
+            module_name=name,
+            mod_bundle=mod_bundle,
+            cachable=cachable,
+            caller_dir=caller_dir,
+        )
+        if not codeobj:
+            raise ImportError(f"No bytecode found for {jac_file_path}")
+        exec(codeobj, new_module.__dict__)
+        return getattr(new_module, name, new_module)
 
 
 class Importer:
@@ -395,7 +388,11 @@ class JacImporter(Importer):
                 if not codeobj:
                     raise ImportError(f"No bytecode found for {spec.full_target}")
                 with sys_path_context(spec.caller_dir):
-                    exec(codeobj, module.__dict__)
+                    try:
+                        exec(codeobj, module.__dict__)
+                    except Exception as e:
+                        logger.error(f"Error while importing {spec.full_target}: {e}")
+                        raise e
 
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:

@@ -1,5 +1,7 @@
-"""Demo"""
+obj HasFault {
+    can init;
+}
 
-can speak {
-    "Hello" |> aprint;
+with entry {
+    HasFault();
 }

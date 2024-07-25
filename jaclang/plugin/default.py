@@ -203,6 +203,38 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def make_impl_ability(file_loc: str) -> Callable:
+        """Update impl file location."""
+
+        def decorator(func: Callable) -> Callable:
+            code = func.__code__
+            new_code = types.CodeType(
+                code.co_argcount,
+                code.co_posonlyargcount,
+                code.co_kwonlyargcount,
+                code.co_nlocals,
+                code.co_stacksize,
+                code.co_flags,
+                code.co_code,
+                code.co_consts,
+                code.co_names,
+                code.co_varnames,
+                file_loc,
+                code.co_name,
+                code.co_qualname,
+                code.co_firstlineno,
+                code.co_linetable,
+                code.co_exceptiontable,
+                code.co_freevars,
+                code.co_cellvars,
+            )
+            func.__code__ = new_code
+            return func
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def jac_import(
         target: str,
         base_path: str,
