@@ -92,6 +92,12 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def make_impl_ability(file_loc: str) -> Callable:
+        """Update impl file location."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def jac_import(
         target: str,
         base_path: str,
