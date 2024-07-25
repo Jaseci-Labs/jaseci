@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import ExecutionContext
-from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
     Architype,
     EdgeArchitype,
@@ -94,7 +94,9 @@ class JacFeature:
         return pm.hook.make_walker(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
-    def make_impl_ability(file_loc: str) -> Callable:
+    def make_impl_ability(
+        file_loc: str,
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]:
         """Update impl file location."""
         return pm.hook.make_impl_ability(file_loc=file_loc)
 
