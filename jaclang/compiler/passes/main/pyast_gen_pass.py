@@ -435,7 +435,7 @@ class PyastGenPass(Pass):
                                 value=self.sync(
                                     ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
-                                attr="make_impl_ability",
+                                attr="impl_patch_filename",
                                 ctx=ast3.Load(),
                             )
                         ),
@@ -927,6 +927,7 @@ class PyastGenPass(Pass):
             if isinstance(node.decorators, ast.SubNodeList)
             else []
         )
+
         ds_on_entry, ds_on_exit = self.collect_events(node)
         if node.arch_type.name != Tok.KW_CLASS:
             self.needs_jac_feature()
@@ -1217,7 +1218,7 @@ class PyastGenPass(Pass):
                                 value=self.sync(
                                     ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
-                                attr="make_impl_ability",
+                                attr="impl_patch_filename",
                                 ctx=ast3.Load(),
                             )
                         ),

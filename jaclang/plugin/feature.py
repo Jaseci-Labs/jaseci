@@ -94,11 +94,11 @@ class JacFeature:
         return pm.hook.make_walker(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
-    def make_impl_ability(
+    def impl_patch_filename(
         file_loc: str,
     ) -> Callable[[Callable[P, T]], Callable[P, T]]:
         """Update impl file location."""
-        return pm.hook.make_impl_ability(file_loc=file_loc)
+        return pm.hook.impl_patch_filename(file_loc=file_loc)
 
     @staticmethod
     def jac_import(

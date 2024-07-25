@@ -102,7 +102,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def make_impl_ability(
+    def impl_patch_filename(
         file_loc: str,
     ) -> Callable[[Callable[P, T]], Callable[P, T]]:
         """Update impl file location."""
