@@ -1181,6 +1181,7 @@ class PyastGenPass(Pass):
             )
         decorator_list = node.decorators.gen.py_ast if node.decorators else []
         if isinstance(node.body, ast.AstImplOnlyNode):
+            self.needs_jac_feature()
             decorator_list.append(
                 self.sync(
                     ast3.Call(
