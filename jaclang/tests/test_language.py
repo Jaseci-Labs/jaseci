@@ -857,3 +857,12 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("i work", stdout_value)
+
+    def test_double_import_exec(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("dblhello", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("Hello World!"), 1)
