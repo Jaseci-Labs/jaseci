@@ -9,24 +9,6 @@ from jaclang.plugin.default import hookimpl
 
 import streamlit.web.bootstrap as bootstrap
 
-
-def run_streamlit(basename: str, dirname: str) -> None:
-    """Run the Streamlit application."""
-    from jaclang import jac_import
-    from jaclang.plugin.feature import JacFeature as Jac
-
-    Jac.context().init_memory(base_path=dirname)
-    (st_app,) = jac_import(basename, base_path=dirname)
-
-    if hasattr(st_app, "main"):
-        st_app.main()
-    else:
-        print(
-            "No main function found. Please define a main function in your "
-            ".jac file or put in a with entrypoint block."
-        )
-
-
 class JacCmd:
     """Jac CLI."""
 
