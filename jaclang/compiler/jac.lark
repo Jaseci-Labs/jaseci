@@ -16,7 +16,8 @@ element: import_stmt
        | test
 
 // Import/Include Statements
-import_stmt: KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI
+import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
+           | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
            | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
            | include_stmt
 

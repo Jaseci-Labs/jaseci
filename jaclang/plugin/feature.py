@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import ExecutionContext
-from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
     Architype,
     EdgeArchitype,
@@ -92,6 +92,13 @@ class JacFeature:
     ) -> Callable[[type], type]:
         """Create a walker architype."""
         return pm.hook.make_walker(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def impl_patch_filename(
+        file_loc: str,
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]:
+        """Update impl file location."""
+        return pm.hook.impl_patch_filename(file_loc=file_loc)
 
     @staticmethod
     def jac_import(

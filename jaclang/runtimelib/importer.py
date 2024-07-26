@@ -115,7 +115,7 @@ class ImportReturn:
                     )
 
                     if jac_file_path and os.path.isfile(jac_file_path):
-                        item = self.load_jac_file(
+                        item = self.load_jac_mod_as_item(
                             module=module,
                             name=name,
                             jac_file_path=jac_file_path,
@@ -130,7 +130,7 @@ class ImportReturn:
                         item = importlib.import_module(full_module_name)
                         handle_item_loading(item, alias)
 
-    def load_jac_file(
+    def load_jac_mod_as_item(
         self,
         module: types.ModuleType,
         name: str,
@@ -390,13 +390,14 @@ class JacImporter(Importer):
                     spec.cachable,
                     caller_dir=spec.caller_dir,
                 )
-                try:
-                    if not codeobj:
-                        raise ImportError(f"No bytecode found for {spec.full_target}")
-                    with sys_path_context(spec.caller_dir):
+                if not codeobj:
+                    raise ImportError(f"No bytecode found for {spec.full_target}")
+                with sys_path_context(spec.caller_dir):
+                    try:
                         exec(codeobj, module.__dict__)
-                except Exception as e:
-                    raise ImportError(f"Error importing {spec.full_target}: {str(e)}")
+                    except Exception as e:
+                        logger.error(f"Error while importing {spec.full_target}: {e}")
+                        raise e
 
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:

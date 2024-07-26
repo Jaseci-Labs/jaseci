@@ -16,7 +16,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.settings import settings
-from jaclang.utils.helpers import import_target_to_relative_path, is_standard_lib_module
+from jaclang.utils.helpers import is_standard_lib_module
 from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
@@ -139,11 +139,7 @@ class JacImportPass(Pass):
     def import_jac_module(self, node: ast.ModulePath) -> None:
         """Import a module."""
         self.cur_node = node  # impacts error reporting
-        target = import_target_to_relative_path(
-            level=node.level,
-            target=node.path_str,
-            base_path=os.path.dirname(node.loc.mod_path),
-        )
+        target = node.resolve_relative_path()
         # If the module is a package (dir)
         if os.path.isdir(target):
             self.attach_mod_to_node(node, self.import_jac_mod_from_dir(target))
@@ -153,11 +149,7 @@ class JacImportPass(Pass):
                 # Import all from items as modules or packages
                 for i in import_node.items.items:
                     if isinstance(i, ast.ModuleItem):
-                        from_mod_target = import_target_to_relative_path(
-                            level=node.level,
-                            target=node.path_str + "." + i.name.value,
-                            base_path=os.path.dirname(node.loc.mod_path),
-                        )
+                        from_mod_target = node.resolve_relative_path(i.name.value)
                         # If package
                         if os.path.isdir(from_mod_target):
                             self.attach_mod_to_node(

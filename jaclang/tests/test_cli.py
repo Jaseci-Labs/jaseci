@@ -5,6 +5,7 @@ import io
 import os
 import subprocess
 import sys
+import traceback
 
 from jaclang.cli import cli
 from jaclang.plugin.builtin import dotgen
@@ -38,7 +39,7 @@ class JacCliTests(TestCase):
         sys.stderr = captured_output
 
         try:
-            cli.enter(self.fixture_abs_path("err2.jac"), entrypoint="speak", args=[])  # type: ignore
+            cli.enter(self.fixture_abs_path("err2.jac"), entrypoint="speak", args=[])
         except Exception as e:
             print(f"Error: {e}")
 
@@ -47,6 +48,41 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         # print(stdout_value)
         self.assertIn("Error", stdout_value)
+
+    def test_jac_impl_err(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+
+        try:
+            cli.enter(self.fixture_abs_path("err.jac"), entrypoint="speak", args=[])
+        except Exception:
+            traceback.print_exc()
+
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        stdout_value = captured_output.getvalue()
+        # print(stdout_value)
+        self.assertIn(
+            '"/home/ninja/jaclang/jaclang/tests/fixtures/err.impl.jac", line 2,',
+            stdout_value,
+        )
+
+    def test_jac_test_err(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+        cli.test(self.fixture_abs_path("err.jac"))
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        stdout_value = captured_output.getvalue()
+        # print(stdout_value)
+        self.assertIn(
+            '"/home/ninja/jaclang/jaclang/tests/fixtures/err.test.jac", line 2,',
+            stdout_value,
+        )
 
     def test_jac_ast_tool_pass_template(self) -> None:
         """Basic test for pass."""

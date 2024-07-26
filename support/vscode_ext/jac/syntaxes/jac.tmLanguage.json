@@ -36,7 +36,7 @@
 			"patterns": [
 				{
 					"begin": "\\b(?<!\\.)(import|include)\\b",
-					"end": ";",
+					"end": ";|}",
 					"beginCaptures": {
 						"1": {
 							"name": "keyword.control.import.jac"

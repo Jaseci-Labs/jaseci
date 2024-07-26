@@ -298,7 +298,8 @@ class JacParser(Pass):
         def import_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
 
-            import_stmt: KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI
+            import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
+                    | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
                     | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
                     | include_stmt
             """
@@ -313,13 +314,13 @@ class JacParser(Pass):
             else:
                 paths = [i for i in kid if isinstance(i, ast.ModulePath)]
                 items = ast.SubNodeList[ast.ModulePath](
-                    items=paths, delim=Tok.COMMA, kid=kid[2:-1]
+                    items=paths, delim=Tok.COMMA, kid=kid[2 if lang else 1 : -1]
                 )
-                kid = (kid[:2] if lang else kid[1:]) + [items] + kid[-1:]
+                kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
 
             is_absorb = False
             if isinstance(items, ast.SubNodeList):
-                return self.nu(
+                ret = self.nu(
                     ast.Import(
                         hint=lang,
                         from_loc=from_path,
@@ -328,6 +329,15 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
+                if (
+                    from_path
+                    and isinstance(kid[-1], ast.Token)
+                    and kid[-1].name == Tok.SEMI
+                ):
+                    self.parse_ref.warning(
+                        "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
+                    )
+                return ret
             else:
                 raise self.ice()
 
@@ -372,7 +382,7 @@ class JacParser(Pass):
             items = ast.SubNodeList[ast.ModulePath](
                 items=[from_path], delim=Tok.COMMA, kid=[from_path]
             )
-            kid = (kid[:2] if lang else kid[1:]) + [items] + kid[-1:]
+            kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
             is_absorb = True
             return self.nu(
                 ast.Import(
