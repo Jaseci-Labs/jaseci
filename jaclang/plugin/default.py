@@ -40,10 +40,12 @@ from jaclang.plugin.spec import P, T
 
 import pluggy
 
+hookimpl = pluggy.HookimplMarker("jac")
 
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
+    "hookimpl",
     "JacTestCheck",
     "NodeAnchor",
     "ObjectAnchor",
@@ -56,9 +58,6 @@ __all__ = [
     "DSFunc",
     "T",
 ]
-
-
-hookimpl = pluggy.HookimplMarker("jac")
 
 
 class JacFeatureDefaults:
