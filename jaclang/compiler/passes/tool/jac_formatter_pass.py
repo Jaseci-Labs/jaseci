@@ -1097,6 +1097,9 @@ class JacFormatPass(Pass):
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
+                elif (tok := self.token_before(i)) and (i.line_no - tok.line_no == 1):
+                    self.emit_ln(node, "")
+                    self.emit(node, i.gen.jac)
                 else:
                     self.emit_ln(node, "")
                     self.emit_ln(node, "")
