@@ -1,7 +1,7 @@
 """Jaseci Redis."""
 
 from os import getenv
-from typing import Any, cast
+from typing import Any
 
 from orjson import dumps, loads
 
@@ -49,7 +49,9 @@ class Redis:
         """Retrieve via key."""
         try:
             redis = cls.get_rd()
-            return loads(cast(str, await redis.get(key)))
+            if res := await redis.get(key):
+                return loads(res)
+            return None
         except Exception:
             logger.exception(f"Error getting key {key}")
             return None
@@ -89,7 +91,9 @@ class Redis:
         """Retrieve via key from group."""
         try:
             redis = cls.get_rd()
-            return loads(cast(str, await redis.hget(cls.__table__, key)))
+            if res := await redis.hget(cls.__table__, key):
+                res = loads(res)
+            return res
         except Exception:
             logger.exception(f"Error getting key {key} from {cls.__table__}")
 

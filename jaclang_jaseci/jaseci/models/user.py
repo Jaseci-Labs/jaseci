@@ -1,20 +1,22 @@
 """Jaseci Models."""
 
-from typing import Any, Mapping, Type, cast
+from dataclasses import MISSING, asdict, dataclass, field, fields
+from typing import Any, Mapping, Type, cast, get_type_hints
+
+from bson import ObjectId
 
 from fastapi_sso import OpenID
 
 from passlib.hash import pbkdf2_sha512
 
-from pydantic import BaseModel, EmailStr, Field, create_model
-from pydantic.fields import FieldInfo
+from pydantic import BaseModel, EmailStr, create_model
 
 from ..datasources.collection import Collection as BaseCollection
 
 NO_PASSWORD = bytes(True)
 
 
-class UserCommon(BaseModel):
+class UserRegistration(BaseModel):
     """User Common Functionalities."""
 
     password: bytes
@@ -31,15 +33,16 @@ class UserCommon(BaseModel):
         return data
 
 
-class User(UserCommon):
+@dataclass(kw_only=True)
+class User:
     """User Base Model."""
 
-    id: str
+    id: ObjectId
     email: EmailStr
     password: bytes
-    root_id: str
+    root_id: ObjectId
     is_activated: bool = False
-    sso: dict[str, dict[str, str]] = Field(default_factory=dict)
+    sso: dict[str, dict[str, str]] = field(default_factory=dict)
 
     class Collection(BaseCollection["User"]):
         """
@@ -49,9 +52,9 @@ class User(UserCommon):
         You may override this if you wish to implement different structure
         """
 
-        __collection__: str | None = "user"
-        __excluded__: list[str] = ["password"]
-        __indexes__: list[dict] = [{"keys": ["email"], "unique": True}]
+        __collection__ = "user"
+        __excluded__ = ["password"]
+        __indexes__ = [{"keys": ["email"], "unique": True}]
 
         @classmethod
         def __document__(cls, doc: Mapping[str, Any]) -> "User":
@@ -63,9 +66,9 @@ class User(UserCommon):
             """
             doc = cast(dict, doc)
             return User.model()(
-                id=str(doc.pop("_id")),
-                password=cast(bytes, doc.pop("password", None)) or NO_PASSWORD,
-                root_id=str(doc.pop("root_id")),
+                id=doc.pop("_id"),
+                password=doc.pop("password", None) or NO_PASSWORD,
+                root_id=doc.pop("root_id"),
                 **doc,
             )
 
@@ -74,23 +77,39 @@ class User(UserCommon):
             """Retrieve user via email."""
             return await cls.find_one(filter={"email": email}, projection={})
 
+    def serialize(self) -> dict:
+        """Return BaseModel.model_dump excluding the password field."""
+        data = asdict(self)
+        data["id"] = str(self.id)
+        data["root_id"] = str(self.root_id)
+        data.pop("password", None)
+        return data
+
     @staticmethod
     def model() -> Type["User"]:
         """Retrieve the preferred User Model from subclasses else this class."""
         if subs := User.__subclasses__():
-            return subs[-1]
+            return dataclass(kw_only=True)(subs[-1])
         return User
 
     @staticmethod
-    def register_type() -> type:
+    def register_type() -> Type[UserRegistration]:
         """Generate User Registration Model based on preferred User Model for FastAPI endpoint validation."""
+        target_user_model = User.model()
+        target_user_hintings = get_type_hints(target_user_model)
         user_model: dict[str, Any] = {}
-        fields: dict[str, FieldInfo] = User.model().model_fields
-        for key, val in fields.items():
-            if callable(val.default_factory):
-                user_model[key] = (val.annotation, val.default_factory())
+
+        for f in fields(target_user_model):
+            if callable(f.default_factory):
+                user_model[f.name] = (
+                    target_user_hintings[f.name],
+                    f.default_factory(),
+                )
             else:
-                user_model[key] = (val.annotation, ...)
+                user_model[f.name] = (
+                    target_user_hintings[f.name],
+                    ... if f.default is MISSING else f.default,
+                )
 
         user_model["password"] = (str, ...)
         user_model.pop("id", None)
@@ -98,7 +117,7 @@ class User(UserCommon):
         user_model.pop("is_activated", None)
         user_model.pop("sso", None)
 
-        return create_model("UserRegister", __base__=UserCommon, **user_model)
+        return create_model("UserRegister", __base__=UserRegistration, **user_model)
 
     @staticmethod
     def send_verification_code(code: str, email: str) -> None:

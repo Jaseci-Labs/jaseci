@@ -303,6 +303,31 @@
                 }
             }
         },
+        "/user/send-verification-code": {
+            "post": {
+                "tags": [
+                    "user"
+                ],
+                "summary": "Send Verification Code",
+                "description": "Verify user API.",
+                "operationId": "send_verification_code_user_send_verification_code_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
         "/user/verify": {
             "post": {
                 "tags": [

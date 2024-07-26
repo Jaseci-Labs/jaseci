@@ -1,13 +1,12 @@
 """Jac Language Features."""
 
 from collections import OrderedDict
-from dataclasses import Field, _MISSING_TYPE, is_dataclass
+from dataclasses import Field, MISSING, fields
 from functools import wraps
 from inspect import iscoroutinefunction
 from os import getenv
-from pydoc import locate
 from re import compile
-from typing import Any, Callable, Type, TypeVar, cast
+from typing import Any, Callable, Type, TypeVar, cast, get_type_hints
 
 from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 from fastapi.responses import ORJSONResponse
@@ -38,17 +37,16 @@ from ..core.architype import (
 )
 from ..core.context import JaseciContext
 from ..jaseci.security import authenticator
-from ..jaseci.utils import make_optional
 
 
 T = TypeVar("T")
 DISABLE_AUTO_ENDPOINT = getenv("DISABLE_AUTO_ENDPOINT") == "true"
 PATH_VARIABLE_REGEX = compile(r"{([^\}]+)}")
-FILE = {
-    "File": UploadFile,
-    "Files": list[UploadFile],
-    "OptFile": UploadFile | None,
-    "OptFiles": list[UploadFile | None],
+FILE_TYPES = {
+    UploadFile,
+    list[UploadFile],
+    UploadFile | None,
+    list[UploadFile] | None,
 }
 
 walker_router = APIRouter(prefix="/walker", tags=["walker"])
@@ -70,17 +68,17 @@ def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
 
 def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[type, Any]:
     """Generate Specs for Model Field."""
-    if not isinstance(field.default, _MISSING_TYPE):
-        consts = (make_optional(cls), pyField(default=field.default))
+    if field.default is not MISSING:
+        consts = (cls, pyField(default=field.default))
     elif callable(field.default_factory):
-        consts = (make_optional(cls), pyField(default_factory=field.default_factory))
+        consts = (cls, pyField(default_factory=field.default_factory))
     else:
         consts = (cls, File(...) if is_file else ...)
 
     return consts
 
 
-def populate_apis(cls: type) -> None:
+def populate_apis(cls: Type[WalkerArchitype]) -> None:
     """Generate FastAPI endpoint based on WalkerArchitype class."""
     if (specs := get_specs(cls)) and not specs.private:
         path: str = specs.path or ""
@@ -98,18 +96,19 @@ def populate_apis(cls: type) -> None:
             if isinstance(as_query, list):
                 as_query += PATH_VARIABLE_REGEX.findall(path)
 
-        if is_dataclass(cls):
-            fields: dict[str, Field] = cls.__dataclass_fields__
-            for key, val in fields.items():
-                if file_type := FILE.get(cast(str, val.type)):  # type: ignore[arg-type]
-                    files[key] = gen_model_field(file_type, val, True)  # type: ignore[arg-type]
-                else:
-                    consts = gen_model_field(locate(val.type), val)  # type: ignore[arg-type]
+        hintings = get_type_hints(cls)
+        for f in fields(cls):
+            f_name = f.name
+            f_type = hintings[f_name]
+            if f_type in FILE_TYPES:
+                files[f_name] = gen_model_field(f_type, f, True)
+            else:
+                consts = gen_model_field(f_type, f)
 
-                    if as_query == "*" or key in as_query:
-                        query[key] = consts
-                    else:
-                        body[key] = consts
+                if as_query == "*" or f_name in as_query:
+                    query[f_name] = consts
+                else:
+                    body[f_name] = consts
 
         payload: dict[str, Any] = {
             "query": (
@@ -182,7 +181,7 @@ def populate_apis(cls: type) -> None:
 
 
 def specs(
-    cls: Type[T] | None = None,
+    cls: Type[WalkerArchitype] | None = None,
     *,
     path: str = "",
     methods: list[str] = ["post"],  # noqa: B006
@@ -192,7 +191,7 @@ def specs(
 ) -> Callable:
     """Walker Decorator."""
 
-    def wrapper(cls: Type[T]) -> Type[T]:
+    def wrapper(cls: Type[WalkerArchitype]) -> Type[WalkerArchitype]:
         if get_specs(cls) is None:
             p = path
             m = methods

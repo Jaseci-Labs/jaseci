@@ -8,6 +8,8 @@ from fastapi import FastAPI as _FaststAPI
 
 from uvicorn import run as _run
 
+from .utils import Emailer
+
 
 class FastAPI:
     """FastAPI Handler."""
@@ -41,9 +43,13 @@ class FastAPI:
         cls,
         host: str | None = None,
         port: int | None = None,
+        emailer: type[Emailer] | None = None,
         **kwargs: Any  # noqa ANN401
     ) -> None:
         """Run FastAPI Handler via Uvicorn."""
+        if emailer:
+            emailer.start()
+
         _run(
             cls.get(),
             host=host or getenv("HOST") or "0.0.0.0",

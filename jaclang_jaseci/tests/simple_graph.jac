@@ -4,6 +4,36 @@ import:py from jaclang_jaseci.plugin, specs;
 import:py from jaclang_jaseci.jaseci.models, User as BaseUser, NO_PASSWORD;
 import:py from jaclang_jaseci.jaseci.utils, SendGridEmailer;
 import:py from dataclasses, dataclass;
+# import:py from fastapi, UploadFile as File;
+
+
+# walker post_with_body_and_file {
+#     has val: int;
+#     has single: File;
+#     has multiple: list[File];
+#     has optional_val: int = 0;
+#     has singleOptional: File | None = None;
+#     has multipleOptional: list[File] | None = None;
+
+#     can enter with `root entry {
+#         print(self.val);
+#         print("###################");
+#         print(self.optional_val);
+#         print("###################");
+#         print(self.single);
+#         print("###################");
+#         print(self.multiple);
+#         print("###################");
+#         print(self.singleOptional);
+#         print("###################");
+#         print(self.multipleOptional);
+#         print("###################");
+#     }
+
+#     obj __specs__ {
+#         static has auth: bool = False;
+#     }
+# }
 
 ::py::
 class User(BaseUser):
@@ -12,11 +42,11 @@ class User(BaseUser):
     class Collection(BaseUser.Collection):
         @classmethod
         def __document__(cls, doc) -> "User":
-            return User.model()(
-                id=str(doc.pop("_id")),
+            return User(
+                id=doc.pop("_id"),
                 email=doc.pop("email"),
                 password=doc.pop("password", None) or NO_PASSWORD,
-                root_id=str(doc.pop("root_id")),
+                root_id=doc.pop("root_id"),
                 **doc,
             )
 
@@ -184,9 +214,9 @@ walker visit_nested_node {
 }
 
 with entry:__main__ {
-    # SendGridEmailer.start();
     FastAPI.start(
         host="0.0.0.0",
         port=8001
+        # emailer=SendGridEmailer
     );
 }

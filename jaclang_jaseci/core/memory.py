@@ -1,7 +1,7 @@
 """Memory abstraction for jaseci plugin."""
 
 from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Callable, Generator, Type
+from typing import AsyncGenerator, Callable, Generator, Type
 
 from bson import ObjectId
 
@@ -10,17 +10,17 @@ from jaclang.runtimelib.architype import MANUAL_SAVE
 
 from motor.motor_asyncio import AsyncIOMotorClientSession
 
-from pymongo import DeleteMany, DeleteOne, InsertOne, UpdateMany, UpdateOne
+from pymongo import DeleteMany, InsertOne
 
 from .architype import (
     Anchor,
     AnchorType,
+    BulkWrite,
     EdgeAnchor,
     NodeAnchor,
     WalkerAnchor,
 )
 from ..jaseci.datasources import Collection
-from ..jaseci.utils import logger
 
 IDS = ObjectId | list[ObjectId]
 
@@ -132,17 +132,9 @@ class MongoDB(Memory):
         """Remove anchor/s from datasource."""
         super().remove(data)
 
-    async def sync(self, session: AsyncIOMotorClientSession) -> None:
+    async def get_bulk_write(self) -> BulkWrite:
         """Sync memory to database."""
-        operations: dict[
-            AnchorType,
-            list[InsertOne[Any] | DeleteMany | DeleteOne | UpdateMany | UpdateOne],
-        ] = {
-            AnchorType.node: [],
-            AnchorType.edge: [],
-            AnchorType.walker: [],
-            AnchorType.generic: [],  # ignored
-        }
+        bulk_write = BulkWrite()
 
         del_node_ids = []
         del_edge_ids = []
@@ -159,15 +151,15 @@ class MongoDB(Memory):
                     pass
 
         if del_node_ids:
-            operations[AnchorType.node].append(
+            bulk_write.operations[AnchorType.node].append(
                 DeleteMany({"_id": {"$in": del_node_ids}})
             )
         if del_edge_ids:
-            operations[AnchorType.edge].append(
+            bulk_write.operations[AnchorType.edge].append(
                 DeleteMany({"_id": {"$in": del_edge_ids}})
             )
         if del_walker_ids:
-            operations[AnchorType.walker].append(
+            bulk_write.operations[AnchorType.walker].append(
                 DeleteMany({"_id": {"$in": del_walker_ids}})
             )
 
@@ -177,32 +169,24 @@ class MongoDB(Memory):
                     if not anchor.connected:
                         anchor.connected = True
                         anchor.sync_hash()
-                        operations[anchor.type].append(InsertOne(anchor.serialize()))
-                    elif anchor.current_access_level > 0 and (
-                        changes := await anchor.pull_changes(False)
-                    ):
-                        operations[anchor.type] += changes
+                        bulk_write.operations[anchor.type].append(
+                            InsertOne(anchor.serialize())
+                        )
+                    elif anchor.current_access_level > 0:
+                        await anchor.update(bulk_write)
 
-        if node_operation := operations[AnchorType.node]:
-            await NodeAnchor.Collection.bulk_write(node_operation, session)
-        if edge_operation := operations[AnchorType.edge]:
-            await EdgeAnchor.Collection.bulk_write(edge_operation, session)
-        if walker_operation := operations[AnchorType.walker]:
-            await WalkerAnchor.Collection.bulk_write(walker_operation, session)
+        return bulk_write
 
     async def close(self) -> None:  # type: ignore[override]
         """Close memory handler."""
-        if self.__session__:
-            await self.sync(self.__session__)
-        else:
-            async with await Collection.get_session() as session:
-                async with session.start_transaction():
-                    try:
-                        await self.sync(session)
-                        await session.commit_transaction()
-                    except Exception:
-                        await session.abort_transaction()
-                        logger.exception("Error syncing memory to database!")
-                        raise
+        bulk_write = await self.get_bulk_write()
+
+        if bulk_write.has_operations:
+            if session := self.__session__:
+                await bulk_write.execute(session)
+            else:
+                async with await Collection.get_session() as session:
+                    async with session.start_transaction():
+                        await bulk_write.execute(session)
 
         super().close()

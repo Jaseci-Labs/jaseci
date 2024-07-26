@@ -24,12 +24,14 @@ from fastapi_sso.sso.notion import NotionSSO
 from fastapi_sso.sso.twitter import TwitterSSO
 from fastapi_sso.sso.yandex import YandexSSO
 
+from pymongo.errors import ConnectionFailure, OperationFailure
+
 from ..dtos import AttachSSO, DetachSSO
 from ..models import NO_PASSWORD, User as BaseUser
 from ..security import authenticator, create_code, create_token
 from ..sso import AppleSSO
 from ..utils import logger
-from ...core.context import JaseciContext, NodeAnchor, Root
+from ...core.architype import BulkWrite, NodeAnchor, Root
 
 router = APIRouter(prefix="/sso", tags=["sso"])
 
@@ -207,39 +209,44 @@ async def register(platform: str, open_id: OpenID) -> Response:
     ):
         return await get_token(cast(User, user))  # type: ignore
 
-    jcxt = JaseciContext.get()
-    await jcxt.build()
-
-    async with await NodeAnchor.Collection.get_session() as session:
+    async with await User.Collection.get_session() as session:
         async with session.start_transaction():
-            try:
-                root = Root()
-                anchor = root.__jac__
-                anchor.root = None
-                await anchor.save(session)
+            root = Root().__jac__
+            ureq: dict[str, object] = User.register_type()(
+                email=f"{root.id}-sso@jac-lang.org",
+                password=NO_PASSWORD,
+                **User.sso_mapper(open_id),
+            ).obfuscate()
+            ureq["root_id"] = root.id
+            ureq["is_activated"] = True
+            ureq["sso"] = {platform: {"id": open_id.id, "email": open_id.email}}
 
-                ureq: dict[str, object] = User.register_type()(
-                    email=f"{anchor.id}-sso@jac-lang.org",
-                    password=NO_PASSWORD,
-                    **User.sso_mapper(open_id),
-                ).obfuscate()
-                ureq["root_id"] = anchor.id
-                ureq["is_activated"] = True
-                ureq["sso"] = {platform: {"id": open_id.id, "email": open_id.email}}
-
-                result = await User.Collection.insert_one(ureq, session=session)
-                await session.commit_transaction()
-            except Exception:
-                logger.exception("Error commiting user registration!")
-                result = None
-
-                await session.abort_transaction()
-    await jcxt.close()
-
-    if result:
-        return await login(platform, open_id)
-    else:
-        return ORJSONResponse({"message": "Registration Failed!"}, 409)
+            retry = 0
+            max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
+            while retry <= max_retry:
+                try:
+                    await NodeAnchor.Collection.insert_one(root.serialize(), session)
+                    if (
+                        await User.Collection.insert_one(ureq, session=session)
+                    ).inserted_id:
+                        await BulkWrite.commit(session)
+                        return await login(platform, open_id)
+                except (ConnectionFailure, OperationFailure) as ex:
+                    if ex.has_error_label("TransientTransactionError"):
+                        retry += 1
+                        logger.error(
+                            "Error executing bulk write! "
+                            f"Retrying [{retry}/{max_retry}] ..."
+                        )
+                        continue
+                    logger.exception("Error executing bulk write!")
+                    await session.abort_transaction()
+                    break
+                except Exception:
+                    logger.exception("Error executing bulk write!")
+                    await session.abort_transaction()
+                    break
+    return ORJSONResponse({"message": "Registration Failed!"}, 409)
 
 
 async def attach(platform: str, open_id: OpenID) -> Response:

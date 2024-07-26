@@ -9,7 +9,7 @@ from bson import ObjectId
 
 from fastapi import Request
 
-from .architype import Anchor, AnchorType, Architype, NodeAnchor, Root
+from .architype import Anchor, AnchorType, Architype, NodeAnchor, Permission, Root
 from .memory import MongoDB
 
 
@@ -57,7 +57,9 @@ class JaseciContext:
 
     def generate_public_root(self) -> NodeAnchor:
         """Generate default super root."""
-        public_root = NodeAnchor(id=PUBLIC_ROOT, current_access_level=2)
+        public_root = NodeAnchor(
+            id=PUBLIC_ROOT, access=Permission(all=2), current_access_level=2
+        )
         architype = public_root.architype = object.__new__(Root)
         architype.__jac__ = public_root
         self.datasource.set(public_root)
@@ -70,16 +72,17 @@ class JaseciContext:
     ) -> NodeAnchor:
         """Load initial anchors."""
         if anchor:
-            if not anchor.connected and (
-                _anchor := await self.datasource.find_one(AnchorType.node, anchor.id)
-            ):
-                anchor.__dict__.update(_anchor.__dict__)
-                anchor.current_access_level = 2
+            if not anchor.connected:
+                if _anchor := await self.datasource.find_one(
+                    AnchorType.node, anchor.id
+                ):
+                    _anchor.current_access_level = 2
+                    return _anchor
             else:
                 self.datasource.set(anchor)
-        else:
-            anchor = default() if callable(default) else default
-        return anchor
+                return anchor
+
+        return default() if callable(default) else default
 
     def validate_access(self) -> bool:
         """Validate access."""

@@ -55,7 +55,7 @@ async def create_code(user_id: ObjectId, reset: bool = False) -> str:
     raise HTTPException(500, "Verification Creation Failed!")
 
 
-async def verify_code(code: str, reset: bool = False) -> str | None:
+async def verify_code(code: str, reset: bool = False) -> ObjectId | None:
     """Verify Code."""
     decrypted = decrypt(code)
     if (
@@ -65,7 +65,7 @@ async def verify_code(code: str, reset: bool = False) -> str | None:
         and await CodeRedis.hget(key=code)
     ):
         await CodeRedis.hdelete(code)
-        return decrypted["user_id"]
+        return ObjectId(decrypted["user_id"])
     return None
 
 
@@ -79,7 +79,7 @@ async def create_token(user: dict[str, Any]) -> str:
     raise HTTPException(500, "Token Creation Failed!")
 
 
-async def invalidate_token(user_id: str) -> None:
+async def invalidate_token(user_id: ObjectId) -> None:
     """Invalidate token of current user."""
     await TokenRedis.hdelete_rgx(f"{user_id}:*")
 

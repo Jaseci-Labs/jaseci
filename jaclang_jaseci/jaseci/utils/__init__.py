@@ -4,8 +4,6 @@ import logging
 from datetime import datetime, timedelta, timezone
 from random import choice
 from string import ascii_letters, digits
-from types import NoneType, UnionType
-from typing import Union, cast, get_args, get_origin
 
 from .mail import Emailer, SendGridEmailer
 
@@ -23,16 +21,6 @@ def utc_datetime(**addons: int) -> datetime:
 def utc_timestamp(**addons: int) -> int:
     """Get current timestamp with option to add additional timedelta."""
     return int(utc_datetime(**addons).timestamp())
-
-
-def make_optional(cls: type) -> type:
-    """Check if the type hint is Optional."""
-    if (
-        (origin := get_origin(cls)) is Union or origin is UnionType
-    ) and NoneType in get_args(cls):
-        return cls
-
-    return cast(type, cls | None)
 
 
 logger = logging.getLogger(__name__)

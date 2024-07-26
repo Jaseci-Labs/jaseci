@@ -3,8 +3,18 @@
 from copy import copy, deepcopy
 from dataclasses import asdict, dataclass, field, is_dataclass
 from inspect import iscoroutine
+from os import getenv
 from re import IGNORECASE, compile
-from typing import Any, Callable, ClassVar, Iterable, Mapping, Type, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Iterable,
+    Mapping,
+    Type,
+    TypeVar,
+    cast,
+)
 
 from bson import ObjectId
 
@@ -24,6 +34,7 @@ from motor.motor_asyncio import AsyncIOMotorClientSession
 from orjson import dumps
 
 from pymongo import ASCENDING, DeleteMany, DeleteOne, InsertOne, UpdateMany, UpdateOne
+from pymongo.errors import ConnectionFailure, OperationFailure
 
 from ..jaseci.datasources import Collection as BaseCollection
 from ..jaseci.utils import logger
@@ -34,6 +45,97 @@ NODE_ID_REGEX = compile(r"^n:([^:]*):([a-f\d]{24})$", IGNORECASE)
 EDGE_ID_REGEX = compile(r"^e:([^:]*):([a-f\d]{24})$", IGNORECASE)
 WALKER_ID_REGEX = compile(r"^w:([^:]*):([a-f\d]{24})$", IGNORECASE)
 TA = TypeVar("TA", bound="type[Architype]")
+
+
+@dataclass
+class BulkWrite:
+    """Bulk Write builder."""
+
+    SESSION_MAX_TRANSACTION_RETRY: ClassVar[int] = int(
+        getenv("SESSION_TRANSACTION_MAX_RETRY") or "1"
+    )
+    SESSION_MAX_COMMIT_RETRY: ClassVar[int] = int(
+        getenv("SESSION_MAX_COMMIT_RETRY") or "1"
+    )
+
+    operations: dict[
+        AnchorType,
+        list[InsertOne[Any] | DeleteMany | DeleteOne | UpdateMany | UpdateOne],
+    ] = field(
+        default_factory=lambda: {
+            AnchorType.node: [],
+            AnchorType.edge: [],
+            AnchorType.walker: [],
+            AnchorType.generic: [],  # ignored
+        }
+    )
+
+    @property
+    def has_operations(self) -> bool:
+        """Check if has operations."""
+        return any(val for val in self.operations.values())
+
+    @staticmethod
+    async def commit(session: AsyncIOMotorClientSession) -> None:
+        """Commit current session."""
+        commit_retry = 0
+        commit_max_retry = BulkWrite.SESSION_MAX_COMMIT_RETRY
+        while commit_retry <= commit_max_retry:
+            try:
+                await session.commit_transaction()
+                break
+            except (ConnectionFailure, OperationFailure) as ex:
+                if ex.has_error_label("UnknownTransactionCommitResult"):
+                    commit_retry += 1
+                    logger.error(
+                        "Error commiting bulk write! "
+                        f"Retrying [{commit_retry}/{commit_max_retry}] ..."
+                    )
+                    continue
+                logger.error(
+                    f"Error commiting bulk write after max retry [{commit_max_retry}] !"
+                )
+                raise
+            except Exception:
+                await session.abort_transaction()
+                logger.error("Error commiting bulk write!")
+                raise
+
+    async def execute(self, session: AsyncIOMotorClientSession) -> None:
+        """Execute all operations."""
+        transaction_retry = 0
+        transaction_max_retry = self.SESSION_MAX_TRANSACTION_RETRY
+        while transaction_retry <= transaction_max_retry:
+            try:
+                if node_operation := self.operations[AnchorType.node]:
+                    await NodeAnchor.Collection.bulk_write(
+                        node_operation, False, session
+                    )
+                if edge_operation := self.operations[AnchorType.edge]:
+                    await EdgeAnchor.Collection.bulk_write(
+                        edge_operation, False, session
+                    )
+                if walker_operation := self.operations[AnchorType.walker]:
+                    await WalkerAnchor.Collection.bulk_write(
+                        walker_operation, False, session
+                    )
+                await self.commit(session)
+                break
+            except (ConnectionFailure, OperationFailure) as ex:
+                if ex.has_error_label("TransientTransactionError"):
+                    transaction_retry += 1
+                    logger.error(
+                        "Error executing bulk write! "
+                        f"Retrying [{transaction_retry}/{transaction_max_retry}] ..."
+                    )
+                    continue
+                logger.error(
+                    f"Error executing bulk write after max retry [{transaction_max_retry}] !"
+                )
+                raise
+            except Exception:
+                logger.error("Error executing bulk write!")
+                raise
 
 
 @dataclass(eq=False)
@@ -257,10 +359,75 @@ class Anchor(_Anchor):
             self.access.all = -1
             self._set.update({"access.all": -1})
 
-    async def pull_changes(
-        self, propagate: bool = True
-    ) -> list[InsertOne[Any] | DeleteMany | DeleteOne | UpdateMany | UpdateOne]:
-        """Return changes and clear current reference."""
+    def rollback(self) -> None:
+        """Rollback hashes so set update still available."""
+        self.hashes = self.rollback_hashes
+        self.changes = self.rollback_changes
+
+    # ------------------------------------------------ #
+
+    async def sync(self, node: "NodeAnchor | None" = None) -> "Architype | None":  # type: ignore[override]
+        """Retrieve the Architype from db and return."""
+        if architype := self.architype:
+            if (node or self).has_read_access(self):
+                return architype
+            return None
+
+        from .context import JaseciContext
+
+        jsrc = JaseciContext.get().datasource
+        anchor = await jsrc.find_one(self.type, self.id)
+
+        if anchor and (node or self).has_read_access(anchor):
+            self.__dict__.update(anchor.__dict__)
+
+        return self.architype
+
+    def allocate(self) -> None:
+        """Allocate hashes and memory."""
+        from .context import JASECI_CONTEXT
+
+        if jctx := JASECI_CONTEXT.get(None):
+            if jctx.root:
+                self.root = jctx.root.id
+            jctx.datasource.set(self)
+
+    async def _save(
+        self,
+        bulk_write: BulkWrite,
+    ) -> None:
+        """Save Anchor."""
+        if self.architype:
+            if not self.connected:
+                self.connected = True
+                self.sync_hash()
+                await self.insert(bulk_write)
+            elif self.current_access_level > 0:
+                await self.update(bulk_write, True)
+
+    async def save(self, session: AsyncIOMotorClientSession | None = None) -> None:  # type: ignore[override]
+        """Save Anchor."""
+        bulk_write = BulkWrite()
+
+        await self._save(bulk_write)
+
+        if bulk_write.has_operations:
+            if session:
+                await bulk_write.execute(session)
+            else:
+                async with await BaseCollection.get_session() as session:
+                    async with session.start_transaction():
+                        await bulk_write.execute(session)
+
+    async def insert(
+        self,
+        bulk_write: BulkWrite,
+    ) -> None:
+        """Insert Anchor."""
+        bulk_write.operations[self.type].append(InsertOne(self.serialize()))
+
+    async def update(self, bulk_write: BulkWrite, propagate: bool = False) -> None:
+        """Update Anchor."""
         self.rollback_changes = deepcopy(self.changes)
         self.rollback_hashes = copy(self.hashes)
 
@@ -295,7 +462,7 @@ class Anchor(_Anchor):
                     for idx, anchor in enumerate(_list):
                         if isinstance(anchor, Anchor):
                             if propagate:
-                                await anchor.save()
+                                await anchor._save(bulk_write)
                             _list[idx] = anchor.ref_id
             if _list:
                 raw_query.append(({"_id": anchor_id}, {ops[0]: target}))
@@ -314,81 +481,8 @@ class Anchor(_Anchor):
                 else:
                     raw_query.append(({"_id": anchor_id}, additional_update))
 
-        return [UpdateOne(*op) for op in raw_query]
-
-    def rollback(self) -> None:
-        """Rollback hashes so set update still available."""
-        self.hashes = self.rollback_hashes
-        self.changes = self.rollback_changes
-
-    # ------------------------------------------------ #
-
-    async def sync(self, node: "NodeAnchor | None" = None) -> "Architype | None":  # type: ignore[override]
-        """Retrieve the Architype from db and return."""
-        if architype := self.architype:
-            if (node or self).has_read_access(self):
-                return architype
-            return None
-
-        from .context import JaseciContext
-
-        jsrc = JaseciContext.get().datasource
-        anchor = await jsrc.find_one(self.type, self.id)
-
-        if anchor and (node or self).has_read_access(anchor):
-            self.__dict__.update(anchor.__dict__)
-
-        return self.architype
-
-    def allocate(self) -> None:
-        """Allocate hashes and memory."""
-        from .context import JASECI_CONTEXT
-
-        if jctx := JASECI_CONTEXT.get(None):
-            if jctx.root:
-                self.root = jctx.root.id
-            jctx.datasource.set(self)
-
-    async def save(self, session: AsyncIOMotorClientSession | None = None) -> None:  # type: ignore[override]
-        """Save Anchor."""
-        if self.architype:
-            if session:
-                if not self.connected:
-                    self.connected = True
-                    self.sync_hash()
-                    await self.insert(session)
-                elif self.current_access_level > 0:
-                    await self.update(session)
-            else:
-                await self.save_with_session()
-
-    async def save_with_session(self) -> None:
-        """Upsert Architype with session."""
-        async with await BaseCollection.get_session() as session:
-            async with session.start_transaction():
-                try:
-                    await self.save(session)
-                    await session.commit_transaction()
-                except Exception:
-                    await session.abort_transaction()
-                    logger.exception("Error saving Anchor!")
-                    raise
-
-    async def insert(self, session: AsyncIOMotorClientSession | None = None) -> None:
-        """Insert Anchor."""
-        await self.Collection.insert_one(self.serialize(), session)
-
-    async def update(self, session: AsyncIOMotorClientSession | None = None) -> None:
-        """Update Anchor."""
-        if changes := await self.pull_changes():
-            try:
-                await self.Collection.bulk_write(
-                    changes,
-                    session=session,
-                )
-            except Exception:
-                self.rollback()
-                raise
+        for query in raw_query:
+            bulk_write.operations[self.type].append(UpdateOne(*query))
 
     async def destroy(self) -> None:  # type: ignore[override]
         """Save Anchor."""
@@ -480,12 +574,15 @@ class NodeAnchor(Anchor):
             )
         return None
 
-    async def insert(self, session: AsyncIOMotorClientSession | None = None) -> None:
+    async def insert(
+        self,
+        bulk_write: BulkWrite,
+    ) -> None:
         """Insert Anchor."""
         for edge in self.edges:
-            await edge.save(session)
+            await edge._save(bulk_write)
 
-        await super().insert(session)
+        await super().insert(bulk_write)
 
     async def destroy(self) -> None:  # type: ignore[override]
         """Delete Anchor."""
@@ -673,15 +770,15 @@ class EdgeAnchor(Anchor):
             )
         return None
 
-    async def insert(self, session: AsyncIOMotorClientSession | None = None) -> None:
+    async def insert(self, bulk_write: BulkWrite) -> None:
         """Insert Anchor."""
         if source := self.source:
-            await source.save(session)
+            await source._save(bulk_write)
 
         if target := self.target:
-            await target.save(session)
+            await target._save(bulk_write)
 
-        await super().insert(session)
+        await super().insert(bulk_write)
 
     async def destroy(self) -> None:  # type: ignore[override]
         """Delete Anchor."""
@@ -690,15 +787,7 @@ class EdgeAnchor(Anchor):
 
             jsrc = JaseciContext.get().datasource
 
-            source = self.source
-            target = self.target
             self.detach()
-
-            if source:
-                await source.save()
-            if target:
-                await target.save()
-
             jsrc.remove(self)
 
     async def sync(  # type: ignore[override]
