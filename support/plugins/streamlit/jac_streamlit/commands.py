@@ -32,7 +32,7 @@ class JacCmd:
                     basename not in sys.modules
                 ), "Please use another name for the .jac file. It conflicts with a Python package."
                 py_lines = [
-                    "from jac_streamlit.streamlit import run_streamlit",
+                    "from jac_streamlit import run_streamlit",
                     f'run_streamlit("{basename}", "{dirname}")',
                 ]
                 with tempfile.NamedTemporaryFile(
