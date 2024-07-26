@@ -1,5 +1,5 @@
 model:
-  hf_dataset: ["chandralegend/map_gen_randomized"]
+  hf_dataset: ["chandralegend/map_gen_randomized", "chandralegend/mtllm-level-gen-test"]
   hf_model: "HuggingFaceTB/SmolLM-135M"
   output_model: "mtllm-levelgen-smollm-135m"
 
@@ -11,22 +11,23 @@ lora_config:
   task_type: "CAUSAL_LM"
 
 training_args:
-  max_num_epochs: 2
-  learning_rate: 2e-4
+  num_train_epochs: 2
+  learning_rate: 0.00002
   lr_scheduler_type: "cosine"
   per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
   gradient_accumulation_steps: 4
   optim: "paged_adamw_32bit"
   save_strategy: "steps"
   save_steps: 500
   logging_steps: 100
-  save_total_limit: 2
+  save_total_limit: 4
   num_train_epochs: 2
-  max_steps: 1000
+  max_steps: 20000
   fp16: true
 
 trainer:
-  dataset_text_fields: "text"
+  dataset_text_field: "text"
   max_seq_length: 2048
 
 push_to_hf:
