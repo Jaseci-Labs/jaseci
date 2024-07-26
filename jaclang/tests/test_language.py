@@ -806,6 +806,16 @@ class JacLanguageTests(TestCase):
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
 
+    def test_circle_override1_type_check_pass(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(
+            self.examples_abs_path("manual_code/circle.jac"),
+            schedule=py_code_gen_typed,
+        )
+        self.assertEqual(len(mypass.errors_had), 0)
+        self.assertEqual(len(mypass.warnings_had), 0)
+
     def test_self_with_no_sig(self) -> None:  # we can get rid of this, isn't?
         """Test py ast to Jac ast conversion output."""
         captured_output = io.StringIO()
