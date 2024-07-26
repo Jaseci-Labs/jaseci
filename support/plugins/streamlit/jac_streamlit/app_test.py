@@ -1,8 +1,10 @@
 """Fork of Streamlit's AppTest for Jac."""
 
-from streamlit.testing.v1 import AppTest
 import os
 import sys
+
+from streamlit.testing.v1 import AppTest
+
 
 class JacAppTest(AppTest):
     """Jac Streamlit App Test."""
