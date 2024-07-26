@@ -5,7 +5,6 @@ import marshal
 import os
 import pdb
 import re
-from typing import Optional
 
 
 def pascal_to_snake(pascal_string: str) -> str:
@@ -125,26 +124,6 @@ def auto_generate_refs() -> None:
         if not os.path.exists(md_file_path):
             with open(md_file_path, "w") as md_file:
                 md_file.write("")
-
-
-def import_target_to_relative_path(
-    level: int, target: str, base_path: Optional[str] = None
-) -> str:
-    """Convert an import target string into a relative file path."""
-    if not base_path:
-        base_path = os.getcwd()
-    parts = target.split(".")
-    traversal_levels = level - 1 if level > 0 else 0
-    actual_parts = parts[traversal_levels:]
-    for _ in range(traversal_levels):
-        base_path = os.path.dirname(base_path)
-    relative_path = os.path.join(base_path, *actual_parts)
-    relative_path = (
-        relative_path + ".jac"
-        if os.path.exists(relative_path + ".jac")
-        else relative_path
-    )
-    return relative_path
 
 
 def is_standard_lib_module(module_path: str) -> bool:

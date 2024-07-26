@@ -426,6 +426,33 @@ class PyastGenPass(Pass):
                 type_params=[],
             ),
         )
+        if node.loc.mod_path != self.ir.loc.mod_path:
+            func.decorator_list.append(
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="impl_patch_filename",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="file_loc",
+                                    value=self.sync(
+                                        ast3.Constant(value=node.body.loc.mod_path)
+                                    ),
+                                )
+                            ),
+                        ],
+                    )
+                )
+            )
         node.gen.py_ast = [func]
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
@@ -609,7 +636,7 @@ class PyastGenPass(Pass):
                                             arg="lng",
                                             value=self.sync(
                                                 ast3.Constant(
-                                                    value=node.hint.tag.value
+                                                    value="py" if node.is_py else "jac"
                                                 ),
                                                 node.hint,
                                             ),
@@ -900,6 +927,7 @@ class PyastGenPass(Pass):
             if isinstance(node.decorators, ast.SubNodeList)
             else []
         )
+
         ds_on_entry, ds_on_exit = self.collect_events(node)
         if node.arch_type.name != Tok.KW_CLASS:
             self.needs_jac_feature()
@@ -1180,6 +1208,34 @@ class PyastGenPass(Pass):
                 node,
             )
         decorator_list = node.decorators.gen.py_ast if node.decorators else []
+        if isinstance(node.body, ast.AstImplOnlyNode):
+            self.needs_jac_feature()
+            decorator_list.append(
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="impl_patch_filename",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="file_loc",
+                                    value=self.sync(
+                                        ast3.Constant(value=node.body.loc.mod_path)
+                                    ),
+                                )
+                            ),
+                        ],
+                    )
+                )
+            )
         if node.is_abstract:
             self.needs_jac_feature()
             decorator_list.append(
