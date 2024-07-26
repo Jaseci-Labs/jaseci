@@ -11,4 +11,3 @@ with entry:__main__ {
 
     # ray.close_window();
 }
-
