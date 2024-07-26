@@ -3,7 +3,6 @@ include random;
 import from ..test_cli, JacCliTests as Jac;
 import from deep.mycode, code as c;
 import hashcheck as h, assign_compr as a;
-include ignore;
 import from jacsamp, my_print as m;
 
 with entry {
