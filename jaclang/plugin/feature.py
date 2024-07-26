@@ -28,10 +28,11 @@ pm.add_hookspecs(JacBuiltin)
 class JacFeature:
     """Jac Feature."""
 
-    import abc
-    from jaclang.compiler.constant import EdgeDir
-    from jaclang.runtimelib.constructs import DSFunc
+    from jaclang.compiler.constant import EdgeDir as EdgeDirType
+    from jaclang.runtimelib.constructs import DSFunc as DSFuncType
 
+    EdgeDir: TypeAlias = EdgeDirType
+    DSFunc: TypeAlias = DSFuncType
     RootType: TypeAlias = Root
     Obj: TypeAlias = Architype
     Node: TypeAlias = NodeArchitype

@@ -218,6 +218,32 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
 
+    def test_deep_imports_mods(self) -> None:
+        """Parse micro jac file."""
+        import sys
+
+        targets = [
+            "deep",
+            "deep.deeper",
+            "deep.mycode",
+            "deep.deeper.snd_lev",
+            "deep.one_lev",
+        ]
+        for i in targets:
+            if i in sys.modules:
+                del sys.modules[i]
+        Jac.get_root()._jac_.edges.clear()
+        Jac.context().init_memory(base_path=self.fixture_abs_path("./"))
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("deep_import_mods", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        mods = eval(stdout_value)
+        for i in targets:
+            self.assertIn(i, mods)
+        self.assertEqual(len([i for i in mods if i.startswith("deep")]), 5)
+
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
         Jac.get_root()._jac_.edges.clear()
@@ -775,6 +801,16 @@ class JacLanguageTests(TestCase):
         Jac.get_root()._jac_.edges.clear()
         mypass = jac_file_to_pass(
             self.examples_abs_path("guess_game/guess_game5.jac"),
+            schedule=py_code_gen_typed,
+        )
+        self.assertEqual(len(mypass.errors_had), 0)
+        self.assertEqual(len(mypass.warnings_had), 0)
+
+    def test_circle_override1_type_check_pass(self) -> None:
+        """Test conn assign on edges."""
+        Jac.get_root()._jac_.edges.clear()
+        mypass = jac_file_to_pass(
+            self.examples_abs_path("manual_code/circle.jac"),
             schedule=py_code_gen_typed,
         )
         self.assertEqual(len(mypass.errors_had), 0)
