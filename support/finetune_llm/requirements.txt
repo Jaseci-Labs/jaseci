@@ -4,3 +4,4 @@ bitsandbytes
 transformers
 trl
 loguru
+datasets

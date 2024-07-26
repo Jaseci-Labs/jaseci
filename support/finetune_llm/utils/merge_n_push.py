@@ -3,30 +3,31 @@
 import argparse
 import os
 
-from huggingface_hub import login
-
 from peft import PeftModel
 
 import torch
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-import utils.constants as cons
+from utils import load_config
 
 
-def merge_n_push(args: argparse.Namespace) -> None:
+def merge_n_push(config: argparse.Namespace, checkpoint: str) -> None:
     """Merge the LoRA with the Base Model and push to the Hugging Face Hub."""
     # Merging the LoRA with the base model
     model = AutoModelForCausalLM.from_pretrained(
-        args.base_model_id,
+        config.model["hf_model"],
         torch_dtype=torch.float16,
         load_in_8bit=False,
         device_map="auto",
         trust_remote_code=True,
     )
-    tokenizer = AutoTokenizer.from_pretrained(args.base_model_id)
+    tokenizer = AutoTokenizer.from_pretrained(config.model["hf_model"])
     peft_model = PeftModel.from_pretrained(
-        model, args.checkpoint_dir, from_transformers=True, device_map="auto"
+        model,
+        os.path.join(config.model["output_model"], f"checkpoint-{checkpoint}"),
+        from_transformers=True,
+        device_map="auto",
     )
     model = peft_model.merge_and_unload()
     model.save_pretrained(os.path.join(args.output_model_name, "merged"))
@@ -34,36 +35,28 @@ def merge_n_push(args: argparse.Namespace) -> None:
 
     # Pushing the model to the Hugging Face Hub
     model.push_to_hub(
-        f"{args.hf_username}/{args.output_model_name}", token=args.hf_token
+        f"{config.push_to_hf['hf_username']}/{config.model['output_model']}"
     )
     tokenizer.push_to_hub(
-        f"{args.hf_username}/{args.output_model_name}", token=args.hf_token
+        f"{config.push_to_hf['hf_username']}/{config.model['output_model']}"
     )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
     parser.add_argument(
-        "--base_model_id", type=str, default=cons.HF_MODEL, help="Base model ID"
-    )
-    parser.add_argument(
-        "--output_model_name",
+        "--config",
         type=str,
-        default=cons.OUTPUT_MODEL,
-        help="Output model name",
+        default="config.yaml",
+        help="Path to the configuration file",
     )
     parser.add_argument(
-        "--checkpoint_dir", type=str, required=True, help="Model Checkpoint directory"
+        "--checkpoint",
+        type=int,
+        default=0,
+        help="Checkpoint to merge with the base model",
     )
-    parser.add_argument(
-        "--hf_username", type=str, required=True, help="Hugging Face username"
-    )
-    parser.add_argument(
-        "--hf_token", type=str, required=True, help="Hugging Face API token"
-    )
-
     args = parser.parse_args()
 
-    login(args.hf_token)
-    merge_n_push(args)
+    config = load_config(args.config)
+    merge_n_push(config, args.checkpoint)
