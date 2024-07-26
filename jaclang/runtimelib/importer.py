@@ -370,35 +370,42 @@ class JacImporter(Importer):
 
         if not module:
             if os.path.isdir(spec.full_target):
-                module = self.handle_directory(
-                    spec.module_name, spec.full_target, valid_mod_bundle
+                module = sys.modules.get(
+                    spec.full_target,
+                    self.handle_directory(
+                        spec.module_name, spec.full_target, valid_mod_bundle
+                    ),
                 )
             else:
                 spec.full_target += ".jac" if spec.language == "jac" else ".py"
                 module_name = self.get_sys_mod_name(spec.full_target)
                 module_name = spec.override_name if spec.override_name else module_name
-                module = self.create_jac_py_module(
-                    valid_mod_bundle,
-                    module_name,
-                    spec.package_path,
-                    spec.full_target,
-                )
-                codeobj = self.get_codeobj(
-                    spec.full_target,
-                    module_name,
-                    valid_mod_bundle,
-                    spec.cachable,
-                    caller_dir=spec.caller_dir,
-                )
-                if not codeobj:
-                    raise ImportError(f"No bytecode found for {spec.full_target}")
-                with sys_path_context(spec.caller_dir):
-                    try:
-                        exec(codeobj, module.__dict__)
-                    except Exception as e:
-                        logger.error(f"Error while importing {spec.full_target}: {e}")
-                        raise e
-
+                if module_name not in sys.modules or module_name == "__main__":
+                    module = self.create_jac_py_module(
+                        valid_mod_bundle,
+                        module_name,
+                        spec.package_path,
+                        spec.full_target,
+                    )
+                    codeobj = self.get_codeobj(
+                        spec.full_target,
+                        module_name,
+                        valid_mod_bundle,
+                        spec.cachable,
+                        caller_dir=spec.caller_dir,
+                    )
+                    if not codeobj:
+                        raise ImportError(f"No bytecode found for {spec.full_target}")
+                    with sys_path_context(spec.caller_dir):
+                        try:
+                            exec(codeobj, module.__dict__)
+                        except Exception as e:
+                            logger.error(
+                                f"Error while importing {spec.full_target}: {e}"
+                            )
+                            raise e
+                else:
+                    module = sys.modules[module_name]
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(
