@@ -25,7 +25,7 @@ Replace `app.jac` with the path to your Jac Streamlit app file.
 If you want to visualize the graph of your Jac Streamlit app in a browser, you can use the following command:
 
 ```shell
-jac dotgen app.jac --streamlit
+jac dot_view app.jac
 ```
 
 This will open up a Streamlit app in your browser, displaying the graph of your Jac Streamlit app.

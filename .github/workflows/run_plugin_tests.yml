@@ -23,9 +23,9 @@ jobs:
                 python -m pip install --upgrade pip
                 pip install -e .
                 pip install pytest
-                pip install streamlit
-                pip install pydot
-                pip install streamlit-agraph
+
+            - name: Install Plugin
+              run: pip install -e support/plugins/streamlit
 
             - name: Run tests
               run: pytest support/plugins/streamlit
