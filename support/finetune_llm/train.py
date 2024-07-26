@@ -26,7 +26,9 @@ def train(config: argparse.Namespace) -> None:
     model, tokenizer = get_model_tokenizer(config.model["hf_model"])
 
     peft_config = LoraConfig(**config.lora_config)
-    training_args = TrainingArguments(output_dir= config.model["output_model"], **config.training_args)
+    training_args = TrainingArguments(
+        output_dir=config.model["output_model"], **config.training_args
+    )
 
     trainer = SFTTrainer(
         model=model,
