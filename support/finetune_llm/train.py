@@ -2,48 +2,32 @@
 
 import argparse
 
-from huggingface_hub import login
-
 from peft import LoraConfig
 
 from transformers import TrainingArguments
 
 from trl import SFTTrainer
 
-import utils.constants as cons
+from utils import load_config
 from utils.dataset import prepare_train_data
+from utils.merge_n_push import merge_n_push
 from utils.model import get_model_tokenizer
 
 
-def train(args: argparse.Namespace) -> None:
+def train(config: argparse.Namespace) -> None:
     """Train the model on the given dataset."""
-    train_data = prepare_train_data(args.dataset)
-    model, tokenizer = get_model_tokenizer(args.model_id)
-    peft_config = LoraConfig(
-        r=8, lora_alpha=16, lora_dropout=0.05, bias="none", task_type="CAUSAL_LM"
-    )
-    training_args = TrainingArguments(
-        output_dir=args.output_model_name,
-        per_device_train_batch_size=16,
-        gradient_accumulation_steps=4,
-        optim="paged_adamw_32bit",
-        learning_rate=args.lr,
-        lr_scheduler_type="cosine",
-        save_strategy="epoch",
-        logging_steps=10,
-        num_train_epochs=args.max_num_epochs,
-        max_steps=250,
-        fp16=True,
-    )
+    train_data = prepare_train_data(config.model["hf_dataset"])
+    model, tokenizer = get_model_tokenizer(config.model["hf_model"])
+    peft_config = LoraConfig(**config.lora_config)
+    training_args = TrainingArguments(**config.training_args)
     trainer = SFTTrainer(
         model=model,
         train_dataset=train_data,
         peft_config=peft_config,
-        dataset_text_field="text",
         args=training_args,
         tokenizer=tokenizer,
         packing=False,
-        max_seq_length=1024,
+        **config.trainer
     )
     trainer.train()
 
@@ -51,33 +35,21 @@ def train(args: argparse.Namespace) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--dataset", type=str, default=cons.HF_DATASET, help="Dataset ID to train on"
-    )
-    parser.add_argument(
-        "--model_id", type=str, default=cons.HF_MODEL, help="Model ID to train"
-    )
-    parser.add_argument(
-        "--output_model_name",
+        "--config",
         type=str,
-        default=cons.OUTPUT_MODEL,
-        help="Output model name",
+        default="config.yaml",
+        help="Path to the configuration file",
     )
     parser.add_argument(
-        "--hf_token", type=str, required=True, help="Hugging Face API token"
+        "--push_to_hf",
+        type=bool,
+        default=False,
+        help="Push the model to the Hugging Face model hub",
     )
-
-    parser.add_argument(
-        "--max_num_epochs",
-        type=int,
-        default=cons.MAX_NUM_EPOCHS,
-        help="Maximum number of epochs to train for",
-    )
-    parser.add_argument(
-        "--lr", type=float, default=cons.LR, help="Learning rate for the model"
-    )
-
     args = parser.parse_args()
+    config = load_config(args.config)
+    train(config)
 
-    login(args.hf_token)
-
-    train(args)
+    if args.push_to_hf:
+        checkpoint = input("Enter the checkpoint to push to the Hugging Face Hub: ")
+        merge_n_push(config, checkpoint)

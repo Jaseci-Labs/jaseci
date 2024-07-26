@@ -18,6 +18,7 @@ import pandas as pd
 ####################################################################################################
 # THIS PIECE OF CODE CAN CHANGE ON BASE ON THE TYPE OF MODEL YOU ARE USING,
 # WHETHER YOU ARE USING DIFFERENT SYSTEM PROMPTS OR NOT.
+
 with open(os.path.join(os.path.dirname(__file__), "chat_template.txt"), "r") as f:
     INPUT_TEMPLATE: str = f.read()
     INPUT_TEMPLATE_ARGS: list[str] = re.findall(r"{(.*?)}", INPUT_TEMPLATE)
