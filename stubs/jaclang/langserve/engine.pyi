@@ -1,0 +1,73 @@
+import jaclang.compiler.absyntree as ast
+import lsprotocol.types as lspt
+from _typeshed import Incomplete
+from jaclang.compiler.compile import jac_str_to_pass as jac_str_to_pass
+from jaclang.compiler.parser import JacParser as JacParser
+from jaclang.compiler.passes import Pass as Pass
+from jaclang.compiler.passes.main.schedules import (
+    py_code_gen_typed as py_code_gen_typed,
+)
+from jaclang.compiler.passes.tool import (
+    FuseCommentsPass as FuseCommentsPass,
+    JacFormatPass as JacFormatPass,
+)
+from jaclang.langserve.sem_manager import SemTokManager as SemTokManager
+from jaclang.langserve.utils import (
+    collect_all_symbols_in_scope as collect_all_symbols_in_scope,
+    create_range as create_range,
+    find_index as find_index,
+    find_node_by_position as find_node_by_position,
+    gen_diagnostics as gen_diagnostics,
+    get_item_path as get_item_path,
+    get_mod_path as get_mod_path,
+    get_symbols_for_outline as get_symbols_for_outline,
+    parse_symbol_path as parse_symbol_path,
+    resolve_completion_symbol_table as resolve_completion_symbol_table,
+)
+from jaclang.vendor.pygls import uris as uris
+from jaclang.vendor.pygls.server import LanguageServer as LanguageServer
+
+class ModuleInfo:
+    ir: Incomplete
+    impl_parent: Incomplete
+    sem_manager: Incomplete
+    def __init__(
+        self, ir: ast.Module, impl_parent: ModuleInfo | None = None
+    ) -> None: ...
+    @property
+    def uri(self) -> str: ...
+
+class JacLangServer(LanguageServer):
+    modules: Incomplete
+    executor: Incomplete
+    tasks: Incomplete
+    def __init__(self) -> None: ...
+    def update_modules(
+        self, file_path: str, build: Pass, refresh: bool = False
+    ) -> None: ...
+    def quick_check(self, file_path: str) -> bool: ...
+    def deep_check(self, file_path: str, annex_view: str | None = None) -> bool: ...
+    async def launch_quick_check(self, uri: str) -> None: ...
+    async def launch_deep_check(self, uri: str) -> None: ...
+    def get_completion(
+        self, file_path: str, position: lspt.Position, completion_trigger: str | None
+    ) -> lspt.CompletionList: ...
+    def rename_module(self, old_path: str, new_path: str) -> None: ...
+    def delete_module(self, uri: str) -> None: ...
+    def formatted_jac(self, file_path: str) -> list[lspt.TextEdit]: ...
+    def get_hover_info(
+        self, file_path: str, position: lspt.Position
+    ) -> lspt.Hover | None: ...
+    def get_node_info(self, node: ast.AstSymbolNode) -> str | None: ...
+    def get_outline(self, file_path: str) -> list[lspt.DocumentSymbol]: ...
+    def get_definition(
+        self, file_path: str, position: lspt.Position
+    ) -> lspt.Location | None: ...
+    def get_references(
+        self, file_path: str, position: lspt.Position
+    ) -> list[lspt.Location]: ...
+    def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens: ...
+    def log_error(self, message: str) -> None: ...
+    def log_warning(self, message: str) -> None: ...
+    def log_info(self, message: str) -> None: ...
+    def log_py(self, message: str) -> None: ...
