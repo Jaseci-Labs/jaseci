@@ -9,6 +9,7 @@ from jaclang.compiler.constant import (
     JacSemTokenType as SemTokType,
 )
 from jaclang.langserve.engine import JacLangServer
+from jaclang.settings import settings
 
 import lsprotocol.types as lspt
 
@@ -32,8 +33,8 @@ async def did_change(
     if file_path in ls.modules:
         document = ls.workspace.get_text_document(file_path)
         lines = document.source.splitlines()
-        ls.modules[file_path].update_sem_tokens(
-            params, ls.modules[file_path].sem_tokens, lines
+        ls.modules[file_path].sem_manager.update_sem_tokens(
+            params, ls.modules[file_path].sem_manager.sem_tokens, lines
         )
         ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
@@ -147,6 +148,7 @@ def semantic_tokens_full(
 
 def run_lang_server() -> None:
     """Run the language server."""
+    settings.pass_timer = True
     server.start_io()
 
 

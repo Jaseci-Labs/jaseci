@@ -220,7 +220,7 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
         base, mod_name = os.path.split(filename)
         base = base if base else "./"
         mod_name = mod_name[:-4]
-        mod = jac_import(target=mod_name, base_path=base)
+        (mod,) = jac_import(target=mod_name, base_path=base)
         if not mod:
             print("Errors occurred while importing the module.")
             return

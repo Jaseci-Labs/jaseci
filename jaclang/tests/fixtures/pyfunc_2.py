@@ -277,3 +277,6 @@ def foo() -> None:
 
 
 foo()
+
+node = 90
+print(node)
