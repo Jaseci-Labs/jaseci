@@ -3,6 +3,7 @@
 import asyncio
 import builtins
 import importlib.util
+import logging
 import os
 import re
 import sys
@@ -392,7 +393,7 @@ def collect_all_symbols_in_scope(
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
     text = text[:dot_position].strip()[:-1]
-
+    print('text |',text,dot_position    )
     valid_character_pattern = re.compile(r"[a-zA-Z0-9_]")
 
     reversed_text = text[::-1]
@@ -430,6 +431,18 @@ def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
         for name, symbol in current_tab.tab.items():
             if name not in dir(builtins) and name == sym_name:
                 path = symbol.defn[0]._sym_type
+                if path == "enum.Enum" and isinstance(current_tab.owner, ast.AstSymbolNode):
+                    logging.info(f"sym type  {current_tab.owner}")
+                    logging.info(
+                        f"isinstance =>   {isinstance(current_tab.owner.name_spec, ast.NameAtom)}"
+                    )
+                    logging.info(
+                        f"sym type final  {current_tab.owner.name_spec._sym_type}"
+                    )
+                    logging.info(f"sym type  {path}")
+                    return current_tab.owner.name_spec._sym_type + "." + sym_name
+                elif path =='enum.Enum' and isinstance(current_tab.owner, ast.Module):
+                    return current_tab.owner.name + "." + sym_name
                 return path
         current_tab = current_tab.parent if current_tab.parent != current_tab else None
     return ""
@@ -463,6 +476,7 @@ def resolve_completion_symbol_table(
     import logging
 
     current_symbol_table = mod_tab
+    logging.info(f" FIRST SYM TABLE : {current_symbol_table}")
     for obj in current_symbol_path:
         logging.info(f"\n\nResolving symbol \n{obj}")
         logging.info(f"\ncurrent sym table  \n   {current_symbol_table}")
@@ -498,6 +512,7 @@ def resolve_completion_symbol_table(
                 pass
         else:
             path: str = resolve_symbol_path(obj, current_symbol_table)
+            logging.info(f"PATH : -- {path}")
             if path:
                 current_symbol_table = find_symbol_table(path, current_tab)
             else:
