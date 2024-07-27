@@ -351,7 +351,7 @@ def collect_all_symbols_in_scope(
     while current_tab is not None and current_tab not in visited:
         visited.add(current_tab)
         for name, symbol in current_tab.tab.items():
-            if name not in dir(builtins):
+            if name not in dir(builtins) and symbol.sym_type != SymbolType.IMPL:
                 symbols.append(
                     lspt.CompletionItem(label=name, kind=label_map(symbol.sym_type))
                 )
@@ -363,26 +363,27 @@ def collect_all_symbols_in_scope(
 
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
-    text = text[:dot_position].strip()
-    pattern = re.compile(r"\b\w+\(\)?|\b\w+\b")
-    matches = pattern.findall(text)
-    if text.endswith("."):
-        matches.append("")
-    symbol_path = []
-    i = 0
-    while i < len(matches):
-        if matches[i].endswith("("):
-            i += 1
-            continue
-        elif "(" in matches[i]:
-            symbol_path.append(matches[i])
-        elif matches[i] == "":
-            pass
-        else:
-            symbol_path.append(matches[i])
-        i += 1
+    text = text[:dot_position].strip()[:-1]
+    valid_character_pattern = re.compile(r"[a-zA-Z0-9]")
 
-    return symbol_path
+    reversed_text = text[::-1]
+    all_words = []
+    current_word = []
+    for char in reversed_text:
+        if valid_character_pattern.fullmatch(char):
+            current_word.append(char)
+        elif char == ".":
+            if current_word:
+                all_words.append("".join(current_word[::-1]))
+                current_word = []
+        else:
+            if current_word:
+                all_words.append("".join(current_word[::-1]))
+            break
+
+    all_words = all_words[::-1]
+
+    return all_words
 
 
 def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:

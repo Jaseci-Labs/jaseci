@@ -39,16 +39,26 @@ obj Colour1 {
 }
 
 obj red :Colour1: {
-    has base_colorred: Colorenum = Color.RED,
+    has base_colorred: Colorenum = Colorenum.RED,
         pointred: int = 10;
     obj color2 {
-        has color22: Color = Colorenum.BLUE,
+        has color22: Colorenum = Colorenum.BLUE,
             point22: int = 20;
+
+        can get_color22 -> Colorenum{
+            return self.color22;
+        }
+        enum Colorenum2 {
+            RED23,
+            GREEN12,
+            BLUE
+
+        }
     }
 }
 
 with entry:__main__ {
-    r = red(color1=Color.GREEN, point1=20);
+    r = red(color1=Colorenum.GREEN, point1=20);
     print(r.get_color1());
-    print(r.color2.color22);
+    print(r.color2.Colorenum2.RED23);
 }
