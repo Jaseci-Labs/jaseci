@@ -6,17 +6,13 @@ symbols are available for matching.
 """
 
 import ast as py_ast
-import importlib.util
 import os
-import sys
 from typing import Optional
 
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
-from jaclang.settings import settings
-from jaclang.utils.helpers import is_standard_lib_module
 from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
@@ -213,59 +209,58 @@ class PyImportPass(JacImportPass):
 
     def before_pass(self) -> None:
         """Only run pass if settings are set to raise python."""
+        from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
+
         super().before_pass()
-        if not settings.py_raise:
-            self.terminate()
 
-    def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
-        """Process an import."""
-        imp_node = i.parent_of_type(ast.Import)
-        if (
-            imp_node.is_py
-            and not i.sub_module
-            and not is_standard_lib_module(i.path_str)
-        ):
-            mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
-            if mod:
-                i.sub_module = mod
-                i.add_kids_right([mod], pos_update=False)
-                if settings.py_raise_deep:
-                    self.run_again = True
+        raised_modules: dict = {"Children": {}}
+        python_raise_list = list(FuseTypeInfoPass.python_raise_list)
+        python_raise_list.sort(key=lambda x: x[0], reverse=False)
 
-    def import_py_module(
-        self, node: ast.ModulePath, mod_path: str
-    ) -> Optional[ast.Module]:
+        for mod_name, mod_path in python_raise_list:
+            o = self.import_py_module(mod_path)
+            if o is None:
+                continue
+            if "." not in mod_name:
+                o.name = mod_name
+                self.attach_mod_to_node(self.ir, o)
+                raised_modules["Children"][o.name] = {"Node": o, "Children": {}}
+            else:
+                mod_parents = mod_name[: mod_name.rindex(".")].split(".")
+                parent = raised_modules
+                for m in mod_parents:
+                    print(m, raised_modules)
+                    if m not in parent["Children"]:
+                        raise Exception("Parent module should be raised before")
+                    else:
+                        parent = parent["Children"][m]
+                o.name = mod_name[mod_name.rindex(".") + 1 :]
+                self.attach_mod_to_node(parent["Node"], o)
+                parent["Children"][o.name] = {"Node": o, "Children": {}}
+
+        self.terminate()
+
+    def import_py_module(self, mod_path: str) -> Optional[ast.Module]:
         """Import a module."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
-        base_dir = os.path.dirname(mod_path)
-        sys.path.append(base_dir)
         try:
-            # Dynamically import the module
-            spec = importlib.util.find_spec(node.path_str)
-            sys.path.remove(base_dir)
-            if spec and spec.origin and spec.origin not in {None, "built-in", "frozen"}:
-                if spec.origin in self.import_table:
-                    return self.import_table[spec.origin]
-                with open(spec.origin, "r", encoding="utf-8") as f:
+            if mod_path not in {None, "built-in", "frozen"}:
+                if mod_path in self.import_table:
+                    return self.import_table[mod_path]
+                with open(mod_path, "r", encoding="utf-8") as f:
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
-                            py_ast.parse(f.read()), mod_path=spec.origin
+                            py_ast.parse(f.read()), mod_path=mod_path
                         ),
                     ).ir
                 if mod:
-                    self.import_table[spec.origin] = mod
+                    mod.py_raised = True
+                    self.import_table[mod_path] = mod
                     return mod
                 else:
-                    raise self.ice(
-                        f"Failed to import python module {node.path_str}: {spec.origin}"
-                    )
+                    raise self.ice(f"Failed to import python module {mod_path}")
         except Exception as e:
-            if "Empty kid for Token ModulePath" in str(e) or "utf-8" in str(e):  # FIXME
-                return None
-            self.error(
-                f"Failed to import python module {node.path_str}: {e}",
-                node_override=node,
-            )
+            self.error(f"Failed to import python module {mod_path}")
             raise e
         return None

@@ -116,6 +116,8 @@ def print_ast_tree(
             return out
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"
+        elif isinstance(node, ast.Module) and node.py_raised:
+            return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
         elif isinstance(node, AstSymbolNode):
             out = (
                 f"{node.__class__.__name__} - {node.sym_name} - "
@@ -184,11 +186,13 @@ def print_ast_tree(
 
     if isinstance(root, ast.AstNode):
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
-        for i, child in enumerate(root.kid):
-            is_last = i == len(root.kid) - 1
-            tree_str += print_ast_tree(
-                child, marker, [*level_markers, not is_last], output_file, max_depth
-            )
+        if not (isinstance(root, ast.Module) and root.py_raised):
+            tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
+            for i, child in enumerate(root.kid):
+                is_last = i == len(root.kid) - 1
+                tree_str += print_ast_tree(
+                    child, marker, [*level_markers, not is_last], output_file, max_depth
+                )
     elif isinstance(root, ast3.AST):
         tree_str = (
             f"{get_location_info(root)}\t{markers}{__node_repr_in_py_tree(root)}\n"

@@ -10,7 +10,6 @@ from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -28,6 +27,7 @@ class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
+    python_raise_list: set[tuple[str, str]] = set()
 
     def __debug_print(self, *argv: object) -> None:
         if settings.fuse_type_info_debug:
@@ -65,6 +65,36 @@ class FuseTypeInfoPass(Pass):
         if typ_sym_table != self.ir.sym_tab:
             node.name_spec.type_sym_tab = typ_sym_table
 
+    def __collect_python_dependencies(self, node: ast.AstNode) -> None:
+        from jaclang.compiler.passes.main.type_check_pass import JacTypeCheckPass
+
+        assert isinstance(node, ast.AstSymbolNode)
+
+        mypy_node = node.gen.mypy_ast[0]
+
+        if isinstance(mypy_node, MypyNodes.RefExpr):
+            node_full_name = mypy_node.node.fullname
+            if "." in node_full_name:
+                mod_name = node_full_name[: node_full_name.rindex(".")]
+            else:
+                mod_name = node_full_name
+
+            if mod_name not in JacTypeCheckPass.graph:
+                self.__debug_print(
+                    f"Can't find a python file associated with {type(node)}::{node.loc}"
+                )
+                return
+
+            mode_path = JacTypeCheckPass.graph[mod_name].xpath
+            if mode_path.endswith(".jac"):
+                return
+
+            FuseTypeInfoPass.python_raise_list.add((mod_name, mode_path))
+        else:
+            self.__debug_print(
+                f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
+            )
+
     @staticmethod
     def __handle_node(
         func: Callable[[FuseTypeInfoPass, T], None]
@@ -86,6 +116,7 @@ class FuseTypeInfoPass(Pass):
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                     self.__set_sym_table_link(node)
+                    self.__collect_python_dependencies(node)
 
                 # Jac node has multiple mypy nodes linked to it
                 elif len(node.gen.mypy_ast) > 1:
@@ -109,6 +140,7 @@ class FuseTypeInfoPass(Pass):
                         )
                         func(self, node)
                         self.__set_sym_table_link(node)
+                        self.__collect_python_dependencies(node)
 
                 # Jac node doesn't have mypy nodes linked to it
                 else:
@@ -182,8 +214,6 @@ class FuseTypeInfoPass(Pass):
     def enter_name(self, node: ast.NameAtom) -> None:
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
-        mypy_node = node.gen.mypy_ast[0]
-        print(type(mypy_node), node.loc, type(mypy_node.node))
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -461,11 +491,3 @@ class FuseTypeInfoPass(Pass):
                 right, ast.IndexSlice
             ):  # TODO check why IndexSlice produce an issue
                 right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
-
-    def exit_has_var(self, node: ast.HasVar) -> None:
-        """Pass handler for HasVar nodes."""
-        node.name_spec.sym_type = node.name.sym_type
-        node.name_spec.type_sym_tab = node.name.type_sym_tab
-    
-    def after_pass(self) -> None:
-        exit()

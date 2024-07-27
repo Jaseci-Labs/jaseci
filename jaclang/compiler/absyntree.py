@@ -632,6 +632,7 @@ class Module(AstDocNode):
         self.mod_deps: dict[str, Module] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
+        self.py_raised: bool = False
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
