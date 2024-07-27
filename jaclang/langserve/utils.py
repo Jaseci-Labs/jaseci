@@ -392,7 +392,8 @@ def collect_all_symbols_in_scope(
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
     text = text[:dot_position].strip()[:-1]
-    valid_character_pattern = re.compile(r"[a-zA-Z0-9]")
+
+    valid_character_pattern = re.compile(r"[a-zA-Z0-9_]")
 
     reversed_text = text[::-1]
     all_words = []
@@ -407,9 +408,14 @@ def parse_symbol_path(text: str, dot_position: int) -> list[str]:
         else:
             if current_word:
                 all_words.append("".join(current_word[::-1]))
+                current_word = []
             break
 
-    all_words = all_words[::-1]
+    all_words = (
+        all_words[::-1]
+        if not current_word
+        else ["".join(current_word[::-1])] + all_words[::-1]
+    )
 
     return all_words
 

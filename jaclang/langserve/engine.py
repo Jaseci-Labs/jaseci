@@ -160,6 +160,9 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position, completion_trigger: Optional[str]
     ) -> lspt.CompletionList:
         """Return completion for a file."""
+        from jaclang.compiler.passes.ir_pass import Pass as Irpass
+
+        logging.info(f"completion trigger\n\n {completion_trigger}")
         completion_items = []
         document = self.workspace.get_text_document(file_path)
         current_line = document.lines[position.line]
@@ -181,6 +184,7 @@ class JacLangServer(LanguageServer):
         )
         current_tab = self.modules[file_path].ir._sym_tab
         current_symbol_table = mod_tab
+
         if completion_trigger == ".":
             if current_symbol_path:
                 completion_items = resolve_completion_symbol_table(
@@ -190,9 +194,26 @@ class JacLangServer(LanguageServer):
                 completion_items = []
         else:
             try:  # noqa SIM105
+                if node_selected and (
+                    Irpass.has_parent_of_type(node_selected, ast.Architype)
+                    or Irpass.has_parent_of_type(node_selected, ast.AbilityDef)
+                ):
+                    self_symbol = [
+                        lspt.CompletionItem(
+                            label="self", kind=lspt.CompletionItemKind.Variable
+                        )
+                    ]
+                else:
+                    self_symbol = []
+
                 logging.info(f" tryy.... currr {current_symbol_table}")
-                completion_items = collect_all_symbols_in_scope(current_symbol_table)
-            except AttributeError:
+                completion_items = (
+                    collect_all_symbols_in_scope(current_symbol_table) + self_symbol
+                )
+
+            except Exception as e:
+                logging.info(f"error22 :: \n\n{e}")
+
                 pass
         return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
