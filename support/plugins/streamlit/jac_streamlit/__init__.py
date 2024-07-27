@@ -9,7 +9,7 @@ def run_streamlit(basename: str, dirname: str) -> None:
     from jaclang.plugin.feature import JacFeature as Jac
 
     Jac.context().init_memory(base_path=dirname)
-    jac_import(basename, base_path=dirname)
+    jac_import(basename, base_path=dirname)  # TODO: need flag to force reload here
 
 
 __all__ = ["AppTest", "run_streamlit"]
