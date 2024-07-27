@@ -30,8 +30,8 @@ def merge_n_push(config: argparse.Namespace, checkpoint: str) -> None:
         device_map="auto",
     )
     model = peft_model.merge_and_unload()
-    model.save_pretrained(os.path.join(args.output_model_name, "merged"))
-    tokenizer.save_pretrained(os.path.join(args.output_model_name, "merged"))
+    model.save_pretrained(os.path.join(config.model["output_model"], "merged"))
+    tokenizer.save_pretrained(os.path.join(config.model["output_model"], "merged"))
 
     # Pushing the model to the Hugging Face Hub
     model.push_to_hub(

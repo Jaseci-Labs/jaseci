@@ -24,6 +24,7 @@ training_args:
   num_train_epochs: 2
   max_steps: 20000
   fp16: true
+  eval_on_start: true
 
 trainer:
   dataset_text_field: "text"
