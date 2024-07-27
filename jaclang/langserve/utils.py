@@ -393,7 +393,6 @@ def collect_all_symbols_in_scope(
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
     text = text[:dot_position].strip()[:-1]
-    print('text |',text,dot_position    )
     valid_character_pattern = re.compile(r"[a-zA-Z0-9_]")
 
     reversed_text = text[::-1]
@@ -431,7 +430,9 @@ def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
         for name, symbol in current_tab.tab.items():
             if name not in dir(builtins) and name == sym_name:
                 path = symbol.defn[0]._sym_type
-                if path == "enum.Enum" and isinstance(current_tab.owner, ast.AstSymbolNode):
+                if path == "enum.Enum" and isinstance(
+                    current_tab.owner, ast.AstSymbolNode
+                ):
                     logging.info(f"sym type  {current_tab.owner}")
                     logging.info(
                         f"isinstance =>   {isinstance(current_tab.owner.name_spec, ast.NameAtom)}"
@@ -441,7 +442,7 @@ def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
                     )
                     logging.info(f"sym type  {path}")
                     return current_tab.owner.name_spec._sym_type + "." + sym_name
-                elif path =='enum.Enum' and isinstance(current_tab.owner, ast.Module):
+                elif path == "enum.Enum" and isinstance(current_tab.owner, ast.Module):
                     return current_tab.owner.name + "." + sym_name
                 return path
         current_tab = current_tab.parent if current_tab.parent != current_tab else None
