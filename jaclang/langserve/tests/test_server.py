@@ -248,7 +248,7 @@ class TestJacLangServer(TestCase):
         test_cases = [
             (lspt.Position(37, 16), ["get_color1", "color1", "point1"], 3),
             (
-                lspt.Position(61, 12),
+                lspt.Position(66, 12),
                 [
                     "get_color1",
                     "color1",
@@ -256,10 +256,15 @@ class TestJacLangServer(TestCase):
                     "base_colorred",
                     "pointred",
                     "color2",
+                    "doubleinner",
                 ],
-                6,
+                7,
             ),
-            (lspt.Position(62, 19), ["color22", "point22"], 4),
+            (
+                lspt.Position(67, 19),
+                ["color22", "doublepoint22", "get_color22", "point22", "Colorenum2"],
+                5,
+            ),
         ]
         for position, expected_completions, expected_length in test_cases:
             completions = lsp.get_completion(

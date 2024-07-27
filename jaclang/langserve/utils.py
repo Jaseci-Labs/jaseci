@@ -88,17 +88,45 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
     return sym_tabs
 
 
-def find_node_by_position(
-    tokens: list[tuple[lspt.Position, int, int, ast.AstSymbolNode]],
-    line: int,
-    position: int,
+def find_deepest_symbol_node_at_pos(
+    node: ast.AstNode, line: int, character: int
 ) -> Optional[ast.AstSymbolNode]:
     """Return the deepest symbol node that contains the given position."""
-    for token in tokens:
-        pos, token_end, length, node = token
-        if pos.line == line and pos.character <= position < token_end:
-            return node
-    return None
+    last_symbol_node = None
+
+    if position_within_node(node, line, character):
+        if isinstance(node, ast.AstSymbolNode):
+            last_symbol_node = node
+
+        for child in [i for i in node.kid if i.loc.mod_path == node.loc.mod_path]:
+            if position_within_node(child, line, character):
+                deeper_node = find_deepest_symbol_node_at_pos(child, line, character)
+                if deeper_node is not None:
+                    last_symbol_node = deeper_node
+
+    return last_symbol_node
+
+
+def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
+    """Check if the position falls within the node's location."""
+    if node.loc.first_line < line + 1 < node.loc.last_line:
+        return True
+    if (
+        node.loc.first_line == line + 1
+        and node.loc.col_start <= character + 1
+        and (
+            node.loc.last_line == line + 1
+            and node.loc.col_end >= character + 1
+            or node.loc.last_line > line + 1
+        )
+    ):
+        return True
+    if (
+        node.loc.last_line == line + 1
+        and node.loc.col_start <= character + 1 <= node.loc.col_end
+    ):
+        return True
+    return False
 
 
 def find_index(
@@ -426,8 +454,12 @@ def resolve_completion_symbol_table(
     current_tab: Optional[SymbolTable],
 ) -> list[lspt.CompletionItem]:
     """Resolve symbol table for completion items."""
+    import logging
+
     current_symbol_table = mod_tab
     for obj in current_symbol_path:
+        logging.info(f"\n\nResolving symbol \n{obj}")
+        logging.info(f"\ncurrent sym table  \n   {current_symbol_table}")
         if obj == "self":
             try:
                 try:
@@ -471,6 +503,7 @@ def resolve_completion_symbol_table(
                         if isinstance(base_name, ast.Name) and base_name.sym:
                             path = base_name.sym.sym_dotted_name + "." + obj
                             current_symbol_table = find_symbol_table(path, current_tab)
+    logging.info(f"cur symtab \n  {current_symbol_table}")
     if (
         isinstance(current_symbol_table.owner, ast.Architype)
         and current_symbol_table.owner.base_classes
