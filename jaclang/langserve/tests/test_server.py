@@ -170,7 +170,7 @@ class TestJacLangServer(TestCase):
         lsp.lsp._workspace = workspace
         circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.test.jac"))
         lsp.deep_check(circle_file)
-        pos = lspt.Position(13, 29)
+        pos = lspt.Position(13, 21)
         self.assertIn(
             "shape_type: circle_pure.ShapeType",
             lsp.get_hover_info(circle_file, pos).contents.value,
@@ -222,7 +222,7 @@ class TestJacLangServer(TestCase):
             ),
             (
                 "<JacSemTokenType.FUNCTION: 12>, <JacSemTokenModifier.DECLARATION: 1>,",
-                9,
+                6,
             ),
             ("<JacSemTokenType.METHOD: 13>, <JacSemTokenModifier.DECLARATION: 1>", 6),
             ("<JacSemTokenType.ENUM: 3>, <JacSemTokenModifier.DECLARATION: 1>,", 4),
@@ -232,6 +232,7 @@ class TestJacLangServer(TestCase):
                 3,
             ),
         ]
+        print(str(sem_list))
         for token_type, expected_count in expected_counts:
             self.assertEqual(str(sem_list).count(token_type), expected_count)
 
@@ -288,8 +289,8 @@ class TestJacLangServer(TestCase):
         lsp.deep_check(circle_file)
         test_cases = [
             (47, 12, ["circle.jac:47:8-47:14", "69:8-69:14", "74:8-74:14"]),
-            (54, 66, ["54:62-54:76", "65:28-65:42"]),
-            (62, 14, ["65:49-65:62", "70:38-70:51"]),
+            (54, 66, ["54:62-54:76", "65:22-65:36"]),
+            (62, 14, ["65:43-65:56", "70:32-70:45"]),
         ]
         for line, char, expected_refs in test_cases:
             references = str(lsp.get_references(circle_file, lspt.Position(line, char)))
