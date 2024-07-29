@@ -1,5 +1,3 @@
-
-
 obj inner_red {
     has color22: string = 'red',
         # self
@@ -8,6 +6,6 @@ obj inner_red {
         # self
         doublepoint33: int = 2,
         # Comments explaining each attribute
-    # color22: represents the color, set to 'red'
+        # color22: represents the color, set to 'red'
         point22: int = 20;
 }
