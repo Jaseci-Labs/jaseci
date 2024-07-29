@@ -158,7 +158,7 @@ class AstNode:
         """Get parent of type."""
         from jaclang.compiler.passes import Pass
 
-        return Pass.has_parent_of_type(node=self, typ=typ)
+        return Pass.find_parent_of_type(node=self, typ=typ)
 
     def parent_of_type(self, typ: Type[T]) -> T:
         """Get parent of type."""
