@@ -356,7 +356,9 @@ class JacImporter(Importer):
         sys.modules[module_name] = module
         return module
 
-    def run_import(self, spec: ImportPathSpec) -> ImportReturn:
+    def run_import(
+        self, spec: ImportPathSpec, reload: Optional[bool] = False
+    ) -> ImportReturn:
         """Run the import process for Jac modules."""
         unique_loaded_items: list[types.ModuleType] = []
         module = None
@@ -375,7 +377,7 @@ class JacImporter(Importer):
 
         module = sys.modules.get(module_name)
 
-        if not module or module.__name__ == "__main__":
+        if not module or module.__name__ == "__main__" or reload:
             if os.path.isdir(spec.full_target):
                 module = self.handle_directory(
                     spec.module_name, spec.full_target, valid_mod_bundle
@@ -403,8 +405,6 @@ class JacImporter(Importer):
                     except Exception as e:
                         logger.error(f"Error while importing {spec.full_target}: {e}")
                         raise e
-                # else:
-                #     module = sys.modules[module_name]
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(

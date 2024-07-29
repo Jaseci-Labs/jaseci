@@ -112,6 +112,7 @@ class JacFeature:
         mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+        reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         return pm.hook.jac_import(
@@ -124,6 +125,7 @@ class JacFeature:
             mod_bundle=mod_bundle,
             lng=lng,
             items=items,
+            reload_module=reload_module,
         )
 
     @staticmethod
