@@ -254,12 +254,12 @@ class TestJacLangServer(TestCase):
             (lspt.Position(46, 30), ["RED22", "GREEN22", "BLUE22"], 3),
             (lspt.Position(46, 41), ["RED22", "GREEN22", "BLUE22"], 3),
             (
-                lspt.Position(52, 32),
+                lspt.Position(51, 32),
                 ["RED22", "GREEN22", "BLUE22"],
                 3,
             ),
             (
-                lspt.Position(66, 13),
+                lspt.Position(65, 13),
                 [
                     "get_color1",
                     "color1",
@@ -273,22 +273,22 @@ class TestJacLangServer(TestCase):
                 8,
             ),
             (
-                lspt.Position(66, 23),
+                lspt.Position(65, 23),
                 ["color22", "doublepoint22", "point22", "apply_inner_red", "enum_red"],
                 5,
             ),
             (
-                lspt.Position(66, 31),
+                lspt.Position(65, 31),
                 ["RED22", "GREEN22", "BLUE22"],
                 3,
             ),
             (
-                lspt.Position(36, 28),
+                lspt.Position(35, 28),
                 [],
                 0,
             ),
             (
-                lspt.Position(73, 12),
+                lspt.Position(72, 12),
                 [
                     "get_color1",
                     "color1",
@@ -302,7 +302,7 @@ class TestJacLangServer(TestCase):
                 8,
             ),
             (
-                lspt.Position(74, 22),
+                lspt.Position(73, 22),
                 ["color22", "doublepoint22", "apply_inner_red", "point22", "enum_red"],
                 5,
             ),

@@ -45,7 +45,6 @@ obj red :Colour1: {
 
     obj inner_red {
         has color22: enum_red = enum_red.BLUE22,
-            # self
             doublepoint22:doubleinner.double  = 2,
             point22: int = 20;
 
