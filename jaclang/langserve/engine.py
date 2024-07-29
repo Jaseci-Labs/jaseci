@@ -163,8 +163,6 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position, completion_trigger: Optional[str]
     ) -> lspt.CompletionList:
         """Return completion for a file."""
-        from jaclang.compiler.passes.ir_pass import Pass as Irpass
-
         completion_items = []
         document = self.workspace.get_text_document(file_path)
         current_line = document.lines[position.line]
@@ -193,8 +191,8 @@ class JacLangServer(LanguageServer):
                 completion_items = []
         else:
             if node_selected and (
-                Irpass.has_parent_of_type(node_selected, ast.Architype)
-                or Irpass.has_parent_of_type(node_selected, ast.AbilityDef)
+                node_selected.find_parent_of_type(ast.Architype)
+                or node_selected.find_parent_of_type(ast.AbilityDef)
             ):
                 self_symbol = [
                     lspt.CompletionItem(

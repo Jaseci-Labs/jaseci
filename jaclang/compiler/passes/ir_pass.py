@@ -74,7 +74,7 @@ class Pass(Transform[T]):
         return result
 
     @staticmethod
-    def has_parent_of_type(node: ast.AstNode, typ: Type[T]) -> Optional[T]:
+    def find_parent_of_type(node: ast.AstNode, typ: Type[T]) -> Optional[T]:
         """Check if node has parent of type."""
         while node.parent:
             if isinstance(node.parent, typ):
