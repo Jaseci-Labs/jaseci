@@ -26,11 +26,12 @@ print(foo())
 print(car.name)
 print(Size.Medium.value)
 ```
+
 However, Jac-lang offers novel language features which allows a programmer to organize their code effortlessly.
 
-## Separating function/object bodies from their declaration.
+## Separating function/object bodies from their declaration
 
-In jaclang the declaration of functions and objects can be done independently, as shown in the below code snippet. By doing so, it creates an empty shell for the function/object/enum. 
+In jaclang the declaration of functions and objects can be done independently, as shown in the below code snippet. By doing so, it creates an empty shell for the function/object/enum.
 
 ```python
 can foo();
@@ -76,7 +77,7 @@ However, there are multiple locations where this code can be held in order for t
 
 The bodies of the objects can be held in the same file as the declaration. This will only improve the code visually during declaration while code management is not sgnificantly improved.
 
-### Including files in ```<>.impl.jac``` / ```<>.test.jac``` files 
+### Including files in ```<>.impl.jac``` / ```<>.test.jac``` files
 
 If the programmer requires better codebase management with having the implementations together in a separate file, jac-lang facilitates that as well. In the previous example there are implementation of objects/enums/functions as well as test. These can be separated in a separate files living in the base path as the main module, named as ```<main_module_name>.impl.jac``` and ```<main_module_name>.test.jac```. Including or importing these files are not required. The file structure can be shown as follows.
 
@@ -91,7 +92,7 @@ However, all implementation files should be located in the base path which can b
 
 ### Including files in ```<>.impl``` / ```<>.test``` folders
 
-The implementation of the program can be coded within individual .impl and .test folders as well. These folders should be named as ```<main_module_name>.impl``` and ```<main_module_name>.impl```. 
+The implementation of the program can be coded within individual .impl and .test folders as well. These folders should be named as ```<main_module_name>.impl``` and ```<main_module_name>.impl```.
 
 Additional benefits of this separation is that inside the folder the implementations can be broken down into multiple files as per the programmer's preference, as long as each file has the ```.impl.jac``` or ```.test.jac``` suffixes. The file structure can look as follows.
 
