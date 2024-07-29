@@ -185,7 +185,7 @@ async def login(platform: str, open_id: OpenID) -> Response:
         }
     ):
         if not user.is_activated:
-            User.send_verification_code(
+            await User.send_verification_code(
                 await create_code(ObjectId(user.id)), user.email
             )
             raise HTTPException(
@@ -215,7 +215,7 @@ async def register(platform: str, open_id: OpenID) -> Response:
             ureq: dict[str, object] = User.register_type()(
                 email=f"{root.id}-sso@jac-lang.org",
                 password=NO_PASSWORD,
-                **User.sso_mapper(open_id),
+                **await User.sso_mapper(open_id),
             ).obfuscate()
             ureq["root_id"] = root.id
             ureq["is_activated"] = True

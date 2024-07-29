@@ -20,6 +20,8 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
+        self.q_node = Collection.get_collection("node")
+        self.q_edge = Collection.get_collection("edge")
         self.users: list[dict] = []
         self.database = getenv("DATABASE_NAME", "jaclang")
         count = 0
@@ -158,7 +160,6 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.assertTrue("reports" not in res)
 
         res = self.post_api("traverse_graph")
-
         self.assertEqual(200, res["status"])
         self.assertEqual([None, None, None], res["returns"])
 
@@ -207,9 +208,9 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
             for _idx, report in enumerate(res["reports"]):
                 self.assertEqual({"val": idx + _idx + 1}, report["context"])
 
-    def trigger_create_nested_node_test(self) -> None:
+    def trigger_create_nested_node_test(self, manual: bool = False) -> None:
         """Test create nested node."""
-        res = self.post_api("create_nested_node", user=1)
+        res = self.post_api(f"{'manual_' if manual else ""}create_nested_node", user=1)
 
         self.assertEqual(200, res["status"])
         self.assertEqual(
@@ -227,9 +228,12 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
             res["returns"][0]["context"],
         )
 
-    def trigger_update_nested_node_test(self) -> None:
+    def trigger_update_nested_node_test(self, manual: bool = False) -> None:
         """Test update nested node."""
-        for walker in ["update_nested_node", "visit_nested_node"]:
+        for walker in [
+            f"{'manual_' if manual else ""}update_nested_node",
+            "visit_nested_node",
+        ]:
             res = self.post_api(walker, user=1)
             self.assertEqual(200, res["status"])
             self.assertEqual(
@@ -251,21 +255,109 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 res["returns"][0]["context"],
             )
 
-    def test_all_features(self) -> None:
+    def trigger_detach_nested_node_test(self, manual: bool = False) -> None:
+        """Test detach nested node."""
+        res = self.post_api(f"{'manual_' if manual else ""}detach_nested_node", user=1)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([True], res["returns"])
+
+        res = self.post_api("visit_nested_node", user=1)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([[]], res["returns"])
+
+    def trigger_delete_nested_node_test(self, manual: bool = False) -> None:
+        """Test create nested node."""
+        res = self.post_api(f"{'manual_' if manual else ""}delete_nested_node", user=1)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([[]], res["reports"])
+
+        res = self.post_api("visit_nested_node", user=1)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([[]], res["returns"])
+
+    def trigger_delete_nested_edge_test(self, manual: bool = False) -> None:
+        """Test create nested node."""
+        res = self.post_api(f"{'manual_' if manual else ""}delete_nested_edge", user=1)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([[]], res["reports"])
+
+        res = self.post_api("visit_nested_node", user=1)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([[]], res["returns"])
+
+    async def nested_count_should_be(self, node: int, edge: int) -> None:
+        """Test nested node count."""
+        self.assertEqual(node, await self.q_node.count_documents({"name": "Nested"}))
+        self.assertEqual(
+            edge,
+            await self.q_edge.count_documents(
+                {
+                    "$or": [
+                        {"source": {"$regex": "^n:Nested:"}},
+                        {"target": {"$regex": "^n:Nested:"}},
+                    ]
+                }
+            ),
+        )
+
+    async def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
 
         self.trigger_create_user_test()
-        self.trigger_create_user_test("2")
+        self.trigger_create_user_test(suffix="2")
 
         self.trigger_create_graph_test()
-
         self.trigger_traverse_graph_test()
-
         self.trigger_detach_node_test()
-
         self.trigger_update_graph_test()
 
+        ###################################################
+        #                   VIA DETACH                    #
+        ###################################################
+
+        await self.nested_count_should_be(node=0, edge=0)
+
         self.trigger_create_nested_node_test()
+        await self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_update_nested_node_test()
+        self.trigger_detach_nested_node_test()
+        await self.nested_count_should_be(node=0, edge=0)
+
+        self.trigger_create_nested_node_test(manual=True)
+        await self.nested_count_should_be(node=1, edge=1)
+
+        self.trigger_update_nested_node_test(manual=True)
+        self.trigger_detach_nested_node_test(manual=True)
+        await self.nested_count_should_be(node=0, edge=0)
+
+        ###################################################
+        #                   VIA DESTROY                   #
+        ###################################################
+
+        self.trigger_create_nested_node_test()
+        await self.nested_count_should_be(node=1, edge=1)
+
+        self.trigger_delete_nested_node_test()
+        await self.nested_count_should_be(node=0, edge=0)
+
+        self.trigger_create_nested_node_test(manual=True)
+        await self.nested_count_should_be(node=1, edge=1)
+
+        self.trigger_delete_nested_node_test(manual=True)
+        await self.nested_count_should_be(node=0, edge=0)
+
+        self.trigger_create_nested_node_test()
+        await self.nested_count_should_be(node=1, edge=1)
+
+        self.trigger_delete_nested_edge_test()
+        await self.nested_count_should_be(node=0, edge=0)
+
+        self.trigger_create_nested_node_test(manual=True)
+        await self.nested_count_should_be(node=1, edge=1)
+
+        # only automatic cleanup remove nodes that doesn't have edges
+        # manual save still needs to trigger the destroy for that node
+        self.trigger_delete_nested_edge_test(manual=True)
+        await self.nested_count_should_be(node=1, edge=0)

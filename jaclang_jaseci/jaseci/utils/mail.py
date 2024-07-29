@@ -75,7 +75,7 @@ class SendGridEmailer(Emailer):
         subject: str,
         recipients: list[dict],
         content: list[dict],
-        sender: str = "no-reply@proptech.ph",
+        sender: str = "no-reply@jac-lang.org",
     ) -> None:
         """Send Email."""
         if client := cast(SendGridAPIClient, cls.get_client()):

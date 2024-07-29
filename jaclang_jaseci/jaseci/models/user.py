@@ -120,16 +120,16 @@ class User:
         return create_model("UserRegister", __base__=UserRegistration, **user_model)
 
     @staticmethod
-    def send_verification_code(code: str, email: str) -> None:
+    async def send_verification_code(code: str, email: str) -> None:
         """Send verification code."""
         pass
 
     @staticmethod
-    def send_reset_code(code: str, email: str) -> None:
+    async def send_reset_code(code: str, email: str) -> None:
         """Send verification code."""
         pass
 
     @staticmethod
-    def sso_mapper(open_id: OpenID) -> dict[str, object]:
+    async def sso_mapper(open_id: OpenID) -> dict[str, object]:
         """Send verification code."""
         return {}

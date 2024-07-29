@@ -9,7 +9,15 @@ from bson import ObjectId
 
 from fastapi import Request
 
-from .architype import Anchor, AnchorType, Architype, NodeAnchor, Permission, Root
+from .architype import (
+    Anchor,
+    AnchorState,
+    AnchorType,
+    Architype,
+    NodeAnchor,
+    Permission,
+    Root,
+)
 from .memory import MongoDB
 
 
@@ -49,7 +57,9 @@ class JaseciContext:
 
     def generate_super_root(self) -> NodeAnchor:
         """Generate default super root."""
-        super_root = NodeAnchor(id=SUPER_ROOT, current_access_level=2)
+        super_root = NodeAnchor(
+            id=SUPER_ROOT, state=AnchorState(current_access_level=2)
+        )
         architype = super_root.architype = object.__new__(Root)
         architype.__jac__ = super_root
         self.datasource.set(super_root)
@@ -58,7 +68,9 @@ class JaseciContext:
     def generate_public_root(self) -> NodeAnchor:
         """Generate default super root."""
         public_root = NodeAnchor(
-            id=PUBLIC_ROOT, access=Permission(all=2), current_access_level=2
+            id=PUBLIC_ROOT,
+            access=Permission(all=2),
+            state=AnchorState(current_access_level=2),
         )
         architype = public_root.architype = object.__new__(Root)
         architype.__jac__ = public_root
@@ -72,11 +84,9 @@ class JaseciContext:
     ) -> NodeAnchor:
         """Load initial anchors."""
         if anchor:
-            if not anchor.connected:
-                if _anchor := await self.datasource.find_one(
-                    AnchorType.node, anchor.id
-                ):
-                    _anchor.current_access_level = 2
+            if not anchor.state.connected:
+                if _anchor := await self.datasource.find_one(AnchorType.node, anchor):
+                    _anchor.state.current_access_level = 2
                     return _anchor
             else:
                 self.datasource.set(anchor)

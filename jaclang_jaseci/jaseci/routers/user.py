@@ -56,7 +56,7 @@ async def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
                     ).inserted_id:
                         await BulkWrite.commit(session)
                         if not is_activated:
-                            User.send_verification_code(
+                            await User.send_verification_code(
                                 await create_code(id), req.email
                             )
                         return ORJSONResponse(
@@ -91,7 +91,7 @@ async def send_verification_code(request: Request) -> ORJSONResponse:
     if user.is_activated:
         return ORJSONResponse({"message": "Account is already verified!"}, 400)
     else:
-        User.send_verification_code(await create_code(user.id), user.email)
+        await User.send_verification_code(await create_code(user.id), user.email)
         return ORJSONResponse({"message": "Successfully sent verification code!"}, 200)
 
 
@@ -114,7 +114,7 @@ async def root(req: UserRequest) -> ORJSONResponse:
         raise HTTPException(status_code=400, detail="Invalid Email/Password!")
 
     if RESTRICT_UNVERIFIED_USER and not user.is_activated:
-        User.send_verification_code(await create_code(user.id), req.email)
+        await User.send_verification_code(await create_code(user.id), req.email)
         raise HTTPException(
             status_code=400,
             detail="Account not yet verified! Resending verification code...",
@@ -152,7 +152,7 @@ async def forgot_password(ufp: UserForgotPassword) -> ORJSONResponse:
     """Forgot password API."""
     user = await User.Collection.find_by_email(ufp.email)
     if isinstance(user, User):
-        User.send_reset_code(await create_code(user.id, True), user.email)
+        await User.send_reset_code(await create_code(user.id, True), user.email)
         return ORJSONResponse({"message": "Reset password email sent!"}, 200)
     else:
         return ORJSONResponse({"message": "Failed to process forgot password!"}, 403)

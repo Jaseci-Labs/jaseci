@@ -20,6 +20,7 @@ from bson import ObjectId
 from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.architype import (
     Anchor as _Anchor,
+    AnchorState as _AnchorState,
     AnchorType,
     Architype as _Architype,
     DSFunc,
@@ -168,6 +169,21 @@ class BulkWrite:
                 raise
 
 
+@dataclass
+class AnchorState(_AnchorState):
+    """Anchor state handler."""
+
+    deleted: bool | None = None
+
+
+@dataclass
+class WalkerAnchorState(AnchorState):
+    """Anchor state handler."""
+
+    disengaged: bool = False
+    persistent: bool = False  # disabled by default
+
+
 @dataclass(eq=False)
 class Anchor(_Anchor):
     """Object Anchor."""
@@ -175,7 +191,7 @@ class Anchor(_Anchor):
     id: ObjectId = field(default_factory=ObjectId)  # type: ignore[assignment]
     root: ObjectId | None = None  # type: ignore[assignment]
     architype: "Architype | None" = None
-    connected: bool = False
+    state: AnchorState = field(default_factory=AnchorState)
 
     # checker if needs to update on db
     changes: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -388,6 +404,9 @@ class Anchor(_Anchor):
 
     async def sync(self, node: "NodeAnchor | None" = None) -> "Architype | None":
         """Retrieve the Architype from db and return."""
+        if self.state.deleted is not None:
+            return None
+
         if architype := self.architype:
             if (node or self).has_read_access(self):
                 return architype
@@ -396,7 +415,7 @@ class Anchor(_Anchor):
         from .context import JaseciContext
 
         jsrc = JaseciContext.get().datasource
-        anchor = await jsrc.find_one(self.type, self.id)
+        anchor = await jsrc.find_one(self.type, self)
 
         if anchor and (node or self).has_read_access(anchor):
             self.__dict__.update(anchor.__dict__)
@@ -412,24 +431,27 @@ class Anchor(_Anchor):
                 self.root = jctx.root.id
             jctx.datasource.set(self)
 
-    async def _save(
+    def _save(
         self,
         bulk_write: BulkWrite,
     ) -> None:
         """Save Anchor."""
         if self.architype:
-            if not self.connected:
-                self.connected = True
+            if self.state.deleted is False:
+                self.state.deleted = True
+                self.delete(bulk_write)
+            elif not self.state.connected:
+                self.state.connected = True
                 self.sync_hash()
-                await self.insert(bulk_write)
-            elif self.current_access_level > 0:
-                await self.update(bulk_write, True)
+                self.insert(bulk_write)
+            elif self.state.current_access_level > 0:
+                self.update(bulk_write, True)
 
     async def save(self, session: AsyncIOMotorClientSession | None = None) -> BulkWrite:
         """Save Anchor."""
         bulk_write = BulkWrite()
 
-        await self._save(bulk_write)
+        self._save(bulk_write)
 
         if bulk_write.has_operations:
             if session:
@@ -441,15 +463,15 @@ class Anchor(_Anchor):
 
         return bulk_write
 
-    async def insert(
+    def insert(
         self,
         bulk_write: BulkWrite,
     ) -> None:
-        """Insert Anchor."""
+        """Append Insert Query."""
         bulk_write.operations[self.type].append(InsertOne(self.serialize()))
 
-    async def update(self, bulk_write: BulkWrite, propagate: bool = False) -> None:
-        """Update Anchor."""
+    def update(self, bulk_write: BulkWrite, propagate: bool = False) -> None:
+        """Append Update Query."""
         changes = self.changes
         self.changes = {}  # renew reference
 
@@ -460,7 +482,7 @@ class Anchor(_Anchor):
         #                     POPULATE CONTEXT                     #
         ############################################################
 
-        if self.current_access_level > 1:
+        if self.state.current_access_level > 1:
             set_architype = changes.pop("$set", {})
             if is_dataclass(architype := self.architype) and not isinstance(
                 architype, type
@@ -488,7 +510,7 @@ class Anchor(_Anchor):
                 _added_edges = []
                 for anchor in added_edges:
                     if propagate:
-                        await anchor._save(bulk_write)
+                        anchor._save(bulk_write)
                     _added_edges.append(anchor.ref_id)
                 changes["$addToSet"]["edges"]["$each"] = _added_edges
             else:
@@ -505,7 +527,8 @@ class Anchor(_Anchor):
             if pulled_edges:
                 _pulled_edges = []
                 for anchor in pulled_edges:
-                    if propagate:
+                    if propagate and anchor.state.deleted is not True:
+                        anchor.state.deleted = True
                         bulk_write.del_edge(anchor.id)
                     _pulled_edges.append(anchor.ref_id)
 
@@ -528,9 +551,23 @@ class Anchor(_Anchor):
         if changes:
             operations.append(UpdateOne(operation_filter, changes))
 
-    async def destroy(self) -> None:
-        """Save Anchor."""
-        raise NotImplementedError("destroy must be implemented in subclasses")
+    def delete(self, bulk_write: BulkWrite) -> None:
+        """Append Delete Query."""
+        raise NotImplementedError("delete must be implemented in subclasses")
+
+    def destroy(self) -> None:
+        """Delete Anchor."""
+        if (
+            self.architype
+            and self.state.current_access_level > 1
+            and self.state.deleted is None
+        ):
+            from .context import JaseciContext
+
+            jsrc = JaseciContext.get().datasource
+
+            self.state.deleted = False
+            jsrc.remove(self)
 
     def data_hash(self) -> int:
         """Get current serialization hash."""
@@ -583,7 +620,7 @@ class NodeAnchor(Anchor):
                 id=doc.pop("_id"),
                 edges=[e for edge in doc.pop("edges") if (e := EdgeAnchor.ref(edge))],
                 access=Permission.deserialize(doc.pop("access")),
-                connected=True,
+                state=AnchorState(connected=True),
                 hashes={key: hash(dumps(val)) for key, val in architype.items()},
                 **doc,
             )
@@ -604,25 +641,41 @@ class NodeAnchor(Anchor):
             )
         return None
 
-    async def insert(
+    def insert(
         self,
         bulk_write: BulkWrite,
     ) -> None:
-        """Insert Anchor."""
+        """Append Insert Query."""
         for edge in self.edges:
-            await edge._save(bulk_write)
+            edge._save(bulk_write)
 
-        await super().insert(bulk_write)
+        super().insert(bulk_write)
 
-    async def destroy(self) -> None:
+    def delete(self, bulk_write: BulkWrite) -> None:
+        """Append Delete Query."""
+        for edge in self.edges:
+            edge.delete(bulk_write)
+
+        pulled_edges: set[Anchor] = self._pull.get("edges", {}).get("$in", [])
+        for edge in pulled_edges:
+            edge.delete(bulk_write)
+
+        bulk_write.del_node(self.id)
+
+    def destroy(self) -> None:
         """Delete Anchor."""
-        if self.architype and self.current_access_level > 1:
+        if (
+            self.architype
+            and self.state.current_access_level > 1
+            and self.state.deleted is None
+        ):
             from .context import JaseciContext
 
             jsrc = JaseciContext.get().datasource
-            for edge in self.edges:
-                await edge.destroy()
+            self.state.deleted = False
 
+            for edge in self.edges:
+                edge.destroy()
             jsrc.remove(self)
 
     async def sync(self, node: "NodeAnchor | None" = None) -> "NodeArchitype | None":
@@ -775,7 +828,7 @@ class EdgeAnchor(Anchor):
                 source=NodeAnchor.ref(doc.pop("source")),
                 target=NodeAnchor.ref(doc.pop("target")),
                 access=Permission.deserialize(doc.pop("access")),
-                connected=True,
+                state=AnchorState(connected=True),
                 hashes={key: hash(dumps(val)) for key, val in architype.items()},
                 **doc,
             )
@@ -798,23 +851,38 @@ class EdgeAnchor(Anchor):
             )
         return None
 
-    async def insert(self, bulk_write: BulkWrite) -> None:
-        """Insert Anchor."""
+    def insert(self, bulk_write: BulkWrite) -> None:
+        """Append Insert Query."""
         if source := self.source:
-            await source._save(bulk_write)
+            source._save(bulk_write)
 
         if target := self.target:
-            await target._save(bulk_write)
+            target._save(bulk_write)
 
-        await super().insert(bulk_write)
+        super().insert(bulk_write)
 
-    async def destroy(self) -> None:
+    def delete(self, bulk_write: BulkWrite) -> None:
+        """Append Delete Query."""
+        if source := self.source:
+            source._save(bulk_write)
+
+        if target := self.target:
+            target._save(bulk_write)
+
+        bulk_write.del_edge(self.id)
+
+    def destroy(self) -> None:
         """Delete Anchor."""
-        if self.architype and self.current_access_level == 1:
+        if (
+            self.architype
+            and self.state.current_access_level > 1
+            and self.state.deleted is None
+        ):
             from .context import JaseciContext
 
             jsrc = JaseciContext.get().datasource
 
+            self.state.deleted = False
             self.detach()
             jsrc.remove(self)
 
@@ -844,9 +912,6 @@ class EdgeAnchor(Anchor):
             target.remove_edge(self)
             target.disconnect_edge(self)
 
-        self.source = None
-        self.target = None
-
     async def spawn_call(self, walk: "WalkerAnchor") -> "WalkerArchitype":
         """Invoke data spatial call."""
         if target := self.target:
@@ -873,8 +938,7 @@ class WalkerAnchor(Anchor):
     next: list[Anchor] = field(default_factory=list)
     returns: list[Any] = field(default_factory=list)
     ignores: list[Anchor] = field(default_factory=list)
-    disengaged: bool = False
-    persistent: bool = False  # Disabled initially but can be adjusted
+    state: WalkerAnchorState = field(default_factory=WalkerAnchorState)
 
     class Collection(BaseCollection["WalkerAnchor"]):
         """WalkerAnchor collection interface."""
@@ -892,7 +956,7 @@ class WalkerAnchor(Anchor):
             anchor = WalkerAnchor(
                 id=doc.pop("_id"),
                 access=Permission.deserialize(doc.pop("access")),
-                connected=True,
+                state=AnchorState(connected=True),
                 hashes={key: hash(dumps(val)) for key, val in architype.items()},
                 **doc,
             )
@@ -913,12 +977,9 @@ class WalkerAnchor(Anchor):
             )
         return None
 
-    async def destroy(self) -> None:
-        """Delete Anchor."""
-        if self.architype and self.current_access_level > 1:
-            from .context import JaseciContext
-
-            JaseciContext.get().datasource.remove(self)
+    def delete(self, bulk_write: BulkWrite) -> None:
+        """Append Delete Query."""
+        bulk_write.del_walker(self.id)
 
     async def sync(self, node: "NodeAnchor | None" = None) -> "WalkerArchitype | None":
         """Retrieve the Architype from db and return."""
@@ -954,7 +1015,7 @@ class WalkerAnchor(Anchor):
 
     def disengage_now(self) -> None:
         """Disengage walker from traversal."""
-        self.disengaged = True
+        self.state.disengaged = True
 
     async def await_if_coroutine(self, ret: Any) -> Any:  # noqa: ANN401
         """Await return if it's a coroutine."""
@@ -979,7 +1040,7 @@ class WalkerAnchor(Anchor):
                                 await self.await_if_coroutine(i.func(node, walker))
                             else:
                                 raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
+                        if self.state.disengaged:
                             return walker
                     for i in walker._jac_entry_funcs_:
                         if not i.trigger or isinstance(node, i.trigger):
@@ -987,7 +1048,7 @@ class WalkerAnchor(Anchor):
                                 await self.await_if_coroutine(i.func(walker, node))
                             else:
                                 raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
+                        if self.state.disengaged:
                             return walker
                     for i in walker._jac_exit_funcs_:
                         if not i.trigger or isinstance(node, i.trigger):
@@ -995,7 +1056,7 @@ class WalkerAnchor(Anchor):
                                 await self.await_if_coroutine(i.func(walker, node))
                             else:
                                 raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
+                        if self.state.disengaged:
                             return walker
                     for i in node._jac_exit_funcs_:
                         if not i.trigger or isinstance(walker, i.trigger):
@@ -1003,7 +1064,7 @@ class WalkerAnchor(Anchor):
                                 await self.await_if_coroutine(i.func(node, walker))
                             else:
                                 raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
+                        if self.state.disengaged:
                             return walker
             self.ignores = []
             return walker

@@ -1,45 +1,17 @@
 """Example of simple walker walking nodes."""
-import:py from jaclang_jaseci, FastAPI;
-import:py from jaclang_jaseci.plugin, specs;
-import:py from jaclang_jaseci.jaseci.models, User as BaseUser, NO_PASSWORD;
-import:py from jaclang_jaseci.jaseci.utils, SendGridEmailer;
-import:py from dataclasses, dataclass;
-# import:py from fastapi, UploadFile as File;
+import:py from jaclang_jaseci {FastAPI}
+import:py from jaclang_jaseci.core.context {JaseciContext}
+import:py from jaclang_jaseci.plugin {specs}
+import:py from jaclang_jaseci.jaseci.models {User as BaseUser, NO_PASSWORD}
+import:py from jaclang_jaseci.jaseci.utils {SendGridEmailer}
+import:py from dataclasses {dataclass}
+import:py from fastapi {UploadFile}
 
+class User:BaseUser: {
+    has name: str;
 
-# walker post_with_body_and_file {
-#     has val: int;
-#     has single: File;
-#     has multiple: list[File];
-#     has optional_val: int = 0;
-#     has singleOptional: File | None = None;
-#     has multipleOptional: list[File] | None = None;
-
-#     can enter with `root entry {
-#         print(self.val);
-#         print("###################");
-#         print(self.optional_val);
-#         print("###################");
-#         print(self.single);
-#         print("###################");
-#         print(self.multiple);
-#         print("###################");
-#         print(self.singleOptional);
-#         print("###################");
-#         print(self.multipleOptional);
-#         print("###################");
-#     }
-
-#     obj __specs__ {
-#         static has auth: bool = False;
-#     }
-# }
-
-::py::
-class User(BaseUser):
-    name: str
-
-    class Collection(BaseUser.Collection):
+    class Collection:BaseUser.Collection: {
+        ::py::
         @classmethod
         def __document__(cls, doc) -> "User":
             return User(
@@ -49,36 +21,23 @@ class User(BaseUser):
                 root_id=doc.pop("root_id"),
                 **doc,
             )
+        ::py::
+    }
 
-    @staticmethod
-    def send_verification_code(code: str, email: str) -> None:
-        """Send verification code."""
-        SendGridEmailer.send_verification_code(code, email)
+    static can send_verification_code(code: str, email: str) -> None {
+        SendGridEmailer.send_verification_code(code, email);
+    }
 
-    @staticmethod
-    def send_reset_code(code: str, email: str) -> None:
-        """Send reset code."""
-        SendGridEmailer.send_reset_code(code, email)
+    static can send_reset_code(code: str, email: str) -> None {
+        SendGridEmailer.send_reset_code(code, email);
+    }
 
-    @staticmethod
-    def sso_mapper(open_id) -> dict[str, object]:
-        """Send verification code."""
+    static can sso_mapper(open_id: object) -> dict[str, object] {
         return {
             "name": f"{open_id.first_name} {open_id.last_name}"
-        }
-
-
-@dataclass
-class Child:
-    val: int
-    arr: list
-    json: dict
-
-@dataclass
-class Parent(Child):
-    child: Child
-
-::py::
+        };
+    }
+}
 
 node A {
     has val: int;
@@ -90,6 +49,14 @@ node B {
 
 node C {
     has val: int;
+}
+
+obj Child {
+    has val: int, arr: list, json: dict;
+}
+
+obj Parent:Child: {
+    has child: Child;
 }
 
 node Nested {
@@ -207,9 +174,229 @@ walker update_nested_node {
     }
 }
 
+walker detach_nested_node {
+    can enter_root with `root entry {
+        return here del--> [-->Nested];
+    }
+}
+
 walker visit_nested_node {
     can enter_root with `root entry {
-        return [-->Nested][0];
+        nesteds = [-->Nested];
+        if nesteds {
+            return [-->Nested][0];
+        } else {
+            return nesteds;
+        }
+
+    }
+}
+
+walker manual_create_nested_node {
+    can enter_root with `root entry {
+        n = Nested(
+            val=0,
+            arr=[],
+            json={},
+            parent=Parent(
+                val=1,
+                arr=[1],
+                json={"a": 1},
+                child=Child(
+                    val=2,
+                    arr=[1, 2],
+                    json={"a": 1, "b": 2}
+                )
+            ));
+        here ++> n;
+        await here.__jac__.save();
+
+        # simulate no auto save
+        jsrc = JaseciContext.get().datasource;
+        jsrc.__mem__.clear();
+        jsrc.__gc__.clear();
+
+        return n;
+    }
+}
+
+walker manual_update_nested_node {
+    can enter_root with `root entry {
+        nested = [-->Nested][0];
+        nested.parent.child.json["c"] = 3;
+        nested.parent.child.arr.append(3);
+        nested.parent.child.val = 3;
+        nested.parent.json["b"] = 2;
+        nested.parent.arr.append(2);
+        nested.parent.val = 2;
+        nested.json["a"] = 1;
+        nested.arr.append(1);
+        nested.val = 1;
+        await nested.__jac__.save();
+
+        # simulate no auto save
+        jsrc = JaseciContext.get().datasource;
+        jsrc.__mem__.clear();
+        jsrc.__gc__.clear();
+
+        return nested;
+    }
+}
+
+walker manual_detach_nested_node {
+    can enter_root with `root entry {
+        nested = [-->Nested][0];
+        detached = here del--> [-->Nested];
+        nested.__jac__.destroy();
+        await nested.__jac__.save();
+
+        # simulate no auto save
+        jsrc = JaseciContext.get().datasource;
+        jsrc.__mem__.clear();
+        jsrc.__gc__.clear();
+
+        return detached;
+    }
+}
+
+walker delete_nested_node {
+    can enter_root with `root entry {
+        nested = [-->Nested][0];
+        nested.__jac__.destroy();
+        await nested.__jac__.save();
+
+        report [-->Nested];
+    }
+}
+
+walker manual_delete_nested_node {
+    can enter_root with `root entry {
+        nested = [-->Nested][0];
+        nested.__jac__.destroy();
+        await nested.__jac__.save();
+
+        # simulate no auto save
+        jsrc = JaseciContext.get().datasource;
+        jsrc.__mem__.clear();
+        jsrc.__gc__.clear();
+
+        report [-->Nested];
+    }
+}
+
+walker delete_nested_edge {
+    can enter_root with `root entry {
+        nested_edge = :e:[-->][0];
+        nested_edge.__jac__.destroy();
+
+        report [-->Nested];
+    }
+}
+
+walker manual_delete_nested_edge {
+    can enter_root with `root entry {
+        nested_edge = :e:[-->][0];
+        nested_edge.__jac__.destroy();
+        await nested_edge.__jac__.save();
+
+        # simulate no auto save
+        jsrc = JaseciContext.get().datasource;
+        jsrc.__mem__.clear();
+        jsrc.__gc__.clear();
+
+        report [-->Nested];
+    }
+}
+
+@specs
+walker post_no_body {}
+
+walker post_with_body {
+    has a: str;
+}
+
+walker get_no_body {
+    obj __specs__ {
+        static has methods: list = ["get"];
+    }
+}
+
+walker get_with_query {
+    has a: str;
+
+    obj __specs__ {
+        static has methods: list = ["get"], as_query: list = ["a"];
+    }
+}
+
+walker get_all_query {
+    has a: str;
+    has b: str;
+
+    obj __specs__ {
+        static has methods: list = ["get"], as_query: list = "*", auth: bool = False;
+    }
+}
+
+walker post_path_var {
+    has a: str;
+
+    obj __specs__ {
+        static has path: str = "/{a}", methods: list = ["post", "get"];
+    }
+}
+
+walker combination1 {
+    has a: str;
+    has b: str;
+    has c: str;
+
+    obj __specs__ {
+        static has methods: list = ["post", "get"], as_query: list = ["a", "b"];
+    }
+}
+
+
+walker combination2 {
+    has a: str;
+    has b: str;
+    has c: str;
+
+    obj __specs__ {
+        static has path: str = "/{a}", methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"], as_query: list = ["b"];
+    }
+}
+
+walker post_with_file {
+    has single: UploadFile;
+    has multiple: list[UploadFile];
+    has singleOptional: UploadFile | None = None;
+
+
+    can enter with `root entry {
+        print(self.single);
+        print(self.multiple);
+        print(self.singleOptional);
+    }
+
+    obj __specs__ {}
+}
+
+walker post_with_body_and_file {
+    has val: int;
+    has single: UploadFile;
+    has multiple: list[UploadFile];
+    has optional_val: int = 0;
+
+    can enter with `root entry {
+        print(self.val);
+        print(self.optional_val);
+        print(self.single);
+        print(self.multiple);
+    }
+
+    obj __specs__ {
+        static has auth: bool = False;
     }
 }
 

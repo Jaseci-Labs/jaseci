@@ -488,7 +488,7 @@ class JacPlugin:
                         and trg_arch in right
                         and source.has_write_access(target)
                     ):
-                        anchor.detach()
+                        anchor.destroy()
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
@@ -496,7 +496,7 @@ class JacPlugin:
                         and src_arch in right
                         and target.has_write_access(source)
                     ):
-                        anchor.detach()
+                        anchor.destroy()
                         disconnect_occurred = True
 
         return disconnect_occurred

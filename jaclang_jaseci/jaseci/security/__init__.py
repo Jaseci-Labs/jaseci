@@ -97,7 +97,7 @@ async def authenticate(request: Request) -> None:
             and (user := await User.Collection.find_by_id(decrypted["id"]))
             and (root := await NodeAnchor.Collection.find_by_id(user.root_id))
         ):
-            root.current_access_level = 1
+            root.state.current_access_level = 1
             request._user = user  # type: ignore[attr-defined]
             request._root = root  # type: ignore[attr-defined]
             return
