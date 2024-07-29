@@ -1,30 +1,30 @@
 # Finetuning Scripts
+The default `config.yaml` provides an example of how to finetune a SmolLM model for the Map Generation Task. Depending on your specific task, you can modify the `config.yaml` file to finetune the model accordingly. Follow the steps below to finetune the model:
 
-The default `config.yaml` provides an example of how we finetuned a SmolLM model for Map Generation Task. according to
-your task, you can change the `config.yaml` file to finetune the model for your task. follow the steps below to finetune
-
-Install the requirements:
+1. Install the required dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-If you are thinking of pushing the model to the huggingface model hub, follow the steps below, remmeber to save the key
-to the git repository, so that the key is not lost.
+2. If you plan to push the model to the Hugging Face Model Hub, follow these steps and make sure to save the key in the git repository to avoid losing it:
 ```bash
 huggingface-cli login
 ```
 
-To finetune the model, run the following command:
+3. To finetune the model, run the following command:
 ```bash
 python train.py --config config.yaml --push_to_hf
 ```
 
-Use the `--push_to_hf` flag to push the model to the huggingface model hub. If you don't want to push the model to the
-huggingface model hub, you can remove the flag.
+4. To push the model to the Hugging Face Model Hub, use the following command:
+```bash
+python merge_n_push.py --config config.yaml --checkpoint 500
+```
 
-To evaluate the model, run the following command:
+5. If you don't want to push the model to the Hugging Face Model Hub, you can remove the `--push_to_hf` flag.
+
+6. To evaluate the model, run the following command:
 ```bash
 python evaluate.py --config config.yaml --checkpoint 500 --eval_data chandralegend/mtllm_eval
 ```
-change the `checkpoint` to the checkpoint you want to evaluate.
-change the `eval_data` to the dataset you want to evaluate on. it should be a dataset in the huggingface dataset hub.
+Make sure to replace `checkpoint` with the desired checkpoint number and `eval_data` with the dataset you want to evaluate on. The dataset should be available in the Hugging Face Dataset Hub.

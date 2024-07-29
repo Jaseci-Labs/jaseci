@@ -7,7 +7,7 @@ import pandas as pd
 
 def formatted_train(input: str, response: str) -> str:
     """Format the input and response into the chat prompt format."""
-    return f"{input}{response}"
+    return f"{input}\n{response}"
 
 
 def prepare_train_data(datasets: list[str]) -> Dataset:
