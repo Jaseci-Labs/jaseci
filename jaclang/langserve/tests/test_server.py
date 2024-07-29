@@ -248,8 +248,8 @@ class TestJacLangServer(TestCase):
         test_cases = [
             (lspt.Position(38, 16), ["get_color1", "color1", "point1"], 3),
             (lspt.Position(42, 22), ["RED", "GREEN", "BLUE"], 3),
-            (lspt.Position(42, 34), ["RED", "GREEN", "BLUE"], 3),
-            (lspt.Position(42, 45), ["REsD", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 33), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 45), ["RED", "GREEN", "BLUE"], 3),
             (lspt.Position(46, 20), ["RED22", "GREEN22", "BLUE22"], 3),
             (lspt.Position(46, 30), ["RED22", "GREEN22", "BLUE22"], 3),
             (lspt.Position(46, 41), ["RED22", "GREEN22", "BLUE22"], 3),
@@ -281,6 +281,11 @@ class TestJacLangServer(TestCase):
                 lspt.Position(66, 31),
                 ["RED22", "GREEN22", "BLUE22"],
                 3,
+            ),
+            (
+                lspt.Position(36, 28),
+                [],
+                0,
             ),
             (
                 lspt.Position(73, 12),

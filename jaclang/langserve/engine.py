@@ -162,7 +162,6 @@ class JacLangServer(LanguageServer):
         """Return completion for a file."""
         from jaclang.compiler.passes.ir_pass import Pass as Irpass
 
-        logging.info(f"completion trigger\n\n {completion_trigger}")
         completion_items = []
         document = self.workspace.get_text_document(file_path)
         current_line = document.lines[position.line]
@@ -182,6 +181,7 @@ class JacLangServer(LanguageServer):
             if not node_selected
             else node_selected.sym_tab
         )
+        logging.info(f"curr sym tab   {mod_tab}")
         current_tab = self.modules[file_path].ir._sym_tab
         current_symbol_table = mod_tab
 

@@ -392,7 +392,7 @@ def collect_all_symbols_in_scope(
 
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
-    text = text[:dot_position].strip()[:-1]
+    text = text[:dot_position][:-1].strip()
     valid_character_pattern = re.compile(r"[a-zA-Z0-9_]")
 
     reversed_text = text[::-1]
@@ -541,7 +541,8 @@ def resolve_completion_symbol_table(
             )
     else:
         completion_items = []
-
+    if isinstance(current_symbol_table.owner, (ast.Ability, ast.AbilityDef)):
+        return completion_items
     completion_items.extend(
         collect_all_symbols_in_scope(current_symbol_table, up_tree=False)
     )
