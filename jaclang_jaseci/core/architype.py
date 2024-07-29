@@ -1,6 +1,5 @@
 """Core constructs for Jac Language."""
 
-from copy import copy, deepcopy
 from dataclasses import asdict, dataclass, field, is_dataclass
 from inspect import iscoroutine
 from os import getenv
@@ -69,6 +68,37 @@ class BulkWrite:
             AnchorType.generic: [],  # ignored
         }
     )
+
+    del_ops_nodes: list[ObjectId] = field(default_factory=list)
+    del_ops_edges: list[ObjectId] = field(default_factory=list)
+    del_ops_walker: list[ObjectId] = field(default_factory=list)
+
+    def del_node(self, id: ObjectId) -> None:
+        """Add node to delete many operations."""
+        if not self.del_ops_nodes:
+            self.operations[AnchorType.node].append(
+                DeleteMany({"_id": {"$in": self.del_ops_nodes}})
+            )
+
+        self.del_ops_nodes.append(id)
+
+    def del_edge(self, id: ObjectId) -> None:
+        """Add edge to delete many operations."""
+        if not self.del_ops_edges:
+            self.operations[AnchorType.edge].append(
+                DeleteMany({"_id": {"$in": self.del_ops_edges}})
+            )
+
+        self.del_ops_edges.append(id)
+
+    def del_walker(self, id: ObjectId) -> None:
+        """Add walker to delete many operations."""
+        if not self.del_ops_walker:
+            self.operations[AnchorType.walker].append(
+                DeleteMany({"_id": {"$in": self.del_ops_walker}})
+            )
+
+        self.del_ops_walker.append(id)
 
     @property
     def has_operations(self) -> bool:
@@ -151,11 +181,6 @@ class Anchor(_Anchor):
     changes: dict[str, dict[str, Any]] = field(default_factory=dict)
     # context checker if update happens for each field
     hashes: dict[str, int] = field(default_factory=dict)
-
-    # rollback holder if something happens on updating
-    rollback_changes: dict[str, dict[str, Any]] = field(default_factory=dict)
-    # rollback holder if something happens on updating
-    rollback_hashes: dict[str, int] = field(default_factory=dict)
 
     class Collection(BaseCollection["Anchor"]):
         """Anchor collection interface."""
@@ -359,14 +384,9 @@ class Anchor(_Anchor):
             self.access.all = -1
             self._set.update({"access.all": -1})
 
-    def rollback(self) -> None:
-        """Rollback hashes so set update still available."""
-        self.hashes = self.rollback_hashes
-        self.changes = self.rollback_changes
-
     # ------------------------------------------------ #
 
-    async def sync(self, node: "NodeAnchor | None" = None) -> "Architype | None":  # type: ignore[override]
+    async def sync(self, node: "NodeAnchor | None" = None) -> "Architype | None":
         """Retrieve the Architype from db and return."""
         if architype := self.architype:
             if (node or self).has_read_access(self):
@@ -405,7 +425,7 @@ class Anchor(_Anchor):
             elif self.current_access_level > 0:
                 await self.update(bulk_write, True)
 
-    async def save(self, session: AsyncIOMotorClientSession | None = None) -> None:  # type: ignore[override]
+    async def save(self, session: AsyncIOMotorClientSession | None = None) -> BulkWrite:
         """Save Anchor."""
         bulk_write = BulkWrite()
 
@@ -419,6 +439,8 @@ class Anchor(_Anchor):
                     async with session.start_transaction():
                         await bulk_write.execute(session)
 
+        return bulk_write
+
     async def insert(
         self,
         bulk_write: BulkWrite,
@@ -428,63 +450,85 @@ class Anchor(_Anchor):
 
     async def update(self, bulk_write: BulkWrite, propagate: bool = False) -> None:
         """Update Anchor."""
-        self.rollback_changes = deepcopy(self.changes)
-        self.rollback_hashes = copy(self.hashes)
-
         changes = self.changes
         self.changes = {}  # renew reference
 
-        old_set = changes.pop("$set", {})
-        if is_dataclass(architype := self.architype) and not isinstance(
-            architype, type
-        ):
-            for key, val in asdict(architype).items():
-                if (h := hash(dumps(val))) != self.hashes.get(key):
-                    self.hashes[key] = h
-                    old_set[f"architype.{key}"] = val
+        operations = bulk_write.operations[self.type]
+        operation_filter = {"_id": self.id}
 
-        if old_set:
-            changes["$set"] = old_set
-
-        raw_query: list[tuple[dict[str, ObjectId], dict[str, Any]]] = []
-
-        anchor_id = self.id
-
-        for ops in [
-            ("$pull", "$in"),
-            ("$addToSet", "$each"),
-        ]:
-            _list = None
-            target: dict[str, dict[str, list[Any]]] = changes.get(ops[0], {})
-            for op in target.values():
-                if _anchors := op[ops[1]]:
-                    _list = op[ops[1]] = list(_anchors)
-                    for idx, anchor in enumerate(_list):
-                        if isinstance(anchor, Anchor):
-                            if propagate:
-                                await anchor._save(bulk_write)
-                            _list[idx] = anchor.ref_id
-            if _list:
-                raw_query.append(({"_id": anchor_id}, {ops[0]: target}))
+        ############################################################
+        #                     POPULATE CONTEXT                     #
+        ############################################################
 
         if self.current_access_level > 1:
-            additional_update = {}
-            if to_set := changes.get("$set"):
-                additional_update["$set"] = to_set
+            set_architype = changes.pop("$set", {})
+            if is_dataclass(architype := self.architype) and not isinstance(
+                architype, type
+            ):
+                for key, val in asdict(architype).items():
+                    if (h := hash(dumps(val))) != self.hashes.get(key):
+                        self.hashes[key] = h
+                        set_architype[f"architype.{key}"] = val
+            if set_architype:
+                changes["$set"] = set_architype
+        else:
+            changes.pop("$set", None)
+            changes.pop("$unset", None)
 
-            if to_unset := changes.get("$unset"):
-                additional_update["$unset"] = to_unset
+        # -------------------------------------------------------- #
 
-            if additional_update:
-                if raw_query:
-                    raw_query[0][1].update(additional_update)
+        if self.type is AnchorType.node:
+            ############################################################
+            #                   POPULATE ADDED EDGES                   #
+            ############################################################
+            added_edges: set[Anchor] = (
+                changes.get("$addToSet", {}).get("edges", {}).get("$each", [])
+            )
+            if added_edges:
+                _added_edges = []
+                for anchor in added_edges:
+                    if propagate:
+                        await anchor._save(bulk_write)
+                    _added_edges.append(anchor.ref_id)
+                changes["$addToSet"]["edges"]["$each"] = _added_edges
+            else:
+                changes.pop("$addToSet", None)
+
+            # -------------------------------------------------------- #
+
+            ############################################################
+            #                  POPULATE REMOVED EDGES                  #
+            ############################################################
+            pulled_edges: set[Anchor] = (
+                changes.get("$pull", {}).get("edges", {}).get("$in", [])
+            )
+            if pulled_edges:
+                _pulled_edges = []
+                for anchor in pulled_edges:
+                    if propagate:
+                        bulk_write.del_edge(anchor.id)
+                    _pulled_edges.append(anchor.ref_id)
+
+                if added_edges:
+                    # Isolate pull to avoid conflict with addToSet
+                    changes.pop("$pull", None)
+                    operations.append(
+                        UpdateOne(
+                            operation_filter,
+                            {"$pull": {"edges": {"$in": _pulled_edges}}},
+                        )
+                    )
                 else:
-                    raw_query.append(({"_id": anchor_id}, additional_update))
+                    changes["$pull"]["edges"]["$in"] = _pulled_edges
+            else:
+                changes.pop("$pull", None)
 
-        for query in raw_query:
-            bulk_write.operations[self.type].append(UpdateOne(*query))
+            # -------------------------------------------------------- #
 
-    async def destroy(self) -> None:  # type: ignore[override]
+        if changes:
+            operations.append(UpdateOne(operation_filter, changes))
+
+    async def destroy(self) -> None:
         """Save Anchor."""
         raise NotImplementedError("destroy must be implemented in subclasses")
 
@@ -512,20 +556,6 @@ class Anchor(_Anchor):
                 else {}
             ),
         }
-
-    def __deepcopy__(self, memo: dict[int, Any]) -> "Anchor":
-        """Override deepcopy handler temporary."""
-        cls = self.__class__
-        result = cls.__new__(cls)
-
-        # allow ref id usage on set
-        result.id = deepcopy(self.id, memo)
-        result.name = deepcopy(self.name, memo)
-
-        memo[id(self)] = result
-        for k, v in self.__dict__.items():
-            setattr(result, k, deepcopy(v, memo))
-        return result
 
 
 @dataclass(eq=False)
@@ -584,7 +614,7 @@ class NodeAnchor(Anchor):
 
         await super().insert(bulk_write)
 
-    async def destroy(self) -> None:  # type: ignore[override]
+    async def destroy(self) -> None:
         """Delete Anchor."""
         if self.architype and self.current_access_level > 1:
             from .context import JaseciContext
@@ -595,9 +625,7 @@ class NodeAnchor(Anchor):
 
             jsrc.remove(self)
 
-    async def sync(  # type: ignore[override]
-        self, node: "NodeAnchor | None" = None
-    ) -> "NodeArchitype | None":
+    async def sync(self, node: "NodeAnchor | None" = None) -> "NodeArchitype | None":
         """Retrieve the Architype from db and return."""
         return cast(NodeArchitype | None, await super().sync(node))
 
@@ -780,7 +808,7 @@ class EdgeAnchor(Anchor):
 
         await super().insert(bulk_write)
 
-    async def destroy(self) -> None:  # type: ignore[override]
+    async def destroy(self) -> None:
         """Delete Anchor."""
         if self.architype and self.current_access_level == 1:
             from .context import JaseciContext
@@ -790,9 +818,7 @@ class EdgeAnchor(Anchor):
             self.detach()
             jsrc.remove(self)
 
-    async def sync(  # type: ignore[override]
-        self, node: "NodeAnchor | None" = None
-    ) -> "EdgeArchitype | None":
+    async def sync(self, node: "NodeAnchor | None" = None) -> "EdgeArchitype | None":
         """Retrieve the Architype from db and return."""
         return cast(EdgeArchitype | None, await super().sync(node))
 
@@ -887,14 +913,14 @@ class WalkerAnchor(Anchor):
             )
         return None
 
-    async def destroy(self) -> None:  # type: ignore[override]
+    async def destroy(self) -> None:
         """Delete Anchor."""
         if self.architype and self.current_access_level > 1:
             from .context import JaseciContext
 
             JaseciContext.get().datasource.remove(self)
 
-    async def sync(self, node: "NodeAnchor | None" = None) -> "WalkerArchitype | None":  # type: ignore[override]
+    async def sync(self, node: "NodeAnchor | None" = None) -> "WalkerArchitype | None":
         """Retrieve the Architype from db and return."""
         return cast(WalkerArchitype | None, await super().sync(node))
 

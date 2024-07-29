@@ -10,7 +10,7 @@ from jaclang.runtimelib.architype import MANUAL_SAVE
 
 from motor.motor_asyncio import AsyncIOMotorClientSession
 
-from pymongo import DeleteMany, InsertOne
+from pymongo import InsertOne
 
 from .architype import (
     Anchor,
@@ -128,40 +128,20 @@ class MongoDB(Memory):
         """Find one anchor from memory by ids with filter."""
         return await anext(self.find(type, ids, filter, session), None)
 
-    def remove(self, data: Anchor | list[Anchor]) -> None:
-        """Remove anchor/s from datasource."""
-        super().remove(data)
-
     async def get_bulk_write(self) -> BulkWrite:
         """Sync memory to database."""
         bulk_write = BulkWrite()
 
-        del_node_ids = []
-        del_edge_ids = []
-        del_walker_ids = []
         for anchor in self.__gc__:
             match anchor.type:
                 case AnchorType.node:
-                    del_node_ids.append(anchor.id)
+                    bulk_write.del_node(anchor.id)
                 case AnchorType.edge:
-                    del_edge_ids.append(anchor.id)
+                    bulk_write.del_edge(anchor.id)
                 case AnchorType.walker:
-                    del_walker_ids.append(anchor.id)
+                    bulk_write.del_walker(anchor.id)
                 case _:
                     pass
-
-        if del_node_ids:
-            bulk_write.operations[AnchorType.node].append(
-                DeleteMany({"_id": {"$in": del_node_ids}})
-            )
-        if del_edge_ids:
-            bulk_write.operations[AnchorType.edge].append(
-                DeleteMany({"_id": {"$in": del_edge_ids}})
-            )
-        if del_walker_ids:
-            bulk_write.operations[AnchorType.walker].append(
-                DeleteMany({"_id": {"$in": del_walker_ids}})
-            )
 
         if not MANUAL_SAVE:
             for anchor in self.__mem__.values():
