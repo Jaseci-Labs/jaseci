@@ -120,7 +120,7 @@ class JacLangServer(LanguageServer):
                 )
 
             self.publish_diagnostics(
-                file_path,
+                annex_view if annex_view else file_path,
                 gen_diagnostics(
                     annex_view if annex_view else file_path,
                     build.errors_had,

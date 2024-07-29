@@ -1,7 +1,7 @@
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.workspace import Workspace
-from jaclang.langserve.engine import JacLangServer, ModuleInfo
+from jaclang.langserve.engine import JacLangServer
 from .session import LspSession
 
 import lsprotocol.types as lspt

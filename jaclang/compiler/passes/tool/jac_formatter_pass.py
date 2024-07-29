@@ -281,6 +281,7 @@ class JacFormatPass(Pass):
                             self.emit(node, stmt.gen.jac)
                             if not stmt.gen.jac.endswith("postinit;"):
                                 self.indent_level -= 1
+                                self.emit_ln(stmt, "")
                                 self.emit_ln(node, "")
                                 self.indent_level += 1
                 elif stmt.gen.jac == ",":
@@ -747,7 +748,7 @@ class JacFormatPass(Pass):
                             self.indent_level += indent_val
                             indented = True
                     else:
-                        self.emit(node, f"{j.gen.jac.strip()}")
+                        self.emit(node, j.gen.jac.lstrip())
                 if indented:
                     self.indent_level -= indent_val
             else:

@@ -1,4 +1,4 @@
-"""Main settings of Jac lang."""
+"""Main settings of jac lang."""
 
 import configparser
 import os

@@ -35,15 +35,17 @@ from jaclang.runtimelib.constructs import (
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
-from jaclang.plugin.spec import T
+from jaclang.plugin.spec import P, T
 
 
 import pluggy
 
+hookimpl = pluggy.HookimplMarker("jac")
 
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
+    "hookimpl",
     "JacTestCheck",
     "NodeAnchor",
     "ObjectAnchor",
@@ -56,9 +58,6 @@ __all__ = [
     "DSFunc",
     "T",
 ]
-
-
-hookimpl = pluggy.HookimplMarker("jac")
 
 
 class JacFeatureDefaults:
@@ -203,6 +202,43 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def impl_patch_filename(
+        file_loc: str,
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]:
+        """Update impl file location."""
+
+        def decorator(func: Callable[P, T]) -> Callable[P, T]:
+            try:
+                code = func.__code__
+                new_code = types.CodeType(
+                    code.co_argcount,
+                    code.co_posonlyargcount,
+                    code.co_kwonlyargcount,
+                    code.co_nlocals,
+                    code.co_stacksize,
+                    code.co_flags,
+                    code.co_code,
+                    code.co_consts,
+                    code.co_names,
+                    code.co_varnames,
+                    file_loc,
+                    code.co_name,
+                    code.co_qualname,
+                    code.co_firstlineno,
+                    code.co_linetable,
+                    code.co_exceptiontable,
+                    code.co_freevars,
+                    code.co_cellvars,
+                )
+                func.__code__ = new_code
+            except AttributeError:
+                pass
+            return func
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def jac_import(
         target: str,
         base_path: str,
@@ -213,6 +249,7 @@ class JacFeatureDefaults:
         mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
+        reload_module: Optional[bool],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         spec = ImportPathSpec(
@@ -229,7 +266,9 @@ class JacFeatureDefaults:
         if lng == "py":
             import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
         else:
-            import_result = JacImporter(Jac.context().jac_machine).run_import(spec)
+            import_result = JacImporter(Jac.context().jac_machine).run_import(
+                spec, reload_module
+            )
         return (
             (import_result.ret_mod,)
             if absorb or not items
