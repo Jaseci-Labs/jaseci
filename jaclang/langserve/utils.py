@@ -430,6 +430,9 @@ def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
         for name, symbol in current_tab.tab.items():
             if name not in dir(builtins) and name == sym_name:
                 path = symbol.defn[0]._sym_type
+                logging.info(f"sym type  {path}")
+                logging.info(f"sym dottneame  {symbol.sym_dotted_name}")
+                logging.info(f"sym type 11 {current_tab.owner}")         
                 if path == "enum.Enum" and isinstance(
                     current_tab.owner, ast.AstSymbolNode
                 ):

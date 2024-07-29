@@ -17,7 +17,7 @@ from typing import (
     Type,
     TypeVar,
 )
-
+import logging
 
 from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
@@ -477,11 +477,13 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     @property
     def sym_type(self) -> str:
         """Get symbol type."""
+        logging.info(f'sym type1 ==>  {self._sym_type}')
         return self._sym_type
 
     @sym_type.setter
     def sym_type(self, sym_type: str) -> None:
         """Set symbol type."""
+        logging.info(f'sym type ==>  {sym_type}')
         self._sym_type = sym_type
 
     @property
