@@ -3,7 +3,6 @@
 import asyncio
 import builtins
 import importlib.util
-import logging
 import os
 import re
 import sys
@@ -430,23 +429,11 @@ def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
         for name, symbol in current_tab.tab.items():
             if name not in dir(builtins) and name == sym_name:
                 path = symbol.defn[0]._sym_type
-                logging.info(f"sym type  {path}")
-                logging.info(f"sym dottneame  {symbol.sym_dotted_name}")
-                logging.info(f"sym type 11 {current_tab.owner}")         
-                if path == "enum.Enum" and isinstance(
-                    current_tab.owner, ast.AstSymbolNode
-                ):
-                    logging.info(f"sym type  {current_tab.owner}")
-                    logging.info(
-                        f"isinstance =>   {isinstance(current_tab.owner.name_spec, ast.NameAtom)}"
-                    )
-                    logging.info(
-                        f"sym type final  {current_tab.owner.name_spec._sym_type}"
-                    )
-                    logging.info(f"sym type  {path}")
-                    return current_tab.owner.name_spec._sym_type + "." + sym_name
-                elif path == "enum.Enum" and isinstance(current_tab.owner, ast.Module):
-                    return current_tab.owner.name + "." + sym_name
+                if symbol.sym_type == SymbolType.ENUM_ARCH:
+                    if isinstance(current_tab.owner, ast.Module):
+                        return current_tab.owner.name + "." + sym_name
+                    elif isinstance(current_tab.owner, ast.AstSymbolNode):
+                        return current_tab.owner.name_spec._sym_type + "." + sym_name
                 return path
         current_tab = current_tab.parent if current_tab.parent != current_tab else None
     return ""
@@ -477,13 +464,8 @@ def resolve_completion_symbol_table(
     current_tab: Optional[SymbolTable],
 ) -> list[lspt.CompletionItem]:
     """Resolve symbol table for completion items."""
-    import logging
-
     current_symbol_table = mod_tab
-    logging.info(f" FIRST SYM TABLE : {current_symbol_table}")
     for obj in current_symbol_path:
-        logging.info(f"\n\nResolving symbol \n{obj}")
-        logging.info(f"\ncurrent sym table  \n   {current_symbol_table}")
         if obj == "self":
             try:
                 try:
@@ -516,7 +498,6 @@ def resolve_completion_symbol_table(
                 pass
         else:
             path: str = resolve_symbol_path(obj, current_symbol_table)
-            logging.info(f"PATH : -- {path}")
             if path:
                 current_symbol_table = find_symbol_table(path, current_tab)
             else:
@@ -528,7 +509,6 @@ def resolve_completion_symbol_table(
                         if isinstance(base_name, ast.Name) and base_name.sym:
                             path = base_name.sym.sym_dotted_name + "." + obj
                             current_symbol_table = find_symbol_table(path, current_tab)
-    logging.info(f"cur symtab \n  {current_symbol_table}")
     if (
         isinstance(current_symbol_table.owner, ast.Architype)
         and current_symbol_table.owner.base_classes

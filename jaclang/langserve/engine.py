@@ -170,21 +170,17 @@ class JacLangServer(LanguageServer):
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        logging.info(
-            f"position: {position},\n\n current_symbol_path: {current_symbol_path}"
-        )
+
         node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir,
             position.line,
             position.character - 2,
         )
-        logging.info(f"node_selected: {node_selected}")
         mod_tab = (
             self.modules[file_path].ir.sym_tab
             if not node_selected
             else node_selected.sym_tab
         )
-        logging.info(f"curr sym tab   {mod_tab}")
         current_tab = self.modules[file_path].ir._sym_tab
         current_symbol_table = mod_tab
 
@@ -196,28 +192,21 @@ class JacLangServer(LanguageServer):
             else:
                 completion_items = []
         else:
-            try:  # noqa SIM105
-                if node_selected and (
-                    Irpass.has_parent_of_type(node_selected, ast.Architype)
-                    or Irpass.has_parent_of_type(node_selected, ast.AbilityDef)
-                ):
-                    self_symbol = [
-                        lspt.CompletionItem(
-                            label="self", kind=lspt.CompletionItemKind.Variable
-                        )
-                    ]
-                else:
-                    self_symbol = []
+            if node_selected and (
+                Irpass.has_parent_of_type(node_selected, ast.Architype)
+                or Irpass.has_parent_of_type(node_selected, ast.AbilityDef)
+            ):
+                self_symbol = [
+                    lspt.CompletionItem(
+                        label="self", kind=lspt.CompletionItemKind.Variable
+                    )
+                ]
+            else:
+                self_symbol = []
 
-                logging.info(f" tryy.... currr {current_symbol_table}")
-                completion_items = (
-                    collect_all_symbols_in_scope(current_symbol_table) + self_symbol
-                )
-
-            except Exception as e:
-                logging.info(f"error22 :: \n\n{e}")
-
-                pass
+            completion_items = (
+                collect_all_symbols_in_scope(current_symbol_table) + self_symbol
+            )
         return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
     def rename_module(self, old_path: str, new_path: str) -> None:

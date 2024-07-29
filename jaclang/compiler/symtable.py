@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as ast3
 from typing import Optional, Sequence
-import logging
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import SymbolAccess, SymbolType
 from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
@@ -41,24 +41,17 @@ class Symbol:
     @property
     def sym_type(self) -> SymbolType:
         """Get sym_type."""
-        import logging
-        logging.info(f' self   ')
-        logging.info(f' decl  {self.decl} ')
-        logging.info(f'dcecl sym type {self.decl.sym_type} ')
-        logging.info(f' decl  {self.decl.sym_category} ')
         return self.decl.sym_category
 
     @property
     def sym_dotted_name(self) -> str:
         """Return a full path of the symbol."""
         out = [self.defn[0].sym_name]
-        logging.info(f'   {self.defn[0].sym_name} ')
         current_tab: SymbolTable | None = self.parent_tab
         while current_tab is not None:
             out.append(current_tab.name)
             current_tab = current_tab.parent
         out.reverse()
-        logging.info(f' out  000--- {out} ')
         return ".".join(out)
 
     def add_defn(self, node: ast.NameAtom) -> None:
