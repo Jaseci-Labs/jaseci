@@ -40,10 +40,12 @@ from jaclang.plugin.spec import P, T
 
 import pluggy
 
+hookimpl = pluggy.HookimplMarker("jac")
 
 __all__ = [
     "EdgeAnchor",
     "GenericEdge",
+    "hookimpl",
     "JacTestCheck",
     "NodeAnchor",
     "ObjectAnchor",
@@ -56,9 +58,6 @@ __all__ = [
     "DSFunc",
     "T",
 ]
-
-
-hookimpl = pluggy.HookimplMarker("jac")
 
 
 class JacFeatureDefaults:
@@ -250,6 +249,7 @@ class JacFeatureDefaults:
         mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
+        reload_module: Optional[bool],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         spec = ImportPathSpec(
@@ -266,7 +266,9 @@ class JacFeatureDefaults:
         if lng == "py":
             import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
         else:
-            import_result = JacImporter(Jac.context().jac_machine).run_import(spec)
+            import_result = JacImporter(Jac.context().jac_machine).run_import(
+                spec, reload_module
+            )
         return (
             (import_result.ret_mod,)
             if absorb or not items

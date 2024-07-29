@@ -174,7 +174,10 @@ class ImportReturn:
                 new_module = self.importer.jac_machine.loaded_modules.get(
                     package_name,
                     self.importer.create_jac_py_module(
-                        mod_bundle, name, module.__name__, jac_file_path
+                        mod_bundle,
+                        self.importer.get_sys_mod_name(jac_file_path),
+                        module.__name__,
+                        jac_file_path,
                     ),
                 )
             codeobj = self.importer.get_codeobj(
@@ -360,7 +363,6 @@ class JacImporter(Importer):
         module.__file__ = full_target
         module.__name__ = module_name
         module.__dict__["__jac_mod_bundle__"] = mod_bundle
-        self.jac_machine.loaded_modules[module_name] = module
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")
@@ -375,12 +377,12 @@ class JacImporter(Importer):
                         full_mod_path=full_mod_path,
                         mod_bundle=mod_bundle,
                     )
-            setattr(self.jac_machine.loaded_modules[package_path], module_name, module)
-            self.jac_machine.loaded_modules[f"{package_path}.{module_name}"] = module
-
+        self.jac_machine.loaded_modules[module_name] = module
         return module
 
-    def run_import(self, spec: ImportPathSpec) -> ImportReturn:
+    def run_import(
+        self, spec: ImportPathSpec, reload: Optional[bool] = False
+    ) -> ImportReturn:
         """Run the import process for Jac modules."""
         unique_loaded_items: list[types.ModuleType] = []
         module = None
@@ -392,18 +394,21 @@ class JacImporter(Importer):
             in self.jac_machine.loaded_modules[spec.mod_bundle].__dict__
             else None
         )
+        if os.path.isfile(spec.full_target + ".jac"):
+            module_name = self.get_sys_mod_name(spec.full_target + ".jac")
+            module_name = spec.override_name if spec.override_name else module_name
+        else:
+            module_name = self.get_sys_mod_name(spec.full_target)
 
-        if not module:
+        module = sys.modules.get(module_name)
+
+        if not module or module.__name__ == "__main__" or reload:
             if os.path.isdir(spec.full_target):
                 module = self.handle_directory(
                     spec.module_name, spec.full_target, valid_mod_bundle
                 )
             else:
                 spec.full_target += ".jac" if spec.language == "jac" else ".py"
-                module_name = self.get_sys_mod_name(spec.full_target)
-                module_name = (
-                    spec.override_name if spec.override_name else spec.module_name
-                )
                 module = self.create_jac_py_module(
                     valid_mod_bundle,
                     module_name,
@@ -427,7 +432,6 @@ class JacImporter(Importer):
                 except Exception as e:
                     logger.error(f"Error while importing {spec.full_target}: {e}")
                     raise e
-
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(

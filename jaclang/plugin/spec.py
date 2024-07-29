@@ -120,6 +120,7 @@ class JacFeatureSpec:
         mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
+        reload_module: Optional[bool],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         raise NotImplementedError

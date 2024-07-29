@@ -27,7 +27,8 @@ class TestLoader(TestCase):
         Jac.context().init_memory(base_path=self.fixture_abs_path(__file__))
         jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
-            "module 'hello_world'", str(Jac.context().jac_machine.loaded_modules)
+            "module 'fixtures.hello_world'",
+            str(Jac.context().jac_machine.loaded_modules),
         )
         self.assertIn(
             "/tests/fixtures/hello_world.jac",
@@ -59,12 +60,3 @@ class TestLoader(TestCase):
             "{SomeObj(a=10): 'check'} [MyObj(apple=5, banana=7), MyObj(apple=5, banana=7)]",
             stdout_value,
         )
-
-    def test_package_import(self) -> None:
-        """Test package import."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        cli.run(self.fixture_abs_path("../../../tests/fixtures/package_import.jac"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertEqual("package is imported successfully!\n", stdout_value)

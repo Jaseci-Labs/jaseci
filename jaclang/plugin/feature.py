@@ -28,10 +28,11 @@ pm.add_hookspecs(JacBuiltin)
 class JacFeature:
     """Jac Feature."""
 
-    import abc
-    from jaclang.compiler.constant import EdgeDir
-    from jaclang.runtimelib.constructs import DSFunc
+    from jaclang.compiler.constant import EdgeDir as EdgeDirType
+    from jaclang.runtimelib.constructs import DSFunc as DSFuncType
 
+    EdgeDir: TypeAlias = EdgeDirType
+    DSFunc: TypeAlias = DSFuncType
     RootType: TypeAlias = Root
     Obj: TypeAlias = Architype
     Node: TypeAlias = NodeArchitype
@@ -111,6 +112,7 @@ class JacFeature:
         mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+        reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         return pm.hook.jac_import(
@@ -123,6 +125,7 @@ class JacFeature:
             mod_bundle=mod_bundle,
             lng=lng,
             items=items,
+            reload_module=reload_module,
         )
 
     @staticmethod
