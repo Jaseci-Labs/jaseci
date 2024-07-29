@@ -206,19 +206,7 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_enum(self, node: ast.Enum) -> None:
         """Pass handler for Enum nodes."""
-        # self.__collect_type_from_symbol(node)
-        if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
-            mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]
-            node.name_spec.sym_type = mypy_node.fullname
-            self.__set_sym_table_link(node)
-        # elif isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
-        #     mypy_node2: MypyNodes.FuncDef = node.gen.mypy_ast[0]
-        #     self.__call_type_handler(node, mypy_node2.type)
-        else:
-            self.__debug_print(
-                f"{node.loc}: Can't get ArchRef (Enum) value from mypyNode other than ClassDef",
-                type(node.gen.mypy_ast[0]),
-            )
+        self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_enum_def(self, node: ast.EnumDef) -> None:
@@ -352,9 +340,9 @@ class FuseTypeInfoPass(Pass):
             mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]
             node.name_spec.sym_type = mypy_node.fullname
             self.__set_sym_table_link(node)
-        # elif isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
-        #     mypy_node2: MypyNodes.FuncDef = node.gen.mypy_ast[0]
-        #     self.__call_type_handler(node, mypy_node2.type)
+        elif isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
+            mypy_node2: MypyNodes.FuncDef = node.gen.mypy_ast[0]
+            self.__call_type_handler(node, mypy_node2.type)
         else:
             self.__debug_print(
                 f"{node.loc}: Can't get ArchRef value from mypyNode other than ClassDef",
