@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
@@ -99,6 +100,7 @@ class JacLangServer(LanguageServer):
     def deep_check(self, file_path: str, annex_view: Optional[str] = None) -> bool:
         """Rebuild a file and its dependencies."""
         try:
+            start_time = time.time()
             document = self.workspace.get_text_document(file_path)
             if file_path in self.modules and (
                 parent := self.modules[file_path].impl_parent
@@ -118,13 +120,14 @@ class JacLangServer(LanguageServer):
                 )
 
             self.publish_diagnostics(
-                file_path,
+                annex_view if annex_view else file_path,
                 gen_diagnostics(
                     annex_view if annex_view else file_path,
                     build.errors_had,
                     build.warnings_had,
                 ),
             )
+            self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
             return len(build.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during deep check: {e}")

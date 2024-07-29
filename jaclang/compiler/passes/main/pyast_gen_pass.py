@@ -52,14 +52,6 @@ class PyastGenPass(Pass):
                 ),
                 jac_node=self.ir,
             ),
-            self.sync(
-                ast3.ImportFrom(
-                    module="typing",
-                    names=[self.sync(ast3.alias(name="TYPE_CHECKING", asname=None))],
-                    level=0,
-                ),
-                jac_node=self.ir,
-            ),
         ]
 
     def enter_node(self, node: ast.AstNode) -> None:
@@ -117,6 +109,25 @@ class PyastGenPass(Pass):
             )
         )
         self.already_added.append(self.needs_typing.__name__)
+
+    def needs_abc(self) -> None:
+        """Check if enum is needed."""
+        if self.needs_abc.__name__ in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.Import(
+                    names=[
+                        self.sync(
+                            ast3.alias(name="abc", asname="_jac_abc"),
+                            jac_node=self.ir,
+                        ),
+                    ]
+                ),
+                jac_node=self.ir,
+            )
+        )
+        self.already_added.append(self.needs_abc.__name__)
 
     def needs_enum(self) -> None:
         """Check if enum is needed."""
@@ -426,6 +437,33 @@ class PyastGenPass(Pass):
                 type_params=[],
             ),
         )
+        if node.loc.mod_path != self.ir.loc.mod_path:
+            func.decorator_list.append(
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="impl_patch_filename",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="file_loc",
+                                    value=self.sync(
+                                        ast3.Constant(value=node.body.loc.mod_path)
+                                    ),
+                                )
+                            ),
+                        ],
+                    )
+                )
+            )
         node.gen.py_ast = [func]
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
@@ -824,10 +862,17 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        self.needs_typing()
         py_nodes.append(
             self.sync(
                 ast3.If(
-                    test=self.sync(ast3.Name(id="TYPE_CHECKING", ctx=ast3.Load())),
+                    test=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                            attr="TYPE_CHECKING",
+                            ctx=ast3.Load(),
+                        )
+                    ),
                     body=typecheck_nodes,
                     orelse=runtime_nodes,
                 )
@@ -900,6 +945,7 @@ class PyastGenPass(Pass):
             if isinstance(node.decorators, ast.SubNodeList)
             else []
         )
+
         ds_on_entry, ds_on_exit = self.collect_events(node)
         if node.arch_type.name != Tok.KW_CLASS:
             self.needs_jac_feature()
@@ -972,19 +1018,11 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_abstract:
-            self.needs_jac_feature()
+            self.needs_abc()
             base_classes.append(
                 self.sync(
                     ast3.Attribute(
-                        value=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="abc",
-                                ctx=ast3.Load(),
-                            )
-                        ),
+                        value=self.sync(ast3.Name(id="_jac_abc", ctx=ast3.Load())),
                         attr="ABC",
                         ctx=ast3.Load(),
                     )
@@ -1180,20 +1218,40 @@ class PyastGenPass(Pass):
                 node,
             )
         decorator_list = node.decorators.gen.py_ast if node.decorators else []
-        if node.is_abstract:
+        if isinstance(node.body, ast.AstImplOnlyNode):
             self.needs_jac_feature()
             decorator_list.append(
                 self.sync(
-                    ast3.Attribute(
-                        value=self.sync(
+                    ast3.Call(
+                        func=self.sync(
                             ast3.Attribute(
                                 value=self.sync(
                                     ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
-                                attr="abc",
+                                attr="impl_patch_filename",
                                 ctx=ast3.Load(),
                             )
                         ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="file_loc",
+                                    value=self.sync(
+                                        ast3.Constant(value=node.body.loc.mod_path)
+                                    ),
+                                )
+                            ),
+                        ],
+                    )
+                )
+            )
+        if node.is_abstract:
+            self.needs_abc()
+            decorator_list.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="_jac_abc", ctx=ast3.Load())),
                         attr="abstractmethod",
                         ctx=ast3.Load(),
                     )

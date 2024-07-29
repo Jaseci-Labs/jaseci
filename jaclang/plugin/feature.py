@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import ExecutionContext
-from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, T
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
     Architype,
     EdgeArchitype,
@@ -28,10 +28,11 @@ pm.add_hookspecs(JacBuiltin)
 class JacFeature:
     """Jac Feature."""
 
-    import abc
-    from jaclang.compiler.constant import EdgeDir
-    from jaclang.runtimelib.constructs import DSFunc
+    from jaclang.compiler.constant import EdgeDir as EdgeDirType
+    from jaclang.runtimelib.constructs import DSFunc as DSFuncType
 
+    EdgeDir: TypeAlias = EdgeDirType
+    DSFunc: TypeAlias = DSFuncType
     RootType: TypeAlias = Root
     Obj: TypeAlias = Architype
     Node: TypeAlias = NodeArchitype
@@ -94,6 +95,13 @@ class JacFeature:
         return pm.hook.make_walker(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
+    def impl_patch_filename(
+        file_loc: str,
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]:
+        """Update impl file location."""
+        return pm.hook.impl_patch_filename(file_loc=file_loc)
+
+    @staticmethod
     def jac_import(
         target: str,
         base_path: str,
@@ -104,6 +112,7 @@ class JacFeature:
         mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+        reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         return pm.hook.jac_import(
@@ -116,6 +125,7 @@ class JacFeature:
             mod_bundle=mod_bundle,
             lng=lng,
             items=items,
+            reload_module=reload_module,
         )
 
     @staticmethod

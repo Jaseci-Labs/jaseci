@@ -115,7 +115,7 @@ class ImportReturn:
                     )
 
                     if jac_file_path and os.path.isfile(jac_file_path):
-                        item = self.load_jac_file(
+                        item = self.load_jac_mod_as_item(
                             module=module,
                             name=name,
                             jac_file_path=jac_file_path,
@@ -130,7 +130,7 @@ class ImportReturn:
                         item = importlib.import_module(full_module_name)
                         handle_item_loading(item, alias)
 
-    def load_jac_file(
+    def load_jac_mod_as_item(
         self,
         module: types.ModuleType,
         name: str,
@@ -150,7 +150,10 @@ class ImportReturn:
                 new_module = sys.modules.get(
                     package_name,
                     self.importer.create_jac_py_module(
-                        mod_bundle, name, module.__name__, jac_file_path
+                        mod_bundle,
+                        self.importer.get_sys_mod_name(jac_file_path),
+                        module.__name__,
+                        jac_file_path,
                     ),
                 )
             codeobj = self.importer.get_codeobj(
@@ -336,7 +339,6 @@ class JacImporter(Importer):
         module.__file__ = full_target
         module.__name__ = module_name
         module.__dict__["__jac_mod_bundle__"] = mod_bundle
-        sys.modules[module_name] = module
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")
@@ -351,12 +353,12 @@ class JacImporter(Importer):
                         full_mod_path=full_mod_path,
                         mod_bundle=mod_bundle,
                     )
-            setattr(sys.modules[package_path], module_name, module)
-            sys.modules[f"{package_path}.{module_name}"] = module
-
+        sys.modules[module_name] = module
         return module
 
-    def run_import(self, spec: ImportPathSpec) -> ImportReturn:
+    def run_import(
+        self, spec: ImportPathSpec, reload: Optional[bool] = False
+    ) -> ImportReturn:
         """Run the import process for Jac modules."""
         unique_loaded_items: list[types.ModuleType] = []
         module = None
@@ -367,18 +369,21 @@ class JacImporter(Importer):
             and "__jac_mod_bundle__" in sys.modules[spec.mod_bundle].__dict__
             else None
         )
+        if os.path.isfile(spec.full_target + ".jac"):
+            module_name = self.get_sys_mod_name(spec.full_target + ".jac")
+            module_name = spec.override_name if spec.override_name else module_name
+        else:
+            module_name = self.get_sys_mod_name(spec.full_target)
 
-        if not module:
+        module = sys.modules.get(module_name)
+
+        if not module or module.__name__ == "__main__" or reload:
             if os.path.isdir(spec.full_target):
                 module = self.handle_directory(
                     spec.module_name, spec.full_target, valid_mod_bundle
                 )
             else:
                 spec.full_target += ".jac" if spec.language == "jac" else ".py"
-                module_name = self.get_sys_mod_name(spec.full_target)
-                module_name = (
-                    spec.override_name if spec.override_name else spec.module_name
-                )
                 module = self.create_jac_py_module(
                     valid_mod_bundle,
                     module_name,
@@ -392,14 +397,14 @@ class JacImporter(Importer):
                     spec.cachable,
                     caller_dir=spec.caller_dir,
                 )
-                try:
-                    if not codeobj:
-                        raise ImportError(f"No bytecode found for {spec.full_target}")
-                    with sys_path_context(spec.caller_dir):
+                if not codeobj:
+                    raise ImportError(f"No bytecode found for {spec.full_target}")
+                with sys_path_context(spec.caller_dir):
+                    try:
                         exec(codeobj, module.__dict__)
-                except Exception as e:
-                    raise ImportError(f"Error importing {spec.full_target}: {str(e)}")
-
+                    except Exception as e:
+                        logger.error(f"Error while importing {spec.full_target}: {e}")
+                        raise e
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(
