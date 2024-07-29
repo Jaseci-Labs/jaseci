@@ -229,20 +229,13 @@ class JacLanguageTests(TestCase):
             "deep.deeper.snd_lev",
             "deep.one_lev",
         ]
-        for i in targets:
-            if i in sys.modules:
-                del sys.modules[i]
         Jac.get_root()._jac_.edges.clear()
         Jac.context().init_memory(base_path=self.fixture_abs_path("./"))
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
         jac_import("deep_import_mods", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        mods = eval(stdout_value)
+        mods = Jac.context().jac_machine.loaded_modules.keys()
         for i in targets:
             self.assertIn(i, mods)
-        self.assertEqual(len([i for i in mods if i.startswith("deep")]), 5)
+        self.assertEqual(len([i for i in mods if i.startswith("deep")]), 6)
 
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
