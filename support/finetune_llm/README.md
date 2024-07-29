@@ -20,8 +20,11 @@ python train.py --config config.yaml --push_to_hf
 ```bash
 python merge_n_push.py --config config.yaml --checkpoint 500
 ```
+If you don't want to push the model to the Hugging Face Model Hub, you can remove the `--push_to_hf` flag.
 
-5. If you don't want to push the model to the Hugging Face Model Hub, you can remove the `--push_to_hf` flag.
+5. Test the trained using the `test.ipynb` notebook. You can also run it in Google Colab by clicking the badge below:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/Jaseci-Labs/mtllm/blob/main/support/finetune_llm/test.ipynb)
+```bash
 
 6. To evaluate the model, run the following command:
 ```bash
