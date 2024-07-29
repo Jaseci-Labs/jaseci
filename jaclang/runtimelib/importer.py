@@ -400,7 +400,7 @@ class JacImporter(Importer):
         else:
             module_name = self.get_sys_mod_name(spec.full_target)
 
-        module = sys.modules.get(module_name)
+        module = self.jac_machine.loaded_modules.get(module_name)
 
         if not module or module.__name__ == "__main__" or reload:
             if os.path.isdir(spec.full_target):
