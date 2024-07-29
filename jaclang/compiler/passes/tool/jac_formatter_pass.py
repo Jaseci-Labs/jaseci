@@ -50,7 +50,8 @@ class JacFormatPass(Pass):
 
     def emit(self, node: ast.AstNode, s: str, strip_mode: bool = True) -> None:
         """Emit code to node."""
-        node.gen.jac += self.indent_str() + s.replace("\n", "\n" + self.indent_str())
+        indented_str = re.sub(r"\n(?!\n)", f"\n{self.indent_str()}", s)
+        node.gen.jac += self.indent_str() + indented_str
         if "\n" in node.gen.jac:
             if strip_mode:
                 node.gen.jac = node.gen.jac.rstrip(" ")
