@@ -220,8 +220,6 @@ class JacLanguageTests(TestCase):
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
-        import sys
-
         targets = [
             "deep",
             "deep.deeper",
