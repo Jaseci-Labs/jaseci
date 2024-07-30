@@ -29,3 +29,28 @@ jobs:
 
             - name: Run tests
               run: pytest support/plugins/streamlit
+
+    mtllm:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v2
+
+            - name: Set up Python 3.12
+              uses: actions/setup-python@v2
+              with:
+                python-version: 3.12
+
+            - name: Install Jaclang
+              run: |
+                python -m pip install --upgrade pip
+                pip install -e .
+
+            - name: Install Plugin
+              run: |
+                git clone https://github.com/Jaseci-Labs/mtllm.git
+                pip install -e .
+                pip install pytest opencv-python-headless pillow
+
+            - name: Run tests
+              run: pytest mtllm
