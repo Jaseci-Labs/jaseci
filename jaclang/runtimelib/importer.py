@@ -182,7 +182,11 @@ class ImportReturn:
                 )
             codeobj = self.importer.get_codeobj(
                 full_target=jac_file_path,
-                module_name=self.importer.get_sys_mod_name(jac_file_path),
+                module_name=(
+                    self.importer.get_sys_mod_name(jac_file_path)
+                    if isinstance(self.importer, JacImporter)
+                    else name
+                ),
                 mod_bundle=mod_bundle,
                 cachable=cachable,
                 caller_dir=caller_dir,
