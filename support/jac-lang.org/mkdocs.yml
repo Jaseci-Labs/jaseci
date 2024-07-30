@@ -10,6 +10,7 @@ nav:
       - ~/for_coders:
         - 'learn/guide.md'
         - 'learn/jac_ref.md'
+        - 'learn/impl_docs.md'
         - 'learn/with_llm.md'
         - 'learn/tips_tricks.md'
         - 'learn/jac_plugins.md'

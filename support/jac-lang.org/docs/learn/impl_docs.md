@@ -33,7 +33,7 @@ However, Jac-lang offers novel language features which allows a programmer to or
 
 In jaclang the declaration of functions and objects can be done independently, as shown in the below code snippet. By doing so, it creates an empty shell for the function/object/enum.
 
-```python
+```jac linenums="1"
 can foo();
 
 obj vehicle;
@@ -51,7 +51,7 @@ with entry {
 ```
 The bodies should be defined somewhere in the codebase for the program to be compiled successfully. The notation for defining the function/object/enum bodies are as follows, for the given example.
 
-```python
+```jac linenums="1"
 :can:foo() {
     return ("Hello");
 }
