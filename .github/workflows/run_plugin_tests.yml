@@ -49,7 +49,7 @@ jobs:
             - name: Install Plugin
               run: |
                 git clone https://github.com/Jaseci-Labs/mtllm.git
-                pip install -e .
+                pip install -e mtllm
                 pip install pytest opencv-python-headless pillow
 
             - name: Run tests
