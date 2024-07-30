@@ -1,4 +1,4 @@
-# **Jac in a Flash**
+# <span style="color: orange; font-weight: bold">Jac in a Flash</span>
 
 Here we demonstrate an example where the ```guess_game.py``` python program, which implements a guess the number game, is converted to jac-lang, which is shown in ```guess_game1.jac```. This Transformation has a one-to-one mapping with the python program.
 
