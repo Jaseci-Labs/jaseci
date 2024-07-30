@@ -248,10 +248,6 @@ def _build_symbol_tree_common(
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 
-        # if isinstance(node.owner, ast.AstSymbolNode) and node.owner.sym_info:
-        #     print("From tree printer", id(node.owner))
-        #     SymbolTree(node_name=f"Datatype: {node.owner.sym_info.typ}", parent=symbol_node)
-
         if sym.decl and sym.decl.loc.first_line > 0:
             SymbolTree(
                 node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start}",

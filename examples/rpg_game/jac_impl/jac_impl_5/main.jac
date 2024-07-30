@@ -1,209 +1,202 @@
-"""This is an RPG game built using Jaclang"""
+
+"""This is the Data Spatial Implementation of the RPG Game"""
 
 # This game is built using the pygame module which is imported here
+
 import:py pygame;
 import:py sys;
+import:py os;
+import:py random;
+import:py time;
+import:py from mtllm.llms, Anthropic;
+
+glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
+
 # Importing Jac codebase
 include:jac sprites;
 include:jac config;
 include:jac map;
+include:jac game_obj;
 
-"""
-The Game base class
-"""
-obj Game {
-    has screen:pygame.surface.Surface = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT)),
-        clock:pygame.time.Clock = pygame.time.Clock(),
-        running:bool = True,
-        won:bool = False,
-        score:int = 0,
-        deaths:int = 0,
-        character_spritesheet:pygame.surface.Surface = Spritesheet('../img/character.png'),
-        terrain_spritesheet:pygame.surface.Surface = Spritesheet('../img/terrain.png'),
-        enemy_spritesheet:pygame.surface.Surface = Spritesheet('../img/enemy.png'),
-        attack_spritesheet:pygame.surface.Surface = Spritesheet('../img/attack.png'),
-        intro_background:pygame.surface.Surface = pygame.image.load('../img/introbackground.png'),
-        go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png'),
-        GameMap:Map = Map();
+glob context:str =  "# These rules must be strictly adhered to while creating a maps."
+                    "- Must have only single Player (P) in map at the middle of the map ."
+                    "- Two consecutive maps should not look alike."
+                    "- Hardness should be slightly increased between consecutive maps."
+                    "- All enemies should be accessible to the player (should not be enclosed with blocks)."
+                    "- Hardnes of a level can be determined by the time taken to complete a level and number of retry attempts.";
 
-    can postinit {
-        pygame.<>init();
-        self.font: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
-    }
-    # Generate the map according to the tilemap variable in map.jac
-    can createTilemap;
-    can new;
-    can events;
-    can update;
-    can draw;
-    can main;
-    can intro_screen;
-    can game_won;
-    can game_over;
+obj 'Consists of the level configuration data of a certain level'
+Map {
+    has Level_no:int = 1;
+    has time_to_win_level:'in seconds':float = 60.0;
+    has nos_retry:'How many retry attempts before completing the level':int = 0;
+    has map:
+    'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space. All outer characters are B. Only one single player character (P) can be in the map.'
+    :list[str] = [
+                                'BBBBBBBBBBBBBBBBBBBB',
+                                'B...E..............B',
+                                'B.......B..........B',
+                                'B....BBBB..........B',
+                                'B..................B',
+                                'B..................B',
+                                'B.........P........B',
+                                'B..................B',
+                                'B.............E....B',
+                                'B..................B',
+                                'B..................B',
+                                'B.........B........B',
+                                'B.........B........B',
+                                'B.........B........B',
+                                'BBBBBBBBBBBBBBBBBBBB'
 
-}
-#=Object=Abilities ===================================================
-
-:obj:Game:can:createTilemap {
-    for (i, row) in enumerate(self.GameMap.map){
-        for (j, column) in enumerate(row){
-            Ground(self,j,i);
-            if column == "B"{
-                Block(self,j,i);
-            }
-            if column == "E"{
-                Enemy(self,j,i);
-            }
-            if column == "P"{
-                self.player = Player(self,j,i);
-            }
-        }
-    }
+                            ];
 }
 
-    # Start a new game
-:obj:Game:can:new{
-    self.playing = True;
-    self.won = False;
-    self.all_sprites = pygame.sprite.LayeredUpdates();
-    self.blocks = pygame.sprite.LayeredUpdates();
-    self.enemies = pygame.sprite.LayeredUpdates();
-    self.attacks = pygame.sprite.LayeredUpdates();
-    self.createTilemap();
-}
-# Update pygame events to check if the game is quitted or attacked.
+'''The walker that initiates the game and runs an instance of the game'''
+walker game{
 
-:obj:Game:can:events{
-    for events in pygame.event.get() {
-        if events.type == pygame.QUIT {
-            self.playing = False;
-            self.running = False;
+    has g:Game = None,
+        current_level:int = 1,
+        fwd_dir:bool = True,
+        map_directory:
+        'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game.'
+        :dict={};
+
+    can start_game with `root entry;
+
+    can 'Return the map of the next level which is different and incrementally challenging than previous levels. '
+    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.5, incl_info=(context));
+}
+
+edge play{
+
+    has level_id:str = '1_1000';
+}
+
+'''Start screen node which operate as the virtual root node'''
+node start_screen {
+
+    has game_started:bool = False;
+
+    can intro_screen with game entry;
+    can exit_game with game exit;
+
+}
+
+'''Level node which (should) have unique (ai generated) attributes'''
+node level{
+    has game_level:int = 1,
+        level_id:str = '1_1000',
+        played:bool = False,
+        level_config:Map = Map(),
+        level_time:float=500000;
+
+    can run_game with game entry;
+    can exit_game with game exit;
+}
+
+'''Run the game'''
+with entry {
+    root spawn game();
+}
+
+#=Walker=&=Node=Abilities=======================================
+
+:walker:game:can:start_game {
+    self.g = Game();
+    here ++> start_screen();
+    visit [-->];
+}
+
+# :walker:game:can:generate_level() {
+
+# }
+
+:node:level:can:run_game {
+    # print("Walker Entry ->", self.level_id);
+
+    if self.played == False {
+        if here.current_level != self.game_level {
+            here.current_level = self.game_level;
         }
-        keys = pygame.key.get_pressed();
-        if keys[pygame.K_SPACE] {
-            if self.player.facing == 'up' {
-                Attack(self, self.player.rect.x, self.player.rect.y - TILESIZE);
-            }
-            if self.player.facing == 'down'{
-                Attack(self, self.player.rect.x, self.player.rect.y + TILESIZE);
-            }
-            if self.player.facing == 'right'{
-                Attack(self, self.player.rect.x + TILESIZE, self.player.rect.y);
-            }
-            if self.player.facing == 'left'{
-                Attack(self, self.player.rect.x - TILESIZE, self.player.rect.y);
-            }
-        }
-    }
-}
-# Update all sprites
-
-:obj:Game:can:update {
-    self.all_sprites.update();
-}
-# Display the game
-
-:obj:Game:can:draw {
-    self.screen.fill(BLACK);
-    self.all_sprites.draw(self.screen);
-    self.clock.tick(FPS);
-    pygame.display.update();
-}
-# Game runtime
-
-:obj:Game:can:main {
-    while self.playing {
-        self.events();
-        self.update();
-        self.draw();
-        if len(self.enemies.sprites()) == 0 {
-            self.won = True;
-            self.playing = False;
-        }
-    }
-}
-# Game over screen
-
-:obj:Game:can:game_over() {
-    self.score -= 2;
-    text = self.font.render('GaMe OvEr', True, RED);
-    text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));
-    restart_button = Button(10,WIN_HEIGHT-135, 120, 125, WHITE, BLACK, 'Restart', 32);
-    for sprite in self.all_sprites {
-        sprite.kill();
-    }
-    while self.running {
-        for event in pygame.event.get() {
-            if event.type == pygame.QUIT {
-                self.running = False;
-            }
-        }
-        mouse_pos = pygame.mouse.get_pos();
-        mouse_pressed = pygame.mouse.get_pressed();
-        if restart_button.is_pressed(mouse_pos, mouse_pressed) {
-            self.won = False;
-            self.new();
-            break;
-        }
-        self.screen.blit(self.go_background, (0,0));
-        self.screen.blit(text, text_rect);
-        self.screen.blit(restart_button.image, restart_button.rect);
-        self.clock.tick(FPS);
-        pygame.display.update();
-    }
-}
-# Introduction Screen
-
-:obj:Game:can:intro_screen {
-    intro = True;
-    title = self.font.render('Spud-nik : SOLO', True, BLUE);
-    title_rect = title.get_rect(x=WIN_WIDTH/2-100,y=100);
-    play_button = Button(WIN_WIDTH/2-50, 200, 100, 100, WHITE, BLACK, 'Play', 32);
-    while intro {
-        for event in pygame.event.get() {
-            if event.type == pygame.QUIT {
-                intro = False;
-                self.running = False;
+        if str(self.game_level) not in here.map_directory.keys(){
+            if here.map_directory {
+                new_map = here.generate_level(here.map_directory);
+                # print(new_map);
+                here.map_directory[str(here.current_level)] = Map(map=new_map, Level_no=here.current_level);
+            } else {
+                here.map_directory[str(here.current_level)] = Map();
             }
         }
-        mouse_pos = pygame.mouse.get_pos();
-        mouse_pressed = pygame.mouse.get_pressed();
-        if play_button.is_pressed(mouse_pos, mouse_pressed) {
-            intro = False;
+
+        here.g.GameMap.map = here.map_directory[str(self.game_level)].map;
+        here.g.new();
+        print(":-: Playing Level :", self.game_level, "| Level ID :",  self.level_id, "| Played :", str(self.played));
+        start_time = time.time();
+        here.g.main();
+        end_time = time.time();
+        if here.g.won == True{
+            self.level_time = end_time - start_time;
+            here.map_directory[str(self.game_level)].time_to_win_level = self.level_time;
+            # print('Time:', self.level_time);
+            here.g.game_won();
+            self.played = True;
+            here.g.won = False;
+            here.fwd_dir =True;
+            new_ID = str(self.game_level+1) + "_" + str(random.randint(1000, 9000));
+            self +:play:level_id=new_ID:+> level(game_level = self.game_level+1, level_id = new_ID);
+            visit [-:play:level_id==new_ID:->];
+        } else {
+            here.g.game_over();
+            here.map_directory[str(self.game_level)].nos_retry += 1;
+            self.played = True;
+            here.g.won = False;
+            here.fwd_dir = False;
+            visit [<-:play:-];
         }
-        self.screen.blit(self.intro_background, (0,0));
-        self.screen.blit(title, title_rect);
-        self.screen.blit(play_button.image, play_button.rect);
-        self.clock.tick(FPS);
-        pygame.display.update();
+    } elif here.fwd_dir == False{
+        new_ID = str(self.game_level+1) + "_" + str(random.randint(1000, 9000));
+        print(":-: Visiting Level :", self.game_level, "| Level ID :",  self.level_id, "| Played :", str(self.played), '| Created Level ID :', new_ID);
+        here.fwd_dir = True;
+        self +:play:level_id=new_ID:+> level(game_level = self.game_level+1, level_id = new_ID);
+        visit [-:play:level_id==new_ID:->];
+    } else {
+        print(":-: Visiting Level :", self.game_level, "| Level ID :",  self.level_id, "| Played :", str(self.played));
+        visit [<--];
     }
 }
-# Game won
 
-:obj:Game:can:game_won {
-    self.score += 5;
-    text = self.font.render('YOU WON!', True, BLUE);
-    text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));
-    restart_button = Button(10,WIN_HEIGHT-135, 120, 125, WHITE, BLACK, 'Restart', 32);
-    for sprite in self.all_sprites {
-        sprite.kill();
+:node:level:can:exit_game {
+    if here.g.running == False {
+        pygame.quit();
+        sys.exit();
+        disengage;
     }
-    while self.running {
-        for event in pygame.event.get() {
-            if event.type == pygame.QUIT {
-                self.running = False;
-            }
-        }
-        mouse_pos = pygame.mouse.get_pos();
-        mouse_pressed = pygame.mouse.get_pressed();
-        if restart_button.is_pressed(mouse_pos, mouse_pressed) {
-            self.new();
-            break;
-        }
-        self.screen.blit(self.intro_background, (0,0));
-        self.screen.blit(text, text_rect);
-        self.screen.blit(restart_button.image, restart_button.rect)   ;
-        self.clock.tick(FPS);
-        pygame.display.update();
+}
+
+:node:start_screen:can:intro_screen {
+    # print("Walker Entry -> Intro Screen");
+    if self.game_started == False {
+        self.game_started = True;
+        here.g.intro_screen();
+        new_ID = str(1) + "_" + str(random.randint(1000, 9000));
+        self +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
+        here.fwd_dir = True;
+        visit [-:play:level_id==new_ID:->];
+    } else {
+        new_ID = str(1) + "_" + str(random.randint(1000, 9000));
+        self +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
+        print(":-: Visiting Intro Screen | Created Level ID :", new_ID);
+        here.fwd_dir = True;
+        visit [-:play:level_id==new_ID:->];
+
+    }
+}
+
+:node:start_screen:can:exit_game {
+    if here.g.running == False {
+        pygame.quit();
+        sys.exit();
+        disengage;
     }
 }

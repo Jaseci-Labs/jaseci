@@ -19,10 +19,10 @@ from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.core.constructs import Architype
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.constructs import Architype
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -220,7 +220,7 @@ def enter(filename: str, entrypoint: str, args: list) -> None:
         base, mod_name = os.path.split(filename)
         base = base if base else "./"
         mod_name = mod_name[:-4]
-        mod = jac_import(target=mod_name, base_path=base)
+        (mod,) = jac_import(target=mod_name, base_path=base)
         if not mod:
             print("Errors occurred while importing the module.")
             return

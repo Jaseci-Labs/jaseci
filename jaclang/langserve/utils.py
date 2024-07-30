@@ -14,7 +14,6 @@ from jaclang.compiler.codeloc import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.symtable import Symbol, SymbolTable
-from jaclang.utils.helpers import import_target_to_relative_path
 from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
@@ -130,12 +129,25 @@ def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
     return False
 
 
-def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
+def find_index(
+    sem_tokens: list[int],
+    line: int,
+    char: int,
+) -> Optional[int]:
+    """Find index."""
+    index = None
+    for i, j in enumerate(
+        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
+    ):
+        if j[0] == line and j[1] <= char <= j[2]:
+            return i
+
+    return index
+
+
+def get_symbols_for_outline(node: SymbolTable) -> list[lspt.DocumentSymbol]:
     """Recursively collect symbols from the AST."""
     symbols = []
-    if node is None:
-        return symbols
-
     for key, item in node.tab.items():
         if (
             key in dir(builtins)
@@ -143,23 +155,20 @@ def collect_symbols(node: SymbolTable) -> list[lspt.DocumentSymbol]:
             or item.decl.loc.mod_path != node.owner.loc.mod_path
         ):
             continue
-        else:
-
-            pos = create_range(item.decl.loc)
-            symbol = lspt.DocumentSymbol(
-                name=key,
-                kind=kind_map(item.decl),
-                range=pos,
-                selection_range=pos,
-                children=[],
-            )
-            symbols.append(symbol)
+        pos = create_range(item.decl.loc)
+        symbol = lspt.DocumentSymbol(
+            name=key,
+            kind=kind_map(item.decl),
+            range=pos,
+            selection_range=pos,
+            children=[],
+        )
+        symbols.append(symbol)
 
     for sub_tab in [
         i for i in node.kid if i.owner.loc.mod_path == node.owner.loc.mod_path
     ]:
-        sub_symbols = collect_symbols(sub_tab)
-
+        sub_symbols = get_symbols_for_outline(sub_tab)
         if isinstance(
             sub_tab.owner,
             (ast.IfStmt, ast.ElseStmt, ast.WhileStmt, ast.IterForStmt, ast.InForStmt),
@@ -267,16 +276,15 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
 def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
     """Get path for a module import name."""
     ret_target = None
-    module_location_path = mod_path.loc.mod_path
     if mod_path.parent and (
         (
             isinstance(mod_path.parent.parent, ast.Import)
-            and mod_path.parent.parent.hint.tag.value == "py"
+            and mod_path.parent.parent.is_py
         )
         or (
             isinstance(mod_path.parent, ast.Import)
             and mod_path.parent.from_loc
-            and mod_path.parent.hint.tag.value == "py"
+            and mod_path.parent.is_py
         )
     ):
         if mod_path.path and name_node in mod_path.path:
@@ -287,38 +295,34 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
             )
         else:
             temporary_path_str = mod_path.path_str
-        sys.path.append(os.path.dirname(module_location_path))
+        sys.path.append(os.path.dirname(mod_path.loc.mod_path))
         spec = importlib.util.find_spec(temporary_path_str)
-        sys.path.remove(os.path.dirname(module_location_path))
+        sys.path.remove(os.path.dirname(mod_path.loc.mod_path))
         if spec and spec.origin and spec.origin.endswith(".py"):
             ret_target = spec.origin
     elif mod_path.parent and (
         (
             isinstance(mod_path.parent.parent, ast.Import)
-            and mod_path.parent.parent.hint.tag.value == "jac"
+            and mod_path.parent.parent.is_jac
         )
         or (
             isinstance(mod_path.parent, ast.Import)
             and mod_path.parent.from_loc
-            and mod_path.parent.hint.tag.value == "jac"
+            and mod_path.parent.is_jac
         )
     ):
-        ret_target = import_target_to_relative_path(
-            level=mod_path.level,
-            target=mod_path.path_str,
-            base_path=os.path.dirname(module_location_path),
-        )
+        ret_target = mod_path.resolve_relative_path()
     return ret_target
 
 
 def get_item_path(mod_item: ast.ModuleItem) -> tuple[str, tuple[int, int]] | None:
     """Get path."""
     item_name = mod_item.name.value
-    if mod_item.from_parent.hint.tag.value == "py" and mod_item.from_parent.from_loc:
+    if mod_item.from_parent.is_py and mod_item.from_parent.from_loc:
         path = get_mod_path(mod_item.from_parent.from_loc, mod_item.name)
         if path:
             return get_definition_range(path, item_name)
-    elif mod_item.from_parent.hint.tag.value == "jac":
+    elif mod_item.from_parent.is_jac:
         mod_node = mod_item.from_mod_path
         if mod_node.sub_module and mod_node.sub_module._sym_tab:
             for symbol_name, symbol in mod_node.sub_module._sym_tab.tab.items():
@@ -364,50 +368,6 @@ def get_definition_range(
     return None
 
 
-def locate_affected_token(
-    tokens: list[int],
-    change_start_line: int,
-    change_start_char: int,
-    change_end_line: int,
-    change_end_char: int,
-) -> Optional[int]:
-    """Find in which token change is occurring."""
-    token_index = 0
-    current_line = 0
-    line_char_offset = 0
-
-    while token_index < len(tokens):
-        token_line_delta = tokens[token_index]
-        token_start_char = tokens[token_index + 1]
-        token_length = tokens[token_index + 2]
-
-        if token_line_delta > 0:
-            current_line += token_line_delta
-            line_char_offset = 0
-        token_abs_start_char = line_char_offset + token_start_char
-        token_abs_end_char = token_abs_start_char + token_length
-        if (
-            current_line == change_start_line == change_end_line
-            and token_abs_start_char <= change_start_char
-            and change_end_char <= token_abs_end_char
-        ):
-            return token_index
-        if (
-            current_line == change_start_line
-            and token_abs_start_char <= change_start_char < token_abs_end_char
-        ):
-            return token_index
-        if (
-            current_line == change_end_line
-            and token_abs_start_char < change_end_char <= token_abs_end_char
-        ):
-            return token_index
-
-        line_char_offset += token_start_char
-        token_index += 5
-    return None
-
-
 def collect_all_symbols_in_scope(
     sym_tab: SymbolTable, up_tree: bool = True
 ) -> list[lspt.CompletionItem]:
@@ -419,7 +379,7 @@ def collect_all_symbols_in_scope(
     while current_tab is not None and current_tab not in visited:
         visited.add(current_tab)
         for name, symbol in current_tab.tab.items():
-            if name not in dir(builtins):
+            if name not in dir(builtins) and symbol.sym_type != SymbolType.IMPL:
                 symbols.append(
                     lspt.CompletionItem(label=name, kind=label_map(symbol.sym_type))
                 )
@@ -431,26 +391,32 @@ def collect_all_symbols_in_scope(
 
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
-    text = text[:dot_position].strip()
-    pattern = re.compile(r"\b\w+\(\)?|\b\w+\b")
-    matches = pattern.findall(text)
-    if text.endswith("."):
-        matches.append("")
-    symbol_path = []
-    i = 0
-    while i < len(matches):
-        if matches[i].endswith("("):
-            i += 1
-            continue
-        elif "(" in matches[i]:
-            symbol_path.append(matches[i])
-        elif matches[i] == "":
-            pass
-        else:
-            symbol_path.append(matches[i])
-        i += 1
+    text = text[:dot_position][:-1].strip()
+    valid_character_pattern = re.compile(r"[a-zA-Z0-9_]")
 
-    return symbol_path
+    reversed_text = text[::-1]
+    all_words = []
+    current_word = []
+    for char in reversed_text:
+        if valid_character_pattern.fullmatch(char):
+            current_word.append(char)
+        elif char == ".":
+            if current_word:
+                all_words.append("".join(current_word[::-1]))
+                current_word = []
+        else:
+            if current_word:
+                all_words.append("".join(current_word[::-1]))
+                current_word = []
+            break
+
+    all_words = (
+        all_words[::-1]
+        if not current_word
+        else ["".join(current_word[::-1])] + all_words[::-1]
+    )
+
+    return all_words
 
 
 def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
@@ -463,6 +429,11 @@ def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
         for name, symbol in current_tab.tab.items():
             if name not in dir(builtins) and name == sym_name:
                 path = symbol.defn[0]._sym_type
+                if symbol.sym_type == SymbolType.ENUM_ARCH:
+                    if isinstance(current_tab.owner, ast.Module):
+                        return current_tab.owner.name + "." + sym_name
+                    elif isinstance(current_tab.owner, ast.AstSymbolNode):
+                        return current_tab.owner.name_spec._sym_type + "." + sym_name
                 return path
         current_tab = current_tab.parent if current_tab.parent != current_tab else None
     return ""
@@ -553,8 +524,104 @@ def resolve_completion_symbol_table(
             )
     else:
         completion_items = []
-
+    if isinstance(current_symbol_table.owner, (ast.Ability, ast.AbilityDef)):
+        return completion_items
     completion_items.extend(
         collect_all_symbols_in_scope(current_symbol_table, up_tree=False)
     )
     return completion_items
+
+
+def get_token_start(
+    token_index: int | None, sem_tokens: list[int]
+) -> tuple[int, int, int]:
+    """Return the starting position of a token."""
+    if token_index is None or token_index >= len(sem_tokens):
+        return 0, 0, 0
+
+    current_line = 0
+    current_char = 0
+    current_tok_index = 0
+
+    while current_tok_index < len(sem_tokens):
+        token_line_delta = sem_tokens[current_tok_index]
+        token_start_char = sem_tokens[current_tok_index + 1]
+
+        if token_line_delta > 0:
+            current_line += token_line_delta
+            current_char = 0
+        if current_tok_index == token_index:
+            if token_line_delta > 0:
+                return (
+                    current_line,
+                    token_start_char,
+                    token_start_char + sem_tokens[current_tok_index + 2],
+                )
+            return (
+                current_line,
+                current_char + token_start_char,
+                current_char + token_start_char + sem_tokens[current_tok_index + 2],
+            )
+
+        current_char += token_start_char
+        current_tok_index += 5
+
+    return (
+        current_line,
+        current_char,
+        current_char + sem_tokens[current_tok_index + 2],
+    )
+
+
+def find_surrounding_tokens(
+    change_start_line: int,
+    change_start_char: int,
+    change_end_line: int,
+    change_end_char: int,
+    sem_tokens: list[int],
+) -> tuple[int | None, int | None, bool]:
+    """Find the indices of the previous and next tokens surrounding the change."""
+    prev_token_index = None
+    next_token_index = None
+    inside_tok = False
+    for i, tok in enumerate(
+        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)][0:]
+    ):
+        if (not (prev_token_index is None or next_token_index is None)) and (
+            tok[0] > change_end_line
+            or (tok[0] == change_end_line and tok[1] > change_end_char)
+        ):
+            prev_token_index = i * 5
+            break
+        elif (
+            change_start_line == tok[0] == change_end_line
+            and tok[1] <= change_start_char
+            and tok[2] >= change_end_char
+        ):
+            prev_token_index = i * 5
+            inside_tok = True
+            break
+        elif (tok[0] < change_start_line) or (
+            tok[0] == change_start_line and tok[1] < change_start_char
+        ):
+            prev_token_index = i * 5
+        elif (tok[0] > change_end_line) or (
+            tok[0] == change_end_line and tok[1] > change_end_char
+        ):
+            next_token_index = i * 5
+            break
+
+    return prev_token_index, next_token_index, inside_tok
+
+
+def get_line_of_code(line_number: int, lines: list[str]) -> Optional[tuple[str, int]]:
+    """Get the line of code, and the first non-space character index."""
+    if 0 <= line_number < len(lines):
+        line = lines[line_number].rstrip("\n")
+        first_non_space = len(line) - len(line.lstrip())
+        return line, (
+            first_non_space + 4
+            if line.strip().endswith(("(", "{", "["))
+            else first_non_space
+        )
+    return None

@@ -74,7 +74,7 @@ class Pass(Transform[T]):
         return result
 
     @staticmethod
-    def has_parent_of_type(node: ast.AstNode, typ: Type[T]) -> Optional[T]:
+    def find_parent_of_type(node: ast.AstNode, typ: Type[T]) -> Optional[T]:
         """Check if node has parent of type."""
         while node.parent:
             if isinstance(node.parent, typ):
@@ -115,7 +115,7 @@ class Pass(Transform[T]):
         self.after_pass()
         self.time_taken = time.time() - start_time
         if settings.pass_timer:
-            print(
+            self.log_info(
                 f"Time taken in {self.__class__.__name__}: {self.time_taken:.4f} seconds"
             )
         return self.ir
@@ -136,21 +136,12 @@ class Pass(Transform[T]):
         self.exit_node(node)
         return node
 
-    def update_code_loc(self, node: Optional[ast.AstNode] = None) -> None:
-        """Update code location."""
-        if node is None:
-            node = self.cur_node
-        if not isinstance(node, ast.AstNode):
-            self.ice("Current node is not an AstNode.")
-
     def error(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
-        self.update_code_loc(node_override)
         self.log_error(f"{msg}", node_override=node_override)
 
     def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
-        self.update_code_loc(node_override)
         self.log_warning(f"{msg}", node_override=node_override)
 
     def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:
@@ -166,10 +157,10 @@ class PrinterPass(Pass):
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Run on entering node."""
-        print("Entering:", node)
+        self.log_info(f"Entering: {node.__class__.__name__}: {node.loc}")
         super().enter_node(node)
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Run on exiting node."""
         super().exit_node(node)
-        print("Exiting:", node)
+        self.log_info(f"Exiting: {node.__class__.__name__}: {node.loc}")

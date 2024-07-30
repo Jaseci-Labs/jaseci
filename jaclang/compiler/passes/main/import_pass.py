@@ -16,7 +16,10 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.settings import settings
-from jaclang.utils.helpers import import_target_to_relative_path, is_standard_lib_module
+from jaclang.utils.helpers import is_standard_lib_module
+from jaclang.utils.log import logging
+
+logger = logging.getLogger(__name__)
 
 
 class JacImportPass(Pass):
@@ -51,13 +54,10 @@ class JacImportPass(Pass):
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
-        lang = i.parent_of_type(ast.Import).hint.tag.value
-        if lang == "jac" and not i.sub_module:
-            self.import_jac_module(
-                node=i,
-                mod_path=node.loc.mod_path,
-            )
-        elif lang == "py":
+        imp_node = i.parent_of_type(ast.Import)
+        if imp_node.is_jac and not i.sub_module:
+            self.import_jac_module(node=i)
+        elif imp_node.is_py:
             self.__py_imports.add(i.path_str)
 
     def attach_mod_to_node(
@@ -136,14 +136,10 @@ class JacImportPass(Pass):
         if node.as_attr_list[0].sym_name in self.__py_imports:
             self.py_resolve_list.add(".".join([i.sym_name for i in node.as_attr_list]))
 
-    def import_jac_module(self, node: ast.ModulePath, mod_path: str) -> None:
+    def import_jac_module(self, node: ast.ModulePath) -> None:
         """Import a module."""
         self.cur_node = node  # impacts error reporting
-        target = import_target_to_relative_path(
-            level=node.level,
-            target=node.path_str,
-            base_path=os.path.dirname(node.loc.mod_path),
-        )
+        target = node.resolve_relative_path()
         # If the module is a package (dir)
         if os.path.isdir(target):
             self.attach_mod_to_node(node, self.import_jac_mod_from_dir(target))
@@ -153,11 +149,7 @@ class JacImportPass(Pass):
                 # Import all from items as modules or packages
                 for i in import_node.items.items:
                     if isinstance(i, ast.ModuleItem):
-                        from_mod_target = import_target_to_relative_path(
-                            level=node.level,
-                            target=node.path_str + "." + i.name.value,
-                            base_path=os.path.dirname(node.loc.mod_path),
-                        )
+                        from_mod_target = node.resolve_relative_path(i.name.value)
                         # If package
                         if os.path.isdir(from_mod_target):
                             self.attach_mod_to_node(
@@ -204,7 +196,7 @@ class JacImportPass(Pass):
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
         except Exception as e:
-            print(e)
+            logger.info(e)
             mod = None
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
@@ -227,8 +219,12 @@ class PyImportPass(JacImportPass):
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
-        lang = i.parent_of_type(ast.Import).hint.tag.value
-        if lang == "py" and not i.sub_module and not is_standard_lib_module(i.path_str):
+        imp_node = i.parent_of_type(ast.Import)
+        if (
+            imp_node.is_py
+            and not i.sub_module
+            and not is_standard_lib_module(i.path_str)
+        ):
             mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
             if mod:
                 i.sub_module = mod
@@ -252,7 +248,6 @@ class PyImportPass(JacImportPass):
                 if spec.origin in self.import_table:
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
-                    # print(f"\nImporting python module {node.path_str}")
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
                             py_ast.parse(f.read()), mod_path=spec.origin

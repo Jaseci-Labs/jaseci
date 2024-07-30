@@ -53,6 +53,12 @@ class JacReferenceTests(TestCase):
 
         def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
             Jac.get_root().reset()
+            Jac.context().init_memory(
+                base_path=os.path.join(
+                    os.path.dirname(os.path.dirname(jaclang.__file__)),
+                    "examples/reference",
+                )
+            )
             f = io.StringIO()
             with redirect_stdout(f):
                 exec(

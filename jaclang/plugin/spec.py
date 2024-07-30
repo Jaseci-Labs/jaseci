@@ -3,12 +3,21 @@
 from __future__ import annotations
 
 import types
-from typing import Any, Callable, Optional, TYPE_CHECKING, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Optional,
+    ParamSpec,
+    TYPE_CHECKING,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from jaclang.compiler.absyntree import Module
 
 if TYPE_CHECKING:
-    from jaclang.core.constructs import EdgeArchitype, NodeArchitype
+    from jaclang.runtimelib.constructs import EdgeArchitype, NodeArchitype
     from jaclang.plugin.default import (
         Architype,
         EdgeDir,
@@ -17,13 +26,14 @@ if TYPE_CHECKING:
         Root,
         DSFunc,
     )
-    from jaclang.core.memory import Memory
+    from jaclang.runtimelib.memory import Memory
 
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
 
 T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class JacFeatureSpec:
@@ -92,6 +102,14 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def impl_patch_filename(
+        file_loc: str,
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]:
+        """Update impl file location."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def jac_import(
         target: str,
         base_path: str,
@@ -102,6 +120,7 @@ class JacFeatureSpec:
         mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
+        reload_module: Optional[bool],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         raise NotImplementedError

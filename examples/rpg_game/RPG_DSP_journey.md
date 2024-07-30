@@ -20,9 +20,9 @@ This is a tutorial on how to build the same game in Jaclang. Two different imple
   - [Data Spatial Implementation](#data-spatial-implementation)
     - [Data Spatial architecture](#data-spatial-architecture)
   - [Converting RPG into Data-spatial Architecture](#converting-rpg-into-data-spatial-architecture)
-    - [main.jac](#mainjac)
+    - [game\_obj.jac](#game_objjac)
     - [sprite.jac, config.jac \& map.jac](#spritejac-configjac--mapjac)
-    - [Runtime Logic of the program : DSP.jac](#runtime-logic-of-the-program--dspjac)
+    - [Runtime Logic of the program : main\_dsp.jac](#runtime-logic-of-the-program--main_dspjac)
       - [Nodes and Walkers](#nodes-and-walkers)
       - [Start Screen node](#start-screen-node)
       - [Level node](#level-node)
@@ -399,18 +399,17 @@ The game built in the conventional program can be converted into the data spatia
 
 The fully implemented Data-spatial version can be found at [jac_impl_4](.//jac_impl/jac_impl_4/) if you want to jump in straight.
 
-### main.jac
+### game_obj.jac
 
-The only difference in this file is the runtime logic has been removed from here. This is because the main difference in this data-spatial implementation is that the program runtime runs as a graph. Nothing else needs to happen in this file.
+This is a direct copy of the main.jac file in previous implementations. The only difference in this file is the runtime logic has been removed from here. This is because the main difference in this data-spatial implementation is that the program runtime runs as a graph. Nothing else needs to happen in this file.
 
 ### sprite.jac, config.jac & map.jac
 
 No changes are required on these files as well.
 
-### Runtime Logic of the program : [DSP.jac](.//jac_impl/jac_impl_4/DSP.jac)
+### Runtime Logic of the program : [main.jac](.//jac_impl/jac_impl_4/main.jac)
 
 This new file will include the supporting architecture for the build of the data-spatial implementation and the runtime logic for graph traversal.
-The imports for this file would be the same as for the main.jac while it will include the main.jac file as well.
 
 ```python
 import:py pygame;
@@ -420,7 +419,7 @@ import:py random;
 include:jac sprites;
 include:jac config;
 include:jac map;
-include:jac main;
+include:jac game_obj;
 ```
 
 Now the visualization of the graph is really important in order to build the architecture.
@@ -506,3 +505,5 @@ with entry {
     root spawn game();
 }
 ```
+
+<!-- TODO: need to add impl 5 and 6 -->

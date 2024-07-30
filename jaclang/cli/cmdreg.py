@@ -172,17 +172,14 @@ class CommandShell(cmd.Cmd):
 
     def default(self, line: str) -> None:
         """Process the command line input."""
-        try:
-            args = vars(self.cmd_reg.parser.parse_args(line.split()))
-            command = self.cmd_reg.get(args["command"])
-            if command:
-                args.pop("command")
-                ret = command.call(**args)
-                if ret:
-                    ret_str = pprint.pformat(ret, indent=2)
-                    self.stdout.write(f"{ret_str}\n")
-        except Exception as e:
-            print(e)
+        args = vars(self.cmd_reg.parser.parse_args(line.split()))
+        command = self.cmd_reg.get(args["command"])
+        if command:
+            args.pop("command")
+            ret = command.call(**args)
+            if ret:
+                ret_str = pprint.pformat(ret, indent=2)
+                self.stdout.write(f"{ret_str}\n")
 
     def do_help(self, arg: str) -> None:
         """Jac CLI 'help' implementaion."""

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
-
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_str_to_pass
@@ -14,15 +14,16 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
-    collect_symbols,
     create_range,
     find_deepest_symbol_node_at_pos,
+    find_index,
     gen_diagnostics,
     get_item_path,
     get_mod_path,
-    locate_affected_token,
+    get_symbols_for_outline,
     parse_symbol_path,
     resolve_completion_symbol_table,
 )
@@ -43,103 +44,12 @@ class ModuleInfo:
         """Initialize module info."""
         self.ir = ir
         self.impl_parent: Optional[ModuleInfo] = impl_parent
-        self.sem_tokens: list[int] = self.gen_sem_tokens()
+        self.sem_manager = SemTokManager(ir=ir)
 
     @property
     def uri(self) -> str:
         """Return uri."""
         return uris.from_fs_path(self.ir.loc.mod_path)
-
-    def gen_sem_tokens(self) -> list[int]:
-        """Return semantic tokens."""
-        tokens = []
-        prev_line, prev_col = 0, 0
-        for node in self.ir._in_mod_nodes:
-            if isinstance(node, ast.NameAtom) and node.sem_token:
-                line, col_start, col_end = (
-                    node.loc.first_line - 1,
-                    node.loc.col_start - 1,
-                    node.loc.col_end - 1,
-                )
-                length = col_end - col_start
-                tokens += [
-                    line - prev_line,
-                    col_start if line != prev_line else col_start - prev_col,
-                    length,
-                    *node.sem_token,
-                ]
-                prev_line, prev_col = line, col_start
-        return tokens
-
-    def update_sem_tokens(
-        self, content_changes: lspt.DidChangeTextDocumentParams
-    ) -> list[int]:
-        """Update semantic tokens on change."""
-        for change in [
-            x
-            for x in content_changes.content_changes
-            if isinstance(x, lspt.TextDocumentContentChangeEvent_Type1)
-        ]:
-            change_start_line = change.range.start.line
-            change_start_char = change.range.start.character
-            change_end_line = change.range.end.line
-            change_end_char = change.range.end.character
-
-            line_delta = change.text.count("\n") - (change_end_line - change_start_line)
-            if line_delta == 0:
-                char_delta = len(change.text) - (change_end_char - change_start_char)
-            else:
-                last_newline_index = change.text.rfind("\n")
-                char_delta = (
-                    len(change.text)
-                    - last_newline_index
-                    - 1
-                    - change_end_char
-                    + change_start_char
-                )
-
-            changed_token_index = locate_affected_token(
-                self.sem_tokens,
-                change_start_line,
-                change_start_char,
-                change_end_line,
-                change_end_char,
-            )
-            if changed_token_index:
-                self.sem_tokens[changed_token_index + 2] = max(
-                    1, self.sem_tokens[changed_token_index + 2] + char_delta
-                )
-                if (
-                    len(self.sem_tokens) > changed_token_index + 5
-                    and self.sem_tokens[changed_token_index + 5] == 0
-                ):
-                    next_token_index = changed_token_index + 5
-                    self.sem_tokens[next_token_index + 1] = max(
-                        0, self.sem_tokens[next_token_index + 1] + char_delta
-                    )
-                    return self.sem_tokens
-
-            current_token_index = 0
-            line_offset = 0
-            while current_token_index < len(self.sem_tokens):
-                token_line_number = self.sem_tokens[current_token_index] + line_offset
-                token_start_pos = self.sem_tokens[current_token_index + 1]
-
-                if token_line_number > change_start_line or (
-                    token_line_number == change_start_line
-                    and token_start_pos >= change_start_char
-                ):
-                    self.sem_tokens[current_token_index] += line_delta
-                    if token_line_number == change_start_line:
-                        self.sem_tokens[current_token_index + 1] += char_delta
-                    if token_line_number > change_end_line or (
-                        token_line_number == change_end_line
-                        and token_start_pos >= change_end_char
-                    ):
-                        break
-                line_offset += self.sem_tokens[current_token_index]
-                current_token_index += 5
-        return self.sem_tokens
 
 
 class JacLangServer(LanguageServer):
@@ -190,6 +100,7 @@ class JacLangServer(LanguageServer):
     def deep_check(self, file_path: str, annex_view: Optional[str] = None) -> bool:
         """Rebuild a file and its dependencies."""
         try:
+            start_time = time.time()
             document = self.workspace.get_text_document(file_path)
             if file_path in self.modules and (
                 parent := self.modules[file_path].impl_parent
@@ -209,13 +120,14 @@ class JacLangServer(LanguageServer):
                 )
 
             self.publish_diagnostics(
-                file_path,
+                annex_view if annex_view else file_path,
                 gen_diagnostics(
                     annex_view if annex_view else file_path,
                     build.errors_had,
                     build.warnings_had,
                 ),
             )
+            self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
             return len(build.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during deep check: {e}")
@@ -256,12 +168,12 @@ class JacLangServer(LanguageServer):
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
+
         node_selected = find_deepest_symbol_node_at_pos(
             self.modules[file_path].ir,
             position.line,
             position.character - 2,
         )
-
         mod_tab = (
             self.modules[file_path].ir.sym_tab
             if not node_selected
@@ -269,15 +181,30 @@ class JacLangServer(LanguageServer):
         )
         current_tab = self.modules[file_path].ir._sym_tab
         current_symbol_table = mod_tab
+
         if completion_trigger == ".":
-            completion_items = resolve_completion_symbol_table(
-                mod_tab, current_symbol_path, current_tab
-            )
+            if current_symbol_path:
+                completion_items = resolve_completion_symbol_table(
+                    mod_tab, current_symbol_path, current_tab
+                )
+            else:
+                completion_items = []
         else:
-            try:  # noqa SIM105
-                completion_items = collect_all_symbols_in_scope(current_symbol_table)
-            except AttributeError:
-                pass
+            if node_selected and (
+                node_selected.find_parent_of_type(ast.Architype)
+                or node_selected.find_parent_of_type(ast.AbilityDef)
+            ):
+                self_symbol = [
+                    lspt.CompletionItem(
+                        label="self", kind=lspt.CompletionItemKind.Variable
+                    )
+                ]
+            else:
+                self_symbol = []
+
+            completion_items = (
+                collect_all_symbols_in_scope(current_symbol_table) + self_symbol
+            )
         return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
     def rename_module(self, old_path: str, new_path: str) -> None:
@@ -327,9 +254,16 @@ class JacLangServer(LanguageServer):
         """Return hover information for a file."""
         if file_path not in self.modules:
             return None
-        node_selected = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir, position.line, position.character
+        token_index = find_index(
+            self.modules[file_path].sem_manager.sem_tokens,
+            position.line,
+            position.character,
         )
+        if token_index is None:
+            return None
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
+            token_index
+        ][3]
         value = self.get_node_info(node_selected) if node_selected else None
         if value:
             return lspt.Hover(
@@ -361,12 +295,12 @@ class JacLangServer(LanguageServer):
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
 
-    def get_document_symbols(self, file_path: str) -> list[lspt.DocumentSymbol]:
+    def get_outline(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
         if file_path in self.modules and (
             root_node := self.modules[file_path].ir._sym_tab
         ):
-            return collect_symbols(root_node)
+            return get_symbols_for_outline(root_node)
         return []
 
     def get_definition(
@@ -375,9 +309,16 @@ class JacLangServer(LanguageServer):
         """Return definition location for a file."""
         if file_path not in self.modules:
             return None
-        node_selected: Optional[ast.AstSymbolNode] = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir, position.line, position.character
+        token_index = find_index(
+            self.modules[file_path].sem_manager.sem_tokens,
+            position.line,
+            position.character,
         )
+        if token_index is None:
+            return None
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
+            token_index
+        ][3]
         if node_selected:
             if (
                 isinstance(node_selected, ast.Name)
@@ -400,13 +341,13 @@ class JacLangServer(LanguageServer):
             ):
                 path_range = get_item_path(node_selected.parent)
                 if path_range:
-                    path, range = path_range
-                    if path and range:
+                    path, loc_range = path_range
+                    if path and loc_range:
                         return lspt.Location(
                             uri=uris.from_fs_path(path),
                             range=lspt.Range(
-                                start=lspt.Position(line=range[0], character=0),
-                                end=lspt.Position(line=range[1], character=5),
+                                start=lspt.Position(line=loc_range[0], character=0),
+                                end=lspt.Position(line=loc_range[1], character=5),
                             ),
                         )
                 else:
@@ -424,7 +365,6 @@ class JacLangServer(LanguageServer):
                     else node_selected
                 )
             )
-            self.log_py(f"{node_selected}, {decl_node}")
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
                 decl_range = create_range(decl_node.loc)
@@ -443,9 +383,16 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> list[lspt.Location]:
         """Return references for a file."""
-        node_selected = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir, position.line, position.character
+        if file_path not in self.modules:
+            return []
+        index1 = find_index(
+            self.modules[file_path].sem_manager.sem_tokens,
+            position.line,
+            position.character,
         )
+        if index1 is None:
+            return []
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
             list_of_references: list[lspt.Location] = [
                 lspt.Location(
@@ -461,7 +408,7 @@ class JacLangServer(LanguageServer):
         """Return semantic tokens for a file."""
         if file_path not in self.modules:
             return lspt.SemanticTokens(data=[])
-        return lspt.SemanticTokens(data=self.modules[file_path].sem_tokens)
+        return lspt.SemanticTokens(data=self.modules[file_path].sem_manager.sem_tokens)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""
