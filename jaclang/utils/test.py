@@ -5,14 +5,23 @@ import os
 from typing import Callable, Optional
 from unittest import TestCase as _TestCase
 
+from _pytest.logging import LogCaptureFixture
 
 import jaclang
 from jaclang.compiler.passes import Pass
 from jaclang.utils.helpers import get_ast_nodes_as_snake_case as ast_snakes
 
+import pytest
+
 
 class TestCase(_TestCase):
     """Base test case for Jaseci."""
+
+    # Reference: https://stackoverflow.com/a/50375022
+    @pytest.fixture(autouse=True)
+    def inject_fixtures(self, caplog: LogCaptureFixture) -> None:
+        """Store the logger capture records within the tests."""
+        self.caplog = caplog
 
     def setUp(self) -> None:
         """Set up test case."""
