@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib
-import marshal
 import os
 import sys
 import types
@@ -11,8 +10,6 @@ from os import getcwd, path
 from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.compile import compile_jac
-from jaclang.compiler.constant import Constants as Con
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.utils import sys_path_context
 from jaclang.utils.log import logging
@@ -156,12 +153,15 @@ class ImportReturn:
                         jac_file_path,
                     ),
                 )
-            codeobj = self.importer.get_codeobj(
-                full_target=jac_file_path,
-                module_name=name,
-                mod_bundle=mod_bundle,
-                cachable=cachable,
-                caller_dir=caller_dir,
+            # codeobj = self.importer.get_codeobj(
+            #     full_target=jac_file_path,
+            #     module_name=name,
+            #     mod_bundle=mod_bundle,
+            #     cachable=cachable,
+            #     caller_dir=caller_dir,
+            # )
+            codeobj = self.importer.jac_machine.get_bytecode(
+                name, jac_file_path, caller_dir=caller_dir, cachable=cachable
             )
             if not codeobj:
                 raise ImportError(f"No bytecode found for {jac_file_path}")
@@ -192,35 +192,35 @@ class Importer:
         if spec.module_name not in sys.modules:
             sys.modules[spec.module_name] = module
 
-    def get_codeobj(
-        self,
-        full_target: str,
-        module_name: str,
-        mod_bundle: Optional[Module],
-        cachable: bool,
-        caller_dir: str,
-    ) -> Optional[types.CodeType]:
-        """Get the code object for a given module."""
-        if mod_bundle:
-            codeobj = mod_bundle.mod_deps[full_target].gen.py_bytecode
-            return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
-        pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
-        if cachable and os.path.exists(pyc_file_path):
-            with open(pyc_file_path, "rb") as f:
-                return marshal.load(f)
+    # def get_codeobj(
+    #     self,
+    #     full_target: str,
+    #     module_name: str,
+    #     mod_bundle: Optional[Module],
+    #     cachable: bool,
+    #     caller_dir: str,
+    # ) -> Optional[types.CodeType]:
+    #     """Get the code object for a given module."""
+    #     if mod_bundle:
+    #         codeobj = mod_bundle.mod_deps[full_target].gen.py_bytecode
+    #         return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
+    #     gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
+    #     pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
+    #     if cachable and os.path.exists(pyc_file_path):
+    #         with open(pyc_file_path, "rb") as f:
+    #             return marshal.load(f)
 
-        result = compile_jac(full_target, cache_result=cachable)
-        if result.errors_had or not result.ir.gen.py_bytecode:
-            logger.error(
-                f"While importing {len(result.errors_had)} errors"
-                f" found in {full_target}"
-            )
-            return None
-        if result.ir.gen.py_bytecode is not None:
-            return marshal.loads(result.ir.gen.py_bytecode)
-        else:
-            return None
+    #     result = compile_jac(full_target, cache_result=cachable)
+    #     if result.errors_had or not result.ir.gen.py_bytecode:
+    #         logger.error(
+    #             f"While importing {len(result.errors_had)} errors"
+    #             f" found in {full_target}"
+    #         )
+    #         return None
+    #     if result.ir.gen.py_bytecode is not None:
+    #         return marshal.loads(result.ir.gen.py_bytecode)
+    #     else:
+    #         return None
 
 
 class PythonImporter(Importer):
@@ -390,13 +390,19 @@ class JacImporter(Importer):
                     spec.package_path,
                     spec.full_target,
                 )
-                codeobj = self.get_codeobj(
-                    spec.full_target,
+                codeobj = self.jac_machine.get_bytecode(
                     module_name,
-                    valid_mod_bundle,
-                    spec.cachable,
+                    spec.full_target,
                     caller_dir=spec.caller_dir,
+                    cachable=spec.cachable,
                 )
+                # codeobj = self.get_codeobj(
+                #     spec.full_target,
+                #     module_name,
+                #     valid_mod_bundle,
+                #     spec.cachable,
+                #     caller_dir=spec.caller_dir,
+                # )
                 if not codeobj:
                     raise ImportError(f"No bytecode found for {spec.full_target}")
                 with sys_path_context(spec.caller_dir):
