@@ -15,6 +15,7 @@ from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.utils import sys_path_context
+from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
@@ -169,9 +170,10 @@ class ImportReturn:
             exec(codeobj, new_module.__dict__)
             return getattr(new_module, name, new_module)
         except ImportError as e:
-            logger.error(
-                f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
-            )
+            logger.error(dump_traceback(e))
+            # logger.error(
+            #     f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
+            # )
             return None
 
 
@@ -403,7 +405,7 @@ class JacImporter(Importer):
                     try:
                         exec(codeobj, module.__dict__)
                     except Exception as e:
-                        logger.error(f"Error while importing {spec.full_target}: {e}")
+                        logger.error(dump_traceback(e))
                         raise e
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
