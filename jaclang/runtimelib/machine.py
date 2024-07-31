@@ -2,6 +2,7 @@
 
 import marshal
 import os
+import sys
 import types
 from typing import Optional
 
@@ -33,6 +34,12 @@ class JacMachine:
         """Attach a JacProgram to the machine."""
         self.jac_program = jac_program
 
+    def get_mod_bundle(self) -> Optional[Module]:
+        """Retrieve the mod_bundle from the attached JacProgram."""
+        if self.jac_program:
+            return self.jac_program.mod_bundle
+        return None
+
     def get_bytecode(
         self,
         module_name: str,
@@ -55,7 +62,13 @@ class JacProgram:
         self, mod_bundle: Optional[Module | str], bytecode: Optional[dict[str, bytes]]
     ) -> None:
         """Initialize the JacProgram object."""
-        self.mod_bundle = mod_bundle
+        self.mod_bundle = (
+            sys.modules[mod_bundle].__jac_mod_bundle__
+            if isinstance(mod_bundle, str)
+            and mod_bundle in sys.modules
+            and "__jac_mod_bundle__" in sys.modules[mod_bundle].__dict__
+            else None
+        )
         self.bytecode = bytecode or {}
 
     def get_bytecode(

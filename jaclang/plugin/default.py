@@ -260,7 +260,6 @@ class JacFeatureDefaults:
             cachable,
             mdl_alias,
             override_name,
-            mod_bundle,
             lng,
             items,
         )
