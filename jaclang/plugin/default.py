@@ -985,6 +985,7 @@ class JacFeatureDefaults:
         """Get the by LLM call args."""
         if node.genai_call is None:
             raise _pass.ice("No genai_call")
+
         model = node.genai_call.target.gen.py_ast[0]
         model_params, include_info, exclude_info = extract_params(node.genai_call)
         action = _pass.sync(
