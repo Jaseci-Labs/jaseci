@@ -358,7 +358,7 @@ class JacFeature:
         )
 
     @staticmethod
-    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> tuple:
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
         """Get the by LLM call args."""
         return pm.hook.get_by_llm_call_args(_pass=_pass, node=node)
 

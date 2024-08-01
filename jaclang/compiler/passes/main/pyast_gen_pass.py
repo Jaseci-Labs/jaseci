@@ -2882,31 +2882,12 @@ class PyastGenPass(Pass):
             exclude_info,
         )
 
-    def get_by_llm_call_args(self, node: ast.FuncCall) -> tuple:
+    def get_by_llm_call_args(self, node: ast.FuncCall) -> dict:
         """Get the arguments for the by_llm_call."""
         # to avoid circular import
         from jaclang.plugin.feature import JacFeature
 
-        (
-            model,
-            model_params,
-            scope,
-            inputs,
-            outputs,
-            action,
-            include_info,
-            exclude_info,
-        ) = JacFeature.get_by_llm_call_args(self, node)
-        return (
-            model,
-            model_params,
-            scope,
-            inputs,
-            outputs,
-            action,
-            include_info,
-            exclude_info,
-        )
+        return JacFeature.get_by_llm_call_args(self, node)
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -2933,31 +2914,13 @@ class PyastGenPass(Pass):
                     self.ice("Invalid Parameter")
         if node.genai_call:
             self.needs_jac_feature()
-            (
-                model,
-                model_params,
-                scope,
-                inputs,
-                outputs,
-                action,
-                include_info,
-                exclude_info,
-            ) = self.get_by_llm_call_args(node)
+            by_llm_call_args = self.get_by_llm_call_args(node)
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
                         func=self.sync(ast3.Name(id="eval", ctx=ast3.Load())),
                         args=[
-                            self.by_llm_call(
-                                model,
-                                model_params,
-                                scope,
-                                inputs,
-                                outputs,
-                                action,
-                                include_info,
-                                exclude_info,
-                            ),
+                            self.by_llm_call(**by_llm_call_args),
                         ],
                         keywords=[],
                     )

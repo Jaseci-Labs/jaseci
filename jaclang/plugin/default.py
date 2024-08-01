@@ -981,7 +981,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> tuple:
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
         """Get the by LLM call args."""
         if node.genai_call is None:
             raise _pass.ice("No genai_call")
@@ -1145,16 +1145,16 @@ class JacFeatureDefaults:
         else:
             inputs = []
 
-        return (
-            model,
-            model_params,
-            scope,
-            inputs,
-            outputs,
-            action,
-            include_info,
-            exclude_info,
-        )
+        return {
+            "model": model,
+            "model_params": model_params,
+            "scope": scope,
+            "inputs": inputs,
+            "outputs": outputs,
+            "action": action,
+            "include_info": include_info,
+            "exclude_info": exclude_info,
+        }
 
 
 class JacBuiltin:
