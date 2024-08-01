@@ -34,7 +34,7 @@ function getVenvEnvironment(): string | undefined {
 export function activate(context: vscode.ExtensionContext) {
     const condaJac = getCondaEnvironment();
     const venvJac = getVenvEnvironment();
-    const jacCommand = condaJac ? condaJac : (venvJac ? venvJac : 'jac');
+    const jacCommand = condaJac || venvJac || 'jac';
 
     let serverOptions: ServerOptions = {
         run: { command: jacCommand, args: ["lsp"] },
@@ -59,6 +59,30 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('Failed to start Jac Language Server: ' + error.message);
         console.error('Failed to start Jac Language Server: ', error);
     });
+
+    // Find and return the jac executable's absolute path.
+    context.subscriptions.push(vscode.commands.registerCommand('extension.jaclang-extension.getJacPath', config => {
+
+        const programName = "jac.exe";  // FIXME: I don't know what it would be on other systems.
+
+        const paths = process.env.PATH.split(path.delimiter);
+        for (const dir of paths) {
+            console.log(dir);
+            const fullPath = path.join(dir, programName);
+            try {
+                fs.accessSync(fullPath, fs.constants.X_OK); // Check if file exists and is executable
+                console.log(`Found ${programName} at: ${fullPath}`);
+                return fullPath;
+            } catch (err) {
+                // File doesn't exist or isn't executable in this directory
+            }
+        }
+
+        const err_msg = `Couldn't find ${programName} in the PATH.`;
+        console.error(err_msg);
+        vscode.window.showErrorMessage(err_msg);
+        return null;
+	}));
 }
 
 export function deactivate(): Thenable<void> | undefined {
