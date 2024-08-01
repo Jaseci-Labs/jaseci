@@ -2887,7 +2887,26 @@ class PyastGenPass(Pass):
         # to avoid circular import
         from jaclang.plugin.feature import JacFeature
 
-        return JacFeature.get_by_llm_call_args(self, node)
+        (
+            model,
+            model_params,
+            scope,
+            inputs,
+            outputs,
+            action,
+            include_info,
+            exclude_info,
+        ) = JacFeature.get_by_llm_call_args(self, node)
+        return (
+            model,
+            model_params,
+            scope,
+            inputs,
+            outputs,
+            action,
+            include_info,
+            exclude_info,
+        )
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
