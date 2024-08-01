@@ -27,7 +27,7 @@ class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
-    python_raise_list: set[tuple[str, str]] = set()
+    python_raise_map: dict[str, str] = {}
 
     def __debug_print(self, *argv: object) -> None:
         if settings.fuse_type_info_debug:
@@ -89,7 +89,8 @@ class FuseTypeInfoPass(Pass):
             if mode_path.endswith(".jac"):
                 return
 
-            FuseTypeInfoPass.python_raise_list.add((mod_name, mode_path))
+            print("--->", mode_path, mod_name)
+            FuseTypeInfoPass.python_raise_map[mod_name] = mode_path
         else:
             self.__debug_print(
                 f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
