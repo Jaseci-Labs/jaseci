@@ -1,11 +1,16 @@
 """Plugin for Jac's with_llm feature."""
 
+import ast as ast3
 import os
 import pickle
-from typing import Any
+from typing import Any, Optional, Sequence
 
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import Constants as Con
+from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemScope
 from jaclang.plugin.default import hookimpl
+from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
 from mtllm.aott import (
     aott_raise,
@@ -96,3 +101,471 @@ class JacFeature:
             meaning_out, output_hint, output_type_explanations
         )
         return _output
+
+    @staticmethod
+    @hookimpl
+    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
+        """Generate the by LLM body."""
+        _pass.needs_jac_feature()
+        if isinstance(node.body, ast.FuncCall):
+            model = node.body.target.gen.py_ast[0]
+            extracted_type = (
+                "".join(extract_type(node.signature.return_type))
+                if isinstance(node.signature, ast.FuncSignature)
+                and node.signature.return_type
+                else None
+            )
+            scope = _pass.sync(ast3.Constant(value=str(get_sem_scope(node))))
+            model_params, include_info, exclude_info = extract_params(node.body)
+            inputs = (
+                [
+                    _pass.sync(
+                        ast3.Tuple(
+                            elts=[
+                                (
+                                    _pass.sync(
+                                        ast3.Constant(
+                                            value=(
+                                                param.semstr.lit_value
+                                                if param.semstr
+                                                else None
+                                            )
+                                        )
+                                    )
+                                ),
+                                (
+                                    param.type_tag.tag.gen.py_ast[0]
+                                    if param.type_tag
+                                    else None
+                                ),
+                                _pass.sync(ast3.Constant(value=param.name.value)),
+                                _pass.sync(
+                                    ast3.Name(
+                                        id=param.name.value,
+                                        ctx=ast3.Load(),
+                                    )
+                                ),
+                            ],
+                            ctx=ast3.Load(),
+                        )
+                    )
+                    for param in node.signature.params.items
+                ]
+                if isinstance(node.signature, ast.FuncSignature)
+                and node.signature.params
+                else []
+            )
+            outputs = (
+                [
+                    (
+                        _pass.sync(
+                            ast3.Constant(
+                                value=(
+                                    node.signature.semstr.lit_value
+                                    if node.signature.semstr
+                                    else ""
+                                )
+                            )
+                        )
+                    ),
+                    (_pass.sync(ast3.Constant(value=(extracted_type)))),
+                ]
+                if isinstance(node.signature, ast.FuncSignature)
+                else []
+            )
+            action = (
+                node.semstr.gen.py_ast[0]
+                if node.semstr
+                else _pass.sync(ast3.Constant(value=node.name_ref.sym_name))
+            )
+            return [
+                _pass.sync(
+                    ast3.Assign(
+                        targets=[_pass.sync(ast3.Name(id="output", ctx=ast3.Store()))],
+                        value=_pass.by_llm_call(
+                            model,
+                            model_params,
+                            scope,
+                            inputs,
+                            outputs,
+                            action,
+                            include_info,
+                            exclude_info,
+                        ),
+                    )
+                ),
+                _pass.sync(
+                    ast3.Try(
+                        body=[
+                            _pass.sync(
+                                ast3.Return(
+                                    value=_pass.sync(
+                                        ast3.Call(
+                                            func=_pass.sync(
+                                                ast3.Name(id="eval", ctx=ast3.Load())
+                                            ),
+                                            args=[
+                                                _pass.sync(
+                                                    ast3.Name(
+                                                        id="output", ctx=ast3.Load()
+                                                    )
+                                                )
+                                            ],
+                                            keywords=[],
+                                        )
+                                    )
+                                )
+                            )
+                        ],
+                        handlers=[
+                            _pass.sync(
+                                ast3.ExceptHandler(
+                                    type=None,
+                                    name=None,
+                                    body=[
+                                        _pass.sync(
+                                            ast3.Return(
+                                                value=_pass.sync(
+                                                    ast3.Name(
+                                                        id="output", ctx=ast3.Load()
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ],
+                                )
+                            )
+                        ],
+                        orelse=[],
+                        finalbody=[],
+                    )
+                ),
+            ]
+        else:
+            return []
+
+    @staticmethod
+    @hookimpl
+    def by_llm_call(
+        _pass: PyastGenPass,
+        model: ast3.AST,
+        model_params: dict[str, ast.Expr],
+        scope: ast3.AST,
+        inputs: Sequence[Optional[ast3.AST]],
+        outputs: Sequence[Optional[ast3.AST]] | ast3.Call,
+        action: Optional[ast3.AST],
+        include_info: list[tuple[str, ast3.AST]],
+        exclude_info: list[tuple[str, ast3.AST]],
+    ) -> ast3.Call:
+        """Return the LLM Call, e.g. _Jac.with_llm()."""
+        return _pass.sync(
+            ast3.Call(
+                func=_pass.sync(
+                    ast3.Attribute(
+                        value=_pass.sync(
+                            ast3.Name(
+                                id=Con.JAC_FEATURE.value,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="with_llm",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[],
+                keywords=[
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="file_loc",
+                            value=_pass.sync(ast3.Name(id="__file__", ctx=ast3.Load())),
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="model",
+                            value=model,
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="model_params",
+                            value=_pass.sync(
+                                ast3.Dict(
+                                    keys=[
+                                        _pass.sync(ast3.Constant(value=key))
+                                        for key in model_params.keys()
+                                    ],
+                                    values=[
+                                        value.gen.py_ast[0]
+                                        for value in model_params.values()
+                                    ],
+                                )
+                            ),
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="scope",
+                            value=scope,
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="incl_info",
+                            value=_pass.sync(
+                                ast3.List(
+                                    elts=[
+                                        _pass.sync(
+                                            ast3.Tuple(
+                                                elts=[
+                                                    _pass.sync(
+                                                        ast3.Constant(value=key)
+                                                    ),
+                                                    value,
+                                                ],
+                                                ctx=ast3.Load(),
+                                            )
+                                        )
+                                        for key, value in include_info
+                                    ],
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="excl_info",
+                            value=_pass.sync(
+                                ast3.List(
+                                    elts=[
+                                        _pass.sync(
+                                            ast3.Tuple(
+                                                elts=[
+                                                    _pass.sync(
+                                                        ast3.Constant(value=key)
+                                                    ),
+                                                    value,
+                                                ],
+                                                ctx=ast3.Load(),
+                                            )
+                                        )
+                                        for key, value in exclude_info
+                                    ],
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                        ),
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="inputs",
+                            value=_pass.sync(
+                                ast3.List(
+                                    elts=inputs,
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="outputs",
+                            value=(
+                                _pass.sync(
+                                    ast3.Tuple(
+                                        elts=outputs,
+                                        ctx=ast3.Load(),
+                                    )
+                                )
+                                if not isinstance(outputs, ast3.Call)
+                                else outputs
+                            ),
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="action",
+                            value=action,
+                        )
+                    ),
+                ],
+            )
+        )
+
+    @staticmethod
+    @hookimpl
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
+        """Get the by LLM call args."""
+        if node.genai_call is None:
+            raise _pass.ice("No genai_call")
+
+        model = node.genai_call.target.gen.py_ast[0]
+        model_params, include_info, exclude_info = extract_params(node.genai_call)
+        action = _pass.sync(
+            ast3.Constant(
+                value="Create an object of the specified type, using the specifically "
+                " provided input value(s) and look up any missing attributes from reliable"
+                " online sources to fill them in accurately."
+            )
+        )
+        _output_ = "".join(extract_type(node.target))
+        include_info.append(
+            (
+                _output_.split(".")[0],
+                _pass.sync(ast3.Name(id=_output_.split(".")[0], ctx=ast3.Load())),
+            )
+        )
+        scope = _pass.sync(
+            ast3.Call(
+                func=_pass.sync(
+                    ast3.Attribute(
+                        value=_pass.sync(
+                            ast3.Name(
+                                id=Con.JAC_FEATURE.value,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="obj_scope",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[
+                    _pass.sync(
+                        ast3.Name(
+                            id="__file__",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    _pass.sync(ast3.Constant(value=_output_)),
+                ],
+                keywords=[],
+            )
+        )
+        outputs = _pass.sync(
+            ast3.Call(
+                func=_pass.sync(
+                    ast3.Attribute(
+                        value=_pass.sync(
+                            ast3.Name(
+                                id=Con.JAC_FEATURE.value,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="get_sem_type",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[
+                    _pass.sync(
+                        ast3.Name(
+                            id="__file__",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    _pass.sync(ast3.Constant(value=str(_output_))),
+                ],
+                keywords=[],
+            )
+        )
+        if node.params and node.params.items:
+            inputs = [
+                _pass.sync(
+                    ast3.Tuple(
+                        elts=[
+                            _pass.sync(
+                                ast3.Call(
+                                    func=_pass.sync(
+                                        ast3.Attribute(
+                                            value=_pass.sync(
+                                                ast3.Name(
+                                                    id=Con.JAC_FEATURE.value,
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                            attr="get_semstr_type",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    args=[
+                                        _pass.sync(
+                                            ast3.Name(id="__file__", ctx=ast3.Load())
+                                        ),
+                                        scope,
+                                        _pass.sync(
+                                            ast3.Constant(
+                                                value=(
+                                                    kw_pair.key.value
+                                                    if isinstance(kw_pair.key, ast.Name)
+                                                    else None
+                                                )
+                                            )
+                                        ),
+                                        _pass.sync(ast3.Constant(value=True)),
+                                    ],
+                                    keywords=[],
+                                )
+                            ),
+                            _pass.sync(
+                                ast3.Call(
+                                    func=_pass.sync(
+                                        ast3.Attribute(
+                                            value=_pass.sync(
+                                                ast3.Name(
+                                                    id=Con.JAC_FEATURE.value,
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                            attr="get_semstr_type",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    args=[
+                                        _pass.sync(
+                                            ast3.Name(id="__file__", ctx=ast3.Load())
+                                        ),
+                                        scope,
+                                        _pass.sync(
+                                            ast3.Constant(
+                                                value=(
+                                                    kw_pair.key.value
+                                                    if isinstance(kw_pair.key, ast.Name)
+                                                    else None
+                                                )
+                                            )
+                                        ),
+                                        _pass.sync(ast3.Constant(value=False)),
+                                    ],
+                                    keywords=[],
+                                )
+                            ),
+                            _pass.sync(
+                                ast3.Constant(
+                                    value=(
+                                        kw_pair.key.value
+                                        if isinstance(kw_pair.key, ast.Name)
+                                        else None
+                                    )
+                                )
+                            ),
+                            kw_pair.value.gen.py_ast[0],
+                        ],
+                        ctx=ast3.Load(),
+                    )
+                )
+                for kw_pair in node.params.items
+                if isinstance(kw_pair, ast.KWPair)
+            ]
+        else:
+            inputs = []
+
+        return {
+            "model": model,
+            "model_params": model_params,
+            "scope": scope,
+            "inputs": inputs,
+            "outputs": outputs,
+            "action": action,
+            "include_info": include_info,
+            "exclude_info": exclude_info,
+        }
