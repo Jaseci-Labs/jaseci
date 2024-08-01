@@ -37,14 +37,17 @@ class Groq(BaseLLM):
     }
 
     def __init__(
-        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+        self,
+        verbose: bool = False,
+        max_tries: int = 10,
+        type_check: bool = False,
+        **kwargs: dict
     ) -> None:
         """Initialize the Groq API client."""
         import groq  # type: ignore
 
+        super().__init__(verbose, max_tries, type_check)
         self.client = groq.Groq()
-        self.verbose = verbose
-        self.max_tries = max_tries
         self.model_name = kwargs.get("model_name", "mixtral-8x7b-32768")
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)

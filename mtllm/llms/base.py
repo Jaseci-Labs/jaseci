@@ -2,6 +2,7 @@
 
 import logging
 import re
+from typing import Any, Mapping, Optional
 
 from loguru import logger
 
@@ -60,7 +61,7 @@ Generate and return the output result(s) only, adhering to the provided Type in 
 REACT_SUFFIX = """
 """  # noqa E501
 
-MTLLM_OUTPUT_FIX_PROMPT = """
+MTLLM_OUTPUT_EXTRACT_PROMPT = """
 [Output]
 {model_output}
 
@@ -74,8 +75,7 @@ MTLLM_OUTPUT_FIX_PROMPT = """
 {output_type_info}
 
 Above output is not in the desired Output Format/Type. Please provide the output in the desired type. Do not repeat the previously provided output.
-Important: Do not provide the code or the methodology. Only provide
-the output in the desired format.
+Important: Do not provide the code or the methodology. Only provide the output in the desired format.
 """  # noqa E501
 
 OUTPUT_CHECK_PROMPT = """
@@ -91,6 +91,23 @@ OUTPUT_CHECK_PROMPT = """
 Check if the output is exactly in the desired Output Type. Important: Just say 'Yes' or 'No'.
 """  # noqa E501
 
+OUTPUT_FIX_PROMPT = """
+[Previous Output]
+{model_output}
+
+[Desired Output Type]
+{output_type}
+
+[Type Explanations]
+{output_type_info}
+
+[Error]
+{error}
+
+Above output is not in the desired Output Format/Type. Please provide the output in the desired type. Do not repeat the previously provided output.
+Important: Do not provide the code or the methodology. Only provide the output in the desired format.
+"""  # noqa E501
+
 
 class BaseLLM:
     """Base Large Language Model (LLM) class."""
@@ -103,16 +120,17 @@ class BaseLLM:
         "Chain-of-Thoughts": CHAIN_OF_THOUGHT_SUFFIX,
         "ReAct": REACT_SUFFIX,
     }
-    OUTPUT_FIX_PROMPT: str = MTLLM_OUTPUT_FIX_PROMPT
+    OUTPUT_EXTRACT_PROMPT: str = MTLLM_OUTPUT_EXTRACT_PROMPT
     OUTPUT_CHECK_PROMPT: str = OUTPUT_CHECK_PROMPT
+    OUTPUT_FIX_PROMPT: str = OUTPUT_FIX_PROMPT
 
     def __init__(
-        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+        self, verbose: bool = False, max_tries: int = 10, type_check: bool = False
     ) -> None:
         """Initialize the Large Language Model (LLM) client."""
         self.verbose = verbose
         self.max_tries = max_tries
-        raise NotImplementedError
+        self.type_check = type_check
 
     def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
@@ -134,25 +152,43 @@ class BaseLLM:
         if self.verbose:
             logger.info(f"Meaning Out\n{meaning_out}")
         output_match = re.search(r"\[Output\](.*)", meaning_out, re.DOTALL)
-        output = output_match.group(1).strip() if output_match else None
         if not output_match:
             output = self._extract_output(
                 meaning_out,
-                output_hint.semstr,
-                output_hint.type,
-                "\n".join([str(x) for x in output_type_explanations]),
+                output_hint,
+                output_type_explanations,
                 self.max_tries,
             )
+        else:
+            output = output_match.group(1).strip()
+        if self.type_check:
+            is_in_desired_format = self._check_output(
+                output, output_hint.type, output_type_explanations
+            )
+            if not is_in_desired_format:
+                output = self._extract_output(
+                    meaning_out,
+                    output_hint,
+                    output_type_explanations,
+                    self.max_tries,
+                    output,
+                )
+
         return str(output)
 
     def _check_output(
-        self, output: str, output_type: str, output_type_info: str
+        self,
+        output: str,
+        output_type: str,
+        output_type_explanations: list[TypeExplanation],
     ) -> bool:
         """Check if the output is in the desired format."""
         output_check_prompt = self.OUTPUT_CHECK_PROMPT.format(
             model_output=output,
             output_type=output_type,
-            output_type_info=output_type_info,
+            output_type_info="\n".join(
+                [str(info) for info in output_type_explanations]
+            ),
         )
         llm_output = self.__infer__(output_check_prompt)
         return "yes" in llm_output.lower()
@@ -160,9 +196,8 @@ class BaseLLM:
     def _extract_output(
         self,
         meaning_out: str,
-        output_semstr: str,
-        output_type: str,
-        output_type_info: str,
+        output_hint: OutputHint,
+        output_type_explanations: list[TypeExplanation],
         max_tries: int,
         previous_output: str = "None",
     ) -> str:
@@ -181,15 +216,17 @@ class BaseLLM:
             else:
                 logger.info("Extracting output from the meaning out string.")
 
-        output_fix_prompt = self.OUTPUT_FIX_PROMPT.format(
+        output_extract_prompt = self.OUTPUT_EXTRACT_PROMPT.format(
             model_output=meaning_out,
             previous_output=previous_output,
-            output_info=f"{output_semstr} ({output_type})",
-            output_type_info=output_type_info,
+            output_info=str(output_hint),
+            output_type_info="\n".join(
+                [str(info) for info in output_type_explanations]
+            ),
         )
-        llm_output = self.__infer__(output_fix_prompt)
+        llm_output = self.__infer__(output_extract_prompt)
         is_in_desired_format = self._check_output(
-            llm_output, output_type, output_type_info
+            llm_output, output_hint.type, output_type_explanations
         )
         if self.verbose:
             logger.info(
@@ -199,9 +236,67 @@ class BaseLLM:
             return llm_output
         return self._extract_output(
             meaning_out,
-            output_semstr,
-            output_type,
-            output_type_info,
+            output_hint,
+            output_type_explanations,
             max_tries - 1,
             llm_output,
         )
+
+    def to_object(
+        self,
+        output: str,
+        output_hint: OutputHint,
+        output_type_explanations: list[TypeExplanation],
+        _globals: dict,
+        _locals: Mapping,
+        error: Optional[Exception] = None,
+        num_retries: int = 0,
+    ) -> Any:  # noqa: ANN401
+        """Convert the output string to an object."""
+        if num_retries >= self.max_tries:
+            raise ValueError("Failed to convert output to object. Max tries reached.")
+        if output_hint.type == "str":
+            return output
+        if error:
+            fixed_output = self._fix_output(
+                output, output_hint, output_type_explanations, error
+            )
+            return self.to_object(
+                fixed_output,
+                output_hint,
+                output_type_explanations,
+                _globals,
+                _locals,
+                num_retries=num_retries + 1,
+            )
+
+        try:
+            return eval(output, _globals, _locals)
+        except Exception as e:
+            return self.to_object(
+                output,
+                output_hint,
+                output_type_explanations,
+                _globals,
+                _locals,
+                error=e,
+                num_retries=num_retries + 1,
+            )
+
+    def _fix_output(
+        self,
+        output: str,
+        output_hint: OutputHint,
+        output_type_explanations: list[TypeExplanation],
+        error: Exception,
+    ) -> str:
+        """Fix the output string."""
+        output_fix_prompt = self.OUTPUT_FIX_PROMPT.format(
+            model_output=output,
+            output_type=output_hint.type,
+            output_type_info="\n".join(
+                [str(info) for info in output_type_explanations]
+            ),
+            error=error,
+        )
+        return self.__infer__(output_fix_prompt)

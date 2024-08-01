@@ -37,14 +37,17 @@ class Anthropic(BaseLLM):
     }
 
     def __init__(
-        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+        self,
+        verbose: bool = False,
+        max_tries: int = 10,
+        type_check: bool = False,
+        **kwargs: dict,
     ) -> None:
         """Initialize the Anthropic API client."""
         import anthropic  # type: ignore
 
+        super().__init__(verbose, max_tries, type_check)
         self.client = anthropic.Anthropic()
-        self.verbose = verbose
-        self.max_tries = max_tries
         self.model_name = str(kwargs.get("model_name", "claude-3-sonnet-20240229"))
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)

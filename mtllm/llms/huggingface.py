@@ -39,12 +39,17 @@ class Huggingface(BaseLLM):
     }
 
     def __init__(
-        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+        self,
+        verbose: bool = False,
+        max_tries: int = 10,
+        type_check: bool = False,
+        **kwargs: dict
     ) -> None:
         """Initialize the Huggingface API client."""
         import torch  # type: ignore
         from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline  # type: ignore
 
+        super().__init__(verbose, max_tries, type_check)
         torch.random.manual_seed(0)
         model = AutoModelForCausalLM.from_pretrained(
             kwargs.get("model_name", "microsoft/Phi-3-mini-128k-instruct"),
@@ -55,8 +60,6 @@ class Huggingface(BaseLLM):
         tokenizer = AutoTokenizer.from_pretrained(
             kwargs.get("model_name", "microsoft/Phi-3-mini-128k-instruct")
         )
-        self.verbose = verbose
-        self.max_tries = max_tries
         self.pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_new_tokens", 1024)

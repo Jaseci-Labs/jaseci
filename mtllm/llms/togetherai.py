@@ -36,14 +36,17 @@ class TogetherAI(BaseLLM):
     }
 
     def __init__(
-        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+        self,
+        verbose: bool = False,
+        max_tries: int = 10,
+        type_check: bool = False,
+        **kwargs: dict
     ) -> None:
         """Initialize the Anthropic API client."""
         import together  # type: ignore
 
+        super().__init__(verbose, max_tries, type_check)
         self.client = together.Together()
-        self.verbose = verbose
-        self.max_tries = max_tries
         self.model_name = kwargs.get("model_name", "mistralai/Mistral-7B-Instruct-v0.3")
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)

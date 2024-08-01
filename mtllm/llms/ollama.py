@@ -36,14 +36,17 @@ class Ollama(BaseLLM):
     }
 
     def __init__(
-        self, verbose: bool = False, max_tries: int = 10, **kwargs: dict
+        self,
+        verbose: bool = False,
+        max_tries: int = 10,
+        type_check: bool = False,
+        **kwargs: dict
     ) -> None:
         """Initialize the Ollama API client."""
         import ollama  # type: ignore
 
+        super().__init__(verbose, max_tries, type_check)
         self.client = ollama.Client(host=kwargs.get("host", "http://localhost:11434"))
-        self.verbose = verbose
-        self.max_tries = max_tries
         self.model_name = kwargs.get("model_name", "phi3")
         self.default_model_params = {
             k: v for k, v in kwargs.items() if k not in ["model_name", "host"]
