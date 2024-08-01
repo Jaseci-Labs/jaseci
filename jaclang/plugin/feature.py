@@ -357,6 +357,11 @@ class JacFeature:
             exclude_info=exclude_info,
         )
 
+    @staticmethod
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> tuple:
+        """Get the by LLM call args."""
+        return pm.hook.get_by_llm_call_args(_pass=_pass, node=node)
+
 
 class JacCmd:
     """Jac CLI command."""

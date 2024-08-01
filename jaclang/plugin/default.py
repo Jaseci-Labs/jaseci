@@ -979,6 +979,182 @@ class JacFeatureDefaults:
             )
         )
 
+    @staticmethod
+    @hookimpl
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> tuple:
+        """Get the by LLM call args."""
+        if node.genai_call is None:
+            raise _pass.ice("No genai_call")
+        model = node.genai_call.target.gen.py_ast[0]
+        model_params, include_info, exclude_info = extract_params(node.genai_call)
+        action = _pass.sync(
+            ast3.Constant(
+                value="Create an object of the specified type, using the specifically "
+                " provided input value(s) and look up any missing attributes from reliable"
+                " online sources to fill them in accurately."
+            )
+        )
+        _output_ = "".join(extract_type(node.target))
+        include_info.append(
+            (
+                _output_.split(".")[0],
+                _pass.sync(ast3.Name(id=_output_.split(".")[0], ctx=ast3.Load())),
+            )
+        )
+        scope = _pass.sync(
+            ast3.Call(
+                func=_pass.sync(
+                    ast3.Attribute(
+                        value=_pass.sync(
+                            ast3.Name(
+                                id=Con.JAC_FEATURE.value,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="obj_scope",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[
+                    _pass.sync(
+                        ast3.Name(
+                            id="__file__",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    _pass.sync(ast3.Constant(value=_output_)),
+                ],
+                keywords=[],
+            )
+        )
+        outputs = _pass.sync(
+            ast3.Call(
+                func=_pass.sync(
+                    ast3.Attribute(
+                        value=_pass.sync(
+                            ast3.Name(
+                                id=Con.JAC_FEATURE.value,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        attr="get_sem_type",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[
+                    _pass.sync(
+                        ast3.Name(
+                            id="__file__",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    _pass.sync(ast3.Constant(value=str(_output_))),
+                ],
+                keywords=[],
+            )
+        )
+        if node.params and node.params.items:
+            inputs = [
+                _pass.sync(
+                    ast3.Tuple(
+                        elts=[
+                            _pass.sync(
+                                ast3.Call(
+                                    func=_pass.sync(
+                                        ast3.Attribute(
+                                            value=_pass.sync(
+                                                ast3.Name(
+                                                    id=Con.JAC_FEATURE.value,
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                            attr="get_semstr_type",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    args=[
+                                        _pass.sync(
+                                            ast3.Name(id="__file__", ctx=ast3.Load())
+                                        ),
+                                        scope,
+                                        _pass.sync(
+                                            ast3.Constant(
+                                                value=(
+                                                    kw_pair.key.value
+                                                    if isinstance(kw_pair.key, ast.Name)
+                                                    else None
+                                                )
+                                            )
+                                        ),
+                                        _pass.sync(ast3.Constant(value=True)),
+                                    ],
+                                    keywords=[],
+                                )
+                            ),
+                            _pass.sync(
+                                ast3.Call(
+                                    func=_pass.sync(
+                                        ast3.Attribute(
+                                            value=_pass.sync(
+                                                ast3.Name(
+                                                    id=Con.JAC_FEATURE.value,
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                            attr="get_semstr_type",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    args=[
+                                        _pass.sync(
+                                            ast3.Name(id="__file__", ctx=ast3.Load())
+                                        ),
+                                        scope,
+                                        _pass.sync(
+                                            ast3.Constant(
+                                                value=(
+                                                    kw_pair.key.value
+                                                    if isinstance(kw_pair.key, ast.Name)
+                                                    else None
+                                                )
+                                            )
+                                        ),
+                                        _pass.sync(ast3.Constant(value=False)),
+                                    ],
+                                    keywords=[],
+                                )
+                            ),
+                            _pass.sync(
+                                ast3.Constant(
+                                    value=(
+                                        kw_pair.key.value
+                                        if isinstance(kw_pair.key, ast.Name)
+                                        else None
+                                    )
+                                )
+                            ),
+                            kw_pair.value.gen.py_ast[0],
+                        ],
+                        ctx=ast3.Load(),
+                    )
+                )
+                for kw_pair in node.params.items
+                if isinstance(kw_pair, ast.KWPair)
+            ]
+        else:
+            inputs = []
+
+        return (
+            model,
+            model_params,
+            scope,
+            inputs,
+            outputs,
+            action,
+            include_info,
+            exclude_info,
+        )
+
 
 class JacBuiltin:
     """Jac Builtins."""
