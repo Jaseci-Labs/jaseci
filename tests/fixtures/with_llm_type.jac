@@ -2,8 +2,7 @@ import:py from mtllm.llms, BaseLLM;
 
 obj model:BaseLLM: {
     can init(output_str: str) {
-        self.verbose = False;
-        self.max_tries = 1;
+        super.__init__();
         self.output_str = output_str;
     }
     can __infer__(meaning_in: str, **kwargs: dict) {

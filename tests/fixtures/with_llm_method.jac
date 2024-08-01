@@ -2,12 +2,11 @@ import:py from mtllm.llms, BaseLLM;
 
 obj model:BaseLLM: {
     can init {
-        self.verbose = False;
-        self.max_tries = 1;
+        super.__init__();
     }
     can __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
-        return "[Output] Something";
+        return "[Output] Personality.INTROVERT";
     }
 }
 glob llm = model();
@@ -47,5 +46,5 @@ outer{
 with entry{
     obj1=outer.inner(["I won noble prize in Physics", "I am popular for my theory of relativity"]);
     pp=Person('Albert Einstein', 76);
-    print(obj1.get_personality(pp));
+    print(type(obj1.get_personality(pp)));
 }
