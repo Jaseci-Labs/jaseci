@@ -7,6 +7,7 @@ import types
 from typing import (
     Any,
     Callable,
+    Mapping,
     Optional,
     ParamSpec,
     Sequence,
@@ -306,6 +307,8 @@ class JacFeatureSpec:
         inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
+        _globals: dict,
+        _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm stmt feature."""
         raise NotImplementedError

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as ast3
 import types
-from typing import Any, Callable, Optional, Sequence, Type, TypeAlias, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeAlias, Union
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import Module
@@ -313,6 +313,8 @@ class JacFeature:
         inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
+        _globals: dict,
+        _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         return pm.hook.with_llm(
@@ -325,6 +327,8 @@ class JacFeature:
             inputs=inputs,
             outputs=outputs,
             action=action,
+            _globals=_globals,
+            _locals=_locals,
         )
 
     @staticmethod
