@@ -2915,17 +2915,7 @@ class PyastGenPass(Pass):
         if node.genai_call:
             self.needs_jac_feature()
             by_llm_call_args = self.get_by_llm_call_args(node)
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(ast3.Name(id="eval", ctx=ast3.Load())),
-                        args=[
-                            self.by_llm_call(**by_llm_call_args),
-                        ],
-                        keywords=[],
-                    )
-                )
-            ]
+            node.gen.py_ast = [self.sync(self.by_llm_call(**by_llm_call_args))]
         else:
             node.gen.py_ast = [
                 self.sync(ast3.Call(func=func, args=args, keywords=keywords))
