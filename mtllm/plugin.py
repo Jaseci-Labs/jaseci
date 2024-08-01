@@ -3,7 +3,7 @@
 import ast as ast3
 import os
 import pickle
-from typing import Any, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
@@ -38,6 +38,8 @@ class JacFeature:
         ],  # TODO: Need to change this in the jaclang pyast_build_pass
         outputs: tuple,
         action: str,
+        _globals: dict,
+        _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         with open(
@@ -98,7 +100,7 @@ class JacFeature:
             model_params,
         )
         _output = model.resolve_output(
-            meaning_out, output_hint, output_type_explanations
+            meaning_out, output_hint, output_type_explanations, _globals, _locals
         )
         return _output
 
@@ -180,66 +182,21 @@ class JacFeature:
             )
             return [
                 _pass.sync(
-                    ast3.Assign(
-                        targets=[_pass.sync(ast3.Name(id="output", ctx=ast3.Store()))],
-                        value=_pass.by_llm_call(
-                            model,
-                            model_params,
-                            scope,
-                            inputs,
-                            outputs,
-                            action,
-                            include_info,
-                            exclude_info,
-                        ),
-                    )
-                ),
-                _pass.sync(
-                    ast3.Try(
-                        body=[
-                            _pass.sync(
-                                ast3.Return(
-                                    value=_pass.sync(
-                                        ast3.Call(
-                                            func=_pass.sync(
-                                                ast3.Name(id="eval", ctx=ast3.Load())
-                                            ),
-                                            args=[
-                                                _pass.sync(
-                                                    ast3.Name(
-                                                        id="output", ctx=ast3.Load()
-                                                    )
-                                                )
-                                            ],
-                                            keywords=[],
-                                        )
-                                    )
-                                )
+                    ast3.Return(
+                        value=_pass.sync(
+                            _pass.by_llm_call(
+                                model,
+                                model_params,
+                                scope,
+                                inputs,
+                                outputs,
+                                action,
+                                include_info,
+                                exclude_info,
                             )
-                        ],
-                        handlers=[
-                            _pass.sync(
-                                ast3.ExceptHandler(
-                                    type=None,
-                                    name=None,
-                                    body=[
-                                        _pass.sync(
-                                            ast3.Return(
-                                                value=_pass.sync(
-                                                    ast3.Name(
-                                                        id="output", ctx=ast3.Load()
-                                                    )
-                                                )
-                                            )
-                                        )
-                                    ],
-                                )
-                            )
-                        ],
-                        orelse=[],
-                        finalbody=[],
+                        )
                     )
-                ),
+                )
             ]
         else:
             return []
@@ -387,6 +344,41 @@ class JacFeature:
                         ast3.keyword(
                             arg="action",
                             value=action,
+                        )
+                    ),
+                    #  _globals=globals(), _locals=locals()
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="_globals",
+                            value=_pass.sync(
+                                ast3.Call(
+                                    func=_pass.sync(
+                                        ast3.Name(
+                                            id="globals",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    args=[],
+                                    keywords=[],
+                                )
+                            ),
+                        )
+                    ),
+                    _pass.sync(
+                        ast3.keyword(
+                            arg="_locals",
+                            value=_pass.sync(
+                                ast3.Call(
+                                    func=_pass.sync(
+                                        ast3.Name(
+                                            id="locals",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    args=[],
+                                    keywords=[],
+                                )
+                            ),
                         )
                     ),
                 ],

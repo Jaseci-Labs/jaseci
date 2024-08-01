@@ -147,6 +147,8 @@ class BaseLLM:
         meaning_out: str,
         output_hint: OutputHint,
         output_type_explanations: list[TypeExplanation],
+        _globals: dict,
+        _locals: Mapping,
     ) -> str:
         """Resolve the output string to return the reasoning and output."""
         if self.verbose:
@@ -174,7 +176,9 @@ class BaseLLM:
                     output,
                 )
 
-        return str(output)
+        return self.to_object(
+            output, output_hint, output_type_explanations, _globals, _locals
+        )
 
     def _check_output(
         self,
@@ -291,6 +295,8 @@ class BaseLLM:
         error: Exception,
     ) -> str:
         """Fix the output string."""
+        if self.verbose:
+            logger.info(f"Error: {error}, Fixing the output.")
         output_fix_prompt = self.OUTPUT_FIX_PROMPT.format(
             model_output=output,
             output_type=output_hint.type,
