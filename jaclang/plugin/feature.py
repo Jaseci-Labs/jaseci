@@ -328,7 +328,7 @@ class JacFeature:
         )
 
     @staticmethod
-    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
+    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[list[ast3.AST]]:
         """Generate the by LLM body."""
         return pm.hook.gen_llm_body(_pass=_pass, node=node)
 
@@ -343,7 +343,7 @@ class JacFeature:
         action: Optional[ast3.AST],
         include_info: list[tuple[str, ast3.AST]],
         exclude_info: list[tuple[str, ast3.AST]],
-    ) -> ast3.Call:
+    ) -> list[ast3.Call]:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
         return pm.hook.by_llm_call(
             _pass=_pass,
@@ -358,7 +358,7 @@ class JacFeature:
         )
 
     @staticmethod
-    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> list[dict]:
         """Get the by LLM call args."""
         return pm.hook.get_by_llm_call_args(_pass=_pass, node=node)
 

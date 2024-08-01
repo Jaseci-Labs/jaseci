@@ -1176,7 +1176,7 @@ class PyastGenPass(Pass):
         # to Avoid circular import
         from jaclang.plugin.feature import JacFeature
 
-        return JacFeature.gen_llm_body(self, node)
+        return JacFeature.gen_llm_body(self, node)[0]
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -2880,14 +2880,14 @@ class PyastGenPass(Pass):
             action,
             include_info,
             exclude_info,
-        )
+        )[0]
 
     def get_by_llm_call_args(self, node: ast.FuncCall) -> dict:
         """Get the arguments for the by_llm_call."""
         # to avoid circular import
         from jaclang.plugin.feature import JacFeature
 
-        return JacFeature.get_by_llm_call_args(self, node)
+        return JacFeature.get_by_llm_call_args(self, node)[0]
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
