@@ -87,7 +87,7 @@ async def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
 )
 async def send_verification_code(request: Request) -> ORJSONResponse:
     """Verify user API."""
-    user: BaseUser = request._user
+    user: BaseUser = request._user  # type: ignore[attr-defined]
     if user.is_activated:
         return ORJSONResponse({"message": "Account is already verified!"}, 400)
     else:

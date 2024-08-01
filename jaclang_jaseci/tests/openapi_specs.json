@@ -4215,14 +4215,14 @@
             },
             "UserRegister": {
                 "properties": {
-                    "password": {
-                        "type": "string",
-                        "title": "Password"
-                    },
                     "email": {
                         "type": "string",
                         "format": "email",
                         "title": "Email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "title": "Password"
                     },
                     "name": {
                         "type": "string",
@@ -4231,8 +4231,8 @@
                 },
                 "type": "object",
                 "required": [
-                    "password",
                     "email",
+                    "password",
                     "name"
                 ],
                 "title": "UserRegister"

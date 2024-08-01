@@ -14,7 +14,6 @@ from fastapi_sso.sso.facebook import FacebookSSO
 from fastapi_sso.sso.fitbit import FitbitSSO
 from fastapi_sso.sso.github import GithubSSO
 from fastapi_sso.sso.gitlab import GitlabSSO
-from fastapi_sso.sso.google import GoogleSSO
 from fastapi_sso.sso.kakao import KakaoSSO
 from fastapi_sso.sso.line import LineSSO
 from fastapi_sso.sso.linkedin import LinkedInSSO
@@ -29,7 +28,7 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 from ..dtos import AttachSSO, DetachSSO
 from ..models import NO_PASSWORD, User as BaseUser
 from ..security import authenticator, create_code, create_token
-from ..sso import AppleSSO
+from ..sso import AppleSSO, GoogleSSO
 from ..utils import logger
 from ...core.architype import BulkWrite, NodeAnchor, Root
 
@@ -37,6 +36,7 @@ router = APIRouter(prefix="/sso", tags=["sso"])
 
 User = BaseUser.model()  # type: ignore[misc]
 
+CUSTOM_PLATFORMS = [AppleSSO]
 SUPPORTED_PLATFORMS: dict[str, type[SSOBase]] = {
     "APPLE": AppleSSO,
     "FACEBOOK": FacebookSSO,
@@ -58,12 +58,10 @@ SSO: dict[str, SSOBase] = {}
 SSO_HOST = getenv("SSO_HOST", "http://localhost:8000/sso")
 
 for platform, cls in SUPPORTED_PLATFORMS.items():
-    if (client_id := getenv(f"{platform}_CLIENT_ID")) and (
-        client_secret := getenv(f"{platform}_CLIENT_SECRET")
-    ):
+    if client_id := getenv(f"{platform}_CLIENT_ID"):
         options: dict[str, Any] = {
             "client_id": client_id,
-            "client_secret": client_secret,
+            "client_secret": getenv(f"{platform}_CLIENT_SECRET"),
         }
 
         if base_endpoint_url := getenv(f"{platform}_BASE_ENDPOINT_URL"):
@@ -74,6 +72,9 @@ for platform, cls in SUPPORTED_PLATFORMS.items():
 
         if allow_insecure_http := getenv(f"{platform}_ALLOW_INSECURE_HTTP"):
             options["allow_insecure_http"] = allow_insecure_http == "true"
+
+        if cls in CUSTOM_PLATFORMS:
+            options["platform"] = platform
 
         SSO[platform.lower()] = cls(**options)
 
@@ -125,7 +126,7 @@ async def sso_callback(
 
 
 @router.post("/attach", dependencies=authenticator)
-async def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:  # type: ignore
+async def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:
     """Generate token from user."""
     if SSO.get(attach_sso.platform):
         if await User.Collection.find_one(
@@ -139,7 +140,7 @@ async def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:
             return ORJSONResponse({"message": "Already Attached!"}, 403)
 
         await User.Collection.update_one(
-            {"_id": ObjectId(request._user.id)},  # type: ignore[attr-defined]
+            {"_id": ObjectId(request._user.id)},
             {
                 "$set": {
                     f"sso.{attach_sso.platform}": {
@@ -155,11 +156,11 @@ async def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:
 
 
 @router.delete("/detach", dependencies=authenticator)
-async def sso_detach(request: Request, detach_sso: DetachSSO) -> ORJSONResponse:  # type: ignore
+async def sso_detach(request: Request, detach_sso: DetachSSO) -> ORJSONResponse:
     """Generate token from user."""
     if SSO.get(detach_sso.platform):
         await User.Collection.update_one(
-            {"_id": ObjectId(request._user.id)},  # type: ignore[attr-defined]
+            {"_id": ObjectId(request._user.id)},
             {"$unset": {f"sso.{detach_sso.platform}": 1}},
         )
         return ORJSONResponse({"message": "Successfully Updated SSO!"}, 200)
@@ -211,26 +212,40 @@ async def register(platform: str, open_id: OpenID) -> Response:
 
     async with await User.Collection.get_session() as session:
         async with session.start_transaction():
-            root = Root().__jac__
-            ureq: dict[str, object] = User.register_type()(
-                email=f"{root.id}-sso@jac-lang.org",
-                password=NO_PASSWORD,
-                **await User.sso_mapper(open_id),
-            ).obfuscate()
-            ureq["root_id"] = root.id
-            ureq["is_activated"] = True
-            ureq["sso"] = {platform: {"id": open_id.id, "email": open_id.email}}
-
             retry = 0
             max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
             while retry <= max_retry:
                 try:
-                    await NodeAnchor.Collection.insert_one(root.serialize(), session)
-                    if (
+                    if not await User.Collection.update_one(
+                        {"email": open_id.email},
+                        {
+                            "$set": {
+                                f"sso.{platform}": {
+                                    "id": open_id.id,
+                                    "email": open_id.email,
+                                },
+                                "is_activated": True,
+                            }
+                        },
+                        session=session,
+                    ):
+                        root = Root().__jac__
+                        ureq: dict[str, object] = User.register_type()(
+                            email=open_id.email,
+                            password=NO_PASSWORD,
+                            **await User.sso_mapper(open_id),
+                        ).obfuscate()
+                        ureq["root_id"] = root.id
+                        ureq["is_activated"] = True
+                        ureq["sso"] = {
+                            platform: {"id": open_id.id, "email": open_id.email}
+                        }
+                        await NodeAnchor.Collection.insert_one(
+                            root.serialize(), session
+                        )
                         await User.Collection.insert_one(ureq, session=session)
-                    ).inserted_id:
-                        await BulkWrite.commit(session)
-                        return await login(platform, open_id)
+                    await BulkWrite.commit(session)
+                    return await login(platform, open_id)
                 except (ConnectionFailure, OperationFailure) as ex:
                     if ex.has_error_label("TransientTransactionError"):
                         retry += 1

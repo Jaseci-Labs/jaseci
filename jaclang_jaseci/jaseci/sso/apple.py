@@ -1,7 +1,9 @@
 """Apple SSO."""
 
+from datetime import UTC, datetime, timedelta
 from json import dumps
-from typing import Any, ClassVar, Dict, Literal, Optional, Union, cast
+from os import getenv
+from typing import Any, ClassVar, Dict, List, Literal, cast
 from warnings import warn
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
@@ -17,7 +19,9 @@ from fastapi_sso.sso.base import (
 
 from httpx import AsyncClient, BasicAuth
 
-from jwt import algorithms, decode, get_unverified_header
+from jwt import algorithms, decode, encode, get_unverified_header
+
+from pydantic import AnyHttpUrl
 
 
 class AppleSSO(SSOBase):
@@ -26,14 +30,82 @@ class AppleSSO(SSOBase):
     provider = "apple"
     base_url = "https://appleid.apple.com/auth"
     scope: ClassVar = ["name", "email"]
+    issuer = "https://appleid.apple.com"
+
+    def __init__(
+        self,
+        platform: str,
+        client_id: str,
+        client_secret: str,
+        redirect_uri: AnyHttpUrl | str | None = None,
+        allow_insecure_http: bool = False,
+        use_state: bool = False,
+        scope: List[str] | None = None,
+    ) -> None:
+        """Apple SSO init."""
+        if not client_secret:
+            if (
+                (client_team_id := getenv(f"{platform}_CLIENT_TEAM_ID"))
+                and (client_team_id := getenv(f"{platform}_CLIENT_TEAM_ID"))
+                and (client_key := getenv(f"{platform}_CLIENT_KEY"))
+                and (
+                    (
+                        client_certificate_path := getenv(
+                            f"{platform}_CLIENT_CERTIFICATE_PATH"
+                        )
+                    )
+                    or (client_certificate := getenv(f"{platform}_CLIENT_CERTIFICATE"))
+                )
+            ):
+                self.client_team_id = client_team_id
+                self.client_key = client_key
+                if client_certificate_path:
+                    with open(client_certificate_path, "r") as cstream:
+                        client_certificate = cstream.read()
+                self.client_certificate = client_certificate
+            else:
+                raise AttributeError(
+                    f"Please provide {platform}_CLIENT_SECRET or all required fields to auto generate secret!\n"
+                    f"{platform}_CLIENT_TEAM_ID\n"
+                    f"{platform}_CLIENT_KEY\n"
+                    f"{platform}_CLIENT_CERTIFICATE_PATH or {platform}_CLIENT_CERTIFICATE"
+                )
+
+        super().__init__(
+            client_id,
+            client_secret,
+            redirect_uri,
+            allow_insecure_http,
+            use_state,
+            scope,
+        )
 
     async def get_discovery_document(self) -> DiscoveryDocument:
         """Get document containing handy urls."""
         return {
             "authorization_endpoint": f"{self.base_url}/authorize",
             "token_endpoint": f"{self.base_url}/oauth2/v2/token",
-            "userinfo_endpoint": f"{self.base_url}/me?fields=id,name,email,first_name,last_name,picture",
+            "userinfo_endpoint": "",
         }
+
+    async def get_client_secret(self) -> str:
+        """Get or generate client secret."""
+        if self.client_secret:
+            return self.client_secret
+
+        now = datetime.now(UTC)
+        return encode(
+            {
+                "iss": self.client_team_id,
+                "aud": self.issuer,
+                "sub": self.client_id,
+                "iat": now,
+                "exp": now + timedelta(minutes=1),
+            },
+            str(self.client_certificate),
+            algorithm="ES256",
+            headers={"alg": "ES256", "kid": self.client_key},
+        )
 
     async def get_public_key(
         self, id_token: str
@@ -51,14 +123,14 @@ class AppleSSO(SSOBase):
         self,
         request: Request,
         *,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
-        redirect_uri: Optional[str] = None,
-        convert_response: Union[Literal[True], Literal[False]] = True,
-    ) -> Union[Optional[OpenID], Optional[Dict[str, Any]]]:
+        params: Dict[str, Any] | None = None,
+        headers: Dict[str, Any] | None = None,
+        redirect_uri: str | None = None,
+        convert_response: Literal[True] | Literal[False] = True,
+    ) -> OpenID | Dict[str, Any] | None:
         """Verify and process Apple SSO."""
-        if params and (id_token := request.query_params.get("id_token")):
-            return await self.get_open_id(id_token)
+        if id_token := request.query_params.get("id_token"):
+            return await self.get_open_id(id_token, params or {})
         return await super().verify_and_process(
             request,
             params=params,
@@ -72,12 +144,12 @@ class AppleSSO(SSOBase):
         code: str,
         request: Request,
         *,
-        params: Optional[Dict[str, Any]] = None,
-        additional_headers: Optional[Dict[str, Any]] = None,
-        redirect_uri: Optional[str] = None,
-        pkce_code_verifier: Optional[str] = None,
-        convert_response: Union[Literal[True], Literal[False]] = True,
-    ) -> Union[Optional[OpenID], Optional[Dict[str, Any]]]:
+        params: Dict[str, Any] | None = None,
+        additional_headers: Dict[str, Any] | None = None,
+        redirect_uri: str | None = None,
+        pkce_code_verifier: str | None = None,
+        convert_response: Literal[True] | Literal[False] = True,
+    ) -> OpenID | Dict[str, Any] | None:
         """Process login for Apple SSO."""
         if self._oauth_client is not None:  # type: ignore[has-type]
             self._oauth_client = None
@@ -107,7 +179,9 @@ class AppleSSO(SSOBase):
         if pkce_code_verifier:
             params.update({"code_verifier": pkce_code_verifier})
 
-        params.update({"client_secret": self.client_secret})
+        client_secret = await self.get_client_secret()
+
+        params.update({"client_secret": client_secret})
 
         token_url, headers, body = self.oauth_client.prepare_token_request(
             await self.token_endpoint,
@@ -122,7 +196,7 @@ class AppleSSO(SSOBase):
 
         headers.update(additional_headers)
 
-        auth = BasicAuth(self.client_id, self.client_secret)
+        auth = BasicAuth(self.client_id, client_secret)
 
         async with AsyncClient() as session:
             response = await session.post(
@@ -132,17 +206,25 @@ class AppleSSO(SSOBase):
             self._refresh_token = content.get("refresh_token")
             if id_token := content.get("id_token"):
                 self._id_token = id_token
-                return await self.get_open_id(id_token)
+                return await self.get_open_id(id_token, params)
             raise HTTPException(401, "Failed to get access token!")
 
-    async def get_open_id(self, id_token: str) -> OpenID:
+    async def get_open_id(self, id_token: str, params: Dict[str, Any]) -> OpenID:
         """Get OpenID from id_tokens provided by Apple."""
-        identity_data: dict = decode(
+        raw: dict = decode(
             id_token,
             cast(RSAPublicKey, await self.get_public_key(id_token)),
             algorithms=["RS256"],
             audience=self.client_id,
-            issuer="https://appleid.apple.com",
+            issuer=self.issuer,
         )
 
-        return OpenID(id=identity_data.get("sub"), email=identity_data.get("email"))
+        if raw.get("email_verified") is not True:
+            raise HTTPException(403, "You're trying to attach a non verified account!")
+
+        return OpenID(
+            id=raw.get("sub"),
+            email=raw.get("email"),
+            first_name=raw.get("firstName") or params.get("first_name"),
+            last_name=raw.get("lastName") or params.get("last_name"),
+        )

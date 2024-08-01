@@ -19,15 +19,12 @@ NO_PASSWORD = bytes(True)
 class UserRegistration(BaseModel):
     """User Common Functionalities."""
 
+    email: EmailStr
     password: bytes
-
-    def serialize(self) -> dict:
-        """Return BaseModel.model_dump excluding the password field."""
-        return self.model_dump(exclude={"password"})
 
     def obfuscate(self) -> dict:
         """Return BaseModel.model_dump where the password is hashed."""
-        data = self.serialize()
+        data = self.model_dump(exclude={"password"})
         if isinstance(self.password, str):
             data["password"] = pbkdf2_sha512.hash(self.password).encode()
         return data
@@ -82,6 +79,7 @@ class User:
         data = asdict(self)
         data["id"] = str(self.id)
         data["root_id"] = str(self.root_id)
+        data.pop("sso", None)
         data.pop("password", None)
         return data
 

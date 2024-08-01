@@ -26,6 +26,7 @@ setup(
         "httpx==0.27.0",
         "sendgrid==6.11.0",
         "fastapi-sso==0.15.0",
+        "google-auth==2.32.0",
     ],
     package_data={},
     entry_points={
