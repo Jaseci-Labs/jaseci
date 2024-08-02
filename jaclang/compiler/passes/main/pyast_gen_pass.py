@@ -6,6 +6,7 @@ in each node. Module nodes contain the entire module code.
 
 import ast as ast3
 import textwrap
+from dataclasses import dataclass
 from typing import Optional, Sequence, TypeVar
 
 import jaclang.compiler.absyntree as ast
@@ -2158,16 +2159,11 @@ class PyastGenPass(Pass):
         #   assertNotRegex
 
         # The return type "struct" for the bellow check_node_isinstance_call.
+        @dataclass
         class CheckNodeIsinstanceCallResult:
-            def __init__(
-                self,
-                isit: bool = False,
-                inst: ast3.AST | None = None,
-                clss: ast3.AST | None = None,
-            ) -> None:
-                self.isit: bool = isit
-                self.inst: ast3.AST | None = inst
-                self.clss: ast3.AST | None = clss
+            isit: bool = False
+            inst: ast3.AST | None = None
+            clss: ast3.AST | None = None
 
         # This will check if a node is `isinstance(<expr>, <expr>)`, we're
         # using a function because it's reusable to check not isinstance(<expr>, <expr>).
@@ -2207,36 +2203,35 @@ class PyastGenPass(Pass):
             and len(node.target.ops) == 1
         ):
             expr: ast.CompareExpr = node.target
-            pyexpr: ast3.Compare = node.target.gen.py_ast[0]
-            op_ty: type[ast3.cmpop] = type(pyexpr.ops[0])
+            opty: ast.Token = expr.ops[0]
 
             optype2fn = {
-                ast3.Eq: "assertEqual",
-                ast3.NotEq: "assertNotEqual",
-                ast3.Lt: "assertLess",
-                ast3.LtE: "assertLessEqual",
-                ast3.Gt: "assertGreater",
-                ast3.GtE: "assertGreaterEqual",
-                ast3.In: "assertIn",
-                ast3.NotIn: "assertNotIn",
-                ast3.Is: "assertIs",
-                ast3.IsNot: "assertIsNot",
+                Tok.EE.name: "assertEqual",
+                Tok.NE.name: "assertNotEqual",
+                Tok.LT.name: "assertLess",
+                Tok.LTE.name: "assertLessEqual",
+                Tok.GT.name: "assertGreater",
+                Tok.GTE.name: "assertGreaterEqual",
+                Tok.KW_IN.name: "assertIn",
+                Tok.KW_NIN.name: "assertNotIn",
+                Tok.KW_IS.name: "assertIs",
+                Tok.KW_ISN.name: "assertIsNot",
             }
 
-            if op_ty in optype2fn:
-                assert_func_name = optype2fn[op_ty]
+            if opty.name in optype2fn:
+                assert_func_name = optype2fn[opty.name]
                 assert_args_list = [
                     expr.left.gen.py_ast[0],
                     expr.rights[0].gen.py_ast[0],
                 ]
 
                 # Override for <expr> is None.
-                if op_ty == ast3.Is and isinstance(expr.rights[0], ast.Null):
+                if opty.name == Tok.KW_IS and isinstance(expr.rights[0], ast.Null):
                     assert_func_name = "assertIsNone"
                     assert_args_list.pop()
 
                 # Override for <expr> is not None.
-                elif op_ty == ast3.IsNot and isinstance(expr.rights[0], ast.Null):
+                elif opty.name == Tok.KW_ISN and isinstance(expr.rights[0], ast.Null):
                     assert_func_name = "assertIsNotNone"
                     assert_args_list.pop()
 
@@ -2255,9 +2250,9 @@ class PyastGenPass(Pass):
         # Check if 'not isinstance(<expr>, <expr>)' is called.
         elif (
             isinstance(node.target, ast.UnaryExpr)
-            and isinstance(node.target.gen.py_ast[0], ast3.UnaryOp)
+            and isinstance(node.target, ast.UnaryExpr)
             and isinstance(node.target.operand, ast.FuncCall)
-            and isinstance(node.target.operand.gen.py_ast[0], ast3.UnaryOp)
+            and isinstance(node.target.operand, ast.UnaryExpr)
         ):
             res = check_node_isinstance_call(node.target.operand)
             if res.isit:
@@ -2275,8 +2270,8 @@ class PyastGenPass(Pass):
         if isinstance(node.target, ast.FuncCall) and isinstance(
             node.target.gen.py_ast[0], ast3.Call
         ):
-            func = node.target.target.gen.py_ast[0]
-            if isinstance(func, ast3.Name) and func.id == "almostEqual":
+            func = node.target.target
+            if isinstance(func, ast.Name) and func.value == "almostEqual":
                 assert_func_name = "assertAlmostEqual"
                 assert_args_list = []
                 if node.target.params is not None:
