@@ -12,7 +12,6 @@ from fastapi import Request
 from .architype import (
     Anchor,
     AnchorState,
-    AnchorType,
     Architype,
     NodeAnchor,
     Permission,
@@ -85,7 +84,7 @@ class JaseciContext:
         """Load initial anchors."""
         if anchor:
             if not anchor.state.connected:
-                if _anchor := await self.datasource.find_one(AnchorType.node, anchor):
+                if _anchor := await self.datasource.find_one(NodeAnchor, anchor):
                     _anchor.state.current_access_level = 2
                     return _anchor
             else:
@@ -103,11 +102,18 @@ class JaseciContext:
         await self.datasource.close()
 
     @staticmethod
-    def get(options: dict[str, Any] | None = None) -> "JaseciContext":
+    def get_or_create(options: dict[str, Any] | None = None) -> "JaseciContext":
         """Get or create execution context."""
         if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
             JASECI_CONTEXT.set(ctx := JaseciContext(**options or {}))
         return ctx
+
+    @staticmethod
+    def get_datasource() -> MongoDB:
+        """Get current datasource."""
+        if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
+            raise Exception("Wrong usage of get_datasource!")
+        return ctx.datasource
 
     def response(self, returns: list[Any], status: int = 200) -> dict[str, Any]:
         """Return serialized version of reports."""

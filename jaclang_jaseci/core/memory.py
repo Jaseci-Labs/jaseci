@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from os import getenv
-from typing import AsyncGenerator, Callable, Generator, Type
+from typing import AsyncGenerator, Callable, Generator, Iterable, Type, TypeVar, cast
 
 from bson import ObjectId
 
@@ -13,19 +13,13 @@ from motor.motor_asyncio import AsyncIOMotorClientSession
 
 from pymongo import InsertOne
 
-from .architype import (
-    Anchor,
-    AnchorType,
-    BulkWrite,
-    EdgeAnchor,
-    NodeAnchor,
-    Root,
-    WalkerAnchor,
-)
+from .architype import Anchor, AnchorType, BulkWrite, EdgeAnchor, NodeAnchor, Root
 from ..jaseci.datasources import Collection
 
 DISABLE_AUTO_CLEANUP = getenv("DISABLE_AUTO_CLEANUP") == "true"
-IDS = ObjectId | list[ObjectId]
+SINGLE_QUERY = getenv("SINGLE_QUERY") == "true"
+IDS = ObjectId | Iterable[ObjectId]
+A = TypeVar("A", bound="Anchor")
 
 
 @dataclass
@@ -44,7 +38,7 @@ class Memory:
         self, ids: IDS, filter: Callable[[Anchor], Anchor] | None = None
     ) -> Generator[Anchor, None, None]:
         """Find anchors from memory by ids with filter."""
-        if not isinstance(ids, list):
+        if not isinstance(ids, Iterable):
             ids = [ids]
 
         return (
@@ -61,18 +55,18 @@ class Memory:
         """Find one anchor from memory by ids with filter."""
         return next(self.find(ids, filter), None)
 
-    def set(self, data: Anchor | list[Anchor]) -> None:
+    def set(self, data: Anchor | Iterable[Anchor]) -> None:
         """Save anchor/s to memory."""
-        if isinstance(data, list):
+        if isinstance(data, Iterable):
             for d in data:
                 if d not in self.__gc__:
                     self.__mem__[d.id] = d
         elif data not in self.__gc__:
             self.__mem__[data.id] = data
 
-    def remove(self, data: Anchor | list[Anchor]) -> None:
+    def remove(self, data: Anchor | Iterable[Anchor]) -> None:
         """Remove anchor/s from memory."""
-        if isinstance(data, list):
+        if isinstance(data, Iterable):
             for d in data:
                 self.__mem__.pop(d.id, None)
                 self.__gc__.add(d)
@@ -89,27 +83,16 @@ class MongoDB(Memory):
 
     async def find(  # type: ignore[override]
         self,
-        type: AnchorType,
-        anchors: Anchor | list[Anchor],
+        type: Type[A],
+        anchors: A | Iterable[A],
         filter: Callable[[Anchor], Anchor] | None = None,
         session: AsyncIOMotorClientSession | None = None,
-    ) -> AsyncGenerator[Anchor, None]:
+    ) -> AsyncGenerator[A, None]:
         """Find anchors from datasource by ids with filter."""
-        if not isinstance(anchors, list):
+        if not isinstance(anchors, Iterable):
             anchors = [anchors]
 
-        base_anchor: Type[Anchor] = Anchor
-        match type:
-            case AnchorType.node:
-                base_anchor = NodeAnchor
-            case AnchorType.edge:
-                base_anchor = EdgeAnchor
-            case AnchorType.walker:
-                base_anchor = WalkerAnchor
-            case _:
-                pass
-
-        async for anchor in await base_anchor.Collection.find(
+        async for anchor in await type.Collection.find(
             {
                 "_id": {
                     "$in": [
@@ -129,17 +112,28 @@ class MongoDB(Memory):
                 and (_anchor := self.__mem__.get(anchor.id))
                 and (not filter or filter(_anchor))
             ):
-                yield _anchor
+                yield cast(A, _anchor)
 
     async def find_one(  # type: ignore[override]
         self,
-        type: AnchorType,
-        anchors: Anchor | list[Anchor],
+        type: Type[A],
+        anchors: A | Iterable[A],
         filter: Callable[[Anchor], Anchor] | None = None,
         session: AsyncIOMotorClientSession | None = None,
-    ) -> Anchor | None:
+    ) -> A | None:
         """Find one anchor from memory by ids with filter."""
         return await anext(self.find(type, anchors, filter, session), None)
+
+    async def populate_data(self, edges: Iterable[EdgeAnchor]) -> None:
+        """Populate data to avoid multiple query."""
+        if not SINGLE_QUERY:
+            nodes: set[NodeAnchor] = set()
+            async for edge in self.find(EdgeAnchor, edges):
+                if edge.source:
+                    nodes.add(edge.source)
+                if edge.target:
+                    nodes.add(edge.target)
+            self.find(NodeAnchor, nodes)
 
     def get_bulk_write(self) -> BulkWrite:
         """Sync memory to database."""

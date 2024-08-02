@@ -212,7 +212,7 @@ walker manual_create_nested_node {
         await here.__jac__.save();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().datasource;
+        jsrc = JaseciContext.get_datasource();
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -235,7 +235,7 @@ walker manual_update_nested_node {
         await nested.__jac__.save();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().datasource;
+        jsrc = JaseciContext.get_datasource();
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -251,7 +251,7 @@ walker manual_detach_nested_node {
         await nested.__jac__.save();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().datasource;
+        jsrc = JaseciContext.get_datasource();
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -276,7 +276,7 @@ walker manual_delete_nested_node {
         await nested.__jac__.save();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().datasource;
+        jsrc = JaseciContext.get_datasource();
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -300,7 +300,7 @@ walker manual_delete_nested_edge {
         await nested_edge.__jac__.save();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().datasource;
+        jsrc = JaseciContext.get_datasource();
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 

@@ -402,7 +402,7 @@ class Anchor(_Anchor):
 
     # ------------------------------------------------ #
 
-    async def sync(self, node: "NodeAnchor | None" = None) -> "Architype | None":
+    async def sync(self, node: "NodeAnchor | None" = None) -> "Architype | None":  # type: ignore[override]
         """Retrieve the Architype from db and return."""
         if self.state.deleted is not None:
             return None
@@ -414,8 +414,8 @@ class Anchor(_Anchor):
 
         from .context import JaseciContext
 
-        jsrc = JaseciContext.get().datasource
-        anchor = await jsrc.find_one(self.type, self)
+        jsrc = JaseciContext.get_datasource()
+        anchor = await jsrc.find_one(self.__class__, self)
 
         if anchor and (node or self).has_read_access(anchor):
             self.__dict__.update(anchor.__dict__)
@@ -431,7 +431,7 @@ class Anchor(_Anchor):
                 self.root = jctx.root.id
             jctx.datasource.set(self)
 
-    def _save(
+    def _save(  # type: ignore[override]
         self,
         bulk_write: BulkWrite,
     ) -> None:
@@ -447,7 +447,7 @@ class Anchor(_Anchor):
             elif self.state.current_access_level > 0:
                 self.update(bulk_write, True)
 
-    async def save(self, session: AsyncIOMotorClientSession | None = None) -> BulkWrite:
+    async def save(self, session: AsyncIOMotorClientSession | None = None) -> BulkWrite:  # type: ignore[override]
         """Save Anchor."""
         bulk_write = BulkWrite()
 
@@ -564,7 +564,7 @@ class Anchor(_Anchor):
         ):
             from .context import JaseciContext
 
-            jsrc = JaseciContext.get().datasource
+            jsrc = JaseciContext.get_datasource()
 
             self.state.deleted = False
             jsrc.remove(self)
@@ -588,7 +588,7 @@ class Anchor(_Anchor):
             "root": str(self.root) if dumps else self.root,
             "access": self.access.serialize(),
             "architype": (
-                asdict(self.architype)
+                asdict(self.architype)  # type: ignore[call-overload]
                 if is_dataclass(self.architype) and not isinstance(self.architype, type)
                 else {}
             ),
@@ -656,7 +656,7 @@ class NodeAnchor(Anchor):
         for edge in self.edges:
             edge.delete(bulk_write)
 
-        pulled_edges: set[Anchor] = self._pull.get("edges", {}).get("$in", [])
+        pulled_edges: set[EdgeAnchor] = self._pull.get("edges", {}).get("$in", [])
         for edge in pulled_edges:
             edge.delete(bulk_write)
 
@@ -671,14 +671,14 @@ class NodeAnchor(Anchor):
         ):
             from .context import JaseciContext
 
-            jsrc = JaseciContext.get().datasource
+            jsrc = JaseciContext.get_datasource()
             self.state.deleted = False
 
             for edge in self.edges:
                 edge.destroy()
             jsrc.remove(self)
 
-    async def sync(self, node: "NodeAnchor | None" = None) -> "NodeArchitype | None":
+    async def sync(self, node: "NodeAnchor | None" = None) -> "NodeArchitype | None":  # type: ignore[override]
         """Retrieve the Architype from db and return."""
         return cast(NodeArchitype | None, await super().sync(node))
 
@@ -693,6 +693,10 @@ class NodeAnchor(Anchor):
         target_cls: list[Type["NodeArchitype"]] | None,
     ) -> list["EdgeArchitype"]:
         """Get edges connected to this node."""
+        from .context import JaseciContext
+
+        await JaseciContext.get_datasource().populate_data(self.edges)
+
         ret_edges: list[EdgeArchitype] = []
         for anchor in self.edges:
             if (
@@ -729,6 +733,10 @@ class NodeAnchor(Anchor):
         target_cls: list[Type["NodeArchitype"]] | None,
     ) -> list["NodeArchitype"]:
         """Get set of nodes connected to this node."""
+        from .context import JaseciContext
+
+        await JaseciContext.get_datasource().populate_data(self.edges)
+
         ret_edges: list[NodeArchitype] = []
         for anchor in self.edges:
             if (
@@ -880,13 +888,13 @@ class EdgeAnchor(Anchor):
         ):
             from .context import JaseciContext
 
-            jsrc = JaseciContext.get().datasource
+            jsrc = JaseciContext.get_datasource()
 
             self.state.deleted = False
             self.detach()
             jsrc.remove(self)
 
-    async def sync(self, node: "NodeAnchor | None" = None) -> "EdgeArchitype | None":
+    async def sync(self, node: "NodeAnchor | None" = None) -> "EdgeArchitype | None":  # type: ignore[override]
         """Retrieve the Architype from db and return."""
         return cast(EdgeArchitype | None, await super().sync(node))
 
@@ -956,7 +964,7 @@ class WalkerAnchor(Anchor):
             anchor = WalkerAnchor(
                 id=doc.pop("_id"),
                 access=Permission.deserialize(doc.pop("access")),
-                state=AnchorState(connected=True),
+                state=WalkerAnchorState(connected=True),
                 hashes={key: hash(dumps(val)) for key, val in architype.items()},
                 **doc,
             )
@@ -981,7 +989,7 @@ class WalkerAnchor(Anchor):
         """Append Delete Query."""
         bulk_write.del_walker(self.id)
 
-    async def sync(self, node: "NodeAnchor | None" = None) -> "WalkerArchitype | None":
+    async def sync(self, node: "NodeAnchor | None" = None) -> "WalkerArchitype | None":  # type: ignore[override]
         """Retrieve the Architype from db and return."""
         return cast(WalkerArchitype | None, await super().sync(node))
 
