@@ -5,7 +5,6 @@ from __future__ import annotations
 import types
 from typing import Any, Callable, Optional, Type, TypeAlias, Union
 
-from jaclang.compiler.absyntree import Module
 from jaclang.plugin.default import ExecutionContext
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
@@ -109,7 +108,6 @@ class JacFeature:
         cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        mod_bundle: Optional[Module | str] = None,
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
@@ -122,7 +120,6 @@ class JacFeature:
             cachable=cachable,
             mdl_alias=mdl_alias,
             override_name=override_name,
-            mod_bundle=mod_bundle,
             lng=lng,
             items=items,
             reload_module=reload_module,
