@@ -89,7 +89,6 @@ class FuseTypeInfoPass(Pass):
             if mode_path.endswith(".jac"):
                 return
 
-            print("--->", mode_path, mod_name)
             FuseTypeInfoPass.python_raise_map[mod_name] = mode_path
         else:
             self.__debug_print(

@@ -13,7 +13,6 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
-from jaclang.utils.helpers import is_standard_lib_module
 from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ class JacImportPass(Pass):
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
         self.__py_imports: set[str] = set()
-        self.py_resolve_list: set[str] = set()
+        self.py_importing = False
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
@@ -43,9 +42,6 @@ class JacImportPass(Pass):
                 self.process_import(node, i)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
-
-        for i in self.get_all_sub_nodes(node, ast.AtomTrailer):
-            self.enter_atom_trailer(i)
 
         node.mod_deps = self.import_table
 
@@ -66,6 +62,7 @@ class JacImportPass(Pass):
             node.sub_module = mod
             self.__annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
+            mod.parent = node
 
     def __annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
@@ -127,11 +124,6 @@ class JacImportPass(Pass):
         if node.alias and node.sub_module:
             node.sub_module.name = node.alias.value
         # Items matched during def/decl pass
-
-    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
-        """Iterate on AtomTrailer nodes to get python paths to resolve."""
-        if node.as_attr_list[0].sym_name in self.__py_imports:
-            self.py_resolve_list.add(".".join([i.sym_name for i in node.as_attr_list]))
 
     def import_jac_module(self, node: ast.ModulePath) -> None:
         """Import a module."""
@@ -212,53 +204,75 @@ class PyImportPass(JacImportPass):
         """Only run pass if settings are set to raise python."""
         super().before_pass()
 
-    def get_current_module(self, node:ast.AstNode) -> str:
-        parent = node
-        l = []
+    def __get_current_module(self, node: ast.AstNode) -> str:
+        parent = node.find_parent_of_type(ast.Module)
+        mod_list = []
         while parent is not None:
-            if isinstance(parent, ast.Module): l.append(parent)
-            parent = parent.parent
-        l.reverse()
-        return ".".join(p.name for p in l)
+            mod_list.append(parent)
+            parent = parent.find_parent_of_type(ast.Module)
+        mod_list.reverse()
+        return ".".join(p.name for p in mod_list)
 
-    
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
-        from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
+        # Process import is orginally implemented to handle ModulePath in Jaclang
+        # This won't work with py imports as this will fail to import stuff in form of
+        #      from a import b
+        #      from a import (c, d, e)
+        # Solution to that is to get the import node and check the from loc then
+        # handle it based on if there a from loc or not
 
         imp_node = i.parent_of_type(ast.Import)
-        if (
-            imp_node.is_py
-            and not i.sub_module
-        ):
-            mod = self.import_py_module(node=i, mod_path=node.loc.mod_path)
-            if mod:
-                i.sub_module = mod
-                i.add_kids_right([mod], pos_update=False)
-                self.run_again = len(FuseTypeInfoPass.python_raise_map.keys()) > 0
+        if imp_node.is_py and not i.sub_module:
+            if imp_node.from_loc:
+                for j in imp_node.items.items:
+                    assert isinstance(j, ast.ModuleItem)
+                    mod_path = f"{imp_node.from_loc.path_str}.{j.name.sym_name}"
+                    self.import_py_module(
+                        parent_node=j,
+                        mod_path=mod_path,
+                        imported_mod_name=j.name.sym_name,
+                    )
+            else:
+                for j in imp_node.items.items:
+                    assert isinstance(j, ast.ModulePath)
+                    self.import_py_module(
+                        parent_node=j,
+                        mod_path=j.path_str,
+                        imported_mod_name=j.path_str.replace(".", ""),
+                    )
 
     def import_py_module(
-        self, node: ast.ModulePath, mod_path: str
+        self,
+        parent_node: ast.ModulePath | ast.ModuleItem,
+        imported_mod_name: str,
+        mod_path: str,
     ) -> Optional[ast.Module]:
         """Import a module."""
         from jaclang.compiler.passes.main import PyastBuildPass
         from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
 
+        python_raise_map = FuseTypeInfoPass.python_raise_map
         file_to_raise = None
-        if node.path_str in FuseTypeInfoPass.python_raise_map:
-            file_to_raise = FuseTypeInfoPass.python_raise_map.pop(node.path_str)
-        else: 
-            resolved_mod_path = self.get_current_module(node) + "." + node.path_str.replace(".", "")
-            if resolved_mod_path in FuseTypeInfoPass.python_raise_map:
-                file_to_raise = FuseTypeInfoPass.python_raise_map.pop(resolved_mod_path)
-        
+
+        if mod_path in python_raise_map:
+            file_to_raise = python_raise_map[mod_path]
+        else:
+            resolved_mod_path = (
+                f"{self.__get_current_module(parent_node)}.{imported_mod_name}"
+            )
+            assert isinstance(self.ir, ast.Module)
+            resolved_mod_path = resolved_mod_path.replace(f"{self.ir.name}.", "")
+            file_to_raise = python_raise_map.get(resolved_mod_path)
+
         if file_to_raise is None:
-            return
-                
+            return None
+
         try:
             if file_to_raise not in {None, "built-in", "frozen"}:
                 if file_to_raise in self.import_table:
                     return self.import_table[file_to_raise]
+
                 with open(file_to_raise, "r", encoding="utf-8") as f:
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
@@ -267,8 +281,9 @@ class PyImportPass(JacImportPass):
                     ).ir
                 if mod:
                     mod.py_raised = True
-                    mod.name = node.path_str
-                    self.import_table[mod_path] = mod
+                    mod.name = imported_mod_name
+                    self.import_table[file_to_raise] = mod
+                    self.attach_mod_to_node(parent_node, mod)
                     return mod
                 else:
                     raise self.ice(f"Failed to import python module {mod_path}")

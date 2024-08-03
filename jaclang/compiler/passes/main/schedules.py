@@ -23,7 +23,6 @@ from .access_modifier_pass import AccessCheckPass  # noqa: I100
 py_code_gen = [
     SubNodeTabPass,
     JacImportPass,
-    PyImportPass,
     SymTabBuildPass,
     DeclImplMatchPass,
     DefUsePass,
@@ -38,6 +37,7 @@ type_checker_sched = [
     FuseTypeInfoPass,
     PyImportPass,
     SymTabBuildPass,
+    DefUsePass,
     AccessCheckPass,
 ]
 py_code_gen_typed = [*py_code_gen, *type_checker_sched]
