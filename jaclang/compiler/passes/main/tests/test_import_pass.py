@@ -3,6 +3,8 @@
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import JacImportPass
+from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
+from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.utils.test import TestCase
 
 
@@ -54,15 +56,43 @@ class ImportPassPassTests(TestCase):
                 self.assertEqual(i.annexable_by, self.fixture_abs_path("autoimpl.jac"))
         self.assertEqual(count, 3)
 
-    def test_py_resolve_list(self) -> None:
+    def test_py_raise_map(self) -> None:
         """Basic test for pass."""
-        state: JacImportPass = jac_file_to_pass(
-            self.examples_abs_path("rpg_game/jac_impl/jac_impl_5/main.jac"),
-            JacImportPass,
+        jac_file_to_pass(
+            self.fixture_abs_path("py_imp_test.jac"),
+            FuseTypeInfoPass,
+            schedule=py_code_gen_typed,
         )
-        self.assertGreater(len(state.py_resolve_list), 20)
-        self.assertIn("pygame.sprite.Sprite.__init__", state.py_resolve_list)
-        self.assertIn("pygame.mouse.get_pressed", state.py_resolve_list)
-        self.assertIn("pygame.K_SPACE", state.py_resolve_list)
-        self.assertIn("random.randint", state.py_resolve_list)
-        self.assertIn("pygame.font.Font", state.py_resolve_list)
+        p = {
+            "math": "jaclang/jaclang/vendor/mypy/typeshed/stdlib/math.pyi",
+            "pygame": "pygame/__init__.pyi",
+            "pygame.color": "pygame/color.pyi",
+            "pygame.constants": "pygame/constants.pyi",
+            "argparse": "jaclang/vendor/mypy/typeshed/stdlib/argparse.pyi",
+            "builtins": "jaclang/vendor/mypy/typeshed/stdlib/builtins.pyi",
+            "pygame.display": "pygame/display.pyi",
+            "os": "jaclang/vendor/mypy/typeshed/stdlib/os/__init__.pyi",
+            "genericpath": "jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi",
+        }
+        for i in p:
+            self.assertIn(i, FuseTypeInfoPass.python_raise_map)
+            self.assertIn(p[i], FuseTypeInfoPass.python_raise_map[i])
+
+    def test_py_raised_mods(self) -> None:
+        """Basic test for pass."""
+        state = jac_file_to_pass(
+            self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
+        )
+        self.assertEqual(
+            len(
+                list(
+                    filter(
+                        lambda x: x.py_raised, state.ir.get_all_sub_nodes(ast.Module)
+                    )
+                )
+            ),
+            6,
+        )
+
+
+#
