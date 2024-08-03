@@ -712,12 +712,12 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
 
-        module_paths = ["random", "tkinter"]
+        module_paths = ["random", "ast"]
         for module_path in module_paths:
             stdlib_dir = sysconfig.get_paths()["stdlib"]
             file_path = os.path.join(
                 stdlib_dir,
-                module_path + (".py" if module_path == "random" else "/__init__.py"),
+                module_path + ".py",
             )
             with open(file_path) as f:
                 jac_ast = PyastBuildPass(
@@ -730,7 +730,7 @@ class JacLanguageTests(TestCase):
             if module_path == "random":
                 self.assertIn("ModulePath - statistics -", gen_ast)
             else:
-                self.assertIn("+-- Name - TclError - Type: No", gen_ast)
+                self.assertIn("+-- Name - NodeTransformer - Type: No", gen_ast)
         settings.py_raise = False
 
     def test_deep_py_load_imports(self) -> None:  # we can get rid of this, isn't?
@@ -893,3 +893,13 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("i work", stdout_value)
+
+    def test_double_import_exec(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("dblhello", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.count("Hello World!"), 1)
+        self.assertIn("im still here", stdout_value)

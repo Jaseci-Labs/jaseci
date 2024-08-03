@@ -88,17 +88,45 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
     return sym_tabs
 
 
-def find_node_by_position(
-    tokens: list[tuple[lspt.Position, int, int, ast.AstSymbolNode]],
-    line: int,
-    position: int,
+def find_deepest_symbol_node_at_pos(
+    node: ast.AstNode, line: int, character: int
 ) -> Optional[ast.AstSymbolNode]:
     """Return the deepest symbol node that contains the given position."""
-    for token in tokens:
-        pos, token_end, length, node = token
-        if pos.line == line and pos.character <= position < token_end:
-            return node
-    return None
+    last_symbol_node = None
+
+    if position_within_node(node, line, character):
+        if isinstance(node, ast.AstSymbolNode):
+            last_symbol_node = node
+
+        for child in [i for i in node.kid if i.loc.mod_path == node.loc.mod_path]:
+            if position_within_node(child, line, character):
+                deeper_node = find_deepest_symbol_node_at_pos(child, line, character)
+                if deeper_node is not None:
+                    last_symbol_node = deeper_node
+
+    return last_symbol_node
+
+
+def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
+    """Check if the position falls within the node's location."""
+    if node.loc.first_line < line + 1 < node.loc.last_line:
+        return True
+    if (
+        node.loc.first_line == line + 1
+        and node.loc.col_start <= character + 1
+        and (
+            node.loc.last_line == line + 1
+            and node.loc.col_end >= character + 1
+            or node.loc.last_line > line + 1
+        )
+    ):
+        return True
+    if (
+        node.loc.last_line == line + 1
+        and node.loc.col_start <= character + 1 <= node.loc.col_end
+    ):
+        return True
+    return False
 
 
 def find_index(
@@ -351,7 +379,7 @@ def collect_all_symbols_in_scope(
     while current_tab is not None and current_tab not in visited:
         visited.add(current_tab)
         for name, symbol in current_tab.tab.items():
-            if name not in dir(builtins):
+            if name not in dir(builtins) and symbol.sym_type != SymbolType.IMPL:
                 symbols.append(
                     lspt.CompletionItem(label=name, kind=label_map(symbol.sym_type))
                 )
@@ -363,26 +391,32 @@ def collect_all_symbols_in_scope(
 
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
-    text = text[:dot_position].strip()
-    pattern = re.compile(r"\b\w+\(\)?|\b\w+\b")
-    matches = pattern.findall(text)
-    if text.endswith("."):
-        matches.append("")
-    symbol_path = []
-    i = 0
-    while i < len(matches):
-        if matches[i].endswith("("):
-            i += 1
-            continue
-        elif "(" in matches[i]:
-            symbol_path.append(matches[i])
-        elif matches[i] == "":
-            pass
-        else:
-            symbol_path.append(matches[i])
-        i += 1
+    text = text[:dot_position][:-1].strip()
+    valid_character_pattern = re.compile(r"[a-zA-Z0-9_]")
 
-    return symbol_path
+    reversed_text = text[::-1]
+    all_words = []
+    current_word = []
+    for char in reversed_text:
+        if valid_character_pattern.fullmatch(char):
+            current_word.append(char)
+        elif char == ".":
+            if current_word:
+                all_words.append("".join(current_word[::-1]))
+                current_word = []
+        else:
+            if current_word:
+                all_words.append("".join(current_word[::-1]))
+                current_word = []
+            break
+
+    all_words = (
+        all_words[::-1]
+        if not current_word
+        else ["".join(current_word[::-1])] + all_words[::-1]
+    )
+
+    return all_words
 
 
 def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
@@ -395,6 +429,11 @@ def resolve_symbol_path(sym_name: str, node_tab: SymbolTable) -> str:
         for name, symbol in current_tab.tab.items():
             if name not in dir(builtins) and name == sym_name:
                 path = symbol.defn[0]._sym_type
+                if symbol.sym_type == SymbolType.ENUM_ARCH:
+                    if isinstance(current_tab.owner, ast.Module):
+                        return current_tab.owner.name + "." + sym_name
+                    elif isinstance(current_tab.owner, ast.AstSymbolNode):
+                        return current_tab.owner.name_spec._sym_type + "." + sym_name
                 return path
         current_tab = current_tab.parent if current_tab.parent != current_tab else None
     return ""
@@ -485,7 +524,8 @@ def resolve_completion_symbol_table(
             )
     else:
         completion_items = []
-
+    if isinstance(current_symbol_table.owner, (ast.Ability, ast.AbilityDef)):
+        return completion_items
     completion_items.extend(
         collect_all_symbols_in_scope(current_symbol_table, up_tree=False)
     )

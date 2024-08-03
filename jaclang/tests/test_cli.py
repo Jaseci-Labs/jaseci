@@ -51,6 +51,8 @@ class JacCliTests(TestCase):
 
     def test_jac_impl_err(self) -> None:
         """Basic test for pass."""
+        if "jaclang.tests.fixtures.err" in sys.modules:
+            del sys.modules["jaclang.tests.fixtures.err"]
         captured_output = io.StringIO()
         sys.stdout = captured_output
         sys.stderr = captured_output
@@ -69,6 +71,8 @@ class JacCliTests(TestCase):
 
     def test_jac_test_err(self) -> None:
         """Basic test for pass."""
+        if "jaclang.tests.fixtures.err" in sys.modules:
+            del sys.modules["jaclang.tests.fixtures.err"]
         captured_output = io.StringIO()
         sys.stdout = captured_output
         sys.stderr = captured_output

@@ -175,7 +175,7 @@ class AccessCheckPass(Pass):
         if isinstance(node.parent, ast.FuncCall):
             self.access_check(node)
 
-        if node.sym and Pass.has_parent_of_type(
+        if node.sym and Pass.find_parent_of_type(
             node=node.sym.defn[-1], typ=ast.GlobalVars
         ):
             self.access_check(node)
