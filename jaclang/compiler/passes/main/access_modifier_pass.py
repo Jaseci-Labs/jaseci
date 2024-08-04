@@ -23,7 +23,12 @@ class AccessCheckPass(Pass):
     def exit_node(self, node: ast.AstNode) -> None:
         """Exit node."""
         super().exit_node(node)
-        if settings.lsp_debug and isinstance(node, ast.NameAtom) and not node.sym:
+        if (
+            settings.lsp_debug
+            and isinstance(node, ast.NameAtom)
+            and not node.sym
+            and not node.parent_of_type(ast.Module).py_raised
+        ):
             self.warning(f"Name {node.sym_name} not present in symbol table")
 
     def access_check(self, node: ast.Name) -> None:
