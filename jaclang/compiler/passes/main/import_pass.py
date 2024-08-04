@@ -24,14 +24,12 @@ class JacImportPass(Pass):
     def before_pass(self) -> None:
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
-        self.__py_imports: set[str] = set()
         self.py_importing = False
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
-        self.__py_imports.clear()
         self.__annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True
@@ -50,8 +48,6 @@ class JacImportPass(Pass):
         imp_node = i.parent_of_type(ast.Import)
         if imp_node.is_jac and not i.sub_module:
             self.import_jac_module(node=i)
-        elif imp_node.is_py:
-            self.__py_imports.add(i.path_str)
 
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
@@ -231,7 +227,9 @@ class PyImportPass(JacImportPass):
                     self.import_py_module(
                         parent_node=j,
                         mod_path=mod_path,
-                        imported_mod_name=j.name.sym_name,
+                        imported_mod_name=(
+                            j.name.sym_name if not j.alias else j.alias.sym_name
+                        ),
                     )
             else:
                 for j in imp_node.items.items:
@@ -239,7 +237,11 @@ class PyImportPass(JacImportPass):
                     self.import_py_module(
                         parent_node=j,
                         mod_path=j.path_str,
-                        imported_mod_name=j.path_str.replace(".", ""),
+                        imported_mod_name=(
+                            j.path_str.replace(".", "")
+                            if not j.alias
+                            else j.alias.sym_name
+                        ),
                     )
 
     def import_py_module(
