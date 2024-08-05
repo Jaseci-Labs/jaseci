@@ -247,32 +247,87 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(base_module_file)
         test_cases = [
-            (lspt.Position(37, 16), ["get_color1", "color1", "point1"], 3),
+            (lspt.Position(38, 16), ["get_color1", "color1", "point1"], 3),
+            (lspt.Position(42, 22), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 33), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 45), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(46, 20), ["RED22", "GREEN22", "BLUE22"], 3),
+            (lspt.Position(46, 30), ["RED22", "GREEN22", "BLUE22"], 3),
+            (lspt.Position(46, 41), ["RED22", "GREEN22", "BLUE22"], 3),
             (
-                lspt.Position(51, 12),
+                lspt.Position(51, 32),
+                ["RED22", "GREEN22", "BLUE22"],
+                3,
+            ),
+            (
+                lspt.Position(65, 13),
                 [
                     "get_color1",
                     "color1",
                     "point1",
                     "base_colorred",
                     "pointred",
-                    "color2",
+                    "inner_red",
+                    "doubleinner",
+                    "apply_red",
                 ],
-                6,
+                8,
             ),
-            (lspt.Position(52, 19), ["color22", "point22"], 2),
+            (
+                lspt.Position(65, 23),
+                ["color22", "doublepoint22", "point22", "apply_inner_red", "enum_red"],
+                5,
+            ),
+            (
+                lspt.Position(65, 31),
+                ["RED22", "GREEN22", "BLUE22"],
+                3,
+            ),
+            (
+                lspt.Position(35, 28),
+                [],
+                0,
+            ),
+            (
+                lspt.Position(72, 12),
+                [
+                    "get_color1",
+                    "color1",
+                    "point1",
+                    "base_colorred",
+                    "pointred",
+                    "inner_red",
+                    "doubleinner",
+                    "apply_red",
+                ],
+                8,
+            ),
+            (
+                lspt.Position(73, 22),
+                ["color22", "doublepoint22", "apply_inner_red", "point22", "enum_red"],
+                5,
+            ),
+            (
+                lspt.Position(37, 12),
+                ["self", "add", "subtract", "x", "Colorenum", "Colour1", "red", "r"],
+                8,
+                None,
+            ),
         ]
-        for position, expected_completions, expected_length in test_cases:
+        default_trigger = "."
+        for case in test_cases:
+            position, expected_completions, expected_length = case[:3]
+            completion_trigger = case[3] if len(case) > 3 else default_trigger
             completions = lsp.get_completion(
-                base_module_file, position, completion_trigger="."
+                base_module_file, position, completion_trigger=completion_trigger
             ).items
             for completion in expected_completions:
                 self.assertIn(completion, str(completions))
             self.assertEqual(expected_length, len(completions))
 
-            if position == lspt.Position(47, 12):
+            if position == lspt.Position(73, 12):
                 self.assertEqual(
-                    1, str(completions).count("kind=<CompletionItemKind.Function: 3>")
+                    2, str(completions).count("kind=<CompletionItemKind.Function: 3>")
                 )
                 self.assertEqual(
                     4, str(completions).count("kind=<CompletionItemKind.Field: 5>")

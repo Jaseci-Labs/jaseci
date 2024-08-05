@@ -50,7 +50,8 @@ class JacFormatPass(Pass):
 
     def emit(self, node: ast.AstNode, s: str, strip_mode: bool = True) -> None:
         """Emit code to node."""
-        node.gen.jac += self.indent_str() + s.replace("\n", "\n" + self.indent_str())
+        indented_str = re.sub(r"\n(?!\n)", f"\n{self.indent_str()}", s)
+        node.gen.jac += self.indent_str() + indented_str
         if "\n" in node.gen.jac:
             if strip_mode:
                 node.gen.jac = node.gen.jac.rstrip(" ")
@@ -281,6 +282,7 @@ class JacFormatPass(Pass):
                             self.emit(node, stmt.gen.jac)
                             if not stmt.gen.jac.endswith("postinit;"):
                                 self.indent_level -= 1
+                                self.emit_ln(stmt, "")
                                 self.emit_ln(node, "")
                                 self.indent_level += 1
                 elif stmt.gen.jac == ",":
@@ -747,7 +749,7 @@ class JacFormatPass(Pass):
                             self.indent_level += indent_val
                             indented = True
                     else:
-                        self.emit(node, f"{j.gen.jac.strip()}")
+                        self.emit(node, j.gen.jac.lstrip())
                 if indented:
                     self.indent_level -= indent_val
             else:
@@ -1097,6 +1099,9 @@ class JacFormatPass(Pass):
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
+                elif (tok := self.token_before(i)) and (i.line_no - tok.line_no == 1):
+                    self.emit_ln(node, "")
+                    self.emit(node, i.gen.jac)
                 else:
                     self.emit_ln(node, "")
                     self.emit_ln(node, "")
