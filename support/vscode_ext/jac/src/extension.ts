@@ -63,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Find and return the jac executable's absolute path.
     context.subscriptions.push(vscode.commands.registerCommand('extension.jaclang-extension.getJacPath', config => {
 
-        const programName = "jac.exe";  // FIXME: I don't know what it would be on other systems.
+        const programName = (process.platform === 'win32') ? "jac.exe" : "jac";
 
         const paths = process.env.PATH.split(path.delimiter);
         for (const dir of paths) {
