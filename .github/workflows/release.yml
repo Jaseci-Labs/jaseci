@@ -40,11 +40,10 @@ jobs:
 
     - name: Configure credentials with Pypi
       run: |
-        poetry config repositories.pypi https://pypi.org/legacy/
         poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Publish package to PyPI
-      run: poetry publish -r pypi
+      run: poetry publish
 
     - name: Create GitHub Release
       uses: actions/create-release@v1
