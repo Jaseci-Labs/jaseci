@@ -1,7 +1,7 @@
 """Example of simple walker walking nodes."""
 import:py from jaclang_jaseci {FastAPI}
+import:py from jaclang_jaseci.core.architype {Anchor}
 import:py from jaclang_jaseci.core.context {JaseciContext}
-import:py from jaclang_jaseci.plugin {specs}
 import:py from jaclang_jaseci.jaseci.models {User as BaseUser, NO_PASSWORD}
 import:py from jaclang_jaseci.jaseci.utils {SendGridEmailer}
 import:py from dataclasses {dataclass}
@@ -172,6 +172,19 @@ walker update_nested_node {
         nested.val = 1;
         return nested;
     }
+
+    can enter_nested with Nested entry {
+        here.parent.child.json["c"] = 3;
+        here.parent.child.arr.append(3);
+        here.parent.child.val = 3;
+        here.parent.json["b"] = 2;
+        here.parent.arr.append(2);
+        here.parent.val = 2;
+        here.json["a"] = 1;
+        here.arr.append(1);
+        here.val = 1;
+        return here;
+    }
 }
 
 walker detach_nested_node {
@@ -188,7 +201,10 @@ walker visit_nested_node {
         } else {
             return nesteds;
         }
+    }
 
+    can enter_nested with Nested entry {
+        return here;
     }
 }
 
@@ -308,7 +324,38 @@ walker manual_delete_nested_edge {
     }
 }
 
-@specs
+walker allow_other_root_access {
+    has root_id: str, level: int = 0;
+
+    can enter_nested with `root entry {
+        here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+    }
+
+    can enter_nested with Nested entry {
+        here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+    }
+
+    obj __specs__ {}
+}
+
+walker disallow_other_root_access {
+    has root_id: str, level: int = 0;
+
+    can enter_nested with `root entry {
+        here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+    }
+
+    can enter_nested with Nested entry {
+        here.__jac__.disallow_root(Anchor.ref(self.root_id));
+    }
+
+    obj __specs__ {}
+}
+
+#################################################################
+#                    ENDPOINT CUSTOMIZATIONS                    #
+#################################################################
+
 walker post_no_body {}
 
 walker post_with_body {

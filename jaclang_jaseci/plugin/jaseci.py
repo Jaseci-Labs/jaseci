@@ -8,7 +8,15 @@ from os import getenv
 from re import compile
 from typing import Any, Callable, Type, TypeVar, cast, get_type_hints
 
-from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.responses import ORJSONResponse
 
 from jaclang.compiler.absyntree import AstAsyncNode
@@ -151,11 +159,16 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             await jctx.build(request, NodeAnchor.ref(node or ""))
 
             wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
-            if jctx.validate_access() and (entry := jctx.entry):
+            if await jctx.validate_access() and (entry := jctx.entry):
                 await wlk.spawn_call(entry)
-
-            await jctx.close()
-            return ORJSONResponse(jctx.response(wlk.returns))
+                await jctx.close()
+                return ORJSONResponse(jctx.response(wlk.returns))
+            else:
+                await jctx.close()
+                raise HTTPException(
+                    403,
+                    f"You don't have access on target entry{cast(Anchor, jctx.entry).ref_id}!",
+                )
 
         async def api_root(
             request: Request,
@@ -437,7 +450,7 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def connect(
+    async def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         edge_spec: Callable[[], EdgeArchitype],
@@ -452,7 +465,7 @@ class JacPlugin:
         edges = []
         for i in left:
             for j in right:
-                if (source := i.__jac__).has_connect_access(target := j.__jac__):
+                if await (source := i.__jac__).has_connect_access(target := j.__jac__):
                     conn_edge = edge_spec()
                     edges.append(conn_edge)
                     source.connect_node(target, conn_edge.__jac__)
@@ -486,7 +499,7 @@ class JacPlugin:
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and i == source
                         and trg_arch in right
-                        and source.has_write_access(target)
+                        and await source.has_write_access(target)
                     ):
                         anchor.destroy()
                         disconnect_occurred = True
@@ -494,7 +507,7 @@ class JacPlugin:
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and i == target
                         and src_arch in right
-                        and target.has_write_access(source)
+                        and await target.has_write_access(source)
                     ):
                         anchor.destroy()
                         disconnect_occurred = True

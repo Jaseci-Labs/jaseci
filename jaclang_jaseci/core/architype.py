@@ -17,13 +17,13 @@ from typing import (
 
 from bson import ObjectId
 
-from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.architype import (
     Anchor as _Anchor,
     AnchorState as _AnchorState,
     AnchorType,
     Architype as _Architype,
     DSFunc,
+    EdgeDir,
     Permission,
     populate_dataclasses,
 )
@@ -295,10 +295,10 @@ class Anchor(_Anchor):
     #     """Allow all access from target node to current Architype."""
     #     access = self.access.nodes
     #     if access.whitelist:
-    #         if level != access.anchors.get(node, -1):
-    #             access.anchors[node] = level
-    #             self._set.update({f"access.nodes.{node.ref_id}": level})
-    #             self._unset.pop(f"access.nodes.{node.ref_id}", None)
+    #         if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, -1):
+    #             access.anchors[ref_id] = level
+    #             self._set.update({f"access.nodes.anchors.{ref_id}": level})
+    #             self._unset.pop(f"access.nodes.anchors.{ref_id}", None)
     #     else:
     #         self.disallow_node(node, level)
 
@@ -306,9 +306,9 @@ class Anchor(_Anchor):
     #     """Disallow all access from target node to current Architype."""
     #     access = self.access.nodes
     #     if access.whitelist:
-    #         if access.anchors.pop(node, None) is not None:
-    #             self._unset.update({f"access.nodes.{node.ref_id}": True})
-    #             self._set.pop(f"access.nodes.{node.ref_id}", None)
+    #         if (ref_id := node.ref_id) and access.anchors.pop(ref_id, None) is not None:
+    #             self._unset.update({f"access.nodes.anchors.{ref_id}": True})
+    #             self._set.pop(f"access.nodes.anchors.{ref_id}", None)
     #     else:
     #         self.allow_node(node, level)
 
@@ -341,11 +341,11 @@ class Anchor(_Anchor):
     #     """Allow all access from target type graph to current Architype."""
     #     if access := self.access.types.get(type):
     #         if access.whitelist:
-    #             if level != access.anchors.get(node, -1):
-    #                 access.anchors[node] = level
+    #             if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, -1):
+    #                 access.anchors[ref_id] = level
     #                 name = type.__ref_cls__()
-    #                 self._set.update({f"access.types.{name}.{node.ref_id}": level})
-    #                 self._unset.pop(f"access.types.{name}.{node.ref_id}", None)
+    #                 self._set.update({f"access.types.{name}.anchors.{ref_id}": level})
+    #                 self._unset.pop(f"access.types.{name}.anchors.{ref_id}", None)
     #         else:
     #             self.disallow_type(type, node, level)
 
@@ -355,10 +355,10 @@ class Anchor(_Anchor):
     #     """Disallow all access from target type graph to current Architype."""
     #     if access := self.access.types.get(type):
     #         if access.whitelist:
-    #             if access.anchors.pop(node, None) is not None:
+    #             if (ref_id := node.ref_id) and access.anchors.pop(ref_id, None) is not None:
     #                 name = type.__ref_cls__()
-    #                 self._unset.update({f"access.types.{name}.{node.ref_id}": True})
-    #                 self._set.pop(f"access.types.{name}.{node.ref_id}", None)
+    #                 self._unset.update({f"access.types.{name}.anchors.{ref_id}": True})
+    #                 self._set.pop(f"access.types.{name}.anchors.{ref_id}", None)
     #         else:
     #             self.allow_type(type, node, level)
 
@@ -371,10 +371,10 @@ class Anchor(_Anchor):
         """Allow all access from target root graph to current Architype."""
         access = self.access.roots
         if access.whitelist:
-            if level != access.anchors.get(root, -1):
-                access.anchors[root] = level
-                self._set.update({f"access.roots.{root.ref_id}": level})
-                self._unset.pop(f"access.roots.{root.ref_id}", None)
+            if (ref_id := root.ref_id) and level != access.anchors.get(ref_id, -1):
+                access.anchors[ref_id] = level
+                self._set.update({f"access.roots.anchors.{ref_id}": level})
+                self._unset.pop(f"access.roots.anchors.{ref_id}", None)
         else:
             self.disallow_root(root, level)
 
@@ -382,9 +382,9 @@ class Anchor(_Anchor):
         """Disallow all access from target root graph to current Architype."""
         access = self.access.roots
         if access.whitelist:
-            if access.anchors.pop(root, None) is not None:
-                self._unset.update({f"access.roots.{root.ref_id}": True})
-                self._set.pop(f"access.roots.{root.ref_id}", None)
+            if (ref_id := root.ref_id) and access.anchors.pop(ref_id, None) is not None:
+                self._unset.update({f"access.roots.anchors.{ref_id}": True})
+                self._set.pop(f"access.roots.anchors.{ref_id}", None)
         else:
             self.allow_root(root, level)
 
@@ -408,7 +408,7 @@ class Anchor(_Anchor):
             return None
 
         if architype := self.architype:
-            if (node or self).has_read_access(self):
+            if await (node or self).has_read_access(self):
                 return architype
             return None
 
@@ -417,7 +417,7 @@ class Anchor(_Anchor):
         jsrc = JaseciContext.get_datasource()
         anchor = await jsrc.find_one(self.__class__, self)
 
-        if anchor and (node or self).has_read_access(anchor):
+        if anchor and await (node or self).has_read_access(anchor):
             self.__dict__.update(anchor.__dict__)
 
         return self.architype
@@ -427,7 +427,7 @@ class Anchor(_Anchor):
         from .context import JASECI_CONTEXT
 
         if jctx := JASECI_CONTEXT.get(None):
-            if jctx.root:
+            if jctx.root and self.root is None and not isinstance(self.architype, Root):
                 self.root = jctx.root.id
             jctx.datasource.set(self)
 
@@ -580,13 +580,78 @@ class Anchor(_Anchor):
 
         self.hash = self.data_hash()
 
+    async def has_read_access(self, to: "Anchor") -> bool:  # type: ignore[override]
+        """Read Access Validation."""
+        return await self.access_level(to) > -1
+
+    async def has_connect_access(self, to: "Anchor") -> bool:  # type: ignore[override]
+        """Write Access Validation."""
+        return await self.access_level(to) > 0
+
+    async def has_write_access(self, to: "Anchor") -> bool:  # type: ignore[override]
+        """Write Access Validation."""
+        return await self.access_level(to) > 1
+
+    async def access_level(self, to: "Anchor") -> int:  # type: ignore[override]
+        """Access validation."""
+        from .context import JaseciContext
+
+        jctx = JaseciContext.get_or_create()
+
+        to.state.current_access_level = -1
+        if jroot := jctx.root:
+            if jroot == jctx.super_root or jroot.id == to.root or jroot == to:
+                to.state.current_access_level = 2
+
+            if (to_access := to.access).all > -1:
+                to.state.current_access_level = to_access.all
+
+            # whitelist, level = to_access.nodes.check(self)
+            # if not whitelist and level < 0:
+            #     to.state.current_access_level = -1
+            #     return to.state.current_access_level
+            # elif whitelist and level > -1:
+            #     to.state.current_access_level = level
+
+            # if (architype := self.architype) and (
+            #     access_type := to_access.types.get(architype.__class__)
+            # ):
+            #     whitelist, level = access_type.check(self)
+            #     if not whitelist and level < 0:
+            #         to.state.current_access_level = -1
+            #         return to.state.current_access_level
+            #     elif whitelist and level > -1 and to.state.current_access_level == -1:
+            #         to.state.current_access_level = level
+
+            whitelist, level = to_access.roots.check(jroot.ref_id)
+            if not whitelist and level < 0:
+                to.state.current_access_level = -1
+                return to.state.current_access_level
+            elif whitelist and level > -1 and to.state.current_access_level == -1:
+                to.state.current_access_level = level
+
+            if to.root and (
+                to_root := await jctx.datasource.find_one(
+                    NodeAnchor,
+                    NodeAnchor(id=to.root, state=AnchorState(connected=True)),
+                )
+            ):
+                whitelist, level = to_root.access.roots.check(jroot.ref_id)
+                if not whitelist and level < 0:
+                    to.state.current_access_level = -1
+                    return to.state.current_access_level
+                elif whitelist and level > -1 and to.state.current_access_level == -1:
+                    to.state.current_access_level = level
+
+        return to.state.current_access_level
+
     def serialize(self, dumps: bool = False) -> dict[str, object]:
         """Serialize Anchor."""
         return {
             "_id": str(self.id) if dumps else self.id,
             "name": self.name,
             "root": str(self.root) if dumps else self.root,
-            "access": self.access.serialize(),
+            "access": asdict(self.access),
             "architype": (
                 asdict(self.architype)  # type: ignore[call-overload]
                 if is_dataclass(self.architype) and not isinstance(self.architype, type)
@@ -713,7 +778,7 @@ class NodeAnchor(Anchor):
                     and self == source
                     and trg_arch
                     and (not target_cls or trg_arch.__class__ in target_cls)
-                    and source.has_read_access(target)
+                    and await source.has_read_access(target)
                 ):
                     ret_edges.append(architype)
                 if (
@@ -721,7 +786,7 @@ class NodeAnchor(Anchor):
                     and self == target
                     and src_arch
                     and (not target_cls or src_arch.__class__ in target_cls)
-                    and target.has_read_access(source)
+                    and await target.has_read_access(source)
                 ):
                     ret_edges.append(architype)
         return ret_edges
@@ -753,7 +818,7 @@ class NodeAnchor(Anchor):
                     and self == source
                     and trg_arch
                     and (not target_cls or trg_arch.__class__ in target_cls)
-                    and source.has_read_access(target)
+                    and await source.has_read_access(target)
                 ):
                     ret_edges.append(trg_arch)
                 if (
@@ -761,7 +826,7 @@ class NodeAnchor(Anchor):
                     and self == target
                     and src_arch
                     and (not target_cls or src_arch.__class__ in target_cls)
-                    and target.has_read_access(source)
+                    and await target.has_read_access(source)
                 ):
                     ret_edges.append(src_arch)
         return ret_edges
@@ -1086,8 +1151,10 @@ class Architype(_Architype):
 
     def __init__(self, __jac__: Anchor | None = None) -> None:
         """Create default architype."""
-        self.__jac__ = __jac__ or Anchor(architype=self)
-        self.__jac__.allocate()
+        if not __jac__:
+            __jac__ = Anchor(architype=self)
+            __jac__.allocate()
+        self.__jac__ = __jac__
 
     @classmethod
     def __ref_cls__(cls) -> str:
@@ -1102,10 +1169,10 @@ class NodeArchitype(Architype):
 
     def __init__(self, __jac__: NodeAnchor | None = None) -> None:
         """Create node architype."""
-        self.__jac__ = __jac__ or NodeAnchor(
-            name=self.__class__.__name__, architype=self
-        )
-        self.__jac__.allocate()
+        if not __jac__:
+            __jac__ = NodeAnchor(name=self.__class__.__name__, architype=self)
+            __jac__.allocate()
+        self.__jac__ = __jac__
 
     @classmethod
     def __ref_cls__(cls) -> str:
@@ -1120,10 +1187,10 @@ class EdgeArchitype(Architype):
 
     def __init__(self, __jac__: EdgeAnchor | None = None) -> None:
         """Create edge architype."""
-        self.__jac__ = __jac__ or EdgeAnchor(
-            name=self.__class__.__name__, architype=self
-        )
-        self.__jac__.allocate()
+        if not __jac__:
+            __jac__ = EdgeAnchor(name=self.__class__.__name__, architype=self)
+            __jac__.allocate()
+        self.__jac__ = __jac__
 
     @classmethod
     def __ref_cls__(cls) -> str:
@@ -1138,10 +1205,10 @@ class WalkerArchitype(Architype):
 
     def __init__(self, __jac__: WalkerAnchor | None = None) -> None:
         """Create walker architype."""
-        self.__jac__ = __jac__ or WalkerAnchor(
-            name=self.__class__.__name__, architype=self
-        )
-        self.__jac__.allocate()
+        if not __jac__:
+            __jac__ = WalkerAnchor(name=self.__class__.__name__, architype=self)
+            __jac__.allocate()
+        self.__jac__ = __jac__
 
     @classmethod
     def __ref_cls__(cls) -> str:
@@ -1158,8 +1225,10 @@ class GenericEdge(EdgeArchitype):
 
     def __init__(self, __jac__: EdgeAnchor | None = None) -> None:
         """Create walker architype."""
-        self.__jac__ = __jac__ or EdgeAnchor(architype=self)
-        self.__jac__.allocate()
+        if not __jac__:
+            __jac__ = EdgeAnchor(architype=self)
+            __jac__.allocate()
+        self.__jac__ = __jac__
 
 
 @dataclass(eq=False)
@@ -1171,5 +1240,7 @@ class Root(NodeArchitype):
 
     def __init__(self, __jac__: NodeAnchor | None = None) -> None:
         """Create walker architype."""
-        self.__jac__ = __jac__ or NodeAnchor(architype=self)
-        self.__jac__.allocate()
+        if not __jac__:
+            __jac__ = NodeAnchor(architype=self)
+            __jac__.allocate()
+        self.__jac__ = __jac__

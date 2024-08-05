@@ -93,9 +93,11 @@ class JaseciContext:
 
         return default() if callable(default) else default
 
-    def validate_access(self) -> bool:
+    async def validate_access(self) -> bool:
         """Validate access."""
-        return bool(self.root and self.entry and self.root.has_read_access(self.entry))
+        return bool(
+            self.root and self.entry and await self.root.has_read_access(self.entry)
+        )
 
     async def close(self) -> None:
         """Clean up context."""

@@ -1703,6 +1703,222 @@
                 }
             }
         },
+        "/walker/allow_other_root_access": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/allow_other_root_access",
+                "operationId": "api_root_walker_allow_other_root_access_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/allow_other_root_access_body_model"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/walker/allow_other_root_access/{node}": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/allow_other_root_access/{node}",
+                "operationId": "api_entry_walker_allow_other_root_access__node__post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "node",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Node"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/allow_other_root_access_body_model"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/walker/disallow_other_root_access": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/disallow_other_root_access",
+                "operationId": "api_root_walker_disallow_other_root_access_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/disallow_other_root_access_body_model"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/walker/disallow_other_root_access/{node}": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/disallow_other_root_access/{node}",
+                "operationId": "api_entry_walker_disallow_other_root_access__node__post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "node",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Node"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/disallow_other_root_access_body_model"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/walker/post_no_body": {
             "post": {
                 "tags": [
@@ -4323,6 +4539,23 @@
                 ],
                 "title": "ValidationError"
             },
+            "allow_other_root_access_body_model": {
+                "properties": {
+                    "root_id": {
+                        "type": "string",
+                        "title": "Root Id"
+                    },
+                    "level": {
+                        "type": "integer",
+                        "title": "Level"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "root_id"
+                ],
+                "title": "allow_other_root_access_body_model"
+            },
             "combination1_body_model": {
                 "properties": {
                     "c": {
@@ -4348,6 +4581,23 @@
                     "c"
                 ],
                 "title": "combination2_body_model"
+            },
+            "disallow_other_root_access_body_model": {
+                "properties": {
+                    "root_id": {
+                        "type": "string",
+                        "title": "Root Id"
+                    },
+                    "level": {
+                        "type": "integer",
+                        "title": "Level"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "root_id"
+                ],
+                "title": "disallow_other_root_access_body_model"
             },
             "post_with_body_body_model": {
                 "properties": {

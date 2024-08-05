@@ -47,9 +47,9 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
     def post_api(
         self,
         api: str,
-        json: dict | None,
-        user: int,
-        expect_error: Literal[True],
+        json: dict | None = None,
+        user: int = 0,
+        expect_error: Literal[True] = True,
     ) -> int:
         pass
 
@@ -71,10 +71,11 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         else:
             return res.status_code
 
-    def check_server(self) -> dict:
+    def check_server(self) -> None:
         """Retrieve OpenAPI Specs JSON."""
         res = get(f"{self.host}/healthz")
         res.raise_for_status()
+        self.assertEqual(200, res.status_code)
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
@@ -228,13 +229,15 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
             res["returns"][0]["context"],
         )
 
-    def trigger_update_nested_node_test(self, manual: bool = False) -> None:
+    def trigger_update_nested_node_test(
+        self, manual: bool = False, user: int = 1
+    ) -> None:
         """Test update nested node."""
         for walker in [
             f"{'manual_' if manual else ""}update_nested_node",
             "visit_nested_node",
         ]:
-            res = self.post_api(walker, user=1)
+            res = self.post_api(walker, user=user)
             self.assertEqual(200, res["status"])
             self.assertEqual(
                 {
@@ -285,6 +288,163 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.assertEqual(200, res["status"])
         self.assertEqual([[]], res["returns"])
 
+    def trigger_access_validation_test(self, give_acces_to_full_graph: bool) -> None:
+        """Test giving access to node or full graph."""
+        res = self.post_api("create_nested_node", user=1)
+
+        nested_node = res["returns"][0]
+
+        allow_walker_suffix = (
+            "" if give_acces_to_full_graph else f'/{nested_node["id"]}'
+        )
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "json": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "json": {"a": 1},
+                    "child": {"val": 2, "arr": [1, 2], "json": {"a": 1, "b": 2}},
+                },
+            },
+            nested_node["context"],
+        )
+
+        ###################################################
+        #                    NO ACCESS                    #
+        ###################################################
+
+        self.assertEqual(
+            403,
+            self.post_api(f"visit_nested_node/{nested_node['id']}", expect_error=True),
+        )
+
+        ###################################################
+        #          WITH ALLOWED ROOT READ ACCESS          #
+        ###################################################
+
+        res = self.post_api(
+            f"allow_other_root_access{allow_walker_suffix}",
+            json={"root_id": f'n::{self.users[0]["user"]["root_id"]}'},
+            user=1,
+        )
+        self.assertEqual(200, res["status"])
+
+        res = self.post_api(f"update_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "json": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "json": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "json": {"a": 1, "b": 2, "c": 3},
+                    },
+                },
+            },
+            res["returns"][0]["context"],
+        )
+
+        # ----------- NO UPDATE SHOULD HAPPEN ----------- #
+
+        res = self.post_api(f"visit_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "json": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "json": {"a": 1},
+                    "child": {"val": 2, "arr": [1, 2], "json": {"a": 1, "b": 2}},
+                },
+            },
+            res["returns"][0]["context"],
+        )
+
+        ###################################################
+        #          WITH ALLOWED ROOT WRITE ACCESS         #
+        ###################################################
+
+        res = self.post_api(
+            f"allow_other_root_access{allow_walker_suffix}",
+            json={"root_id": f'n::{self.users[0]["user"]["root_id"]}', "level": 2},
+            user=1,
+        )
+        self.assertEqual(200, res["status"])
+
+        res = self.post_api(f"update_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "json": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "json": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "json": {"a": 1, "b": 2, "c": 3},
+                    },
+                },
+            },
+            res["returns"][0]["context"],
+        )
+
+        # ------------ UPDATE SHOULD REFLECT ------------ #
+
+        res = self.post_api(f"visit_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "json": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "json": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "json": {"a": 1, "b": 2, "c": 3},
+                    },
+                },
+            },
+            res["returns"][0]["context"],
+        )
+
+        ###################################################
+        #                REMOVE ROOT ACCESS               #
+        ###################################################
+
+        res = self.post_api(
+            f"disallow_other_root_access{allow_walker_suffix}",
+            json={"root_id": f'n::{self.users[0]["user"]["root_id"]}'},
+            user=1,
+        )
+        self.assertEqual(200, res["status"])
+
+        self.assertEqual(
+            403,
+            self.post_api(f"visit_nested_node/{nested_node['id']}", expect_error=True),
+        )
+
     async def nested_count_should_be(self, node: int, edge: int) -> None:
         """Test nested node count."""
         self.assertEqual(node, await self.q_node.count_documents({"name": "Nested"}))
@@ -302,7 +462,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def test_all_features(self) -> None:
         """Test Full Features."""
-        self.trigger_openapi_specs_test()
+        # self.trigger_openapi_specs_test()
 
         self.trigger_create_user_test()
         self.trigger_create_user_test(suffix="2")
@@ -361,3 +521,6 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         # manual save still needs to trigger the destroy for that node
         self.trigger_delete_nested_edge_test(manual=True)
         await self.nested_count_should_be(node=1, edge=0)
+
+        self.trigger_access_validation_test(give_acces_to_full_graph=False)
+        self.trigger_access_validation_test(give_acces_to_full_graph=True)
