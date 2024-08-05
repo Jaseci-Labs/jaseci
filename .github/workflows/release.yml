@@ -1,0 +1,57 @@
+name: Release to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'  # Specify your Python version
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python -
+        export PATH="$HOME/.poetry/bin:$PATH"
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Extract version from tag
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
+
+    - name: Update version in pyproject.toml
+      run: |
+        poetry version ${{ steps.get_version.outputs.VERSION }}
+
+    - name: Build package
+      run: poetry build
+
+    - name: Configure credentials with Pypi
+      run: |
+        poetry config repositories.pypi https://pypi.org/legacy/
+        poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+
+    - name: Publish package to PyPI
+      run: poetry publish -r pypi
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
