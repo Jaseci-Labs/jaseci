@@ -1,5 +1,7 @@
 node day {}
+
 edge future {}
+
 edge parent {}
 
 walker get_last_active_day {
