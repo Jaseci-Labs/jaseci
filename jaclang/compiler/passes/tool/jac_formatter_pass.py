@@ -288,20 +288,17 @@ class JacFormatPass(Pass):
                 continue
             elif isinstance(stmt, ast.Semi):
                 self.emit(node, stmt.gen.jac)
-            elif isinstance(prev_token, (ast.HasVar, ast.ArchHas)) and not isinstance(
-                stmt, (ast.HasVar, ast.ArchHas)
+            elif (
+                isinstance(prev_token, (ast.HasVar, ast.ArchHas))
+                and not isinstance(stmt, (ast.HasVar, ast.ArchHas))
+            ) or (
+                isinstance(prev_token, ast.Ability)
+                and isinstance(stmt, (ast.Ability, ast.AbilityDef))
             ):
                 if not isinstance(prev_token.kid[-1], ast.CommentToken):
                     self.indent_level -= 1
                     self.emit_ln(node, "")
                     self.indent_level += 1
-                self.emit(node, stmt.gen.jac)
-            elif isinstance(prev_token, ast.Ability) and isinstance(
-                stmt, (ast.Ability, ast.AbilityDef)
-            ):
-                self.indent_level -= 1
-                self.emit_ln(node, "")
-                self.indent_level += 1
                 self.emit(node, stmt.gen.jac)
             else:
                 if prev_token and prev_token.gen.jac.strip() == "{":
