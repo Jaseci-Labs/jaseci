@@ -37,7 +37,7 @@ class JacTypeCheckPass(Pass):
     def after_pass(self) -> None:
         """Call mypy api after traversing all the modules."""
         try:
-            self.api()
+            self.api(os.path.dirname(self.ir.loc.mod_path))
         except Exception as e:
             self.error(f"Unable to run type checking: {e}")
         return super().after_pass()
@@ -47,7 +47,7 @@ class JacTypeCheckPass(Pass):
     ) -> None:
         """Mypy errors reporter."""
 
-    def api(self) -> None:
+    def api(self, top_module_path: str = "") -> None:
         """Call mypy APIs to implement type checking in Jac."""
         # Creating mypy api objects
         options = myab.myb.Options()
@@ -59,6 +59,9 @@ class JacTypeCheckPass(Pass):
                 / "stubs"
             )
         ]
+        if top_module_path != "":
+            options.mypy_path.append(top_module_path)
+
         errors = myab.Errors(self, options)
         fs_cache = myab.FileSystemCache()
         search_paths = myab.compute_search_paths([], options, str(self.__path))
