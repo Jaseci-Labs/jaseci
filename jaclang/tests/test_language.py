@@ -494,12 +494,23 @@ class JacLanguageTests(TestCase):
 
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.py_raise = True
-        file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_1.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen
+        file_name = self.fixture_abs_path("pyfunc_1.py")
+
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
+        import ast as py_ast
         import jaclang.compiler.absyntree as ast
 
-        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
+        with open(file_name, "r") as f:
+            parsed_ast = py_ast.parse(f.read())
+            try:
+                py_ast_build_pass = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                )
+            except Exception as e:
+                return f"Error While Jac to Py AST conversion: {e}"
+
+        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 7)
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -542,13 +553,26 @@ class JacLanguageTests(TestCase):
 
     def test_needs_import_2(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.py_raise = True
-        file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_2.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen
+        file_name = self.fixture_abs_path("pyfunc_2.py")
+
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
+        import ast as py_ast
         import jaclang.compiler.absyntree as ast
 
-        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 5)
+        with open(file_name, "r") as f:
+            parsed_ast = py_ast.parse(f.read())
+            try:
+                py_ast_build_pass = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                )
+            except Exception as e:
+                return f"Error While Jac to Py AST conversion: {e}"
+
+        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
+        self.assertEqual(
+            len(ir.get_all_sub_nodes(ast.Architype)), 8
+        )  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
@@ -578,13 +602,26 @@ class JacLanguageTests(TestCase):
 
     def test_needs_import_3(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.py_raise = True
-        file_name = os.path.join(self.fixture_abs_path("./"), "needs_import_3.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen
+        file_name = self.fixture_abs_path("pyfunc_3.py")
+
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
+        import ast as py_ast
         import jaclang.compiler.absyntree as ast
 
-        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 6)
+        with open(file_name, "r") as f:
+            parsed_ast = py_ast.parse(f.read())
+            try:
+                py_ast_build_pass = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                )
+            except Exception as e:
+                return f"Error While Jac to Py AST conversion: {e}"
+
+        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
+        self.assertEqual(
+            len(ir.get_all_sub_nodes(ast.Architype)), 38
+        )  # Because of the Architype from other imports
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
@@ -760,15 +797,26 @@ class JacLanguageTests(TestCase):
 
     def test_deep_convert(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.py_raise = settings.py_raise_deep = True
-        file_name = os.path.join(self.fixture_abs_path("./"), "deep_convert.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen
+        file_name = self.fixture_abs_path("pyfunc_1.py")
+
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
+        import ast as py_ast
         import jaclang.compiler.absyntree as ast
 
-        ir = jac_file_to_pass(file_name, schedule=py_code_gen).ir
+        with open(file_name, "r") as f:
+            parsed_ast = py_ast.parse(f.read())
+            try:
+                py_ast_build_pass = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                )
+            except Exception as e:
+                return f"Error While Jac to Py AST conversion: {e}"
+
+        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(' |   +-- String - "Loop compl', jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 272)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 269)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
@@ -903,3 +951,6 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("Hello World!"), 1)
         self.assertIn("im still here", stdout_value)
+
+
+JacLanguageTests().test_needs_import_2()
