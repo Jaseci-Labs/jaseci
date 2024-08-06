@@ -1,5 +1,4 @@
 node user_root {}
-
 node day {}
 
 walker update_graph {

@@ -129,11 +129,15 @@ class JacFormatPass(Pass):
             if isinstance(i, ast.Import):
                 self.emit_ln(node, i.gen.jac)
             else:
-                if isinstance(
-                    last_element, (ast.Import, ast.Architype)
-                ) and not node.gen.jac.endswith("\n\n"):
+                if isinstance(last_element, ast.Import):
                     self.emit_ln(node, "")
-
+                if last_element and (
+                    isinstance(i, ast.Architype)
+                    and isinstance(last_element, ast.Architype)
+                    and i.loc.first_line - last_element.loc.last_line == 2
+                    and not node.gen.jac.endswith("\n\n")
+                ):
+                    self.emit_ln(node, "")
                 self.emit_ln(node, i.gen.jac)
 
                 if counter <= len(node.body) - 1:
