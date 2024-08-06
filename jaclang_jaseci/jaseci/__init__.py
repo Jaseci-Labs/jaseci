@@ -53,6 +53,6 @@ class FastAPI:
         _run(
             cls.get(),
             host=host or getenv("HOST") or "0.0.0.0",
-            port=port or int(getenv("HOST", "8000")),
+            port=port or int(getenv("PORT", "8000")),
             **kwargs
         )
