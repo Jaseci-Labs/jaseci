@@ -28,6 +28,11 @@ class AccessCheckPass(Pass):
             and isinstance(node, ast.NameAtom)
             and not node.sym
             and not node.parent_of_type(ast.Module).py_raised
+            and not (
+                node.sym_name == "py"
+                and node.parent
+                and isinstance(node.parent.parent, ast.Import)
+            )
         ):
             self.warning(f"Name {node.sym_name} not present in symbol table")
 
