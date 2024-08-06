@@ -10,7 +10,6 @@ from typing import Optional, TYPE_CHECKING
 import jaclang.compiler.absyntree as ast
 from jaclang.settings import settings
 
-
 if TYPE_CHECKING:
     from jaclang.compiler.absyntree import AstNode, SymbolTable
 
@@ -85,6 +84,7 @@ def print_ast_tree(
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
     max_depth: Optional[int] = None,
+    print_py_raise: bool = False,
 ) -> str:
     """Recursively print ast tree."""
     from jaclang.compiler.absyntree import AstSymbolNode, Token
@@ -116,7 +116,7 @@ def print_ast_tree(
             return out
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"
-        elif isinstance(node, ast.Module) and node.py_raised:
+        elif isinstance(node, ast.Module) and node.py_raised and not print_py_raise:
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
         elif isinstance(node, AstSymbolNode):
             out = (
@@ -187,16 +187,15 @@ def print_ast_tree(
     if isinstance(root, ast.AstNode):
         if isinstance(root, ast.Module) and root.py_raised:
             tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
-            kids = list(filter(
-                lambda x: x.py_raised,
-                root.get_all_sub_nodes(ast.Module)
-            ))
+            kids = list(
+                filter(lambda x: x.py_raised, root.get_all_sub_nodes(ast.Module))
+            )
             for i, child in enumerate(kids):
                 is_last = i == len(kids) - 1
                 tree_str += print_ast_tree(
                     child, marker, [*level_markers, not is_last], output_file, max_depth
                 )
-                    
+
         else:
             tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
             for i, child in enumerate(root.kid):
@@ -204,7 +203,7 @@ def print_ast_tree(
                 tree_str += print_ast_tree(
                     child, marker, [*level_markers, not is_last], output_file, max_depth
                 )
-            
+
     elif isinstance(root, ast3.AST):
         tree_str = (
             f"{get_location_info(root)}\t{markers}{__node_repr_in_py_tree(root)}\n"
