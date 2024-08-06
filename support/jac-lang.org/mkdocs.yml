@@ -1,28 +1,30 @@
 site_name: The Jac Programming Language
 site_url: https://jac-lang.org
 nav:
-    - ~$: 'index.md'
-    - ~/start$:
+    - Home: 'index.md'
+    - Start:
+      - 'start/about.md'
       - 'start.md'
       - 'start/installation.md'
       - 'start/jac_in_a_flash.md'
-    - ~/learn$:
-      - ~/for_coders:
+    - Learn:
+      - For coders:
         - 'learn/guide.md'
         - 'learn/jac_ref.md'
+        - 'learn/impl_docs.md'
         - 'learn/with_llm.md'
         - 'learn/tips_tricks.md'
         - 'learn/jac_plugins.md'
-      - ~/for_contributors:
+      - For contributors:
         - 'learn/contrib.md'
-      - ~/w.i.p$:
+      - W.I.P:
         - 'learn/ast_doc.md'
-        - ~/projects$:
+        - projects:
           - 'projects/auto_ref.md'
 
-    - ~/why$: 'why.md'
+    - Why: 'why.md'
     # - ~/roadmap$: 'roadmap.md'
-    - ~/github$: https://github.com/Jaseci-Labs/jaclang
+    - Github: https://github.com/Jaseci-Labs/jaclang
 
 theme:
     logo: 'assets/logo.png'
@@ -40,6 +42,7 @@ theme:
     - navigation.tracking
     - navigation.tabs
     - navigation.path
+    - navigation.footer
     icon:
       admonition:
         note: octicons/tag-16
@@ -91,7 +94,7 @@ extra:
   social:
     - icon: fontawesome/brands/mastodon
       link: https://fosstodon.org/@squidfunk
-copyright: Copyright &copy; 2023 - 20XX Jac Hackers Everwhere
+copyright: Copyright &copy; 2023 - 2024 Jac Hackers Everwhere
 
 plugins:
   - search

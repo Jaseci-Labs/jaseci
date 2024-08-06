@@ -1,17 +1,17 @@
 glob x = 5, y = 2;
 
 test a {
-    check assertAlmostEqual(5, x);
+    check almostEqual(5, x);
 }
 
 test b {
-    check assertIn("l", "llm");
+    check "l" in "llm";
 }
 
 test c {
-    check assertEqual(x - y, 3);
+    check x - y == 3;
 }
 
 test d {
-    check assertEqual(1, 2);
+    check 1 == 2;
 }
