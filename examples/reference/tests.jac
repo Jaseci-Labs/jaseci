@@ -1,13 +1,13 @@
 test test1 {
-    check assertAlmostEqual(4.99999, 4.99999);
+    check almostEqual(4.99999, 4.99999);
 }
 
 test test2 {
-    check assertEqual(5, 5);
+    check 5 == 5;
 }
 
 test test3 {
-    check assertIn("e", "qwerty");
+    check "e" in "qwerty";
 }
 
 with entry:__main__ {

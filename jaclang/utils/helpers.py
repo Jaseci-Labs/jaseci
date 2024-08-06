@@ -5,6 +5,7 @@ import marshal
 import os
 import pdb
 import re
+from traceback import TracebackException
 
 
 def pascal_to_snake(pascal_string: str) -> str:
@@ -135,6 +136,50 @@ def is_standard_lib_module(module_path: str) -> bool:
     direc_path = os.path.join(stdlib_dir, module_path)
     file_path = direc_path + ".py"
     return os.path.isfile(file_path) or os.path.isdir(direc_path)
+
+
+def dump_traceback(e: Exception) -> str:
+    """Dump the stack frames of the exception."""
+    trace_dump = ""
+
+    # Utility function to get the error line char offset.
+    def byte_offset_to_char_offset(string: str, offset: int) -> int:
+        return len(string.encode("utf-8")[:offset].decode("utf-8", errors="replace"))
+
+    tb = TracebackException(type(e), e, e.__traceback__, limit=None, compact=True)
+    trace_dump += f"Error: {str(e)}"
+
+    # The first frame is the call the to the above `exec` function, not usefull to the enduser,
+    # and Make the most recent call first.
+    tb.stack.pop(0)
+    tb.stack.reverse()
+
+    # FIXME: should be some settings, we should replace to ensure the anchors length match.
+    dump_tab_width = 4
+
+    for idx, frame in enumerate(tb.stack):
+        func_signature = frame.name + ("()" if frame.name.isidentifier() else "")
+
+        # Pretty print the most recent call's location.
+        if idx == 0 and (frame.line and frame.line.strip() != ""):
+            line_o = frame._original_line.rstrip()  # type: ignore [attr-defined]
+            line_s = frame.line.rstrip() if frame.line else ""
+            stripped_chars = len(line_o) - len(line_s)
+            trace_dump += f'\n{" " * (dump_tab_width * 2)}{line_s}'
+            if frame.colno is not None and frame.end_colno is not None:
+                off_start = byte_offset_to_char_offset(line_o, frame.colno)
+                off_end = byte_offset_to_char_offset(line_o, frame.end_colno)
+
+                # A bunch of caret '^' characters under the error location.
+                anchors = (" " * (off_start - stripped_chars - 1)) + "^" * len(
+                    line_o[off_start:off_end].replace("\t", " " * dump_tab_width)
+                )
+
+                trace_dump += f'\n{" " * (dump_tab_width * 2)}{anchors}'
+
+        trace_dump += f'\n{" " * dump_tab_width}at {func_signature} {frame.filename}:{frame.lineno}'
+
+    return trace_dump
 
 
 class Jdb(pdb.Pdb):
