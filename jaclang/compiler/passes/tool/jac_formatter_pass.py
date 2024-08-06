@@ -240,25 +240,18 @@ class JacFormatPass(Pass):
                 if stmt.name == Tok.LBRACE:
                     self.emit(node, f" {stmt.value}")
                 elif stmt.name == Tok.RBRACE:
-                    if self.indent_level > 0:
-                        self.indent_level -= 1
+                    self.indent_level = max(0, self.indent_level - 1)
                     if stmt.parent and stmt.parent.gen.jac.strip() == "{":
                         self.emit(node, f"{stmt.value}")
                     else:
-                        if not (node.gen.jac).endswith("\n"):
+                        if not node.gen.jac.endswith("\n"):
                             self.emit_ln(node, "")
-                            self.emit(node, f"{stmt.value}")
-                        else:
-                            self.emit(node, f"{stmt.value}")
+                        self.emit(node, f"{stmt.value}")
                 elif isinstance(stmt, ast.CommentToken):
                     if stmt.is_inline:
                         if isinstance(prev_token, ast.Semi) or (
                             isinstance(prev_token, ast.Token)
-                            and prev_token.name
-                            in [
-                                Tok.LBRACE,
-                                Tok.RBRACE,
-                            ]
+                            and prev_token.name in [Tok.LBRACE, Tok.RBRACE]
                         ):
                             self.indent_level -= 1
                             self.emit(node, f" {stmt.gen.jac}")
@@ -306,25 +299,10 @@ class JacFormatPass(Pass):
             elif isinstance(prev_token, ast.Ability) and isinstance(
                 stmt, (ast.Ability, ast.AbilityDef)
             ):
-                if not isinstance(prev_token.kid[-1], ast.CommentToken) and (
-                    stmt.body and not isinstance(stmt.body, ast.FuncCall)
-                ):
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                    self.emit(node, f"{stmt.gen.jac}")
-                elif stmt.body and isinstance(
-                    stmt.body, (ast.FuncCall, ast.EventSignature)
-                ):
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                    self.emit(node, stmt.gen.jac)
-                else:
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                    self.emit(node, f"{stmt.gen.jac}")
+                self.indent_level -= 1
+                self.emit_ln(node, "")
+                self.indent_level += 1
+                self.emit(node, stmt.gen.jac)
             else:
                 if prev_token and prev_token.gen.jac.strip() == "{":
                     self.emit_ln(node, "")
