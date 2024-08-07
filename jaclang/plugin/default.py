@@ -36,6 +36,7 @@ from jaclang.runtimelib.constructs import (
     exec_context,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
+from jaclang.runtimelib.machine import JacProgram
 from jaclang.runtimelib.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
 from jaclang.plugin.spec import P, T
@@ -262,10 +263,12 @@ class JacFeatureDefaults:
             cachable,
             mdl_alias,
             override_name,
-            mod_bundle,
             lng,
             items,
         )
+        if not Jac.context().jac_machine.jac_program:
+            jac_program = JacProgram(mod_bundle, {})
+            Jac.context().jac_machine.attach_program(jac_program)
         if lng == "py":
             import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
         else:

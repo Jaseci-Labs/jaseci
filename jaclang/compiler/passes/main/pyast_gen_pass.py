@@ -6,6 +6,7 @@ in each node. Module nodes contain the entire module code.
 
 import ast as ast3
 import textwrap
+from dataclasses import dataclass
 from typing import Optional, Sequence, TypeVar
 
 import jaclang.compiler.absyntree as ast
@@ -1862,32 +1863,159 @@ class PyastGenPass(Pass):
 
         target: ExprType,
         """
+        # TODO: Here is the list of assertions which are not implemented instead a simpler version of them will work.
+        # ie. [] == [] will be assertEqual instead of assertListEqual. However I don't think this is needed since it can
+        # only detected if both operand are compile time literal list or type inferable.
+        #
+        #   assertAlmostEqual
+        #   assertNotAlmostEqual
+        #   assertSequenceEqual
+        #   assertListEqual
+        #   assertTupleEqual
+        #   assertSetEqual
+        #   assertDictEqual
+        #   assertCountEqual
+        #   assertMultiLineEqual
+        #   assertRaisesRegex
+        #   assertWarnsRegex
+        #   assertRegex
+        #   assertNotRegex
+
+        # The return type "struct" for the bellow check_node_isinstance_call.
+        @dataclass
+        class CheckNodeIsinstanceCallResult:
+            isit: bool = False
+            inst: ast3.AST | None = None
+            clss: ast3.AST | None = None
+
+        # This will check if a node is `isinstance(<expr>, <expr>)`, we're
+        # using a function because it's reusable to check not isinstance(<expr>, <expr>).
+        def check_node_isinstance_call(
+            node: ast.FuncCall,
+        ) -> CheckNodeIsinstanceCallResult:
+
+            # Ensure the type of the FuncCall node is SubNodeList[Expr]
+            # since the type can be: Optional[SubNodeList[Expr | KWPair]].
+            if not (
+                node.params is not None
+                and len(node.params.items) == 2
+                and isinstance(node.params.items[0], ast.Expr)
+                and isinstance(node.params.items[1], ast.Expr)
+            ):
+                return CheckNodeIsinstanceCallResult()
+
+            func = node.target.gen.py_ast[0]
+            if not (isinstance(func, ast3.Name) and func.id == "isinstance"):
+                return CheckNodeIsinstanceCallResult()
+
+            return CheckNodeIsinstanceCallResult(
+                True,
+                node.params.items[0].gen.py_ast[0],
+                node.params.items[1].gen.py_ast[0],
+            )
+
+        # By default the check expression will become assertTrue(<expr>), unless any pattern detected.
+        assert_func_name = "assertTrue"
+        assert_args_list = node.target.gen.py_ast
+
+        # Compare operations. Note that We're only considering the compare
+        # operation with a single operation ie. a < b < c is  ignored here.
+        if (
+            isinstance(node.target, ast.CompareExpr)
+            and isinstance(node.target.gen.py_ast[0], ast3.Compare)
+            and len(node.target.ops) == 1
+        ):
+            expr: ast.CompareExpr = node.target
+            opty: ast.Token = expr.ops[0]
+
+            optype2fn = {
+                Tok.EE.name: "assertEqual",
+                Tok.NE.name: "assertNotEqual",
+                Tok.LT.name: "assertLess",
+                Tok.LTE.name: "assertLessEqual",
+                Tok.GT.name: "assertGreater",
+                Tok.GTE.name: "assertGreaterEqual",
+                Tok.KW_IN.name: "assertIn",
+                Tok.KW_NIN.name: "assertNotIn",
+                Tok.KW_IS.name: "assertIs",
+                Tok.KW_ISN.name: "assertIsNot",
+            }
+
+            if opty.name in optype2fn:
+                assert_func_name = optype2fn[opty.name]
+                assert_args_list = [
+                    expr.left.gen.py_ast[0],
+                    expr.rights[0].gen.py_ast[0],
+                ]
+
+                # Override for <expr> is None.
+                if opty.name == Tok.KW_IS and isinstance(expr.rights[0], ast.Null):
+                    assert_func_name = "assertIsNone"
+                    assert_args_list.pop()
+
+                # Override for <expr> is not None.
+                elif opty.name == Tok.KW_ISN and isinstance(expr.rights[0], ast.Null):
+                    assert_func_name = "assertIsNotNone"
+                    assert_args_list.pop()
+
+        # Check if 'isinstance' is called.
+        elif isinstance(node.target, ast.FuncCall) and isinstance(
+            node.target.gen.py_ast[0], ast3.Call
+        ):
+            res = check_node_isinstance_call(node.target)
+            if res.isit:
+                # These assertions will make mypy happy.
+                assert isinstance(res.inst, ast3.AST)
+                assert isinstance(res.clss, ast3.AST)
+                assert_func_name = "assertIsInstance"
+                assert_args_list = [res.inst, res.clss]
+
+        # Check if 'not isinstance(<expr>, <expr>)' is called.
+        elif (
+            isinstance(node.target, ast.UnaryExpr)
+            and isinstance(node.target, ast.UnaryExpr)
+            and isinstance(node.target.operand, ast.FuncCall)
+            and isinstance(node.target.operand, ast.UnaryExpr)
+        ):
+            res = check_node_isinstance_call(node.target.operand)
+            if res.isit:
+                # These assertions will make mypy happy.
+                assert isinstance(res.inst, ast3.AST)
+                assert isinstance(res.clss, ast3.AST)
+                assert_func_name = "assertIsNotInstance"
+                assert_args_list = [res.inst, res.clss]
+
+        # NOTE That the almost equal is NOT a builtin function of jaclang and won't work outside of the
+        # check statement. And we're hacking the node here. Not sure if this is a hacky workaround to support
+        # the almost equal functionality (snice there is no almost equal operator in jac and never needed ig.).
+
+        # Check if 'almostEqual' is called.
         if isinstance(node.target, ast.FuncCall) and isinstance(
             node.target.gen.py_ast[0], ast3.Call
         ):
-            func = node.target.target.gen.py_ast[0]
-            if isinstance(func, ast3.Name):
-                new_func: ast3.expr = self.sync(
-                    ast3.Attribute(
-                        value=self.sync(ast3.Name(id="_jac_check", ctx=ast3.Load())),
-                        attr=func.id,
-                        ctx=ast3.Load(),
-                    )
-                )
-                node.target.gen.py_ast[0].func = new_func
-                node.gen.py_ast = [
-                    self.sync(
-                        ast3.Expr(
-                            value=node.target.gen.py_ast[0],
-                        )
-                    )
-                ]
-                return
-        self.error(
-            "For now, check statements must be function calls "
-            "in the style of assertTrue(), assertEqual(), etc.",
-            node,
+            func = node.target.target
+            if isinstance(func, ast.Name) and func.value == "almostEqual":
+                assert_func_name = "assertAlmostEqual"
+                assert_args_list = []
+                if node.target.params is not None:
+                    for param in node.target.params.items:
+                        assert_args_list.append(param.gen.py_ast[0])
+
+        # assert_func_expr = "_jac_check.assertXXX"
+        assert_func_expr: ast3.Attribute = self.sync(
+            ast3.Attribute(
+                value=self.sync(ast3.Name(id="_jac_check", ctx=ast3.Load())),
+                attr=assert_func_name,
+                ctx=ast3.Load(),
+            )
         )
+
+        # assert_call_expr = "(_jac_check.assertXXX)(args)"
+        assert_call_expr: ast3.Call = self.sync(
+            ast3.Call(func=assert_func_expr, args=assert_args_list, keywords=[])
+        )
+
+        node.gen.py_ast = [self.sync(ast3.Expr(assert_call_expr))]
 
     def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
