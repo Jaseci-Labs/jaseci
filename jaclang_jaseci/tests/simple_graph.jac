@@ -77,8 +77,6 @@ walker create_graph {
         report b;
         report c;
     }
-
-    obj __specs__ {}
 }
 
 walker traverse_graph {
@@ -100,8 +98,6 @@ walker traverse_graph {
     can enter_C with C entry {
         report here;
     }
-
-    obj __specs__ {}
 }
 
 walker detach_node {
@@ -325,31 +321,43 @@ walker manual_delete_nested_edge {
 }
 
 walker allow_other_root_access {
-    has root_id: str, level: int = 0;
+    has root_id: str, level: int | str = 0, via_all: bool = False;
 
-    can enter_nested with `root entry {
-        here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+    can enter_root with `root entry {
+        if self.via_all {
+            here.__jac__.unrestrict(self.level);
+        } else {
+            here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+        }
     }
 
     can enter_nested with Nested entry {
-        here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+        if self.via_all {
+            here.__jac__.unrestrict(self.level);
+        } else {
+            here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+        }
     }
-
-    obj __specs__ {}
 }
 
 walker disallow_other_root_access {
-    has root_id: str, level: int = 0;
+    has root_id: str, via_all: bool = False;
 
-    can enter_nested with `root entry {
-        here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+    can enter_root with `root entry {
+        if self.via_all {
+            here.__jac__.restrict();
+        } else {
+            here.__jac__.disallow_root(Anchor.ref(self.root_id));
+        }
     }
 
     can enter_nested with Nested entry {
-        here.__jac__.disallow_root(Anchor.ref(self.root_id));
+        if self.via_all {
+            here.__jac__.restrict();
+        } else {
+            here.__jac__.disallow_root(Anchor.ref(self.root_id));
+        }
     }
-
-    obj __specs__ {}
 }
 
 #################################################################
@@ -363,16 +371,16 @@ walker post_with_body {
 }
 
 walker get_no_body {
-    obj __specs__ {
-        static has methods: list = ["get"];
+    class __specs__ {
+        has methods: list = ["get"];
     }
 }
 
 walker get_with_query {
     has a: str;
 
-    obj __specs__ {
-        static has methods: list = ["get"], as_query: list = ["a"];
+    class __specs__ {
+        has methods: list = ["get"], as_query: list = ["a"];
     }
 }
 
@@ -380,16 +388,16 @@ walker get_all_query {
     has a: str;
     has b: str;
 
-    obj __specs__ {
-        static has methods: list = ["get"], as_query: list = "*", auth: bool = False;
+    class __specs__ {
+        has methods: list = ["get"], as_query: list = "*", auth: bool = False;
     }
 }
 
 walker post_path_var {
     has a: str;
 
-    obj __specs__ {
-        static has path: str = "/{a}", methods: list = ["post", "get"];
+    class __specs__ {
+        has path: str = "/{a}", methods: list = ["post", "get"];
     }
 }
 
@@ -398,8 +406,8 @@ walker combination1 {
     has b: str;
     has c: str;
 
-    obj __specs__ {
-        static has methods: list = ["post", "get"], as_query: list = ["a", "b"];
+    class __specs__ {
+        has methods: list = ["post", "get"], as_query: list = ["a", "b"];
     }
 }
 
@@ -409,8 +417,8 @@ walker combination2 {
     has b: str;
     has c: str;
 
-    obj __specs__ {
-        static has path: str = "/{a}", methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"], as_query: list = ["b"];
+    class __specs__ {
+        has path: str = "/{a}", methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"], as_query: list = ["b"];
     }
 }
 
@@ -426,7 +434,7 @@ walker post_with_file {
         print(self.singleOptional);
     }
 
-    obj __specs__ {}
+    class __specs__ {}
 }
 
 walker post_with_body_and_file {
@@ -442,8 +450,8 @@ walker post_with_body_and_file {
         print(self.multiple);
     }
 
-    obj __specs__ {
-        static has auth: bool = False;
+    class __specs__ {
+        has auth: bool = False;
     }
 }
 

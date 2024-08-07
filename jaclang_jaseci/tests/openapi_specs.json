@@ -4546,8 +4546,19 @@
                         "title": "Root Id"
                     },
                     "level": {
-                        "type": "integer",
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ],
                         "title": "Level"
+                    },
+                    "via_all": {
+                        "type": "boolean",
+                        "title": "Via All"
                     }
                 },
                 "type": "object",
@@ -4588,9 +4599,9 @@
                         "type": "string",
                         "title": "Root Id"
                     },
-                    "level": {
-                        "type": "integer",
-                        "title": "Level"
+                    "via_all": {
+                        "type": "boolean",
+                        "title": "Via All"
                     }
                 },
                 "type": "object",

@@ -288,14 +288,16 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.assertEqual(200, res["status"])
         self.assertEqual([[]], res["returns"])
 
-    def trigger_access_validation_test(self, give_acces_to_full_graph: bool) -> None:
+    def trigger_access_validation_test(
+        self, give_access_to_full_graph: bool, via_all: bool = False
+    ) -> None:
         """Test giving access to node or full graph."""
         res = self.post_api("create_nested_node", user=1)
 
         nested_node = res["returns"][0]
 
         allow_walker_suffix = (
-            "" if give_acces_to_full_graph else f'/{nested_node["id"]}'
+            "" if give_access_to_full_graph else f'/{nested_node["id"]}'
         )
 
         self.assertEqual(200, res["status"])
@@ -329,7 +331,10 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
         res = self.post_api(
             f"allow_other_root_access{allow_walker_suffix}",
-            json={"root_id": f'n::{self.users[0]["user"]["root_id"]}'},
+            json={
+                "root_id": f'n::{self.users[0]["user"]["root_id"]}',
+                "via_all": via_all,
+            },
             user=1,
         )
         self.assertEqual(200, res["status"])
@@ -380,7 +385,11 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
         res = self.post_api(
             f"allow_other_root_access{allow_walker_suffix}",
-            json={"root_id": f'n::{self.users[0]["user"]["root_id"]}', "level": 2},
+            json={
+                "root_id": f'n::{self.users[0]["user"]["root_id"]}',
+                "level": "WRITE",
+                "via_all": via_all,
+            },
             user=1,
         )
         self.assertEqual(200, res["status"])
@@ -435,7 +444,10 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
         res = self.post_api(
             f"disallow_other_root_access{allow_walker_suffix}",
-            json={"root_id": f'n::{self.users[0]["user"]["root_id"]}'},
+            json={
+                "root_id": f'n::{self.users[0]["user"]["root_id"]}',
+                "via_all": via_all,
+            },
             user=1,
         )
         self.assertEqual(200, res["status"])
@@ -462,7 +474,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def test_all_features(self) -> None:
         """Test Full Features."""
-        # self.trigger_openapi_specs_test()
+        self.trigger_openapi_specs_test()
 
         self.trigger_create_user_test()
         self.trigger_create_user_test(suffix="2")
@@ -522,5 +534,12 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.trigger_delete_nested_edge_test(manual=True)
         await self.nested_count_should_be(node=1, edge=0)
 
-        self.trigger_access_validation_test(give_acces_to_full_graph=False)
-        self.trigger_access_validation_test(give_acces_to_full_graph=True)
+        self.trigger_access_validation_test(give_access_to_full_graph=False)
+        self.trigger_access_validation_test(give_access_to_full_graph=True)
+
+        self.trigger_access_validation_test(
+            give_access_to_full_graph=False, via_all=True
+        )
+        self.trigger_access_validation_test(
+            give_access_to_full_graph=True, via_all=True
+        )
