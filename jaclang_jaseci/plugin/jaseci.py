@@ -463,13 +463,15 @@ class JacPlugin:
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
         edges = []
+        nodes = []
         for i in left:
             for j in right:
                 if await (source := i.__jac__).has_connect_access(target := j.__jac__):
                     conn_edge = edge_spec()
                     edges.append(conn_edge)
+                    nodes.append(j)
                     source.connect_node(target, conn_edge.__jac__)
-        return right if not edges_only else edges
+        return nodes if not edges_only else edges
 
     @staticmethod
     @hookimpl

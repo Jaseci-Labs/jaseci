@@ -604,7 +604,7 @@ class Anchor(_Anchor):
         """Write Access Validation."""
         return await self.access_level(to) > AccessLevel.CONNECT
 
-    async def access_level(self, to: "Anchor") -> int:  # type: ignore[override]
+    async def access_level(self, to: "Anchor") -> AccessLevel:  # type: ignore[override]
         """Access validation."""
         from .context import JaseciContext
 
@@ -614,45 +614,10 @@ class Anchor(_Anchor):
         if jroot := jctx.root:
             if jroot == jctx.super_root or jroot.id == to.root or jroot == to:
                 to.state.current_access_level = AccessLevel.WRITE
+                return to.state.current_access_level
 
             if (to_access := to.access).all > AccessLevel.NO_ACESSS:
                 to.state.current_access_level = to_access.all
-
-            # whitelist, level = to_access.nodes.check(self)
-            # if not whitelist and level < AccessLevel.READ:
-            #     to.state.current_access_level = AccessLevel.NO_ACESSS
-            #     return to.state.current_access_level
-            # elif (
-            #     whitelist
-            #     and level > AccessLevel.NO_ACESSS
-            #     and to.state.current_access_level == AccessLevel.NO_ACESSS
-            # )
-            #     to.state.current_access_level = level
-
-            # if (architype := self.architype) and (
-            #     access_type := to_access.types.get(architype.__class__)
-            # ):
-            #     whitelist, level = access_type.check(self)
-            #     if not whitelist and level < AccessLevel.READ:
-            #         to.state.current_access_level = AccessLevel.NO_ACESSS
-            #         return to.state.current_access_level
-            #     elif (
-            #         whitelist
-            #         and level > AccessLevel.NO_ACESSS
-            #         and to.state.current_access_level == AccessLevel.NO_ACESSS
-            #     )
-            #         to.state.current_access_level = level
-
-            whitelist, level = to_access.roots.check(jroot.ref_id)
-            if not whitelist and level < AccessLevel.READ:
-                to.state.current_access_level = AccessLevel.NO_ACESSS
-                return to.state.current_access_level
-            elif (
-                whitelist
-                and level > AccessLevel.NO_ACESSS
-                and to.state.current_access_level == AccessLevel.NO_ACESSS
-            ):
-                to.state.current_access_level = level
 
             if to.root and (
                 to_root := await jctx.datasource.find_one(
@@ -660,16 +625,51 @@ class Anchor(_Anchor):
                     NodeAnchor(id=to.root, state=AnchorState(connected=True)),
                 )
             ):
+                if to_root.access.all > to.state.current_access_level:
+                    to.state.current_access_level = to_root.access.all
+
                 whitelist, level = to_root.access.roots.check(jroot.ref_id)
-                if not whitelist and level < AccessLevel.READ:
+                if not whitelist:
+                    if level < AccessLevel.READ:
+                        to.state.current_access_level = AccessLevel.NO_ACESSS
+                        return to.state.current_access_level
+                    elif level < to.state.current_access_level:
+                        level = to.state.current_access_level
+                elif whitelist and level > to.state.current_access_level:
+                    to.state.current_access_level = level
+
+            whitelist, level = to_access.roots.check(jroot.ref_id)
+            if not whitelist:
+                if level < AccessLevel.READ:
                     to.state.current_access_level = AccessLevel.NO_ACESSS
                     return to.state.current_access_level
-                elif (
-                    whitelist
-                    and level > AccessLevel.NO_ACESSS
-                    and to.state.current_access_level == AccessLevel.NO_ACESSS
-                ):
-                    to.state.current_access_level = level
+                elif level < to.state.current_access_level:
+                    level = to.state.current_access_level
+            elif whitelist and level > to.state.current_access_level:
+                to.state.current_access_level = level
+
+            # if (architype := self.architype) and (
+            #     access_type := to_access.types.get(architype.__class__)
+            # ):
+            #     whitelist, level = access_type.check(self)
+            #     if not whitelist:
+            #         if level < AccessLevel.READ:
+            #             to.state.current_access_level = AccessLevel.NO_ACESSS
+            #             return to.state.current_access_level
+            #         elif level < to.state.current_access_level:
+            #             level = to.state.current_access_level
+            #     elif whitelist and level > to.state.current_access_level:
+            #         to.state.current_access_level = level
+
+            # whitelist, level = to_access.nodes.check(self)
+            # if not whitelist:
+            #     if level < AccessLevel.READ:
+            #         to.state.current_access_level = AccessLevel.NO_ACESSS
+            #         return to.state.current_access_level
+            #     elif level < to.state.current_access_level:
+            #         level = to.state.current_access_level
+            # elif whitelist and level > to.state.current_access_level:
+            #     to.state.current_access_level = level
 
         return to.state.current_access_level
 
