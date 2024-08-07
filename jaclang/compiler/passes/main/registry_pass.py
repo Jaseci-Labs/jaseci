@@ -84,6 +84,17 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
+    def exit_ability(self, node: ast.Ability) -> None:
+        """Save ability information."""
+        scope = get_sem_scope(node)
+        seminfo = SemInfo(
+            node.name_ref.sym_name,
+            None,
+            node.semstr.lit_value if node.semstr else "",
+        )
+        if len(self.modules_visited) and self.modules_visited[-1].registry:
+            self.modules_visited[-1].registry.add(scope, seminfo)
+
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Save assignment information."""
         if node.aug_op:
