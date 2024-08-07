@@ -14,7 +14,7 @@ from jwt import decode, encode
 from ..datasources.redis import CodeRedis, TokenRedis
 from ..models.user import User as BaseUser
 from ..utils import logger, random_string, utc_timestamp
-from ...core.architype import NodeAnchor
+from ...core.architype import AccessLevel, NodeAnchor
 
 
 TOKEN_SECRET = getenv("TOKEN_SECRET", random_string(50))
@@ -97,7 +97,7 @@ async def authenticate(request: Request) -> None:
             and (user := await User.Collection.find_by_id(decrypted["id"]))
             and (root := await NodeAnchor.Collection.find_by_id(user.root_id))
         ):
-            root.state.current_access_level = 2
+            root.state.current_access_level = AccessLevel.WRITE
             request._user = user  # type: ignore[attr-defined]
             request._root = root  # type: ignore[attr-defined]
             return

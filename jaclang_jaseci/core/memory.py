@@ -13,7 +13,15 @@ from motor.motor_asyncio import AsyncIOMotorClientSession
 
 from pymongo import InsertOne
 
-from .architype import Anchor, AnchorType, BulkWrite, EdgeAnchor, NodeAnchor, Root
+from .architype import (
+    AccessLevel,
+    Anchor,
+    AnchorType,
+    BulkWrite,
+    EdgeAnchor,
+    NodeAnchor,
+    Root,
+)
 from ..jaseci.datasources import Collection
 
 DISABLE_AUTO_CLEANUP = getenv("DISABLE_AUTO_CLEANUP") == "true"
@@ -160,7 +168,7 @@ class MongoDB(Memory):
                         bulk_write.operations[anchor.type].append(
                             InsertOne(anchor.serialize())
                         )
-                    elif anchor.state.current_access_level > 0:
+                    elif anchor.state.current_access_level > AccessLevel.READ:
                         if (
                             not DISABLE_AUTO_CLEANUP
                             and isinstance(anchor, NodeAnchor)

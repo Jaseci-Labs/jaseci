@@ -10,6 +10,7 @@ from bson import ObjectId
 from fastapi import Request
 
 from .architype import (
+    AccessLevel,
     Anchor,
     AnchorState,
     Architype,
@@ -57,7 +58,7 @@ class JaseciContext:
     def generate_super_root(self) -> NodeAnchor:
         """Generate default super root."""
         super_root = NodeAnchor(
-            id=SUPER_ROOT, state=AnchorState(current_access_level=2)
+            id=SUPER_ROOT, state=AnchorState(current_access_level=AccessLevel.WRITE)
         )
         architype = super_root.architype = object.__new__(Root)
         architype.__jac__ = super_root
@@ -69,7 +70,7 @@ class JaseciContext:
         public_root = NodeAnchor(
             id=PUBLIC_ROOT,
             access=Permission(all=2),
-            state=AnchorState(current_access_level=2),
+            state=AnchorState(current_access_level=AccessLevel.WRITE),
         )
         architype = public_root.architype = object.__new__(Root)
         architype.__jac__ = public_root
@@ -85,7 +86,7 @@ class JaseciContext:
         if anchor:
             if not anchor.state.connected:
                 if _anchor := await self.datasource.find_one(NodeAnchor, anchor):
-                    _anchor.state.current_access_level = 2
+                    _anchor.state.current_access_level = AccessLevel.WRITE
                     return _anchor
             else:
                 self.datasource.set(anchor)

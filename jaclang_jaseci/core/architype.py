@@ -18,6 +18,7 @@ from typing import (
 from bson import ObjectId
 
 from jaclang.runtimelib.architype import (
+    AccessLevel,
     Anchor as _Anchor,
     AnchorState as _AnchorState,
     AnchorType,
@@ -291,19 +292,23 @@ class Anchor(_Anchor):
     #     if whitelist != self.access.nodes.whitelist:
     #         self._set.update({"access.nodes.whitelist": whitelist})
 
-    # def allow_node(self, node: Anchor, level: int = 0) -> None:
+    # def allow_node(self, node: Anchor, level: AccessLevel | int = AccessLevel.READ) -> None:
     #     """Allow all access from target node to current Architype."""
+    #     if isinstance(level, int):
+    #         level = AccessLevel(level)
     #     access = self.access.nodes
     #     if access.whitelist:
-    #         if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, -1):
+    #         if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, AccessLevel.NO_ACESSS):
     #             access.anchors[ref_id] = level
-    #             self._set.update({f"access.nodes.anchors.{ref_id}": level})
+    #             self._set.update({f"access.nodes.anchors.{ref_id}": level.name})
     #             self._unset.pop(f"access.nodes.anchors.{ref_id}", None)
     #     else:
     #         self.disallow_node(node, level)
 
-    # def disallow_node(self, node: Anchor, level: int = 0) -> None:
+    # def disallow_node(self, node: Anchor, level: AccessLevel | int = AccessLevel.READ) -> None:
     #     """Disallow all access from target node to current Architype."""
+    #     if isinstance(level, int):
+    #         level = AccessLevel(level)
     #     access = self.access.nodes
     #     if access.whitelist:
     #         if (ref_id := node.ref_id) and access.anchors.pop(ref_id, None) is not None:
@@ -336,23 +341,27 @@ class Anchor(_Anchor):
     #         )
 
     # def allow_type(
-    #     self, type: type[NodeArchitype], node: Anchor, level: int = 0
+    #     self, type: type[NodeArchitype], node: Anchor, level: AccessLevel | int = AccessLevel.READ
     # ) -> None:
     #     """Allow all access from target type graph to current Architype."""
+    #     if isinstance(level, int):
+    #         level = AccessLevel(level)
     #     if access := self.access.types.get(type):
     #         if access.whitelist:
-    #             if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, -1):
+    #             if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, AccessLevel.NO_ACESSS):
     #                 access.anchors[ref_id] = level
     #                 name = type.__ref_cls__()
-    #                 self._set.update({f"access.types.{name}.anchors.{ref_id}": level})
+    #                 self._set.update({f"access.types.{name}.anchors.{ref_id}": level.name})
     #                 self._unset.pop(f"access.types.{name}.anchors.{ref_id}", None)
     #         else:
     #             self.disallow_type(type, node, level)
 
     # def disallow_type(
-    #     self, type: type[NodeArchitype], node: Anchor, level: int = 0
+    #     self, type: type[NodeArchitype], node: Anchor, level: AccessLevel | int = AccessLevel.READ
     # ) -> None:
     #     """Disallow all access from target type graph to current Architype."""
+    #     if isinstance(level, int):
+    #         level = AccessLevel(level)
     #     if access := self.access.types.get(type):
     #         if access.whitelist:
     #             if (ref_id := node.ref_id) and access.anchors.pop(ref_id, None) is not None:
@@ -367,19 +376,31 @@ class Anchor(_Anchor):
         if whitelist != self.access.roots.whitelist:
             self._set.update({"access.roots.whitelist": whitelist})
 
-    def allow_root(self, root: "Anchor", level: int = 0) -> None:
+    def allow_root(
+        self, root: "Anchor", level: AccessLevel | int = AccessLevel.READ
+    ) -> None:
         """Allow all access from target root graph to current Architype."""
+        if isinstance(level, int):
+            level = AccessLevel(level)
+
         access = self.access.roots
         if access.whitelist:
-            if (ref_id := root.ref_id) and level != access.anchors.get(ref_id, -1):
+            if (ref_id := root.ref_id) and level != access.anchors.get(
+                ref_id, AccessLevel.NO_ACESSS
+            ):
                 access.anchors[ref_id] = level
-                self._set.update({f"access.roots.anchors.{ref_id}": level})
+                self._set.update({f"access.roots.anchors.{ref_id}": level.name})
                 self._unset.pop(f"access.roots.anchors.{ref_id}", None)
         else:
             self.disallow_root(root, level)
 
-    def disallow_root(self, root: "Anchor", level: int = 0) -> None:
+    def disallow_root(
+        self, root: "Anchor", level: AccessLevel | int = AccessLevel.READ
+    ) -> None:
         """Disallow all access from target root graph to current Architype."""
+        if isinstance(level, int):
+            level = AccessLevel(level)
+
         access = self.access.roots
         if access.whitelist:
             if (ref_id := root.ref_id) and access.anchors.pop(ref_id, None) is not None:
@@ -388,17 +409,20 @@ class Anchor(_Anchor):
         else:
             self.allow_root(root, level)
 
-    def unrestrict(self, level: int = 0) -> None:
+    def unrestrict(self, level: AccessLevel | int = AccessLevel.READ) -> None:
         """Allow everyone to access current Architype."""
+        if isinstance(level, int):
+            level = AccessLevel(level)
+
         if level != self.access.all:
             self.access.all = level
-            self._set.update({"access.all": level})
+            self._set.update({"access.all": level.name})
 
     def restrict(self) -> None:
         """Disallow others to access current Architype."""
-        if self.access.all > -1:
-            self.access.all = -1
-            self._set.update({"access.all": -1})
+        if self.access.all > AccessLevel.NO_ACESSS:
+            self.access.all = AccessLevel.NO_ACESSS
+            self._set.update({"access.all": AccessLevel.NO_ACESSS.name})
 
     # ------------------------------------------------ #
 
@@ -444,7 +468,7 @@ class Anchor(_Anchor):
                 self.state.connected = True
                 self.sync_hash()
                 self.insert(bulk_write)
-            elif self.state.current_access_level > 0:
+            elif self.state.current_access_level > AccessLevel.READ:
                 self.update(bulk_write, True)
 
     async def save(self, session: AsyncIOMotorClientSession | None = None) -> BulkWrite:  # type: ignore[override]
@@ -482,7 +506,7 @@ class Anchor(_Anchor):
         #                     POPULATE CONTEXT                     #
         ############################################################
 
-        if self.state.current_access_level > 1:
+        if self.state.current_access_level > AccessLevel.CONNECT:
             set_architype = changes.pop("$set", {})
             if is_dataclass(architype := self.architype) and not isinstance(
                 architype, type
@@ -559,7 +583,7 @@ class Anchor(_Anchor):
         """Delete Anchor."""
         if (
             self.architype
-            and self.state.current_access_level > 1
+            and self.state.current_access_level > AccessLevel.CONNECT
             and self.state.deleted is None
         ):
             from .context import JaseciContext
@@ -582,15 +606,15 @@ class Anchor(_Anchor):
 
     async def has_read_access(self, to: "Anchor") -> bool:  # type: ignore[override]
         """Read Access Validation."""
-        return await self.access_level(to) > -1
+        return await self.access_level(to) > AccessLevel.NO_ACESSS
 
     async def has_connect_access(self, to: "Anchor") -> bool:  # type: ignore[override]
         """Write Access Validation."""
-        return await self.access_level(to) > 0
+        return await self.access_level(to) > AccessLevel.READ
 
     async def has_write_access(self, to: "Anchor") -> bool:  # type: ignore[override]
         """Write Access Validation."""
-        return await self.access_level(to) > 1
+        return await self.access_level(to) > AccessLevel.CONNECT
 
     async def access_level(self, to: "Anchor") -> int:  # type: ignore[override]
         """Access validation."""
@@ -598,36 +622,48 @@ class Anchor(_Anchor):
 
         jctx = JaseciContext.get_or_create()
 
-        to.state.current_access_level = -1
+        to.state.current_access_level = AccessLevel.NO_ACESSS
         if jroot := jctx.root:
             if jroot == jctx.super_root or jroot.id == to.root or jroot == to:
-                to.state.current_access_level = 2
+                to.state.current_access_level = AccessLevel.WRITE
 
-            if (to_access := to.access).all > -1:
+            if (to_access := to.access).all > AccessLevel.NO_ACESSS:
                 to.state.current_access_level = to_access.all
 
             # whitelist, level = to_access.nodes.check(self)
-            # if not whitelist and level < 0:
-            #     to.state.current_access_level = -1
+            # if not whitelist and level < AccessLevel.READ:
+            #     to.state.current_access_level = AccessLevel.NO_ACESSS
             #     return to.state.current_access_level
-            # elif whitelist and level > -1:
+            # elif (
+            #     whitelist
+            #     and level > AccessLevel.NO_ACESSS
+            #     and to.state.current_access_level == AccessLevel.NO_ACESSS
+            # )
             #     to.state.current_access_level = level
 
             # if (architype := self.architype) and (
             #     access_type := to_access.types.get(architype.__class__)
             # ):
             #     whitelist, level = access_type.check(self)
-            #     if not whitelist and level < 0:
-            #         to.state.current_access_level = -1
+            #     if not whitelist and level < AccessLevel.READ:
+            #         to.state.current_access_level = AccessLevel.NO_ACESSS
             #         return to.state.current_access_level
-            #     elif whitelist and level > -1 and to.state.current_access_level == -1:
+            #     elif (
+            #         whitelist
+            #         and level > AccessLevel.NO_ACESSS
+            #         and to.state.current_access_level == AccessLevel.NO_ACESSS
+            #     )
             #         to.state.current_access_level = level
 
             whitelist, level = to_access.roots.check(jroot.ref_id)
-            if not whitelist and level < 0:
-                to.state.current_access_level = -1
+            if not whitelist and level < AccessLevel.READ:
+                to.state.current_access_level = AccessLevel.NO_ACESSS
                 return to.state.current_access_level
-            elif whitelist and level > -1 and to.state.current_access_level == -1:
+            elif (
+                whitelist
+                and level > AccessLevel.NO_ACESSS
+                and to.state.current_access_level == AccessLevel.NO_ACESSS
+            ):
                 to.state.current_access_level = level
 
             if to.root and (
@@ -637,10 +673,14 @@ class Anchor(_Anchor):
                 )
             ):
                 whitelist, level = to_root.access.roots.check(jroot.ref_id)
-                if not whitelist and level < 0:
-                    to.state.current_access_level = -1
+                if not whitelist and level < AccessLevel.READ:
+                    to.state.current_access_level = AccessLevel.NO_ACESSS
                     return to.state.current_access_level
-                elif whitelist and level > -1 and to.state.current_access_level == -1:
+                elif (
+                    whitelist
+                    and level > AccessLevel.NO_ACESSS
+                    and to.state.current_access_level == AccessLevel.NO_ACESSS
+                ):
                     to.state.current_access_level = level
 
         return to.state.current_access_level
@@ -651,7 +691,7 @@ class Anchor(_Anchor):
             "_id": str(self.id) if dumps else self.id,
             "name": self.name,
             "root": str(self.root) if dumps else self.root,
-            "access": asdict(self.access),
+            "access": self.access.serialize(),
             "architype": (
                 asdict(self.architype)  # type: ignore[call-overload]
                 if is_dataclass(self.architype) and not isinstance(self.architype, type)
@@ -731,7 +771,7 @@ class NodeAnchor(Anchor):
         """Delete Anchor."""
         if (
             self.architype
-            and self.state.current_access_level > 1
+            and self.state.current_access_level > AccessLevel.CONNECT
             and self.state.deleted is None
         ):
             from .context import JaseciContext
@@ -948,7 +988,7 @@ class EdgeAnchor(Anchor):
         """Delete Anchor."""
         if (
             self.architype
-            and self.state.current_access_level > 1
+            and self.state.current_access_level > AccessLevel.CONNECT
             and self.state.deleted is None
         ):
             from .context import JaseciContext
