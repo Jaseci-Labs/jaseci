@@ -174,8 +174,6 @@ class BulkWrite:
 class AnchorState(_AnchorState):
     """Anchor state handler."""
 
-    deleted: bool | None = None
-
     # checker if needs to update on db
     changes: dict[str, dict[str, Any]] = field(default_factory=dict)
     # context checker if update happens for each field
@@ -370,9 +368,10 @@ class Anchor(_Anchor):
     def whitelist_roots(self, whitelist: bool = True) -> None:
         """Toggle root whitelist/blacklist."""
         if whitelist != self.access.roots.whitelist:
+            self.access.roots.whitelist = whitelist
             self._set.update({"access.roots.whitelist": whitelist})
 
-    def allow_root(
+    def allow_root(  # type: ignore[override]
         self, root: "Anchor", level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
         """Allow all access from target root graph to current Architype."""
@@ -388,7 +387,7 @@ class Anchor(_Anchor):
         else:
             self.disallow_root(root, level)
 
-    def disallow_root(
+    def disallow_root(  # type: ignore[override]
         self, root: "Anchor", level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
@@ -441,7 +440,7 @@ class Anchor(_Anchor):
         from .context import JASECI_CONTEXT
 
         if jctx := JASECI_CONTEXT.get(None):
-            if jctx.root and self.root is None and not isinstance(self.architype, Root):
+            if self.root is None and not isinstance(self.architype, Root):
                 self.root = jctx.root.id
             jctx.datasource.set(self)
 
@@ -608,37 +607,26 @@ class Anchor(_Anchor):
         """Access validation."""
         from .context import JaseciContext
 
-        jctx = JaseciContext.get_or_create()
+        jctx = JaseciContext.get()
 
         to.state.current_access_level = AccessLevel.NO_ACESSS
-        if jroot := jctx.root:
-            if jroot == jctx.super_root or jroot.id == to.root or jroot == to:
-                to.state.current_access_level = AccessLevel.WRITE
-                return to.state.current_access_level
+        if jctx.root == jctx.super_root or jctx.root.id == to.root or jctx.root == to:
+            to.state.current_access_level = AccessLevel.WRITE
+            return to.state.current_access_level
 
-            if (to_access := to.access).all > AccessLevel.NO_ACESSS:
-                to.state.current_access_level = to_access.all
+        if (to_access := to.access).all > AccessLevel.NO_ACESSS:
+            to.state.current_access_level = to_access.all
 
-            if to.root and (
-                to_root := await jctx.datasource.find_one(
-                    NodeAnchor,
-                    NodeAnchor(id=to.root, state=AnchorState(connected=True)),
-                )
-            ):
-                if to_root.access.all > to.state.current_access_level:
-                    to.state.current_access_level = to_root.access.all
+        if to.root and (
+            to_root := await jctx.datasource.find_one(
+                NodeAnchor,
+                NodeAnchor(id=to.root, state=AnchorState(connected=True)),
+            )
+        ):
+            if to_root.access.all > to.state.current_access_level:
+                to.state.current_access_level = to_root.access.all
 
-                whitelist, level = to_root.access.roots.check(jroot.ref_id)
-                if not whitelist:
-                    if level < AccessLevel.READ:
-                        to.state.current_access_level = AccessLevel.NO_ACESSS
-                        return to.state.current_access_level
-                    elif level < to.state.current_access_level:
-                        level = to.state.current_access_level
-                elif whitelist and level > to.state.current_access_level:
-                    to.state.current_access_level = level
-
-            whitelist, level = to_access.roots.check(jroot.ref_id)
+            whitelist, level = to_root.access.roots.check(jctx.root.ref_id)
             if not whitelist:
                 if level < AccessLevel.READ:
                     to.state.current_access_level = AccessLevel.NO_ACESSS
@@ -648,28 +636,38 @@ class Anchor(_Anchor):
             elif whitelist and level > to.state.current_access_level:
                 to.state.current_access_level = level
 
-            # if (architype := self.architype) and (
-            #     access_type := to_access.types.get(architype.__class__)
-            # ):
-            #     whitelist, level = access_type.check(self)
-            #     if not whitelist:
-            #         if level < AccessLevel.READ:
-            #             to.state.current_access_level = AccessLevel.NO_ACESSS
-            #             return to.state.current_access_level
-            #         elif level < to.state.current_access_level:
-            #             level = to.state.current_access_level
-            #     elif whitelist and level > to.state.current_access_level:
-            #         to.state.current_access_level = level
+        whitelist, level = to_access.roots.check(jctx.root.ref_id)
+        if not whitelist:
+            if level < AccessLevel.READ:
+                to.state.current_access_level = AccessLevel.NO_ACESSS
+                return to.state.current_access_level
+            elif level < to.state.current_access_level:
+                level = to.state.current_access_level
+        elif whitelist and level > to.state.current_access_level:
+            to.state.current_access_level = level
 
-            # whitelist, level = to_access.nodes.check(self)
-            # if not whitelist:
-            #     if level < AccessLevel.READ:
-            #         to.state.current_access_level = AccessLevel.NO_ACESSS
-            #         return to.state.current_access_level
-            #     elif level < to.state.current_access_level:
-            #         level = to.state.current_access_level
-            # elif whitelist and level > to.state.current_access_level:
-            #     to.state.current_access_level = level
+        # if (architype := self.architype) and (
+        #     access_type := to_access.types.get(architype.__class__)
+        # ):
+        #     whitelist, level = access_type.check(self)
+        #     if not whitelist:
+        #         if level < AccessLevel.READ:
+        #             to.state.current_access_level = AccessLevel.NO_ACESSS
+        #             return to.state.current_access_level
+        #         elif level < to.state.current_access_level:
+        #             level = to.state.current_access_level
+        #     elif whitelist and level > to.state.current_access_level:
+        #         to.state.current_access_level = level
+
+        # whitelist, level = to_access.nodes.check(self)
+        # if not whitelist:
+        #     if level < AccessLevel.READ:
+        #         to.state.current_access_level = AccessLevel.NO_ACESSS
+        #         return to.state.current_access_level
+        #     elif level < to.state.current_access_level:
+        #         level = to.state.current_access_level
+        # elif whitelist and level > to.state.current_access_level:
+        #     to.state.current_access_level = level
 
         return to.state.current_access_level
 
@@ -796,14 +794,12 @@ class NodeAnchor(Anchor):
                 and (source := anchor.source)
                 and (target := anchor.target)
                 and (not filter_func or filter_func([architype]))
+                and (src_arch := await source.sync())
+                and (trg_arch := await target.sync())
             ):
-                src_arch = await source.sync()
-                trg_arch = await target.sync()
-
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
-                    and trg_arch
                     and (not target_cls or trg_arch.__class__ in target_cls)
                     and await source.has_read_access(target)
                 ):
@@ -811,7 +807,6 @@ class NodeAnchor(Anchor):
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
-                    and src_arch
                     and (not target_cls or src_arch.__class__ in target_cls)
                     and await target.has_read_access(source)
                 ):
@@ -836,14 +831,12 @@ class NodeAnchor(Anchor):
                 and (source := anchor.source)
                 and (target := anchor.target)
                 and (not filter_func or filter_func([architype]))
+                and (src_arch := await source.sync())
+                and (trg_arch := await target.sync())
             ):
-                src_arch = await source.sync()
-                trg_arch = await target.sync()
-
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
-                    and trg_arch
                     and (not target_cls or trg_arch.__class__ in target_cls)
                     and await source.has_read_access(target)
                 ):
@@ -851,7 +844,6 @@ class NodeAnchor(Anchor):
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
-                    and src_arch
                     and (not target_cls or src_arch.__class__ in target_cls)
                     and await target.has_read_access(source)
                 ):

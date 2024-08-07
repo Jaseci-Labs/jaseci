@@ -155,12 +155,11 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 except ValidationError as e:
                     return ORJSONResponse({"detail": e.errors()})
 
-            jctx = JaseciContext.get_or_create()
-            await jctx.build(request, NodeAnchor.ref(node or ""))
+            jctx = await JaseciContext.create(request, NodeAnchor.ref(node or ""))
 
             wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
-            if await jctx.validate_access() and (entry := jctx.entry):
-                await wlk.spawn_call(entry)
+            if await jctx.validate_access():
+                await wlk.spawn_call(jctx.entry)
                 await jctx.close()
                 return ORJSONResponse(jctx.response(wlk.returns))
             else:
@@ -242,6 +241,12 @@ class DefaultSpecs:
 
 class JacPlugin:
     """Jaseci Implementations."""
+
+    @staticmethod
+    @hookimpl
+    def context() -> JaseciContext:
+        """Get the execution context."""
+        return JaseciContext.get()
 
     @staticmethod
     @hookimpl
@@ -374,7 +379,7 @@ class JacPlugin:
     @hookimpl
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
-        JaseciContext.get_or_create().reports.append(expr)
+        JaseciContext.get().reports.append(expr)
 
     @staticmethod
     @hookimpl
@@ -493,13 +498,12 @@ class JacPlugin:
                     and (source := anchor.source)
                     and (target := anchor.target)
                     and (not filter_func or filter_func([architype]))
+                    and (src_arch := await source.sync())
+                    and (trg_arch := await target.sync())
                 ):
-                    src_arch = await source.sync()
-                    trg_arch = await target.sync()
-
                     if (
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
-                        and i == source
+                        and node == source
                         and trg_arch in right
                         and await source.has_write_access(target)
                     ):
@@ -507,7 +511,7 @@ class JacPlugin:
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
-                        and i == target
+                        and node == target
                         and src_arch in right
                         and await target.has_write_access(source)
                     ):
@@ -520,9 +524,7 @@ class JacPlugin:
     @hookimpl
     async def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        if (root := JaseciContext.get_or_create().root) and (
-            architype := await root.sync()
-        ):
+        if architype := await JaseciContext.get().root.sync():
             return cast(Root, architype)
         raise Exception("No Available Root!")
 

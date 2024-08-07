@@ -30,30 +30,12 @@ PUBLIC_ROOT = ObjectId("000000000000000000000001")
 class JaseciContext:
     """Execution Context."""
 
-    def __init__(
-        self,
-        **ignored: Any,  # noqa: ANN401
-    ) -> None:
-        """Create JacContext."""
-        self.datasource: MongoDB = MongoDB()
-        self.reports: list[Any] = []
-        self.super_root: NodeAnchor | None = None
-        self.root: NodeAnchor | None = None
-        self.entry: NodeAnchor | None = None
-
-    async def build(
-        self, request: Request | None = None, entry: NodeAnchor | None = None
-    ) -> None:
-        """Async build JacContext."""
-        self.request = request
-        self.super_root = await self.load(
-            NodeAnchor(id=SUPER_ROOT), self.generate_super_root
-        )
-        self.root = await self.load(
-            getattr(request, "_root", None) or NodeAnchor(id=PUBLIC_ROOT),
-            self.generate_public_root,
-        )
-        self.entry = await self.load(entry, self.root)
+    request: Request
+    datasource: MongoDB
+    reports: list
+    super_root: NodeAnchor
+    root: NodeAnchor
+    entry: NodeAnchor
 
     def generate_super_root(self) -> NodeAnchor:
         """Generate default super root."""
@@ -69,7 +51,7 @@ class JaseciContext:
         """Generate default super root."""
         public_root = NodeAnchor(
             id=PUBLIC_ROOT,
-            access=Permission(all=2),
+            access=Permission(all=AccessLevel.WRITE),
             state=AnchorState(current_access_level=AccessLevel.WRITE),
         )
         architype = public_root.architype = object.__new__(Root)
@@ -96,27 +78,47 @@ class JaseciContext:
 
     async def validate_access(self) -> bool:
         """Validate access."""
-        return bool(
-            self.root and self.entry and await self.root.has_read_access(self.entry)
-        )
+        return await self.root.has_read_access(self.entry)
 
     async def close(self) -> None:
         """Clean up context."""
         await self.datasource.close()
 
     @staticmethod
-    def get_or_create(options: dict[str, Any] | None = None) -> "JaseciContext":
-        """Get or create execution context."""
+    async def create(
+        request: Request, entry: NodeAnchor | None = None
+    ) -> "JaseciContext":
+        """Create JacContext."""
+        ctx = JaseciContext()
+        ctx.request = request
+        ctx.datasource = MongoDB()
+        ctx.reports = []
+        ctx.super_root = await ctx.load(
+            NodeAnchor(id=SUPER_ROOT), ctx.generate_super_root
+        )
+        ctx.root = await ctx.load(
+            getattr(request, "_root", None) or NodeAnchor(id=PUBLIC_ROOT),
+            ctx.generate_public_root,
+        )
+        ctx.entry = await ctx.load(entry, ctx.root)
+
+        if _ctx := JASECI_CONTEXT.get(None):
+            await _ctx.close()
+        JASECI_CONTEXT.set(ctx)
+
+        return ctx
+
+    @staticmethod
+    def get() -> "JaseciContext":
+        """Get current ExecutionContext."""
         if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
-            JASECI_CONTEXT.set(ctx := JaseciContext(**options or {}))
+            raise Exception("JaseciContext is not yet available!")
         return ctx
 
     @staticmethod
     def get_datasource() -> MongoDB:
         """Get current datasource."""
-        if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
-            raise Exception("Wrong usage of get_datasource!")
-        return ctx.datasource
+        return JaseciContext.get().datasource
 
     def response(self, returns: list[Any], status: int = 200) -> dict[str, Any]:
         """Return serialized version of reports."""
