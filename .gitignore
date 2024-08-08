@@ -50,3 +50,4 @@ out.txt
 
 # Mypy files #
 .mypy_cache*
+.jac_mypy_cache
