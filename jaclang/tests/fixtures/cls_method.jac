@@ -6,7 +6,7 @@ class MyClass {
     }
 
     @classmethod
-    can my_method(cls: any) -> str {
+    can my_method(cls: Type[MyClass]) -> str {
         x = cls.__name__;
         print(x);
         return "Hello, World2!";
@@ -20,13 +20,13 @@ with entry {
 }
 
 class MyClass2 {
-    can Ability_1(self: any) -> str;
+    can Ability_1(self: MyClass2) -> str;
     @classmethod
-    can Ability_2(cls: any) -> str;
+    can Ability_2(cls: Type[MyClass2]) -> str;
 }
 
 :obj:MyClass2:can:Ability_1
-(self: any) {
+(self: MyClass2) -> str {
     return "Hello, World!";
 }
 
