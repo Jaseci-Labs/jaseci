@@ -20,6 +20,17 @@ class AccessCheckPass(Pass):
         """After pass."""
         pass
 
+    def __find_scope_by_dotted_path(self, path: str):
+        current_scope = self.ir.sym_tab
+        path_list = path.split(".")
+        print(path_list)
+        while current_scope and path_list.pop(0) == current_scope.name:
+            if len(path_list) == 0: break
+            a = current_scope.find_scope(path_list[0])
+            print(current_scope.name, path_list[0], a.name if a else a)
+            current_scope = a
+        return current_scope
+
     def exit_node(self, node: ast.AstNode) -> None:
         """Exit node."""
         super().exit_node(node)
@@ -35,6 +46,10 @@ class AccessCheckPass(Pass):
             )
         ):
             self.warning(f"Name {node.sym_name} not present in symbol table")
+        
+        if isinstance(node, ast.AstSymbolNode):
+            if node.name_spec.type_sym_tab is None and node.sym is not None:
+                node.name_spec.type_sym_tab = self.__find_scope_by_dotted_path(node.sym.sym_dotted_name)
 
     def access_check(self, node: ast.Name) -> None:
         """Access check."""
