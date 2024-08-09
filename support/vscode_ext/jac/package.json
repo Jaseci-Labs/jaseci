@@ -82,7 +82,8 @@
     "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^9.0.1",
+    "ms-python.python": "^2024.12.2"
   },
   "devDependencies": {
     "@types/node": "^20.14.1",

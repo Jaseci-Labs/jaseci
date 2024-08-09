@@ -8,10 +8,9 @@ All that is needed is to have jac installed (i.e. `pip install jaclang`) and the
 
 # Debugging Jaclang
 
-Make sure that you've installed [python extention for vscode](https://marketplace.visualstudio.com/items?itemName=ms-python.python) This is needed since the jaclang
-produce python bytecode which can be debugged with `debugpy`.
+Note that it'll install [python extention for vscode](https://marketplace.visualstudio.com/items?itemName=ms-python.python) as a dependecy as it is needed to debug the python bytecode that jaclang produce.
 
-Now to debug a jac file a launch.json file needs to created with the debug configurations. This can simply generated with:
+To debug a jac file a launch.json file needs to created with the debug configurations. This can simply generated with:
 1. Goto the debug options at the left pannel.
 2. click "create a launch.json file"
 3. Select `Jac Debug` Option
