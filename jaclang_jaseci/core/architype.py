@@ -295,7 +295,7 @@ class Anchor(_Anchor):
     #     level = AccessLevel.cast(level)
     #     access = self.access.nodes
     #     if access.whitelist:
-    #         if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, AccessLevel.NO_ACESSS):
+    #         if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, AccessLevel.NO_ACCESS):
     #             access.anchors[ref_id] = level
     #             self._set.update({f"access.nodes.anchors.{ref_id}": level.name})
     #             self._unset.pop(f"access.nodes.anchors.{ref_id}", None)
@@ -343,7 +343,7 @@ class Anchor(_Anchor):
     #     level = AccessLevel.cast(level)
     #     if access := self.access.types.get(type):
     #         if access.whitelist:
-    #             if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, AccessLevel.NO_ACESSS):
+    #             if (ref_id := node.ref_id) and level != access.anchors.get(ref_id, AccessLevel.NO_ACCESS):
     #                 access.anchors[ref_id] = level
     #                 name = type.__ref_cls__()
     #                 self._set.update({f"access.types.{name}.anchors.{ref_id}": level.name})
@@ -379,7 +379,7 @@ class Anchor(_Anchor):
         access = self.access.roots
         if access.whitelist:
             if (ref_id := root.ref_id) and level != access.anchors.get(
-                ref_id, AccessLevel.NO_ACESSS
+                ref_id, AccessLevel.NO_ACCESS
             ):
                 access.anchors[ref_id] = level
                 self._set.update({f"access.roots.anchors.{ref_id}": level.name})
@@ -409,9 +409,9 @@ class Anchor(_Anchor):
 
     def restrict(self) -> None:
         """Disallow others to access current Architype."""
-        if self.access.all > AccessLevel.NO_ACESSS:
-            self.access.all = AccessLevel.NO_ACESSS
-            self._set.update({"access.all": AccessLevel.NO_ACESSS.name})
+        if self.access.all > AccessLevel.NO_ACCESS:
+            self.access.all = AccessLevel.NO_ACCESS
+            self._set.update({"access.all": AccessLevel.NO_ACCESS.name})
 
     # ------------------------------------------------ #
 
@@ -593,7 +593,7 @@ class Anchor(_Anchor):
 
     async def has_read_access(self, to: "Anchor") -> bool:  # type: ignore[override]
         """Read Access Validation."""
-        return await self.access_level(to) > AccessLevel.NO_ACESSS
+        return await self.access_level(to) > AccessLevel.NO_ACCESS
 
     async def has_connect_access(self, to: "Anchor") -> bool:  # type: ignore[override]
         """Write Access Validation."""
@@ -609,12 +609,12 @@ class Anchor(_Anchor):
 
         jctx = JaseciContext.get()
 
-        to.state.current_access_level = AccessLevel.NO_ACESSS
+        to.state.current_access_level = AccessLevel.NO_ACCESS
         if jctx.root == jctx.super_root or jctx.root.id == to.root or jctx.root == to:
             to.state.current_access_level = AccessLevel.WRITE
             return to.state.current_access_level
 
-        if (to_access := to.access).all > AccessLevel.NO_ACESSS:
+        if (to_access := to.access).all > AccessLevel.NO_ACCESS:
             to.state.current_access_level = to_access.all
 
         if to.root and (
@@ -629,7 +629,7 @@ class Anchor(_Anchor):
             whitelist, level = to_root.access.roots.check(jctx.root.ref_id)
             if not whitelist:
                 if level < AccessLevel.READ:
-                    to.state.current_access_level = AccessLevel.NO_ACESSS
+                    to.state.current_access_level = AccessLevel.NO_ACCESS
                     return to.state.current_access_level
                 elif level < to.state.current_access_level:
                     level = to.state.current_access_level
@@ -639,7 +639,7 @@ class Anchor(_Anchor):
         whitelist, level = to_access.roots.check(jctx.root.ref_id)
         if not whitelist:
             if level < AccessLevel.READ:
-                to.state.current_access_level = AccessLevel.NO_ACESSS
+                to.state.current_access_level = AccessLevel.NO_ACCESS
                 return to.state.current_access_level
             elif level < to.state.current_access_level:
                 level = to.state.current_access_level
@@ -652,7 +652,7 @@ class Anchor(_Anchor):
         #     whitelist, level = access_type.check(self)
         #     if not whitelist:
         #         if level < AccessLevel.READ:
-        #             to.state.current_access_level = AccessLevel.NO_ACESSS
+        #             to.state.current_access_level = AccessLevel.NO_ACCESS
         #             return to.state.current_access_level
         #         elif level < to.state.current_access_level:
         #             level = to.state.current_access_level
@@ -662,7 +662,7 @@ class Anchor(_Anchor):
         # whitelist, level = to_access.nodes.check(self)
         # if not whitelist:
         #     if level < AccessLevel.READ:
-        #         to.state.current_access_level = AccessLevel.NO_ACESSS
+        #         to.state.current_access_level = AccessLevel.NO_ACCESS
         #         return to.state.current_access_level
         #     elif level < to.state.current_access_level:
         #         level = to.state.current_access_level
@@ -1016,6 +1016,7 @@ class EdgeAnchor(Anchor):
             **super().serialize(),
             "source": self.source.ref_id if self.source else None,
             "target": self.target.ref_id if self.target else None,
+            "is_undirected": self.is_undirected,
         }
 
 

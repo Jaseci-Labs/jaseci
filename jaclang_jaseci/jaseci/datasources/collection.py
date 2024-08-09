@@ -144,7 +144,7 @@ class Collection(Generic[T]):
         """Return pymongo.database.Database for database connection based from current client connection."""
         if not isinstance(Collection.__database__, AsyncIOMotorDatabase):
             Collection.__database__ = Collection.get_client().get_database(
-                getenv("DATABASE_NAME", "jaclang")
+                getenv("DATABASE_NAME", "jaseci")
             )
 
         return Collection.__database__
