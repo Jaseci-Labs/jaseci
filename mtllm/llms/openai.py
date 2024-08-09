@@ -23,6 +23,11 @@ Generate and return the output result(s) only, adhering to the provided Type in 
 """  # noqa E501
 
 REACT_SUFFIX = """
+You are given with a list of tools you can use to do different things. To achieve the given [Action], incrementally think and provide tool_usage necessary to achieve what is thought.
+Provide your answer adhering in the following format. tool_usage is a function call with the necessary arguments.
+
+[Thought] <Thought>
+[Tool Usage] <tool_usage>
 """  # noqa E501
 
 

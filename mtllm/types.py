@@ -4,7 +4,7 @@ import base64
 import importlib
 import importlib.util
 from io import BytesIO
-from typing import Any
+from typing import Any, Callable
 
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 
@@ -255,3 +255,44 @@ class Information:
     def get_types(self) -> list:
         """Get the types of the information."""
         return extract_non_primary_type(self.type)
+
+
+class Tool:
+    """Base class for tools."""
+
+    def __init__(
+        self, func: Callable, sem_info: SemInfo, params: list[SemInfo]
+    ) -> None:
+        """Initialize the tool."""
+        self.sem_info = sem_info
+        self.func = func
+        self.params = params
+
+    def __call__(self, *args, **kwargs) -> str:  # noqa
+        """Forward function of the tool."""
+        return self.func(*args, **kwargs)
+
+    def get_usage_example(self) -> str:
+        """Get the usage example of the tool."""
+        get_param_str = lambda x: (  # noqa E731
+            f'{x.name}="{x.semstr}":{x.type}' if x.semstr else f"{x.name}={x.type}"
+        )
+        return f"{self.sem_info.semstr}({', '.join([get_param_str(x) for x in self.params])})"
+
+    def __str__(self) -> str:
+        """String representation of the tool."""
+        return f"{self.sem_info.semstr} ({self.sem_info.name}) usage eg. {self.get_usage_example()}"
+
+
+class ReActOutput:
+    """Class to represent the ReAct output."""
+
+    def __init__(self, thought: str, action: str, observation: str) -> None:
+        """Initializes the ReActOutput class."""
+        self.thought = thought
+        self.action = action
+        self.observation = observation
+
+    def __repr__(self) -> str:
+        """Returns the string representation of the ReActOutput class."""
+        return f"ReActOutput(thought={self.thought}, action={self.action}, observation={self.observation})"

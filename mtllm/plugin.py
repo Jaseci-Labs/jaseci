@@ -3,12 +3,12 @@
 import ast as ast3
 import os
 import pickle
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-from jaclang.compiler.semtable import SemScope
+from jaclang.compiler.semtable import SemRegistry, SemScope
 from jaclang.plugin.default import hookimpl
 from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
@@ -17,8 +17,19 @@ from mtllm.aott import (
     get_all_type_explanations,
 )
 from mtllm.llms.base import BaseLLM
-from mtllm.types import Information, InputInformation, OutputHint
+from mtllm.types import Information, InputInformation, OutputHint, Tool
 from mtllm.utils import get_filtered_registry
+
+
+def callable_to_tool(tool: Callable, mod_registry: SemRegistry) -> Tool:
+    """Convert a callable to a Tool."""
+    assert callable(tool), f"{tool} cannot be used as a tool"
+    tool_name = tool.__name__
+    tool_info = mod_registry.lookup(name=tool_name, type="ability")
+    assert tool_info, f"Tool {tool_name} not found in the registry"
+    return Tool(
+        tool, tool_info, []
+    )  # TODO: Replace the empty list with the parameter seminfos
 
 
 class JacFeature:
@@ -87,6 +98,16 @@ class JacFeature:
 
         type_explanations = get_all_type_explanations(type_collector, mod_registry)
 
+        tools = model_params.pop("tools") if "tools" in model_params else None
+        if method == "ReAct":
+            assert tools, "Tools must be provided for the ReAct method."
+            _tools = [
+                tool if isinstance(tool, Tool) else callable_to_tool(tool, mod_registry)
+                for tool in tools
+            ]
+        else:
+            _tools = []
+
         meaning_out = aott_raise(
             model,
             informations,
@@ -96,8 +117,10 @@ class JacFeature:
             action,
             context,
             method,
-            [],
+            _tools,
             model_params,
+            _globals,
+            _locals,
         )
         _output = model.resolve_output(
             meaning_out, output_hint, output_type_explanations, _globals, _locals
@@ -346,7 +369,6 @@ class JacFeature:
                             value=action,
                         )
                     ),
-                    #  _globals=globals(), _locals=locals()
                     _pass.sync(
                         ast3.keyword(
                             arg="_globals",
