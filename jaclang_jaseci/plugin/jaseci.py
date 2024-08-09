@@ -19,7 +19,7 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse
 
-from jaclang.compiler.absyntree import AstAsyncNode
+from jaclang.compiler.absyntree import Ability, AstAsyncNode
 from jaclang.compiler.constant import EdgeDir
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.plugin.default import hookimpl
@@ -571,7 +571,7 @@ Jac.Walker = WalkerArchitype  # type: ignore[assignment]
 
 def overrided_init(self: AstAsyncNode, is_async: bool) -> None:
     """Initialize ast."""
-    self.is_async = True
+    self.is_async = True if isinstance(self, Ability) else is_async
 
 
 AstAsyncNode.__init__ = overrided_init  # type: ignore[method-assign]
