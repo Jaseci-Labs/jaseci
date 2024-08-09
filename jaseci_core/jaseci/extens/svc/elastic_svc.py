@@ -45,7 +45,7 @@ class ElasticService(JsOrc.CommonService):
 
     def run(self):
         kube = JsOrc.svc("kube", KubeService)
-        if kube.is_running():
+        if self.automated and kube.is_running():
             elasticsearches = kube.resolve_manifest(
                 self.manifest, *JsOrc.overrided_namespace("elastic", self.manifest_type)
             ).get("Elasticsearch", [])
