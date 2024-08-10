@@ -1595,7 +1595,7 @@ class PyastGenPass(Pass):
         """
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
-            if node.is_method and not node.is_static and not node.is_class_method
+            if node.is_method and not node.is_static and not node.is_in_py_class
             else []
         )
         vararg = None

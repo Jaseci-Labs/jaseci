@@ -1530,7 +1530,7 @@ class FuncSignature(AstSemStrNode):
         )
 
     @property
-    def is_class_method(self) -> bool:
+    def is_in_py_class(self) -> bool:
         """Check if the ability belongs to a class."""
         is_archi = self.find_parent_of_type(Architype)
         is_class = is_archi is not None and is_archi.arch_type.name == Tok.KW_CLASS

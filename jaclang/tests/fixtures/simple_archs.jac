@@ -15,7 +15,7 @@ class SimpleClass {
         var2: int,
         var3: int = 0;
 
-    can init(self:any) {
+    can init(self: SimpleClass) {
         print(self.var3);
     }
 }
