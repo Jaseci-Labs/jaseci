@@ -2,7 +2,6 @@
 
 import marshal
 import os
-import sys
 import types
 from typing import Optional
 
@@ -59,16 +58,10 @@ class JacProgram:
     """Class to hold the mod_bundle and bytecode for Jac modules."""
 
     def __init__(
-        self, mod_bundle: Optional[Module | str], bytecode: Optional[dict[str, bytes]]
+        self, mod_bundle: Optional[Module], bytecode: Optional[dict[str, bytes]]
     ) -> None:
         """Initialize the JacProgram object."""
-        self.mod_bundle = (
-            sys.modules[mod_bundle].__jac_mod_bundle__
-            if isinstance(mod_bundle, str)
-            and mod_bundle in sys.modules
-            and "__jac_mod_bundle__" in sys.modules[mod_bundle].__dict__
-            else None
-        )
+        self.mod_bundle = mod_bundle
         self.bytecode = bytecode or {}
 
     def get_bytecode(

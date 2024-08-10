@@ -279,7 +279,6 @@ class JacImporter(Importer):
         module.__name__ = module_name
         module.__path__ = [full_mod_path]
         module.__file__ = None
-        module.__dict__["__jac_mod_bundle__"] = self.jac_machine.get_mod_bundle()
 
         if module_name not in sys.modules:
             sys.modules[module_name] = module
@@ -295,7 +294,6 @@ class JacImporter(Importer):
         module = types.ModuleType(module_name)
         module.__file__ = full_target
         module.__name__ = module_name
-        module.__dict__["__jac_mod_bundle__"] = self.jac_machine.get_mod_bundle()
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")

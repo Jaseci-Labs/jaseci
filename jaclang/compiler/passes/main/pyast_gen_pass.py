@@ -634,17 +634,6 @@ class PyastGenPass(Pass):
                                     ),
                                     self.sync(
                                         ast3.keyword(
-                                            arg="mod_bundle",
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id="__name__",
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
                                             arg="lng",
                                             value=self.sync(
                                                 ast3.Constant(
