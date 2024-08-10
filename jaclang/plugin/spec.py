@@ -14,8 +14,6 @@ from typing import (
     Union,
 )
 
-from jaclang.compiler.absyntree import Module
-
 if TYPE_CHECKING:
     from jaclang.runtimelib.constructs import EdgeArchitype, NodeArchitype
     from jaclang.plugin.default import (
@@ -117,7 +115,6 @@ class JacFeatureSpec:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],

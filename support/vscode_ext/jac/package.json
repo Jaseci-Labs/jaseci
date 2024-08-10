@@ -17,6 +17,7 @@
   },
   "categories": [
     "Programming Languages",
+    "Debuggers",
     "Linters",
     "Formatters",
     "Snippets",
@@ -27,6 +28,25 @@
     "vscode": "^1.89.0"
   },
   "contributes": {
+
+    "debuggers": [
+      {
+        "type": "jacdebug",
+        "label": "Jac Debug",
+
+        "initialConfigurations": [
+          {
+            "type": "debugpy",
+            "request": "launch",
+            "name": "Run a jac file",
+            "program": "${command:extension.jaclang-extension.getJacPath}",
+            "args" : "run ${file}"
+          }
+        ]
+
+      }
+    ],
+
     "languages": [
       {
         "id": "jac",
@@ -62,7 +82,8 @@
     "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^9.0.1",
+    "ms-python.python": "^2024.12.2"
   },
   "devDependencies": {
     "@types/node": "^20.14.1",
