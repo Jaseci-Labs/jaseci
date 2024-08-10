@@ -1,4 +1,4 @@
-"""Tools for the MTLLM framework."""
+"""Wikipedia Tools for the MTLLM framework."""
 
 from jaclang.compiler.semtable import SemInfo
 

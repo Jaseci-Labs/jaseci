@@ -1,6 +1,6 @@
 import:py from mtllm.llms, OpenAI;
 
-glob llm = OpenAI();
+glob llm = OpenAI(verbose=True, model_name="gpt-4o-mini");
 
 enum 'Personality of the Person'
 Personality {

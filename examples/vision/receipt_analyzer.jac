@@ -1,7 +1,8 @@
 import:py from mtllm.llms, OpenAI;
+import:py from mtllm.tools.math_utils, math_tool;
 import:py from PIL, Image;
 
-glob llm = OpenAI(model_name="gpt-4o");
+glob llm = OpenAI(verbose=True, model_name="gpt-4o");
 
 obj 'Purchased Item'
 PurchasedItem {
@@ -30,8 +31,11 @@ Receipt {
 can 'Get Reciept Object'
 get_reciept(reciept_img: 'Image of the Receipt': Image) -> 'Reciept Object': Receipt by llm();
 
+can verity_total(reciept: Receipt) -> bool by llm(method="ReAct", tools=[math_tool]);
+
 with entry {
     reciept_img = Image.open("receipt.jpg");
     receipt = get_reciept(reciept_img);
     receipt.pp();
+    print(f"Total is correct: {verity_total(receipt)}");
 }
