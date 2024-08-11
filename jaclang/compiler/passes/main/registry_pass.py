@@ -95,11 +95,14 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
-        if isinstance(node.signature, ast.EventSignature):
-            if len(self.modules_visited) and self.modules_visited[-1].registry:
-                self.modules_visited[-1].registry.add(
-                    get_sem_scope(node), SemInfo("No Input Params", "")
-                )
+        if (
+            isinstance(node.signature, ast.EventSignature)
+            and len(self.modules_visited)
+            and self.modules_visited[-1].registry
+        ):
+            self.modules_visited[-1].registry.add(
+                get_sem_scope(node), SemInfo("No Input Params", "")
+            )
 
     def exit_param_var(self, node: ast.ParamVar) -> None:
         """Save param information"""
