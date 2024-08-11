@@ -185,24 +185,18 @@ def print_ast_tree(
     markers += marker if level > 0 else ""
 
     if isinstance(root, ast.AstNode):
+        tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if isinstance(root, ast.Module) and root.py_raised:
-            tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
-            kids = list(
-                filter(lambda x: x.py_raised, root.get_all_sub_nodes(ast.Module))
-            )
-            for i, child in enumerate(kids):
-                is_last = i == len(kids) - 1
-                tree_str += print_ast_tree(
-                    child, marker, [*level_markers, not is_last], output_file, max_depth
-                )
-
+            kids: list[AstNode] = [
+                *filter(lambda x: x.py_raised, root.get_all_sub_nodes(ast.Module))
+            ]
         else:
-            tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
-            for i, child in enumerate(root.kid):
-                is_last = i == len(root.kid) - 1
-                tree_str += print_ast_tree(
-                    child, marker, [*level_markers, not is_last], output_file, max_depth
-                )
+            kids = root.kid
+        for i, child in enumerate(kids):
+            is_last = i == len(kids) - 1
+            tree_str += print_ast_tree(
+                child, marker, [*level_markers, not is_last], output_file, max_depth
+            )
 
     elif isinstance(root, ast3.AST):
         tree_str = (
@@ -256,34 +250,34 @@ def _build_symbol_tree_common(
         node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
         parent=parent_node,
     )
-    symbols = SymbolTree(node_name="Symbols", parent=root)
+    # symbols = SymbolTree(node_name="Symbols", parent=root)
     children = SymbolTree(node_name="Sub Tables", parent=root)
 
-    for sym in node.tab.values():
-        symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
-        # SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
+    # for sym in node.tab.values():
+    #     symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
+    #     SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 
-        # if sym.decl and sym.decl.loc.first_line > 0:
-        #     SymbolTree(
-        #         node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start}",
-        #         parent=symbol_node,
-        #     )
-        #     defn = SymbolTree(node_name="defn", parent=symbol_node)
-        #     [
-        #         SymbolTree(
-        #             node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
-        #             parent=defn,
-        #         )
-        #         for n in sym.defn
-        #     ]
-        #     uses = SymbolTree(node_name="uses", parent=symbol_node)
-        #     [
-        #         SymbolTree(
-        #             node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
-        #             parent=uses,
-        #         )
-        #         for n in sym.uses
-        #     ]
+    #     if sym.decl and sym.decl.loc.first_line > 0:
+    #         SymbolTree(
+    #             node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start}",
+    #             parent=symbol_node,
+    #         )
+    #         defn = SymbolTree(node_name="defn", parent=symbol_node)
+    #         [
+    #             SymbolTree(
+    #                 node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
+    #                 parent=defn,
+    #             )
+    #             for n in sym.defn
+    #         ]
+    #         uses = SymbolTree(node_name="uses", parent=symbol_node)
+    #         [
+    #             SymbolTree(
+    #                 node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
+    #                 parent=uses,
+    #             )
+    #             for n in sym.uses
+    #         ]
 
     for k in node.kid:
         _build_symbol_tree_common(k, children)
