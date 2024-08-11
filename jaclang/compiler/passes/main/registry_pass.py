@@ -86,7 +86,7 @@ class RegistryPass(Pass):
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Save ability information."""
-        scope_node = node.parent
+        scope_node : ast.AstNode = node.parent
         scope = get_sem_scope(scope_node)
         seminfo = SemInfo(
             node.name_ref.sym_name,
