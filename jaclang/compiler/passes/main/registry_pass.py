@@ -38,6 +38,8 @@ class RegistryPass(Pass):
                 os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb"
             ) as f:
                 pickle.dump(node.registry, f)
+                print(node.registry.pp())
+                # print(node.registry.registry[list(node.registry.registry.keys())[2]])
         except Exception as e:
             self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
@@ -86,10 +88,30 @@ class RegistryPass(Pass):
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Save ability information."""
-        scope = get_sem_scope(node)
+        scope = get_sem_scope(node.parent)
         seminfo = SemInfo(
             node.name_ref.sym_name,
-            None,
+            "Ability",
+            node.semstr.lit_value if node.semstr else "",
+        )
+        if len(self.modules_visited) and self.modules_visited[-1].registry:
+            self.modules_visited[-1].registry.add(scope, seminfo)
+
+        if isinstance(node.signature, ast.EventSignature):
+            if len(self.modules_visited) and self.modules_visited[-1].registry:
+                self.modules_visited[-1].registry.add(
+                    get_sem_scope(node), SemInfo("No Input Params", "")
+                )
+
+    def exit_param_var(self, node: ast.ParamVar) -> None:
+        """Save param information"""
+        scope = get_sem_scope(node)
+        extracted_type = (
+            "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
+        )
+        seminfo = SemInfo(
+            node.name.value,
+            extracted_type,
             node.semstr.lit_value if node.semstr else "",
         )
         if len(self.modules_visited) and self.modules_visited[-1].registry:

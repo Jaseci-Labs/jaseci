@@ -113,17 +113,21 @@ def get_sem_scope(node: ast.AstNode) -> SemScope:
     a = (
         node.name
         if isinstance(node, ast.Module)
-        else node.name.value if isinstance(node, (ast.Enum, ast.Architype)) else ""
+        else (
+            node.name.value
+            if isinstance(node, (ast.Enum, ast.Architype))
+            else node.name_ref.sym_name if isinstance(node, ast.Ability) else ""
+        )
     )
     if isinstance(node, ast.Module):
         return SemScope(a, "Module", None)
-    elif isinstance(node, (ast.Enum, ast.Architype)):
+    elif isinstance(node, (ast.Enum, ast.Architype, ast.Ability)):
         node_type = (
             node.__class__.__name__
             if isinstance(node, ast.Enum)
-            else node.arch_type.value
+            else ("Ability" if isinstance(node, ast.Ability) else node.arch_type.value)
         )
-        if node.parent:
+        if node.parent or isinstance(node, ast.Ability):
             return SemScope(a, node_type, get_sem_scope(node.parent))
     else:
         if node.parent:
