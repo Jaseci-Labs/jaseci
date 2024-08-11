@@ -105,7 +105,7 @@ class RegistryPass(Pass):
             )
 
     def exit_param_var(self, node: ast.ParamVar) -> None:
-        """Save param information"""
+        """Save param information."""
         scope = get_sem_scope(node)
         extracted_type = (
             "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None

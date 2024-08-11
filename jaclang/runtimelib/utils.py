@@ -108,7 +108,7 @@ def traverse_graph(
                     dfs(other_nd, cur_depth + 1)
 
 
-def get_sem_scope(node: ast.AstNode | None) -> SemScope:
+def get_sem_scope(node: ast.AstNode) -> SemScope:
     """Get scope of the node."""
     a = (
         node.name
