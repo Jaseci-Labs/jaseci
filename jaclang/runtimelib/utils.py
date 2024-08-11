@@ -128,10 +128,14 @@ def get_sem_scope(node: ast.AstNode) -> SemScope:
             else ("Ability" if isinstance(node, ast.Ability) else node.arch_type.value)
         )
         if node.parent:
-            return SemScope(a, node_type, get_sem_scope(node.parent))
+            return SemScope(
+                a,
+                node_type,
+                get_sem_scope(node.parent),
+            )
     else:
         if node.parent:
-            return get_sem_scope(node.parent) if not isinstance(node, ast.Ability) else get_sem_scope(node.owner_method)
+            return get_sem_scope(node.parent)
     return SemScope("", "", None)
 
 
