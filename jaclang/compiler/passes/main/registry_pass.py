@@ -38,7 +38,6 @@ class RegistryPass(Pass):
                 os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb"
             ) as f:
                 pickle.dump(node.registry, f)
-                print(node.registry.pp())
         except Exception as e:
             self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
