@@ -286,7 +286,7 @@ class PyImportPass(JacImportPass):
                     SubNodeTabPass(input_ir=mod, prior=self)
                 if mod:
                     if not settings.print_py_raised_ast:
-                        mod.py_raised = True
+                        mod.is_from_py_file = True
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)

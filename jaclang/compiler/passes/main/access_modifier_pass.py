@@ -38,7 +38,7 @@ class AccessCheckPass(Pass):
             settings.lsp_debug
             and isinstance(node, ast.NameAtom)
             and not node.sym
-            and not node.parent_of_type(ast.Module).py_raised
+            and not node.parent_of_type(ast.Module).is_from_py_file
             and not (
                 node.sym_name == "py"
                 and node.parent
