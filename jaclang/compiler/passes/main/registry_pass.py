@@ -38,6 +38,7 @@ class RegistryPass(Pass):
                 os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb"
             ) as f:
                 pickle.dump(node.registry, f)
+                print(node.registry.pp())
         except Exception as e:
             self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
@@ -86,8 +87,8 @@ class RegistryPass(Pass):
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Save ability information."""
-        scope_node : ast.AstNode = node.parent
-        scope = get_sem_scope(scope_node)
+        # scope_node = node.parent
+        scope = get_sem_scope(node.owner_method)
         seminfo = SemInfo(
             node.name_ref.sym_name,
             "Ability",
