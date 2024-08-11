@@ -962,6 +962,3 @@ class JacLanguageTests(TestCase):
         self.assertEqual("MyClass", stdout_value[0])
         self.assertEqual("Hello, World1! Hello, World2!", stdout_value[1])
         self.assertEqual("Hello, World! Hello, World22!", stdout_value[2])
-
-
-JacLanguageTests().test_needs_import_2()
