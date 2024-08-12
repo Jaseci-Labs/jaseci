@@ -146,3 +146,24 @@ with entry:__main__ {
     );
 }
 ```
+
+## **Walker Response Structure**
+- Response support auto serialization of walker/edge/node architypes and obj as long as it's attributes is also serializable (ex: nested dataclass)
+
+```python
+{
+    "status": {{ int : http status code }},
+    "reports": {{ list : jac reports }},
+
+    # optional via SHOW_ENDPOINT_RETURNS=true environment variable
+    "returns" {{ list : jac per visit return }}
+}
+```
+
+## **Walker/Edge/Node Serialization**
+```python
+{
+    "id": {{ str : anchor ref_id }},
+    "context": {{ dict : anchor architype data }}
+}
+```

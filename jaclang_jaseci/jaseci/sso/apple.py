@@ -45,16 +45,20 @@ class AppleSSO(SSOBase):
         """Apple SSO init."""
         if not client_secret:
             if (
-                (client_team_id := getenv(f"{platform}_CLIENT_TEAM_ID"))
-                and (client_team_id := getenv(f"{platform}_CLIENT_TEAM_ID"))
-                and (client_key := getenv(f"{platform}_CLIENT_KEY"))
+                (client_team_id := getenv(f"SSO_{platform}_CLIENT_TEAM_ID"))
+                and (client_team_id := getenv(f"SSO_{platform}_CLIENT_TEAM_ID"))
+                and (client_key := getenv(f"SSO_{platform}_CLIENT_KEY"))
                 and (
                     (
                         client_certificate_path := getenv(
-                            f"{platform}_CLIENT_CERTIFICATE_PATH"
+                            f"SSO_{platform}_CLIENT_CERTIFICATE_PATH"
                         )
                     )
-                    or (client_certificate := getenv(f"{platform}_CLIENT_CERTIFICATE"))
+                    or (
+                        client_certificate := getenv(
+                            f"SSO_{platform}_CLIENT_CERTIFICATE"
+                        )
+                    )
                 )
             ):
                 self.client_team_id = client_team_id
@@ -65,10 +69,10 @@ class AppleSSO(SSOBase):
                 self.client_certificate = client_certificate
             else:
                 raise AttributeError(
-                    f"Please provide {platform}_CLIENT_SECRET or all required fields to auto generate secret!\n"
-                    f"{platform}_CLIENT_TEAM_ID\n"
-                    f"{platform}_CLIENT_KEY\n"
-                    f"{platform}_CLIENT_CERTIFICATE_PATH or {platform}_CLIENT_CERTIFICATE"
+                    f"Please provide SSO_{platform}_CLIENT_SECRET or all required fields to auto generate secret!\n"
+                    f"SSO_{platform}_CLIENT_TEAM_ID\n"
+                    f"SSO_{platform}_CLIENT_KEY\n"
+                    f"SSO_{platform}_CLIENT_CERTIFICATE_PATH or SSO_{platform}_CLIENT_CERTIFICATE"
                 )
 
         super().__init__(

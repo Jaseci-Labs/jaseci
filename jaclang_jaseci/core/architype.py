@@ -80,7 +80,7 @@ class BulkWrite:
     """Bulk Write builder."""
 
     SESSION_MAX_TRANSACTION_RETRY: ClassVar[int] = int(
-        getenv("SESSION_TRANSACTION_MAX_RETRY") or "1"
+        getenv("SESSION_MAX_TRANSACTION_RETRY") or "1"
     )
     SESSION_MAX_COMMIT_RETRY: ClassVar[int] = int(
         getenv("SESSION_MAX_COMMIT_RETRY") or "1"

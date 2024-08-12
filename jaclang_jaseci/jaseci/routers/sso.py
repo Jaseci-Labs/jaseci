@@ -58,19 +58,19 @@ SSO: dict[str, SSOBase] = {}
 SSO_HOST = getenv("SSO_HOST", "http://localhost:8000/sso")
 
 for platform, cls in SUPPORTED_PLATFORMS.items():
-    if client_id := getenv(f"{platform}_CLIENT_ID"):
+    if client_id := getenv(f"SSO_{platform}_CLIENT_ID"):
         options: dict[str, Any] = {
             "client_id": client_id,
-            "client_secret": getenv(f"{platform}_CLIENT_SECRET"),
+            "client_secret": getenv(f"SSO_{platform}_CLIENT_SECRET"),
         }
 
-        if base_endpoint_url := getenv(f"{platform}_BASE_ENDPOINT_URL"):
+        if base_endpoint_url := getenv(f"SSO_{platform}_BASE_ENDPOINT_URL"):
             options["base_endpoint_url"] = base_endpoint_url
 
-        if tenant := getenv(f"{platform}_TENANT"):
+        if tenant := getenv(f"SSO_{platform}_TENANT"):
             options["tenant"] = tenant
 
-        if allow_insecure_http := getenv(f"{platform}_ALLOW_INSECURE_HTTP"):
+        if allow_insecure_http := getenv(f"SSO_{platform}_ALLOW_INSECURE_HTTP"):
             options["allow_insecure_http"] = allow_insecure_http == "true"
 
         if cls in CUSTOM_PLATFORMS:

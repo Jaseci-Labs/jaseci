@@ -60,7 +60,7 @@ class Emailer:
 class SendGridEmailer(Emailer):
     """SendGrid Handler."""
 
-    __host__: str = getenv("HOST") or "http://localhost:8000"
+    __host__: str = getenv("SENDGRID_HOST") or "http://localhost:8000"
 
     @classmethod
     def generate_client(cls) -> SendGridAPIClient | None:
