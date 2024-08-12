@@ -289,6 +289,8 @@ class JacFormatPass(Pass):
                     self.emit(node, f"{stmt.value} ")
                 elif stmt.value == "=":
                     self.emit(node, f" {stmt.value} ")
+                elif prev_token and prev_token.gen.jac.strip() == "@":
+                    self.emit_ln(node, stmt.value)
                 else:
                     self.emit(node, f"{stmt.gen.jac}")
                 prev_token = stmt
