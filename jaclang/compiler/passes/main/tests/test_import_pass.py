@@ -96,7 +96,7 @@ class ImportPassPassTests(TestCase):
                     )
                 )
             ),
-            6,
+            7,
         )
 
 
