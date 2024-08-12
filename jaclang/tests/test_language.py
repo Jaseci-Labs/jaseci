@@ -107,7 +107,7 @@ class JacLanguageTests(TestCase):
             stdout_value,
             "{'apple': None, 'pineapple': None}\n"
             "This is a long\n"
-            "        line of code.\n"
+            "    line of code.\n"
             "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",
         )
 
