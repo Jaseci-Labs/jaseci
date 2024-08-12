@@ -86,30 +86,25 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=PyastGenPass
+        )
+        from_jac_str = ast3.dump(code_gen.ir.gen.py_ast[0], indent=2)
+        from_jac = code_gen.ir.gen.py_ast[0]
         try:
-            code_gen = jac_file_to_pass(
-                self.fixture_abs_path(filename), target=PyastGenPass
-            )
-            from_jac_str = ast3.dump(code_gen.ir.gen.py_ast[0], indent=2)
-            from_jac = code_gen.ir.gen.py_ast[0]
-            try:
-                compile(from_jac, filename="<ast>", mode="exec")
-            except Exception as e:
-                print(from_jac_str)
-                raise e
-            for i in ast3.walk(from_jac):
-                try:
-                    if not isinstance(i, (ast3.Load, ast3.Store, ast3.Del)):
-                        self.assertTrue(hasattr(i, "jac_link"))
-                except Exception as e:
-                    print(filename, ast3.dump(i, indent=2))
-                    raise e
-            self.assertTrue(self.parent_scrub(code_gen.ir))
-            self.assertGreater(len(from_jac_str), 10)
+            compile(from_jac, filename="<ast>", mode="exec")
         except Exception as e:
-            if "pip install mtllm" in str(e):
-                return
+            print(from_jac_str)
             raise e
+        for i in ast3.walk(from_jac):
+            try:
+                if not isinstance(i, (ast3.Load, ast3.Store, ast3.Del)):
+                    self.assertTrue(hasattr(i, "jac_link"))
+            except Exception as e:
+                print(filename, ast3.dump(i, indent=2))
+                raise e
+        self.assertTrue(self.parent_scrub(code_gen.ir))
+        self.assertGreater(len(from_jac_str), 10)
 
 
 PyastGenPassTests.self_attach_micro_tests()
@@ -135,19 +130,14 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        try:
-            code_gen = jac_file_to_pass(
-                self.fixture_abs_path(filename), target=SubNodeTabPass
-            )
-            self.assertTrue(self.parent_scrub(code_gen.ir))
-            code_gen = jac_file_to_pass(
-                self.fixture_abs_path(filename), target=PyastGenPass
-            )
-            self.assertTrue(self.parent_scrub(code_gen.ir))
-        except Exception as e:
-            if "pip install mtllm" in str(e):
-                return
-            raise e
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=SubNodeTabPass
+        )
+        self.assertTrue(self.parent_scrub(code_gen.ir))
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=PyastGenPass
+        )
+        self.assertTrue(self.parent_scrub(code_gen.ir))
 
 
 ValidateTreeParentTest.self_attach_micro_tests()

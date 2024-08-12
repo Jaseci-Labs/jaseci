@@ -33,49 +33,41 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        try:
-            code_gen_pure = jac_file_to_pass(
-                self.fixture_abs_path(filename),
-                target=PyastGenPass,
-                schedule=without_format,
+        code_gen_pure = jac_file_to_pass(
+            self.fixture_abs_path(filename),
+            target=PyastGenPass,
+            schedule=without_format,
+        )
+        before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
+        x = code_gen_pure.ir.unparse()
+        # print(x)
+        # print(f"Testing {code_gen_pure.ir.name}")
+        # print(code_gen_pure.ir.pp())
+        code_gen_jac = jac_str_to_pass(
+            jac_str=x,
+            file_path=filename,
+            target=PyastGenPass,
+            schedule=without_format,
+        )
+        after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
+        if "circle_clean_tests.jac" in filename:
+            self.assertEqual(
+                len(
+                    [
+                        i
+                        for i in unified_diff(
+                            before.splitlines(), after.splitlines(), n=0
+                        )
+                        if "test" not in i
+                    ]
+                ),
+                5,
             )
-            before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
-            x = code_gen_pure.ir.unparse()
-            # print(x)
-            # print(f"Testing {code_gen_pure.ir.name}")
-            # print(code_gen_pure.ir.pp())
-            code_gen_jac = jac_str_to_pass(
-                jac_str=x,
-                file_path=filename,
-                target=PyastGenPass,
-                schedule=without_format,
+        else:
+            self.assertEqual(
+                len("\n".join(unified_diff(before.splitlines(), after.splitlines()))),
+                0,
             )
-            after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
-            if "circle_clean_tests.jac" in filename:
-                self.assertEqual(
-                    len(
-                        [
-                            i
-                            for i in unified_diff(
-                                before.splitlines(), after.splitlines(), n=0
-                            )
-                            if "test" not in i
-                        ]
-                    ),
-                    5,
-                )
-            else:
-                self.assertEqual(
-                    len(
-                        "\n".join(unified_diff(before.splitlines(), after.splitlines()))
-                    ),
-                    0,
-                )
-
-        except Exception as e:
-            if "pip install mtllm" in str(e):
-                return
-            raise e
 
 
 JacUnparseTests.self_attach_micro_tests()

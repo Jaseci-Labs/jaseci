@@ -115,51 +115,46 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
+        code_gen_pure = jac_file_to_pass(
+            self.fixture_abs_path(filename),
+            target=PyastGenPass,
+            schedule=without_format,
+        )
+        code_gen_format = jac_file_to_pass(
+            self.fixture_abs_path(filename), schedule=format_pass
+        )
+        code_gen_jac = jac_str_to_pass(
+            jac_str=code_gen_format.ir.gen.jac,
+            file_path=filename,
+            target=PyastGenPass,
+            schedule=without_format,
+        )
+        if "circle_clean_tests.jac" in filename:
+            tokens = code_gen_format.ir.gen.jac.split()
+            num_test = 0
+            for i in range(len(tokens)):
+                if tokens[i] == "test":
+                    num_test += 1
+                    self.assertEqual(tokens[i + 1], "{")
+            self.assertEqual(num_test, 3)
+            return
         try:
-            code_gen_pure = jac_file_to_pass(
-                self.fixture_abs_path(filename),
-                target=PyastGenPass,
-                schedule=without_format,
+            self.assertTrue(
+                isinstance(code_gen_pure.ir, ast.Module)
+                and isinstance(code_gen_jac.ir, ast.Module),
+                "Parsed objects are not modules.",
             )
-            code_gen_format = jac_file_to_pass(
-                self.fixture_abs_path(filename), schedule=format_pass
-            )
-            code_gen_jac = jac_str_to_pass(
-                jac_str=code_gen_format.ir.gen.jac,
-                file_path=filename,
-                target=PyastGenPass,
-                schedule=without_format,
-            )
-            if "circle_clean_tests.jac" in filename:
-                tokens = code_gen_format.ir.gen.jac.split()
-                num_test = 0
-                for i in range(len(tokens)):
-                    if tokens[i] == "test":
-                        num_test += 1
-                        self.assertEqual(tokens[i + 1], "{")
-                self.assertEqual(num_test, 3)
-                return
-            try:
-                self.assertTrue(
-                    isinstance(code_gen_pure.ir, ast.Module)
-                    and isinstance(code_gen_jac.ir, ast.Module),
-                    "Parsed objects are not modules.",
-                )
-                before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
-                after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
-                diff = "\n".join(unified_diff(before.splitlines(), after.splitlines()))
-                self.assertFalse(diff, "AST structures differ after formatting.")
+            before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
+            after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
+            diff = "\n".join(unified_diff(before.splitlines(), after.splitlines()))
+            self.assertFalse(diff, "AST structures differ after formatting.")
 
-            except Exception as e:
-                print(add_line_numbers(code_gen_pure.ir.source.code))
-                print("\n+++++++++++++++++++++++++++++++++++++++\n")
-                print(add_line_numbers(code_gen_format.ir.gen.jac))
-                print("\n+++++++++++++++++++++++++++++++++++++++\n")
-                print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
-                raise e
         except Exception as e:
-            if "pip install mtllm" in str(e):
-                return
+            print(add_line_numbers(code_gen_pure.ir.source.code))
+            print("\n+++++++++++++++++++++++++++++++++++++++\n")
+            print(add_line_numbers(code_gen_format.ir.gen.jac))
+            print("\n+++++++++++++++++++++++++++++++++++++++\n")
+            print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
             raise e
 
 

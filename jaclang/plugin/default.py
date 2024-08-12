@@ -685,16 +685,37 @@ class JacFeatureDefaults:
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         raise ImportError(
-            "mtllm is not installed. Please install it with `pip install mtllm`."
+            "mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."
         )
 
     @staticmethod
     @hookimpl
     def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
-        raise ImportError(
-            "mtllm is not installed. Please install it with `pip install mtllm`."
+        _pass.log_warning(
+            "MT-LLM is not installed. Please install it with `pip install mtllm`."
         )
+        return [
+            _pass.sync(
+                ast3.Raise(
+                    _pass.sync(
+                        ast3.Call(
+                            func=_pass.sync(
+                                ast3.Name(id="ImportError", ctx=ast3.Load())
+                            ),
+                            args=[
+                                _pass.sync(
+                                    ast3.Constant(
+                                        value="mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."  # noqa: E501
+                                    )
+                                )
+                            ],
+                            keywords=[],
+                        )
+                    )
+                )
+            )
+        ]
 
     @staticmethod
     @hookimpl
@@ -710,17 +731,102 @@ class JacFeatureDefaults:
         exclude_info: list[tuple[str, ast3.AST]],
     ) -> ast3.Call:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
-        raise ImportError(
-            "mtllm is not installed. Please install it with `pip install mtllm`."
+        _pass.log_warning(
+            "MT-LLM is not installed. Please install it with `pip install mtllm`."
+        )
+        return ast3.Call(
+            func=_pass.sync(
+                ast3.Attribute(
+                    value=_pass.sync(ast3.Name(id="_Jac", ctx=ast3.Load())),
+                    attr="with_llm",
+                    ctx=ast3.Load(),
+                )
+            ),
+            args=[],
+            keywords=[
+                _pass.sync(
+                    ast3.keyword(
+                        arg="file_loc",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="model",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="model_params",
+                        value=_pass.sync(ast3.Dict(keys=[], values=[])),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="scope",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="incl_info",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="excl_info",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="inputs",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="outputs",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="action",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="_globals",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="_locals",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+            ],
         )
 
     @staticmethod
     @hookimpl
     def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
         """Get the by LLM call args."""
-        raise ImportError(
-            "mtllm is not installed. Please install it with `pip install mtllm`."
-        )
+        return {
+            "model": None,
+            "model_params": {},
+            "scope": None,
+            "inputs": [],
+            "outputs": [],
+            "action": None,
+            "include_info": [],
+            "exclude_info": [],
+        }
 
 
 class JacBuiltin:
