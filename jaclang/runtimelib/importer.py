@@ -3,18 +3,15 @@
 from __future__ import annotations
 
 import importlib
-import marshal
 import os
 import sys
 import types
 from os import getcwd, path
 from typing import Optional, Type, Union
 
-from jaclang.compiler.absyntree import Module
-from jaclang.compiler.compile import compile_jac
-from jaclang.compiler.constant import Constants as Con
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.utils import sys_path_context
+from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
@@ -55,7 +52,6 @@ class ImportPathSpec:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> None:
@@ -66,7 +62,6 @@ class ImportPathSpec:
         self.cachable = cachable
         self.mdl_alias = mdl_alias
         self.override_name = override_name
-        self.mod_bundle = mod_bundle
         self.language = lng
         self.items = items
         self.dir_path, self.file_name = path.split(path.join(*(target.split("."))))
@@ -112,7 +107,6 @@ class ImportReturn:
         items: dict[str, Union[str, Optional[str]]],
         caller_dir: str,
         lang: Optional[str],
-        mod_bundle: Optional[Module] = None,
         cachable: bool = True,
     ) -> None:
         """Process items within a module by handling renaming and potentially loading missing attributes."""
@@ -143,7 +137,6 @@ class ImportReturn:
                             module=module,
                             name=name,
                             jac_file_path=jac_file_path,
-                            mod_bundle=mod_bundle,
                             cachable=cachable,
                             caller_dir=caller_dir,
                         )
@@ -159,7 +152,6 @@ class ImportReturn:
         module: types.ModuleType,
         name: str,
         jac_file_path: str,
-        mod_bundle: Optional[Module],
         cachable: bool,
         caller_dir: str,
     ) -> Optional[types.ModuleType]:
@@ -174,22 +166,13 @@ class ImportReturn:
                 new_module = self.importer.jac_machine.loaded_modules.get(
                     package_name,
                     self.importer.create_jac_py_module(
-                        mod_bundle,
                         self.importer.get_sys_mod_name(jac_file_path),
                         module.__name__,
                         jac_file_path,
                     ),
                 )
-            codeobj = self.importer.get_codeobj(
-                full_target=jac_file_path,
-                module_name=(
-                    self.importer.get_sys_mod_name(jac_file_path)
-                    if isinstance(self.importer, JacImporter)
-                    else name
-                ),
-                mod_bundle=mod_bundle,
-                cachable=cachable,
-                caller_dir=caller_dir,
+            codeobj = self.importer.jac_machine.get_bytecode(
+                name, jac_file_path, caller_dir=caller_dir, cachable=cachable
             )
             if not codeobj:
                 raise ImportError(f"No bytecode found for {jac_file_path}")
@@ -197,9 +180,10 @@ class ImportReturn:
             exec(codeobj, new_module.__dict__)
             return getattr(new_module, name, new_module)
         except ImportError as e:
-            logger.error(
-                f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
-            )
+            logger.error(dump_traceback(e))
+            # logger.error(
+            #     f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
+            # )
             return None
 
 
@@ -219,36 +203,6 @@ class Importer:
         """Update sys.modules with the newly imported module."""
         if spec.module_name not in self.jac_machine.loaded_modules:
             self.jac_machine.loaded_modules[spec.module_name] = module
-
-    def get_codeobj(
-        self,
-        full_target: str,
-        module_name: str,
-        mod_bundle: Optional[Module],
-        cachable: bool,
-        caller_dir: str,
-    ) -> Optional[types.CodeType]:
-        """Get the code object for a given module."""
-        if mod_bundle:
-            codeobj = mod_bundle.mod_deps[full_target].gen.py_bytecode
-            return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
-        pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
-        if cachable and os.path.exists(pyc_file_path):
-            with open(pyc_file_path, "rb") as f:
-                return marshal.load(f)
-
-        result = compile_jac(full_target, cache_result=cachable)
-        if result.errors_had or not result.ir.gen.py_bytecode:
-            logger.error(
-                f"While importing {len(result.errors_had)} errors"
-                f" found in {full_target}"
-            )
-            return None
-        if result.ir.gen.py_bytecode is not None:
-            return marshal.loads(result.ir.gen.py_bytecode)
-        else:
-            return None
 
 
 class PythonImporter(Importer):
@@ -341,7 +295,7 @@ class JacImporter(Importer):
         return sys_mod_name
 
     def handle_directory(
-        self, module_name: str, full_mod_path: str, mod_bundle: Optional[Module | str]
+        self, module_name: str, full_mod_path: str
     ) -> types.ModuleType:
         """Import from a directory that potentially contains multiple Jac modules."""
         module_name = self.get_sys_mod_name(full_mod_path)
@@ -349,7 +303,6 @@ class JacImporter(Importer):
         module.__name__ = module_name
         module.__path__ = [full_mod_path]
         module.__file__ = None
-        module.__dict__["__jac_mod_bundle__"] = mod_bundle
 
         if module_name not in self.jac_machine.loaded_modules:
             self.jac_machine.loaded_modules[module_name] = module
@@ -357,7 +310,6 @@ class JacImporter(Importer):
 
     def create_jac_py_module(
         self,
-        mod_bundle: Optional[Module | str],
         module_name: str,
         package_path: str,
         full_target: str,
@@ -366,7 +318,6 @@ class JacImporter(Importer):
         module = types.ModuleType(module_name)
         module.__file__ = full_target
         module.__name__ = module_name
-        module.__dict__["__jac_mod_bundle__"] = mod_bundle
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")
@@ -379,7 +330,6 @@ class JacImporter(Importer):
                     self.handle_directory(
                         module_name=package_name,
                         full_mod_path=full_mod_path,
-                        mod_bundle=mod_bundle,
                     )
         self.jac_machine.loaded_modules[module_name] = module
         return module
@@ -390,14 +340,6 @@ class JacImporter(Importer):
         """Run the import process for Jac modules."""
         unique_loaded_items: list[types.ModuleType] = []
         module = None
-        valid_mod_bundle = (
-            self.jac_machine.loaded_modules[spec.mod_bundle].__jac_mod_bundle__
-            if isinstance(spec.mod_bundle, str)
-            and spec.mod_bundle in self.jac_machine.loaded_modules
-            and "__jac_mod_bundle__"
-            in self.jac_machine.loaded_modules[spec.mod_bundle].__dict__
-            else None
-        )
         if os.path.isfile(spec.full_target + ".jac"):
             module_name = self.get_sys_mod_name(spec.full_target + ".jac")
             module_name = spec.override_name if spec.override_name else module_name
@@ -408,23 +350,19 @@ class JacImporter(Importer):
 
         if not module or module.__name__ == "__main__" or reload:
             if os.path.isdir(spec.full_target):
-                module = self.handle_directory(
-                    spec.module_name, spec.full_target, valid_mod_bundle
-                )
+                module = self.handle_directory(spec.module_name, spec.full_target)
             else:
                 spec.full_target += ".jac" if spec.language == "jac" else ".py"
                 module = self.create_jac_py_module(
-                    valid_mod_bundle,
                     module_name,
                     spec.package_path,
                     spec.full_target,
                 )
-                codeobj = self.get_codeobj(
-                    spec.full_target,
+                codeobj = self.jac_machine.get_bytecode(
                     module_name,
-                    valid_mod_bundle,
-                    spec.cachable,
+                    spec.full_target,
                     caller_dir=spec.caller_dir,
+                    cachable=spec.cachable,
                 )
                 try:
                     if not codeobj:
@@ -434,7 +372,7 @@ class JacImporter(Importer):
                     ), sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
-                    logger.error(f"Error while importing {spec.full_target}: {e}")
+                    logger.error(dump_traceback(e))
                     raise e
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
@@ -442,7 +380,6 @@ class JacImporter(Importer):
                 module=module,
                 items=spec.items,
                 caller_dir=spec.caller_dir,
-                mod_bundle=valid_mod_bundle,
                 cachable=spec.cachable,
                 lang=spec.language,
             )

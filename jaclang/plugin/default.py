@@ -12,7 +12,6 @@ from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Optional, Type, Union
 
-from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.runtimelib.constructs import (
@@ -246,7 +245,6 @@ class JacFeatureDefaults:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
@@ -259,7 +257,6 @@ class JacFeatureDefaults:
             cachable,
             mdl_alias,
             override_name,
-            mod_bundle,
             lng,
             items,
         )

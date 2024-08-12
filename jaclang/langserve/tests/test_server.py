@@ -170,7 +170,7 @@ class TestJacLangServer(TestCase):
         lsp.lsp._workspace = workspace
         circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.test.jac"))
         lsp.deep_check(circle_file)
-        pos = lspt.Position(13, 29)
+        pos = lspt.Position(13, 21)
         self.assertIn(
             "shape_type: circle_pure.ShapeType",
             lsp.get_hover_info(circle_file, pos).contents.value,
@@ -222,7 +222,7 @@ class TestJacLangServer(TestCase):
             ),
             (
                 "<JacSemTokenType.FUNCTION: 12>, <JacSemTokenModifier.DECLARATION: 1>,",
-                9,
+                6,
             ),
             ("<JacSemTokenType.METHOD: 13>, <JacSemTokenModifier.DECLARATION: 1>", 6),
             ("<JacSemTokenType.ENUM: 3>, <JacSemTokenModifier.DECLARATION: 1>,", 4),
@@ -232,6 +232,7 @@ class TestJacLangServer(TestCase):
                 3,
             ),
         ]
+        print(str(sem_list))
         for token_type, expected_count in expected_counts:
             self.assertEqual(str(sem_list).count(token_type), expected_count)
 
@@ -246,32 +247,87 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(base_module_file)
         test_cases = [
-            (lspt.Position(37, 16), ["get_color1", "color1", "point1"], 3),
+            (lspt.Position(38, 16), ["get_color1", "color1", "point1"], 3),
+            (lspt.Position(42, 22), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 33), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 45), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(46, 20), ["RED22", "GREEN22", "BLUE22"], 3),
+            (lspt.Position(46, 30), ["RED22", "GREEN22", "BLUE22"], 3),
+            (lspt.Position(46, 41), ["RED22", "GREEN22", "BLUE22"], 3),
             (
-                lspt.Position(51, 12),
+                lspt.Position(51, 32),
+                ["RED22", "GREEN22", "BLUE22"],
+                3,
+            ),
+            (
+                lspt.Position(65, 13),
                 [
                     "get_color1",
                     "color1",
                     "point1",
                     "base_colorred",
                     "pointred",
-                    "color2",
+                    "inner_red",
+                    "doubleinner",
+                    "apply_red",
                 ],
-                6,
+                8,
             ),
-            (lspt.Position(52, 19), ["color22", "point22"], 2),
+            (
+                lspt.Position(65, 23),
+                ["color22", "doublepoint22", "point22", "apply_inner_red", "enum_red"],
+                5,
+            ),
+            (
+                lspt.Position(65, 31),
+                ["RED22", "GREEN22", "BLUE22"],
+                3,
+            ),
+            (
+                lspt.Position(35, 28),
+                [],
+                0,
+            ),
+            (
+                lspt.Position(72, 12),
+                [
+                    "get_color1",
+                    "color1",
+                    "point1",
+                    "base_colorred",
+                    "pointred",
+                    "inner_red",
+                    "doubleinner",
+                    "apply_red",
+                ],
+                8,
+            ),
+            (
+                lspt.Position(73, 22),
+                ["color22", "doublepoint22", "apply_inner_red", "point22", "enum_red"],
+                5,
+            ),
+            (
+                lspt.Position(37, 12),
+                ["self", "add", "subtract", "x", "Colorenum", "Colour1", "red", "r"],
+                8,
+                None,
+            ),
         ]
-        for position, expected_completions, expected_length in test_cases:
+        default_trigger = "."
+        for case in test_cases:
+            position, expected_completions, expected_length = case[:3]
+            completion_trigger = case[3] if len(case) > 3 else default_trigger
             completions = lsp.get_completion(
-                base_module_file, position, completion_trigger="."
+                base_module_file, position, completion_trigger=completion_trigger
             ).items
             for completion in expected_completions:
                 self.assertIn(completion, str(completions))
             self.assertEqual(expected_length, len(completions))
 
-            if position == lspt.Position(47, 12):
+            if position == lspt.Position(73, 12):
                 self.assertEqual(
-                    1, str(completions).count("kind=<CompletionItemKind.Function: 3>")
+                    2, str(completions).count("kind=<CompletionItemKind.Function: 3>")
                 )
                 self.assertEqual(
                     4, str(completions).count("kind=<CompletionItemKind.Field: 5>")
@@ -288,8 +344,8 @@ class TestJacLangServer(TestCase):
         lsp.deep_check(circle_file)
         test_cases = [
             (47, 12, ["circle.jac:47:8-47:14", "69:8-69:14", "74:8-74:14"]),
-            (54, 66, ["54:62-54:76", "65:28-65:42"]),
-            (62, 14, ["65:49-65:62", "70:38-70:51"]),
+            (54, 66, ["54:62-54:76", "65:22-65:36"]),
+            (62, 14, ["65:43-65:56", "70:32-70:45"]),
         ]
         for line, char, expected_refs in test_cases:
             references = str(lsp.get_references(circle_file, lspt.Position(line, char)))

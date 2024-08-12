@@ -35,20 +35,41 @@ obj Colour1 {
 }
 
 :obj:Colour1:can:get_color1 -> Colorenum {
+
     return self.color1;
 }
 
 obj red :Colour1: {
-    has base_colorred: Colorenum = Color.RED,
+    has base_colorred: Colorenum = Colorenum.RED,
         pointred: int = 10;
-    obj color2 {
-        has color22: Color = Colorenum.BLUE,
+
+    obj inner_red {
+        has color22: enum_red = enum_red.BLUE22,
+            doublepoint22:doubleinner.double  = 2,
             point22: int = 20;
+
+        can apply_inner_red -> enum_red {
+            return self.color22;
+        }
+        enum enum_red {
+            RED22,
+            GREEN22,
+            BLUE22
+        }
     }
+    class doubleinner {
+        has double: int = 2;
+    }
+
+    can apply_red -> int {
+        x =
+        self.inner_red.color22.GREEN22;
+        return self.point1 + self.pointred;
+        }
 }
 
 with entry:__main__ {
-    r = red(color1=Color.GREEN, point1=20);
+    r = red(color1=Colorenum.GREEN, point1=20);
     print(r.get_color1());
-    print(r.color2.color22);
+    print(r.inner_red);
 }

@@ -23,6 +23,7 @@ from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.constructs import Architype
+from jaclang.runtimelib.machine import JacProgram
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -104,12 +105,13 @@ def run(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             ir = pickle.load(f)
+            jac_program = JacProgram(mod_bundle=ir, bytecode=None)
+            Jac.context().jac_machine.attach_program(jac_program)
             ret_module = jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
-                mod_bundle=ir,
             )
             if ret_module is None:
                 loaded_mod = None

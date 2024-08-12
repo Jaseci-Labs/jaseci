@@ -158,7 +158,7 @@ class AstNode:
         """Get parent of type."""
         from jaclang.compiler.passes import Pass
 
-        return Pass.has_parent_of_type(node=self, typ=typ)
+        return Pass.find_parent_of_type(node=self, typ=typ)
 
     def parent_of_type(self, typ: Type[T]) -> T:
         """Get parent of type."""
@@ -1527,6 +1527,23 @@ class FuncSignature(AstSemStrNode):
             isinstance(self.parent, AbilityDef)
             and isinstance(self.parent.decl_link, Ability)
             and self.parent.decl_link.is_static
+        )
+
+    @property
+    def is_in_py_class(self) -> bool:
+        """Check if the ability belongs to a class."""
+        is_archi = self.find_parent_of_type(Architype)
+        is_class = is_archi is not None and is_archi.arch_type.name == Tok.KW_CLASS
+
+        return (
+            isinstance(self.parent, Ability)
+            and self.parent.is_method is not None
+            and is_class
+        ) or (
+            isinstance(self.parent, AbilityDef)
+            and isinstance(self.parent.decl_link, Ability)
+            and self.parent.decl_link.is_method
+            and is_class
         )
 
 

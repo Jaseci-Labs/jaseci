@@ -18,8 +18,8 @@ from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     collect_all_symbols_in_scope,
     create_range,
+    find_deepest_symbol_node_at_pos,
     find_index,
-    find_node_by_position,
     gen_diagnostics,
     get_item_path,
     get_mod_path,
@@ -168,12 +168,12 @@ class JacLangServer(LanguageServer):
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        node_selected = find_node_by_position(
-            self.modules[file_path].sem_manager.static_sem_tokens,
+
+        node_selected = find_deepest_symbol_node_at_pos(
+            self.modules[file_path].ir,
             position.line,
             position.character - 2,
         )
-
         mod_tab = (
             self.modules[file_path].ir.sym_tab
             if not node_selected
@@ -181,15 +181,30 @@ class JacLangServer(LanguageServer):
         )
         current_tab = self.modules[file_path].ir._sym_tab
         current_symbol_table = mod_tab
+
         if completion_trigger == ".":
-            completion_items = resolve_completion_symbol_table(
-                mod_tab, current_symbol_path, current_tab
-            )
+            if current_symbol_path:
+                completion_items = resolve_completion_symbol_table(
+                    mod_tab, current_symbol_path, current_tab
+                )
+            else:
+                completion_items = []
         else:
-            try:  # noqa SIM105
-                completion_items = collect_all_symbols_in_scope(current_symbol_table)
-            except AttributeError:
-                pass
+            if node_selected and (
+                node_selected.find_parent_of_type(ast.Architype)
+                or node_selected.find_parent_of_type(ast.AbilityDef)
+            ):
+                self_symbol = [
+                    lspt.CompletionItem(
+                        label="self", kind=lspt.CompletionItemKind.Variable
+                    )
+                ]
+            else:
+                self_symbol = []
+
+            completion_items = (
+                collect_all_symbols_in_scope(current_symbol_table) + self_symbol
+            )
         return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
     def rename_module(self, old_path: str, new_path: str) -> None:
