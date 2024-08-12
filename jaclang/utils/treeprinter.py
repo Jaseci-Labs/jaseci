@@ -252,34 +252,34 @@ def _build_symbol_tree_common(
         node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
         parent=parent_node,
     )
-    # symbols = SymbolTree(node_name="Symbols", parent=root)
+    symbols = SymbolTree(node_name="Symbols", parent=root)
     children = SymbolTree(node_name="Sub Tables", parent=root)
 
-    # for sym in node.tab.values():
-    #     symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
-    #     SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
+    for sym in node.tab.values():
+        symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
+        SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 
-    #     if sym.decl and sym.decl.loc.first_line > 0:
-    #         SymbolTree(
-    #             node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start}",
-    #             parent=symbol_node,
-    #         )
-    #         defn = SymbolTree(node_name="defn", parent=symbol_node)
-    #         [
-    #             SymbolTree(
-    #                 node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
-    #                 parent=defn,
-    #             )
-    #             for n in sym.defn
-    #         ]
-    #         uses = SymbolTree(node_name="uses", parent=symbol_node)
-    #         [
-    #             SymbolTree(
-    #                 node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
-    #                 parent=uses,
-    #             )
-    #             for n in sym.uses
-    #         ]
+        if sym.decl and sym.decl.loc.first_line > 0:
+            SymbolTree(
+                node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start}",
+                parent=symbol_node,
+            )
+            defn = SymbolTree(node_name="defn", parent=symbol_node)
+            [
+                SymbolTree(
+                    node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
+                    parent=defn,
+                )
+                for n in sym.defn
+            ]
+            uses = SymbolTree(node_name="uses", parent=symbol_node)
+            [
+                SymbolTree(
+                    node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
+                    parent=uses,
+                )
+                for n in sym.uses
+            ]
 
     for k in node.kid:
         _build_symbol_tree_common(k, children)
