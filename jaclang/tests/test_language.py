@@ -479,9 +479,9 @@ class JacLanguageTests(TestCase):
         ) as f:
             registry = pickle.load(f)
 
-        self.assertEqual(len(registry.registry), 3)
-        self.assertEqual(len(list(registry.registry.items())[0][1]), 10)
-        self.assertEqual(list(registry.registry.items())[1][0].scope, "Person")
+        self.assertEqual(len(registry.registry), 7)
+        self.assertEqual(len(list(registry.registry.items())[0][1]), 2)
+        self.assertEqual(list(registry.registry.items())[3][0].scope, "Person")
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
@@ -903,3 +903,14 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("Hello World!"), 1)
         self.assertIn("im still here", stdout_value)
+
+    def test_cls_method(self) -> None:
+        """Test class method output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("cls_method", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("MyClass", stdout_value[0])
+        self.assertEqual("Hello, World1! Hello, World2!", stdout_value[1])
+        self.assertEqual("Hello, World! Hello, World22!", stdout_value[2])

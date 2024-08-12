@@ -1,0 +1,41 @@
+"""Test file for class method."""
+
+class MyClass {
+    can simple_method() -> str {
+        return "Hello, World1!";
+    }
+
+    @classmethod
+    can my_method(cls: Type[MyClass]) -> str {
+        x = cls.__name__;
+        print(x);
+        return "Hello, World2!";
+    }
+}
+
+with entry {
+    a = MyClass.simple_method();
+    b = MyClass.my_method();
+    print(a, b);
+}
+
+class MyClass2 {
+    can Ability_1(self: MyClass2) -> str;
+    @classmethod
+    can Ability_2(cls: Type[MyClass2]) -> str;
+}
+
+:obj:MyClass2:can:Ability_1
+(self: MyClass2) -> str {
+    return "Hello, World!";
+}
+
+:obj:MyClass2:can:Ability_2 {
+    return "Hello, World22!";
+}
+
+with entry {
+    a = MyClass2().Ability_1();
+    b = MyClass2.Ability_2();
+    print(a, b);
+}

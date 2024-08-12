@@ -18,7 +18,6 @@ from typing import (
 )
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.absyntree import Module
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 
 if TYPE_CHECKING:
@@ -122,7 +121,6 @@ class JacFeatureSpec:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
