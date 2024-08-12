@@ -111,7 +111,7 @@ async def scrape(
 
     async with async_playwright() as aspw:
         browser = await aspw.chromium.launch()
-        page = await browser.new_page()
+        page = await browser.new_page(ignore_https_errors=True)
 
         while pages and Process.can_continue(trigger_id):
             try:

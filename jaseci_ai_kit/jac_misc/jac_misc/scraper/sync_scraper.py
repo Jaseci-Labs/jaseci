@@ -62,7 +62,7 @@ def scrape(
 
     with sync_playwright() as spw:
         browser = spw.chromium.launch()
-        page = browser.new_page()
+        page = browser.new_page(ignore_https_errors=True)
 
         while pages and Process.can_continue(trigger_id):
             try:
