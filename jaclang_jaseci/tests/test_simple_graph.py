@@ -23,7 +23,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.q_node = Collection.get_collection("node")
         self.q_edge = Collection.get_collection("edge")
         self.users: list[dict] = []
-        self.database = getenv("DATABASE_NAME", "jaclang")
+        self.database = getenv("DATABASE_NAME", "jaseci")
         count = 0
         while True:
             if count > 5:

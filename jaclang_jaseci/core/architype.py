@@ -26,7 +26,7 @@ from jaclang.runtimelib.architype import (
     DSFunc,
     EdgeDir,
     Permission,
-    populate_dataclasses,
+    to_dataclass,
 )
 from jaclang.runtimelib.utils import collect_node_connections
 
@@ -715,9 +715,7 @@ class NodeAnchor(Anchor):
                 **doc,
             )
             architype_cls = NodeArchitype.__get_class__(doc.get("name") or "Root")
-            anchor.architype = architype_cls(
-                __jac__=anchor, **populate_dataclasses(architype_cls, architype)
-            )
+            anchor.architype = to_dataclass(architype_cls, architype, __jac__=anchor)
             anchor.sync_hash()
             return anchor
 
@@ -926,9 +924,7 @@ class EdgeAnchor(Anchor):
             architype_cls = EdgeArchitype.__get_class__(
                 doc.get("name") or "GenericEdge"
             )
-            anchor.architype = architype_cls(
-                __jac__=anchor, **populate_dataclasses(architype_cls, architype)
-            )
+            anchor.architype = to_dataclass(architype_cls, architype, __jac__=anchor)
             anchor.sync_hash()
             return anchor
 
@@ -1052,9 +1048,7 @@ class WalkerAnchor(Anchor):
                 **doc,
             )
             architype_cls = WalkerArchitype.__get_class__(doc.get("name") or "")
-            anchor.architype = architype_cls(
-                __jac__=anchor, **populate_dataclasses(architype_cls, architype)
-            )
+            anchor.architype = to_dataclass(architype_cls, architype, __jac__=anchor)
             anchor.sync_hash()
             return anchor
 
