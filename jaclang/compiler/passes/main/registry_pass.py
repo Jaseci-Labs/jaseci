@@ -86,7 +86,9 @@ class RegistryPass(Pass):
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Save ability information."""
-        scope = get_sem_scope(node.parent)  # type: ignore[arg-type]
+        scope = get_sem_scope(node.parent) if node.parent else None
+        if not scope:
+            raise self.ice("Ability has no parent. Impossible")
         seminfo = SemInfo(
             node.name_ref.sym_name,
             "Ability",
