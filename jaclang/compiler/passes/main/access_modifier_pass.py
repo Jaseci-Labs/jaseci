@@ -20,7 +20,7 @@ class AccessCheckPass(Pass):
         """After pass."""
         pass
 
-    def __find_scope_by_dotted_path(self, path: str) -> SymbolTable | None:
+    def __find_scope_by_dotted_path(self, path: str) -> Optional[SymbolTable]:
         current_scope = self.ir.sym_tab
         path_list = path.split(".")
         while current_scope and path_list.pop(0) == current_scope.name:
@@ -37,7 +37,7 @@ class AccessCheckPass(Pass):
             settings.lsp_debug
             and isinstance(node, ast.NameAtom)
             and not node.sym
-            and not node.parent_of_type(ast.Module).py_raised
+            and not node.parent_of_type(ast.Module).is_from_py_file
             and not (
                 node.sym_name == "py"
                 and node.parent

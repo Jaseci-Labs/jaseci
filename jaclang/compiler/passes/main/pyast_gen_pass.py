@@ -634,17 +634,6 @@ class PyastGenPass(Pass):
                                     ),
                                     self.sync(
                                         ast3.keyword(
-                                            arg="mod_bundle",
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id="__name__",
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
                                             arg="lng",
                                             value=self.sync(
                                                 ast3.Constant(
@@ -1595,7 +1584,7 @@ class PyastGenPass(Pass):
         """
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
-            if node.is_method and not node.is_static
+            if node.is_method and not node.is_static and not node.is_in_py_class
             else []
         )
         vararg = None

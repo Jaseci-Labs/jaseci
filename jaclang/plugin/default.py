@@ -12,7 +12,6 @@ from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Optional, Type, Union
 
-from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.runtimelib.constructs import (
@@ -33,7 +32,6 @@ from jaclang.runtimelib.constructs import (
     exec_context,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.runtimelib.machine import JacProgram
 from jaclang.runtimelib.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
 from jaclang.plugin.spec import P, T
@@ -247,7 +245,6 @@ class JacFeatureDefaults:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
@@ -263,9 +260,6 @@ class JacFeatureDefaults:
             lng,
             items,
         )
-        if not Jac.context().jac_machine.jac_program:
-            jac_program = JacProgram(mod_bundle, {})
-            Jac.context().jac_machine.attach_program(jac_program)
         if lng == "py":
             import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
         else:
