@@ -49,6 +49,33 @@ class JacCliTests(TestCase):
         # print(stdout_value)
         self.assertIn("Error", stdout_value)
 
+    def test_jac_cli_alert_based_runtime_err(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+
+        try:
+            cli.run(self.fixture_abs_path("err_runtime.jac"))
+        except Exception as e:
+            print(f"Error: {e}")
+
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+        expected_stdout_values = (
+            "Error: list index out of range",
+            "    print(some_list[invalid_index]);",
+            "          ^^^^^^^^^^^^^^^^^^^^^^^^",
+            "  at bar() ",
+            "  at foo() ",
+            "  at <module> ",
+        )
+
+        logger_capture = "\n".join([rec.message for rec in self.caplog.records])
+        for exp in expected_stdout_values:
+            self.assertIn(exp, logger_capture)
+
     def test_jac_impl_err(self) -> None:
         """Basic test for pass."""
         if "jaclang.tests.fixtures.err" in sys.modules:

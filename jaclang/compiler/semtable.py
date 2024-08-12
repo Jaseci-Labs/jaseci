@@ -38,7 +38,8 @@ class SemScope:
         """Return the string representation of the class."""
         if self.parent:
             return f"{self.parent}.{self.scope}({self.type})"
-        return f"{self.scope}({self.type})"
+        else:
+            return f"{self.scope}({self.type})"
 
     def __repr__(self) -> str:
         """Return the string representation of the class."""
@@ -57,7 +58,7 @@ class SemScope:
 
     @property
     def as_type_str(self) -> Optional[str]:
-        """Return the type string representation of the SemsScope."""
+        """Return the type string representation of the SemScope."""
         if self.type not in ["class", "node", "obj"]:
             return None
         type_str = self.scope
