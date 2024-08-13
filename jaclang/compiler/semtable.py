@@ -6,7 +6,10 @@ semantic information.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import jaclang.compiler.absyntree as ast
 
 
 class SemInfo:
@@ -14,7 +17,7 @@ class SemInfo:
 
     def __init__(
         self,
-        node: Any,  # noqa: ANN401
+        node: ast.AstNode,
         name: str,
         type: Optional[str] = None,
         semstr: str = "",
@@ -30,7 +33,7 @@ class SemInfo:
         return f"{self.semstr} ({self.type}) ({self.name})"
 
     def get_children(
-        self, sem_registry: SemRegistry, filter: Any = None  # noqa: ANN401
+        self, sem_registry: SemRegistry, filter: Optional[type[ast.AstNode]] = None
     ) -> list[SemInfo]:
         """Get the children of the SemInfo."""
         scope, _ = sem_registry.lookup(name=self.name)
