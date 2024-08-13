@@ -96,7 +96,7 @@ def aott_raise(
         ]
         meaning_typed_input_list.extend(inputs_information_repr)
         if is_react:
-            tool_prompt = "[Tools]\n" + "\n".join([str(tool) for tool in tools])
+            tool_prompt = "[Teools]\n" + "\n".join([str(tool) for tool in tools])
             meaning_typed_input_list.append({"type": "text", "text": tool_prompt})
         meaning_typed_input_list.extend(
             [

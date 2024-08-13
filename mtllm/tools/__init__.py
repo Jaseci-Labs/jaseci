@@ -13,7 +13,10 @@ def finish(output: str) -> str:
 finish_tool = Tool(
     finish,
     SemInfo(
-        "finish_tool", "ability", "Finishes the Thought process by providing the output"
+        None,
+        "finish_tool",
+        "ability",
+        "Finishes the Thought process by providing the output",
     ),
-    [SemInfo("output", "Any", "Final Output")],
+    [SemInfo(None, "output", "Any", "Final Output")],
 )

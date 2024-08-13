@@ -13,9 +13,10 @@ def solve_math_expression(expr: str) -> float:
 math_tool = Tool(
     solve_math_expression,
     SemInfo(
+        None,
         "math_tool",
         "ability",
         "Solves the given math expression",
     ),
-    [SemInfo("expr", "str", "Math expression to solve eg- 2+2")],
+    [SemInfo(None, "expr", "str", "Math expression to solve eg- 2+2")],
 )

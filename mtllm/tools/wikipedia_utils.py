@@ -20,21 +20,23 @@ def get_wikipedia_summary(title: str) -> str:
 wikipedia_summary = Tool(
     get_wikipedia_summary,
     SemInfo(
+        None,
         "wikipedia_summary",
         "ability",
         "Gets the Summary of the related article from Wikipedia",
     ),
-    [SemInfo("title", "str", "Title to search")],
+    [SemInfo(None, "title", "str", "Title to search")],
 )
 
 wikipedia_get_related_titles = Tool(
     wikipedia_lib.search,
     SemInfo(
+        None,
         "wikipedia_get_related_titles",
         "ability",
         "Gets the related titles from Wikipedia",
     ),
-    [SemInfo("title", "str", "Title to search")],
+    [SemInfo(None, "title", "str", "Title to search")],
 )
 
 
@@ -55,7 +57,10 @@ def wikipedia_get_page(title: str) -> dict:
 wikipedia_get_whole_page = Tool(
     wikipedia_get_page,
     SemInfo(
-        "wikipedia_get_whole_page", "ability", "Gets the whole page from Wikipedia"
+        None,
+        "wikipedia_get_whole_page",
+        "ability",
+        "Gets the whole page from Wikipedia",
     ),
-    [SemInfo("title", "str", "Title to search")],
+    [SemInfo(None, "title", "str", "Title to search")],
 )

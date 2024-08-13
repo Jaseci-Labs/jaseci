@@ -8,7 +8,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-from jaclang.compiler.semtable import SemRegistry, SemScope
+from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.plugin.default import hookimpl
 from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
@@ -25,11 +25,11 @@ def callable_to_tool(tool: Callable, mod_registry: SemRegistry) -> Tool:
     """Convert a callable to a Tool."""
     assert callable(tool), f"{tool} cannot be used as a tool"
     tool_name = tool.__name__
-    tool_info = mod_registry.lookup(name=tool_name, type="ability")
-    assert tool_info, f"Tool {tool_name} not found in the registry"
-    return Tool(
-        tool, tool_info, []
-    )  # TODO: Replace the empty list with the parameter seminfos
+    _, tool_info = mod_registry.lookup(name=tool_name)
+    assert tool_info and isinstance(
+        tool_info, SemInfo
+    ), f"Tool {tool_name} not found in the registry"
+    return Tool(tool, tool_info, tool_info.get_children(mod_registry, ast.ParamVar))
 
 
 class JacFeature:

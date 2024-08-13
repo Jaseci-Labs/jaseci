@@ -111,9 +111,9 @@ class TypeExplanation:
                     (
                         type_example_list.append(
                             f'{sem_info.name}.{enum_item.name} : "{enum_item.semstr}"'
+                            if enum_item.semstr
+                            else f"{sem_info.name}.{enum_item.name}"
                         )
-                        if enum_item.semstr
-                        else f"{sem_info.name}.{enum_item.name}"
                     )
                 type_example = ", ".join(type_example_list)
             elif sem_info.type in ["obj", "class", "node", "edge"] and isinstance(
@@ -131,7 +131,7 @@ class TypeExplanation:
                         type_info_types.extend(extract_non_primary_type(arch_item.type))
                 type_example = f"{sem_info.name}({', '.join(type_example_list)})"
             return (
-                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {type_example}",  # noqa: E501
+                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {type_example}".strip(),  # noqa: E501
                 set(type_info_types),
             )
         return "", set()

@@ -8,6 +8,5 @@ can get_answer(question: str) -> str by llm(method="ReAct", tools=[wikipedia_sum
 with entry {
     question = "List the countries in the European Union";
     answer = get_answer(question);
-    print("Question:", question);
-    print("Answer:", answer);
+    print(answer);
 }
