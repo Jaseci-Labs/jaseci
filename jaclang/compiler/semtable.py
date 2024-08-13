@@ -6,14 +6,21 @@ semantic information.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 
 class SemInfo:
     """Semantic information class."""
 
-    def __init__(self, name: str, type: Optional[str] = None, semstr: str = "") -> None:
+    def __init__(
+        self,
+        node: Any,  # noqa: ANN401
+        name: str,
+        type: Optional[str] = None,
+        semstr: str = "",
+    ) -> None:
         """Initialize the class."""
+        self.node = node
         self.name = name
         self.type = type
         self.semstr = semstr
@@ -21,6 +28,17 @@ class SemInfo:
     def __repr__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.semstr} ({self.type}) ({self.name})"
+
+    def get_children(
+        self, sem_registry: SemRegistry, filter: Any = None  # noqa: ANN401
+    ) -> list[SemInfo]:
+        """Get the children of the SemInfo."""
+        scope, _ = sem_registry.lookup(name=self.name)
+        self_scope = str(scope) + f".{self.name}({self.type})"
+        _, children = sem_registry.lookup(scope=SemScope.get_scope_from_str(self_scope))
+        if filter and children and isinstance(children, list):
+            return [i for i in children if isinstance(i.node, filter)]
+        return children if children and isinstance(children, list) else []
 
 
 class SemScope:
