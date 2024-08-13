@@ -2458,7 +2458,11 @@ class JacFormatPass(Pass):
         pos_end: int,
         """
         # if string is in docstring format and spans multiple lines turn into the multiple single quoted strings
-        if "\n" in node.value and node.parent and isinstance(node.parent, ast.Expr):
+        if "\n" in node.value and (
+            node.parent
+            and isinstance(node.parent, ast.Expr)
+            and not isinstance(node.parent, ast.MultiString)
+        ):
             string_type = node.value[0:3]
             pure_string = node.value[3:-3]
             lines = pure_string.split("\n")
@@ -2476,10 +2480,10 @@ class JacFormatPass(Pass):
             string_type = node.value[0:3]
             pure_string = node.value[3:-3]
             lines = pure_string.split("\n")
-            self.emit(node, string_type)
-            for line in lines[:-1]:
-                self.emit_ln(node, line)
-            self.emit_ln(node, f"{lines[-1]}{string_type}")
+            self.emit_ln(node, f"{string_type}{lines[0].lstrip()}")
+            for line in lines[1:-1]:
+                self.emit_ln(node, line.lstrip())
+            self.emit(node, f"{lines[-1].lstrip()}{string_type}")
         else:
             self.emit(node, node.value)
 
