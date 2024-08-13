@@ -24,6 +24,7 @@ from jaclang.compiler.constant import EdgeDir
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.plugin.default import hookimpl
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.context import ExecutionContext
 
 from orjson import loads
 
@@ -43,7 +44,7 @@ from ..core.architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import JaseciContext
+from ..core.context import JASECI_CONTEXT, JaseciContext
 from ..jaseci.security import authenticator
 
 
@@ -244,9 +245,12 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def context() -> JaseciContext:
+    def current_context() -> JaseciContext | ExecutionContext:
         """Get the execution context."""
-        return JaseciContext.get()
+        if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
+            return ctx
+
+        return ExecutionContext.get()
 
     @staticmethod
     @hookimpl

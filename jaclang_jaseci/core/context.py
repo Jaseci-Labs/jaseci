@@ -9,6 +9,8 @@ from bson import ObjectId
 
 from fastapi import Request
 
+from jaclang.runtimelib.context import ExecutionContext
+
 from .architype import (
     AccessLevel,
     Anchor,
@@ -30,6 +32,7 @@ PUBLIC_ROOT = ObjectId("000000000000000000000001")
 class JaseciContext:
     """Execution Context."""
 
+    base: ExecutionContext
     request: Request
     datasource: MongoDB
     reports: list
@@ -90,6 +93,7 @@ class JaseciContext:
     ) -> "JaseciContext":
         """Create JacContext."""
         ctx = JaseciContext()
+        ctx.base = ExecutionContext.get()
         ctx.request = request
         ctx.datasource = MongoDB()
         ctx.reports = []
