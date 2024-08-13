@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast as ast3
 import fnmatch
 import html
 import os
@@ -10,10 +11,11 @@ import types
 from collections import OrderedDict
 from dataclasses import field
 from functools import wraps
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
 
-from jaclang.compiler.absyntree import Module
+import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import EdgeDir, colors
+from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.runtimelib.constructs import (
     Architype,
@@ -33,7 +35,6 @@ from jaclang.runtimelib.constructs import (
     exec_context,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.runtimelib.machine import JacProgram
 from jaclang.runtimelib.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
 from jaclang.plugin.spec import P, T
@@ -247,7 +248,6 @@ class JacFeatureDefaults:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
@@ -263,9 +263,6 @@ class JacFeatureDefaults:
             lng,
             items,
         )
-        if not Jac.context().jac_machine.jac_program:
-            jac_program = JacProgram(mod_bundle, {})
-            Jac.context().jac_machine.attach_program(jac_program)
         if lng == "py":
             import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
         else:
@@ -677,11 +674,153 @@ class JacFeatureDefaults:
         inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
+        _globals: dict,
+        _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         raise ImportError(
-            "mtllm is not installed. Please install it with `pip install mtllm`."
+            "mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."
         )
+
+    @staticmethod
+    @hookimpl
+    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
+        """Generate the by LLM body."""
+        _pass.log_warning(
+            "MT-LLM is not installed. Please install it with `pip install mtllm`."
+        )
+        return [
+            _pass.sync(
+                ast3.Raise(
+                    _pass.sync(
+                        ast3.Call(
+                            func=_pass.sync(
+                                ast3.Name(id="ImportError", ctx=ast3.Load())
+                            ),
+                            args=[
+                                _pass.sync(
+                                    ast3.Constant(
+                                        value="mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."  # noqa: E501
+                                    )
+                                )
+                            ],
+                            keywords=[],
+                        )
+                    )
+                )
+            )
+        ]
+
+    @staticmethod
+    @hookimpl
+    def by_llm_call(
+        _pass: PyastGenPass,
+        model: ast3.AST,
+        model_params: dict[str, ast.Expr],
+        scope: ast3.AST,
+        inputs: Sequence[Optional[ast3.AST]],
+        outputs: Sequence[Optional[ast3.AST]] | ast3.Call,
+        action: Optional[ast3.AST],
+        include_info: list[tuple[str, ast3.AST]],
+        exclude_info: list[tuple[str, ast3.AST]],
+    ) -> ast3.Call:
+        """Return the LLM Call, e.g. _Jac.with_llm()."""
+        _pass.log_warning(
+            "MT-LLM is not installed. Please install it with `pip install mtllm`."
+        )
+        return ast3.Call(
+            func=_pass.sync(
+                ast3.Attribute(
+                    value=_pass.sync(ast3.Name(id="_Jac", ctx=ast3.Load())),
+                    attr="with_llm",
+                    ctx=ast3.Load(),
+                )
+            ),
+            args=[],
+            keywords=[
+                _pass.sync(
+                    ast3.keyword(
+                        arg="file_loc",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="model",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="model_params",
+                        value=_pass.sync(ast3.Dict(keys=[], values=[])),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="scope",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="incl_info",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="excl_info",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="inputs",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="outputs",
+                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="action",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="_globals",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+                _pass.sync(
+                    ast3.keyword(
+                        arg="_locals",
+                        value=_pass.sync(ast3.Constant(value="None")),
+                    )
+                ),
+            ],
+        )
+
+    @staticmethod
+    @hookimpl
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
+        """Get the by LLM call args."""
+        return {
+            "model": None,
+            "model_params": {},
+            "scope": None,
+            "inputs": [],
+            "outputs": [],
+            "action": None,
+            "include_info": [],
+            "exclude_info": [],
+        }
 
 
 class JacBuiltin:

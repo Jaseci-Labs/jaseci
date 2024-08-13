@@ -46,6 +46,7 @@ class RegistryPass(Pass):
         """Save architype information."""
         scope = get_sem_scope(node)
         seminfo = SemInfo(
+            node,
             node.name.value,
             node.arch_type.value,
             node.semstr.lit_value if node.semstr else "",
@@ -61,7 +62,7 @@ class RegistryPass(Pass):
         """Save enum information."""
         scope = get_sem_scope(node)
         seminfo = SemInfo(
-            node.name.value, "Enum", node.semstr.lit_value if node.semstr else ""
+            node, node.name.value, "Enum", node.semstr.lit_value if node.semstr else ""
         )
         if (
             len(self.modules_visited)
@@ -77,6 +78,38 @@ class RegistryPass(Pass):
         )
         scope = get_sem_scope(node)
         seminfo = SemInfo(
+            node,
+            node.name.value,
+            extracted_type,
+            node.semstr.lit_value if node.semstr else "",
+        )
+        if len(self.modules_visited) and self.modules_visited[-1].registry:
+            self.modules_visited[-1].registry.add(scope, seminfo)
+
+    def exit_ability(self, node: ast.Ability) -> None:
+        """Save ability information."""
+        scope = get_sem_scope(node)
+        seminfo = SemInfo(
+            node,
+            node.name_ref.sym_name,
+            "Ability",
+            node.semstr.lit_value if node.semstr else "",
+        )
+        if len(self.modules_visited) and self.modules_visited[-1].registry:
+            (
+                self.modules_visited[-1].registry.add(scope.parent, seminfo)
+                if scope.parent
+                else None
+            )
+
+    def exit_param_var(self, node: ast.ParamVar) -> None:
+        """Save param information."""
+        scope = get_sem_scope(node)
+        extracted_type = (
+            "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
+        )
+        seminfo = SemInfo(
+            node,
             node.name.value,
             extracted_type,
             node.semstr.lit_value if node.semstr else "",
@@ -94,6 +127,7 @@ class RegistryPass(Pass):
         )
         scope = get_sem_scope(node)
         seminfo = SemInfo(
+            node,
             (
                 node.target.items[0].value
                 if isinstance(node.target.items[0], ast.Name)
@@ -113,7 +147,7 @@ class RegistryPass(Pass):
             and node.parent.parent.__class__.__name__ == "Enum"
         ):
             scope = get_sem_scope(node)
-            seminfo = SemInfo(node.value, None, "")
+            seminfo = SemInfo(node, node.value, None, "")
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
 
