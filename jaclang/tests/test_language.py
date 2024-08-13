@@ -479,9 +479,11 @@ class JacLanguageTests(TestCase):
         ) as f:
             registry = pickle.load(f)
 
-        self.assertEqual(len(registry.registry), 7)
+        self.assertEqual(len(registry.registry), 9)
         self.assertEqual(len(list(registry.registry.items())[0][1]), 2)
         self.assertEqual(list(registry.registry.items())[3][0].scope, "Person")
+        _, sem_info = registry.lookup(name="normal_ability")
+        self.assertEqual(len(sem_info.get_children(registry)), 2)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
