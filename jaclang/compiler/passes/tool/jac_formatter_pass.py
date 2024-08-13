@@ -2420,7 +2420,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, f"<>{node.value}" if node.is_kwesc else node.value)
 
-    def enter_float(self, node: ast.Float) -> None:
+    def exit_float(self, node: ast.Float) -> None:
         """Sub objects.
 
         name: str,
@@ -2433,7 +2433,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, node.value)
 
-    def enter_int(self, node: ast.Int) -> None:
+    def exit_int(self, node: ast.Int) -> None:
         """Sub objects.
 
         name: str,
@@ -2446,7 +2446,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, node.value)
 
-    def enter_string(self, node: ast.String) -> None:
+    def exit_string(self, node: ast.String) -> None:
         """Sub objects.
 
         name: str,
@@ -2483,7 +2483,7 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, node.value)
 
-    def enter_bool(self, node: ast.Bool) -> None:
+    def exit_bool(self, node: ast.Bool) -> None:
         """Sub objects.
 
         name: str,
