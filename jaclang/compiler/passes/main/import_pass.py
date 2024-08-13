@@ -32,7 +32,7 @@ class JacImportPass(Pass):
         """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
-        self.__annex_impl(node)
+        self.annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True
         while self.run_again:
@@ -43,7 +43,7 @@ class JacImportPass(Pass):
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
 
-        node.mod_deps = self.import_table
+        node.mod_deps.update(self.import_table)
 
     def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
         """Process an import."""
@@ -58,11 +58,11 @@ class JacImportPass(Pass):
         if mod:
             self.run_again = True
             node.sub_module = mod
-            self.__annex_impl(mod)
+            self.annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
 
-    def __annex_impl(self, node: ast.Module) -> None:
+    def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
         if node.stub_only:
             return
@@ -219,7 +219,6 @@ class PyImportPass(JacImportPass):
         #      from a import (c, d, e)
         # Solution to that is to get the import node and check the from loc then
         # handle it based on if there a from loc or not
-
         imp_node = i.parent_of_type(ast.Import)
         if imp_node.is_py and not i.sub_module:
             if imp_node.from_loc:
@@ -296,4 +295,8 @@ class PyImportPass(JacImportPass):
         except Exception as e:
             self.error(f"Failed to import python module {mod_path}")
             raise e
+        return None
+
+    def annex_impl(self, node: ast.Module) -> None:
+        """Annex impl and test modules."""
         return None
