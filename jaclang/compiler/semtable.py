@@ -6,14 +6,24 @@ semantic information.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import jaclang.compiler.absyntree as ast
 
 
 class SemInfo:
     """Semantic information class."""
 
-    def __init__(self, name: str, type: Optional[str] = None, semstr: str = "") -> None:
+    def __init__(
+        self,
+        node: ast.AstNode,
+        name: str,
+        type: Optional[str] = None,
+        semstr: str = "",
+    ) -> None:
         """Initialize the class."""
+        self.node = node
         self.name = name
         self.type = type
         self.semstr = semstr
@@ -21,6 +31,17 @@ class SemInfo:
     def __repr__(self) -> str:
         """Return the string representation of the class."""
         return f"{self.semstr} ({self.type}) ({self.name})"
+
+    def get_children(
+        self, sem_registry: SemRegistry, filter: Optional[type[ast.AstNode]] = None
+    ) -> list[SemInfo]:
+        """Get the children of the SemInfo."""
+        scope, _ = sem_registry.lookup(name=self.name)
+        self_scope = str(scope) + f".{self.name}({self.type})"
+        _, children = sem_registry.lookup(scope=SemScope.get_scope_from_str(self_scope))
+        if filter and children and isinstance(children, list):
+            return [i for i in children if isinstance(i.node, filter)]
+        return children if children and isinstance(children, list) else []
 
 
 class SemScope:
@@ -38,7 +59,8 @@ class SemScope:
         """Return the string representation of the class."""
         if self.parent:
             return f"{self.parent}.{self.scope}({self.type})"
-        return f"{self.scope}({self.type})"
+        else:
+            return f"{self.scope}({self.type})"
 
     def __repr__(self) -> str:
         """Return the string representation of the class."""
@@ -57,7 +79,7 @@ class SemScope:
 
     @property
     def as_type_str(self) -> Optional[str]:
-        """Return the type string representation of the SemsScope."""
+        """Return the type string representation of the SemScope."""
         if self.type not in ["class", "node", "obj"]:
             return None
         type_str = self.scope

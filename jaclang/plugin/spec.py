@@ -2,19 +2,23 @@
 
 from __future__ import annotations
 
+import ast as ast3
 import types
 from typing import (
     Any,
     Callable,
+    Mapping,
     Optional,
     ParamSpec,
+    Sequence,
     TYPE_CHECKING,
     Type,
     TypeVar,
     Union,
 )
 
-from jaclang.compiler.absyntree import Module
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 
 if TYPE_CHECKING:
     from jaclang.runtimelib.constructs import EdgeArchitype, NodeArchitype
@@ -117,7 +121,6 @@ class JacFeatureSpec:
         cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        mod_bundle: Optional[Module | str],
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
@@ -302,8 +305,38 @@ class JacFeatureSpec:
         inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
+        _globals: dict,
+        _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm stmt feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
+        """Generate the by LLM body."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def by_llm_call(
+        _pass: PyastGenPass,
+        model: ast3.AST,
+        model_params: dict[str, ast.Expr],
+        scope: ast3.AST,
+        inputs: Sequence[Optional[ast3.AST]],
+        outputs: Sequence[Optional[ast3.AST]] | ast3.Call,
+        action: Optional[ast3.AST],
+        include_info: list[tuple[str, ast3.AST]],
+        exclude_info: list[tuple[str, ast3.AST]],
+    ) -> ast3.Call:
+        """Return the LLM Call, e.g. _Jac.with_llm()."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
+        """Get the by LLM call args."""
         raise NotImplementedError
 
 

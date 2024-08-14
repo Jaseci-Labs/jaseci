@@ -6,7 +6,3 @@ class Foo {
         return 1;
     }
 }
-
-with entry {
-    my_thing = YourThing(level=thingy by llm());
-}

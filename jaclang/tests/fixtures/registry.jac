@@ -24,6 +24,15 @@ glob personality_examples: 'Personality Information of Famous People': dict[str,
 
 glob person_value : list[tuple[dict[str, Personality], int]] =(-90);
 
+can 'GenAI ability'
+genai_ability(x: 'Something': str) -> 'Something Else': str by llm();
+
+can 'Normal ability'
+normal_ability(x: 'Something': str) -> 'Something Else': str {
+    y = 10;
+    return x;
+}
+
 can foo() {
    person_value=22;
    can bar() {
