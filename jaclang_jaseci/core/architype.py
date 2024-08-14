@@ -1,6 +1,6 @@
 """Core constructs for Jac Language."""
 
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from inspect import iscoroutine
 from os import getenv
 from re import IGNORECASE, compile
@@ -13,20 +13,23 @@ from typing import (
     Type,
     TypeVar,
     cast,
+    get_args,
+    get_origin,
+    get_type_hints,
 )
 
 from bson import ObjectId
 
+from jaclang.compiler.constant import EdgeDir, T
 from jaclang.runtimelib.architype import (
+    Access as _Access,
     AccessLevel,
     Anchor as _Anchor,
     AnchorState as _AnchorState,
     AnchorType,
     Architype as _Architype,
     DSFunc,
-    EdgeDir,
-    Permission,
-    to_dataclass,
+    Permission as _Permission,
 )
 from jaclang.runtimelib.utils import collect_node_connections
 
@@ -45,7 +48,31 @@ GENERIC_ID_REGEX = compile(r"^(g|n|e|w):([^:]*):([a-f\d]{24})$", IGNORECASE)
 NODE_ID_REGEX = compile(r"^n:([^:]*):([a-f\d]{24})$", IGNORECASE)
 EDGE_ID_REGEX = compile(r"^e:([^:]*):([a-f\d]{24})$", IGNORECASE)
 WALKER_ID_REGEX = compile(r"^w:([^:]*):([a-f\d]{24})$", IGNORECASE)
-TA = TypeVar("TA", bound="type[Architype]")
+TA = TypeVar("TA", bound="Architype")
+
+
+def to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object) -> T:
+    """Parse dict to dataclass."""
+    hintings = get_type_hints(cls)
+    for attr in fields(cls):  # type: ignore[arg-type]
+        if target := data.get(attr.name):
+            hint = hintings[attr.name]
+            if is_dataclass(hint):
+                data[attr.name] = to_dataclass(hint, target)
+            else:
+                origin = get_origin(hint)
+                if origin == dict and isinstance(target, dict):
+                    if is_dataclass(inner_cls := get_args(hint)[-1]):
+                        for key, value in target.items():
+                            target[key] = to_dataclass(inner_cls, value)
+                elif (
+                    origin == list
+                    and isinstance(target, list)
+                    and is_dataclass(inner_cls := get_args(hint)[-1])
+                ):
+                    for key, value in enumerate(target):
+                        target[key] = to_dataclass(inner_cls, value)
+    return cls(**data, **kwargs)
 
 
 @dataclass
@@ -171,6 +198,46 @@ class BulkWrite:
 
 
 @dataclass
+class Access(_Access):
+    """Access Structure."""
+
+    def serialize(self) -> dict[str, object]:
+        """Serialize Access."""
+        return {
+            "whitelist": self.whitelist,
+            "anchors": {key: val.name for key, val in self.anchors.items()},
+        }
+
+    @classmethod
+    def deserialize(cls, data: dict[str, Any]) -> "Access":
+        """Deserialize Access."""
+        anchors = cast(dict[str, str], data.get("anchors"))
+        return Access(
+            whitelist=bool(data.get("whitelist")),
+            anchors={key: AccessLevel[val] for key, val in anchors.items()},
+        )
+
+
+@dataclass
+class Permission(_Permission):
+    """Anchor Access Handler."""
+
+    roots: Access = field(default_factory=Access)
+
+    def serialize(self) -> dict[str, object]:
+        """Serialize Permission."""
+        return {"all": self.all.name, "roots": self.roots.serialize()}
+
+    @classmethod
+    def deserialize(cls, data: dict[str, Any]) -> "Permission":
+        """Deserialize Permission."""
+        return Permission(
+            all=AccessLevel[data.get("all", AccessLevel.NO_ACCESS.name)],
+            roots=Access.deserialize(data.get("roots", {})),
+        )
+
+
+@dataclass
 class AnchorState(_AnchorState):
     """Anchor state handler."""
 
@@ -194,6 +261,7 @@ class Anchor(_Anchor):
 
     id: ObjectId = field(default_factory=ObjectId)  # type: ignore[assignment]
     root: ObjectId | None = None  # type: ignore[assignment]
+    access: Permission = field(default_factory=Permission)
     architype: "Architype | None" = None
     state: AnchorState = field(default_factory=AnchorState)
 
@@ -201,6 +269,11 @@ class Anchor(_Anchor):
         """Anchor collection interface."""
 
         pass
+
+    @property
+    def ref_id(self) -> str:
+        """Return id in reference type."""
+        return f"{self.type.value}:{self.name}:{self.id}"
 
     @staticmethod
     def ref(ref_id: str) -> "Anchor | None":
@@ -1159,6 +1232,9 @@ class WalkerAnchor(Anchor):
 class Architype(_Architype):
     """Architype Protocol."""
 
+    __jac_classes__: dict[str, type["Architype"]]
+    __jac_hintings__: dict[str, type]
+
     __jac__: Anchor
 
     def __init__(self, __jac__: Anchor | None = None) -> None:
@@ -1172,6 +1248,27 @@ class Architype(_Architype):
     def __ref_cls__(cls) -> str:
         """Get class naming."""
         return f"g:{cls.__name__}"
+
+    @classmethod
+    def __set_classes__(cls) -> dict[str, Any]:
+        """Initialize Jac Classes."""
+        jac_classes = {}
+        for sub in cls.__subclasses__():
+            sub.__jac_hintings__ = get_type_hints(sub)
+            jac_classes[sub.__name__] = sub
+        cls.__jac_classes__ = jac_classes
+
+        return jac_classes
+
+    @classmethod
+    def __get_class__(cls: type[TA], name: str) -> type[TA]:
+        """Build class map from subclasses."""
+        jac_classes: dict[str, Any] | None = getattr(cls, "__jac_classes__", None)
+        if not jac_classes or not (jac_class := jac_classes.get(name)):
+            jac_classes = cls.__set_classes__()
+            jac_class = jac_classes.get(name, cls)
+
+        return jac_class
 
 
 class NodeArchitype(Architype):
