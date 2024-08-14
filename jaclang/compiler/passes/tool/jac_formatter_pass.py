@@ -338,7 +338,10 @@ class JacFormatPass(Pass):
                 self.emit(node, f"{i.gen.jac} ")
             else:
                 if isinstance(i, ast.Token) and not isinstance(i, ast.BuiltinType):
-                    prev_token = self.token_before(i)
+                    try:
+                        prev_token = self.token_before(i)
+                    except Exception:
+                        prev_token = None
                 if start or (prev_token and prev_token.gen.jac.strip() == ":"):
                     self.emit(node, i.gen.jac.strip())
                     start = False
