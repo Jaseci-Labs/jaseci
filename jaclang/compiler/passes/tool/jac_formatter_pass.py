@@ -289,6 +289,8 @@ class JacFormatPass(Pass):
                     self.emit(node, f"{stmt.value} ")
                 elif stmt.value == "=":
                     self.emit(node, f" {stmt.value} ")
+                elif prev_token and prev_token.gen.jac.strip() == "@":
+                    self.emit_ln(node, stmt.value)
                 else:
                     self.emit(node, f"{stmt.gen.jac}")
                 prev_token = stmt
@@ -2418,7 +2420,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, f"<>{node.value}" if node.is_kwesc else node.value)
 
-    def enter_float(self, node: ast.Float) -> None:
+    def exit_float(self, node: ast.Float) -> None:
         """Sub objects.
 
         name: str,
@@ -2431,7 +2433,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, node.value)
 
-    def enter_int(self, node: ast.Int) -> None:
+    def exit_int(self, node: ast.Int) -> None:
         """Sub objects.
 
         name: str,
@@ -2444,7 +2446,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, node.value)
 
-    def enter_string(self, node: ast.String) -> None:
+    def exit_string(self, node: ast.String) -> None:
         """Sub objects.
 
         name: str,
@@ -2456,7 +2458,11 @@ class JacFormatPass(Pass):
         pos_end: int,
         """
         # if string is in docstring format and spans multiple lines turn into the multiple single quoted strings
-        if "\n" in node.value and node.parent and isinstance(node.parent, ast.Expr):
+        if "\n" in node.value and (
+            node.parent
+            and isinstance(node.parent, ast.Expr)
+            and not isinstance(node.parent, ast.MultiString)
+        ):
             string_type = node.value[0:3]
             pure_string = node.value[3:-3]
             lines = pure_string.split("\n")
@@ -2474,14 +2480,14 @@ class JacFormatPass(Pass):
             string_type = node.value[0:3]
             pure_string = node.value[3:-3]
             lines = pure_string.split("\n")
-            self.emit(node, string_type)
-            for line in lines[:-1]:
-                self.emit_ln(node, line)
-            self.emit_ln(node, f"{lines[-1]}{string_type}")
+            self.emit_ln(node, f"{string_type}{lines[0].lstrip()}")
+            for line in lines[1:-1]:
+                self.emit_ln(node, line.lstrip())
+            self.emit(node, f"{lines[-1].lstrip()}{string_type}")
         else:
             self.emit(node, node.value)
 
-    def enter_bool(self, node: ast.Bool) -> None:
+    def exit_bool(self, node: ast.Bool) -> None:
         """Sub objects.
 
         name: str,
