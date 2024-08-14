@@ -1,5 +1,10 @@
 # RELEASES
 
+## `0.3.0` - 2024-08-14
+- [IMPROVEMENT] Added support for the new `Jaclang` version
+- [IMPROVEMENT] Moved all the mtllm related AST capabilities to mtllm repo from jaclang
+- [FEATURE] Added ReAct and Tool Calling capabilities
+
 ## `0.2.0` - 2024-07-23
 - [IMPROVEMENT] Seperated the different llms and vision capabilities into extras for the main package
 
