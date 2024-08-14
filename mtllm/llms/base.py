@@ -6,7 +6,7 @@ from typing import Any, Mapping, Optional
 
 from loguru import logger
 
-from mtllm.types import OutputHint, TypeExplanation
+from mtllm.types import OutputHint, ReActOutput, TypeExplanation
 
 
 httpx_logger = logging.getLogger("httpx")
@@ -17,7 +17,6 @@ SYSTEM_PROMPT = """
 This is an operation you must perform and return the output values. Neither, the methodology, extra sentences nor the code are not needed.
 Input/Type formatting: Explanation of the Input (variable_name) (type) = value
 """  # noqa E501
-
 
 PROMPT_TEMPLATE = """
 [Information]
@@ -59,6 +58,11 @@ Generate and return the output result(s) only, adhering to the provided Type in 
 """  # noqa E501
 
 REACT_SUFFIX = """
+You are given with a list of tools you can use to do different things. To achieve the given [Action], incrementally think and provide tool_usage necessary to achieve what is thought.
+Provide your answer adhering in the following format. tool_usage is a function call with the necessary arguments. Only provide one [THOUGHT] and [TOOL USAGE] at a time.
+
+[Thought] <Thought>
+[Tool Usage] <tool_usage>
 """  # noqa E501
 
 MTLLM_OUTPUT_EXTRACT_PROMPT = """
@@ -149,7 +153,7 @@ class BaseLLM:
         output_type_explanations: list[TypeExplanation],
         _globals: dict,
         _locals: Mapping,
-    ) -> str:
+    ) -> Any:  # noqa: ANN401
         """Resolve the output string to return the reasoning and output."""
         if self.verbose:
             logger.info(f"Meaning Out\n{meaning_out}")
@@ -179,6 +183,32 @@ class BaseLLM:
         return self.to_object(
             output, output_hint, output_type_explanations, _globals, _locals
         )
+
+    def resolve_react_output(
+        self,
+        meaning_out: str,
+        _globals: dict,
+        _locals: Mapping,
+    ) -> ReActOutput:
+        """Resolve the output string to return the reasoning and output."""
+        if self.verbose:
+            logger.info(f"Meaning Out\n{meaning_out}")
+        try:
+            thought_match = re.search(
+                r"\[Thought\](.*)\[Tool Usage\]", meaning_out, re.DOTALL
+            )
+            tool_usage_match = re.search(r"\[Tool Usage\](.*)", meaning_out, re.DOTALL)
+            if not thought_match or not tool_usage_match:
+                raise ValueError("Failed to find Thought or Tool Usage in the output.")
+            thought = thought_match.group(1).strip()
+            tool_usage = tool_usage_match.group(1).strip()
+            try:
+                output = eval(tool_usage, _globals, _locals)
+            except Exception as e:
+                raise ValueError(f"Failed to run the tool usage. Error: {e}")
+            return ReActOutput(thought=thought, action=tool_usage, observation=output)
+        except Exception as e:
+            raise ValueError(f"Failed to resolve the ReAct output. Error: {e}")
 
     def _check_output(
         self,

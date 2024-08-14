@@ -4,7 +4,7 @@ import base64
 import importlib
 import importlib.util
 from io import BytesIO
-from typing import Any
+from typing import Any, Callable
 
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 
@@ -103,33 +103,35 @@ class TypeExplanation:
         if isinstance(sem_info, SemInfo) and sem_info.type:
             sem_info_scope = SemScope(sem_info.name, sem_info.type, scope)
             _, type_info = mod_registry.lookup(scope=sem_info_scope)
-            type_info_str = []
             type_info_types = []
-            type_example = [f"{sem_info.name}("]
+            type_example_list = []
+            type_example: str
             if sem_info.type == "Enum" and isinstance(type_info, list):
                 for enum_item in type_info:
-                    type_info_str.append(
-                        f"{enum_item.semstr} ({enum_item.name}) (EnumItem)".strip()
+                    (
+                        type_example_list.append(
+                            f'{sem_info.name}.{enum_item.name} : "{enum_item.semstr}"'
+                            if enum_item.semstr
+                            else f"{sem_info.name}.{enum_item.name}"
+                        )
                     )
-                type_example[0] = type_example[0].replace("(", f".{enum_item.name}")
+                type_example = ", ".join(type_example_list)
             elif sem_info.type in ["obj", "class", "node", "edge"] and isinstance(
                 type_info, list
             ):
                 for arch_item in type_info:
                     if arch_item.type in ["obj", "class", "node", "edge"]:
                         continue
-                    type_info_str.append(
-                        f"{arch_item.semstr} ({arch_item.name}) ({arch_item.type})".strip()
+                    type_example_list.append(
+                        f'{arch_item.name}="{arch_item.semstr}":{arch_item.type}'
+                        if arch_item.semstr
+                        else f"{arch_item.name}={arch_item.type}"
                     )
-                    type_example.append(f"{arch_item.name}={arch_item.type}, ")
                     if arch_item.type and extract_non_primary_type(arch_item.type):
                         type_info_types.extend(extract_non_primary_type(arch_item.type))
-                if len(type_example) > 1:
-                    type_example[-1] = type_example[-1].replace(", ", ")")
-                else:
-                    type_example.append(")")
+                type_example = f"{sem_info.name}({', '.join(type_example_list)})"
             return (
-                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {''.join(type_example)} -> {', '.join(type_info_str)}".strip(),  # noqa: E501
+                f"{sem_info.semstr} ({sem_info.name}) ({sem_info.type}) eg:- {type_example}".strip(),  # noqa: E501
                 set(type_info_types),
             )
         return "", set()
@@ -255,3 +257,44 @@ class Information:
     def get_types(self) -> list:
         """Get the types of the information."""
         return extract_non_primary_type(self.type)
+
+
+class Tool:
+    """Base class for tools."""
+
+    def __init__(
+        self, func: Callable, sem_info: SemInfo, params: list[SemInfo]
+    ) -> None:
+        """Initialize the tool."""
+        self.sem_info = sem_info
+        self.func = func
+        self.params = params
+
+    def __call__(self, *args, **kwargs) -> str:  # noqa
+        """Forward function of the tool."""
+        return self.func(*args, **kwargs)
+
+    def get_usage_example(self) -> str:
+        """Get the usage example of the tool."""
+        get_param_str = lambda x: (  # noqa E731
+            f'{x.name}="{x.semstr}":{x.type}' if x.semstr else f"{x.name}={x.type}"
+        )
+        return f"{self.sem_info.name}({', '.join([get_param_str(x) for x in self.params])})"
+
+    def __str__(self) -> str:
+        """String representation of the tool."""
+        return f"{self.sem_info.semstr} ({self.sem_info.name}) usage eg. {self.get_usage_example()}"
+
+
+class ReActOutput:
+    """Class to represent the ReAct output."""
+
+    def __init__(self, thought: str, action: str, observation: str) -> None:
+        """Initializes the ReActOutput class."""
+        self.thought = thought
+        self.action = action
+        self.observation = observation
+
+    def __repr__(self) -> str:
+        """Returns the string representation of the ReActOutput class."""
+        return f"ReActOutput(thought={self.thought}, action={self.action}, observation={self.observation})"

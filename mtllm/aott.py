@@ -4,15 +4,21 @@ AOTT: Automated Operational Type Transformation.
 This has all the necessary functions to perform the AOTT operations.
 """
 
+from typing import Mapping
+
 from jaclang.compiler.semtable import SemRegistry
 
+from loguru import logger
+
 from mtllm.llms.base import BaseLLM
-from mtllm.tools.base import Tool
+from mtllm.tools import finish_tool
 from mtllm.types import (
     Image,
     Information,
     InputInformation,
     OutputHint,
+    ReActOutput,
+    Tool,
     TypeExplanation,
     Video,
 )
@@ -29,8 +35,11 @@ def aott_raise(
     method: str,
     tools: list[Tool],
     model_params: dict,
+    _globals: dict,
+    _locals: Mapping,
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
+    _globals["finish_tool"] = finish_tool
     contains_media: bool = any(
         isinstance(x.value, (Image, Video)) for x in inputs_information
     )
@@ -46,49 +55,137 @@ def aott_raise(
     type_explanations_str = "\n".join([str(x) for x in type_explanations])
 
     system_prompt = model.MTLLM_SYSTEM_PROMPT
-    meaning_typed_input: str | list[dict]
-    if method != "ReAct":
-        method_prompt = model.MTLLM_METHOD_PROMPTS[method]
-        if isinstance(inputs_information_repr, str):
-            mtllm_prompt = model.MTLLM_PROMPT.format(
-                information=informations_str,
-                inputs_information=inputs_information_repr,
-                output_information=str(output_hint),
-                type_explanations=type_explanations_str,
-                action=action,
-                context=context,
-            ).strip()
-            meaning_typed_input = (
-                f"{system_prompt}\n{mtllm_prompt}\n{method_prompt}".strip()
-            )
+    meaning_typed_input_list: list[str] | list[dict]
+    is_react = method == "ReAct"
+    tools.append(finish_tool)
+    method_prompt = model.MTLLM_METHOD_PROMPTS[method]
+    if isinstance(inputs_information_repr, str):
+        mtllm_prompt = model.MTLLM_PROMPT.format(
+            information=informations_str,
+            inputs_information=inputs_information_repr,
+            output_information=str(output_hint),
+            type_explanations=type_explanations_str,
+            action=action,
+            context=context,
+        ).strip()
+        if not is_react:
+            meaning_typed_input_list = [system_prompt, mtllm_prompt, method_prompt]
         else:
-            upper_half = model.MTLLM_PROMPT.split("{inputs_information}")[0]
-            lower_half = model.MTLLM_PROMPT.split("{inputs_information}")[1]
-            upper_half = upper_half.format(
-                information=informations_str,
-                context=context,
-            )
-            lower_half = lower_half.format(
-                output_information=str(output_hint),
-                type_explanations=type_explanations_str,
-                action=action,
-            )
-            meaning_typed_input = [
-                {"type": "text", "text": system_prompt},
-                {"type": "text", "text": upper_half},
+            tool_prompt = "\n[Tools]\n" + "\n".join([str(tool) for tool in tools])
+            meaning_typed_input_list = [
+                system_prompt,
+                mtllm_prompt,
+                tool_prompt,
+                method_prompt,
             ]
-            meaning_typed_input.extend(inputs_information_repr)
-            meaning_typed_input.extend(
-                [
-                    {"type": "text", "text": lower_half},
-                    {"type": "text", "text": method_prompt},
-                ]
-            )
-        return model(meaning_typed_input, **model_params)
     else:
-        assert tools, "Tools must be provided for the ReAct method."
-        # TODO: Implement ReAct method
-        return ""
+        upper_half = model.MTLLM_PROMPT.split("{inputs_information}")[0]
+        lower_half = model.MTLLM_PROMPT.split("{inputs_information}")[1]
+        upper_half = upper_half.format(
+            information=informations_str,
+            context=context,
+        )
+        lower_half = lower_half.format(
+            output_information=str(output_hint),
+            type_explanations=type_explanations_str,
+            action=action,
+        )
+        meaning_typed_input_list = [
+            {"type": "text", "text": system_prompt},
+            {"type": "text", "text": upper_half},
+        ]
+        meaning_typed_input_list.extend(inputs_information_repr)
+        if is_react:
+            tool_prompt = "[Teools]\n" + "\n".join([str(tool) for tool in tools])
+            meaning_typed_input_list.append({"type": "text", "text": tool_prompt})
+        meaning_typed_input_list.extend(
+            [
+                {"type": "text", "text": lower_half},
+                {"type": "text", "text": method_prompt},
+            ]
+        )
+    if is_react:
+        result = execute_react(
+            model,
+            meaning_typed_input_list,
+            contains_media,
+            model_params,
+            _globals,
+            _locals,
+        )
+        return f"[Output] {result}"
+    meaning_typed_input = (
+        "\n".join(meaning_typed_input_list)  # type: ignore
+        if not contains_media
+        else meaning_typed_input_list
+    )
+    return model(meaning_typed_input, **model_params)  # type: ignore
+
+
+def execute_react(
+    model: BaseLLM,
+    meaning_typed_input_list: list[dict] | list[str],
+    contains_media: bool,
+    model_params: dict,
+    _globals: dict,
+    _locals: Mapping,
+) -> str:
+    """Execute the ReAct method."""
+    max_react_iterations = model_params.pop("max_react_iterations", 10)
+    max_prev_react_outputs = model_params.pop("max_prev_react_outputs", 3)
+    prev_react_outputs: list[ReActOutput] = []
+    added_prev_react_input = False
+    while True:
+        if len(prev_react_outputs) >= max_react_iterations:
+            raise Exception(
+                f"Reached maximum iterations of {max_react_iterations} for ReAct."
+            )
+        prev_react_input = process_prev_react(
+            prev_react_outputs[-max_prev_react_outputs:]
+            if len(prev_react_outputs) > max_prev_react_outputs
+            else prev_react_outputs
+        )
+        if prev_react_input:
+            if added_prev_react_input:
+                meaning_typed_input_list.pop(-2)
+            meaning_typed_input_list.insert(
+                -1,
+                (
+                    prev_react_input  # type: ignore
+                    if not contains_media
+                    else {"type": "text", "text": prev_react_input}
+                ),
+            )
+            added_prev_react_input = True
+        meaning_typed_input = (
+            "\n".join(meaning_typed_input_list)  # type: ignore
+            if not contains_media
+            else meaning_typed_input_list
+        )
+        meaning_out = model(meaning_typed_input, **model_params)  # type: ignore
+        react_output: ReActOutput = model.resolve_react_output(
+            meaning_out, _globals, _locals
+        )
+        if model.verbose:
+            logger.info(f"React Output\n{react_output}")
+        if "finish_tool" in react_output.action:
+            return react_output.observation
+        prev_react_outputs.append(react_output)
+
+
+def process_prev_react(prev_react_outputs: list[ReActOutput]) -> str:
+    """Process the previous ReAct outputs."""
+    prev_react_input = ""
+    for i, prev_react_output in enumerate(prev_react_outputs):
+        prev_react_input += f"{i + 1}.\n"
+        prev_react_input += f"[Thought] {prev_react_output.thought}\n"
+        prev_react_input += f"[Tool Usage] {prev_react_output.action}\n"
+        prev_react_input += f"[Observation] {prev_react_output.observation}\n\n"
+    if prev_react_input:
+        prev_react_input = (
+            f"\n[Previous Thoughts, Actions & Observations]\n{prev_react_input}"
+        )
+    return prev_react_input
 
 
 def get_all_type_explanations(
