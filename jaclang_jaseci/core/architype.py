@@ -573,7 +573,7 @@ class Anchor(_Anchor):
             if is_dataclass(architype := self.architype) and not isinstance(
                 architype, type
             ):
-                for key, val in asdict(architype).items():
+                for key, val in architype.__getstate__().items():
                     if (h := hash(dumps(val))) != self.state.hashes.get(key):
                         self.state.hashes[key] = h
                         set_architype[f"architype.{key}"] = val
@@ -661,7 +661,7 @@ class Anchor(_Anchor):
             architype, type
         ):
             self.state.hashes = {
-                key: hash(dumps(val)) for key, val in asdict(architype).items()
+                key: hash(dumps(val)) for key, val in architype.__getstate__().items()
             }
 
     async def has_read_access(self, to: "Anchor") -> bool:  # type: ignore[override]
@@ -752,7 +752,7 @@ class Anchor(_Anchor):
             "root": self.root,
             "access": self.access.serialize(),
             "architype": (
-                asdict(self.architype)  # type: ignore[call-overload]
+                self.architype.__getstate__()
                 if is_dataclass(self.architype) and not isinstance(self.architype, type)
                 else {}
             ),
@@ -1243,6 +1243,10 @@ class Architype(_Architype):
             __jac__ = Anchor(architype=self)
             __jac__.allocate()
         self.__jac__ = __jac__
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Process default serialization."""
+        return asdict(self)
 
     @classmethod
     def __ref_cls__(cls) -> str:
