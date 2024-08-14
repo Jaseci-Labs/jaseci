@@ -28,7 +28,7 @@ class ImportPassPassTests(TestCase):
         state = jac_file_to_pass(self.fixture_abs_path("autoimpl.jac"), JacImportPass)
         num_modules = len(state.ir.get_all_sub_nodes(ast.Module))
         mod_names = [i.name for i in state.ir.get_all_sub_nodes(ast.Module)]
-        self.assertEqual(num_modules, 3)
+        self.assertEqual(num_modules, 4)
         self.assertIn("getme.impl", mod_names)
         self.assertIn("autoimpl.impl", mod_names)
         self.assertIn("autoimpl.something.else.impl", mod_names)
@@ -40,7 +40,7 @@ class ImportPassPassTests(TestCase):
         )
         num_modules = len(state.ir.get_all_sub_nodes(ast.Module))
         mod_names = [i.name for i in state.ir.get_all_sub_nodes(ast.Module)]
-        self.assertEqual(num_modules, 4)
+        self.assertEqual(num_modules, 5)
         self.assertIn("getme.impl", mod_names)
         self.assertIn("autoimpl", mod_names)
         self.assertIn("autoimpl.impl", mod_names)
@@ -56,7 +56,7 @@ class ImportPassPassTests(TestCase):
             if i.name != "autoimpl":
                 count += 1
                 self.assertEqual(i.annexable_by, self.fixture_abs_path("autoimpl.jac"))
-        self.assertEqual(count, 3)
+        self.assertEqual(count, 4)
 
     def test_py_resolve_list(self) -> None:
         """Basic test for pass."""
