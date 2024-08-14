@@ -1,6 +1,10 @@
 """Test pass module."""
 
+import io
+import sys
+
 import jaclang.compiler.absyntree as ast
+from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import JacImportPass
 from jaclang.utils.test import TestCase
@@ -66,3 +70,15 @@ class ImportPassPassTests(TestCase):
         self.assertIn("pygame.K_SPACE", state.py_resolve_list)
         self.assertIn("random.randint", state.py_resolve_list)
         self.assertIn("pygame.font.Font", state.py_resolve_list)
+
+    def test_double_empty_anx(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("autoimpl.jac"))
+        cli.run(self.fixture_abs_path("autoimpl.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("foo", stdout_value)
+        self.assertIn("bar", stdout_value)
+        self.assertIn("baz", stdout_value)
