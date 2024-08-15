@@ -36,7 +36,6 @@ type_checker_sched = [
     JacTypeCheckPass,
     FuseTypeInfoPass,
     PyImportPass,
-    # SymTabBuildPass,
     DefUsePass,
     AccessCheckPass,
 ]
