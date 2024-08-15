@@ -366,9 +366,9 @@ class JacFeatureDefaults:
     def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
-            return op1.__jac__.spawn_call(op2)
+            return op1.__jac__.spawn_call(op2.__jac__)
         elif isinstance(op2, WalkerArchitype):
-            return op2.__jac__.spawn_call(op1)
+            return op2.__jac__.spawn_call(op1.__jac__)
         else:
             raise TypeError("Invalid walker object")
 
@@ -390,7 +390,12 @@ class JacFeatureDefaults:
         ),
     ) -> bool:
         """Jac's ignore stmt feature."""
-        return walker.__jac__.ignore_node(expr)
+        if isinstance(walker, WalkerArchitype):
+            return walker.__jac__.ignore_node(
+                (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
+            )
+        else:
+            raise TypeError("Invalid walker object")
 
     @staticmethod
     @hookimpl
@@ -406,7 +411,9 @@ class JacFeatureDefaults:
     ) -> bool:
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchitype):
-            return walker.__jac__.visit_node(expr)
+            return walker.__jac__.visit_node(
+                (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
+            )
         else:
             raise TypeError("Invalid walker object")
 
@@ -470,13 +477,11 @@ class JacFeatureDefaults:
             for j in right:
                 conn_edge = edge_spec()
                 edges.append(conn_edge)
-                i.__jac__.connect_node(j, conn_edge)
-
+                i.__jac__.connect_node(j.__jac__, conn_edge.__jac__)
                 if i.__jac__.persistent or j.__jac__.persistent:
-                    conn_edge.save()
-                    j.save()
-                    i.save()
-
+                    conn_edge.__jac__.save()
+                    j.__jac__.save()
+                    i.__jac__.save()
         return right if not edges_only else edges
 
     @staticmethod
@@ -492,25 +497,31 @@ class JacFeatureDefaults:
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
         for i in left:
-            for j in right:
-                edge_list: list[EdgeArchitype] = [*i.__jac__.edges]
-                edge_list = filter_func(edge_list) if filter_func else edge_list
-                for e in edge_list:
-                    if e.__jac__.target and e.__jac__.source:
-                        if (
-                            dir in ["OUT", "ANY"]  # TODO: Not ideal
-                            and i.__jac__.obj == e.__jac__.source
-                            and e.__jac__.target == j.__jac__.obj
-                        ):
-                            e.__jac__.detach(i.__jac__.obj, e.__jac__.target)
-                            disconnect_occurred = True
-                        if (
-                            dir in ["IN", "ANY"]
-                            and i.__jac__.obj == e.__jac__.target
-                            and e.__jac__.source == j.__jac__.obj
-                        ):
-                            e.__jac__.detach(i.__jac__.obj, e.__jac__.source)
-                            disconnect_occurred = True
+            node = i.__jac__
+            for anchor in set(node.edges):
+                if (
+                    (architype := anchor.architype)
+                    and (source := anchor.source)
+                    and (target := anchor.target)
+                    and (not filter_func or filter_func([architype]))
+                    and (src_arch := source.architype)
+                    and (trg_arch := target.architype)
+                ):
+                    if (
+                        dir in [EdgeDir.OUT, EdgeDir.ANY]
+                        and node == source
+                        and trg_arch in right
+                    ):
+                        anchor.detach()
+                        disconnect_occurred = True
+                    if (
+                        dir in [EdgeDir.IN, EdgeDir.ANY]
+                        and node == target
+                        and src_arch in right
+                    ):
+                        anchor.detach()
+                        disconnect_occurred = True
+
         return disconnect_occurred
 
     @staticmethod
@@ -897,14 +908,14 @@ class JacBuiltin:
         for source, target, edge in connections:
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
-                f' [label="{html.escape(str(edge.__jac__.obj.__class__.__name__))} "];\n'
+                f' [label="{html.escape(str(edge.__jac__.architype.__class__.__name__))} "];\n'
             )
         for node_ in visited_nodes:
             color = (
                 colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
             )
             dot_content += (
-                f'{visited_nodes.index(node_)} [label="{html.escape(str(node_.__jac__.obj))}"'
+                f'{visited_nodes.index(node_)} [label="{html.escape(str(node_.__jac__.architype))}"'
                 f'fillcolor="{color}"];\n'
             )
         if dot_file:
