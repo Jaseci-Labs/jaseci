@@ -32,7 +32,7 @@ obj ExecutionContext {
 "Global Execution Context, should be monkey patched by the user."
 glob exec_ctx = ExecutionContext();
 
-obj ElementAnchor {
+obj Anchor :ArchitypeProtocol: {
     has ob: object,
         jid: UUID = :> uuid4,
         timestamp: datetime = :> datetime.now,
@@ -41,8 +41,12 @@ obj ElementAnchor {
         rw_access: set = :> set,
         ro_access: set = :> set,
         owner_id: UUID = exec_ctx.master,
-        mem: Memory = exec_ctx.memory;
+        mem: Memory = exec_ctx.memory,
+        ds_entry_funcs: list[DSFunc],
+        ds_exit_funcs: list[DSFunc];
 
+    static can on_entry(cls: type, triggers: list[type]);
+    static can on_exit(cls: type, triggers: list[type]);
     can make_public_ro;
     can make_public_rw;
     can make_private;
@@ -55,15 +59,7 @@ obj ElementAnchor {
     can revoke_access(caller_id: UUID);
 }
 
-obj ObjectAnchor :ElementAnchor, ArchitypeProtocol: {
-    has ds_entry_funcs: list[DSFunc],
-        ds_exit_funcs: list[DSFunc];
-
-    static can on_entry(cls: type, triggers: list[type]);
-    static can on_exit(cls: type, triggers: list[type]);
-}
-
-obj NodeAnchor :ObjectAnchor: {
+obj NodeAnchor :Anchor: {
     has edges: dict[EdgeDir, list[Edge]] = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
     can connect_node(nd: Node, edg: Edge) -> Node;
@@ -71,7 +67,7 @@ obj NodeAnchor :ObjectAnchor: {
     can __call__(walk: Walker);
 }
 
-obj EdgeAnchor :ObjectAnchor: {
+obj EdgeAnchor :Anchor: {
     has source: Node = None,
         target: Node = None,
         dir: EdgeDir = None;
@@ -81,7 +77,7 @@ obj EdgeAnchor :ObjectAnchor: {
     can __call__(walk: Walker);
 }
 
-obj WalkerAnchor :ObjectAnchor: {
+obj WalkerAnchor :Anchor: {
     has path: list[Node] = [],
         next: list[Node] = [],
         ignores: list[Node] = [],
@@ -110,11 +106,11 @@ obj GenericEdge :ArchitypeProtocol: {
 }
 
 obj Master {
-    has __jac__: ElementAnchor | None = None;
+    has __jac__: Anchor | None = None;
     has root_node: Root = Root(Root);
 
     can postinit {
-        self.__jac__ = ElementAnchor(self);
+        self.__jac__ = Anchor(self);
     }
 }
 
@@ -204,31 +200,31 @@ obj JacPlugin {
     PRIVATE
 }
 
-:obj:ElementAnchor:can:make_public_ro {
+:obj:Anchor:can:make_public_ro {
     self.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:obj:ElementAnchor:can:make_public_rw {
+:obj:Anchor:can:make_public_rw {
     self.__jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:obj:ElementAnchor:can:make_private {
+:obj:Anchor:can:make_private {
     self.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:obj:ElementAnchor:can:is_public_ro -> bool {
+:obj:Anchor:can:is_public_ro -> bool {
     return self.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:obj:ElementAnchor:can:is_public_rw -> bool {
+:obj:Anchor:can:is_public_rw -> bool {
     return self.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:obj:ElementAnchor:can:is_private -> bool {
+:obj:Anchor:can:is_private -> bool {
     return self.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:obj:ElementAnchor:can:is_readable
+:obj:Anchor:can:is_readable
 (caller_id: UUID) -> bool {
     return (caller_id == self.owner_id
         or |> self.is_public_read
@@ -236,14 +232,14 @@ obj JacPlugin {
         or caller_id in self.rw_access);
 }
 
-:obj:ElementAnchor:can:is_writable
+:obj:Anchor:can:is_writable
 (caller_id: UUID) -> bool {
     return (caller_id == self.owner_id
         or |> self.is_public_write
         or caller_id in self.rw_access);
 }
 
-:obj:ElementAnchor:can:give_access
+:obj:Anchor:can:give_access
 (caller_id: UUID, read_write: bool=False) {
     if read_write {
         caller_id |> self.rw_access.add;
@@ -252,13 +248,13 @@ obj JacPlugin {
     }
 }
 
-:obj:ElementAnchor:can:revoke_access
+:obj:Anchor:can:revoke_access
 (caller_id: UUID) {
     caller_id |> self.ro_access.discard;
     caller_id |> self.rw_access.discard;
 }
 
-:obj:ObjectAnchor:can:on_entry
+:obj:Anchor:can:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append(
@@ -272,7 +268,7 @@ obj JacPlugin {
     return decorator;
 }
 
-:obj:ObjectAnchor:can:on_exit
+:obj:Anchor:can:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append(
@@ -423,7 +419,7 @@ obj JacPlugin {
 (arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
-            arch.__jac__ = ObjectAnchor(
+            arch.__jac__ = Anchor(
                 ob=arch,
                 ds_entry_funcs=on_entry,
                 ds_exit_funcs=on_exit
