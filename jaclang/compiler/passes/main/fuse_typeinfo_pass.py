@@ -27,7 +27,6 @@ class FuseTypeInfoPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
-    python_raise_map: dict[str, str] = {}
 
     def __debug_print(self, *argv: object) -> None:
         if settings.fuse_type_info_debug:
@@ -66,9 +65,8 @@ class FuseTypeInfoPass(Pass):
             node.name_spec.type_sym_tab = typ_sym_table
 
     def __collect_python_dependencies(self, node: ast.AstNode) -> None:
-        from jaclang.compiler.passes.main.type_check_pass import JacTypeCheckPass
-
         assert isinstance(node, ast.AstSymbolNode)
+        assert isinstance(self.ir, ast.Module)
 
         mypy_node = node.gen.mypy_ast[0]
 
@@ -79,17 +77,17 @@ class FuseTypeInfoPass(Pass):
             else:
                 mod_name = node_full_name
 
-            if mod_name not in JacTypeCheckPass.graph:
+            if mod_name not in self.ir.py_mod_dep_map:
                 self.__debug_print(
                     f"Can't find a python file associated with {type(node)}::{node.loc}"
                 )
                 return
 
-            mode_path = JacTypeCheckPass.graph[mod_name].xpath
+            mode_path = self.ir.py_mod_dep_map[mod_name]
             if mode_path.endswith(".jac"):
                 return
 
-            FuseTypeInfoPass.python_raise_map[mod_name] = mode_path
+            self.ir.py_raise_map[mod_name] = mode_path
         else:
             self.__debug_print(
                 f"Collect python dependencies is not supported in {type(node)}::{node.loc}"

@@ -18,8 +18,6 @@ from jaclang.compiler.passes import Pass
 class JacTypeCheckPass(Pass):
     """Python and bytecode file printing pass."""
 
-    graph: myab.Graph = {}
-
     def before_pass(self) -> None:
         """Before pass."""
         self.__path = (
@@ -106,7 +104,9 @@ class JacTypeCheckPass(Pass):
             mypy_graph[module.name] = st
             new_modules.append(st)
 
-        JacTypeCheckPass.graph = myab.load_graph(
+        if not isinstance(self.ir, ast.Module):
+            raise self.ice("Expected module node. Impossible")
+        mypy_graph = myab.load_graph(
             [
                 myab.BuildSource(
                     path=str(self.__path / "typeshed" / "stdlib" / "builtins.pyi"),
@@ -117,4 +117,6 @@ class JacTypeCheckPass(Pass):
             old_graph=mypy_graph,
             new_modules=new_modules,  # To parse the dependancies of modules
         )
-        myab.process_graph(JacTypeCheckPass.graph, manager)
+        for i in mypy_graph:
+            self.ir.py_mod_dep_map[i] = mypy_graph[i].xpath
+        myab.process_graph(mypy_graph, manager)

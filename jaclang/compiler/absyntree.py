@@ -630,6 +630,8 @@ class Module(AstDocNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
+        self.py_mod_dep_map: dict[str, str] = {}
+        self.py_raise_map: dict[str, str] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False

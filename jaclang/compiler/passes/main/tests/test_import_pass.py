@@ -63,11 +63,12 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raise_map(self) -> None:
         """Basic test for pass."""
-        jac_file_to_pass(
+        build = jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"),
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
         )
+        assert isinstance(build.ir, ast.Module)
         p = {
             "math": "jaclang/jaclang/vendor/mypy/typeshed/stdlib/math.pyi",
             "pygame_mock": "pygame_mock/__init__.py",
@@ -80,10 +81,8 @@ class ImportPassPassTests(TestCase):
             "genericpath": "jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi",
         }
         for i in p:
-            self.assertIn(i, FuseTypeInfoPass.python_raise_map)
-            self.assertIn(
-                p[i], re.sub(r".*fixtures/", "", FuseTypeInfoPass.python_raise_map[i])
-            )
+            self.assertIn(i, build.ir.py_raise_map)
+            self.assertIn(p[i], re.sub(r".*fixtures/", "", build.ir.py_raise_map[i]))
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""

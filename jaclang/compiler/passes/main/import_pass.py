@@ -251,9 +251,10 @@ class PyImportPass(JacImportPass):
     ) -> Optional[ast.Module]:
         """Import a module."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
 
-        python_raise_map = FuseTypeInfoPass.python_raise_map
+        assert isinstance(self.ir, ast.Module)
+
+        python_raise_map = self.ir.py_raise_map
         file_to_raise = None
 
         if mod_path in python_raise_map:
