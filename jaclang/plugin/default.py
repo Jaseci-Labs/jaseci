@@ -366,9 +366,9 @@ class JacFeatureDefaults:
     def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
-            return op1._jac_.spawn_call(op2)
+            return op1.__jac__.spawn_call(op2)
         elif isinstance(op2, WalkerArchitype):
-            return op2._jac_.spawn_call(op1)
+            return op2.__jac__.spawn_call(op1)
         else:
             raise TypeError("Invalid walker object")
 
@@ -390,7 +390,7 @@ class JacFeatureDefaults:
         ),
     ) -> bool:
         """Jac's ignore stmt feature."""
-        return walker._jac_.ignore_node(expr)
+        return walker.__jac__.ignore_node(expr)
 
     @staticmethod
     @hookimpl
@@ -406,7 +406,7 @@ class JacFeatureDefaults:
     ) -> bool:
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchitype):
-            return walker._jac_.visit_node(expr)
+            return walker.__jac__.visit_node(expr)
         else:
             raise TypeError("Invalid walker object")
 
@@ -414,7 +414,7 @@ class JacFeatureDefaults:
     @hookimpl
     def disengage(walker: WalkerArchitype) -> bool:  # noqa: ANN401
         """Jac's disengage stmt feature."""
-        walker._jac_.disengage_now()
+        walker.__jac__.disengage_now()
         return True
 
     @staticmethod
@@ -437,7 +437,7 @@ class JacFeatureDefaults:
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
-                connected_edges += node._jac_.get_edges(
+                connected_edges += node.__jac__.get_edges(
                     dir, filter_func, target_obj=targ_obj_set
                 )
             return list(set(connected_edges))
@@ -445,7 +445,9 @@ class JacFeatureDefaults:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
-                    node._jac_.edges_to_nodes(dir, filter_func, target_obj=targ_obj_set)
+                    node.__jac__.edges_to_nodes(
+                        dir, filter_func, target_obj=targ_obj_set
+                    )
                 )
             return list(set(connected_nodes))
 
@@ -468,9 +470,9 @@ class JacFeatureDefaults:
             for j in right:
                 conn_edge = edge_spec()
                 edges.append(conn_edge)
-                i._jac_.connect_node(j, conn_edge)
+                i.__jac__.connect_node(j, conn_edge)
 
-                if i._jac_.persistent or j._jac_.persistent:
+                if i.__jac__.persistent or j.__jac__.persistent:
                     conn_edge.save()
                     j.save()
                     i.save()
@@ -491,23 +493,23 @@ class JacFeatureDefaults:
         right = [right] if isinstance(right, NodeArchitype) else right
         for i in left:
             for j in right:
-                edge_list: list[EdgeArchitype] = [*i._jac_.edges]
+                edge_list: list[EdgeArchitype] = [*i.__jac__.edges]
                 edge_list = filter_func(edge_list) if filter_func else edge_list
                 for e in edge_list:
-                    if e._jac_.target and e._jac_.source:
+                    if e.__jac__.target and e.__jac__.source:
                         if (
                             dir in ["OUT", "ANY"]  # TODO: Not ideal
-                            and i._jac_.obj == e._jac_.source
-                            and e._jac_.target == j._jac_.obj
+                            and i.__jac__.obj == e.__jac__.source
+                            and e.__jac__.target == j.__jac__.obj
                         ):
-                            e._jac_.detach(i._jac_.obj, e._jac_.target)
+                            e.__jac__.detach(i.__jac__.obj, e.__jac__.target)
                             disconnect_occurred = True
                         if (
                             dir in ["IN", "ANY"]
-                            and i._jac_.obj == e._jac_.target
-                            and e._jac_.source == j._jac_.obj
+                            and i.__jac__.obj == e.__jac__.target
+                            and e.__jac__.source == j.__jac__.obj
                         ):
-                            e._jac_.detach(i._jac_.obj, e._jac_.source)
+                            e.__jac__.detach(i.__jac__.obj, e.__jac__.source)
                             disconnect_occurred = True
         return disconnect_occurred
 
@@ -547,7 +549,7 @@ class JacFeatureDefaults:
 
         def builder() -> EdgeArchitype:
             edge = conn_type() if isinstance(conn_type, type) else conn_type
-            edge._jac_.is_undirected = is_undirected
+            edge.__jac__.is_undirected = is_undirected
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1]):
                     if hasattr(edge, fld):
@@ -895,14 +897,14 @@ class JacBuiltin:
         for source, target, edge in connections:
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
-                f' [label="{html.escape(str(edge._jac_.obj.__class__.__name__))} "];\n'
+                f' [label="{html.escape(str(edge.__jac__.obj.__class__.__name__))} "];\n'
             )
         for node_ in visited_nodes:
             color = (
                 colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
             )
             dot_content += (
-                f'{visited_nodes.index(node_)} [label="{html.escape(str(node_._jac_.obj))}"'
+                f'{visited_nodes.index(node_)} [label="{html.escape(str(node_.__jac__.obj))}"'
                 f'fillcolor="{color}"];\n'
             )
         if dot_file:
