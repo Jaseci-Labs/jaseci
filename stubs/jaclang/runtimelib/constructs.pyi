@@ -1,13 +1,12 @@
 from .architype import (
+    Anchor as Anchor,
     Architype as Architype,
     DSFunc as DSFunc,
     EdgeAnchor as EdgeAnchor,
     EdgeArchitype as EdgeArchitype,
-    ElementAnchor as ElementAnchor,
     GenericEdge as GenericEdge,
     NodeAnchor as NodeAnchor,
     NodeArchitype as NodeArchitype,
-    ObjectAnchor as ObjectAnchor,
     Root as Root,
     WalkerAnchor as WalkerAnchor,
     WalkerArchitype as WalkerArchitype,
@@ -21,8 +20,7 @@ from .test import (
 )
 
 __all__ = [
-    "ElementAnchor",
-    "ObjectAnchor",
+    "Anchor",
     "NodeAnchor",
     "EdgeAnchor",
     "WalkerAnchor",

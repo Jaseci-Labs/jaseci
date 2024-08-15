@@ -18,6 +18,7 @@ from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.runtimelib.constructs import (
+    Anchor,
     Architype,
     DSFunc,
     EdgeAnchor,
@@ -28,7 +29,6 @@ from jaclang.runtimelib.constructs import (
     Memory,
     NodeAnchor,
     NodeArchitype,
-    ObjectAnchor,
     Root,
     WalkerAnchor,
     WalkerArchitype,
@@ -45,12 +45,12 @@ import pluggy
 hookimpl = pluggy.HookimplMarker("jac")
 
 __all__ = [
+    "Anchor",
     "EdgeAnchor",
     "GenericEdge",
     "hookimpl",
     "JacTestCheck",
     "NodeAnchor",
-    "ObjectAnchor",
     "WalkerAnchor",
     "NodeArchitype",
     "EdgeArchitype",

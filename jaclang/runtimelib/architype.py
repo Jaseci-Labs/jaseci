@@ -12,16 +12,11 @@ from jaclang.runtimelib.utils import collect_node_connections
 
 
 @dataclass(eq=False)
-class ElementAnchor:
-    """Element Anchor."""
+class Anchor:
+    """Object Anchor."""
 
     obj: Architype
     id: UUID = field(default_factory=uuid4)
-
-
-@dataclass(eq=False)
-class ObjectAnchor(ElementAnchor):
-    """Object Anchor."""
 
     def spawn_call(self, walk: WalkerArchitype) -> WalkerArchitype:
         """Invoke data spatial call."""
@@ -29,7 +24,7 @@ class ObjectAnchor(ElementAnchor):
 
 
 @dataclass(eq=False)
-class NodeAnchor(ObjectAnchor):
+class NodeAnchor(Anchor):
     """Node Anchor."""
 
     obj: NodeArchitype
@@ -157,7 +152,7 @@ class NodeAnchor(ObjectAnchor):
 
 
 @dataclass(eq=False)
-class EdgeAnchor(ObjectAnchor):
+class EdgeAnchor(Anchor):
     """Edge Anchor."""
 
     obj: EdgeArchitype
@@ -218,7 +213,7 @@ class EdgeAnchor(ObjectAnchor):
 
 
 @dataclass(eq=False)
-class WalkerAnchor(ObjectAnchor):
+class WalkerAnchor(Anchor):
     """Walker Anchor."""
 
     obj: WalkerArchitype
@@ -337,7 +332,7 @@ class Architype:
 
     def __init__(self) -> None:
         """Create default architype."""
-        self.__jac__: ObjectAnchor = ObjectAnchor(obj=self)
+        self.__jac__: Anchor = Anchor(obj=self)
 
     def __hash__(self) -> int:
         """Override hash for architype."""
