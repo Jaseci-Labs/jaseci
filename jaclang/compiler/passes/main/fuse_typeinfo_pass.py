@@ -10,7 +10,6 @@ from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -65,6 +64,35 @@ class FuseTypeInfoPass(Pass):
         if typ_sym_table != self.ir.sym_tab:
             node.name_spec.type_sym_tab = typ_sym_table
 
+    def __collect_python_dependencies(self, node: ast.AstNode) -> None:
+        assert isinstance(node, ast.AstSymbolNode)
+        assert isinstance(self.ir, ast.Module)
+
+        mypy_node = node.gen.mypy_ast[0]
+
+        if isinstance(mypy_node, MypyNodes.RefExpr):
+            node_full_name = mypy_node.node.fullname
+            if "." in node_full_name:
+                mod_name = node_full_name[: node_full_name.rindex(".")]
+            else:
+                mod_name = node_full_name
+
+            if mod_name not in self.ir.py_mod_dep_map:
+                self.__debug_print(
+                    f"Can't find a python file associated with {type(node)}::{node.loc}"
+                )
+                return
+
+            mode_path = self.ir.py_mod_dep_map[mod_name]
+            if mode_path.endswith(".jac"):
+                return
+
+            self.ir.py_raise_map[mod_name] = mode_path
+        else:
+            self.__debug_print(
+                f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
+            )
+
     @staticmethod
     def __handle_node(
         func: Callable[[FuseTypeInfoPass, T], None]
@@ -86,6 +114,7 @@ class FuseTypeInfoPass(Pass):
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                     self.__set_sym_table_link(node)
+                    self.__collect_python_dependencies(node)
 
                 # Jac node has multiple mypy nodes linked to it
                 elif len(node.gen.mypy_ast) > 1:
@@ -109,6 +138,7 @@ class FuseTypeInfoPass(Pass):
                         )
                         func(self, node)
                         self.__set_sym_table_link(node)
+                        self.__collect_python_dependencies(node)
 
                 # Jac node doesn't have mypy nodes linked to it
                 else:
@@ -446,20 +476,16 @@ class FuseTypeInfoPass(Pass):
                 if self_obj.type_sym_tab and isinstance(right_obj, ast.AstSymbolNode):
                     self_obj.type_sym_tab.def_insert(right_obj)
 
-    def exit_name(self, node: ast.Name) -> None:
-        """Add new symbols in the symbol table in case of atom trailer."""
-        if isinstance(node.parent, ast.AtomTrailer):
-            target_node = node.parent.target
-            if isinstance(target_node, ast.AstSymbolNode):
-                parent_symbol_table = target_node.type_sym_tab
-                if isinstance(parent_symbol_table, SymbolTable):
-                    node.sym = parent_symbol_table.lookup(node.sym_name)
-
-    # def exit_in_for_stmt(self, node: ast.InForStmt):
-    #     print(node.loc.mod_path, node.loc)
-    #     print(node.target, node.target.loc)
-    #     # node.sym_tab.def_insert()
-    #     # exit()
-
-    # def after_pass(self) -> None:
-    #     exit()
+    def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """Adding symbol links to AtomTrailer right nodes."""
+        # This will fix adding the symbol links to nodes in atom trailer
+        # self.x.z = 5  # will add symbol links to both x and z
+        for i in range(1, len(node.as_attr_list)):
+            left = node.as_attr_list[i - 1]
+            right = node.as_attr_list[i]
+            # assert isinstance(left, ast.NameAtom)
+            # assert isinstance(right, ast.NameAtom)
+            if left.type_sym_tab and not isinstance(
+                right, ast.IndexSlice
+            ):  # TODO check why IndexSlice produce an issue
+                right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
