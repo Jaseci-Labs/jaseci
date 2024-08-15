@@ -21,13 +21,12 @@ class AccessCheckPass(Pass):
         pass
 
     def __find_scope_by_dotted_path(self, path: str) -> Optional[SymbolTable]:
-        current_scope = self.ir.sym_tab
+        current_scope: Optional[SymbolTable] = self.ir.sym_tab
         path_list = path.split(".")
         while current_scope and path_list.pop(0) == current_scope.name:
             if len(path_list) == 0:
                 break
-            a = current_scope.find_scope(path_list[0])
-            current_scope = a
+            current_scope = current_scope.find_scope(path_list[0])
         return current_scope
 
     def exit_node(self, node: ast.AstNode) -> None:

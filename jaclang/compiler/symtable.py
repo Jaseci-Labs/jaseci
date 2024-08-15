@@ -137,7 +137,7 @@ class SymbolTable:
                 return k
         return None
 
-    def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
+    def push_kid_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
         self.kid.append(SymbolTable(name, key_node, self))
         return self.kid[-1]

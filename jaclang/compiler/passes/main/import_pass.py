@@ -12,7 +12,7 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main import SubNodeTabPass
+from jaclang.compiler.passes.main import SubNodeTabPass, SymTabBuildPass
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 
@@ -39,13 +39,13 @@ class JacImportPass(Pass):
             self.run_again = False
             all_imports = self.get_all_sub_nodes(node, ast.ModulePath, brute_force=True)
             for i in all_imports:
-                self.process_import(node, i)
+                self.process_import(i)
                 self.enter_module_path(i)
             SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
-    def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
+    def process_import(self, i: ast.ModulePath) -> None:
         """Process an import."""
         imp_node = i.parent_of_type(ast.Import)
         if imp_node.is_jac and not i.sub_module:
@@ -211,7 +211,7 @@ class PyImportPass(JacImportPass):
         mod_list.reverse()
         return ".".join(p.name for p in mod_list)
 
-    def process_import(self, node: ast.Module, i: ast.ModulePath) -> None:
+    def process_import(self, i: ast.ModulePath) -> None:
         """Process an import."""
         # Process import is orginally implemented to handle ModulePath in Jaclang
         # This won't work with py imports as this will fail to import stuff in form of
@@ -289,6 +289,7 @@ class PyImportPass(JacImportPass):
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)
+                    SymTabBuildPass(input_ir=mod, prior=self)
                     return mod
                 else:
                     raise self.ice(f"Failed to import python module {mod_path}")

@@ -232,7 +232,6 @@ class TestJacLangServer(TestCase):
                 3,
             ),
         ]
-        print(str(sem_list))
         for token_type, expected_count in expected_counts:
             self.assertEqual(str(sem_list).count(token_type), expected_count)
 
