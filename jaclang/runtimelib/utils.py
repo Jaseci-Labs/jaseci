@@ -37,12 +37,16 @@ def collect_node_connections(
         visited_nodes.add(current_node)
         edges = current_node.edges
         for edge_ in edges:
-            target = edge_.__jac__.target
+            target = edge_.target
             if target:
                 connections.add(
-                    (current_node.obj, target.__jac__.obj, edge_.__class__.__name__)
+                    (
+                        current_node.architype,
+                        target.architype,
+                        edge_.__class__.__name__,
+                    )
                 )
-                collect_node_connections(target.__jac__, visited_nodes, connections)
+                collect_node_connections(target, visited_nodes, connections)
 
 
 def traverse_graph(
@@ -62,18 +66,19 @@ def traverse_graph(
 ) -> None:
     """Traverse the graph using Breadth-First Search (BFS) or Depth-First Search (DFS)."""
     for edge in node.__jac__.edges:
-        is_self_loop = id(edge.__jac__.source) == id(edge.__jac__.target)
-        is_in_edge = edge.__jac__.target == node
-        if (
-            traverse and is_in_edge
-        ) or edge.__jac__.obj.__class__.__name__ in edge_type:
+        is_self_loop = id(edge.source) == id(edge.target)
+        is_in_edge = edge.target == node.__jac__
+        if (traverse and is_in_edge) or edge.architype.__class__.__name__ in edge_type:
             continue
         if is_self_loop:
             continue  # lets skip self loop for a while, need to handle it later
-        else:
-            other_nd = edge.__jac__.target if not is_in_edge else edge.__jac__.source
+        elif (other_nda := edge.target if not is_in_edge else edge.source) and (
+            other_nd := other_nda.architype
+        ):
             new_con = (
-                (node, other_nd, edge) if not is_in_edge else (other_nd, node, edge)
+                (node, other_nd, edge.architype)
+                if not is_in_edge
+                else (other_nd, node, edge.architype)
             )
             if node in node_depths and node_depths[node] is not None:
                 if other_nd in node_depths:

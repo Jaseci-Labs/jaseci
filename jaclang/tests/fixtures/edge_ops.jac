@@ -22,7 +22,7 @@ edge MyEdge {
             for j=0 to j<3 by j+=1  {
                 end +:MyEdge:val=random.randint(1, 15), val2=random.randint(1, 5):+> node_a(value=j + 10);
             }
-            print([(i.val, i.val2) for i in end.__jac__.edges if isinstance(i, MyEdge)]);
+            print([(arch.val, arch.val2) for i in end.__jac__.edges if isinstance(arch := i.architype, MyEdge)]);
         }
     }
     for i=0 to i<3 by i+=1  {
@@ -41,5 +41,5 @@ with entry {
     random.seed(1);
     root spawn Creator();
 
-    #print(root.__jac__.gen_dot());
+    #print(root._jac_.gen_dot());
 }
