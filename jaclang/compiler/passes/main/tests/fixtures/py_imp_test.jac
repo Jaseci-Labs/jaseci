@@ -1,6 +1,6 @@
 import:py math;
 import:py argparse;
-import:py from pygame_mock, color;
+import:py from pygame_mock { color }
 import:py pygame_mock;
 import:py os;
 
