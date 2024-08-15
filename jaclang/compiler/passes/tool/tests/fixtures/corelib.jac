@@ -94,27 +94,27 @@ obj WalkerAnchor :ObjectAnchor: {
 }
 
 obj Root :AbsRootHook: {
-    has _jac_: NodeAnchor | None = None;
+    has __jac__: NodeAnchor | None = None;
 
     can postinit {
-        self._jac_ = NodeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
+        self.__jac__ = NodeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
 
 obj GenericEdge :ArchitypeProtocol: {
-    has _jac_: EdgeAnchor | None = None;
+    has __jac__: EdgeAnchor | None = None;
 
     can postinit {
-        self._jac_ = EdgeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
+        self.__jac__ = EdgeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
 
 obj Master {
-    has _jac_: ElementAnchor | None = None;
+    has __jac__: ElementAnchor | None = None;
     has root_node: Root = Root(Root);
 
     can postinit {
-        self._jac_ = ElementAnchor(self);
+        self.__jac__ = ElementAnchor(self);
     }
 }
 
@@ -361,7 +361,7 @@ obj JacPlugin {
 
 :obj:NodeAnchor:can:__call__
 (walk: object) {
-    if not isinstance(walk._jac_, WalkerAnchor) {
+    if not isinstance(walk.__jac__, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
     }
     walk(self);
@@ -369,10 +369,10 @@ obj JacPlugin {
 
 :obj:EdgeAnchor:can:__call__
 (walk: EdgeInterface) {
-    if not isinstance(walk._jac_, WalkerAnchor) {
+    if not isinstance(walk.__jac__, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
     }
-    walk(self._jac_.target);
+    walk(self.__jac__.target);
 }
 
 :obj:WalkerAnchor:can:__call__
@@ -423,25 +423,25 @@ obj JacPlugin {
 (arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
-            arch._jac_ = ObjectAnchor(
+            arch.__jac__ = ObjectAnchor(
                 ob=arch,
                 ds_entry_funcs=on_entry,
                 ds_exit_funcs=on_exit
             );
         case 'node':
-            arch._jac_ = NodeAnchor(
+            arch.__jac__ = NodeAnchor(
                 ob=arch,
                 ds_entry_funcs=on_entry,
                 ds_exit_funcs=on_exit
             );
         case 'edge':
-            arch._jac_ = EdgeAnchor(
+            arch.__jac__ = EdgeAnchor(
                 ob=arch,
                 ds_entry_funcs=on_entry,
                 ds_exit_funcs=on_exit
             );
         case 'walker':
-            arch._jac_ = WalkerAnchor(
+            arch.__jac__ = WalkerAnchor(
                 ob=arch,
                 ds_entry_funcs=on_entry,
                 ds_exit_funcs=on_exit
@@ -464,19 +464,19 @@ obj JacPlugin {
         edg_type = edge_spec[1];
     }
     edg = edg_type(*(edge_spec[2])) if edge_spec[2] else edg_type();
-    edg._jac_.apply_dir(edge_spec[0]);
+    edg.__jac__.apply_dir(edge_spec[0]);
     return edg;
 }
 
 :obj:JacPlugin:can:connect
 (left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
     edg = JacPlugin.build_edge(edge_spec);
-    left.connect_node(right._jac_, edg._jac_);
+    left.connect_node(right.__jac__, edg.__jac__);
 }
 
 :obj:JacPlugin:can:visit_node
 (walker_obj: Any, expr: Any) -> bool {
-    return walker_obj._jac_.visit_node(expr);
+    return walker_obj.__jac__.visit_node(expr);
 }
 
 glob expected_area = 78.53981633974483;
