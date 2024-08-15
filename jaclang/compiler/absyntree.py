@@ -4314,11 +4314,11 @@ class Ellipsis(Literal):
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
-    def __init__(self) -> None:
+    def __init__(self, file_path: str = "") -> None:
         """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
-            file_path="",
+            file_path=file_path,
             value="",
             line=0,
             end_line=0,

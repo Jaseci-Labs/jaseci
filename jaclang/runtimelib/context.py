@@ -46,7 +46,7 @@ class ExecutionContext:
             root = self.mem.get_obj(UUID(int=0))
             if root is None:
                 self.root = Root()
-                self.mem.save_obj(self.root, persistent=self.root._jac_.persistent)
+                self.mem.save_obj(self.root, persistent=self.root.__jac__.persistent)
             elif not isinstance(root, Root):
                 raise ValueError(f"Invalid root object: {root}")
             else:
