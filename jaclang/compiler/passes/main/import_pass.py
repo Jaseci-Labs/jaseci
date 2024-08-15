@@ -13,7 +13,6 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass, SymTabBuildPass
-from jaclang.settings import settings
 from jaclang.utils.log import logging
 
 
@@ -284,8 +283,6 @@ class PyImportPass(JacImportPass):
                     ).ir
                     SubNodeTabPass(input_ir=mod, prior=self)
                 if mod:
-                    if not settings.print_py_raised_ast:
-                        mod.is_from_py_file = True
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)

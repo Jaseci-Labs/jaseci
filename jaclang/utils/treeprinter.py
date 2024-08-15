@@ -84,7 +84,7 @@ def print_ast_tree(
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
     max_depth: Optional[int] = None,
-    print_py_raise: bool = False,
+    print_py_raise: bool = True,
 ) -> str:
     """Recursively print ast tree."""
     from jaclang.compiler.absyntree import AstSymbolNode, Token
@@ -117,7 +117,9 @@ def print_ast_tree(
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif (
-            isinstance(node, ast.Module) and node.is_from_py_file and not print_py_raise
+            isinstance(node, ast.Module)
+            and node.is_raised_from_py
+            and not print_py_raise
         ):
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
         elif isinstance(node, AstSymbolNode):
@@ -188,9 +190,15 @@ def print_ast_tree(
 
     if isinstance(root, ast.AstNode):
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
-        if isinstance(root, ast.Module) and root.is_from_py_file:
+        if (
+            isinstance(root, ast.Module)
+            and root.is_raised_from_py
+            and not print_py_raise
+        ):
             kids: list[AstNode] = [
-                *filter(lambda x: x.is_from_py_file, root.get_all_sub_nodes(ast.Module))
+                *filter(
+                    lambda x: x.is_raised_from_py, root.get_all_sub_nodes(ast.Module)
+                )
             ]
         else:
             kids = root.kid

@@ -13,7 +13,6 @@ from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.settings import settings
 from jaclang.utils.test import TestCase
 
 
@@ -520,7 +519,6 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_1 imported", stdout_value)
-        settings.py_raise = False
 
     def test_pyfunc_1(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -582,7 +580,6 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_2 imported", stdout_value)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
-        settings.py_raise = False
 
     def test_pyfunc_2(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -630,7 +627,6 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_3 imported", stdout_value)
-        settings.py_raise = False
 
     def test_pyfunc_3(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -745,8 +741,6 @@ class JacLanguageTests(TestCase):
 
     def test_random_check(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        settings.py_raise = True
-
         from jaclang.compiler.passes.main import PyastBuildPass
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
@@ -770,17 +764,14 @@ class JacLanguageTests(TestCase):
                 self.assertIn("ModulePath - statistics -", gen_ast)
             else:
                 self.assertIn("+-- Name - NodeTransformer - Type: No", gen_ast)
-        settings.py_raise = False
 
     def test_deep_py_load_imports(self) -> None:  # we can get rid of this, isn't?
         """Test py ast to Jac ast conversion output."""
-        settings.py_raise = True
         file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
         from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
         imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
         self.assertEqual(len(imp.import_table), 1)
-        settings.py_raise = False
 
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
@@ -825,7 +816,6 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Deep convo is imported", stdout_value)
-        settings.py_raise = settings.py_raise_deep = False
 
     def test_override_walker_inherit(self) -> None:
         """Test py ast to Jac ast conversion output."""

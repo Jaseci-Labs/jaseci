@@ -94,7 +94,7 @@ class ImportPassPassTests(TestCase):
             len(
                 list(
                     filter(
-                        lambda x: x.is_from_py_file,
+                        lambda x: x.is_raised_from_py,
                         state.ir.get_all_sub_nodes(ast.Module),
                     )
                 )
