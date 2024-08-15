@@ -25,7 +25,6 @@ class JacImportPass(Pass):
     def before_pass(self) -> None:
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
-        self.py_importing = False
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
@@ -36,7 +35,7 @@ class JacImportPass(Pass):
         self.run_again = True
         while self.run_again:
             self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath, brute_force=True)
+            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
             for i in all_imports:
                 self.process_import(i)
                 self.enter_module_path(i)
