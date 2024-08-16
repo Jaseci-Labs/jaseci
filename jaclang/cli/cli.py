@@ -22,7 +22,7 @@ from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.constructs import Architype
+from jaclang.runtimelib.constructs import Anchor, Architype
 from jaclang.runtimelib.machine import JacProgram
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
@@ -124,8 +124,8 @@ def run(
     if not node or node == "root":
         entrypoint: Architype = Jac.get_root()
     else:
-        obj = Jac.context().get_obj(UUID(node))
-        if obj is None or obj.architype is None:
+        obj = Jac.context().mem.find_by_id(UUID(node))
+        if not isinstance(obj, Anchor) or obj.architype is None:
             print(f"Entrypoint {node} not found.")
             return
         entrypoint = obj.architype
@@ -154,7 +154,7 @@ def get_object(id: str, session: str = "") -> dict:
     else:
         id_uuid = UUID(id)
 
-    obj = Jac.context().get_obj(id_uuid)
+    obj = Jac.context().mem.find_by_id(id_uuid)
     if obj is None:
         print(f"Object with id {id} not found.")
         Jac.reset_context()

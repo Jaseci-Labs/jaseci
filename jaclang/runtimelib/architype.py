@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, is_dataclass
+from pickle import dumps
 from types import UnionType
-from typing import Any, Callable, Iterable, Optional, Type, TypeVar
+from typing import Any, Callable, Iterable, Optional, TypeVar
 from uuid import UUID, uuid4
 
 from jaclang.compiler.constant import EdgeDir
@@ -14,38 +15,35 @@ TARCH = TypeVar("TARCH", bound="Architype")
 TANCH = TypeVar("TANCH", bound="Anchor")
 
 
+@dataclass
+class Report:
+    """Report Handler."""
+
+    id: str
+    context: dict[str, Any]
+
+
 @dataclass(eq=False)
 class Anchor:
     """Object Anchor."""
 
-    name: str = ""
+    architype: Architype
     id: UUID = field(default_factory=uuid4)
-    architype: Optional[Architype] = None
     persistent: bool = False
-
-    @property
-    def ref_id(self) -> str:
-        """Return id in reference type."""
-        return str(self.id)
-
-    @classmethod
-    def ref(cls: Type[TANCH], ref_id: str) -> TANCH | None:
-        """Return Anchor instance if valid."""
-        try:
-            return cls(id=UUID(ref_id))
-        except Exception:
-            return None
-
-    def _save(self) -> None:
-        """Save Anchor."""
-        raise NotImplementedError("_save must be implemented in subclasses")
+    hash: int = 0
 
     def save(self) -> None:
         """Save Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
 
         self.persistent = True
-        Jac.context().save_obj(self, persistent=True)
+        Jac.context().mem.set(self.id, self)
+
+    def destroy(self) -> None:
+        """Destroy Anchor."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        Jac.context().mem.remove(self.id)
 
     def unlinked_architype(self) -> Architype | None:
         """Unlink architype."""
@@ -59,44 +57,38 @@ class Anchor:
 
     def __getstate__(self) -> dict[str, object]:
         """Serialize Anchor."""
-        state: dict[str, object] = {"name": self.name, "id": self.id}
-
-        if architype := self.unlinked_architype():
-            state["architype"] = architype
-
-        return state
+        return {
+            "id": self.id,
+            "architype": self.unlinked_architype(),
+            "persistent": self.persistent,
+        }
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Deserialize Anchor."""
         self.__dict__.update(state)
+        self.architype.__jac__ = self
+        self.hash = hash(dumps(self))
 
-        if self.architype:
-            self.architype.__jac__ = self
-        else:
-            self.root = None
-            self.architype = None
-
-    def report(self) -> dict[str, object]:
+    def report(self) -> Report:
         """Report Anchor."""
-        return {
-            "id": self.ref_id,
-            "context": (
+        return Report(
+            id=self.id.hex,
+            context=(
                 asdict(self.architype)
                 if is_dataclass(self.architype) and not isinstance(self.architype, type)
                 else {}
             ),
-        }
+        )
 
     def __hash__(self) -> int:
         """Override hash for anchor."""
-        return hash(self.ref_id)
+        return hash(self.id)
 
     def __eq__(self, other: object) -> bool:
         """Override equal implementation."""
         if isinstance(other, Anchor):
             return (
                 self.__class__ is other.__class__
-                and self.name == other.name
                 and self.id == other.id
                 and self.architype == self.architype
             )
@@ -108,7 +100,7 @@ class Anchor:
 class NodeAnchor(Anchor):
     """Node Anchor."""
 
-    architype: Optional[NodeArchitype] = None
+    architype: NodeArchitype
     edges: list[EdgeAnchor] = field(default_factory=list)
     edge_ids: list[UUID] = field(default_factory=list)
 
@@ -116,16 +108,15 @@ class NodeAnchor(Anchor):
         """Populate edges from edge ids."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        if len(self.edges) == 0 and len(self.edge_ids) > 0:
-            for e_id in self.edge_ids:
-                edge = Jac.context().get_obj(e_id)
-                if edge is None:
-                    raise ValueError(f"Edge with id {e_id} not found.")
-                elif not isinstance(edge, EdgeAnchor):
-                    raise ValueError(f"Object with id {e_id} is not an edge.")
-                else:
-                    self.edges.append(edge)
+        if self.edge_ids:
+            jmem = Jac.context().mem
+
+            edges = [
+                edge for e_id in self.edge_ids if (edge := jmem.find_by_id(e_id))
+            ] + self.edges
+
             self.edge_ids.clear()
+            self.edges = edges
 
     def connect_node(self, node: NodeAnchor, edge: EdgeAnchor) -> None:
         """Connect a node with given edge."""
@@ -231,17 +222,25 @@ class NodeAnchor(Anchor):
         """Invoke data spatial call."""
         return walk.spawn_call(self)
 
+    def destroy(self) -> None:
+        """Destroy Anchor."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        self.populate_edges()
+        for edge in self.edges:
+            edge.destroy()
+
+        Jac.context().mem.remove(self.id)
+
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
         state = super().__getstate__()
-
-        if self.architype:
-            state.update(
-                {
-                    "edges": [],
-                    "edge_ids": self.edge_ids or [edge.id for edge in self.edges],
-                }
-            )
+        state.update(
+            {
+                "edges": [],
+                "edge_ids": self.edge_ids + [edge.id for edge in self.edges],
+            }
+        )
 
         return state
 
@@ -250,7 +249,7 @@ class NodeAnchor(Anchor):
 class EdgeAnchor(Anchor):
     """Edge Anchor."""
 
-    architype: Optional[EdgeArchitype] = None
+    architype: EdgeArchitype
     source: Optional[NodeAnchor] = None
     source_id: Optional[UUID] = None
     target: Optional[NodeAnchor] = None
@@ -261,24 +260,15 @@ class EdgeAnchor(Anchor):
         """Populate nodes for the edges from node ids."""
         from jaclang.plugin.feature import JacFeature as Jac
 
+        jmem = Jac.context().mem
+
         if self.source_id:
-            obj = Jac.context().get_obj(self.source_id)
-            if obj is None:
-                raise ValueError(f"Node with id {self.source_id} not found.")
-            elif not isinstance(obj, NodeAnchor):
-                raise ValueError(f"Object with id {self.source_id} is not a node.")
-            else:
-                self.source = obj
-                self.source_id = None
+            self.source = jmem.find_by_id(self.source_id)
+            self.source_id = None
+
         if self.target_id:
-            obj = Jac.context().get_obj(self.target_id)
-            if obj is None:
-                raise ValueError(f"Node with id {self.target_id} not found.")
-            elif not isinstance(obj, NodeAnchor):
-                raise ValueError(f"Object with id {self.target_id} is not a node.")
-            else:
-                self.target = obj
-                self.target_id = None
+            self.target = jmem.find_by_id(self.target_id)
+            self.target_id = None
 
     def attach(
         self, src: NodeAnchor, trg: NodeAnchor, is_undirected: bool = False
@@ -305,24 +295,30 @@ class EdgeAnchor(Anchor):
         else:
             raise ValueError("Edge has no target.")
 
+    def destroy(self) -> None:
+        """Destroy Anchor."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        self.populate_nodes()
+        self.detach()
+        Jac.context().mem.remove(self.id)
+
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
         state = super().__getstate__()
-
-        if self.architype:
-            state.update(
-                {
-                    "source": None,
-                    "target": None,
-                    "source_id": (
-                        self.source_id or (self.source.id if self.source else None)
-                    ),
-                    "target_id": (
-                        self.target_id or (self.target.id if self.target else None)
-                    ),
-                    "is_undirected": self.is_undirected,
-                }
-            )
+        state.update(
+            {
+                "source": None,
+                "target": None,
+                "source_id": (
+                    self.source_id or (self.source.id if self.source else None)
+                ),
+                "target_id": (
+                    self.target_id or (self.target.id if self.target else None)
+                ),
+                "is_undirected": self.is_undirected,
+            }
+        )
 
         return state
 
@@ -331,7 +327,7 @@ class EdgeAnchor(Anchor):
 class WalkerAnchor(Anchor):
     """Walker Anchor."""
 
-    architype: Optional[WalkerArchitype] = None
+    architype: WalkerArchitype
     path: list[Anchor] = field(default_factory=list)
     next: list[Anchor] = field(default_factory=list)
     ignores: list[Anchor] = field(default_factory=list)
@@ -410,7 +406,7 @@ class WalkerAnchor(Anchor):
                             return walker
             self.ignores = []
             return walker
-        raise Exception(f"Invalid Reference {self.ref_id}")
+        raise Exception(f"Invalid Reference {self.id}")
 
 
 class Architype:
@@ -435,7 +431,7 @@ class NodeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create node architype."""
-        self.__jac__ = NodeAnchor(name=self.__class__.__name__, architype=self)
+        self.__jac__ = NodeAnchor(architype=self)
 
 
 class EdgeArchitype(Architype):
@@ -445,7 +441,7 @@ class EdgeArchitype(Architype):
 
     def __init__(self) -> None:
         """Create edge architype."""
-        self.__jac__ = EdgeAnchor(name=self.__class__.__name__, architype=self)
+        self.__jac__ = EdgeAnchor(architype=self)
 
 
 class WalkerArchitype(Architype):
@@ -455,7 +451,7 @@ class WalkerArchitype(Architype):
 
     def __init__(self) -> None:
         """Create walker architype."""
-        self.__jac__ = WalkerAnchor(name=self.__class__.__name__, architype=self)
+        self.__jac__ = WalkerAnchor(architype=self)
 
 
 class GenericEdge(EdgeArchitype):
@@ -479,7 +475,7 @@ class Root(NodeArchitype):
 
     def __init__(self) -> None:
         """Create root node."""
-        self.__jac__ = NodeAnchor(id=UUID(int=0), architype=self, persistent=True)
+        self.__jac__ = NodeAnchor(architype=self, id=UUID(int=0), persistent=True)
 
     def reset(self) -> None:
         """Reset the root."""

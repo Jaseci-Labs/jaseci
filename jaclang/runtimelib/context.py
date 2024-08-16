@@ -7,21 +7,21 @@ from contextvars import ContextVar
 from typing import Callable, Optional
 from uuid import UUID
 
-from .architype import Anchor, Root
+from .architype import Root
 from .machine import JacMachine, JacProgram
-from .memory import Memory, ShelveStorage
+from .memory import Memory, ShelfStorage
 
 
 class ExecutionContext:
     """Default Execution Context implementation."""
 
-    mem: Optional[Memory]
+    mem: Memory
     root: Optional[Root]
 
     def __init__(self) -> None:
         """Create execution context."""
         super().__init__()
-        self.mem = ShelveStorage()
+        self.mem = ShelfStorage()
         self.root = None
         self.jac_machine = JacMachine()
         jac_program = JacProgram(mod_bundle=None, bytecode=None)
@@ -29,51 +29,29 @@ class ExecutionContext:
 
     def init_memory(self, base_path: str = "", session: str = "") -> None:
         """Initialize memory."""
-        if session:
-            self.mem = ShelveStorage(session)
-        else:
-            self.mem = Memory()
+        self.mem = ShelfStorage(session)
         self.jac_machine = JacMachine(base_path)
         jac_program = JacProgram(mod_bundle=None, bytecode=None)
         self.jac_machine.attach_program(jac_program)
 
     def get_root(self) -> Root:
         """Get the root object."""
-        if self.mem is None:
-            raise ValueError("Memory not initialized")
-
         if not self.root:
-            root = self.mem.get_obj(UUID(int=0))
+            root = self.mem.find_by_id(UUID(int=0))
             if root is None:
-                self.root = Root()
-                self.mem.save_obj(
-                    self.root.__jac__, persistent=self.root.__jac__.persistent
-                )
-            elif not isinstance(root.architype, Root):
+                root = Root().__jac__
+                self.mem.set(root.id, root)
+
+            if not isinstance(root.architype, Root):
                 raise ValueError(f"Invalid root object: {root}")
             else:
                 self.root = root.architype
         return self.root
 
-    def get_obj(self, obj_id: UUID) -> Anchor | None:
-        """Get object from memory."""
-        if self.mem is None:
-            raise ValueError("Memory not initialized")
-
-        return self.mem.get_obj(obj_id)
-
-    def save_obj(self, item: Anchor, persistent: bool) -> None:
-        """Save object to memory."""
-        if self.mem is None:
-            raise ValueError("Memory not initialized")
-
-        self.mem.save_obj(item, persistent)
-
     def reset(self) -> None:
         """Reset the execution context."""
         if self.mem:
             self.mem.close()
-        self.mem = None
         self.root = None
 
 
