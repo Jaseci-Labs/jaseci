@@ -6,7 +6,7 @@ This pass checks for access to attributes in the Jac language.
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import SymbolAccess, SymbolType
+from jaclang.compiler.constant import SymbolAccess
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import Symbol
 from jaclang.settings import settings
@@ -185,45 +185,7 @@ class AccessCheckPass(Pass):
         # Note that currently we can only check for name + symbols, because expressions are not associated with the
         # typeinfo thus they don't have a symbol. In the future the name nodes will become expression nodes.
         if not isinstance(node.sym, Symbol):
-            # In an expression 'foo.bar', the name bar doesn't contains any symbols if 'foo' is a module.
-            # In that case we'll manually get the module and check the access. This is one hacky way
-            # and needs to be done properly in the future.
-            if not (isinstance(node.parent, ast.AtomTrailer) and node.parent.is_attr):
-                return
-
-            access_obj = node.parent.target
-            if not isinstance(access_obj, ast.Name) or access_obj.sym is None:
-                return
-
-            if access_obj.sym.sym_type == SymbolType.MODULE:
-                accessed_module: Optional[ast.Module] = None
-                for mod_dep in curr_module.mod_deps.values():
-                    if mod_dep.name == access_obj.sym.sym_name:
-                        accessed_module = mod_dep
-                        break
-                else:
-                    return
-
-                symbol: Optional[Symbol] = accessed_module.sym_tab.lookup(node.value)
-                if symbol is None:
-                    # NOTE: This is a symantic error, assuming that a non
-                    # existing member access was reported by some other
-                    # semantic analysis pass, as it's not the responsibility
-                    # of the current pass.
-                    return
-
-                # Assuming toplevel things (class, vars, ability) cannot be protected.
-                if symbol.access == SymbolAccess.PRIVATE:
-                    self.report_error(
-                        f"Error: Invalid access of private member of module '{accessed_module.name}'.",
-                        node,
-                    )
-
-            # Not sure what else (except for module.member) can have a name
-            # node without symbol, we're just returning here for now.
             return
-
-        # From here (bellow) the node has a valid symbol.
 
         # Public symbols are fine.
         if node.sym.access == SymbolAccess.PUBLIC:

@@ -52,6 +52,9 @@ class FuseTypeInfoPass(Pass):
         if typ[0] == "builtins":
             return
 
+        if node.sym_type == "types.ModuleType" and node.sym:
+            node.name_spec.type_sym_tab = node.sym.parent_tab.find_scope(node.sym_name)
+
         assert isinstance(self.ir, ast.Module)
 
         if typ_sym_table:
