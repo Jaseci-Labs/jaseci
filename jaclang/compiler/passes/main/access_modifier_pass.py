@@ -205,26 +205,26 @@ class AccessCheckPass(Pass):
             # Accessing a private/protected member within the top level scope illegal.
             if curr_class is None:
                 return self.report_error(
-                    f"Error: Invalid access of {access_type} member.",
+                    f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                     node,
                 )
 
             if curr_class != node.sym.parent_tab.owner:
                 if not is_portect:  # private member accessed in a different class.
                     return self.report_error(
-                        f"Error: Invalid access of {access_type} member.",
+                        f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                         node,
                     )
                 else:  # Accessing a protected member, check we're in an inherited class.
                     if not self.is_class_inherited_from(curr_class, sym_owner):
                         return self.report_error(
-                            f"Error: Invalid access of {access_type} member.",
+                            f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                             node,
                         )
 
         elif isinstance(sym_owner, ast.Module) and sym_owner != curr_module:
             # Accessing a private/public member in a different module.
             return self.report_error(
-                f"Error: Invalid access of {access_type} member.",
+                f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                 node,
             )

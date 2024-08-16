@@ -6,11 +6,10 @@ mypy apis into Jac and use jac py ast in it.
 
 from __future__ import annotations
 
-from typing import Callable, Optional, TypeVar
+from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import Symbol
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -494,28 +493,29 @@ class FuseTypeInfoPass(Pass):
             ):  # TODO check why IndexSlice produce an issue
                 right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
 
-    # NOTE: Note sure why we're inferring the symbol here instead of the sym table build pass
-    # I afraid that moving this there might break something.
-    def lookup_sym_from_node(self, node: ast.AstNode, member: str) -> Optional[Symbol]:
-        """Recursively look for the symbol of a member from a given node."""
-        if isinstance(node, ast.AstSymbolNode):
-            if node.type_sym_tab is None:
-                return None
-            return node.type_sym_tab.lookup(member)
+    # # TODO [Gamal]: Need to support getting the type of an expression
+    # # NOTE: Note sure why we're inferring the symbol here instead of the sym table build pass
+    # # I afraid that moving this there might break something.
+    # def lookup_sym_from_node(self, node: ast.AstNode, member: str) -> Optional[Symbol]:
+    #     """Recursively look for the symbol of a member from a given node."""
+    #     if isinstance(node, ast.AstSymbolNode):
+    #         if node.type_sym_tab is None:
+    #             return None
+    #         return node.type_sym_tab.lookup(member)
 
-        if isinstance(node, ast.AtomTrailer):
-            if node.is_attr:  # <expr>.member access.
-                return self.lookup_sym_from_node(node.right, member)
-            elif isinstance(node.right, ast.IndexSlice):
-                # NOTE: if the 'node.target' is a variable of type list[T] the
-                # node.target.sym_type is "builtins.list[T]" string Not sure how
-                # to get the type_sym_tab of "T" from just the name itself. would
-                # be better if the symbols types are not just strings but references.
-                # For now I'll mark them as todos.
-                # TODO:
-                # case 1: expr[i]     -> regular indexing.
-                # case 2: expr[i:j:k] -> returns a sublist.
-                # case 3: expr["str"] -> dictionary lookup.
-                pass
+    #     if isinstance(node, ast.AtomTrailer):
+    #         if node.is_attr:  # <expr>.member access.
+    #             return self.lookup_sym_from_node(node.right, member)
+    #         elif isinstance(node.right, ast.IndexSlice):
+    #             # NOTE: if the 'node.target' is a variable of type list[T] the
+    #             # node.target.sym_type is "builtins.list[T]" string Not sure how
+    #             # to get the type_sym_tab of "T" from just the name itself. would
+    #             # be better if the symbols types are not just strings but references.
+    #             # For now I'll mark them as todos.
+    #             # TODO:
+    #             # case 1: expr[i]     -> regular indexing.
+    #             # case 2: expr[i:j:k] -> returns a sublist.
+    #             # case 3: expr["str"] -> dictionary lookup.
+    #             pass
 
-        return None
+    #     return None
