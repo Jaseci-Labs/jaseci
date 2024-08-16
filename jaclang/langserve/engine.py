@@ -127,6 +127,15 @@ class JacLangServer(LanguageServer):
                     build.warnings_had,
                 ),
             )
+            if annex_view:
+                self.publish_diagnostics(
+                    file_path,
+                    gen_diagnostics(
+                        file_path,
+                        build.errors_had,
+                        build.warnings_had,
+                    ),
+                )
             self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
             return len(build.errors_had) == 0
         except Exception as e:

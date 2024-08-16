@@ -73,5 +73,5 @@ with entry {
     root spawn walker1();
     root spawn walker2();
     root spawn walker3();
-    print(root._jac_.gen_dot());
+    print(root.__jac__.gen_dot());
 }

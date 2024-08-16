@@ -28,6 +28,3 @@ can add() -> 'no of': int {}
 
 can 'update user mood'
 updateMood(* mood: 'Moo of the Person': str,  something:'Something':str, something_else: 'Something Else': int = 5, without_semstr: float) -> 'mood selection': str {}
-
-
- can get_personality (person: 'Person Object': list[Person]) -> 'Personality of the Person': dict[Personality, PersonalityIndex] by llm(reason=True, incl_info=(personality_examples, self.diary_entries));
