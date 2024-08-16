@@ -630,8 +630,11 @@ class Module(AstDocNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
+        self.py_mod_dep_map: dict[str, str] = {}
+        self.py_raise_map: dict[str, str] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
+        self.is_raised_from_py: bool = False
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -4313,11 +4316,11 @@ class Ellipsis(Literal):
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
-    def __init__(self) -> None:
+    def __init__(self, file_path: str = "") -> None:
         """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
-            file_path="",
+            file_path=file_path,
             value="",
             line=0,
             end_line=0,

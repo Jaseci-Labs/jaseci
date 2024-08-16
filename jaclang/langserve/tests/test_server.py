@@ -214,7 +214,7 @@ class TestJacLangServer(TestCase):
             ("<JacSemTokenType.VARIABLE: 8>, <JacSemTokenModifier.READONLY: 4>", 12),
             (
                 "<JacSemTokenType.PROPERTY: 9>, <JacSemTokenModifier.DEFINITION: 2>,",
-                19,
+                21,
             ),
             (
                 "<JacSemTokenType.PARAMETER: 7>, <JacSemTokenModifier.DECLARATION: 1>,",
@@ -232,7 +232,6 @@ class TestJacLangServer(TestCase):
                 3,
             ),
         ]
-        print(str(sem_list))
         for token_type, expected_count in expected_counts:
             self.assertEqual(str(sem_list).count(token_type), expected_count)
 

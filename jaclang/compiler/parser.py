@@ -163,7 +163,11 @@ class JacParser(Pass):
                 body=body,
                 is_imported=False,
                 terminals=self.terminals,
-                kid=kid if len(kid) else [ast.EmptyToken()],
+                kid=(
+                    kid
+                    if len(kid)
+                    else [ast.EmptyToken(file_path=self.parse_ref.mod_path)]
+                ),
             )
             return self.nu(mod)
 
@@ -1003,7 +1007,11 @@ class JacParser(Pass):
                         semstr=semstr,
                         params=params,
                         return_type=return_spec,
-                        kid=kid if len(kid) else [ast.EmptyToken()],
+                        kid=(
+                            kid
+                            if len(kid)
+                            else [ast.EmptyToken(file_path=self.parse_ref.mod_path)]
+                        ),
                     )
                 )
             else:
