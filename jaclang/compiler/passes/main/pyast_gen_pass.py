@@ -2367,7 +2367,22 @@ class PyastGenPass(Pass):
                             node.left.gen.py_ast[0],
                             node.right.gen.py_ast[0],
                             self.sync(
-                                ast3.Constant(value=node.op.edge_spec.edge_dir.name)
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Attribute(
+                                            value=self.sync(
+                                                ast3.Name(
+                                                    id=Con.JAC_FEATURE.value,
+                                                    ctx=ast3.Load(),
+                                                )
+                                            ),
+                                            attr="EdgeDir",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    attr=node.op.edge_spec.edge_dir.name,
+                                    ctx=ast3.Load(),
+                                )
                             ),
                             (
                                 node.op.edge_spec.filter_cond.gen.py_ast[0]
