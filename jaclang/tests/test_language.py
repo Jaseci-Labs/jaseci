@@ -806,6 +806,7 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
+        os.environ["JACLANG_PRINT_PY_RAISED_AST"] = "1"
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(' |   +-- String - "Loop compl', jac_ast)
