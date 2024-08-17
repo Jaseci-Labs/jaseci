@@ -745,7 +745,6 @@ class JacLanguageTests(TestCase):
 
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
-        return  # TODO;
         captured_output = io.StringIO()
         sys.stdout = captured_output
         cli.check(
@@ -754,10 +753,7 @@ class JacLanguageTests(TestCase):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn('Can not access private variable "p"', stdout_value)
-        self.assertIn('Can not access private variable "privmethod"', stdout_value)
-        self.assertIn('Can not access private variable "BankAccount"', stdout_value)
-        self.assertNotIn(" Name: ", stdout_value)
+        self.assertEqual(stdout_value.count("Invalid access"), 15)
 
     def test_deep_convert(self) -> None:
         """Test py ast to Jac ast conversion output."""

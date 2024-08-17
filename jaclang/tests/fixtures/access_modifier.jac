@@ -19,6 +19,39 @@ obj SomeObj {
 }
 
 
+obj BaseClass {
+    has :pub     publ_attrib:int = 0;
+    has :priv    priv_attrib:int = 0;
+    has :protect prot_attrib:int = 0;
+
+    can do_base() -> None {
+        self.publ_attrib; # <-- okey.
+        self.priv_attrib; # <-- okey.
+        self.prot_attrib; # <-- okey.
+    }
+}
+
+
+obj DrivedClass1 :BaseClass: {
+    can do_driv1() -> None {
+        self.publ_attrib; # <-- okey.
+        self.priv_attrib; # <-- not okey.
+        self.prot_attrib; # <-- okey.
+    }
+}
+
+
+# Check if the protect works from inherited chain.
+obj DrivedClass2 :BaseClass: {
+    can do_driv2() -> None {
+        self.publ_attrib; # <-- okey.
+        self.priv_attrib; # <-- not okey.
+        self.prot_attrib; # <-- okey.
+    }
+}
+
+
+
 obj :pub Chain1 {
     has :priv priv_val:int = 0; # <-- the private in the chain.
 }
