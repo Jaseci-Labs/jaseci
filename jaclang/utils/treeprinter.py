@@ -84,7 +84,7 @@ def print_ast_tree(
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
     max_depth: Optional[int] = None,
-    print_py_raise: bool = True,
+    print_py_raise: bool = False,
 ) -> str:
     """Recursively print ast tree."""
     from jaclang.compiler.absyntree import AstSymbolNode, Token
