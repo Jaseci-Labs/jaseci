@@ -6,7 +6,7 @@ This pass checks for access to attributes in the Jac language.
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import SymbolAccess, SymbolType
+from jaclang.compiler.constant import SymbolAccess
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import Symbol
 from jaclang.settings import settings
@@ -42,10 +42,20 @@ class AccessCheckPass(Pass):
         """After pass."""
         pass
 
-    def exit_node(self, node: ast.AstNode) -> None:
+    def exit_node(self, node: ast.AstNode) -> None:  # TODO: Move to debug pass
         """Exit node."""
         super().exit_node(node)
-        if settings.lsp_debug and isinstance(node, ast.NameAtom) and not node.sym:
+        if (
+            settings.lsp_debug
+            and isinstance(node, ast.NameAtom)
+            and not node.sym
+            and not node.parent_of_type(ast.Module).is_raised_from_py
+            and not (
+                node.sym_name == "py"
+                and node.parent
+                and isinstance(node.parent.parent, ast.Import)
+            )
+        ):
             self.warning(f"Name {node.sym_name} not present in symbol table")
 
     def access_register(
@@ -175,45 +185,7 @@ class AccessCheckPass(Pass):
         # Note that currently we can only check for name + symbols, because expressions are not associated with the
         # typeinfo thus they don't have a symbol. In the future the name nodes will become expression nodes.
         if not isinstance(node.sym, Symbol):
-            # In an expression 'foo.bar', the name bar doesn't contains any symbols if 'foo' is a module.
-            # In that case we'll manually get the module and check the access. This is one hacky way
-            # and needs to be done properly in the future.
-            if not (isinstance(node.parent, ast.AtomTrailer) and node.parent.is_attr):
-                return
-
-            access_obj = node.parent.target
-            if not isinstance(access_obj, ast.Name) or access_obj.sym is None:
-                return
-
-            if access_obj.sym.sym_type == SymbolType.MODULE:
-                accessed_module: Optional[ast.Module] = None
-                for mod_dep in curr_module.mod_deps.values():
-                    if mod_dep.name == access_obj.sym.sym_name:
-                        accessed_module = mod_dep
-                        break
-                else:
-                    return
-
-                symbol: Optional[Symbol] = accessed_module.sym_tab.lookup(node.value)
-                if symbol is None:
-                    # NOTE: This is a symantic error, assuming that a non
-                    # existing member access was reported by some other
-                    # semantic analysis pass, as it's not the responsibility
-                    # of the current pass.
-                    return
-
-                # Assuming toplevel things (class, vars, ability) cannot be protected.
-                if symbol.access == SymbolAccess.PRIVATE:
-                    self.report_error(
-                        f"Error: Invalid access of private member of module '{accessed_module.name}'.",
-                        node,
-                    )
-
-            # Not sure what else (except for module.member) can have a name
-            # node without symbol, we're just returning here for now.
             return
-
-        # From here (bellow) the node has a valid symbol.
 
         # Public symbols are fine.
         if node.sym.access == SymbolAccess.PUBLIC:
@@ -233,26 +205,26 @@ class AccessCheckPass(Pass):
             # Accessing a private/protected member within the top level scope illegal.
             if curr_class is None:
                 return self.report_error(
-                    f"Error: Invalid access of {access_type} member.",
+                    f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                     node,
                 )
 
             if curr_class != node.sym.parent_tab.owner:
                 if not is_portect:  # private member accessed in a different class.
                     return self.report_error(
-                        f"Error: Invalid access of {access_type} member.",
+                        f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                         node,
                     )
                 else:  # Accessing a protected member, check we're in an inherited class.
                     if not self.is_class_inherited_from(curr_class, sym_owner):
                         return self.report_error(
-                            f"Error: Invalid access of {access_type} member.",
+                            f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                             node,
                         )
 
         elif isinstance(sym_owner, ast.Module) and sym_owner != curr_module:
             # Accessing a private/public member in a different module.
             return self.report_error(
-                f"Error: Invalid access of {access_type} member.",
+                f'Error: Invalid access of {access_type} member "{node.sym_name}".',
                 node,
             )

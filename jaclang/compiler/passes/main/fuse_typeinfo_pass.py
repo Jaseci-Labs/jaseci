@@ -6,11 +6,10 @@ mypy apis into Jac and use jac py ast in it.
 
 from __future__ import annotations
 
-from typing import Callable, Optional, TypeVar
+from typing import Callable, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import Symbol
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -52,6 +51,9 @@ class FuseTypeInfoPass(Pass):
         if typ[0] == "builtins":
             return
 
+        if node.sym_type == "types.ModuleType" and node.sym:
+            node.name_spec.type_sym_tab = node.sym.parent_tab.find_scope(node.sym_name)
+
         assert isinstance(self.ir, ast.Module)
 
         if typ_sym_table:
@@ -64,6 +66,35 @@ class FuseTypeInfoPass(Pass):
 
         if typ_sym_table != self.ir.sym_tab:
             node.name_spec.type_sym_tab = typ_sym_table
+
+    def __collect_python_dependencies(self, node: ast.AstNode) -> None:
+        assert isinstance(node, ast.AstSymbolNode)
+        assert isinstance(self.ir, ast.Module)
+
+        mypy_node = node.gen.mypy_ast[0]
+
+        if isinstance(mypy_node, MypyNodes.RefExpr):
+            node_full_name = mypy_node.node.fullname
+            if "." in node_full_name:
+                mod_name = node_full_name[: node_full_name.rindex(".")]
+            else:
+                mod_name = node_full_name
+
+            if mod_name not in self.ir.py_mod_dep_map:
+                self.__debug_print(
+                    f"Can't find a python file associated with {type(node)}::{node.loc}"
+                )
+                return
+
+            mode_path = self.ir.py_mod_dep_map[mod_name]
+            if mode_path.endswith(".jac"):
+                return
+
+            self.ir.py_raise_map[mod_name] = mode_path
+        else:
+            self.__debug_print(
+                f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
+            )
 
     @staticmethod
     def __handle_node(
@@ -86,6 +117,7 @@ class FuseTypeInfoPass(Pass):
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                     self.__set_sym_table_link(node)
+                    self.__collect_python_dependencies(node)
 
                 # Jac node has multiple mypy nodes linked to it
                 elif len(node.gen.mypy_ast) > 1:
@@ -109,6 +141,7 @@ class FuseTypeInfoPass(Pass):
                         )
                         func(self, node)
                         self.__set_sym_table_link(node)
+                        self.__collect_python_dependencies(node)
 
                 # Jac node doesn't have mypy nodes linked to it
                 else:
@@ -446,43 +479,43 @@ class FuseTypeInfoPass(Pass):
                 if self_obj.type_sym_tab and isinstance(right_obj, ast.AstSymbolNode):
                     self_obj.type_sym_tab.def_insert(right_obj)
 
-    # NOTE: Note sure why we're inferring the symbol here instead of the sym table build pass
-    # I afraid that moving this there might break something.
-    def lookup_sym_from_node(self, node: ast.AstNode, member: str) -> Optional[Symbol]:
-        """Recursively look for the symbol of a member from a given node."""
-        if isinstance(node, ast.AstSymbolNode):
-            if node.type_sym_tab is None:
-                return None
-            return node.type_sym_tab.lookup(member)
+    def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """Adding symbol links to AtomTrailer right nodes."""
+        # This will fix adding the symbol links to nodes in atom trailer
+        # self.x.z = 5  # will add symbol links to both x and z
+        for i in range(1, len(node.as_attr_list)):
+            left = node.as_attr_list[i - 1]
+            right = node.as_attr_list[i]
+            # assert isinstance(left, ast.NameAtom)
+            # assert isinstance(right, ast.NameAtom)
+            if left.type_sym_tab and not isinstance(
+                right, ast.IndexSlice
+            ):  # TODO check why IndexSlice produce an issue
+                right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
 
-        if isinstance(node, ast.AtomTrailer):
-            if node.is_attr:  # <expr>.member access.
-                return self.lookup_sym_from_node(node.right, member)
-            elif isinstance(node.right, ast.IndexSlice):
-                # NOTE: if the 'node.target' is a variable of type list[T] the
-                # node.target.sym_type is "builtins.list[T]" string Not sure how
-                # to get the type_sym_tab of "T" from just the name itself. would
-                # be better if the symbols types are not just strings but references.
-                # For now I'll mark them as todos.
-                # TODO:
-                # case 1: expr[i]     -> regular indexing.
-                # case 2: expr[i:j:k] -> returns a sublist.
-                # case 3: expr["str"] -> dictionary lookup.
-                pass
+    # # TODO [Gamal]: Need to support getting the type of an expression
+    # # NOTE: Note sure why we're inferring the symbol here instead of the sym table build pass
+    # # I afraid that moving this there might break something.
+    # def lookup_sym_from_node(self, node: ast.AstNode, member: str) -> Optional[Symbol]:
+    #     """Recursively look for the symbol of a member from a given node."""
+    #     if isinstance(node, ast.AstSymbolNode):
+    #         if node.type_sym_tab is None:
+    #             return None
+    #         return node.type_sym_tab.lookup(member)
 
-        return None
+    #     if isinstance(node, ast.AtomTrailer):
+    #         if node.is_attr:  # <expr>.member access.
+    #             return self.lookup_sym_from_node(node.right, member)
+    #         elif isinstance(node.right, ast.IndexSlice):
+    #             # NOTE: if the 'node.target' is a variable of type list[T] the
+    #             # node.target.sym_type is "builtins.list[T]" string Not sure how
+    #             # to get the type_sym_tab of "T" from just the name itself. would
+    #             # be better if the symbols types are not just strings but references.
+    #             # For now I'll mark them as todos.
+    #             # TODO:
+    #             # case 1: expr[i]     -> regular indexing.
+    #             # case 2: expr[i:j:k] -> returns a sublist.
+    #             # case 3: expr["str"] -> dictionary lookup.
+    #             pass
 
-    def exit_name(self, node: ast.Name) -> None:
-        """Add new symbols in the symbol table in case of atom trailer."""
-        if isinstance(node.parent, ast.AtomTrailer) and node.parent.target is not node:
-            sym = self.lookup_sym_from_node(node.parent.target, node.sym_name)
-            node.sym = sym or node.sym
-
-    # def exit_in_for_stmt(self, node: ast.InForStmt):
-    #     print(node.loc.mod_path, node.loc)
-    #     print(node.target, node.target.loc)
-    #     # node.sym_tab.def_insert()
-    #     # exit()
-
-    # def after_pass(self) -> None:
-    #     exit()
+    #     return None

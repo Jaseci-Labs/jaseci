@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import ast as ast3
 import types
-from typing import Any, Callable, Optional, Type, TypeAlias, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeAlias, Union
 
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.plugin.default import ExecutionContext
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
@@ -307,6 +310,8 @@ class JacFeature:
         inputs: list[tuple[str, str, str, Any]],
         outputs: tuple,
         action: str,
+        _globals: dict,
+        _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         return pm.hook.with_llm(
@@ -319,7 +324,44 @@ class JacFeature:
             inputs=inputs,
             outputs=outputs,
             action=action,
+            _globals=_globals,
+            _locals=_locals,
         )
+
+    @staticmethod
+    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
+        """Generate the by LLM body."""
+        return pm.hook.gen_llm_body(_pass=_pass, node=node)
+
+    @staticmethod
+    def by_llm_call(
+        _pass: PyastGenPass,
+        model: ast3.AST,
+        model_params: dict[str, ast.Expr],
+        scope: ast3.AST,
+        inputs: Sequence[Optional[ast3.AST]],
+        outputs: Sequence[Optional[ast3.AST]] | ast3.Call,
+        action: Optional[ast3.AST],
+        include_info: list[tuple[str, ast3.AST]],
+        exclude_info: list[tuple[str, ast3.AST]],
+    ) -> ast3.Call:
+        """Return the LLM Call, e.g. _Jac.with_llm()."""
+        return pm.hook.by_llm_call(
+            _pass=_pass,
+            model=model,
+            model_params=model_params,
+            scope=scope,
+            inputs=inputs,
+            outputs=outputs,
+            action=action,
+            include_info=include_info,
+            exclude_info=exclude_info,
+        )
+
+    @staticmethod
+    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
+        """Get the by LLM call args."""
+        return pm.hook.get_by_llm_call_args(_pass=_pass, node=node)
 
 
 class JacCmd:

@@ -125,10 +125,10 @@ def run(
         entrypoint: Architype = Jac.get_root()
     else:
         obj = Jac.context().get_obj(UUID(node))
-        if obj is None:
+        if obj is None or obj.architype is None:
             print(f"Entrypoint {node} not found.")
             return
-        entrypoint = obj
+        entrypoint = obj.architype
 
     # TODO: handle no override name
     if walker:
