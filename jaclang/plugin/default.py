@@ -502,6 +502,7 @@ class JacFeatureDefaults:
             node = i.__jac__
             node.populate_edges()
             for anchor in set(node.edges):
+                anchor.populate_nodes()
                 if (
                     (architype := anchor.architype)
                     and (source := anchor.source)

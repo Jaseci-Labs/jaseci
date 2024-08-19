@@ -132,6 +132,7 @@ class NodeAnchor(Anchor):
         self.populate_edges()
         ret_edges: list[EdgeArchitype] = []
         for anchor in self.edges:
+            anchor.populate_nodes()
             if (
                 (architype := anchor.architype)
                 and (source := anchor.source)
@@ -162,10 +163,9 @@ class NodeAnchor(Anchor):
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
         self.populate_edges()
-        for edge in self.edges:
-            edge.populate_nodes()
         ret_edges: list[NodeArchitype] = []
         for anchor in self.edges:
+            anchor.populate_nodes()
             if (
                 (architype := anchor.architype)
                 and (source := anchor.source)
