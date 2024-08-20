@@ -504,24 +504,21 @@ class JacFeatureDefaults:
             for anchor in set(node.edges):
                 anchor.populate_nodes()
                 if (
-                    (architype := anchor.architype)
-                    and (source := anchor.source)
+                    (source := anchor.source)
                     and (target := anchor.target)
-                    and (not filter_func or filter_func([architype]))
-                    and (src_arch := source.architype)
-                    and (trg_arch := target.architype)
+                    and (not filter_func or filter_func([anchor.architype]))
                 ):
                     if (
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
-                        and trg_arch in right
+                        and target.architype in right
                     ):
                         anchor.destroy()
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
-                        and src_arch in right
+                        and source.architype in right
                     ):
                         anchor.destroy()
                         disconnect_occurred = True

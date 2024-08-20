@@ -134,25 +134,22 @@ class NodeAnchor(Anchor):
         for anchor in self.edges:
             anchor.populate_nodes()
             if (
-                (architype := anchor.architype)
-                and (source := anchor.source)
+                (source := anchor.source)
                 and (target := anchor.target)
-                and (not filter_func or filter_func([architype]))
-                and (src_arch := source.architype)
-                and (trg_arch := target.architype)
+                and (not filter_func or filter_func([anchor.architype]))
             ):
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
-                    and (not target_obj or trg_arch in target_obj)
+                    and (not target_obj or target.architype in target_obj)
                 ):
-                    ret_edges.append(architype)
+                    ret_edges.append(anchor.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
-                    and (not target_obj or src_arch in target_obj)
+                    and (not target_obj or source.architype in target_obj)
                 ):
-                    ret_edges.append(architype)
+                    ret_edges.append(anchor.architype)
         return ret_edges
 
     def edges_to_nodes(
@@ -167,25 +164,22 @@ class NodeAnchor(Anchor):
         for anchor in self.edges:
             anchor.populate_nodes()
             if (
-                (architype := anchor.architype)
-                and (source := anchor.source)
+                (source := anchor.source)
                 and (target := anchor.target)
-                and (not filter_func or filter_func([architype]))
-                and (src_arch := source.architype)
-                and (trg_arch := target.architype)
+                and (not filter_func or filter_func([anchor.architype]))
             ):
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
-                    and (not target_obj or trg_arch in target_obj)
+                    and (not target_obj or target.architype in target_obj)
                 ):
-                    ret_edges.append(trg_arch)
+                    ret_edges.append(target.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
-                    and (not target_obj or src_arch in target_obj)
+                    and (not target_obj or source.architype in target_obj)
                 ):
-                    ret_edges.append(src_arch)
+                    ret_edges.append(source.architype)
         return ret_edges
 
     def remove_edge(self, edge: EdgeAnchor) -> None:
