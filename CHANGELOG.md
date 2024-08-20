@@ -1,5 +1,9 @@
 # RELEASES
 
+## `0.3.1` - 2024-08-20
+- [IMPROVEMENT] Added Self Healing for the ReAct capabilities
+- [FEATURE] Added Serper Tools for Search Integration
+
 ## `0.3.0` - 2024-08-14
 - [IMPROVEMENT] Added support for the new `Jaclang` version
 - [IMPROVEMENT] Moved all the mtllm related AST capabilities to mtllm repo from jaclang

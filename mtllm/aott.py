@@ -139,11 +139,10 @@ def execute_react(
     max_prev_react_outputs = model_params.pop("max_prev_react_outputs", 3)
     prev_react_outputs: list[ReActOutput] = []
     added_prev_react_input = False
+    reached_max_iterations = False
     while True:
         if len(prev_react_outputs) >= max_react_iterations:
-            raise Exception(
-                f"Reached maximum iterations of {max_react_iterations} for ReAct."
-            )
+            reached_max_iterations = True
         prev_react_input = process_prev_react(
             prev_react_outputs[-max_prev_react_outputs:]
             if len(prev_react_outputs) > max_prev_react_outputs
@@ -161,6 +160,18 @@ def execute_react(
                 ),
             )
             added_prev_react_input = True
+        if reached_max_iterations:
+            meaning_typed_input_list.insert(
+                -1,
+                (
+                    "[Reached Max Iterations] PLEASE FINALIZE using the finish tool."  # type: ignore
+                    if not contains_media
+                    else {
+                        "type": "text",
+                        "text": "[Reached Max Iterations] PLEASE FINALIZE using the finish tool.",
+                    }
+                ),
+            )
         meaning_typed_input = (
             "\n".join(meaning_typed_input_list)  # type: ignore
             if not contains_media
@@ -174,6 +185,8 @@ def execute_react(
             logger.info(f"React Output\n{react_output}")
         if "finish_tool" in react_output.action:
             return react_output.observation
+        if reached_max_iterations:
+            raise Exception("Reached max iterations.")
         prev_react_outputs.append(react_output)
 
 

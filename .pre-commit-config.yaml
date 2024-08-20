@@ -19,7 +19,7 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-PyYAML]
+        additional_dependencies: [types-PyYAML, types-requests]
         args:
           - --follow-imports=silent
           - --ignore-missing-imports
