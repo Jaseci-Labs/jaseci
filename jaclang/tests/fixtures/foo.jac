@@ -1,5 +1,7 @@
 import:py from jaclang.plugin.feature, JacFeature as Jac;
 import:jac from bar, bar_walk;
+import:py from time,sleep;
+
 
 
 # Test runner to initialize the walker
@@ -35,9 +37,20 @@ can test_run {
             f"  - Edge: {edge}" |> print;
         }
     }
+    print(f"bar_walk: {bar_walk}");
     root spawn bar_walk();
-}
 
+    # Sleep to observe the update process
+    "Sleeping for 5 seconds after update..." |> print;
+    sleep(8);
+
+    # Update the module
+    (print_walk,)=Jac.context().jac_machine.update_module("bar", items={'print_walk': None});
+    print(f"print_walk: {print_walk}");
+    # Run the walker again after update
+    "Running bar_walk after update..." |> print;
+    root spawn print_walk();
+}
 # Define the entry point to run the test
 with entry {
     test_run();

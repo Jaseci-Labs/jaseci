@@ -3,8 +3,9 @@
 import inspect
 import marshal
 import os
+import sys
 import types
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
@@ -96,6 +97,48 @@ class JacMachine:
                     nodes.append(name)
             return nodes
         return []
+
+    def update_module(
+        self, module_name: str, items: Optional[dict[str, Union[str, Optional[str]]]]
+    ) -> tuple[types.ModuleType, ...]:
+        """Reimport the module."""
+        from .importer import JacImporter, ImportPathSpec
+
+        if module_name in self.loaded_modules:
+            try:
+                # Unload the existing module
+                del self.loaded_modules[module_name]
+                if module_name in sys.modules:
+                    del sys.modules[module_name]
+
+                # Re-import the module
+                importer = JacImporter(self)
+                spec = ImportPathSpec(
+                    target=module_name,
+                    base_path=self.base_path,
+                    absorb=False,
+                    cachable=True,
+                    mdl_alias=None,
+                    override_name=None,
+                    lng="jac",
+                    items=items,
+                )
+                import_result = importer.run_import(spec, reload=True)
+                # print(f"received items: {import_result.ret_items}")
+                # Load the updated module into JacMachine
+                self.load_module(module_name, import_result.ret_mod)
+
+                # print(f"Module {module_name} successfully updated.")
+                # print(f"imported items: {import_result.ret_items}")
+                return (
+                    (import_result.ret_mod,)
+                    if not items
+                    else tuple(import_result.ret_items)
+                )
+            except Exception as e:
+                logger.error(f"Failed to update module {module_name}: {e}")
+        else:
+            logger.warning(f"Module {module_name} not found in loaded modules.")
 
 
 class JacProgram:
