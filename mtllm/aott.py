@@ -112,6 +112,8 @@ def aott_raise(
             model_params,
             _globals,
             _locals,
+            tool_prompt,
+            type_explanations_str,
         )
         return f"[Output] {result}"
     meaning_typed_input = (
@@ -129,6 +131,8 @@ def execute_react(
     model_params: dict,
     _globals: dict,
     _locals: Mapping,
+    tool_prompt: str,
+    type_explanations_str: str,
 ) -> str:
     """Execute the ReAct method."""
     max_react_iterations = model_params.pop("max_react_iterations", 10)
@@ -164,7 +168,7 @@ def execute_react(
         )
         meaning_out = model(meaning_typed_input, **model_params)  # type: ignore
         react_output: ReActOutput = model.resolve_react_output(
-            meaning_out, _globals, _locals
+            meaning_out, _globals, _locals, tool_prompt, type_explanations_str
         )
         if model.verbose:
             logger.info(f"React Output\n{react_output}")

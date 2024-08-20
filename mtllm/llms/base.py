@@ -112,6 +112,26 @@ Above output is not in the desired Output Format/Type. Please provide the output
 Important: Do not provide the code or the methodology. Only provide the output in the desired format.
 """  # noqa E501
 
+REACT_OUTPUT_FIX_PROMPT = """
+[Previous Output]
+{model_output}
+
+[Error]
+{error}
+
+[Tool Explanations]
+{tool_explanations}
+
+[Type Explanations]
+{type_explanations}
+
+Above output is not in the desired Output Format/Type. Please provide the output in the desired type. Do not repeat the previously provided output.
+Provide the output in the below format. Where tool_usage is a function call with the necessary arguments. Only provide one [THOUGHT] and [TOOL USAGE] at a time.
+
+[Thought] <Thought>
+[Tool Usage] <tool_usage>
+"""  # noqa E501
+
 
 class BaseLLM:
     """Base Large Language Model (LLM) class."""
@@ -127,6 +147,7 @@ class BaseLLM:
     OUTPUT_EXTRACT_PROMPT: str = MTLLM_OUTPUT_EXTRACT_PROMPT
     OUTPUT_CHECK_PROMPT: str = OUTPUT_CHECK_PROMPT
     OUTPUT_FIX_PROMPT: str = OUTPUT_FIX_PROMPT
+    REACT_OUTPUT_FIX_PROMPT: str = REACT_OUTPUT_FIX_PROMPT
 
     def __init__(
         self, verbose: bool = False, max_tries: int = 10, type_check: bool = False
@@ -189,6 +210,8 @@ class BaseLLM:
         meaning_out: str,
         _globals: dict,
         _locals: Mapping,
+        tool_explanations: str,
+        type_explanations: str,
     ) -> ReActOutput:
         """Resolve the output string to return the reasoning and output."""
         if self.verbose:
@@ -205,10 +228,36 @@ class BaseLLM:
             try:
                 output = eval(tool_usage, _globals, _locals)
             except Exception as e:
-                raise ValueError(f"Failed to run the tool usage. Error: {e}")
+                return ReActOutput(
+                    thought=thought, action=tool_usage, observation=str(e)
+                )
             return ReActOutput(thought=thought, action=tool_usage, observation=output)
         except Exception as e:
-            raise ValueError(f"Failed to resolve the ReAct output. Error: {e}")
+            print(e)
+            new_meaning_out = self._fix_react_output(
+                meaning_out, e, tool_explanations, type_explanations
+            )
+            return self.resolve_react_output(
+                new_meaning_out, _globals, _locals, tool_explanations, type_explanations
+            )
+
+    def _fix_react_output(
+        self,
+        meaning_out: str,
+        error: Exception,
+        tool_explanations: str,
+        type_explanations: str,
+    ) -> str:
+        """Fix the output string."""
+        if self.verbose:
+            logger.info(f"Error: {error}, Fixing the output.")
+        react_output_fix_prompt = self.REACT_OUTPUT_FIX_PROMPT.format(
+            model_output=meaning_out,
+            error=str(error),
+            tool_explanations=tool_explanations,
+            type_explanations=type_explanations,
+        )
+        return self.__infer__(react_output_fix_prompt)
 
     def _check_output(
         self,

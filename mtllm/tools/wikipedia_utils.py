@@ -11,10 +11,9 @@ def get_wikipedia_summary(title: str) -> str:
     """Gets the summary of the related article from Wikipedia."""
     try:
         return wikipedia_lib.summary(title)
-    except wikipedia_lib.DisambiguationError as e:
-        raise Exception(
-            f"Could not get summary for {title}. Similar titles: {e.options}"
-        )
+    except Exception:
+        options = wikipedia_lib.search(title, results=5, suggestion=True)
+        raise Exception(f"Could not get summary for {title}. Similar titles: {options}")
 
 
 wikipedia_summary = Tool(
