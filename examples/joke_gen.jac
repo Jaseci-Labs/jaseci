@@ -1,4 +1,4 @@
-import:py from mtllm.llms, OpenAI;
+import:py from mtllm.llms { OpenAI }
 
 glob llm = OpenAI();
 
@@ -23,6 +23,8 @@ obj PunclineJokes {
 
 with entry {
     joke_gen = PunclineJokes();
-    for i in range(5) {joke_gen.generate();}
+    for i in range(5) {
+        joke_gen.generate();
+    }
     print(joke_gen.jokes);
 }

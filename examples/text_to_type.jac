@@ -1,4 +1,4 @@
-import:py from mtllm.llms, OpenAI;
+import:py from mtllm.llms { OpenAI }
 
 glob llm = OpenAI();
 
@@ -19,5 +19,7 @@ Person {
 with entry {
     info: "Person's Information": str = "Chandra is a 28 years old and works as an ML engineer at Jaseci Labs in Sri Lanka.";
     person = Person(by llm(incl_info=(info)));
-    print(f"Person's name is {person.name} and works at {person.employer.employer_name} which is located in {person.employer.location}.");
+    print(
+        f"Person's name is {person.name} and works at {person.employer.employer_name} which is located in {person.employer.location}."
+    );
 }

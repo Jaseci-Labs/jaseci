@@ -1,5 +1,5 @@
-import:py from mtllm.llms {OpenAI}
-import:py from mtllm.tools.wikipedia_utils {wikipedia_summary}
+import:py from mtllm.llms { OpenAI }
+import:py from mtllm.tools.wikipedia_utils { wikipedia_summary }
 
 glob llm = OpenAI(model_name="gpt-4o-mini");
 
@@ -15,8 +15,7 @@ state_facts(information: str) -> None {
 }
 
 can 'Perform a debate session with a opponent on the given topic, for information use given tools'
-debate_agent(topic: 'Debate Topic': str) -> 'Summary of the Conversation': str
-by llm(
+debate_agent(topic: 'Debate Topic': str) -> 'Summary of the Conversation': str by llm(
     method='ReAct',
     tools=[wikipedia_summary, ask_opponent, state_facts],
     context=[

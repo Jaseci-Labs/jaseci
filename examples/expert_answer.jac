@@ -1,4 +1,4 @@
-import:py from mtllm.llms, OpenAI;
+import:py from mtllm.llms { OpenAI }
 
 glob llm = OpenAI();
 
