@@ -413,6 +413,44 @@ class JacLangServer(LanguageServer):
             return list_of_references
         return []
 
+    def rename_symbol(
+        self, file_path: str, position: lspt.Position, new_name: str
+    ) -> Optional[lspt.WorkspaceEdit]:
+        """Rename a symbol in a file."""
+        if file_path not in self.modules:
+            return None
+        index1 = find_index(
+            self.modules[file_path].sem_manager.sem_tokens,
+            position.line,
+            position.character,
+        )
+        if index1 is None:
+            return None
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
+        if node_selected and node_selected.sym:
+            changes: dict[str, list[lspt.TextEdit]] = {
+                uris.from_fs_path(node_selected.loc.mod_path): [
+                    lspt.TextEdit(
+                        range=create_range(node_selected.loc),
+                        new_text=new_name,
+                    )
+                ]
+            }
+            for node in node_selected.sym.uses:
+                key = uris.from_fs_path(node.loc.mod_path)
+                value = [
+                    lspt.TextEdit(
+                        range=create_range(node.loc),
+                        new_text=new_name,
+                    )
+                ]
+                if key in changes:
+                    changes[key].extend(value)
+                else:
+                    changes[key] = value
+            return lspt.WorkspaceEdit(changes=changes)
+        return None
+
     def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
         """Return semantic tokens for a file."""
         if file_path not in self.modules:
