@@ -428,15 +428,8 @@ class JacLangServer(LanguageServer):
             return None
         node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
-            changes: dict[str, list[lspt.TextEdit]] = {
-                uris.from_fs_path(node_selected.loc.mod_path): [
-                    lspt.TextEdit(
-                        range=create_range(node_selected.loc),
-                        new_text=new_name,
-                    )
-                ]
-            }
-            for node in node_selected.sym.uses:
+            changes: dict[str, list[lspt.TextEdit]] = {}
+            for node in [*node_selected.sym.uses, node_selected.sym.defn[0]]:
                 key = uris.from_fs_path(node.loc.mod_path)
                 value = [
                     lspt.TextEdit(
