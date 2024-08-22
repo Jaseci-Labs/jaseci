@@ -312,7 +312,7 @@ class FuseTypeInfoPass(Pass):
         """Pass handler for ListVal nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
-            node.name_spec.sym_type = str(self.node_type_hash[mypy_node])    
+            node.name_spec.sym_type = str(self.node_type_hash[mypy_node])
         else:
             node.name_spec.sym_type = "builtins.list"
 
@@ -481,7 +481,7 @@ class FuseTypeInfoPass(Pass):
 
     def expand_atom_trailer(self, node_list: list[ast.AstNode]) -> list[ast.AstNode]:
         """Expand the atom trailer object in a list of AstNode."""
-        out = []
+        out: list[ast.AstNode] = []
         for i in node_list:
             if isinstance(i, ast.AtomTrailer):
                 out.append(i.target)
@@ -491,8 +491,7 @@ class FuseTypeInfoPass(Pass):
             else:
                 out.append(i)
         return out
-            
-    
+
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Adding symbol links to AtomTrailer right nodes."""
         # This will fix adding the symbol links to nodes in atom trailer
@@ -505,10 +504,12 @@ class FuseTypeInfoPass(Pass):
         # their type is not an AstSymbolNode
         atom_trailer_unwind = self.expand_atom_trailer([node])
         iteration_count = 0
-        while any(isinstance(i, (ast.AtomTrailer, ast.FuncCall)) for i in atom_trailer_unwind):
+        while any(
+            isinstance(i, (ast.AtomTrailer, ast.FuncCall)) for i in atom_trailer_unwind
+        ):
             atom_trailer_unwind = self.expand_atom_trailer(atom_trailer_unwind)
             iteration_count += 1
-            if iteration_count > 50: 
+            if iteration_count > 50:
                 break
 
         for i in range(1, len(atom_trailer_unwind)):
