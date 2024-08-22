@@ -959,6 +959,7 @@ class ModulePath(AstSymbolNode):
         self.level = level
         self.alias = alias
         self.sub_module: Optional[Module] = None
+        self.xpath: Optional[str] = None
 
         name_spec = alias if alias else path[0] if path else None
 
@@ -1044,6 +1045,7 @@ class ModuleItem(AstSymbolNode):
         self.name = name
         self.alias = alias
         self.sub_module: Optional[Module] = None
+        self.xpath: Optional[str] = None
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
