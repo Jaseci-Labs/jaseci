@@ -160,12 +160,7 @@ class FuseTypeInfoPass(Pass):
 
         if isinstance(mypy_node, MypyNodes.MemberExpr):
             if mypy_node in self.node_type_hash:
-                t = str(self.node_type_hash[mypy_node])
-                if "def" in t and "->" in t:
-                    t = t.split("->")[1].strip()
-                elif "def" in t:
-                    t = "None"
-                node.name_spec.sym_type = t
+                self.__call_type_handler(node, self.node_type_hash[mypy_node])
             else:
                 self.__debug_print(f"{node.loc} MemberExpr type is not found")
 
@@ -317,7 +312,7 @@ class FuseTypeInfoPass(Pass):
         """Pass handler for ListVal nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
-            node.name_spec.sym_type = str(self.node_type_hash[mypy_node])
+            node.name_spec.sym_type = str(self.node_type_hash[mypy_node])    
         else:
             node.name_spec.sym_type = "builtins.list"
 
@@ -484,6 +479,20 @@ class FuseTypeInfoPass(Pass):
                 if self_obj.type_sym_tab and isinstance(right_obj, ast.AstSymbolNode):
                     self_obj.type_sym_tab.def_insert(right_obj)
 
+    def expand_atom_trailer(self, node_list: list[ast.AstNode]) -> list[ast.AstNode]:
+        """Expand the atom trailer object in a list of AstNode."""
+        out = []
+        for i in node_list:
+            if isinstance(i, ast.AtomTrailer):
+                out.append(i.target)
+                out.append(i.right)
+            elif isinstance(i, ast.FuncCall):
+                out.append(i.target)
+            else:
+                out.append(i)
+        return out
+            
+    
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Adding symbol links to AtomTrailer right nodes."""
         # This will fix adding the symbol links to nodes in atom trailer
@@ -494,29 +503,20 @@ class FuseTypeInfoPass(Pass):
         # The issue was due to the way `as_attr_list` implemented so the fix
         # was to implement it again to get all items in AtomTrailer even if
         # their type is not an AstSymbolNode
-        atom_trailer_unwind: list[ast.AstNode] = []
-        if isinstance(node.target, ast.AtomTrailer):
-            atom_trailer_unwind.append(node.target.right)
-        else:
-            atom_trailer_unwind.append(node.target)
-
-        current_node: ast.AtomTrailer = node
-        while isinstance(current_node.right, ast.AtomTrailer):
-            atom_trailer_unwind.append(current_node.right.target)
-            current_node = current_node.right
-        atom_trailer_unwind.append(current_node.right)
+        atom_trailer_unwind = self.expand_atom_trailer([node])
+        iteration_count = 0
+        while any(isinstance(i, (ast.AtomTrailer, ast.FuncCall)) for i in atom_trailer_unwind):
+            atom_trailer_unwind = self.expand_atom_trailer(atom_trailer_unwind)
+            iteration_count += 1
+            if iteration_count > 50: 
+                break
 
         for i in range(1, len(atom_trailer_unwind)):
             left = atom_trailer_unwind[i - 1]
             right = atom_trailer_unwind[i]
 
-            # It's not granted that left/right are of AstSymbolNode
-            # so the fix is to find the name node inside them
-            if not isinstance(left, ast.AstSymbolNode):
-                left = left.get_all_sub_nodes(ast.Name)[0]
-
-            if not isinstance(right, ast.AstSymbolNode):
-                right = right.get_all_sub_nodes(ast.Name)[0]
+            assert isinstance(left, ast.AstSymbolNode)
+            assert isinstance(right, ast.AstSymbolNode)
 
             if left.type_sym_tab and not isinstance(
                 right, ast.IndexSlice
