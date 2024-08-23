@@ -21,7 +21,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.constructs import EdgeArchitype, NodeArchitype
+    from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
     from jaclang.plugin.default import (
         Architype,
         EdgeDir,
@@ -224,7 +224,7 @@ class JacFeatureSpec:
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[], EdgeArchitype],
+        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -270,7 +270,7 @@ class JacFeatureSpec:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Callable[[], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         raise NotImplementedError
 

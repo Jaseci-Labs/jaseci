@@ -463,7 +463,7 @@ class JacFeatureDefaults:
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[], EdgeArchitype],
+        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -474,16 +474,8 @@ class JacFeatureDefaults:
         right = [right] if isinstance(right, NodeArchitype) else right
         edges = []
         for i in left:
-            _left = i.__jac__
             for j in right:
-                _right = j.__jac__
-                conn_edge = edge_spec()
-                edges.append(conn_edge)
-                _left.connect_node(_right, conn_edge.__jac__)
-                if _left.persistent or _right.persistent:
-                    conn_edge.__jac__.save()
-                    _right.save()
-                    _left.save()
+                edges.append(edge_spec(i.__jac__, j.__jac__))
         return right if not edges_only else edges
 
     @staticmethod
@@ -500,9 +492,7 @@ class JacFeatureDefaults:
         right = [right] if isinstance(right, NodeArchitype) else right
         for i in left:
             node = i.__jac__
-            node.populate_edges()
             for anchor in set(node.edges):
-                anchor.populate_nodes()
                 if (
                     (source := anchor.source)
                     and (target := anchor.target)
@@ -555,19 +545,23 @@ class JacFeatureDefaults:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Callable[[], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
 
-        def builder() -> EdgeArchitype:
+        def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
             edge = conn_type() if isinstance(conn_type, type) else conn_type
-            edge.__jac__.is_undirected = is_undirected
+            edge.__attach__(source, target, is_undirected)
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1]):
                     if hasattr(edge, fld):
                         setattr(edge, fld, val)
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
+            if source.persistent or target.persistent:
+                edge.__jac__.save()
+                target.save()
+                source.save()
             return edge
 
         return builder
