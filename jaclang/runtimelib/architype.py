@@ -45,19 +45,19 @@ class Anchor:
 
         Jac.context().mem.remove(self.id)
 
-    def is_loaded(self) -> bool:
+    def is_populated(self) -> bool:
         """Check if state."""
         return "architype" in self.__dict__
 
-    def unload(self: TANCH) -> TANCH:
+    def make_stub(self: TANCH) -> TANCH:
         """Return unsynced copy of anchor."""
-        if self.is_loaded():
+        if self.is_populated():
             unloaded = object.__new__(self.__class__)
             unloaded.id = self.id
             return unloaded
         return self
 
-    def load(self) -> None:
+    def populate(self) -> None:
         """Retrieve the Architype from db and return."""
         from jaclang.plugin.feature import JacFeature as Jac
 
@@ -66,22 +66,12 @@ class Anchor:
         if anchor := ctx_mem.find_by_id(self.id):
             self.__dict__.update(anchor.__dict__)
 
-    def unlinked_architype(self) -> Architype | None:
-        """Unlink architype."""
-        # this is to avoid using copy/deepcopy as it can be overriden by architypes in language level
-        if self.architype:
-            cloned = object.__new__(self.architype.__class__)
-            cloned.__dict__.update(self.architype.__dict__)
-            cloned.__dict__.pop("__jac__", None)
-            return cloned
-        return None
-
     def __getattr__(self, name: str) -> object:
         """Trigger load if detects unloaded state."""
-        if not self.is_loaded():
-            self.load()
+        if not self.is_populated():
+            self.populate()
 
-            if not self.is_loaded():
+            if not self.is_populated():
                 raise ValueError(
                     f"{self.__class__.__name__} [{self.id}] is not a valid reference!"
                 )
@@ -94,10 +84,14 @@ class Anchor:
 
     def __getstate__(self) -> dict[str, Any]:
         """Serialize Anchor."""
-        if self.is_loaded():
+        if self.is_populated():
+            unlinked = object.__new__(self.architype.__class__)
+            unlinked.__dict__.update(self.architype.__dict__)
+            unlinked.__dict__.pop("__jac__", None)
+
             return {
                 "id": self.id,
-                "architype": self.unlinked_architype(),
+                "architype": unlinked,
                 "persistent": self.persistent,
             }
         else:
@@ -107,7 +101,7 @@ class Anchor:
         """Deserialize Anchor."""
         self.__dict__.update(state)
 
-        if self.is_loaded() and self.architype:
+        if self.is_populated() and self.architype:
             self.architype.__jac__ = self
             self.hash = hash(dumps(self))
 
@@ -257,8 +251,8 @@ class NodeAnchor(Anchor):
         """Serialize Node Anchor."""
         state = super().__getstate__()
 
-        if self.is_loaded():
-            state["edges"] = [edge.unload() for edge in self.edges]
+        if self.is_populated():
+            state["edges"] = [edge.make_stub() for edge in self.edges]
 
         return state
 
@@ -297,11 +291,11 @@ class EdgeAnchor(Anchor):
         """Serialize Node Anchor."""
         state = super().__getstate__()
 
-        if self.is_loaded():
+        if self.is_populated():
             state.update(
                 {
-                    "source": self.source.unload(),
-                    "target": self.target.unload(),
+                    "source": self.source.make_stub(),
+                    "target": self.target.make_stub(),
                     "is_undirected": self.is_undirected,
                 }
             )
