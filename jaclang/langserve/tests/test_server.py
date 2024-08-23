@@ -424,3 +424,33 @@ class TestJacLangServer(TestCase):
             references = str(lsp.get_references(circle_file, lspt.Position(line, char)))
             for expected in expected_refs:
                 self.assertIn(expected, references)
+
+    def test_rename_symbol(self) -> None:
+        """Test that the rename is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle.jac"))
+        lsp.deep_check(circle_file)
+        test_cases = [
+            (
+                20,
+                14,
+                "ShapeKind",
+                "27:20-27:29,",
+                "36:19-36:28",
+                "75:26-75:35",
+                "20:5-20:14",
+            ),
+            (12, 34, "circleRadius", "12:21-12:27", "12:30-12:36", "11:19-11:25"),
+            (62, 14, "target_area", "65:43-65:56", "70:32-70:45", "62:5-62:18"),
+        ]
+        for tup in test_cases:
+            line, char, new_name, *expected_refs = tup
+            references = str(
+                lsp.rename_symbol(circle_file, lspt.Position(line, char), new_name)
+            )
+            for expected in expected_refs:
+                self.assertIn(expected, references)
