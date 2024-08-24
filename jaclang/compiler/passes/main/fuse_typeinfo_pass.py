@@ -519,7 +519,32 @@ class FuseTypeInfoPass(Pass):
             assert isinstance(left, ast.AstSymbolNode)
             assert isinstance(right, ast.AstSymbolNode)
 
-            if left.type_sym_tab and not isinstance(
-                right, ast.IndexSlice
-            ):  # TODO check why IndexSlice produce an issue
-                right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
+            if isinstance(right, ast.IndexSlice):
+                # In case of index slice, left won't have a symbol table as it's a list 
+                if not left.sym_type.startswith("builtins.list["):
+                    continue
+
+                list_type = left.sym_type[len("builtins.list["): -1].split(".")
+
+                # right index slice is a range then it's type is the same as left
+                if right.is_range:
+                    right.name_spec.sym_type = left.sym_type
+                    continue
+                
+                # Getting the correct symbol table for the list type
+                list_type_symtab = self.ir.sym_tab
+                assert isinstance(self.ir, ast.Module)
+                for i in list_type:
+                    if i == self.ir.name:
+                        continue
+                    list_type_symtab = list_type_symtab.find_scope(i)
+                    if list_type_symtab is None:
+                        break
+                
+                right.name_spec.sym_type = list_type_symtab.name
+                right.name_spec.type_sym_tab = list_type_symtab
+
+            else:
+                if left.type_sym_tab:
+                    right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
+                    
