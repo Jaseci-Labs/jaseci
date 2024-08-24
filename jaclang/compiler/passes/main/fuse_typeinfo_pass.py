@@ -536,7 +536,7 @@ class FuseTypeInfoPass(Pass):
                 # left type is a dictionary
                 elif left.sym_type.startswith("builtins.dict["):
                     node_type = (
-                        left.sym_type[len("builtins.list[") : -1].split(",")[1].strip()
+                        left.sym_type[len("builtins.dict[") : -1].split(",")[1].strip()
                     )
 
                 # unsupported type
