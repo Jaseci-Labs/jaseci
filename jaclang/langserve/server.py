@@ -132,6 +132,14 @@ def references(ls: JacLangServer, params: lspt.ReferenceParams) -> list[lspt.Loc
     return ls.get_references(params.text_document.uri, params.position)
 
 
+@server.feature(lspt.TEXT_DOCUMENT_RENAME)
+def rename(
+    ls: JacLangServer, params: lspt.RenameParams
+) -> Optional[lspt.WorkspaceEdit]:
+    """Rename symbol."""
+    return ls.rename_symbol(params.text_document.uri, params.position, params.new_name)
+
+
 @server.feature(
     lspt.TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
     lspt.SemanticTokensLegend(
