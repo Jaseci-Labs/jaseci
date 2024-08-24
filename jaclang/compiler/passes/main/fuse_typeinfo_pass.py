@@ -6,10 +6,11 @@ mypy apis into Jac and use jac py ast in it.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -520,29 +521,41 @@ class FuseTypeInfoPass(Pass):
             assert isinstance(right, ast.AstSymbolNode)
 
             if isinstance(right, ast.IndexSlice):
-                # In case of index slice, left won't have a symbol table as it's a list
-                if not left.sym_type.startswith("builtins.list["):
-                    continue
+                # In case of index slice, left won't have a symbol table as it's a list/dict/set
+                node_type: str = ""
 
-                list_type = left.sym_type[len("builtins.list[") : -1].split(".")
+                # left type is a list
+                if left.sym_type.startswith("builtins.list["):
+                    node_type = left.sym_type[len("builtins.list[") : -1]
 
-                # right index slice is a range then it's type is the same as left
-                if right.is_range:
-                    right.name_spec.sym_type = left.sym_type
-                    continue
-
-                # Getting the correct symbol table for the list type
-                list_type_symtab = self.ir.sym_tab
-                assert isinstance(self.ir, ast.Module)
-                for i in list_type:
-                    if i == self.ir.name:
+                    # right index slice is a range then it's type is the same as left
+                    if right.is_range:
+                        right.name_spec.sym_type = left.sym_type
                         continue
-                    list_type_symtab = list_type_symtab.find_scope(i)
-                    if list_type_symtab is None:
-                        break
 
-                right.name_spec.sym_type = list_type_symtab.name
-                right.name_spec.type_sym_tab = list_type_symtab
+                # left type is a dictionary
+                elif left.sym_type.startswith("builtins.dict["):
+                    node_type = (
+                        left.sym_type[len("builtins.list[") : -1].split(",")[1].strip()
+                    )
+
+                # unsupported type
+                else:
+                    continue
+
+                right.name_spec.sym_type = node_type
+
+                # Getting the correct symbol table and link it
+                type_symtab: Optional[SymbolTable] = self.ir.sym_tab
+                assert isinstance(self.ir, ast.Module)
+                assert isinstance(type_symtab, SymbolTable)
+                for j in node_type.split("."):
+                    if j == self.ir.name:
+                        continue
+                    type_symtab = type_symtab.find_scope(j)
+                    if type_symtab is None:
+                        break
+                right.name_spec.type_sym_tab = type_symtab
 
             else:
                 if left.type_sym_tab:
