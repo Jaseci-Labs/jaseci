@@ -30,8 +30,11 @@ class TestJaseciPlugin(TestCase):
         sys.stdout = sys.__stdout__
 
     def _del_session(self, session: str) -> None:
-        if os.path.exists(session):
-            os.remove(session)
+        path = os.path.dirname(session)
+        prefix = os.path.basename(session)
+        for file in os.listdir(path):
+            if file.startswith(prefix):
+                os.remove(f"{path}/{file}")
 
     def test_walker_simple_persistent(self) -> None:
         """Test simple persistent object."""
@@ -64,7 +67,7 @@ class TestJaseciPlugin(TestCase):
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            node=str(obj["_jac_"]["id"]),
+            node=str(obj["id"]),
             walker="traverse",
         )
         output = self.capturedOutput.getvalue().strip()
@@ -80,13 +83,13 @@ class TestJaseciPlugin(TestCase):
             walker="create",
         )
         obj = cli.get_object(session=session, id="root")
-        edge_obj = cli.get_object(session=session, id=str(obj["_jac_"]["edge_ids"][0]))
-        a_obj = cli.get_object(session=session, id=str(edge_obj["_jac_"]["target_id"]))
+        edge_obj = cli.get_object(session=session, id=str(obj["edge_ids"][0]))
+        a_obj = cli.get_object(session=session, id=str(edge_obj["target_id"]))
         self._output2buffer()
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            node=str(a_obj["_jac_"]["id"]),
+            node=str(a_obj["id"]),
             walker="traverse",
         )
         output = self.capturedOutput.getvalue().strip()
@@ -101,15 +104,16 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         obj = cli.get_object(session=session, id="root")
-        self.assertEqual(len(obj["_jac_"]["edge_ids"]), 2)
+        self.assertEqual(len(obj["edge_ids"]), 2)
         edge_objs = [
-            cli.get_object(session=session, id=str(e_id))
-            for e_id in obj["_jac_"]["edge_ids"]
+            cli.get_object(session=session, id=str(e_id)) for e_id in obj["edge_ids"]
         ]
-        node_ids = [obj["_jac_"]["target_id"] for obj in edge_objs]
+        node_ids = [obj["target_id"] for obj in edge_objs]
         node_objs = [cli.get_object(session=session, id=str(n_id)) for n_id in node_ids]
         self.assertEqual(len(node_objs), 2)
-        self.assertEqual({obj["tag"] for obj in node_objs}, {"first", "second"})
+        self.assertEqual(
+            {obj["architype"].tag for obj in node_objs}, {"first", "second"}
+        )
         self._del_session(session)
 
     def test_filter_on_edge_get_edge(self) -> None:

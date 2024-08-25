@@ -17,8 +17,14 @@ server = JacLangServer()
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
-@server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
 async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
+    """Check syntax on change."""
+    ls.deep_check(params.text_document.uri)
+    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
+
+
+@server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
+async def did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
     await ls.launch_deep_check(params.text_document.uri)
     ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
@@ -130,6 +136,15 @@ def definition(
 def references(ls: JacLangServer, params: lspt.ReferenceParams) -> list[lspt.Location]:
     """Provide references."""
     return ls.get_references(params.text_document.uri, params.position)
+
+
+@server.feature(lspt.TEXT_DOCUMENT_RENAME)
+def rename(
+    ls: JacLangServer, params: lspt.RenameParams
+) -> Optional[lspt.WorkspaceEdit]:
+    """Rename symbol."""
+    ls.log_warning("Auto Rename is Experimental, Please use with caution.")
+    return ls.rename_symbol(params.text_document.uri, params.position, params.new_name)
 
 
 @server.feature(

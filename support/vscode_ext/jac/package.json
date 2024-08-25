@@ -81,9 +81,11 @@
     "deploy": "vsce publish --yarn",
     "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
   },
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
   "dependencies": {
-    "vscode-languageclient": "^9.0.1",
-    "ms-python.python": "^2024.12.2"
+    "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.1",

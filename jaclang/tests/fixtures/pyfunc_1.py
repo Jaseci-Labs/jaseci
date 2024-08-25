@@ -79,7 +79,7 @@ for i in range(a):
         break
     print(b)
 else:
-    print("Loop completed normally{}".format(i))
+    print(f"Loop completed normally{i}")
 
 
 def fooo45() -> None:
