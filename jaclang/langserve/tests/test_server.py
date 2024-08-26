@@ -233,6 +233,30 @@ class TestJacLangServer(TestCase):
                     str(lsp.get_definition(import_file, lspt.Position(line, char))),
                 )
 
+    def test_go_to_definition_index_expr(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(
+            self.fixture_abs_path("../../../../jaclang/tests/fixtures/index_slice.jac")
+        )
+        lsp.deep_check(import_file)
+        positions = [
+            (23, 20, "index_slice.jac:2:8-2:13"),
+            (24, 24, "index_slice.jac:2:8-2:13"),
+            (27, 33, "index_slice.jac:2:8-2:13"),
+        ]
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                print(str(lsp.get_definition(import_file, lspt.Position(line, char))))
+                self.assertIn(
+                    expected,
+                    str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                )
+
     def test_sem_tokens(self) -> None:
         """Test that the Semantic Tokens are generated correctly."""
         lsp = JacLangServer()
