@@ -6,7 +6,7 @@ mypy apis into Jac and use jac py ast in it.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
@@ -489,3 +489,28 @@ class FuseTypeInfoPass(Pass):
                 right, ast.IndexSlice
             ):  # TODO check why IndexSlice produce an issue
                 right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
+
+        def find_tab(tab: ast.SymbolTable, name: str) -> Optional[ast.SymbolTable]:
+            """Recursively find symbol table from sym dotted name."""
+            tab_list = name.split(".")
+            if len(tab_list) == 1:
+                return tab
+            else:
+                if tab_list[0] == tab.name:
+                    return find_tab(tab, ".".join(tab_list[1:]))
+                else:
+                    for child in tab.kid:
+                        if child.name == tab_list[0]:
+                            return find_tab(child, ".".join(tab_list[1:]))
+            return None
+
+        for name_node in node.as_attr_list:
+            tab = (
+                find_tab(self.ir.sym_tab, name_node.sym.sym_dotted_name)
+                if name_node.sym
+                else None
+            )
+            if tab:
+                find_symbol = tab.lookup(name_node.sym_name)
+                if find_symbol and name_node not in find_symbol.uses:
+                    find_symbol.add_use(name_node.name_spec)
