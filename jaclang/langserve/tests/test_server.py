@@ -420,14 +420,14 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(import_file)
         positions = [
-            (13, 29, "pygame_mock/color.py:0:0-2:4"),
+            (19, 29, "pygame_mock/color.py:0:0-2:4"),
             (3, 17, "/pygame_mock/__init__.py:0:0-0:0"),
-            (14, 45, "pygame_mock/color.py:0:0-2:4"),
-            (13, 77, "mock/constants.py:4:3-4:15"),
-            (17, 28, "mock/display.py:0:0-1:7"),
-            (15, 22, "/argparse.pyi:124:0-249:13"),
-            (13, 74, "pygame_mock/constants.py:4:3-4:15"),
-            (18, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
+            (14 + 5, 45, "pygame_mock/color.py:0:0-2:4"),
+            (13 + 6, 77, "mock/constants.py:4:3-4:15"),
+            (26, 28, "mock/display.py:0:0-1:7"),
+            (24, 22, "/argparse.pyi:124:0-249:13"),
+            (19, 74, "pygame_mock/constants.py:4:3-4:15"),
+            (27, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
         ]
 
         for line, char, expected in positions:
@@ -455,12 +455,15 @@ class TestJacLangServer(TestCase):
                 12,
                 15,
                 [
-                    ":12:13-12:18",
-                    "12:27-12:32",
-                    "13:26-13:31",
-                    "13:40-13:45",
-                    "14:26-14:31",
-                    "14:40-14:45",
+                    ":6:21-6:32",
+                    ":7:11-7:22",
+                    ":11:25-11:36",
+                    ":12:15-12:26",
+                    ":18:33-18:44",
+                    ":19:8-19:19",
+                    ":19:46-19:57",
+                    ":20:8-20:19",
+                    ":26:4-26:15",
                 ],
             ),
             (13, 63, ["6:33-6:42", "7:23-7:32", "12:45-12:54", "13:58-13:67"]),
