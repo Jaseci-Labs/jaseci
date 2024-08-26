@@ -201,6 +201,38 @@ class TestJacLangServer(TestCase):
                     str(lsp.get_definition(import_file, lspt.Position(line, char))),
                 )
 
+    def test_go_to_definition_foolme(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(
+            self.fixture_abs_path(
+                "../../../../jaclang/compiler/passes/main/tests/fixtures/py_imp_test.jac"
+            )
+        )
+        lsp.deep_check(import_file)
+        positions = [
+            (6, 39, "/pygame_mock/__init__.py:2:0-2:0"),
+            (6, 45, "/pygame_mock/constants.py:3:0-4:1"),
+            (7, 31, "/pygame_mock/__init__.py:2:0-2:0"),
+            (7, 35, "/pygame_mock/constants.py:3:0-4:1"),
+            (20, 51, "/py_imp_test.jac:6:4-6:11"),
+            (20, 64, "/pygame_mock/constants.py:4:3-4:15"),
+            (21, 48, "/py_imp_test.jac:10:4-10:6"),
+            (21, 58, "/py_imp_test.jac:11:8-11:15"),
+            (21, 68, "/pygame_mock/constants.py:4:3-4:15"),
+            (23, 58, "/pygame_mock/constants.py:4:3-4:15"),
+        ]
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                self.assertIn(
+                    expected,
+                    str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                )
+
     def test_sem_tokens(self) -> None:
         """Test that the Semantic Tokens are generated correctly."""
         lsp = JacLangServer()
