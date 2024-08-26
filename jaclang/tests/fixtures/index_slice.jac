@@ -26,5 +26,5 @@ with entry {
     f_clr = foo(a);
     f_clrw = foo(a)[0];
     f_clrw2 = foo(a)[0:1][0].color;
-    print(foo(a)[0].color);
+    # print(foo(a)[0].color);
 }
