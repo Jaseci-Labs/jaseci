@@ -446,6 +446,7 @@ class TestJacLangServer(TestCase):
             ),
             (12, 34, "circleRadius", "12:21-12:27", "12:30-12:36", "11:19-11:25"),
             (62, 14, "target_area", "65:43-65:56", "70:32-70:45", "62:5-62:18"),
+            (57, 33, "type_of_shape", "75:12-75:22", "27:8-27:18,", "57:23-57:33"),
         ]
         for tup in test_cases:
             line, char, new_name, *expected_refs = tup
