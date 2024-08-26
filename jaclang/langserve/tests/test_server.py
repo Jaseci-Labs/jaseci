@@ -382,3 +382,107 @@ class TestJacLangServer(TestCase):
             references = str(lsp.get_references(circle_file, lspt.Position(line, char)))
             for expected in expected_refs:
                 self.assertIn(expected, references)
+
+    def test_py_type__definition(self) -> None:
+        """Test that the go to definition is correct for pythoon imports."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(
+            self.fixture_abs_path(
+                "../../../../jaclang/compiler/passes/main/tests/fixtures/py_imp_test.jac"
+            )
+        )
+        lsp.deep_check(import_file)
+        positions = [
+            (13, 29, "pygame_mock/color.py:0:0-2:4"),
+            (3, 17, "/pygame_mock/__init__.py:0:0-0:0"),
+            (14, 45, "pygame_mock/color.py:0:0-2:4"),
+            (13, 77, "mock/constants.py:4:3-4:15"),
+            (17, 28, "mock/display.py:0:0-1:7"),
+            (15, 22, "/argparse.pyi:124:0-249:13"),
+            (13, 74, "pygame_mock/constants.py:4:3-4:15"),
+            (18, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
+        ]
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                self.assertIn(
+                    expected,
+                    str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                )
+
+    def test_py_type__references(self) -> None:
+        """Test that the go to definition is correct for pythoon imports."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+
+        circle_file = uris.from_fs_path(
+            self.fixture_abs_path(
+                "../../../../jaclang/compiler/passes/main/tests/fixtures/py_imp_test.jac"
+            )
+        )
+        lsp.deep_check(circle_file)
+        test_cases = [
+            (
+                12,
+                15,
+                [
+                    ":12:13-12:18",
+                    "12:27-12:32",
+                    "13:26-13:31",
+                    "13:40-13:45",
+                    "14:26-14:31",
+                    "14:40-14:45",
+                ],
+            ),
+            (13, 63, ["6:33-6:42", "7:23-7:32", "12:45-12:54", "13:58-13:67"]),
+            (
+                15,
+                53,
+                [
+                    "15:42-15:56",
+                    "15:16-15:30",
+                    "argparse.pyi:334:21-334:35",
+                    "argparse.pyi:163:29-163:43",
+                    "argparse.pyi:32:52-32:66",
+                ],
+            ),
+        ]
+        for line, char, expected_refs in test_cases:
+            references = str(lsp.get_references(circle_file, lspt.Position(line, char)))
+            for expected in expected_refs:
+                self.assertIn(expected, references)
+
+    def test_rename_symbol(self) -> None:
+        """Test that the rename is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle.jac"))
+        lsp.deep_check(circle_file)
+        test_cases = [
+            (
+                20,
+                14,
+                "ShapeKind",
+                "27:20-27:29,",
+                "36:19-36:28",
+                "75:26-75:35",
+                "20:5-20:14",
+            ),
+            (12, 34, "circleRadius", "12:21-12:27", "12:30-12:36", "11:19-11:25"),
+            (62, 14, "target_area", "65:43-65:56", "70:32-70:45", "62:5-62:18"),
+        ]
+        for tup in test_cases:
+            line, char, new_name, *expected_refs = tup
+            references = str(
+                lsp.rename_symbol(circle_file, lspt.Position(line, char), new_name)
+            )
+            for expected in expected_refs:
+                self.assertIn(expected, references)

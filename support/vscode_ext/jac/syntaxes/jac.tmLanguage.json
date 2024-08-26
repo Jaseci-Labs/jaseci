@@ -198,6 +198,9 @@
 							"include": "#statement-keyword"
 						},
 						{
+							"include": "#string"
+						},
+						{
 							"include": "#architype_refdef"
 						},
 						{
