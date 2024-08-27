@@ -2,6 +2,7 @@
 
 import marshal
 import os
+import sys
 import types
 from typing import Dict, Optional
 
@@ -52,6 +53,11 @@ class JacMachine:
                 module_name, full_target, caller_dir, cachable
             )
         return None
+
+    def load_module(self, module_name: str, module: types.ModuleType) -> None:
+        """Load a module into the machine."""
+        self.loaded_modules[module_name] = module
+        sys.modules[module_name] = module
 
 
 class JacProgram:
