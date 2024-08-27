@@ -103,6 +103,7 @@ class JacCliTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         sys.stderr = captured_output
+        assert "jaclang.tests.fixtures.err" not in sys.modules
         cli.test(self.fixture_abs_path("err.jac"))
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
