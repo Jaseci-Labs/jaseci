@@ -107,7 +107,7 @@ class Anchor:
 
     def __repr__(self) -> str:
         """Override representation."""
-        if hasattr(self, "architype"):
+        if self.is_populated():
             attrs = ""
             for f in fields(self):
                 if f.name in self.__dict__:
