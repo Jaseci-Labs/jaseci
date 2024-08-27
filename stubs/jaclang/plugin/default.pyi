@@ -4,6 +4,7 @@ from jaclang.compiler.absyntree import Module
 from jaclang.compiler.constant import EdgeDir
 from jaclang.plugin.spec import P, T as T
 from jaclang.runtimelib.constructs import (
+    Anchor as Anchor,
     Architype as Architype,
     DSFunc as DSFunc,
     EdgeAnchor as EdgeAnchor,
@@ -14,7 +15,6 @@ from jaclang.runtimelib.constructs import (
     Memory,
     NodeAnchor as NodeAnchor,
     NodeArchitype as NodeArchitype,
-    ObjectAnchor as ObjectAnchor,
     Root as Root,
     WalkerAnchor as WalkerAnchor,
     WalkerArchitype as WalkerArchitype,
@@ -27,7 +27,7 @@ __all__ = [
     "hookimpl",
     "JacTestCheck",
     "NodeAnchor",
-    "ObjectAnchor",
+    "Anchor",
     "WalkerAnchor",
     "NodeArchitype",
     "EdgeArchitype",

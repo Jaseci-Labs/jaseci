@@ -7,7 +7,7 @@ from contextvars import ContextVar
 from typing import Callable, Optional
 from uuid import UUID
 
-from .architype import Architype, Root
+from .architype import Anchor, Root
 from .machine import JacMachine, JacProgram
 from .memory import Memory, ShelveStorage
 
@@ -46,21 +46,23 @@ class ExecutionContext:
             root = self.mem.get_obj(UUID(int=0))
             if root is None:
                 self.root = Root()
-                self.mem.save_obj(self.root, persistent=self.root._jac_.persistent)
-            elif not isinstance(root, Root):
+                self.mem.save_obj(
+                    self.root.__jac__, persistent=self.root.__jac__.persistent
+                )
+            elif not isinstance(root.architype, Root):
                 raise ValueError(f"Invalid root object: {root}")
             else:
-                self.root = root
+                self.root = root.architype
         return self.root
 
-    def get_obj(self, obj_id: UUID) -> Architype | None:
+    def get_obj(self, obj_id: UUID) -> Anchor | None:
         """Get object from memory."""
         if self.mem is None:
             raise ValueError("Memory not initialized")
 
         return self.mem.get_obj(obj_id)
 
-    def save_obj(self, item: Architype, persistent: bool) -> None:
+    def save_obj(self, item: Anchor, persistent: bool) -> None:
         """Save object to memory."""
         if self.mem is None:
             raise ValueError("Memory not initialized")

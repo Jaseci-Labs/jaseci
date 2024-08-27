@@ -165,7 +165,7 @@ class JacCliTests(TestCase):
         cli.check(f"{self.fixture_abs_path('game1.jac')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn("Errors: 0, Warnings: 1", stdout_value)
+        self.assertIn("Errors: 0, Warnings: 2", stdout_value)
 
     def test_type_info(self) -> None:
         """Testing for type info inside the ast tool."""
