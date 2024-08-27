@@ -202,7 +202,7 @@ class Importer:
     def update_sys(self, module: types.ModuleType, spec: ImportPathSpec) -> None:
         """Update sys.modules with the newly imported module."""
         if spec.module_name not in self.jac_machine.loaded_modules:
-            self.jac_machine.loaded_modules[spec.module_name] = module
+            self.jac_machine.load_module(spec.module_name, module)
 
 
 class PythonImporter(Importer):
@@ -305,7 +305,7 @@ class JacImporter(Importer):
         module.__file__ = None
 
         if module_name not in self.jac_machine.loaded_modules:
-            self.jac_machine.loaded_modules[module_name] = module
+            self.jac_machine.load_module(module_name, module)
         return module
 
     def create_jac_py_module(
@@ -331,7 +331,7 @@ class JacImporter(Importer):
                         module_name=package_name,
                         full_mod_path=full_mod_path,
                     )
-        self.jac_machine.loaded_modules[module_name] = module
+        self.jac_machine.load_module(module_name, module)
         return module
 
     def run_import(
@@ -368,14 +368,14 @@ class JacImporter(Importer):
 
                     if not codeobj:
                         raise ImportError(f"No bytecode found for {spec.full_target}")
-                    print(f"Compiling {spec.full_target}")
+                    # print(f"Compiling {spec.full_target}")
                     with SysModulesPatch(
                         self.jac_machine.loaded_modules
                     ), sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
-                    print(
-                        f"Module {module_name} successfully compiled. dict: {module.__dict__.keys()}"
-                    )
+                    # print(
+                    #     f"Module {module_name} successfully compiled. dict: {module.__dict__.keys()}"
+                    # )
                 except Exception as e:
                     logger.error(dump_traceback(e))
                     raise e
