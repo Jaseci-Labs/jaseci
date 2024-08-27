@@ -98,18 +98,14 @@ class JacCliTests(TestCase):
 
     def test_jac_test_err(self) -> None:
         """Basic test for pass."""
-        if "jaclang.tests.fixtures.err" in sys.modules:
-            del sys.modules["jaclang.tests.fixtures.err"]
         captured_output = io.StringIO()
         sys.stdout = captured_output
         sys.stderr = captured_output
-        assert "jaclang.tests.fixtures.err" not in sys.modules
-        cli.test(self.fixture_abs_path("err.jac"))
+        cli.test(self.fixture_abs_path("baddy.jac"))
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
-        # print(stdout_value)
-        path_to_file = self.fixture_abs_path("err.test.jac")
+        path_to_file = self.fixture_abs_path("baddy.test.jac")
         self.assertIn(f'"{path_to_file}", line 2,', stdout_value)
 
     def test_jac_ast_tool_pass_template(self) -> None:
