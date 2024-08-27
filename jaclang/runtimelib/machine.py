@@ -5,7 +5,7 @@ import marshal
 import os
 import sys
 import types
-from typing import Dict, Optional
+from typing import Optional
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
@@ -22,7 +22,7 @@ class JacMachine:
 
     def __init__(self, base_path: str = "") -> None:
         """Initialize the JacMachine object."""
-        self.loaded_modules: Dict[str, types.ModuleType] = {}
+        self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
             base_path = os.getcwd()
         self.base_path = base_path

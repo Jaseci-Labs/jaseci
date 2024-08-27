@@ -83,8 +83,8 @@ class TestJaseciPlugin(TestCase):
             walker="create",
         )
         obj = cli.get_object(session=session, id="root")
-        edge_obj = cli.get_object(session=session, id=str(obj["edge_ids"][0]))
-        a_obj = cli.get_object(session=session, id=str(edge_obj["target_id"]))
+        edge_obj = cli.get_object(session=session, id=obj["edges"][0].id.hex)
+        a_obj = cli.get_object(session=session, id=str(edge_obj["target"].id.hex))
         self._output2buffer()
         cli.run(
             filename=self.fixture_abs_path("simple_persistent.jac"),
@@ -104,11 +104,9 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         obj = cli.get_object(session=session, id="root")
-        self.assertEqual(len(obj["edge_ids"]), 2)
-        edge_objs = [
-            cli.get_object(session=session, id=str(e_id)) for e_id in obj["edge_ids"]
-        ]
-        node_ids = [obj["target_id"] for obj in edge_objs]
+        self.assertEqual(len(obj["edges"]), 2)
+        edge_objs = [cli.get_object(session=session, id=e.id.hex) for e in obj["edges"]]
+        node_ids = [obj["target"].id.hex for obj in edge_objs]
         node_objs = [cli.get_object(session=session, id=str(n_id)) for n_id in node_ids]
         self.assertEqual(len(node_objs), 2)
         self.assertEqual(
