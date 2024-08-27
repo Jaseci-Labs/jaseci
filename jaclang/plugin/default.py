@@ -463,7 +463,7 @@ class JacFeatureDefaults:
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[], EdgeArchitype],
+        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -475,13 +475,7 @@ class JacFeatureDefaults:
         edges = []
         for i in left:
             for j in right:
-                conn_edge = edge_spec()
-                edges.append(conn_edge)
-                i.__jac__.connect_node(j.__jac__, conn_edge.__jac__)
-                if i.__jac__.persistent or j.__jac__.persistent:
-                    conn_edge.__jac__.save()
-                    j.__jac__.save()
-                    i.__jac__.save()
+                edges.append(edge_spec(i.__jac__, j.__jac__))
         return right if not edges_only else edges
 
     @staticmethod
@@ -500,26 +494,23 @@ class JacFeatureDefaults:
             node = i.__jac__
             for anchor in set(node.edges):
                 if (
-                    (architype := anchor.architype)
-                    and (source := anchor.source)
+                    (source := anchor.source)
                     and (target := anchor.target)
-                    and (not filter_func or filter_func([architype]))
-                    and (src_arch := source.architype)
-                    and (trg_arch := target.architype)
+                    and (not filter_func or filter_func([anchor.architype]))
                 ):
                     if (
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
-                        and trg_arch in right
+                        and target.architype in right
                     ):
-                        anchor.detach()
+                        anchor.destroy()
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
-                        and src_arch in right
+                        and source.architype in right
                     ):
-                        anchor.detach()
+                        anchor.destroy()
                         disconnect_occurred = True
 
         return disconnect_occurred
@@ -554,19 +545,23 @@ class JacFeatureDefaults:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Callable[[], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
 
-        def builder() -> EdgeArchitype:
+        def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
             edge = conn_type() if isinstance(conn_type, type) else conn_type
-            edge.__jac__.is_undirected = is_undirected
+            edge.__attach__(source, target, is_undirected)
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1]):
                     if hasattr(edge, fld):
                         setattr(edge, fld, val)
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
+            if source.persistent or target.persistent:
+                edge.__jac__.save()
+                target.save()
+                source.save()
             return edge
 
         return builder
