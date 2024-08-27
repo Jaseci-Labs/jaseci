@@ -82,7 +82,7 @@ class Anchor:
             f"'{self.__class__.__name__}' object has not attribute '{name}'"
         )
 
-    def __getstate__(self) -> dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:  # NOTE: May be better type hinting
         """Serialize Anchor."""
         if self.is_populated():
             unlinked = object.__new__(self.architype.__class__)
