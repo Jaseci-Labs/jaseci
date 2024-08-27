@@ -1,7 +1,7 @@
-"""Integrate mypy infrastructure into Jac.
+"""Collect Python dependencies based on reference sourced from Jac.
 
-This is used to call mypy type checking into Jac files by integrating
-mypy apis into Jac and use jac py ast in it.
+This pass will use mypy to calculate the python package/module dependencies
+that are only relevant to actual references source from Jac code.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from jaclang.settings import settings
 import mypy.nodes as MypyNodes  # noqa N812
 
 
-class CollectPythonDependencies(Pass):
+class PyCollectDepsPass(Pass):
     """Python and bytecode file self.__debug_printing pass."""
 
     def __debug_print(self, msg: str) -> None:

@@ -222,7 +222,7 @@ class PyImportPass(JacImportPass):
             if imp_node.from_loc:
                 for j in imp_node.items.items:
                     assert isinstance(j, ast.ModuleItem)
-                    mod_path = f"{imp_node.from_loc.path_str}.{j.name.sym_name}"
+                    mod_path = f"{imp_node.from_loc.dot_path_str}.{j.name.sym_name}"
                     self.import_py_module(
                         parent_node=j,
                         mod_path=mod_path,
@@ -235,9 +235,9 @@ class PyImportPass(JacImportPass):
                     assert isinstance(j, ast.ModulePath)
                     self.import_py_module(
                         parent_node=j,
-                        mod_path=j.path_str,
+                        mod_path=j.dot_path_str,
                         imported_mod_name=(
-                            j.path_str.replace(".", "")
+                            j.dot_path_str.replace(".", "")
                             if not j.alias
                             else j.alias.sym_name
                         ),
@@ -283,7 +283,6 @@ class PyImportPass(JacImportPass):
                     ).ir
                     SubNodeTabPass(input_ir=mod, prior=self)
                 if mod:
-                    parent_node.xpath = file_to_raise
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)

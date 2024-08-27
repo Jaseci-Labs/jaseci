@@ -445,7 +445,7 @@ class JacFormatPass(Pass):
         path: list[Token],
         alias: Optional[Name],
         """
-        self.emit(node, node.path_str)
+        self.emit(node, node.dot_path_str)
         if node.alias:
             self.emit(node, " as " + node.alias.gen.jac)
 
