@@ -14,6 +14,7 @@ from jaclang.runtimelib.constructs import (
     Architype,
     EdgeArchitype,
     Memory,
+    NodeAnchor,
     NodeArchitype,
     Root,
     WalkerArchitype,
@@ -226,7 +227,7 @@ class JacFeature:
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[], EdgeArchitype],
+        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
         edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -274,7 +275,7 @@ class JacFeature:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Callable[[], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         return pm.hook.build_edge(
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
