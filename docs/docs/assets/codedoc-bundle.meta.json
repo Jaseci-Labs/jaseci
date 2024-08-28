@@ -74,6 +74,11 @@
       "name": "gatherFootnotes",
       "filename": "/Users/chandralegend/Desktop/Jaseci/mtllm/docs/.codedoc/node_modules/@codedoc/core/dist/es6/components/footnote/gather-footnotes.js",
       "hash": "xQ6x4bVhgWv141WiBZFUqA=="
+    },
+    {
+      "name": "reloadOnChange",
+      "filename": "/Users/chandralegend/Desktop/Jaseci/mtllm/docs/.codedoc/node_modules/@codedoc/core/dist/es6/serve/reload.js",
+      "hash": "+KRGGOdm2jeqtLj1Qa86oA=="
     }
   ],
   "components": [

@@ -4,21 +4,23 @@
 
 The MTLLM (Meaning-Typed Large Language Model) Inference Engine is a core component of the MTLLM framework. It is responsible for managing the interaction between the application, the semantic registry, and the underlying Large Language Model (LLM). The Inference Engine handles the process of constructing prompts, managing LLM interactions, processing outputs, and implementing error handling and self-correction mechanisms.
 
-```mermaid
-graph TD
-    A[Jaclang Application] --> B[Compilation]
-    B --> C[SemRegistry]
-    C --> D[Pickle File]
-    A --> E[Runtime]
-    E --> F[MTLLM Inference Engine]
-    F --> G[LLM Model]
-    F --> H[Tool Integration]
-    D -.-> F
-    G --> I[Output Processing]
-    I --> J[Error Handling]
-    J -->|Error| F
-    J -->|Success| K[Final Output]
-```
+
+> :Mermaid
+>
+> graph TD
+>     A[Jaclang Application] --> B[Compilation]
+>     B --> C[SemRegistry]
+>     C --> D[Pickle File]
+>     A --> E[Runtime]
+>     E --> F[MTLLM Inference Engine]
+>     F --> G[LLM Model]
+>     F --> H[Tool Integration]
+>     D -.-> F
+>     G --> I[Output Processing]
+>     I --> J[Error Handling]
+>     J -->|Error| F
+>     J -->|Success| K[Final Output]
+
 
 ## 2. Key Components
 
@@ -40,7 +42,7 @@ Key features:
 - Integration of type information and constraints
 - Inclusion of available tools and their usage instructions
 
-### 2.2 LLM Interface 
+### 2.2 LLM Interface
 
 The LLM Interface manages the communication between the MTLLM framework and the underlying Large Language Model. It handles sending prompts to the LLM and receiving raw outputs.
 
@@ -58,37 +60,37 @@ Key features:
 - Type checking and format validation
 - Conversion of string representations to Python objects (when applicable)
 
-```mermaid
-sequenceDiagram
-    participant A as Application
-    participant M as MTLLM Engine
-    participant S as SemRegistry
-    participant L as LLM Model
-    participant T as Tools
-    participant E as Evaluator
+> :Mermaid
+>
+> sequenceDiagram
+>     participant A as Application
+>     participant M as MTLLM Engine
+>     participant S as SemRegistry
+>     participant L as LLM Model
+>     participant T as Tools
+>     participant E as Evaluator
+>     A->>M: Call by_llm()
+>     M->>S: Fetch Semantic Info
+>     M->>M: Construct Prompt
+>     M->>L: Send Prompt
+>     L->>M: Return Raw Output
+>     M->>E: Evaluate Output
+>     alt Evaluation Successful
+>         E->>M: Return Result
+>         M->>A: Return Final Output
+>     else Evaluation Failed
+>         E->>M: Return Error
+>         M->>M: Construct Error Prompt
+>         M->>L: Send Error Prompt
+>         L->>M: Return Corrected Output
+>         M->>E: Re-evaluate Output
+>     end
+>     opt Tool Usage Required
+>         M->>T: Execute Tool
+>         T->>M: Return Tool Result
+>         M->>L: Include Tool Result in Prompt
+>     end
 
-    A->>M: Call by_llm()
-    M->>S: Fetch Semantic Info
-    M->>M: Construct Prompt
-    M->>L: Send Prompt
-    L->>M: Return Raw Output
-    M->>E: Evaluate Output
-    alt Evaluation Successful
-        E->>M: Return Result
-        M->>A: Return Final Output
-    else Evaluation Failed
-        E->>M: Return Error
-        M->>M: Construct Error Prompt
-        M->>L: Send Error Prompt
-        L->>M: Return Corrected Output
-        M->>E: Re-evaluate Output
-    end
-    opt Tool Usage Required
-        M->>T: Execute Tool
-        T->>M: Return Tool Result
-        M->>L: Include Tool Result in Prompt
-    end
-```
 
 ### 2.4 Error Handler
 
@@ -100,18 +102,19 @@ Key features:
 - Management of the self-correction loop
 - Implementation of fallback strategies
 
-```mermaid
-graph TD
-    A[LLM Output] --> B{Validate Output}
-    B -->|Valid| C[Return Result]
-    B -->|Invalid| D[Classify Error]
-    D --> E[Generate Error Feedback]
-    E --> F[Create Self-Correction Prompt]
-    F --> G[Submit to LLM]
-    G --> H{Check Retry Count}
-    H -->|Max Retries Reached| I[Return Error to Application]
-    H -->|Retries Available| B
-```
+> :Mermaid
+>
+> graph TD
+>     A[LLM Output] --> B{Validate Output}
+>     B -->|Valid| C[Return Result]
+>     B -->|Invalid| D[Classify Error]
+>     D --> E[Generate Error Feedback]
+>     E --> F[Create Self-Correction Prompt]
+>     F --> G[Submit to LLM]
+>     G --> H{Check Retry Count}
+>     H -->|Max Retries Reached| I[Return Error to Application]
+>     H -->|Retries Available| B
+
 
 ### 2.5 Tool Integrator
 
@@ -121,22 +124,22 @@ Key features:
 - Integration of tool results into the LLM prompt
 - Error handling for tool execution in ReAct mode
 
-```mermaid
-sequenceDiagram
-    participant A as Application
-    participant M as MTLLM Engine
-    participant L as LLM Model
-    participant T as Tools
+> :Mermaid
+>
+> sequenceDiagram
+>     participant A as Application
+>     participant M as MTLLM Engine
+>     participant L as LLM Model
+>     participant T as Tools
+>     A->>M: Call by_llm()
+>     M->>L: Send Prompt
+>     L->>M: Return Tool Usage Request
+>     M->>T: Execute Tool
+>     T->>M: Return Tool Result
+>     M->>L: Include Tool Result in Prompt
+>     L->>M: Return Final Output
+>     M->>A: Return Final Output
 
-    A->>M: Call by_llm()
-    M->>L: Send Prompt
-    L->>M: Return Tool Usage Request
-    M->>T: Execute Tool
-    T->>M: Return Tool Result
-    M->>L: Include Tool Result in Prompt
-    L->>M: Return Final Output
-    M->>A: Return Final Output
-```
 
 ## 3. Inference Process
 
@@ -160,40 +163,40 @@ The MTLLM Inference Engine follows a structured process for each inference reque
 
 9. **Final Output**: Once a valid output is obtained, it is returned to the calling application.
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant IE as Inference Engine
-    participant PC as Prompt Constructor
-    participant SR as Semantic Registry
-    participant LLM as LLM Interface
-    participant OP as Output Processor
-    participant EH as Error Handler
-    participant TI as Tool Integrator
+> :Mermaid
+>
+> sequenceDiagram
+>     participant App as Application
+>     participant IE as Inference Engine
+>     participant PC as Prompt Constructor
+>     participant SR as Semantic Registry
+>     participant LLM as LLM Interface
+>     participant OP as Output Processor
+>     participant EH as Error Handler
+>     participant TI as Tool Integrator
+>     App->>IE: Call by_llm()
+>     IE->>SR: Retrieve semantic info
+>     SR-->>IE: Return semantic info
+>     IE->>PC: Construct prompt
+>     PC-->>IE: Return initial prompt
+>     loop Until valid output or max iterations
+>         IE->>LLM: Send prompt
+>         LLM-->>IE: Return raw output
+>         IE->>OP: Process output
+>         OP-->>IE: Return processed output
+>         IE->>EH: Check for errors
+>         alt Error detected
+>             EH-->>IE: Return correction prompt
+>             IE->>PC: Update prompt
+>         else Tool required
+>             IE->>TI: Execute tool
+>             TI-->>IE: Return tool result
+>             IE->>PC: Add tool result to prompt
+>         else Valid output
+>             IE->>App: Return final output
+>         end
+>     end
 
-    App->>IE: Call by_llm()
-    IE->>SR: Retrieve semantic info
-    SR-->>IE: Return semantic info
-    IE->>PC: Construct prompt
-    PC-->>IE: Return initial prompt
-    loop Until valid output or max iterations
-        IE->>LLM: Send prompt
-        LLM-->>IE: Return raw output
-        IE->>OP: Process output
-        OP-->>IE: Return processed output
-        IE->>EH: Check for errors
-        alt Error detected
-            EH-->>IE: Return correction prompt
-            IE->>PC: Update prompt
-        else Tool required
-            IE->>TI: Execute tool
-            TI-->>IE: Return tool result
-            IE->>PC: Add tool result to prompt
-        else Valid output
-            IE->>App: Return final output
-        end
-    end
-```
 
 ## 4. Implementation Details
 

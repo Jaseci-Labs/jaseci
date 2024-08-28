@@ -6,26 +6,25 @@
 
 The semantic registry system in the MTLLM framework consists of three main classes: `SemInfo`, `SemScope`, and `SemRegistry`. These classes work together to provide a structured way of storing and retrieving semantic information about various elements in a program. This document outlines the design and implementation details of each class.
 
-## TLDR
-```mermaid
-sequenceDiagram
-    participant C as Compiler
-    participant R as SemRegistry
-    participant S as SemScope
-    participant I as SemInfo
-    participant F as File System
+> :Mermaid
+>
+> sequenceDiagram
+>     participant C as Compiler
+>     participant R as SemRegistry
+>     participant S as SemScope
+>     participant I as SemInfo
+>     participant F as File System
+>     C->>R: Initialize SemRegistry
+>     loop For each AST node
+>         C->>R: Get or Create SemScope
+>         R->>S: Create if not exists
+>         C->>I: Create SemInfo
+>         C->>S: Add SemInfo to SemScope
+>         S->>I: Store SemInfo
+>     end
+>     C->>R: Finalize Registry
+>     R->>F: Save to Pickle File
 
-    C->>R: Initialize SemRegistry
-    loop For each AST node
-        C->>R: Get or Create SemScope
-        R->>S: Create if not exists
-        C->>I: Create SemInfo
-        C->>S: Add SemInfo to SemScope
-        S->>I: Store SemInfo
-    end
-    C->>R: Finalize Registry
-    R->>F: Save to Pickle File
-```
 ## SemInfo
 
 ### Design
