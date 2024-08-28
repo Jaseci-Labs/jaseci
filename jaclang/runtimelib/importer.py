@@ -7,7 +7,7 @@ import os
 import sys
 import types
 from os import getcwd, path
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.utils import sys_path_context
@@ -15,30 +15,6 @@ from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
-
-
-class SysModulesPatch:
-    """Context manager to temporarily patch the sys.modules dictionary."""
-
-    def __init__(self, loaded_modules: dict[str, types.ModuleType]) -> None:
-        """Initialize the SysModulesPatch context manager with the provided modules."""
-        self.loaded_modules = loaded_modules
-        self.original_sys_modules: dict[str, types.ModuleType]
-
-    def __enter__(self) -> None:
-        """Enter the runtime context and patch sys.modules."""
-        self.original_sys_modules = sys.modules.copy()
-        sys.modules.update(self.loaded_modules)
-
-    def __exit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[Type[BaseException]],
-        exc_tb: Optional[types.TracebackType],
-    ) -> None:
-        """Exit the runtime context and restore the original sys.modules."""
-        sys.modules.clear()
-        sys.modules.update(self.original_sys_modules)
 
 
 class ImportPathSpec:
@@ -368,10 +344,7 @@ class JacImporter(Importer):
 
                     if not codeobj:
                         raise ImportError(f"No bytecode found for {spec.full_target}")
-                    # print(f"Compiling {spec.full_target}")
-                    with SysModulesPatch(
-                        self.jac_machine.loaded_modules
-                    ), sys_path_context(spec.caller_dir):
+                    with sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
                     # print(
                     #     f"Module {module_name} successfully compiled. dict: {module.__dict__.keys()}"
