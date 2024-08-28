@@ -16,7 +16,8 @@ by llm(
     method="ReAct",
     tools=[wikipedia_summary, search, scrape],
     max_prev_react_outputs=10,
-    max_react_iterations=10
+    max_react_iterations=10,
+    context=["DONOT SUMMARIZE. MAKE IT DETAILED"]
 );
 can 'Expert Demographic Analysis Agent, Perform a detailed analysis of the demographics for a product'
 demographic_expert(requirements: 'Managers Requirements': str) -> 'Markdown Formatted Detailed Report with citations': str
@@ -24,7 +25,8 @@ by llm(
     method="ReAct",
     tools=[wikipedia_summary, search, scrape],
     max_prev_react_outputs=10,
-    max_react_iterations=10
+    max_react_iterations=10,
+    context=["DONOT SUMMARIZE. MAKE IT DETAILED"]
 );
 can 'Expert Market Analysis Agent, Perform a detailed analysis of the market for a product'
 market_expert(requirements: 'Managers Requirements': str) -> 'Markdown Formatted Detailed Report with citations': str
@@ -32,7 +34,8 @@ by llm(
     method="ReAct",
     tools=[wikipedia_summary, scrape, search],
     max_prev_react_outputs=10,
-    max_react_iterations=10
+    max_react_iterations=10,
+    context=["DONOT SUMMARIZE. MAKE IT DETAILED"]
 );
 can 'Expert in demand analysis, Perform a detailed analysis of the demand for a product'
 demand_expert(requirements: 'Managers Requirements': str) -> 'Markdown Formatted Detailed Report with citations': str
@@ -40,15 +43,17 @@ by llm(
     method="ReAct",
     tools=[wikipedia_summary, search, scrape],
     max_prev_react_outputs=10,
-    max_react_iterations=10
+    max_react_iterations=10,
+    context=["DONOT SUMMARIZE. MAKE IT DETAILED"]
 );
 can 'Manager agent come up with a marketing strategy and delegate tasks with detailed requirements to the team'
 manager(query: 'Customers Inquiry': str) -> "Markdown Formatted Highy Detailed Report with an Executive Summary": str
 by llm(
     method="ReAct",
     tools=[persona_expert, demographic_expert, market_expert, search, scrape],
-    max_react_iterations=100,
-    max_prev_react_outputs=10
+    max_react_iterations=10,
+    max_prev_react_outputs=10,
+    context=["DONOT SUMMARIZE. MAKE IT DETAILED"]
 );
 
 with entry {

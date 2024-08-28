@@ -5,6 +5,12 @@
 > [Installation](/docs/quickstart/installation)
 > [Minimal Working Example](/docs/quickstart/minimal-working-example)
 
+> :Collapse label=Design and Implementation
+>
+> [SemRegistry](/docs/design-impl/sem_registry)
+> [Inference Engine](/docs/design-impl/inference_engine)
+
+
 > :Collapse label=Building Blocks
 >
 > [Language Models](/docs/building-blocks/language_models)
