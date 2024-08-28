@@ -8,7 +8,6 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeAlias, 
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-from jaclang.plugin.default import ExecutionContext
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
     Architype,
@@ -19,6 +18,8 @@ from jaclang.runtimelib.constructs import (
     Root,
     WalkerArchitype,
 )
+from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.machine import JacMachine, JacProgram
 
 import pluggy
 
@@ -43,19 +44,14 @@ class JacFeature:
     Walker: TypeAlias = WalkerArchitype
 
     @staticmethod
-    def context(session: str = "") -> ExecutionContext:
-        """Create execution context."""
-        return pm.hook.context(session=session)
+    def get_context() -> ExecutionContext:
+        """Get current execution context."""
+        return pm.hook.get_context()
 
     @staticmethod
-    def reset_context() -> None:
-        """Reset execution context."""
-        return pm.hook.reset_context()
-
-    @staticmethod
-    def memory_hook() -> Memory | None:
-        """Create memory abstraction."""
-        return pm.hook.memory_hook()
+    def get_datasource() -> Memory:
+        """Get current execution context."""
+        return pm.hook.get_datasource()
 
     @staticmethod
     def make_architype(
@@ -115,6 +111,8 @@ class JacFeature:
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
+        jac_machine: Optional[JacMachine] = None,
+        jac_program: Optional[JacProgram] = None,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         return pm.hook.jac_import(
@@ -127,6 +125,8 @@ class JacFeature:
             lng=lng,
             items=items,
             reload_module=reload_module,
+            jac_machine=jac_machine,
+            jac_program=jac_program,
         )
 
     @staticmethod

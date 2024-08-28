@@ -4,60 +4,95 @@ from __future__ import annotations
 
 import unittest
 from contextvars import ContextVar
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
-from .architype import Root
-from .machine import JacMachine, JacProgram
+from .architype import NodeAnchor, Root
 from .memory import Memory, ShelfStorage
 
 
-class ExecutionContext:
-    """Default Execution Context implementation."""
+EXECUTION_CONTEXT = ContextVar[Optional["ExecutionContext"]]("ExecutionContext")
 
-    mem: Memory
-    root: Optional[Root]
-
-    def __init__(self) -> None:
-        """Create execution context."""
-        super().__init__()
-        self.mem = ShelfStorage()
-        self.root = None
-        self.jac_machine = JacMachine()
-        jac_program = JacProgram(mod_bundle=None, bytecode=None)
-        self.jac_machine.attach_program(jac_program)
-
-    def init_memory(self, base_path: str = "", session: str = "") -> None:
-        """Initialize memory."""
-        self.mem = ShelfStorage(session)
-        self.jac_machine = JacMachine(base_path)
-        jac_program = JacProgram(mod_bundle=None, bytecode=None)
-        self.jac_machine.attach_program(jac_program)
-
-    def get_root(self) -> Root:
-        """Get the root object."""
-        if not self.root:
-            root = self.mem.find_by_id(UUID(int=0))
-            if root is None:
-                root = Root().__jac__
-                self.mem.set(root.id, root)
-
-            if not isinstance(root.architype, Root):
-                raise ValueError(f"Invalid root object: {root}")
-            else:
-                self.root = root.architype
-        return self.root
-
-    def reset(self) -> None:
-        """Reset the execution context."""
-        if self.mem:
-            self.mem.close()
-        self.root = None
-
-
-exec_context: ContextVar[ExecutionContext | None] = ContextVar(
-    "ExecutionContext", default=None
+SUPER_ROOT_UUID = "00000000-0000-0000-0000-000000000000"
+SUPER_ROOT_ARCHITYPE = object.__new__(Root)
+SUPER_ROOT_ANCHOR = NodeAnchor(
+    id=UUID(SUPER_ROOT_UUID), architype=SUPER_ROOT_ARCHITYPE, persistent=False, edges=[]
 )
+SUPER_ROOT_ARCHITYPE.__jac__ = SUPER_ROOT_ANCHOR
+
+
+class ExecutionContext:
+    """Execution Context."""
+
+    datasource: Memory
+    reports: list[Any]
+    system_root: NodeAnchor
+    root: NodeAnchor
+    entry: NodeAnchor
+
+    def generate_system_root(self) -> NodeAnchor:
+        """Generate default system root."""
+        architype = object.__new__(Root)
+        anchor = NodeAnchor(
+            id=UUID(SUPER_ROOT_UUID), architype=architype, persistent=True, edges=[]
+        )
+        architype.__jac__ = anchor
+        self.datasource.set(anchor.id, anchor)
+        return anchor
+
+    def init_anchor(
+        self,
+        anchor_id: str | None,
+        default: NodeAnchor | Callable[[], NodeAnchor],
+    ) -> NodeAnchor:
+        """Load initial anchors."""
+        if anchor_id and isinstance(
+            anchor := self.datasource.find_by_id(UUID(anchor_id)), NodeAnchor
+        ):
+            return anchor
+        return default() if callable(default) else default
+
+    def close(self) -> None:
+        """Close current ExecutionContext."""
+        self.datasource.close()
+        EXECUTION_CONTEXT.set(None)
+
+    @staticmethod
+    def create(
+        session: Optional[str] = None,
+        root: Optional[str] = None,
+        entry: Optional[str] = None,
+        auto_close: bool = True,
+    ) -> ExecutionContext:
+        """Create ExecutionContext."""
+        ctx = ExecutionContext()
+        ctx.datasource = ShelfStorage(session)
+        ctx.reports = []
+        ctx.system_root = ctx.init_anchor(SUPER_ROOT_UUID, ctx.generate_system_root)
+        ctx.root = ctx.init_anchor(root, ctx.system_root)
+        ctx.entry = ctx.init_anchor(entry, ctx.root)
+
+        if auto_close and (old_ctx := EXECUTION_CONTEXT.get(None)):
+            old_ctx.close()
+
+        EXECUTION_CONTEXT.set(ctx)
+
+        return ctx
+
+    @staticmethod
+    def get() -> ExecutionContext:
+        """Get current ExecutionContext."""
+        if ctx := EXECUTION_CONTEXT.get(None):
+            return ctx
+        raise Exception("ExecutionContext is not yet available!")
+
+    @staticmethod
+    def get_root() -> Root:
+        """Get current root."""
+        if ctx := EXECUTION_CONTEXT.get(None):
+            return cast(Root, ctx.root.architype)
+
+        return SUPER_ROOT_ARCHITYPE
 
 
 class JacTestResult(unittest.TextTestResult):

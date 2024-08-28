@@ -21,15 +21,16 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
     from jaclang.plugin.default import (
         Architype,
         EdgeDir,
-        ExecutionContext,
         WalkerArchitype,
         Root,
         DSFunc,
     )
+    from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
+    from jaclang.runtimelib.context import ExecutionContext
+    from jaclang.runtimelib.machine import JacMachine, JacProgram
     from jaclang.runtimelib.memory import Memory
 
 import pluggy
@@ -45,20 +46,14 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def context(session: str = "") -> ExecutionContext:
-        """Get the execution context."""
+    def get_context() -> ExecutionContext:
+        """Get current execution context."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def reset_context() -> None:
-        """Reset the execution context."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def memory_hook() -> Memory | None:
-        """Create memory abstraction."""
+    def get_datasource() -> Memory:
+        """Get current execution context datasource."""
         raise NotImplementedError
 
     @staticmethod
@@ -124,6 +119,8 @@ class JacFeatureSpec:
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
+        jac_machine: Optional[JacMachine],
+        jac_program: Optional[JacProgram],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         raise NotImplementedError
