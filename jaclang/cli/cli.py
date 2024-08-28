@@ -100,19 +100,24 @@ def run(
             base_path=base,
             cachable=cache,
             override_name="__main__" if main else None,
+            is_origin=True,
         )
+
         if ret_module is None:
             loaded_mod = None
         else:
             (loaded_mod,) = ret_module
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
+            JacMachine(base).attach_program(
+                JacProgram(mod_bundle=pickle.load(f), bytecode=None)
+            )
             ret_module = jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
-                jac_program=JacProgram(mod_bundle=pickle.load(f), bytecode=None),
+                is_origin=True,
             )
             if ret_module is None:
                 loaded_mod = None
@@ -233,7 +238,7 @@ def enter(
         base, mod_name = os.path.split(filename)
         base = base if base else "./"
         mod_name = mod_name[:-4]
-        (mod,) = jac_import(target=mod_name, base_path=base)
+        (mod,) = jac_import(target=mod_name, base_path=base, is_origin=True)
         if not mod:
             print("Errors occurred while importing the module.")
         else:
@@ -386,7 +391,7 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
-        jac_import(target=mod, base_path=base, jac_machine=jac_machine)
+        jac_import(target=mod, base_path=base, is_origin=True)
         module = jac_machine.loaded_modules.get(mod)
         globals().update(vars(module))
         try:

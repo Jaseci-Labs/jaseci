@@ -5,13 +5,13 @@ import:jac from bar, bar_walk;
 # Test runner to initialize the walker
 can test_run {
     # Print the loaded modules
-    modules = Jac.context().jac_machine.list_modules();
+    modules = Jac.get_machine().list_modules();
     "Loaded Modules:" |> print;
     for mod_name in modules {
         f"Module: {mod_name}" |> print;
     }
     # Print walkers
-    walkers = Jac.context().jac_machine.list_walkers(mod_name);
+    walkers = Jac.get_machine().list_walkers(mod_name);
         if walkers{
             f"Walkers in {mod_name}:" |> print;
             for walker in walkers{
@@ -20,7 +20,7 @@ can test_run {
         }
 
     # Print nodes
-    nodes = Jac.context().jac_machine.list_nodes(mod_name);
+    nodes = Jac.get_machine().list_nodes(mod_name);
     if nodes{
         f"Nodes in {mod_name}:" |> print;
         for node in nodes{
@@ -28,7 +28,7 @@ can test_run {
         }
     }
     # Print edges
-    edges = Jac.context().jac_machine.list_edges(mod_name);
+    edges = Jac.get_machine().list_edges(mod_name);
     if edges{
         f"Edges in {mod_name}:" |> print;
         for edge in edges{

@@ -81,6 +81,18 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
+    def get_machine(base_path: str) -> JacMachine:
+        """Get current execution context."""
+        return JacMachine.get(base_path)
+
+    @staticmethod
+    @hookimpl
+    def detach_machine() -> None:
+        """Detach current jac machine."""
+        JacMachine.detach()
+
+    @staticmethod
+    @hookimpl
     def make_architype(
         cls: type,
         arch_base: Type[Architype],
@@ -238,8 +250,7 @@ class JacFeatureDefaults:
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
-        jac_machine: Optional[JacMachine],
-        jac_program: Optional[JacProgram],
+        is_origin: bool,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         spec = ImportPathSpec(
@@ -252,14 +263,19 @@ class JacFeatureDefaults:
             lng,
             items,
         )
-        jac_machine = jac_machine or JacMachine(base_path)
-        jac_machine.attach_program(
-            jac_program or JacProgram(mod_bundle=None, bytecode=None)
-        )
+
+        jac_machine = Jac.get_machine(base_path)
+        if not jac_machine.jac_program:
+            jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None))
+
         if lng == "py":
             import_result = PythonImporter(jac_machine).run_import(spec)
         else:
             import_result = JacImporter(jac_machine).run_import(spec, reload_module)
+
+        if is_origin:
+            Jac.detach_machine()
+
         return (
             (import_result.ret_mod,)
             if absorb or not items

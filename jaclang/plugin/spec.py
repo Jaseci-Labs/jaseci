@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     )
     from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
     from jaclang.runtimelib.context import ExecutionContext
-    from jaclang.runtimelib.machine import JacMachine, JacProgram
+    from jaclang.runtimelib.machine import JacMachine
     from jaclang.runtimelib.memory import Memory
 
 import pluggy
@@ -54,6 +54,18 @@ class JacFeatureSpec:
     @hookspec(firstresult=True)
     def get_datasource() -> Memory:
         """Get current execution context datasource."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_machine(base_path: str) -> JacMachine:
+        """Get current jac machine."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def detach_machine() -> None:
+        """Detach current jac machine."""
         raise NotImplementedError
 
     @staticmethod
@@ -119,8 +131,7 @@ class JacFeatureSpec:
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
-        jac_machine: Optional[JacMachine],
-        jac_program: Optional[JacProgram],
+        is_origin: bool,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         raise NotImplementedError
