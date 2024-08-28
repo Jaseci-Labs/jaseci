@@ -946,3 +946,34 @@ class JacLanguageTests(TestCase):
         self.assertEqual("MyClass", stdout_value[0])
         self.assertEqual("Hello, World1! Hello, World2!", stdout_value[1])
         self.assertEqual("Hello, World! Hello, World22!", stdout_value[2])
+
+    def test_list_methods(self) -> None:
+        """Test list_modules, list_walkers, list_nodes, and list_edges."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        jac_import("foo", base_path=self.fixture_abs_path("."))
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        self.assertIn(
+            "Module: jaclang.tests.fixtures.foo",
+            stdout_value,
+        )
+        self.assertIn(
+            "Module: jaclang.tests.fixtures.bar",
+            stdout_value,
+        )
+        self.assertIn(
+            "Walkers in jaclang.tests.fixtures.bar:\n  - Walker: bar_walk",
+            stdout_value,
+        )
+        self.assertIn(
+            "Nodes in jaclang.tests.fixtures.bar:\n  - Node: Item", stdout_value
+        )
+        self.assertIn(
+            "Edges in jaclang.tests.fixtures.bar:\n  - Edge: Link", stdout_value
+        )
+        self.assertIn("Item value: 0", stdout_value)
+        self.assertIn("Created 5 items.", stdout_value)
