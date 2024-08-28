@@ -18,6 +18,7 @@ from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
     collect_all_symbols_in_scope,
+    collect_impl_nodes,
     collect_linkage_symbol,
     create_range,
     find_deepest_symbol_node_at_pos,
@@ -420,18 +421,13 @@ class JacLangServer(LanguageServer):
             return None
         node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
-            xx = collect_linkage_symbol(node_selected)
-            decl_node = (
-                xx.archs[0].arch_name
-                if isinstance(xx, ast.ArchRefChain)
-                else node_selected
-            )
+            impl_node_uses, archi_name_uses = collect_impl_nodes(node_selected)
             changes: dict[str, list[lspt.TextEdit]] = {}
             for node in [
                 *node_selected.sym.uses,
                 node_selected.sym.defn[0],
-                decl_node,
-                node_selected,
+                *impl_node_uses,
+                *archi_name_uses,
             ]:
                 key = uris.from_fs_path(node.loc.mod_path)
                 new_edit = lspt.TextEdit(

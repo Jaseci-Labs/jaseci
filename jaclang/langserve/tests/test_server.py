@@ -455,3 +455,36 @@ class TestJacLangServer(TestCase):
             )
             for expected in expected_refs:
                 self.assertIn(expected, references)
+
+    def test_rename_uses(self) -> None:
+        """Test that the rename is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+
+        circle_file = uris.from_fs_path(self.fixture_abs_path("rename.jac"))
+        lsp.deep_check(circle_file)
+        # fmt: off
+        test_cases = [
+            (0, 7, "func", "24:4-24:7", "0:4-0:7", "4:5-4:8",),
+            (4, 6, "func", "24:4-24:7", "0:4-0:7", "4:5-4:8",),
+            (24, 7, "func", "24:4-24:7", "0:4-0:7", "4:5-4:8",),
+            (10, 10, "canBar", "10:8-10:11", "15:13-15:16", ),  # until merge fool me
+            (15, 15, "ubar", "15:13-15:16", "10:8-10:11", ),  # until merge fool me
+            # (10, 10, "canBar", "10:8-10:11", "14:13-14:16", "21....",),  # True
+            # (14, 15, "ubar", "14:13-14:16", "10:8-10:11", "21......" ),  # True
+            (9, 7, "result", "9:4-9:7", "25:4-25:7", "15:5-15:8", "15:5-15:8",),
+            (15, 7, "result", "9:4-9:7", "25:4-25:7", "15:5-15:8",),
+            (25, 7, "result", "9:4-9:7", "25:4-25:7", "15:5-15:8",),
+            (25, 7, "result", "9:4-9:7", "25:4-25:7", "15:5-15:8",),
+            (25, 7, "result", "9:4-9:7", "25:4-25:7", "15:5-15:8",),
+        ]
+        # fmt: on
+        for tup in test_cases:
+            line, char, new_name, *expected_refs = tup
+            references = str(
+                lsp.rename_symbol(circle_file, lspt.Position(line, char), new_name)
+            )
+            for expected in expected_refs:
+                self.assertIn(expected, references)

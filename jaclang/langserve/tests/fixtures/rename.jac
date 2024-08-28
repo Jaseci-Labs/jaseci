@@ -9,6 +9,7 @@ can foo;
 
 obj out{
     can bar;
+    can baz;
 }
 
 
@@ -16,6 +17,9 @@ obj out{
     print("bar");
 }
 
+:obj:out:can:baz{
+    print("baz");
+}
 
 with entry{
     foo();
