@@ -219,8 +219,6 @@ class JacLanguageTests(TestCase):
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
-        import sys
-
         targets = [
             "deep",
             "deep.deeper",
@@ -233,15 +231,11 @@ class JacLanguageTests(TestCase):
                 del sys.modules[i]
         Jac.get_root().__jac__.edges.clear()
         Jac.context().init_memory(base_path=self.fixture_abs_path("./"))
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
         jac_import("deep_import_mods", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        mods = eval(stdout_value)
+        mods = Jac.context().jac_machine.loaded_modules.keys()
         for i in targets:
             self.assertIn(i, mods)
-        self.assertEqual(len([i for i in mods if i.startswith("deep")]), 5)
+        self.assertEqual(len([i for i in mods if i.startswith("deep")]), 6)
 
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
@@ -393,7 +387,6 @@ class JacLanguageTests(TestCase):
         jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
         self.assertEqual(stdout_value.count("True"), 14)
 
     def test_with_contexts(self) -> None:
@@ -906,7 +899,6 @@ class JacLanguageTests(TestCase):
         )
         table = None
         for i in mypass.ir.sym_tab.kid:
-            print(i.name)
             if i.name == "GuessTheNumberGame":
                 for j in i.kid:
                     if j.name == "play":

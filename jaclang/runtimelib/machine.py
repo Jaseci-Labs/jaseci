@@ -2,6 +2,7 @@
 
 import marshal
 import os
+import sys
 import types
 from typing import Optional
 
@@ -18,8 +19,8 @@ class JacMachine:
 
     def __init__(self, base_path: str = "") -> None:
         """Initialize the JacMachine object."""
-        # self.loaded_modules: Dict[str, types.ModuleType] = {}
-        if not len(base_path):
+        self.loaded_modules: dict[str, types.ModuleType] = {}
+        if not base_path:
             base_path = os.getcwd()
         self.base_path = base_path
         self.base_path_dir = (
@@ -52,6 +53,11 @@ class JacMachine:
                 module_name, full_target, caller_dir, cachable
             )
         return None
+
+    def load_module(self, module_name: str, module: types.ModuleType) -> None:
+        """Load a module into the machine."""
+        self.loaded_modules[module_name] = module
+        sys.modules[module_name] = module
 
 
 class JacProgram:
