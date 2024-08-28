@@ -7,16 +7,16 @@ from contextvars import ContextVar
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
-from .architype import NodeAnchor, Root
+from .architype import AccessLevel, NodeAnchor, Root
 from .memory import Memory, ShelfStorage
 
 
 EXECUTION_CONTEXT = ContextVar[Optional["ExecutionContext"]]("ExecutionContext")
 
-SUPER_ROOT_UUID = "00000000-0000-0000-0000-000000000000"
+SUPER_ROOT_UUID = UUID("00000000-0000-0000-0000-000000000000")
 SUPER_ROOT_ARCHITYPE = object.__new__(Root)
 SUPER_ROOT_ANCHOR = NodeAnchor(
-    id=UUID(SUPER_ROOT_UUID), architype=SUPER_ROOT_ARCHITYPE, persistent=False, edges=[]
+    id=SUPER_ROOT_UUID, architype=SUPER_ROOT_ARCHITYPE, persistent=False, edges=[]
 )
 SUPER_ROOT_ARCHITYPE.__jac__ = SUPER_ROOT_ANCHOR
 
@@ -28,29 +28,35 @@ class ExecutionContext:
     reports: list[Any]
     system_root: NodeAnchor
     root: NodeAnchor
-    entry: NodeAnchor
+    __entry__: NodeAnchor | str | None
 
-    def generate_system_root(self) -> NodeAnchor:
-        """Generate default system root."""
-        architype = object.__new__(Root)
-        anchor = NodeAnchor(
-            id=UUID(SUPER_ROOT_UUID), architype=architype, persistent=True, edges=[]
-        )
-        architype.__jac__ = anchor
-        self.mem.set(anchor.id, anchor)
-        return anchor
+    @property
+    def entry(self) -> NodeAnchor:
+        """Get entry lazy load."""
+        match self.__entry__:
+            case NodeAnchor():
+                pass
+            case str():
+                self.__entry__ = self.init_anchor(self.__entry__, self.root)
+            case _:
+                self.__entry__ = self.root
+        return self.__entry__
 
     def init_anchor(
         self,
         anchor_id: str | None,
-        default: NodeAnchor | Callable[[], NodeAnchor],
+        default: NodeAnchor,
     ) -> NodeAnchor:
         """Load initial anchors."""
-        if anchor_id and isinstance(
-            anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor
-        ):
-            return anchor
-        return default() if callable(default) else default
+        if anchor_id:
+            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
+                return anchor
+            raise ValueError(f"Invalid anchor id {anchor_id} !")
+        return default
+
+    def validate_access(self) -> bool:
+        """Validate access."""
+        return self.root.has_read_access(self.entry)
 
     def close(self) -> None:
         """Close current ExecutionContext."""
@@ -68,9 +74,20 @@ class ExecutionContext:
         ctx = ExecutionContext()
         ctx.mem = ShelfStorage(session)
         ctx.reports = []
-        ctx.system_root = ctx.init_anchor(SUPER_ROOT_UUID, ctx.generate_system_root)
+
+        if not isinstance(
+            system_root := ctx.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
+        ):
+            system_root = Root().__jac__
+            system_root.id = SUPER_ROOT_UUID
+            ctx.mem.set(system_root.id, system_root)
+
+        ctx.system_root = system_root
+
         ctx.root = ctx.init_anchor(root, ctx.system_root)
-        ctx.entry = ctx.init_anchor(entry, ctx.root)
+        ctx.root.current_access_level = AccessLevel.WRITE
+
+        ctx.__entry__ = entry
 
         if auto_close and (old_ctx := EXECUTION_CONTEXT.get(None)):
             old_ctx.close()

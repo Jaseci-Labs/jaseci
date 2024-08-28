@@ -483,11 +483,14 @@ class JacFeatureDefaults:
                     (source := anchor.source)
                     and (target := anchor.target)
                     and (not filter_func or filter_func([anchor.architype]))
+                    and source.architype
+                    and target.architype
                 ):
                     if (
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
                         and target.architype in right
+                        and source.has_write_access(target)
                     ):
                         anchor.destroy() if anchor.persistent else anchor.detach()
                         disconnect_occurred = True
@@ -495,6 +498,7 @@ class JacFeatureDefaults:
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
                         and source.architype in right
+                        and target.has_write_access(source)
                     ):
                         anchor.destroy() if anchor.persistent else anchor.detach()
                         disconnect_occurred = True

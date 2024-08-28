@@ -8,7 +8,7 @@ from shelve import Shelf, open
 from typing import Callable, Generator, Generic, Iterable, TypeVar
 from uuid import UUID
 
-from .architype import Anchor, NodeAnchor, Root, TANCH
+from .architype import AccessLevel, Anchor, NodeAnchor, Root, TANCH
 
 ID = TypeVar("ID")
 
@@ -85,16 +85,33 @@ class ShelfStorage(Memory[UUID, Anchor]):
                 self.__mem__.pop(id, None)
 
             for d in self.__mem__.values():
-                if d.persistent and d.hash != (new_hash := hash(dumps(d))):
-                    if (
+                if d.persistent and d.hash != hash(dumps(d)):
+                    _id = str(d.id)
+                    if p_d := self.__shelf__.get(_id):
+                        if (
+                            isinstance(p_d, NodeAnchor)
+                            and isinstance(d, NodeAnchor)
+                            and p_d.edges != d.edges
+                            and d.current_access_level >= AccessLevel.CONNECT
+                        ):
+                            if not d.edges:
+                                self.__shelf__.pop(_id, None)
+                                continue
+                            p_d.edges = d.edges
+
+                        if d.current_access_level >= AccessLevel.WRITE:
+                            if hash(dumps(p_d.access)) != hash(dumps(d.access)):
+                                p_d.access = d.access
+                            if hash(dumps(d.architype)) != hash(dumps(d.architype)):
+                                p_d.architype = d.architype
+
+                        self.__shelf__[_id] = p_d
+                    elif not (
                         isinstance(d, NodeAnchor)
                         and not isinstance(d.architype, Root)
                         and not d.edges
                     ):
-                        self.__shelf__.pop(str(d.id), None)
-                    else:
-                        d.hash = new_hash
-                        self.__shelf__[str(d.id)] = d
+                        self.__shelf__[_id] = d
 
             self.__shelf__.close()
         super().close()
