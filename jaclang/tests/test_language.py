@@ -718,6 +718,7 @@ class JacLanguageTests(TestCase):
         from jaclang.compiler.passes.main import PyastBuildPass
         import jaclang.compiler.absyntree as ast
         import ast as py_ast
+        from jaclang.settings import settings
 
         module_paths = ["random", "ast"]
         for module_path in module_paths:
@@ -732,6 +733,7 @@ class JacLanguageTests(TestCase):
                         py_ast.parse(f.read()), mod_path=file_path
                     )
                 )
+            settings.print_py_raised_ast = True
             ir = jac_pass_to_pass(jac_ast).ir
             gen_ast = ir.pp()
             if module_path == "random":
@@ -767,6 +769,7 @@ class JacLanguageTests(TestCase):
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
         import jaclang.compiler.absyntree as ast
+        from jaclang.settings import settings
 
         with open(file_name, "r") as f:
             parsed_ast = py_ast.parse(f.read())
@@ -777,6 +780,7 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
+        settings.print_py_raised_ast = True
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(' |   +-- String - "Loop compl', jac_ast)

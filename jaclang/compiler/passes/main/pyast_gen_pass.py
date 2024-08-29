@@ -529,7 +529,7 @@ class PyastGenPass(Pass):
         sub_module: Optional[Module],
         """
         path_alias: dict[str, Optional[str]] = (
-            {node.from_loc.path_str: None} if node.from_loc else {}
+            {node.from_loc.dot_path_str: None} if node.from_loc else {}
         )
         imp_from = {}
         if node.items:
@@ -539,7 +539,7 @@ class PyastGenPass(Pass):
                         item.alias.sym_name if item.alias else None
                     )
                 elif isinstance(item, ast.ModulePath):
-                    path_alias[item.path_str] = (
+                    path_alias[item.dot_path_str] = (
                         item.alias.sym_name if item.alias else None
                     )
 
@@ -828,7 +828,7 @@ class PyastGenPass(Pass):
             typecheck_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module=(source.path_str.lstrip(".") if source else None),
+                        module=(source.dot_path_str.lstrip(".") if source else None),
                         names=[self.sync(ast3.alias(name="*"), node)],
                         level=0,
                     ),
@@ -842,7 +842,7 @@ class PyastGenPass(Pass):
                 self.sync(
                     ast3.ImportFrom(
                         module=(
-                            node.from_loc.path_str.lstrip(".")
+                            node.from_loc.dot_path_str.lstrip(".")
                             if node.from_loc
                             else None
                         ),
@@ -879,7 +879,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.alias(
-                    name=f"{node.path_str}",
+                    name=f"{node.dot_path_str}",
                     asname=node.alias.sym_name if node.alias else None,
                 )
             )
