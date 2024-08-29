@@ -26,15 +26,14 @@ from jaclang.runtimelib.constructs import (
     ExecutionContext,
     GenericEdge,
     JacTestCheck,
-    Memory,
     NodeAnchor,
     NodeArchitype,
     Root,
     WalkerAnchor,
     WalkerArchitype,
-    exec_context,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
+from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.runtimelib.utils import traverse_graph
 from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
 from jaclang.plugin.spec import P, T
@@ -69,28 +68,9 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def context(session: str = "") -> ExecutionContext:
-        """Get the execution context."""
-        ctx = exec_context.get()
-        if ctx is None:
-            ctx = ExecutionContext()
-            exec_context.set(ctx)
-        return ctx
-
-    @staticmethod
-    @hookimpl
-    def reset_context() -> None:
-        """Reset the execution context."""
-        ctx = exec_context.get()
-        if ctx:
-            ctx.reset()
-        exec_context.set(None)
-
-    @staticmethod
-    @hookimpl
-    def memory_hook() -> Memory | None:
-        """Return the memory hook."""
-        return Jac.context().mem
+    def get_context() -> ExecutionContext:
+        """Get current execution context."""
+        return ExecutionContext.get()
 
     @staticmethod
     @hookimpl
@@ -263,12 +243,18 @@ class JacFeatureDefaults:
             lng,
             items,
         )
+
+        jac_machine = JacMachine.get(base_path)
+        if not jac_machine.jac_program:
+            jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None))
+
         if lng == "py":
-            import_result = PythonImporter(Jac.context().jac_machine).run_import(spec)
+            import_result = PythonImporter(JacMachine.get()).run_import(spec)
         else:
-            import_result = JacImporter(Jac.context().jac_machine).run_import(
+            import_result = JacImporter(JacMachine.get()).run_import(
                 spec, reload_module
             )
+
         return (
             (import_result.ret_mod,)
             if absorb or not items
@@ -463,7 +449,7 @@ class JacFeatureDefaults:
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[], EdgeArchitype],
+        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -475,13 +461,7 @@ class JacFeatureDefaults:
         edges = []
         for i in left:
             for j in right:
-                conn_edge = edge_spec()
-                edges.append(conn_edge)
-                i.__jac__.connect_node(j.__jac__, conn_edge.__jac__)
-                if i.__jac__.persistent or j.__jac__.persistent:
-                    conn_edge.__jac__.save()
-                    j.__jac__.save()
-                    i.__jac__.save()
+                edges.append(edge_spec(i.__jac__, j.__jac__))
         return right if not edges_only else edges
 
     @staticmethod
@@ -500,26 +480,23 @@ class JacFeatureDefaults:
             node = i.__jac__
             for anchor in set(node.edges):
                 if (
-                    (architype := anchor.architype)
-                    and (source := anchor.source)
+                    (source := anchor.source)
                     and (target := anchor.target)
-                    and (not filter_func or filter_func([architype]))
-                    and (src_arch := source.architype)
-                    and (trg_arch := target.architype)
+                    and (not filter_func or filter_func([anchor.architype]))
                 ):
                     if (
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
-                        and trg_arch in right
+                        and target.architype in right
                     ):
-                        anchor.detach()
+                        anchor.destroy() if anchor.persistent else anchor.detach()
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
-                        and src_arch in right
+                        and source.architype in right
                     ):
-                        anchor.detach()
+                        anchor.destroy() if anchor.persistent else anchor.detach()
                         disconnect_occurred = True
 
         return disconnect_occurred
@@ -540,7 +517,7 @@ class JacFeatureDefaults:
     @hookimpl
     def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        return Jac.context().get_root()
+        return ExecutionContext.get_root()
 
     @staticmethod
     @hookimpl
@@ -554,19 +531,23 @@ class JacFeatureDefaults:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Callable[[], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
 
-        def builder() -> EdgeArchitype:
+        def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
             edge = conn_type() if isinstance(conn_type, type) else conn_type
-            edge.__jac__.is_undirected = is_undirected
+            edge.__attach__(source, target, is_undirected)
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1]):
                     if hasattr(edge, fld):
                         setattr(edge, fld, val)
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
+            if source.persistent or target.persistent:
+                edge.__jac__.save()
+                target.save()
+                source.save()
             return edge
 
         return builder
