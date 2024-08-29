@@ -16,7 +16,7 @@ TANCH = TypeVar("TANCH", bound="Anchor")
 
 
 @dataclass
-class Report:
+class AnchorReport:
     """Report Handler."""
 
     id: str
@@ -37,13 +37,13 @@ class Anchor:
         from jaclang.plugin.feature import JacFeature as Jac
 
         self.persistent = True
-        Jac.context().mem.set(self.id, self)
+        Jac.get_context().mem.set(self.id, self)
 
     def destroy(self) -> None:
         """Destroy Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        Jac.context().mem.remove(self.id)
+        Jac.get_context().mem.remove(self.id)
 
     def is_populated(self) -> bool:
         """Check if state."""
@@ -61,9 +61,9 @@ class Anchor:
         """Retrieve the Architype from db and return."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        ctx_mem = Jac.context().mem
+        jsrc = Jac.get_context().mem
 
-        if anchor := ctx_mem.find_by_id(self.id):
+        if anchor := jsrc.find_by_id(self.id):
             self.__dict__.update(anchor.__dict__)
 
     def __getattr__(self, name: str) -> object:
@@ -118,9 +118,9 @@ class Anchor:
 
         return f"{self.__class__.__name__}({attrs})"
 
-    def report(self) -> Report:
+    def report(self) -> AnchorReport:
         """Report Anchor."""
-        return Report(
+        return AnchorReport(
             id=self.id.hex,
             context=(
                 asdict(self.architype)
@@ -245,7 +245,7 @@ class NodeAnchor(Anchor):
         for edge in self.edges:
             edge.destroy()
 
-        Jac.context().mem.remove(self.id)
+        Jac.get_context().mem.remove(self.id)
 
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
@@ -285,7 +285,7 @@ class EdgeAnchor(Anchor):
         from jaclang.plugin.feature import JacFeature as Jac
 
         self.detach()
-        Jac.context().mem.remove(self.id)
+        Jac.get_context().mem.remove(self.id)
 
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
@@ -453,20 +453,10 @@ class Root(NodeArchitype):
 
     _jac_entry_funcs_ = []
     _jac_exit_funcs_ = []
-    reachable_nodes: list[NodeArchitype] = []
-    connections: set[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = set()
 
     def __init__(self) -> None:
         """Create root node."""
-        self.__jac__ = NodeAnchor(
-            architype=self, id=UUID(int=0), persistent=True, edges=[]
-        )
-
-    def reset(self) -> None:
-        """Reset the root."""
-        self.reachable_nodes = []
-        self.connections = set()
-        self.__jac__.edges = []
+        self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
 
 
 @dataclass(eq=False)

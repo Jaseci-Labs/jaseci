@@ -5,35 +5,37 @@ import sys
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.utils.test import TestCase
 
 
 class TestLoader(TestCase):
     """Test Jac self.prse."""
 
-    def setUp(self) -> None:
-        """Set up test."""
-        return super().setUp()
-
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        Jac.context().init_memory(base_path=self.fixture_abs_path(__file__))
+        JacMachine(self.fixture_abs_path(__file__)).attach_program(
+            JacProgram(mod_bundle=None, bytecode=None)
+        )
         (h,) = jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
+        JacMachine.detach()
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        Jac.context().init_memory(base_path=self.fixture_abs_path(__file__))
+        JacMachine(self.fixture_abs_path(__file__)).attach_program(
+            JacProgram(mod_bundle=None, bytecode=None)
+        )
         jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
             "module 'fixtures.hello_world'",
-            str(Jac.context().jac_machine.loaded_modules),
+            str(JacMachine.get().loaded_modules),
         )
         self.assertIn(
             "/tests/fixtures/hello_world.jac",
-            str(Jac.context().jac_machine.loaded_modules),
+            str(JacMachine.get().loaded_modules),
         )
+        JacMachine.detach()
 
     def test_jac_py_import(self) -> None:
         """Basic test for pass."""
