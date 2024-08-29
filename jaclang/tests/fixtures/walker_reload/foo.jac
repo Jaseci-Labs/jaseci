@@ -1,6 +1,7 @@
 import:py from jaclang.plugin.feature {JacFeature as Jac}
 import:jac from bar {bar_walk}
 import:py from time {sleep}
+import:py os; 
 
 
 can update_bar_walker {
@@ -12,7 +13,7 @@ can update_bar_walker {
     }
 }
     ''';
-    bar_file_path = '/home/ubuntu/jaclang/jaclang/tests/fixtures/walker_reload/bar.jac';
+    bar_file_path = os.path.abspath('jaclang/tests/fixtures/walker_reload/bar.jac');
     with open(bar_file_path, 'r') as bar_file{
         original_content = bar_file.read();
     }
