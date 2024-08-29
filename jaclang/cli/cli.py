@@ -93,14 +93,14 @@ def run(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session)
-
     if filename.endswith(".jac"):
+        JacMachine(base).attach_program(JacProgram(mod_bundle=None, bytecode=None))
+
         ret_module = jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
             override_name="__main__" if main else None,
-            is_origin=True,
         )
 
         if ret_module is None:
@@ -117,7 +117,6 @@ def run(
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
-                is_origin=True,
             )
             if ret_module is None:
                 loaded_mod = None
@@ -129,7 +128,7 @@ def run(
 
     if not node or node == "root":
         entrypoint: Architype = jctx.root.architype
-    elif obj := jctx.datasource.find_by_id(UUID(node)):
+    elif obj := jctx.mem.find_by_id(UUID(node)):
         entrypoint = obj.architype
     else:
         print(f"Entrypoint {node} not found.")
@@ -145,6 +144,7 @@ def run(
             print(f"Walker {walker} not found.")
 
     jctx.close()
+    JacMachine.detach()
 
 
 @cmd_registry.register
@@ -158,7 +158,7 @@ def get_object(id: str, session: str = "") -> dict:
     data = {}
     if id == "root":
         data = jctx.root.__getstate__()
-    elif obj := jctx.datasource.find_by_id(UUID(id)):
+    elif obj := jctx.mem.find_by_id(UUID(id)):
         data = obj.__getstate__()
     else:
         print(f"Object with id {id} not found.")
@@ -238,13 +238,15 @@ def enter(
         base, mod_name = os.path.split(filename)
         base = base if base else "./"
         mod_name = mod_name[:-4]
-        (mod,) = jac_import(target=mod_name, base_path=base, is_origin=True)
+        (mod,) = jac_import(target=mod_name, base_path=base)
+        JacMachine(base).attach_program(JacProgram(mod_bundle=None, bytecode=None))
         if not mod:
             print("Errors occurred while importing the module.")
         else:
             architype = getattr(mod, entrypoint)(*args)
             if isinstance(architype, WalkerArchitype):
                 Jac.spawn_call(jctx.entry.architype, architype)
+        JacMachine.detach()
 
     else:
         print("Not a .jac file.")
@@ -391,7 +393,7 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
-        jac_import(target=mod, base_path=base, is_origin=True)
+        jac_import(target=mod, base_path=base)
         module = jac_machine.loaded_modules.get(mod)
         globals().update(vars(module))
         try:

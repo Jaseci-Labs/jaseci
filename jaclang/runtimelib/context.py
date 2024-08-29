@@ -24,7 +24,7 @@ SUPER_ROOT_ARCHITYPE.__jac__ = SUPER_ROOT_ANCHOR
 class ExecutionContext:
     """Execution Context."""
 
-    datasource: Memory
+    mem: Memory
     reports: list[Any]
     system_root: NodeAnchor
     root: NodeAnchor
@@ -37,7 +37,7 @@ class ExecutionContext:
             id=UUID(SUPER_ROOT_UUID), architype=architype, persistent=True, edges=[]
         )
         architype.__jac__ = anchor
-        self.datasource.set(anchor.id, anchor)
+        self.mem.set(anchor.id, anchor)
         return anchor
 
     def init_anchor(
@@ -47,14 +47,14 @@ class ExecutionContext:
     ) -> NodeAnchor:
         """Load initial anchors."""
         if anchor_id and isinstance(
-            anchor := self.datasource.find_by_id(UUID(anchor_id)), NodeAnchor
+            anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor
         ):
             return anchor
         return default() if callable(default) else default
 
     def close(self) -> None:
         """Close current ExecutionContext."""
-        self.datasource.close()
+        self.mem.close()
         EXECUTION_CONTEXT.set(None)
 
     @staticmethod
@@ -66,7 +66,7 @@ class ExecutionContext:
     ) -> ExecutionContext:
         """Create ExecutionContext."""
         ctx = ExecutionContext()
-        ctx.datasource = ShelfStorage(session)
+        ctx.mem = ShelfStorage(session)
         ctx.reports = []
         ctx.system_root = ctx.init_anchor(SUPER_ROOT_UUID, ctx.generate_system_root)
         ctx.root = ctx.init_anchor(root, ctx.system_root)

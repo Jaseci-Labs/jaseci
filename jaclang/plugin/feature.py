@@ -12,14 +12,12 @@ from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
     Architype,
     EdgeArchitype,
-    Memory,
     NodeAnchor,
     NodeArchitype,
     Root,
     WalkerArchitype,
 )
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine
 
 import pluggy
 
@@ -47,21 +45,6 @@ class JacFeature:
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         return pm.hook.get_context()
-
-    @staticmethod
-    def get_datasource() -> Memory:
-        """Get current execution context."""
-        return pm.hook.get_datasource()
-
-    @staticmethod
-    def get_machine(base_path: str = "") -> JacMachine:
-        """Get current jac machine."""
-        return pm.hook.get_machine(base_path=base_path)
-
-    @staticmethod
-    def detach_machine() -> None:
-        """Detach current jac machine."""
-        return pm.hook.detach_machine()
 
     @staticmethod
     def make_architype(
@@ -121,7 +104,6 @@ class JacFeature:
         lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
-        is_origin: bool = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         return pm.hook.jac_import(
@@ -134,7 +116,6 @@ class JacFeature:
             lng=lng,
             items=items,
             reload_module=reload_module,
-            is_origin=is_origin,
         )
 
     @staticmethod

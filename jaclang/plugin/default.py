@@ -26,7 +26,6 @@ from jaclang.runtimelib.constructs import (
     ExecutionContext,
     GenericEdge,
     JacTestCheck,
-    Memory,
     NodeAnchor,
     NodeArchitype,
     Root,
@@ -72,24 +71,6 @@ class JacFeatureDefaults:
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         return ExecutionContext.get()
-
-    @staticmethod
-    @hookimpl
-    def get_datasource() -> Memory:
-        """Get current execution context."""
-        return ExecutionContext.get().datasource
-
-    @staticmethod
-    @hookimpl
-    def get_machine(base_path: str) -> JacMachine:
-        """Get current execution context."""
-        return JacMachine.get(base_path)
-
-    @staticmethod
-    @hookimpl
-    def detach_machine() -> None:
-        """Detach current jac machine."""
-        JacMachine.detach()
 
     @staticmethod
     @hookimpl
@@ -250,7 +231,6 @@ class JacFeatureDefaults:
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
-        is_origin: bool,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         spec = ImportPathSpec(
@@ -264,17 +244,16 @@ class JacFeatureDefaults:
             items,
         )
 
-        jac_machine = Jac.get_machine(base_path)
+        jac_machine = JacMachine.get(base_path)
         if not jac_machine.jac_program:
             jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None))
 
         if lng == "py":
-            import_result = PythonImporter(jac_machine).run_import(spec)
+            import_result = PythonImporter(JacMachine.get()).run_import(spec)
         else:
-            import_result = JacImporter(jac_machine).run_import(spec, reload_module)
-
-        if is_origin:
-            Jac.detach_machine()
+            import_result = JacImporter(JacMachine.get()).run_import(
+                spec, reload_module
+            )
 
         return (
             (import_result.ret_mod,)

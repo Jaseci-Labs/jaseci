@@ -37,13 +37,13 @@ class Anchor:
         from jaclang.plugin.feature import JacFeature as Jac
 
         self.persistent = True
-        Jac.get_datasource().set(self.id, self)
+        Jac.get_context().mem.set(self.id, self)
 
     def destroy(self) -> None:
         """Destroy Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        Jac.get_datasource().remove(self.id)
+        Jac.get_context().mem.remove(self.id)
 
     def is_populated(self) -> bool:
         """Check if state."""
@@ -61,7 +61,7 @@ class Anchor:
         """Retrieve the Architype from db and return."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        jsrc = Jac.get_datasource()
+        jsrc = Jac.get_context().mem
 
         if anchor := jsrc.find_by_id(self.id):
             self.__dict__.update(anchor.__dict__)
@@ -245,7 +245,7 @@ class NodeAnchor(Anchor):
         for edge in self.edges:
             edge.destroy()
 
-        Jac.get_datasource().remove(self.id)
+        Jac.get_context().mem.remove(self.id)
 
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
@@ -285,7 +285,7 @@ class EdgeAnchor(Anchor):
         from jaclang.plugin.feature import JacFeature as Jac
 
         self.detach()
-        Jac.get_datasource().remove(self.id)
+        Jac.get_context().mem.remove(self.id)
 
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
