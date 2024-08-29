@@ -42,6 +42,11 @@ Key features:
 - Integration of type information and constraints
 - Inclusion of available tools and their usage instructions
 
+Files involved:
+- [`aott.py`](mtllm/aott.py) # aott_raise, get_all_type_explanations
+- [`plugin.py`](mtllm/plugin.py) # with_llm method
+- [`types.py`](mtllm/types.py) # Information, InputInformation, OutputHint, Tool classes
+
 ### 2.2 LLM Interface
 
 The LLM Interface manages the communication between the MTLLM framework and the underlying Large Language Model. It handles sending prompts to the LLM and receiving raw outputs.
@@ -50,6 +55,10 @@ Key features:
 - Abstraction layer for different LLM providers
 - Handling of API communication and error management
 - Handling Multi-Modal Inputs if applicable
+
+Files involved:
+- [`aott.py`](mtllm/aott.py) # aott_raise
+- ['llms/base.py'](mtllm/llms/base.py) # BaseLLM class, __call__, __infer__
 
 ### 2.3 Output Processor
 
@@ -91,6 +100,9 @@ Key features:
 >         M->>L: Include Tool Result in Prompt
 >     end
 
+Files involved:
+- [`aott.py`](mtllm/aott.py) # aott_raise
+- [`llms/base.py`](mtllm/llms/base.py) # BaseLLM class, BaseLLM.resolve_output, BaseLLM._extract_output, BaseLLM.to_object, BaseLLM._fix_output
 
 ### 2.4 Error Handler
 
@@ -114,6 +126,9 @@ Key features:
 >     G --> H{Check Retry Count}
 >     H -->|Max Retries Reached| I[Return Error to Application]
 >     H -->|Retries Available| B
+
+Files involved:
+- [`llms/base.py`](mtllm/llms/base.py) # BaseLLM._check_output , BaseLLM._extract_output, BaseLLM.to_object, BaseLLM._fix_output
 
 
 ### 2.5 Tool Integrator
@@ -140,6 +155,11 @@ Key features:
 >     L->>M: Return Final Output
 >     M->>A: Return Final Output
 
+Files involved:
+- [`plugin.py`](mtllm/plugin.py) # callable_to_tool
+- [`types.py`](mtllm/types.py) # Tool class
+- [`tools/base.py`](mtllm/tools/base.py) # Tool class
+- [`tools/<math_utils.py/serper.py/wikipedia.py>](mtllm/tools) # Predefined tools
 
 ## 3. Inference Process
 
