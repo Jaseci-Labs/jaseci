@@ -66,7 +66,6 @@ class JacReferenceTests(TestCase):
                     {
                         "__file__": filename,
                         "__name__": "__main__",
-                        "__jac_mod_bundle__": None,
                     },
                 )
             return f.getvalue()
