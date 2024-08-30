@@ -31,9 +31,4 @@ walker bar_walk {
             disengage;
         }
     }
-    # New behavior after update
-    can end with `root exit {
-        "bar_walk has been updated!" |> print;
-        disengage;
-    }
 }
