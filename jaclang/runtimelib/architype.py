@@ -41,17 +41,11 @@ class AccessLevel(IntEnum):
 class Access:
     """Access Structure."""
 
-    whitelist: bool = True  # whitelist or blacklist
     anchors: dict[str, AccessLevel] = field(default_factory=dict)
 
-    def check(
-        self, anchor: str
-    ) -> tuple[bool, AccessLevel]:  # whitelist or blacklist, has_read_access, level
+    def check(self, anchor: str) -> AccessLevel:
         """Validate access."""
-        if self.whitelist:
-            return self.whitelist, self.anchors.get(anchor, AccessLevel.NO_ACCESS)
-        else:
-            return self.whitelist, self.anchors.get(anchor, AccessLevel.WRITE)
+        return self.anchors.get(anchor, AccessLevel.NO_ACCESS)
 
 
 @dataclass
@@ -86,23 +80,16 @@ class Anchor:
     #                             ACCESS CONTROL                             #
     ##########################################################################
 
-    def whitelist_roots(self, whitelist: bool = True) -> None:
-        """Toggle root whitelist/blacklist."""
-        if whitelist != self.access.roots.whitelist:
-            self.access.roots.whitelist = whitelist
-
     def allow_root(
         self, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
         access = self.access.roots
-        if access.whitelist:
-            _root_id = str(root_id)
-            if level != access.anchors.get(_root_id, AccessLevel.NO_ACCESS):
-                access.anchors[_root_id] = level
-        else:
-            self.disallow_root(root_id, level)
+
+        _root_id = str(root_id)
+        if level != access.anchors.get(_root_id, AccessLevel.NO_ACCESS):
+            access.anchors[_root_id] = level
 
     def disallow_root(
         self, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
@@ -110,10 +97,8 @@ class Anchor:
         """Disallow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
         access = self.access.roots
-        if access.whitelist:
-            access.anchors.pop(str(root_id), None)
-        else:
-            self.allow_root(root_id, level)
+
+        access.anchors.pop(str(root_id), None)
 
     def unrestrict(self, level: AccessLevel | int | str = AccessLevel.READ) -> None:
         """Allow everyone to access current Architype."""
@@ -166,32 +151,18 @@ class Anchor:
                 if to_root.access.all > to.current_access_level:
                     to.current_access_level = to_root.access.all
 
-                whitelist, level = to_root.access.roots.check(str(jroot.id))
-                if not whitelist:
-                    if level < AccessLevel.READ:
-                        to.current_access_level = AccessLevel.NO_ACCESS
-                        return to.current_access_level
-                    elif level < to.current_access_level:
-                        level = to.current_access_level
-                elif (
-                    whitelist
-                    and level > AccessLevel.NO_ACCESS
+                level = to_root.access.roots.check(str(jroot.id))
+                if (
+                    level > AccessLevel.NO_ACCESS
                     and to.current_access_level == AccessLevel.NO_ACCESS
                 ):
                     to.current_access_level = level
 
             # if target anchor have set allowed roots
             # if current root is allowed to target anchor
-            whitelist, level = to_access.roots.check(str(jroot.id))
-            if not whitelist:
-                if level < AccessLevel.READ:
-                    to.current_access_level = AccessLevel.NO_ACCESS
-                    return to.current_access_level
-                elif level < to.current_access_level:
-                    level = to.current_access_level
-            elif (
-                whitelist
-                and level > AccessLevel.NO_ACCESS
+            level = to_access.roots.check(str(jroot.id))
+            if (
+                level > AccessLevel.NO_ACCESS
                 and to.current_access_level == AccessLevel.NO_ACCESS
             ):
                 to.current_access_level = level
