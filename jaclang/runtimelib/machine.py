@@ -5,8 +5,8 @@ import marshal
 import os
 import sys
 import types
-from typing import Optional, Union
 from contextvars import ContextVar
+from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
