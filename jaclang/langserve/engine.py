@@ -14,12 +14,11 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.symtable import Symbol
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
     collect_all_symbols_in_scope,
-    collect_impl_nodes,
-    collect_linkage_symbol,
     create_range,
     find_deepest_symbol_node_at_pos,
     find_index,
@@ -366,7 +365,17 @@ class JacLangServer(LanguageServer):
                     return None
             elif isinstance(node_selected, (ast.ElementStmt, ast.BuiltinType)):
                 return None
-            decl_node = collect_linkage_symbol(node_selected)
+            decl_node = (
+                node_selected.parent.body.target
+                if node_selected.parent
+                and isinstance(node_selected.parent, ast.AstImplNeedingNode)
+                and isinstance(node_selected.parent.body, ast.AstImplOnlyNode)
+                else (
+                    node_selected.sym.decl
+                    if (node_selected.sym and node_selected.sym.decl)
+                    else node_selected
+                )
+            )
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
                 decl_range = create_range(decl_node.loc)
@@ -420,14 +429,15 @@ class JacLangServer(LanguageServer):
         if index1 is None:
             return None
         node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
-        if node_selected and node_selected.sym:
-            impl_node_uses, archi_name_uses = collect_impl_nodes(node_selected)
+        if (
+            node_selected
+            and node_selected.sym
+            and isinstance(node_selected.sym.decl.sym, Symbol)
+        ):
             changes: dict[str, list[lspt.TextEdit]] = {}
             for node in [
-                *node_selected.sym.uses,
+                *node_selected.sym.decl.sym.uses,
                 node_selected.sym.defn[0],
-                *impl_node_uses,
-                *archi_name_uses,
             ]:
                 key = uris.from_fs_path(node.loc.mod_path)
                 new_edit = lspt.TextEdit(

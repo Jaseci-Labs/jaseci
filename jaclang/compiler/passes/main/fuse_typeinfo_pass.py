@@ -510,31 +510,6 @@ class FuseTypeInfoPass(Pass):
             ):  # TODO check why IndexSlice produce an issue
                 right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
 
-        def find_tab(tab: ast.SymbolTable, name: str) -> Optional[ast.SymbolTable]:
-            """Recursively find symbol table from sym dotted name."""
-            tab_list = name.split(".")
-            if len(tab_list) == 1:
-                return tab
-            else:
-                if tab_list[0] == tab.name:
-                    return find_tab(tab, ".".join(tab_list[1:]))
-                else:
-                    for child in tab.kid:
-                        if child.name == tab_list[0]:
-                            return find_tab(child, ".".join(tab_list[1:]))
-            return None
-
-        for name_node in node.as_attr_list:
-            tab = (
-                find_tab(self.ir.sym_tab, name_node.sym.sym_dotted_name)
-                if name_node.sym
-                else None
-            )
-            if tab:
-                find_symbol = tab.lookup(name_node.sym_name)
-                if find_symbol and name_node not in find_symbol.uses:
-                    find_symbol.add_use(name_node.name_spec)
-
         # This function originally used `as_attr_list` in AtomTrailer
         # but an issue happened when doing stuff like fool_me().CONST_VALUE2
         # The issue was due to the way `as_attr_list` implemented so the fix
@@ -549,7 +524,7 @@ class FuseTypeInfoPass(Pass):
             iteration_count += 1
             if iteration_count > 50:
                 break
-
+        # print(1234,'atom_trailer_unwind',atom_trailer_unwind)
         for i in range(1, len(atom_trailer_unwind)):
             left = atom_trailer_unwind[i - 1]
             right = atom_trailer_unwind[i]
@@ -597,3 +572,5 @@ class FuseTypeInfoPass(Pass):
             else:
                 if left.type_sym_tab:
                     right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
+                    if right.name_spec.sym:
+                        right.name_spec.sym.add_use(right.name_spec)
