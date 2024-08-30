@@ -33,7 +33,6 @@ can test_run {
             f"  - Edge: {edge}" |> print;
         }
     }
-    print(f"bar_walk: {bar_walk}");
     root spawn bar_walk();
 }
 # Define the entry point to run the test
