@@ -30,17 +30,5 @@ walker bar_walk {
             disengage;
         }
     }
-
-    # New behavior added during runtime
-    can end with `root exit {
-    "bar_walk has been updated with new behavior!" |> print;
-    disengage;
-    }
-    
-    # New behavior added during runtime
-    can end with `root exit {
-    "bar_walk has been updated with new behavior!" |> print;
-    disengage;
-    }
-    }
+}
     

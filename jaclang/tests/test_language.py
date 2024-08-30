@@ -957,10 +957,9 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
-        # cli.run(
-        #     filename=self.fixture_abs_path("walker_reload/foo.jac"),
-        # )
-        jac_import("foo", base_path=self.fixture_abs_path("walker_reload"))
+        cli.run(
+            filename=self.fixture_abs_path("walker_reload/foo.jac"),
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         print(f"Stdout: {stdout_value}")
