@@ -21,16 +21,15 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
     from jaclang.plugin.default import (
         Architype,
         EdgeDir,
-        ExecutionContext,
         WalkerArchitype,
         Root,
         DSFunc,
     )
-    from jaclang.runtimelib.memory import Memory
+    from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
+    from jaclang.runtimelib.context import ExecutionContext
 
 import pluggy
 
@@ -45,20 +44,8 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def context(session: str = "") -> ExecutionContext:
-        """Get the execution context."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def reset_context() -> None:
-        """Reset the execution context."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def memory_hook() -> Memory | None:
-        """Create memory abstraction."""
+    def get_context() -> ExecutionContext:
+        """Get current execution context."""
         raise NotImplementedError
 
     @staticmethod

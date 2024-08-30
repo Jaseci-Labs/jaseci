@@ -6,6 +6,8 @@ import os
 import sys
 import types
 from typing import Optional, Union
+from contextvars import ContextVar
+from typing import Optional
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
@@ -15,6 +17,9 @@ from jaclang.utils.log import logging
 
 
 logger = logging.getLogger(__name__)
+
+
+JACMACHINE_CONTEXT = ContextVar["JacMachine | None"]("JacMachine")
 
 
 class JacMachine:
@@ -32,6 +37,8 @@ class JacMachine:
             else os.path.abspath(base_path)
         )
         self.jac_program: Optional[JacProgram] = None
+
+        JACMACHINE_CONTEXT.set(self)
 
     def attach_program(self, jac_program: "JacProgram") -> None:
         """Attach a JacProgram to the machine."""
@@ -139,6 +146,18 @@ class JacMachine:
         else:
             logger.warning(f"Module {module_name} not found in loaded modules.")
         return ()
+
+    @staticmethod
+    def get(base_path: str = "") -> "JacMachine":
+        """Get current jac machine."""
+        if (jac_machine := JACMACHINE_CONTEXT.get(None)) is None:
+            jac_machine = JacMachine(base_path)
+        return jac_machine
+
+    @staticmethod
+    def detach() -> None:
+        """Detach current jac machine."""
+        JACMACHINE_CONTEXT.set(None)
 
 
 class JacProgram:

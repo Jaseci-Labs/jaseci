@@ -201,7 +201,7 @@ class SymTabBuildPass(Pass):
             source = node.items.items[0]
             if not isinstance(source, ast.ModulePath) or not source.sub_module:
                 self.error(
-                    f"Module {node.from_loc.path_str if node.from_loc else 'from location'}"
+                    f"Module {node.from_loc.dot_path_str if node.from_loc else 'from location'}"
                     f" not found to include *, or ICE occurred!"
                 )
             else:
