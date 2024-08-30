@@ -7,6 +7,8 @@ import sys
 from jaclang.cli import cli
 from jaclang.utils.test import TestCase
 
+session = ""
+
 
 class TestJaseciPlugin(TestCase):
     """Test jaseci plugin."""
@@ -40,15 +42,17 @@ class TestJaseciPlugin(TestCase):
         """Test simple persistent object."""
         session = self.fixture_abs_path("test_walker_simple_persistent.session")
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            walker="create",
+            entrypoint="create",
+            args=[],
         )
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            walker="traverse",
+            entrypoint="traverse",
+            args=[],
         )
         output = self.capturedOutput.getvalue().strip()
         self.assertEqual(output, "node a\nnode b")
@@ -57,18 +61,24 @@ class TestJaseciPlugin(TestCase):
     def test_entrypoint_root(self) -> None:
         """Test entrypoint being root."""
         session = self.fixture_abs_path("test_entrypoint_root.session")
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            walker="create",
+            entrypoint="create",
+            args=[],
         )
-        obj = cli.get_object(session=session, id="root")
+        obj = cli.get_object(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            id="root",
+            session=session,
+        )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
+            entrypoint="traverse",
             node=str(obj["id"]),
-            walker="traverse",
+            args=[],
         )
         output = self.capturedOutput.getvalue().strip()
         self.assertEqual(output, "node a\nnode b")
@@ -77,20 +87,34 @@ class TestJaseciPlugin(TestCase):
     def test_entrypoint_non_root(self) -> None:
         """Test entrypoint being non root node."""
         session = self.fixture_abs_path("test_entrypoint_non_root.session")
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            walker="create",
+            entrypoint="create",
+            args=[],
         )
-        obj = cli.get_object(session=session, id="root")
-        edge_obj = cli.get_object(session=session, id=obj["edges"][0].id.hex)
-        a_obj = cli.get_object(session=session, id=str(edge_obj["target"].id.hex))
+        obj = cli.get_object(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            id="root",
+            session=session,
+        )
+        edge_obj = cli.get_object(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            id=obj["edges"][0].id.hex,
+            session=session,
+        )
+        a_obj = cli.get_object(
+            filename=self.fixture_abs_path("simple_persistent.jac"),
+            id=edge_obj["target"].id.hex,
+            session=session,
+        )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
+            entrypoint="traverse",
             node=str(a_obj["id"]),
-            walker="traverse",
+            args=[],
         )
         output = self.capturedOutput.getvalue().strip()
         self.assertEqual(output, "node a\nnode b")
@@ -103,11 +127,29 @@ class TestJaseciPlugin(TestCase):
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
         )
-        obj = cli.get_object(session=session, id="root")
+        obj = cli.get_object(
+            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            session=session,
+            id="root",
+        )
         self.assertEqual(len(obj["edges"]), 2)
-        edge_objs = [cli.get_object(session=session, id=e.id.hex) for e in obj["edges"]]
+        edge_objs = [
+            cli.get_object(
+                filename=self.fixture_abs_path("simple_node_connection.jac"),
+                session=session,
+                id=e.id.hex,
+            )
+            for e in obj["edges"]
+        ]
         node_ids = [obj["target"].id.hex for obj in edge_objs]
-        node_objs = [cli.get_object(session=session, id=str(n_id)) for n_id in node_ids]
+        node_objs = [
+            cli.get_object(
+                filename=self.fixture_abs_path("simple_node_connection.jac"),
+                session=session,
+                id=str(n_id),
+            )
+            for n_id in node_ids
+        ]
         self.assertEqual(len(node_objs), 2)
         self.assertEqual(
             {obj["architype"].tag for obj in node_objs}, {"first", "second"}
@@ -122,10 +164,11 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
-            walker="filter_on_edge_get_edge",
+            entrypoint="filter_on_edge_get_edge",
+            args=[],
         )
         self.assertEqual(
             self.capturedOutput.getvalue().strip(), "[simple_edge(index=1)]"
@@ -140,10 +183,11 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
-            walker="filter_on_edge_get_node",
+            entrypoint="filter_on_edge_get_node",
+            args=[],
         )
         self.assertEqual(
             self.capturedOutput.getvalue().strip(), "[simple(tag='second')]"
@@ -158,10 +202,11 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
-            walker="filter_on_node_get_node",
+            entrypoint="filter_on_node_get_node",
+            args=[],
         )
         self.assertEqual(
             self.capturedOutput.getvalue().strip(), "[simple(tag='second')]"
@@ -176,10 +221,11 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
-            walker="filter_on_edge_visit",
+            entrypoint="filter_on_edge_visit",
+            args=[],
         )
         self.assertEqual(self.capturedOutput.getvalue().strip(), "simple(tag='first')")
         self._del_session(session)
@@ -192,10 +238,11 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
-            walker="filter_on_node_visit",
+            entrypoint="filter_on_node_visit",
+            args=[],
         )
         self.assertEqual(self.capturedOutput.getvalue().strip(), "simple(tag='first')")
         self._del_session(session)
@@ -203,16 +250,18 @@ class TestJaseciPlugin(TestCase):
     def test_indirect_reference_node(self) -> None:
         """Test reference node indirectly without visiting."""
         session = self.fixture_abs_path("test_indirect_reference_node.session")
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            walker="create",
+            entrypoint="create",
+            args=[],
         )
         self._output2buffer()
-        cli.run(
+        cli.enter(
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
-            walker="indirect_ref",
+            entrypoint="indirect_ref",
+            args=[],
         )
         self.assertEqual(
             self.capturedOutput.getvalue().strip(),

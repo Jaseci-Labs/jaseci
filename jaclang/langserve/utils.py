@@ -273,7 +273,9 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
     )
 
 
-def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
+def get_mod_path(
+    mod_path: ast.ModulePath, name_node: ast.Name
+) -> str | None:  # TODO: This should go away
     """Get path for a module import name."""
     ret_target = None
     if mod_path.parent and (
@@ -294,7 +296,7 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
                 else ""
             )
         else:
-            temporary_path_str = mod_path.path_str
+            temporary_path_str = mod_path.dot_path_str
         sys.path.append(os.path.dirname(mod_path.loc.mod_path))
         spec = importlib.util.find_spec(temporary_path_str)
         sys.path.remove(os.path.dirname(mod_path.loc.mod_path))

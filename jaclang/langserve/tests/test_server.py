@@ -201,6 +201,62 @@ class TestJacLangServer(TestCase):
                     str(lsp.get_definition(import_file, lspt.Position(line, char))),
                 )
 
+    def test_go_to_definition_foolme(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(
+            self.fixture_abs_path(
+                "../../../../jaclang/compiler/passes/main/tests/fixtures/py_imp_test.jac"
+            )
+        )
+        lsp.deep_check(import_file)
+        positions = [
+            (6, 39, "/pygame_mock/__init__.py:2:0-2:0"),
+            (6, 45, "/pygame_mock/constants.py:3:0-4:1"),
+            (7, 31, "/pygame_mock/__init__.py:2:0-2:0"),
+            (7, 35, "/pygame_mock/constants.py:3:0-4:1"),
+            (20, 51, "/py_imp_test.jac:6:4-6:11"),
+            (20, 64, "/pygame_mock/constants.py:4:3-4:15"),
+            (21, 48, "/py_imp_test.jac:10:4-10:6"),
+            (21, 58, "/py_imp_test.jac:11:8-11:15"),
+            (21, 68, "/pygame_mock/constants.py:4:3-4:15"),
+            (23, 58, "/pygame_mock/constants.py:4:3-4:15"),
+        ]
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                self.assertIn(
+                    expected,
+                    str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                )
+
+    def test_go_to_definition_index_expr(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(
+            self.fixture_abs_path("../../../../jaclang/tests/fixtures/index_slice.jac")
+        )
+        lsp.deep_check(import_file)
+        positions = [
+            (23, 20, "index_slice.jac:2:8-2:13"),
+            (24, 24, "index_slice.jac:2:8-2:13"),
+            (27, 33, "index_slice.jac:2:8-2:13"),
+        ]
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                print(str(lsp.get_definition(import_file, lspt.Position(line, char))))
+                self.assertIn(
+                    expected,
+                    str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                )
+
     def test_sem_tokens(self) -> None:
         """Test that the Semantic Tokens are generated correctly."""
         lsp = JacLangServer()
@@ -364,14 +420,14 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(import_file)
         positions = [
-            (13, 29, "pygame_mock/color.py:0:0-2:4"),
+            (19, 29, "pygame_mock/color.py:0:0-2:4"),
             (3, 17, "/pygame_mock/__init__.py:0:0-0:0"),
-            (14, 45, "pygame_mock/color.py:0:0-2:4"),
-            (13, 77, "mock/constants.py:4:3-4:15"),
-            (17, 28, "mock/display.py:0:0-1:7"),
-            (15, 22, "/argparse.pyi:124:0-249:13"),
-            (13, 74, "pygame_mock/constants.py:4:3-4:15"),
-            (18, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
+            (20, 45, "pygame_mock/color.py:0:0-2:4"),
+            (19, 77, "mock/constants.py:4:3-4:15"),
+            (26, 28, "mock/display.py:0:0-1:7"),
+            (24, 22, "/argparse.pyi:124:0-249:13"),
+            (19, 74, "pygame_mock/constants.py:4:3-4:15"),
+            (27, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
         ]
 
         for line, char, expected in positions:
@@ -396,24 +452,41 @@ class TestJacLangServer(TestCase):
         lsp.deep_check(circle_file)
         test_cases = [
             (
-                12,
-                15,
+                2,
+                21,
                 [
-                    ":12:13-12:18",
-                    "12:27-12:32",
-                    "13:26-13:31",
-                    "13:40-13:45",
-                    "14:26-14:31",
-                    "14:40-14:45",
+                    ":6:21-6:32",
+                    ":7:11-7:22",
+                    ":11:25-11:36",
+                    ":12:15-12:26",
+                    ":18:33-18:44",
+                    "19:46-19:57",
+                    ":19:8-19:19",
+                    ":19:46-19:57",
+                    ":20:8-20:19",
+                    "21:8-21:19,",
+                    "23:8-23:19",
+                    ":26:4-26:15",
                 ],
             ),
-            (13, 63, ["6:33-6:42", "7:23-7:32", "12:45-12:54", "13:58-13:67"]),
             (
-                15,
+                19,
+                63,
+                [
+                    "6:33-6:42",
+                    "7:23-7:32",
+                    "18:45-18:54",
+                    "19:58-19:67",
+                    "11:37-11:46",
+                    "12:27-12:36",
+                ],
+            ),
+            (
+                24,
                 53,
                 [
-                    "15:42-15:56",
-                    "15:16-15:30",
+                    "24:42-24:56",
+                    "24:16-24:30",
                     "argparse.pyi:334:21-334:35",
                     "argparse.pyi:163:29-163:43",
                     "argparse.pyi:32:52-32:66",
