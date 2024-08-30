@@ -515,6 +515,7 @@ class FuseTypeInfoPass(Pass):
             iteration_count += 1
             if iteration_count > 50:
                 break
+
         for i in range(1, len(atom_trailer_unwind)):
             left = atom_trailer_unwind[i - 1]
             right = atom_trailer_unwind[i]

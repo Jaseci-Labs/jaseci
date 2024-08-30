@@ -9,7 +9,6 @@ import ast as ast3
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import Symbol
 
 
 class PyJacAstLinkPass(Pass):
@@ -167,7 +166,7 @@ class PyJacAstLinkPass(Pass):
             node.target, ast.ArchRefChain
         ):
             for arch in node.target.archs:
-                if arch.arch_name.sym and isinstance(arch.arch_name.sym, Symbol):
+                if arch.arch_name.sym:
                     arch.arch_name.sym.add_use(arch.arch_name)
 
     def exit_param_var(self, node: ast.ParamVar) -> None:
