@@ -13,9 +13,8 @@ can update_bar_walker {
     }
     }
     ''';
-    bar_file_path = os.path.join(os.path.abspath("."),
-        'jaclang/tests/fixtures/walker_reload/bar.jac'
-    );
+    script_dir = os.path.dirname(os.path.abspath(__file__));
+    bar_file_path = os.path.join(script_dir,'bar.jac');
     with open(bar_file_path, 'r') as bar_file {
         original_content = bar_file.read();
     }
