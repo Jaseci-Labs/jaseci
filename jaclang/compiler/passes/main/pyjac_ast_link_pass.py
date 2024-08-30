@@ -162,7 +162,6 @@ class PyJacAstLinkPass(Pass):
                     jac_node=node.signature.return_type,
                     py_nodes=node.parent.signature.return_type.gen.py_ast,
                 )
-                """Enter ability definition."""
 
         if isinstance(node.decl_link, ast.Ability) and isinstance(
             node.target, ast.ArchRefChain

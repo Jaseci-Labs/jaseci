@@ -14,7 +14,6 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
-from jaclang.compiler.symtable import Symbol
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
@@ -429,14 +428,10 @@ class JacLangServer(LanguageServer):
         if index1 is None:
             return None
         node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
-        if (
-            node_selected
-            and node_selected.sym
-            and isinstance(node_selected.sym.decl.sym, Symbol)
-        ):
+        if node_selected and node_selected.sym:
             changes: dict[str, list[lspt.TextEdit]] = {}
             for node in [
-                *node_selected.sym.decl.sym.uses,
+                *node_selected.sym.uses,
                 node_selected.sym.defn[0],
             ]:
                 key = uris.from_fs_path(node.loc.mod_path)

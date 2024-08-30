@@ -500,15 +500,6 @@ class FuseTypeInfoPass(Pass):
         """Adding symbol links to AtomTrailer right nodes."""
         # This will fix adding the symbol links to nodes in atom trailer
         # self.x.z = 5  # will add symbol links to both x and z
-        for i in range(1, len(node.as_attr_list)):
-            left = node.as_attr_list[i - 1]
-            right = node.as_attr_list[i]
-            # assert isinstance(left, ast.NameAtom)
-            # assert isinstance(right, ast.NameAtom)
-            if left.type_sym_tab and not isinstance(
-                right, ast.IndexSlice
-            ):  # TODO check why IndexSlice produce an issue
-                right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
 
         # This function originally used `as_attr_list` in AtomTrailer
         # but an issue happened when doing stuff like fool_me().CONST_VALUE2
@@ -524,7 +515,6 @@ class FuseTypeInfoPass(Pass):
             iteration_count += 1
             if iteration_count > 50:
                 break
-        # print(1234,'atom_trailer_unwind',atom_trailer_unwind)
         for i in range(1, len(atom_trailer_unwind)):
             left = atom_trailer_unwind[i - 1]
             right = atom_trailer_unwind[i]

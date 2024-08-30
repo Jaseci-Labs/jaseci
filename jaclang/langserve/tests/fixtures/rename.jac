@@ -8,6 +8,7 @@ can foo;
 
 
 obj out{
+    has cnt :int;
     can bar;
     can baz;
 }
@@ -23,5 +24,7 @@ obj out{
 
 with entry{
     foo();
-    out().bar();
+    new = out();
+    new.cnt;
+    out(1).bar();
 }
