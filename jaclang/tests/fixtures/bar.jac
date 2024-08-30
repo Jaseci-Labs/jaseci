@@ -37,10 +37,3 @@ walker bar_walk {
         disengage;
     }
 }
-
-walker print_walk {
-    can start with `root entry {
-        "This is a new walker, print_walk!" |> print;
-        disengage;
-    }
-}
