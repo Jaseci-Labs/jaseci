@@ -2,14 +2,13 @@
 node Item {
     has value: int = 0;
 }
-
 # Define an edge type called `Link`
-edge Link {}
 
+edge Link {}
 # Define the `bar` walker
+
 walker bar_walk {
     has count: int = 0;
-
     # Start walking from the root node or an Item node
     can start with `root | Item entry {
         here ++> Item();
@@ -20,8 +19,8 @@ walker bar_walk {
             disengage;
         }
     }
-
     # Walk over Item nodes and update their values
+
     can walk with Item entry {
         here.value = self.count;
         f"Item value: {here.value}" |> print;
