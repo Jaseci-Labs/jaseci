@@ -8,7 +8,7 @@ from shelve import Shelf, open
 from typing import Callable, Generator, Generic, Iterable, TypeVar
 from uuid import UUID
 
-from .architype import AccessLevel, Anchor, NodeAnchor, Root, TANCH
+from .architype import Anchor, NodeAnchor, Root, TANCH
 
 ID = TypeVar("ID")
 
@@ -80,6 +80,10 @@ class ShelfStorage(Memory[UUID, Anchor]):
     def close(self) -> None:
         """Close memory handler."""
         if isinstance(self.__shelf__, Shelf):
+            from jaclang.plugin.feature import JacFeature as Jac
+
+            root = Jac.get_root().__jac__
+
             for id in self.__gc__:
                 self.__shelf__.pop(str(id), None)
                 self.__mem__.pop(id, None)
@@ -92,14 +96,14 @@ class ShelfStorage(Memory[UUID, Anchor]):
                             isinstance(p_d, NodeAnchor)
                             and isinstance(d, NodeAnchor)
                             and p_d.edges != d.edges
-                            and d.current_access_level >= AccessLevel.CONNECT
+                            and root.has_connect_access(d)
                         ):
                             if not d.edges:
                                 self.__shelf__.pop(_id, None)
                                 continue
                             p_d.edges = d.edges
 
-                        if d.current_access_level >= AccessLevel.WRITE:
+                        if root.has_write_access(d):
                             if hash(dumps(p_d.access)) != hash(dumps(d.access)):
                                 p_d.access = d.access
                             if hash(dumps(d.architype)) != hash(dumps(d.architype)):

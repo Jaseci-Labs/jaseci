@@ -7,7 +7,7 @@ from contextvars import ContextVar
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
-from .architype import AccessLevel, NodeAnchor, Root
+from .architype import NodeAnchor, Root
 from .memory import Memory, ShelfStorage
 
 
@@ -28,19 +28,7 @@ class ExecutionContext:
     reports: list[Any]
     system_root: NodeAnchor
     root: NodeAnchor
-    __entry__: NodeAnchor | str | None
-
-    @property
-    def entry(self) -> NodeAnchor:
-        """Get entry lazy load."""
-        match self.__entry__:
-            case NodeAnchor():
-                pass
-            case str():
-                self.__entry__ = self.init_anchor(self.__entry__, self.root)
-            case _:
-                self.__entry__ = self.root
-        return self.__entry__
+    entry: NodeAnchor
 
     def init_anchor(
         self,
@@ -58,6 +46,10 @@ class ExecutionContext:
         """Validate access."""
         return self.root.has_read_access(self.entry)
 
+    def set_entry(self, entry: str | None) -> None:
+        """Override entry."""
+        self.entry = self.init_anchor(entry, self.root)
+
     def close(self) -> None:
         """Close current ExecutionContext."""
         self.mem.close()
@@ -67,7 +59,6 @@ class ExecutionContext:
     def create(
         session: Optional[str] = None,
         root: Optional[str] = None,
-        entry: Optional[str] = None,
         auto_close: bool = True,
     ) -> ExecutionContext:
         """Create ExecutionContext."""
@@ -84,10 +75,7 @@ class ExecutionContext:
 
         ctx.system_root = system_root
 
-        ctx.root = ctx.init_anchor(root, ctx.system_root)
-        ctx.root.current_access_level = AccessLevel.WRITE
-
-        ctx.__entry__ = entry
+        ctx.entry = ctx.root = ctx.init_anchor(root, ctx.system_root)
 
         if auto_close and (old_ctx := EXECUTION_CONTEXT.get(None)):
             old_ctx.close()

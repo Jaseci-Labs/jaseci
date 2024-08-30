@@ -251,7 +251,7 @@ def enter(
     base = base if base else "./"
     mod = mod[:-4]
 
-    jctx = ExecutionContext.create(session=session, root=root, entry=node)
+    jctx = ExecutionContext.create(session=session, root=root)
 
     if filename.endswith(".jac"):
         ret_module = jac_import(
@@ -282,6 +282,9 @@ def enter(
             print("Errors occurred while importing the module.")
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
+
+            jctx.set_entry(node)
+
             if isinstance(architype, WalkerArchitype) and jctx.validate_access():
                 Jac.spawn_call(jctx.entry.architype, architype)
 

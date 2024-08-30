@@ -285,7 +285,7 @@ class TestJaseciPlugin(TestCase):
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="allow_other_root_access",
-            args=[self.roots[1], 1, via_all],
+            args=[self.roots[1], 0, via_all],
             session=session,
             root=self.roots[0],
             node=node_1,
@@ -293,7 +293,7 @@ class TestJaseciPlugin(TestCase):
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="allow_other_root_access",
-            args=[self.roots[0], 1, via_all],
+            args=[self.roots[0], 0, via_all],
             session=session,
             root=self.roots[1],
             node=node_2,
