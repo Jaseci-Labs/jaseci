@@ -31,4 +31,3 @@ walker bar_walk {
         }
     }
 }
-    
