@@ -348,9 +348,6 @@ class JacImporter(Importer):
                         raise ImportError(f"No bytecode found for {spec.full_target}")
                     with sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
-                    # print(
-                    #     f"Module {module_name} successfully compiled. dict: {module.__dict__.keys()}"
-                    # )
                 except Exception as e:
                     logger.error(dump_traceback(e))
                     raise e
@@ -363,6 +360,5 @@ class JacImporter(Importer):
                 cachable=spec.cachable,
                 lang=spec.language,
             )
-        # print(f"import_return: {import_return}")
         self.result = import_return
         return self.result

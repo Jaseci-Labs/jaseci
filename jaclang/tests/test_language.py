@@ -954,15 +954,15 @@ class JacLanguageTests(TestCase):
 
     def test_walker_dynamic_update(self) -> None:
         """Test dynamic update of a walker during runtime."""
-        Jac.get_root().__jac__.edges.clear()
-        Jac.context().init_memory(base_path=self.fixture_abs_path("./"))
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
-        cli.run(
-            filename=self.fixture_abs_path("walker_reload/foo.jac"),
-        )
+        # cli.run(
+        #     filename=self.fixture_abs_path("walker_reload/foo.jac"),
+        # )
+        jac_import("foo", base_path=self.fixture_abs_path("walker_reload"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        print(f"Stdout: {stdout_value}")
         expected_output = "bar_walk has been updated with new behavior!"
         self.assertIn(expected_output, stdout_value.split("\n"))

@@ -1,6 +1,7 @@
-import:py from jaclang.plugin.feature { JacFeature as Jac }
 import:jac from bar { bar_walk }
 import:py from time { sleep }
+import:py from jaclang.runtimelib.machine {JacMachine}
+
 import:py os;
 
 can update_bar_walker {
@@ -18,7 +19,7 @@ can update_bar_walker {
     with open(bar_file_path, 'r') as bar_file {
         original_content = bar_file.read();
     }
-    with open(bar_file_path, 'r+') as bar_file { # Specify the correct path to bar.jac
+    with open(bar_file_path, 'r+') as bar_file {
 
     content = bar_file.read();
 
@@ -31,8 +32,8 @@ can update_bar_walker {
         bar_file.truncate();
     }
     }
-    "Updated bar.jac with new behavior." |> print;
-    (bar_walk_new, ) = Jac.context().jac_machine.update_walker(
+    "Updating bar.jac with new behavior." |> print;
+    (bar_walk_new, ) = JacMachine.get().update_walker(
         "bar",
         items={'bar_walk': None}
     );
