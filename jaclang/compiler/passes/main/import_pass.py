@@ -286,6 +286,7 @@ class PyImportPass(JacImportPass):
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)
+                    parent_node.abs_path = file_to_raise
                     SymTabBuildPass(input_ir=mod, prior=self)
                     return mod
                 else:
