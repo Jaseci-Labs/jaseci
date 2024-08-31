@@ -16,6 +16,7 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
+    add_unique_text_edit,
     collect_all_symbols_in_scope,
     create_range,
     find_deepest_symbol_node_at_pos,
@@ -429,18 +430,16 @@ class JacLangServer(LanguageServer):
         node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
             changes: dict[str, list[lspt.TextEdit]] = {}
-            for node in [*node_selected.sym.uses, node_selected.sym.defn[0]]:
+            for node in [
+                *node_selected.sym.uses,
+                node_selected.sym.defn[0],
+            ]:
                 key = uris.from_fs_path(node.loc.mod_path)
-                value = [
-                    lspt.TextEdit(
-                        range=create_range(node.loc),
-                        new_text=new_name,
-                    )
-                ]
-                if key in changes:
-                    changes[key].extend(value)
-                else:
-                    changes[key] = value
+                new_edit = lspt.TextEdit(
+                    range=create_range(node.loc),
+                    new_text=new_name,
+                )
+                add_unique_text_edit(changes, key, new_edit)
             return lspt.WorkspaceEdit(changes=changes)
         return None
 

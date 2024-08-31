@@ -80,21 +80,42 @@ class ShelfStorage(Memory[UUID, Anchor]):
     def close(self) -> None:
         """Close memory handler."""
         if isinstance(self.__shelf__, Shelf):
+            from jaclang.plugin.feature import JacFeature as Jac
+
+            root = Jac.get_root().__jac__
+
             for id in self.__gc__:
                 self.__shelf__.pop(str(id), None)
                 self.__mem__.pop(id, None)
 
             for d in self.__mem__.values():
-                if d.persistent and d.hash != (new_hash := hash(dumps(d))):
-                    if (
+                if d.persistent and d.hash != hash(dumps(d)):
+                    _id = str(d.id)
+                    if p_d := self.__shelf__.get(_id):
+                        if (
+                            isinstance(p_d, NodeAnchor)
+                            and isinstance(d, NodeAnchor)
+                            and p_d.edges != d.edges
+                            and root.has_connect_access(d)
+                        ):
+                            if not d.edges:
+                                self.__shelf__.pop(_id, None)
+                                continue
+                            p_d.edges = d.edges
+
+                        if root.has_write_access(d):
+                            if hash(dumps(p_d.access)) != hash(dumps(d.access)):
+                                p_d.access = d.access
+                            if hash(dumps(d.architype)) != hash(dumps(d.architype)):
+                                p_d.architype = d.architype
+
+                        self.__shelf__[_id] = p_d
+                    elif not (
                         isinstance(d, NodeAnchor)
                         and not isinstance(d.architype, Root)
                         and not d.edges
                     ):
-                        self.__shelf__.pop(str(d.id), None)
-                    else:
-                        d.hash = new_hash
-                        self.__shelf__[str(d.id)] = d
+                        self.__shelf__[_id] = d
 
             self.__shelf__.close()
         super().close()
