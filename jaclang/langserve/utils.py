@@ -627,3 +627,20 @@ def get_line_of_code(line_number: int, lines: list[str]) -> Optional[tuple[str, 
             else first_non_space
         )
     return None
+
+
+def add_unique_text_edit(
+    changes: dict[str, list[lspt.TextEdit]], key: str, new_edit: lspt.TextEdit
+) -> None:
+    """Add a new text edit to the changes dictionary if it is unique."""
+    if key not in changes:
+        changes[key] = [new_edit]
+    else:
+        for existing_edit in changes[key]:
+            if (
+                existing_edit.range.start == new_edit.range.start
+                and existing_edit.range.end == new_edit.range.end
+                and existing_edit.new_text == new_edit.new_text
+            ):
+                return
+        changes[key].append(new_edit)
