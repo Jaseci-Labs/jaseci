@@ -519,7 +519,45 @@ class TestJacLangServer(TestCase):
             ),
             (12, 34, "circleRadius", "12:21-12:27", "12:30-12:36", "11:19-11:25"),
             (62, 14, "target_area", "65:43-65:56", "70:32-70:45", "62:5-62:18"),
+            (57, 33, "type_of_shape", "75:12-75:22", "27:8-27:18,", "57:23-57:33"),
         ]
+        for tup in test_cases:
+            line, char, new_name, *expected_refs = tup
+            references = str(
+                lsp.rename_symbol(circle_file, lspt.Position(line, char), new_name)
+            )
+            for expected in expected_refs:
+                self.assertIn(expected, references)
+
+    def test_rename_uses(self) -> None:
+        """Test that the rename is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+
+        circle_file = uris.from_fs_path(self.fixture_abs_path("rename.jac"))
+        lsp.deep_check(circle_file)
+        # fmt: off
+        test_cases = [
+            (0, 7, "func", "25:4-25:7", "0:4-0:7", "4:5-4:8",),
+            (4, 6, "func", "25:4-25:7", "0:4-0:7", "4:5-4:8",),
+            (25, 7, "func", "25:4-25:7", "0:4-0:7", "4:5-4:8",),
+            (10, 10, "canBar", "27:8-27:11", "10:8-10:11"),
+            (27, 9, "canBar", "27:8-27:11", "10:8-10:11"),
+            (9, 6, "canBar", "26:10-26:13", "28:4-28:7", "16:5-16:8", "9:4-9:7"),
+            (26, 11, "canBar", "26:10-26:13", "28:4-28:7", "16:5-16:8", "9:4-9:7"),
+            (16, 7, "canBar", "26:10-26:13", "28:4-28:7", "16:5-16:8", "9:4-9:7"),
+            (28, 6, "canBar", "26:10-26:13", "28:4-28:7", "16:5-16:8", "9:4-9:7"),
+            (11, 10, "canBar", "11:8-11:11", "16:13-16:16", "28:11-28:14"),
+            (16, 14, "canBar", "11:8-11:11", "16:13-16:16", "28:11-28:14"),
+            (28, 13, "canBar", "11:8-11:11", "16:13-16:16", "28:11-28:14"),
+            (12, 10, "canBaz", "12:8-12:11", "20:13-20:16"),
+            (20, 14, "canBaz", "12:8-12:11", "20:13-20:16"),
+            (26, 6, "count", "27:4-27:7", "26:4-26:7"),
+            (27, 5, "count", "27:4-27:7", "26:4-26:7"),
+        ]
+        # fmt: on
         for tup in test_cases:
             line, char, new_name, *expected_refs = tup
             references = str(
