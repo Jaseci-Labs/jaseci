@@ -251,6 +251,8 @@ def enter(
     base = base if base else "./"
     mod = mod[:-4]
 
+    jctx = ExecutionContext.create(session=session, root=root)
+
     if filename.endswith(".jac"):
         ret_module = jac_import(
             target=mod,
@@ -270,10 +272,9 @@ def enter(
                 override_name="__main__" if main else None,
             )
     else:
+        jctx.close()
         JacMachine.detach()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
-
-    jctx = ExecutionContext.create(session=session, root=root, entry=node)
 
     if ret_module:
         (loaded_mod,) = ret_module
@@ -281,8 +282,11 @@ def enter(
             print("Errors occurred while importing the module.")
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
-            if isinstance(architype, WalkerArchitype):
-                Jac.spawn_call(jctx.entry.architype, architype)
+
+            jctx.set_entry_node(node)
+
+            if isinstance(architype, WalkerArchitype) and jctx.validate_access():
+                Jac.spawn_call(jctx.entry_node.architype, architype)
 
     jctx.close()
     JacMachine.detach()
