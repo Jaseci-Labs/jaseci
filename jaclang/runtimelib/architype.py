@@ -568,8 +568,8 @@ class WalkerAnchor(Anchor):
 class Architype:
     """Architype Protocol."""
 
-    _jac_entry_funcs_: list[DSFunc]
-    _jac_exit_funcs_: list[DSFunc]
+    _jac_entry_funcs_: ClassVar[list[DSFunc]]
+    _jac_exit_funcs_: ClassVar[list[DSFunc]]
 
     def __init__(self) -> None:
         """Create default architype."""
@@ -621,16 +621,16 @@ class WalkerArchitype(Architype):
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
 
 @dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []  # type: ignore[misc]
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
     def __init__(self) -> None:
         """Create root node."""
