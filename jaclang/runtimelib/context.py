@@ -28,7 +28,7 @@ class ExecutionContext:
     reports: list[Any]
     system_root: NodeAnchor
     root: NodeAnchor
-    entry: NodeAnchor
+    entry_node: NodeAnchor
 
     def init_anchor(
         self,
@@ -44,11 +44,11 @@ class ExecutionContext:
 
     def validate_access(self) -> bool:
         """Validate access."""
-        return self.root.has_read_access(self.entry)
+        return self.root.has_read_access(self.entry_node)
 
-    def set_entry(self, entry: str | None) -> None:
+    def set_entry_node(self, entry_node: str | None) -> None:
         """Override entry."""
-        self.entry = self.init_anchor(entry, self.root)
+        self.entry_node = self.init_anchor(entry_node, self.root)
 
     def close(self) -> None:
         """Close current ExecutionContext."""
@@ -75,7 +75,7 @@ class ExecutionContext:
 
         ctx.system_root = system_root
 
-        ctx.entry = ctx.root = ctx.init_anchor(root, ctx.system_root)
+        ctx.entry_node = ctx.root = ctx.init_anchor(root, ctx.system_root)
 
         if auto_close and (old_ctx := EXECUTION_CONTEXT.get(None)):
             old_ctx.close()

@@ -283,10 +283,10 @@ def enter(
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
 
-            jctx.set_entry(node)
+            jctx.set_entry_node(node)
 
             if isinstance(architype, WalkerArchitype) and jctx.validate_access():
-                Jac.spawn_call(jctx.entry.architype, architype)
+                Jac.spawn_call(jctx.entry_node.architype, architype)
 
     jctx.close()
     JacMachine.detach()
