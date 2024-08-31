@@ -28,13 +28,16 @@ class PyCollectDepsPass(Pass):
         if not isinstance(node, ast.AstSymbolNode):
             return
 
+        path: str = ""
         if isinstance(node, ast.ModulePath):
-            path = ".".join([i.value for i in node.path])
+            if node.path:
+                path = ".".join([i.value for i in node.path])
             node.abs_path = self.ir.py_mod_dep_map.get(path)
         elif isinstance(node, ast.ModuleItem):
             imp = node.parent_of_type(ast.Import)
             mod_path_node = imp.get_all_sub_nodes(ast.ModulePath)[0]
-            path = ".".join([i.value for i in mod_path_node.path])
+            if mod_path_node.path:
+                path = ".".join([i.value for i in mod_path_node.path])
             path += f".{node.name.value}"
             node.abs_path = self.ir.py_mod_dep_map.get(path)
 
