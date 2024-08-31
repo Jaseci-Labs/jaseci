@@ -8,12 +8,10 @@ import os
 import pathlib
 import sys
 
-# import jaclang
 import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
-from jaclang.vendor.mypy.build import find_module_with_reason
 
 
 class JacTypeCheckPass(Pass):
@@ -121,5 +119,7 @@ class JacTypeCheckPass(Pass):
         for i in mypy_graph:
             self.ir.py_mod_dep_map[i] = mypy_graph[i].xpath
             for j in mypy_graph[i].dependencies:
-                self.ir.py_mod_dep_map[j] = str(find_module_with_reason(j, manager))
+                self.ir.py_mod_dep_map[j] = str(
+                    myab.find_module_with_reason(j, manager)
+                )
         myab.process_graph(mypy_graph, manager)
