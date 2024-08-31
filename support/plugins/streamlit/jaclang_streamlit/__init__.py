@@ -1,6 +1,6 @@
 """Streamlit of Jac."""
 
-from jac_streamlit.app_test import JacAppTest as AppTest
+from jaclang_streamlit.app_test import JacAppTest as AppTest
 
 
 def run_streamlit(basename: str, dirname: str) -> None:
