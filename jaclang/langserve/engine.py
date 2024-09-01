@@ -22,8 +22,6 @@ from jaclang.langserve.utils import (
     find_deepest_symbol_node_at_pos,
     find_index,
     gen_diagnostics,
-    get_item_path,
-    get_mod_path,
     get_symbols_for_outline,
     parse_symbol_path,
     resolve_completion_symbol_table,
@@ -335,8 +333,10 @@ class JacLangServer(LanguageServer):
                 and node_selected.parent
                 and isinstance(node_selected.parent, ast.ModulePath)
             ):
-                spec = get_mod_path(node_selected.parent, node_selected)
+                spec = node_selected.parent.abs_path
+                self.log_py(f"spec: {spec}")
                 if spec:
+                    spec = spec[5:] if spec.startswith("File:") else spec
                     return lspt.Location(
                         uri=uris.from_fs_path(spec),
                         range=lspt.Range(
@@ -349,15 +349,22 @@ class JacLangServer(LanguageServer):
             elif node_selected.parent and isinstance(
                 node_selected.parent, ast.ModuleItem
             ):
-                path_range = get_item_path(node_selected.parent)
-                if path_range:
-                    path, loc_range = path_range
+                if True:
+                    path = node_selected.parent.from_mod_path.abs_path
+                    loc_range = node_selected.parent.loc_range
                     if path and loc_range:
+                        path = path[5:] if path.startswith("File:") else path
+                        self.log_py(f"path: {path}")
+                        self.log_py(f"loc_range: {loc_range}")
                         return lspt.Location(
                             uri=uris.from_fs_path(path),
                             range=lspt.Range(
-                                start=lspt.Position(line=loc_range[0], character=0),
-                                end=lspt.Position(line=loc_range[1], character=5),
+                                start=lspt.Position(
+                                    line=loc_range[0], character=loc_range[2]
+                                ),
+                                end=lspt.Position(
+                                    line=loc_range[1], character=loc_range[3]
+                                ),
                             ),
                         )
                 else:
