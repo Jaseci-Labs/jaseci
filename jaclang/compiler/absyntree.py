@@ -1059,11 +1059,12 @@ class ModuleItem(AstSymbolNode):
         """Get location range."""
         if not self.from_mod_path.sub_module:
             raise ValueError("Module items should have module path. Not Possible.")
-        if not self.from_mod_path.sub_module.sym_tab.lookup(self.sym_name):
+        lookup = self.from_mod_path.sub_module.sym_tab.lookup(self.sym_name)
+        if not lookup:
             raise ValueError(
                 "Module items should have a symbol table entry. Not Possible."
             )
-        loc = self.from_mod_path.sub_module.sym_tab.lookup(self.sym_name).decl.loc
+        loc = lookup.decl.loc
         return loc.first_line, loc.col_start, loc.col_end, loc.col_end
 
     @property
