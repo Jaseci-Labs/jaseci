@@ -125,7 +125,7 @@ class Collection(Generic[T]):
         return cast(T, doc)
 
     @classmethod
-    def __documents__(cls, docs: Cursor) -> Generator[T, None]:
+    def __documents__(cls, docs: Cursor) -> Generator[T, None, None]:
         """
         Return parsed version of multiple documents.
 
@@ -151,7 +151,7 @@ class Collection(Generic[T]):
     @staticmethod
     def get_session() -> ClientSession:
         """Return pymongo.client_session.ClientSession used for mongodb transactional operations."""
-        return await Collection.get_client().start_session()
+        return Collection.get_client().start_session()
 
     @staticmethod
     def get_database() -> Database:
@@ -238,7 +238,7 @@ class Collection(Generic[T]):
         projection: Mapping[str, Any] | Iterable[str] | None = None,
         session: ClientSession | None = None,
         **kwargs: Any,  # noqa: ANN401
-    ) -> Generator[T, None]:
+    ) -> Generator[T, None, None]:
         """Retrieve multiple documents."""
         if projection is None:
             projection = cls.__excluded_obj__
@@ -378,7 +378,7 @@ class AsyncCollection(Generic[T]):
     @staticmethod
     async def apply_indexes() -> None:
         """Apply Indexes."""
-        queue: list[type[Collection]] = Collection.__subclasses__()
+        queue: list[type[AsyncCollection]] = AsyncCollection.__subclasses__()
         while queue:
             cls = queue.pop(-1)
 
@@ -429,8 +429,8 @@ class AsyncCollection(Generic[T]):
     @staticmethod
     def get_client() -> AsyncIOMotorClient:
         """Return pymongo.database.Database for mongodb connection."""
-        if not isinstance(Collection.__client__, AsyncIOMotorClient):
-            Collection.__client__ = AsyncIOMotorClient(
+        if not isinstance(AsyncCollection.__client__, AsyncIOMotorClient):
+            AsyncCollection.__client__ = AsyncIOMotorClient(
                 getenv(
                     "DATABASE_HOST",
                     "mongodb://localhost/?retryWrites=true&w=majority",
@@ -438,27 +438,27 @@ class AsyncCollection(Generic[T]):
                 server_api=ServerApi("1"),
             )
 
-        return Collection.__client__
+        return AsyncCollection.__client__
 
     @staticmethod
     async def get_session() -> AsyncIOMotorClientSession:
         """Return pymongo.client_session.ClientSession used for mongodb transactional operations."""
-        return await Collection.get_client().start_session()
+        return await AsyncCollection.get_client().start_session()
 
     @staticmethod
     def get_database() -> AsyncIOMotorDatabase:
         """Return pymongo.database.Database for database connection based from current client connection."""
-        if not isinstance(Collection.__database__, AsyncIOMotorDatabase):
-            Collection.__database__ = Collection.get_client().get_database(
+        if not isinstance(AsyncCollection.__database__, AsyncIOMotorDatabase):
+            AsyncCollection.__database__ = AsyncCollection.get_client().get_database(
                 getenv("DATABASE_NAME", "jaseci")
             )
 
-        return Collection.__database__
+        return AsyncCollection.__database__
 
     @staticmethod
     def get_collection(collection: str) -> AsyncIOMotorCollection:
         """Return pymongo.collection.Collection for collection connection based from current database connection."""
-        return Collection.get_database().get_collection(collection)
+        return AsyncCollection.get_database().get_collection(collection)
 
     @classmethod
     def collection(cls) -> AsyncIOMotorCollection:

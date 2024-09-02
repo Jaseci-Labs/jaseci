@@ -35,7 +35,7 @@ class Redis:
     @staticmethod
     def get_rd() -> _Redis:
         """Return redis.Redis for Redis connection."""
-        if not isinstance(Redis.__redis__, _Redis):
+        if Redis.__redis__ is None:
             Redis.__redis__ = _Redis.from_url(
                 getenv("REDIS_HOST", "redis://localhost"),
                 port=int(getenv("REDIS_PORT", "6379")),
@@ -186,14 +186,14 @@ class AsyncRedis:
     @staticmethod
     def get_rd() -> _AsyncRedis:
         """Return redis.Redis for Redis connection."""
-        if not isinstance(Redis.__redis__, _AsyncRedis):
-            Redis.__redis__ = _AsyncRedis.from_url(
+        if AsyncRedis.__redis__ is None:
+            AsyncRedis.__redis__ = _AsyncRedis.from_url(
                 getenv("REDIS_HOST", "redis://localhost"),
                 port=int(getenv("REDIS_PORT", "6379")),
                 username=getenv("REDIS_USER"),
                 password=getenv("REDIS_PASS"),
             )
-        return Redis.__redis__
+        return AsyncRedis.__redis__
 
     @classmethod
     async def get(cls, key: str) -> Any:  # noqa: ANN401

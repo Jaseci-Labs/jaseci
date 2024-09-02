@@ -3,10 +3,11 @@
 from collections import OrderedDict
 from dataclasses import Field, MISSING, fields
 from functools import wraps
-from inspect import iscoroutinefunction
 from os import getenv
 from re import compile
 from typing import Any, Callable, Type, TypeVar, cast, get_type_hints
+
+from asyncer import syncify
 
 from fastapi import (
     APIRouter,
@@ -19,12 +20,9 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse
 
-from jaclang.compiler.absyntree import Ability, AstAsyncNode
-from jaclang.compiler.constant import EdgeDir
-from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.plugin.default import hookimpl
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.architype import DSFunc
 
 from orjson import loads
 
@@ -35,16 +33,16 @@ from starlette.datastructures import UploadFile as BaseUploadFile
 from ..core.architype import (
     Anchor,
     Architype,
-    DSFunc,
     EdgeArchitype,
     GenericEdge,
     NodeAnchor,
     NodeArchitype,
+    ObjectArchitype,
     Root,
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import JASECI_CONTEXT, JaseciContext
+from ..core.context import JaseciContext
 from ..jaseci.security import authenticator
 
 
@@ -141,7 +139,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
         payload_model = create_model(f"{cls.__name__.lower()}_request_model", **payload)
 
-        async def api_entry(
+        def api_entry(
             request: Request,
             node: str | None,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
@@ -150,31 +148,31 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             body = pl.get("body", {})
 
             if isinstance(body, BaseUploadFile) and body_model:
-                body = loads(await body.read())
+                body = loads(syncify(body.read)())
                 try:
                     body = body_model(**body).model_dump()
                 except ValidationError as e:
                     return ORJSONResponse({"detail": e.errors()})
 
-            jctx = await JaseciContext.create(request, NodeAnchor.ref(node or ""))
+            jctx = JaseciContext.create(request, NodeAnchor.ref(node) if node else None)
 
             wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
-            if await jctx.validate_access():
-                await wlk.spawn_call(jctx.entry)
-                await jctx.close()
+            if jctx.validate_access():
+                wlk.spawn_call(jctx.entry_node)
+                jctx.close()
                 return ORJSONResponse(jctx.response(wlk.returns))
             else:
-                await jctx.close()
+                jctx.close()
                 raise HTTPException(
                     403,
-                    f"You don't have access on target entry{cast(Anchor, jctx.entry).ref_id}!",
+                    f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!",
                 )
 
-        async def api_root(
+        def api_root(
             request: Request,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
         ) -> Response:
-            return await api_entry(request, None, payload)
+            return api_entry(request, None, payload)
 
         for method in methods:
             method = method.lower()
@@ -245,12 +243,9 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    def current_context() -> JaseciContext | ExecutionContext:
-        """Get the execution context."""
-        if not isinstance(ctx := JASECI_CONTEXT.get(None), JaseciContext):
-            return ctx
-
-        return ExecutionContext.get()
+    def get_context() -> JaseciContext:
+        """Get current execution context."""
+        return JaseciContext.get()
 
     @staticmethod
     @hookimpl
@@ -291,13 +286,8 @@ class JacPlugin:
         inner_init = cls.__init__  # type: ignore
 
         @wraps(inner_init)
-        def new_init(
-            self: Architype,
-            *args: object,
-            __jac__: Anchor | None = None,
-            **kwargs: object,
-        ) -> None:
-            arch_base.__init__(self, __jac__)
+        def new_init(self: Architype, *args: object, **kwargs: object) -> None:
+            arch_base.__init__(self)
             inner_init(self, *args, **kwargs)
 
         cls.__init__ = new_init  # type: ignore
@@ -312,8 +302,8 @@ class JacPlugin:
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = JacPlugin.make_architype(
-                cls=cls, arch_base=Architype, on_entry=on_entry, on_exit=on_exit
+            cls = Jac.make_architype(
+                cls=cls, arch_base=ObjectArchitype, on_entry=on_entry, on_exit=on_exit
             )
             return cls
 
@@ -328,7 +318,7 @@ class JacPlugin:
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = JacPlugin.make_architype(
+            cls = Jac.make_architype(
                 cls=cls, arch_base=NodeArchitype, on_entry=on_entry, on_exit=on_exit
             )
             return cls
@@ -344,7 +334,7 @@ class JacPlugin:
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = JacPlugin.make_architype(
+            cls = Jac.make_architype(
                 cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
             )
             return cls
@@ -360,7 +350,7 @@ class JacPlugin:
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = JacPlugin.make_architype(
+            cls = Jac.make_architype(
                 cls=cls, arch_base=WalkerArchitype, on_entry=on_entry, on_exit=on_exit
             )
             populate_apis(cls)
@@ -370,167 +360,15 @@ class JacPlugin:
 
     @staticmethod
     @hookimpl
-    async def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
-        """Jac's spawn operator feature."""
-        if isinstance(op1, WalkerArchitype):
-            return await op1.__jac__.spawn_call(op2.__jac__)
-        elif isinstance(op2, WalkerArchitype):
-            return await op2.__jac__.spawn_call(op1.__jac__)
-        else:
-            raise TypeError("Invalid walker object")
-
-    @staticmethod
-    @hookimpl
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
         JaseciContext.get().reports.append(expr)
 
     @staticmethod
     @hookimpl
-    async def ignore(
-        walker: WalkerArchitype,
-        expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
-        ),
-    ) -> bool:
-        """Jac's ignore stmt feature."""
-        if isinstance(walker, WalkerArchitype):
-            return await walker.__jac__.ignore_node(
-                (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
-            )
-        else:
-            raise TypeError("Invalid walker object")
-
-    @staticmethod
-    @hookimpl
-    async def visit_node(
-        walker: WalkerArchitype,
-        expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
-        ),
-    ) -> bool:
-        """Jac's visit stmt feature."""
-        if isinstance(walker, WalkerArchitype):
-            return await walker.__jac__.visit_node(
-                (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
-            )
-        else:
-            raise TypeError("Invalid walker object")
-
-    @staticmethod
-    @hookimpl
-    async def edge_ref(
-        node_obj: NodeArchitype | list[NodeArchitype],
-        target_cls: Type[NodeArchitype] | list[Type[NodeArchitype]] | None,
-        dir: EdgeDir,
-        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
-        edges_only: bool,
-    ) -> list[NodeArchitype] | list[EdgeArchitype]:
-        """Jac's apply_dir stmt feature."""
-        if isinstance(node_obj, NodeArchitype):
-            node_obj = [node_obj]
-        targ_cls_set: list[Type[NodeArchitype]] | None = (
-            [target_cls] if isinstance(target_cls, type) else target_cls
-        )
-        if edges_only:
-            connected_edges: list[EdgeArchitype] = []
-            for node in node_obj:
-                connected_edges += await node.__jac__.get_edges(
-                    dir, filter_func, target_cls=targ_cls_set
-                )
-            return list(set(connected_edges))
-        else:
-            connected_nodes: list[NodeArchitype] = []
-            for node in node_obj:
-                connected_nodes.extend(
-                    await node.__jac__.edges_to_nodes(
-                        dir, filter_func, target_cls=targ_cls_set
-                    )
-                )
-            return list(set(connected_nodes))
-
-    @staticmethod
-    @hookimpl
-    async def connect(
-        left: NodeArchitype | list[NodeArchitype],
-        right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[], EdgeArchitype],
-        edges_only: bool,
-    ) -> list[NodeArchitype] | list[EdgeArchitype]:
-        """Jac's connect operator feature.
-
-        Note: connect needs to call assign compr with tuple in op
-        """
-        left = [left] if isinstance(left, NodeArchitype) else left
-        right = [right] if isinstance(right, NodeArchitype) else right
-        edges = []
-        nodes = []
-        for i in left:
-            for j in right:
-                if await (source := i.__jac__).has_connect_access(target := j.__jac__):
-                    conn_edge = edge_spec()
-                    edges.append(conn_edge)
-                    nodes.append(j)
-                    source.connect_node(target, conn_edge.__jac__)
-        return nodes if not edges_only else edges
-
-    @staticmethod
-    @hookimpl
-    async def disconnect(
-        left: NodeArchitype | list[NodeArchitype],
-        right: NodeArchitype | list[NodeArchitype],
-        dir: EdgeDir,
-        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
-    ) -> bool:  # noqa: ANN401
-        """Jac's disconnect operator feature."""
-        disconnect_occurred = False
-        left = [left] if isinstance(left, NodeArchitype) else left
-        right = [right] if isinstance(right, NodeArchitype) else right
-        for i in left:
-            node = i.__jac__
-            for anchor in set(node.edges):
-                if (
-                    (architype := await anchor.sync(node))
-                    and (source := anchor.source)
-                    and (target := anchor.target)
-                    and (not filter_func or filter_func([architype]))
-                    and (src_arch := await source.sync())
-                    and (trg_arch := await target.sync())
-                ):
-                    if (
-                        dir in [EdgeDir.OUT, EdgeDir.ANY]
-                        and node == source
-                        and trg_arch in right
-                        and await source.has_write_access(target)
-                    ):
-                        anchor.destroy()
-                        disconnect_occurred = True
-                    if (
-                        dir in [EdgeDir.IN, EdgeDir.ANY]
-                        and node == target
-                        and src_arch in right
-                        and await target.has_write_access(source)
-                    ):
-                        anchor.destroy()
-                        disconnect_occurred = True
-
-        return disconnect_occurred
-
-    @staticmethod
-    @hookimpl
-    async def get_root() -> Root:
+    def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        if architype := await JaseciContext.get().root.sync():
-            return cast(Root, architype)
-        raise Exception("No Available Root!")
+        return JaseciContext.get_root()
 
     @staticmethod
     @hookimpl
@@ -544,19 +382,23 @@ class JacPlugin:
         is_undirected: bool,
         conn_type: Type[EdgeArchitype] | EdgeArchitype | None,
         conn_assign: tuple[tuple, tuple] | None,
-    ) -> Callable[[], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         conn_type = conn_type if conn_type else GenericEdge
 
-        def builder() -> EdgeArchitype:
+        def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
             edge = conn_type() if isinstance(conn_type, type) else conn_type
-            edge.__jac__.is_undirected = is_undirected
+            edge.__attach__(source, target, is_undirected)
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1]):
                     if hasattr(edge, fld):
                         setattr(edge, fld, val)
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
+            if source.persistent or target.persistent:
+                edge.__jac__.save()
+                target.save()
+                source.save()
             return edge
 
         return builder
@@ -567,22 +409,7 @@ class JacPlugin:
 ##########################################################
 
 Jac.RootType = Root  # type: ignore[assignment]
-Jac.Obj = Architype  # type: ignore[assignment]
+Jac.Obj = ObjectArchitype  # type: ignore[assignment]
 Jac.Node = NodeArchitype  # type: ignore[assignment]
 Jac.Edge = EdgeArchitype  # type: ignore[assignment]
 Jac.Walker = WalkerArchitype  # type: ignore[assignment]
-
-
-def overrided_init(self: AstAsyncNode, is_async: bool) -> None:
-    """Initialize ast."""
-    self.is_async = True if isinstance(self, Ability) else is_async
-
-
-AstAsyncNode.__init__ = overrided_init  # type: ignore[method-assign]
-PyastGenPass.set(
-    [
-        name
-        for name, func in JacPlugin.__dict__.items()
-        if isinstance(func, staticmethod) and iscoroutinefunction(func.__func__)
-    ]
-)

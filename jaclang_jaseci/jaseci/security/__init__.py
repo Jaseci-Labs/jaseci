@@ -14,7 +14,7 @@ from jwt import decode, encode
 from ..datasources.redis import CodeRedis, TokenRedis
 from ..models.user import User as BaseUser
 from ..utils import logger, random_string, utc_timestamp
-from ...core.architype import AccessLevel, NodeAnchor
+from ...core.architype import NodeAnchor
 
 
 TOKEN_SECRET = getenv("TOKEN_SECRET", random_string(50))
@@ -39,7 +39,7 @@ def decrypt(token: str) -> dict | None:
         return None
 
 
-async def create_code(user_id: ObjectId, reset: bool = False) -> str:
+def create_code(user_id: ObjectId, reset: bool = False) -> str:
     """Generate Verification Code."""
     verification = encrypt(
         {
@@ -50,41 +50,41 @@ async def create_code(user_id: ObjectId, reset: bool = False) -> str:
             ),
         }
     )
-    if await CodeRedis.hset(key=verification, data=True):
+    if CodeRedis.hset(key=verification, data=True):
         return verification
     raise HTTPException(500, "Verification Creation Failed!")
 
 
-async def verify_code(code: str, reset: bool = False) -> ObjectId | None:
+def verify_code(code: str, reset: bool = False) -> ObjectId | None:
     """Verify Code."""
     decrypted = decrypt(code)
     if (
         decrypted
         and decrypted["reset"] == reset
         and decrypted["expiration"] > utc_timestamp()
-        and await CodeRedis.hget(key=code)
+        and CodeRedis.hget(key=code)
     ):
-        await CodeRedis.hdelete(code)
+        CodeRedis.hdelete(code)
         return ObjectId(decrypted["user_id"])
     return None
 
 
-async def create_token(user: dict[str, Any]) -> str:
+def create_token(user: dict[str, Any]) -> str:
     """Generate token for current user."""
     user["expiration"] = utc_timestamp(hours=TOKEN_TIMEOUT)
     user["state"] = random_string(8)
     token = encrypt(user)
-    if await TokenRedis.hset(f"{user['id']}:{token}", True):
+    if TokenRedis.hset(f"{user['id']}:{token}", True):
         return token
     raise HTTPException(500, "Token Creation Failed!")
 
 
-async def invalidate_token(user_id: ObjectId) -> None:
+def invalidate_token(user_id: ObjectId) -> None:
     """Invalidate token of current user."""
-    await TokenRedis.hdelete_rgx(f"{user_id}:*")
+    TokenRedis.hdelete_rgx(f"{user_id}:*")
 
 
-async def authenticate(request: Request) -> None:
+def authenticate(request: Request) -> None:
     """Authenticate current request and attach authenticated user and their root."""
     authorization = request.headers.get("Authorization")
     if authorization and authorization.lower().startswith("bearer"):
@@ -93,11 +93,10 @@ async def authenticate(request: Request) -> None:
         if (
             decrypted
             and decrypted["expiration"] > utc_timestamp()
-            and await TokenRedis.hget(f"{decrypted['id']}:{token}")
-            and (user := await User.Collection.find_by_id(decrypted["id"]))
-            and (root := await NodeAnchor.Collection.find_by_id(user.root_id))
+            and TokenRedis.hget(f"{decrypted['id']}:{token}")
+            and (user := User.Collection.find_by_id(decrypted["id"]))
+            and (root := NodeAnchor.Collection.find_by_id(user.root_id))
         ):
-            root.state.current_access_level = AccessLevel.WRITE
             request._user = user  # type: ignore[attr-defined]
             request._root = root  # type: ignore[attr-defined]
             return

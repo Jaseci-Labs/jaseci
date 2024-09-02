@@ -9,7 +9,7 @@ setup(
     version=VERSION,
     packages=find_packages(include=["jaclang_jaseci", "jaclang_jaseci.*"]),
     install_requires=[
-        "jaclang",
+        "jaclang==0.7.17",
         "fastapi==0.111.0",
         "pydantic==2.8.2",
         "pymongo==4.8.0",
@@ -29,6 +29,7 @@ setup(
         "sendgrid==6.11.0",
         "fastapi-sso==0.15.0",
         "google-auth==2.32.0",
+        "asyncer==0.0.8",
     ],
     package_data={},
     entry_points={

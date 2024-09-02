@@ -38,7 +38,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         cd ..
-        git clone -b enhancements/persistent-v2 https://github.com/Jaseci-Labs/jaclang.git
+        git clone https://github.com/Jaseci-Labs/jaclang.git
         cd jaclang
         pip install -e .
         cd ../jaclang-jaseci

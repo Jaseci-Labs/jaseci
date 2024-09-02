@@ -70,9 +70,9 @@ class User:
             )
 
         @classmethod
-        async def find_by_email(cls, email: str) -> "User | None":
+        def find_by_email(cls, email: str) -> "User | None":
             """Retrieve user via email."""
-            return await cls.find_one(filter={"email": email}, projection={})
+            return cls.find_one(filter={"email": email}, projection={})
 
     def serialize(self) -> dict:
         """Return BaseModel.model_dump excluding the password field."""
@@ -118,16 +118,16 @@ class User:
         return create_model("UserRegister", __base__=UserRegistration, **user_model)
 
     @staticmethod
-    async def send_verification_code(code: str, email: str) -> None:
+    def send_verification_code(code: str, email: str) -> None:
         """Send verification code."""
         pass
 
     @staticmethod
-    async def send_reset_code(code: str, email: str) -> None:
+    def send_reset_code(code: str, email: str) -> None:
         """Send verification code."""
         pass
 
     @staticmethod
-    async def sso_mapper(open_id: OpenID) -> dict[str, object]:
+    def sso_mapper(open_id: OpenID) -> dict[str, object]:
         """Send verification code."""
         return {}

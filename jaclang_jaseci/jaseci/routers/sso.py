@@ -3,6 +3,8 @@
 from os import getenv
 from typing import Any, cast
 
+from asyncer import syncify
+
 from bson import ObjectId
 
 from fastapi import APIRouter, Request, Response
@@ -80,7 +82,7 @@ for platform, cls in SUPPORTED_PLATFORMS.items():
 
 
 @router.get("/{platform}/{operation}")
-async def sso_operation(
+def sso_operation(
     request: Request,
     platform: str,
     operation: str,
@@ -91,7 +93,7 @@ async def sso_operation(
     if sso := SSO.get(platform):
         with sso:
             params = request.query_params._dict
-            return await sso.get_login_redirect(
+            return syncify(sso.get_login_redirect)(
                 redirect_uri=params.pop("redirect_uri", None)
                 or f"{SSO_HOST}/{platform}/{operation}/callback",
                 state=params.pop("state", None),
@@ -101,24 +103,24 @@ async def sso_operation(
 
 
 @router.get("/{platform}/{operation}/callback")
-async def sso_callback(
+def sso_callback(
     request: Request, platform: str, operation: str, redirect_uri: str | None = None
 ) -> Response:
     """SSO Login API."""
     if sso := SSO.get(platform):
         with sso:
-            if open_id := await sso.verify_and_process(
+            if open_id := syncify(sso.verify_and_process)(
                 request,
                 redirect_uri=redirect_uri
                 or f"{SSO_HOST}/{platform}/{operation}/callback",
             ):
                 match operation:
                     case "login":
-                        return await login(platform, open_id)
+                        return login(platform, open_id)
                     case "register":
-                        return await register(platform, open_id)
+                        return register(platform, open_id)
                     case "attach":
-                        return await attach(platform, open_id)
+                        return attach(platform, open_id)
                     case _:
                         pass
 
@@ -126,10 +128,10 @@ async def sso_callback(
 
 
 @router.post("/attach", dependencies=authenticator)
-async def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:
+def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:
     """Generate token from user."""
     if SSO.get(attach_sso.platform):
-        if await User.Collection.find_one(
+        if User.Collection.find_one(
             {
                 "$or": [
                     {f"sso.{platform}.id": attach_sso.id},
@@ -139,7 +141,7 @@ async def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:
         ):
             return ORJSONResponse({"message": "Already Attached!"}, 403)
 
-        await User.Collection.update_one(
+        User.Collection.update_one(
             {"_id": ObjectId(request._user.id)},
             {
                 "$set": {
@@ -156,10 +158,10 @@ async def sso_attach(request: Request, attach_sso: AttachSSO) -> ORJSONResponse:
 
 
 @router.delete("/detach", dependencies=authenticator)
-async def sso_detach(request: Request, detach_sso: DetachSSO) -> ORJSONResponse:
+def sso_detach(request: Request, detach_sso: DetachSSO) -> ORJSONResponse:
     """Generate token from user."""
     if SSO.get(detach_sso.platform):
-        await User.Collection.update_one(
+        User.Collection.update_one(
             {"_id": ObjectId(request._user.id)},
             {"$unset": {f"sso.{detach_sso.platform}": 1}},
         )
@@ -167,17 +169,17 @@ async def sso_detach(request: Request, detach_sso: DetachSSO) -> ORJSONResponse:
     return ORJSONResponse({"message": "Feature not yet implemented!"}, 501)
 
 
-async def get_token(user: User) -> ORJSONResponse:  # type: ignore
+def get_token(user: User) -> ORJSONResponse:  # type: ignore
     """Generate token from user."""
     user_json = user.serialize()  # type: ignore[attr-defined]
-    token = await create_token(user_json)
+    token = create_token(user_json)
 
     return ORJSONResponse(content={"token": token, "user": user_json})
 
 
-async def login(platform: str, open_id: OpenID) -> Response:
+def login(platform: str, open_id: OpenID) -> Response:
     """Login user method."""
-    if user := await BaseUser.Collection.find_one(
+    if user := BaseUser.Collection.find_one(
         {
             "$or": [
                 {f"sso.{platform}.id": open_id.id},
@@ -186,21 +188,19 @@ async def login(platform: str, open_id: OpenID) -> Response:
         }
     ):
         if not user.is_activated:
-            await User.send_verification_code(
-                await create_code(ObjectId(user.id)), user.email
-            )
+            User.send_verification_code(create_code(ObjectId(user.id)), user.email)
             raise HTTPException(
                 status_code=400,
                 detail="Account not yet verified! Resending verification code...",
             )
 
-        return await get_token(user)
+        return get_token(user)
     return ORJSONResponse({"message": "Not Existing!"}, 403)
 
 
-async def register(platform: str, open_id: OpenID) -> Response:
+def register(platform: str, open_id: OpenID) -> Response:
     """Register user method."""
-    if user := await User.Collection.find_one(
+    if user := User.Collection.find_one(
         {
             "$or": [
                 {f"sso.{platform}.id": open_id.id},
@@ -208,65 +208,60 @@ async def register(platform: str, open_id: OpenID) -> Response:
             ]
         }
     ):
-        return await get_token(cast(User, user))  # type: ignore
+        return get_token(cast(User, user))  # type: ignore
 
-    async with await User.Collection.get_session() as session:
-        async with session.start_transaction():
-            retry = 0
-            max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
-            while retry <= max_retry:
-                try:
-                    if not await User.Collection.update_one(
-                        {"email": open_id.email},
-                        {
-                            "$set": {
-                                f"sso.{platform}": {
-                                    "id": open_id.id,
-                                    "email": open_id.email,
-                                },
-                                "is_activated": True,
-                            }
-                        },
-                        session=session,
-                    ):
-                        root = Root().__jac__
-                        ureq: dict[str, object] = User.register_type()(
-                            email=open_id.email,
-                            password=NO_PASSWORD,
-                            **await User.sso_mapper(open_id),
-                        ).obfuscate()
-                        ureq["root_id"] = root.id
-                        ureq["is_activated"] = True
-                        ureq["sso"] = {
-                            platform: {"id": open_id.id, "email": open_id.email}
+    with User.Collection.get_session() as session, session.start_transaction():
+        retry = 0
+        max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
+        while retry <= max_retry:
+            try:
+                if not User.Collection.update_one(
+                    {"email": open_id.email},
+                    {
+                        "$set": {
+                            f"sso.{platform}": {
+                                "id": open_id.id,
+                                "email": open_id.email,
+                            },
+                            "is_activated": True,
                         }
-                        await NodeAnchor.Collection.insert_one(
-                            root.serialize(), session
-                        )
-                        await User.Collection.insert_one(ureq, session=session)
-                    await BulkWrite.commit(session)
-                    return await login(platform, open_id)
-                except (ConnectionFailure, OperationFailure) as ex:
-                    if ex.has_error_label("TransientTransactionError"):
-                        retry += 1
-                        logger.error(
-                            "Error executing bulk write! "
-                            f"Retrying [{retry}/{max_retry}] ..."
-                        )
-                        continue
-                    logger.exception("Error executing bulk write!")
-                    await session.abort_transaction()
-                    break
-                except Exception:
-                    logger.exception("Error executing bulk write!")
-                    await session.abort_transaction()
-                    break
+                    },
+                    session=session,
+                ):
+                    root = Root().__jac__
+                    ureq: dict[str, object] = User.register_type()(
+                        email=open_id.email,
+                        password=NO_PASSWORD,
+                        **User.sso_mapper(open_id),
+                    ).obfuscate()
+                    ureq["root_id"] = root.id
+                    ureq["is_activated"] = True
+                    ureq["sso"] = {platform: {"id": open_id.id, "email": open_id.email}}
+                    NodeAnchor.Collection.insert_one(root.serialize(), session)
+                    User.Collection.insert_one(ureq, session=session)
+                BulkWrite.commit(session)
+                return login(platform, open_id)
+            except (ConnectionFailure, OperationFailure) as ex:
+                if ex.has_error_label("TransientTransactionError"):
+                    retry += 1
+                    logger.error(
+                        "Error executing bulk write! "
+                        f"Retrying [{retry}/{max_retry}] ..."
+                    )
+                    continue
+                logger.exception("Error executing bulk write!")
+                session.abort_transaction()
+                break
+            except Exception:
+                logger.exception("Error executing bulk write!")
+                session.abort_transaction()
+                break
     return ORJSONResponse({"message": "Registration Failed!"}, 409)
 
 
-async def attach(platform: str, open_id: OpenID) -> Response:
+def attach(platform: str, open_id: OpenID) -> Response:
     """Return openid ."""
-    if await User.Collection.find_one(
+    if User.Collection.find_one(
         {
             "$or": [
                 {f"sso.{platform}.id": open_id.id},

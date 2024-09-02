@@ -1,6 +1,6 @@
 """Example of simple walker walking nodes."""
 import:py from jaclang_jaseci {FastAPI}
-import:py from jaclang_jaseci.core.architype {Anchor}
+import:py from jaclang_jaseci.core.architype {BaseAnchor}
 import:py from jaclang_jaseci.core.context {JaseciContext}
 import:py from jaclang_jaseci.jaseci.models {User as BaseUser, NO_PASSWORD}
 import:py from jaclang_jaseci.jaseci.utils {SendGridEmailer}
@@ -156,7 +156,7 @@ walker create_nested_node {
 
 walker update_nested_node {
     can enter_root with `root entry {
-        nested = [-->Nested][0];
+        nested = [-->(`?Nested)][0];
         nested.parent.child.json["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
@@ -185,15 +185,15 @@ walker update_nested_node {
 
 walker detach_nested_node {
     can enter_root with `root entry {
-        return here del--> [-->Nested];
+        return here del--> [-->(`?Nested)];
     }
 }
 
 walker visit_nested_node {
     can enter_root with `root entry {
-        nesteds = [-->Nested];
+        nesteds = [-->(`?Nested)];
         if nesteds {
-            return [-->Nested][0];
+            return [-->(`?Nested)][0];
         } else {
             return nesteds;
         }
@@ -221,10 +221,10 @@ walker manual_create_nested_node {
                 )
             ));
         here ++> n;
-        await here.__jac__.save();
+        here.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get_datasource();
+        jsrc = JaseciContext.get().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -234,7 +234,7 @@ walker manual_create_nested_node {
 
 walker manual_update_nested_node {
     can enter_root with `root entry {
-        nested = [-->Nested][0];
+        nested = [-->(`?Nested)][0];
         nested.parent.child.json["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
@@ -244,10 +244,10 @@ walker manual_update_nested_node {
         nested.json["a"] = 1;
         nested.arr.append(1);
         nested.val = 1;
-        await nested.__jac__.save();
+        nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get_datasource();
+        jsrc = JaseciContext.get().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -257,13 +257,13 @@ walker manual_update_nested_node {
 
 walker manual_detach_nested_node {
     can enter_root with `root entry {
-        nested = [-->Nested][0];
-        detached = here del--> [-->Nested];
+        nested = [-->(`?Nested)][0];
+        detached = here del--> [-->(`?Nested)];
         nested.__jac__.destroy();
-        await nested.__jac__.save();
+        nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get_datasource();
+        jsrc = JaseciContext.get().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -273,26 +273,26 @@ walker manual_detach_nested_node {
 
 walker delete_nested_node {
     can enter_root with `root entry {
-        nested = [-->Nested][0];
+        nested = [-->(`?Nested)][0];
         nested.__jac__.destroy();
-        await nested.__jac__.save();
+        # nested.__jac__.apply();
 
-        report [-->Nested];
+        report [-->(`?Nested)];
     }
 }
 
 walker manual_delete_nested_node {
     can enter_root with `root entry {
-        nested = [-->Nested][0];
+        nested = [-->(`?Nested)][0];
         nested.__jac__.destroy();
-        await nested.__jac__.save();
+        nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get_datasource();
+        jsrc = JaseciContext.get().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
-        report [-->Nested];
+        report [-->(`?Nested)];
     }
 }
 
@@ -301,7 +301,7 @@ walker delete_nested_edge {
         nested_edge = :e:[-->][0];
         nested_edge.__jac__.destroy();
 
-        report [-->Nested];
+        report [-->(`?Nested)];
     }
 }
 
@@ -309,14 +309,14 @@ walker manual_delete_nested_edge {
     can enter_root with `root entry {
         nested_edge = :e:[-->][0];
         nested_edge.__jac__.destroy();
-        await nested_edge.__jac__.save();
+        nested_edge.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get_datasource();
+        jsrc = JaseciContext.get().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
-        report [-->Nested];
+        report [-->(`?Nested)];
     }
 }
 
@@ -327,7 +327,7 @@ walker allow_other_root_access {
         if self.via_all {
             here.__jac__.unrestrict(self.level);
         } else {
-            here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+            here.__jac__.allow_root(BaseAnchor.ref(self.root_id), self.level);
         }
     }
 
@@ -335,7 +335,7 @@ walker allow_other_root_access {
         if self.via_all {
             here.__jac__.unrestrict(self.level);
         } else {
-            here.__jac__.allow_root(Anchor.ref(self.root_id), self.level);
+            here.__jac__.allow_root(BaseAnchor.ref(self.root_id), self.level);
         }
     }
 }
@@ -347,7 +347,7 @@ walker disallow_other_root_access {
         if self.via_all {
             here.__jac__.restrict();
         } else {
-            here.__jac__.disallow_root(Anchor.ref(self.root_id));
+            here.__jac__.disallow_root(BaseAnchor.ref(self.root_id));
         }
     }
 
@@ -355,7 +355,7 @@ walker disallow_other_root_access {
         if self.via_all {
             here.__jac__.restrict();
         } else {
-            here.__jac__.disallow_root(Anchor.ref(self.root_id));
+            here.__jac__.disallow_root(BaseAnchor.ref(self.root_id));
         }
     }
 }

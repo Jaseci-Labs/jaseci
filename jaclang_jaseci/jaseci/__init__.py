@@ -25,7 +25,7 @@ class FastAPI:
             async def lifespan(app: _FaststAPI) -> AsyncGenerator[None, _FaststAPI]:
                 from .datasources import Collection
 
-                await Collection.apply_indexes()
+                Collection.apply_indexes()
                 yield
 
             cls.__app__ = _FaststAPI(lifespan=lifespan)

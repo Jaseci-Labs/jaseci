@@ -37,7 +37,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self) -> None:
         """Clean up DB."""
-        await self.client.drop_database(self.database)
+        self.client.drop_database(self.database)
 
     @overload
     def post_api(self, api: str, json: dict | None = None, user: int = 0) -> dict:
@@ -459,10 +459,10 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def nested_count_should_be(self, node: int, edge: int) -> None:
         """Test nested node count."""
-        self.assertEqual(node, await self.q_node.count_documents({"name": "Nested"}))
+        self.assertEqual(node, self.q_node.count_documents({"name": "Nested"}))
         self.assertEqual(
             edge,
-            await self.q_edge.count_documents(
+            self.q_edge.count_documents(
                 {
                     "$or": [
                         {"source": {"$regex": "^n:Nested:"}},
