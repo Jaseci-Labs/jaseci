@@ -18,7 +18,7 @@ class Memory(Generic[ID, TANCH]):
     """Generic Memory Handler."""
 
     __mem__: dict[ID, TANCH] = field(default_factory=dict)
-    __gc__: set[ID] = field(default_factory=set)
+    __gc__: set[TANCH] = field(default_factory=set)
 
     def close(self) -> None:
         """Close memory handler."""
@@ -62,8 +62,8 @@ class Memory(Generic[ID, TANCH]):
             ids = [ids]
 
         for id in ids:
-            self.__mem__.pop(id, None)
-            self.__gc__.add(id)
+            if anchor := self.__mem__.pop(id, None):
+                self.__gc__.add(anchor)
 
 
 @dataclass
@@ -84,9 +84,9 @@ class ShelfStorage(Memory[UUID, Anchor]):
 
             root = Jac.get_root().__jac__
 
-            for id in self.__gc__:
-                self.__shelf__.pop(str(id), None)
-                self.__mem__.pop(id, None)
+            for anchor in self.__gc__:
+                self.__shelf__.pop(str(anchor.id), None)
+                self.__mem__.pop(anchor.id, None)
 
             for d in self.__mem__.values():
                 if d.persistent and d.hash != hash(dumps(d)):
