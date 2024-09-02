@@ -1,6 +1,5 @@
 import:py math;
 
-
 glob RAD = 5;
 glob DIA = 10;
 
@@ -35,13 +34,13 @@ walker decorator_walk {
     can greeter(name: Any) {
         print("Hello, " + name + "!");
     }
-
     # Entry point for the walker
     can start with entry {
         # Apply decorators to greeter
         decorated_greeter = hash(exclaim(tilde(greeter)));
 
-        # Call the decorated greeter function    decorated_greeter("World");
+        # Call the decorated greeter function
+        decorated_greeter("World");
     }
 }
 
