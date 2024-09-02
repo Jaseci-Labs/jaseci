@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "jaclang-streamlit"
+version = "0.0.3"
+description = "This Jac plugin adds a streamlit command line option for conveniently running streamlit apps written in Jac."
+authors = ["Jason Mars <jason@jaseci.org>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["jac", "jaclang", "jaseci", "streamlit", "visualization", "graph"]
+repository = "https://github.com/Jaseci-Labs/jaclang"
+homepage = "https://jaseci.org"
+documentation = "https://jac-lang.org"
+
+[tool.poetry.dependencies]
+python = "^3.12.0"
+streamlit = "^1.38.0"
+pydot = "^3.0.1"
+streamlit-agraph = "^0.0.45"
+
+[tool.poetry.plugins.jac]
+streamlit = "jaclang_streamlit.commands:JacCmd"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

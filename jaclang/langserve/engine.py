@@ -16,6 +16,7 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
+    add_unique_text_edit,
     collect_all_symbols_in_scope,
     create_range,
     find_deepest_symbol_node_at_pos,
@@ -127,6 +128,15 @@ class JacLangServer(LanguageServer):
                     build.warnings_had,
                 ),
             )
+            if annex_view:
+                self.publish_diagnostics(
+                    file_path,
+                    gen_diagnostics(
+                        file_path,
+                        build.errors_had,
+                        build.warnings_had,
+                    ),
+                )
             self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
             return len(build.errors_had) == 0
         except Exception as e:
@@ -403,6 +413,35 @@ class JacLangServer(LanguageServer):
             ]
             return list_of_references
         return []
+
+    def rename_symbol(
+        self, file_path: str, position: lspt.Position, new_name: str
+    ) -> Optional[lspt.WorkspaceEdit]:
+        """Rename a symbol in a file."""
+        if file_path not in self.modules:
+            return None
+        index1 = find_index(
+            self.modules[file_path].sem_manager.sem_tokens,
+            position.line,
+            position.character,
+        )
+        if index1 is None:
+            return None
+        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
+        if node_selected and node_selected.sym:
+            changes: dict[str, list[lspt.TextEdit]] = {}
+            for node in [
+                *node_selected.sym.uses,
+                node_selected.sym.defn[0],
+            ]:
+                key = uris.from_fs_path(node.loc.mod_path)
+                new_edit = lspt.TextEdit(
+                    range=create_range(node.loc),
+                    new_text=new_name,
+                )
+                add_unique_text_edit(changes, key, new_edit)
+            return lspt.WorkspaceEdit(changes=changes)
+        return None
 
     def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
         """Return semantic tokens for a file."""

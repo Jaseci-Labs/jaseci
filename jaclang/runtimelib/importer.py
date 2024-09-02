@@ -139,7 +139,7 @@ class ImportReturn:
                 else module.__name__
             )
             if isinstance(self.importer, JacImporter):
-                new_module = sys.modules.get(
+                new_module = self.importer.jac_machine.loaded_modules.get(
                     package_name,
                     self.importer.create_jac_py_module(
                         self.importer.get_sys_mod_name(jac_file_path),
@@ -177,8 +177,8 @@ class Importer:
 
     def update_sys(self, module: types.ModuleType, spec: ImportPathSpec) -> None:
         """Update sys.modules with the newly imported module."""
-        if spec.module_name not in sys.modules:
-            sys.modules[spec.module_name] = module
+        if spec.module_name not in self.jac_machine.loaded_modules:
+            self.jac_machine.load_module(spec.module_name, module)
 
 
 class PythonImporter(Importer):
@@ -280,8 +280,8 @@ class JacImporter(Importer):
         module.__path__ = [full_mod_path]
         module.__file__ = None
 
-        if module_name not in sys.modules:
-            sys.modules[module_name] = module
+        if module_name not in self.jac_machine.loaded_modules:
+            self.jac_machine.load_module(module_name, module)
         return module
 
     def create_jac_py_module(
@@ -299,7 +299,7 @@ class JacImporter(Importer):
             parts = package_path.split(".")
             for i in range(len(parts)):
                 package_name = ".".join(parts[: i + 1])
-                if package_name not in sys.modules:
+                if package_name not in self.jac_machine.loaded_modules:
                     full_mod_path = path.join(
                         base_path, package_name.replace(".", path.sep)
                     )
@@ -307,7 +307,7 @@ class JacImporter(Importer):
                         module_name=package_name,
                         full_mod_path=full_mod_path,
                     )
-        sys.modules[module_name] = module
+        self.jac_machine.load_module(module_name, module)
         return module
 
     def run_import(
@@ -322,7 +322,7 @@ class JacImporter(Importer):
         else:
             module_name = self.get_sys_mod_name(spec.full_target)
 
-        module = sys.modules.get(module_name)
+        module = self.jac_machine.loaded_modules.get(module_name)
 
         if not module or module.__name__ == "__main__" or reload:
             if os.path.isdir(spec.full_target):
@@ -340,14 +340,14 @@ class JacImporter(Importer):
                     caller_dir=spec.caller_dir,
                     cachable=spec.cachable,
                 )
-                if not codeobj:
-                    raise ImportError(f"No bytecode found for {spec.full_target}")
-                with sys_path_context(spec.caller_dir):
-                    try:
+                try:
+                    if not codeobj:
+                        raise ImportError(f"No bytecode found for {spec.full_target}")
+                    with sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
-                    except Exception as e:
-                        logger.error(dump_traceback(e))
-                        raise e
+                except Exception as e:
+                    logger.error(dump_traceback(e))
+                    raise e
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(

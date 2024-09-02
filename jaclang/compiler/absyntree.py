@@ -630,8 +630,11 @@ class Module(AstDocNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
+        self.py_mod_dep_map: dict[str, str] = {}
+        self.py_raise_map: dict[str, str] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
+        self.is_raised_from_py: bool = False
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -956,6 +959,7 @@ class ModulePath(AstSymbolNode):
         self.level = level
         self.alias = alias
         self.sub_module: Optional[Module] = None
+        self.abs_path: Optional[str] = None
 
         name_spec = alias if alias else path[0] if path else None
 
@@ -977,7 +981,7 @@ class ModulePath(AstSymbolNode):
         )
 
     @property
-    def path_str(self) -> str:
+    def dot_path_str(self) -> str:
         """Get path string."""
         return ("." * self.level) + ".".join(
             [p.value for p in self.path] if self.path else [self.name_spec.sym_name]
@@ -985,7 +989,7 @@ class ModulePath(AstSymbolNode):
 
     def resolve_relative_path(self, target_item: Optional[str] = None) -> str:
         """Convert an import target string into a relative file path."""
-        target = self.path_str
+        target = self.dot_path_str
         if target_item:
             target += f".{target_item}"
         base_path = os.path.dirname(self.loc.mod_path)
@@ -1048,6 +1052,7 @@ class ModuleItem(AstSymbolNode):
             name_spec=alias if alias else name,
             sym_category=SymbolType.MOD_VAR,
         )
+        self.abs_path: Optional[str] = None
 
     @property
     def from_parent(self) -> Import:
@@ -4313,11 +4318,11 @@ class Ellipsis(Literal):
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
-    def __init__(self) -> None:
+    def __init__(self, file_path: str = "") -> None:
         """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
-            file_path="",
+            file_path=file_path,
             value="",
             line=0,
             end_line=0,

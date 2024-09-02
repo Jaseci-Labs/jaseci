@@ -8,7 +8,6 @@ import os
 import pathlib
 import sys
 
-# import jaclang
 import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
 from jaclang.compiler.constant import Constants as Con
@@ -35,7 +34,7 @@ class JacTypeCheckPass(Pass):
     def after_pass(self) -> None:
         """Call mypy api after traversing all the modules."""
         try:
-            self.api()
+            self.api(os.path.dirname(self.ir.loc.mod_path))
         except Exception as e:
             self.error(f"Unable to run type checking: {e}")
         return super().after_pass()
@@ -45,7 +44,7 @@ class JacTypeCheckPass(Pass):
     ) -> None:
         """Mypy errors reporter."""
 
-    def api(self) -> None:
+    def api(self, top_module_path: str = "") -> None:
         """Call mypy APIs to implement type checking in Jac."""
         # Creating mypy api objects
         options = myab.myb.Options()
@@ -57,6 +56,9 @@ class JacTypeCheckPass(Pass):
                 / "stubs"
             )
         ]
+        if top_module_path != "":
+            options.mypy_path.append(top_module_path)
+
         errors = myab.Errors(self, options)
         fs_cache = myab.FileSystemCache()
         search_paths = myab.compute_search_paths([], options, str(self.__path))
@@ -101,7 +103,9 @@ class JacTypeCheckPass(Pass):
             mypy_graph[module.name] = st
             new_modules.append(st)
 
-        graph = myab.load_graph(
+        if not isinstance(self.ir, ast.Module):
+            raise self.ice("Expected module node. Impossible")
+        mypy_graph = myab.load_graph(
             [
                 myab.BuildSource(
                     path=str(self.__path / "typeshed" / "stdlib" / "builtins.pyi"),
@@ -112,4 +116,10 @@ class JacTypeCheckPass(Pass):
             old_graph=mypy_graph,
             new_modules=new_modules,  # To parse the dependancies of modules
         )
-        myab.process_graph(graph, manager)
+        for i in mypy_graph:
+            self.ir.py_mod_dep_map[i] = mypy_graph[i].xpath
+            for j in mypy_graph[i].dependencies:
+                self.ir.py_mod_dep_map[j] = str(
+                    myab.find_module_with_reason(j, manager)
+                )
+        myab.process_graph(mypy_graph, manager)

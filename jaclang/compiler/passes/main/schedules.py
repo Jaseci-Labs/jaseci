@@ -19,11 +19,11 @@ from .type_check_pass import JacTypeCheckPass  # noqa: I100
 from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .registry_pass import RegistryPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
+from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
 
 py_code_gen = [
     SubNodeTabPass,
     JacImportPass,
-    PyImportPass,
     SymTabBuildPass,
     DeclImplMatchPass,
     DefUsePass,
@@ -33,6 +33,13 @@ py_code_gen = [
     PyBytecodeGenPass,
 ]
 
-type_checker_sched = [JacTypeCheckPass, FuseTypeInfoPass, AccessCheckPass]
+type_checker_sched = [
+    JacTypeCheckPass,
+    PyCollectDepsPass,
+    PyImportPass,
+    DefUsePass,
+    FuseTypeInfoPass,
+    AccessCheckPass,
+]
 py_code_gen_typed = [*py_code_gen, *type_checker_sched]
 py_compiler = [*py_code_gen, PyOutPass]

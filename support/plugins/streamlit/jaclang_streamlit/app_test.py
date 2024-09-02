@@ -24,7 +24,7 @@ class JacAppTest(AppTest):
                 basename not in sys.modules
             ), "Please use another name for the .jac file. It conflicts with a Python package."
             py_lines = [
-                "from jac_streamlit import run_streamlit",
+                "from jaclang_streamlit import run_streamlit",
                 f'run_streamlit("{basename}", "{dirname}")',
             ]
             return cls.from_string("\n".join(py_lines), default_timeout=default_timeout)

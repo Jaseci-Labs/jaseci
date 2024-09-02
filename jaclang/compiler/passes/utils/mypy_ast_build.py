@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import os
+from typing import Callable, TYPE_CHECKING, TextIO
 
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
@@ -21,12 +22,18 @@ from mypy.build import FileSystemCache
 from mypy.build import Graph
 from mypy.build import ModuleNotFound
 from mypy.build import PRI_INDIRECT
+from mypy.build import Plugin
+from mypy.build import SearchPaths
 from mypy.build import compute_search_paths
 from mypy.build import find_module_simple
+from mypy.build import find_module_with_reason
 from mypy.build import load_plugins
 from mypy.build import process_graph
 from mypy.options import Options
 from mypy.semanal_main import semantic_analysis_for_scc
+
+if TYPE_CHECKING:
+    from mypy.report import Reports  # Avoid unconditional slow import
 
 
 mypy_to_jac_node_map: dict[
@@ -36,6 +43,43 @@ mypy_to_jac_node_map: dict[
 
 class BuildManager(myb.BuildManager):
     """Overrides to mypy build manager for direct AST pass through."""
+
+    def __init__(
+        self,
+        data_dir: str,
+        search_paths: SearchPaths,
+        ignore_prefix: str,
+        source_set: BuildSourceSet,
+        reports: Reports | None,
+        options: Options,
+        version_id: str,
+        plugin: Plugin,
+        plugins_snapshot: dict[str, str],
+        errors: Errors,
+        flush_errors: Callable[[str | None, list[str], bool], None],
+        fscache: FileSystemCache,
+        stdout: TextIO,
+        stderr: TextIO,
+    ) -> None:
+        """Override mypy BuildManager constructor to initialize jac related map."""
+        global mypy_to_jac_node_map
+        super().__init__(
+            data_dir,
+            search_paths,
+            ignore_prefix,
+            source_set,
+            reports,
+            options,
+            version_id,
+            plugin,
+            plugins_snapshot,
+            errors,
+            flush_errors,
+            fscache,
+            stdout,
+            stderr,
+        )
+        mypy_to_jac_node_map = {}
 
     def parse_file(
         self,
@@ -664,6 +708,7 @@ __all__ = [
     "BuildSource",
     "BuildSourceSet",
     "FileSystemCache",
+    "find_module_with_reason",
     "compute_search_paths",
     "load_graph",
     "load_plugins",

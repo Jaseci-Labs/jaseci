@@ -2,7 +2,6 @@
 
 import ast as ast3
 import importlib
-import inspect
 import marshal
 import os
 import pickle
@@ -22,8 +21,9 @@ from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.constructs import Architype
-from jaclang.runtimelib.machine import JacProgram
+from jaclang.runtimelib.constructs import WalkerArchitype
+from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -68,12 +68,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 @cmd_registry.register
 def run(
-    filename: str,
-    session: str = "",
-    main: bool = True,
-    cache: bool = True,
-    walker: str = "",
-    node: str = "",
+    filename: str, session: str = "", main: bool = True, cache: bool = True
 ) -> None:
     """Run the specified .jac file."""
     # if no session specified, check if it was defined when starting the command shell
@@ -90,78 +85,90 @@ def run(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    Jac.context().init_memory(base_path=base, session=session)
+
+    jctx = ExecutionContext.create(session=session)
+
     if filename.endswith(".jac"):
-        ret_module = jac_import(
+        jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
             override_name="__main__" if main else None,
         )
-        if ret_module is None:
-            loaded_mod = None
-        else:
-            (loaded_mod,) = ret_module
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            ir = pickle.load(f)
-            jac_program = JacProgram(mod_bundle=ir, bytecode=None)
-            Jac.context().jac_machine.attach_program(jac_program)
-            ret_module = jac_import(
+            JacMachine(base).attach_program(
+                JacProgram(mod_bundle=pickle.load(f), bytecode=None)
+            )
+            jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
-            if ret_module is None:
-                loaded_mod = None
-            else:
-                (loaded_mod,) = ret_module
     else:
-        print("Not a .jac file.")
-        return
+        jctx.close()
+        JacMachine.detach()
+        raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
-    if not node or node == "root":
-        entrypoint: Architype = Jac.get_root()
-    else:
-        obj = Jac.context().get_obj(UUID(node))
-        if obj is None:
-            print(f"Entrypoint {node} not found.")
-            return
-        entrypoint = obj
-
-    # TODO: handle no override name
-    if walker:
-        walker_module = dict(inspect.getmembers(loaded_mod)).get(walker)
-        if walker_module:
-            Jac.spawn_call(entrypoint, walker_module())
-        else:
-            print(f"Walker {walker} not found.")
-
-    Jac.reset_context()
+    jctx.close()
+    JacMachine.detach()
 
 
 @cmd_registry.register
-def get_object(id: str, session: str = "") -> dict:
+def get_object(
+    filename: str, id: str, session: str = "", main: bool = True, cache: bool = True
+) -> dict:
     """Get the object with the specified id."""
     if session == "":
-        session = cmd_registry.args.session if "session" in cmd_registry.args else ""
+        session = (
+            cmd_registry.args.session
+            if hasattr(cmd_registry, "args")
+            and hasattr(cmd_registry.args, "session")
+            and cmd_registry.args.session
+            else ""
+        )
 
-    Jac.context().init_memory(session=session)
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
 
+    jctx = ExecutionContext.create(session=session)
+
+    if filename.endswith(".jac"):
+        jac_import(
+            target=mod,
+            base_path=base,
+            cachable=cache,
+            override_name="__main__" if main else None,
+        )
+    elif filename.endswith(".jir"):
+        with open(filename, "rb") as f:
+            JacMachine(base).attach_program(
+                JacProgram(mod_bundle=pickle.load(f), bytecode=None)
+            )
+            jac_import(
+                target=mod,
+                base_path=base,
+                cachable=cache,
+                override_name="__main__" if main else None,
+            )
+    else:
+        jctx.close()
+        JacMachine.detach()
+        raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
+
+    data = {}
     if id == "root":
-        id_uuid = UUID(int=0)
+        data = jctx.root.__getstate__()
+    elif obj := jctx.mem.find_by_id(UUID(id)):
+        data = obj.__getstate__()
     else:
-        id_uuid = UUID(id)
-
-    obj = Jac.context().get_obj(id_uuid)
-    if obj is None:
         print(f"Object with id {id} not found.")
-        Jac.reset_context()
-        return {}
-    else:
-        Jac.reset_context()
-        return obj.__getstate__()
+
+    jctx.close()
+    JacMachine.detach()
+    return data
 
 
 @cmd_registry.register
@@ -211,25 +218,78 @@ def lsp() -> None:
 
 
 @cmd_registry.register
-def enter(filename: str, entrypoint: str, args: list) -> None:
-    """Run the specified entrypoint function in the given .jac file.
+def enter(
+    filename: str,
+    entrypoint: str,
+    args: list,
+    session: str = "",
+    main: bool = True,
+    cache: bool = True,
+    root: str = "",
+    node: str = "",
+) -> None:
+    """
+    Run the specified entrypoint function in the given .jac file.
 
     :param filename: The path to the .jac file.
     :param entrypoint: The name of the entrypoint function.
     :param args: Arguments to pass to the entrypoint function.
+    :param session: shelve.Shelf file path.
+    :param root: root executor.
+    :param node: starting node.
     """
+    if session == "":
+        session = (
+            cmd_registry.args.session
+            if hasattr(cmd_registry, "args")
+            and hasattr(cmd_registry.args, "session")
+            and cmd_registry.args.session
+            else ""
+        )
+
+    base, mod = os.path.split(filename)
+    base = base if base else "./"
+    mod = mod[:-4]
+
+    jctx = ExecutionContext.create(session=session, root=root)
+
     if filename.endswith(".jac"):
-        base, mod_name = os.path.split(filename)
-        base = base if base else "./"
-        mod_name = mod_name[:-4]
-        (mod,) = jac_import(target=mod_name, base_path=base)
-        if not mod:
-            print("Errors occurred while importing the module.")
-            return
-        else:
-            getattr(mod, entrypoint)(*args)
+        ret_module = jac_import(
+            target=mod,
+            base_path=base,
+            cachable=cache,
+            override_name="__main__" if main else None,
+        )
+    elif filename.endswith(".jir"):
+        with open(filename, "rb") as f:
+            JacMachine(base).attach_program(
+                JacProgram(mod_bundle=pickle.load(f), bytecode=None)
+            )
+            ret_module = jac_import(
+                target=mod,
+                base_path=base,
+                cachable=cache,
+                override_name="__main__" if main else None,
+            )
     else:
-        print("Not a .jac file.")
+        jctx.close()
+        JacMachine.detach()
+        raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
+
+    if ret_module:
+        (loaded_mod,) = ret_module
+        if not loaded_mod:
+            print("Errors occurred while importing the module.")
+        else:
+            architype = getattr(loaded_mod, entrypoint)(*args)
+
+            jctx.set_entry_node(node)
+
+            if isinstance(architype, WalkerArchitype) and jctx.validate_access():
+                Jac.spawn_call(jctx.entry_node.architype, architype)
+
+    jctx.close()
+    JacMachine.detach()
 
 
 @cmd_registry.register
@@ -252,6 +312,8 @@ def test(
 
     jac test => jac test -d .
     """
+    jctx = ExecutionContext.create()
+
     failcount = Jac.run_test(
         filepath=filepath,
         filter=filter,
@@ -260,6 +322,9 @@ def test(
         directory=directory,
         verbose=verbose,
     )
+
+    jctx.close()
+
     if failcount:
         raise SystemExit(f"Tests failed: {failcount}")
 
@@ -361,13 +426,13 @@ def dot(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    Jac.context().init_memory(base_path=base, session=session)
+
+    jctx = ExecutionContext.create(session=session)
+
     if filename.endswith(".jac"):
-        jac_import(
-            target=mod,
-            base_path=base,
-        )
-        module = importlib.import_module(mod)
+        jac_machine = JacMachine(base)
+        jac_import(target=mod, base_path=base)
+        module = jac_machine.loaded_modules.get(mod)
         globals().update(vars(module))
         try:
             node = globals().get(initial, eval(initial)) if initial else None
@@ -385,7 +450,7 @@ def dot(
             import traceback
 
             traceback.print_exc()
-            Jac.reset_context()
+            jctx.close()
             return
         file_name = saveto if saveto else f"{mod}.dot"
         with open(file_name, "w") as file:
@@ -394,7 +459,7 @@ def dot(
     else:
         print("Not a .jac file.")
 
-    Jac.reset_context()
+    jctx.close()
 
 
 @cmd_registry.register

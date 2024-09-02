@@ -4,26 +4,24 @@ from __future__ import annotations
 
 
 from .architype import (
+    Anchor,
     Architype,
     DSFunc,
     EdgeAnchor,
     EdgeArchitype,
-    ElementAnchor,
     GenericEdge,
     NodeAnchor,
     NodeArchitype,
-    ObjectAnchor,
     Root,
     WalkerAnchor,
     WalkerArchitype,
 )
-from .context import ExecutionContext, exec_context
-from .memory import Memory, ShelveStorage
+from .context import ExecutionContext
+from .memory import Memory, ShelfStorage
 from .test import JacTestCheck, JacTestResult, JacTextTestRunner
 
 __all__ = [
-    "ElementAnchor",
-    "ObjectAnchor",
+    "Anchor",
     "NodeAnchor",
     "EdgeAnchor",
     "WalkerAnchor",
@@ -35,9 +33,8 @@ __all__ = [
     "Root",
     "DSFunc",
     "Memory",
-    "ShelveStorage",
+    "ShelfStorage",
     "ExecutionContext",
-    "exec_context",
     "JacTestResult",
     "JacTextTestRunner",
     "JacTestCheck",

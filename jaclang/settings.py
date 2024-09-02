@@ -14,10 +14,8 @@ class Settings:
     filter_sym_builtins: bool = True
     ast_symbol_info_detailed: bool = False
     pass_timer: bool = False
-
-    # Import configuration
-    py_raise: bool = False
-    py_raise_deep: bool = False
+    collect_py_dep_debug: bool = False
+    print_py_raised_ast: bool = False
 
     # Formatter configuration
     max_line_length: int = 88

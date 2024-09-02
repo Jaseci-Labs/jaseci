@@ -273,7 +273,9 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
     )
 
 
-def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
+def get_mod_path(
+    mod_path: ast.ModulePath, name_node: ast.Name
+) -> str | None:  # TODO: This should go away
     """Get path for a module import name."""
     ret_target = None
     if mod_path.parent and (
@@ -294,7 +296,7 @@ def get_mod_path(mod_path: ast.ModulePath, name_node: ast.Name) -> str | None:
                 else ""
             )
         else:
-            temporary_path_str = mod_path.path_str
+            temporary_path_str = mod_path.dot_path_str
         sys.path.append(os.path.dirname(mod_path.loc.mod_path))
         spec = importlib.util.find_spec(temporary_path_str)
         sys.path.remove(os.path.dirname(mod_path.loc.mod_path))
@@ -625,3 +627,20 @@ def get_line_of_code(line_number: int, lines: list[str]) -> Optional[tuple[str, 
             else first_non_space
         )
     return None
+
+
+def add_unique_text_edit(
+    changes: dict[str, list[lspt.TextEdit]], key: str, new_edit: lspt.TextEdit
+) -> None:
+    """Add a new text edit to the changes dictionary if it is unique."""
+    if key not in changes:
+        changes[key] = [new_edit]
+    else:
+        for existing_edit in changes[key]:
+            if (
+                existing_edit.range.start == new_edit.range.start
+                and existing_edit.range.end == new_edit.range.end
+                and existing_edit.new_text == new_edit.new_text
+            ):
+                return
+        changes[key].append(new_edit)

@@ -343,6 +343,7 @@ class JacFormatPass(Pass):
         tag: T,
         """
         start = True
+        prev_token = None
         for i in node.kid:
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
@@ -357,8 +358,13 @@ class JacFormatPass(Pass):
             elif i.gen.jac == ",":
                 self.emit(node, f"{i.gen.jac} ")
             else:
-                if start:
-                    self.emit(node, i.gen.jac)
+                if isinstance(i, ast.Token) and not isinstance(i, ast.BuiltinType):
+                    try:
+                        prev_token = self.token_before(i)
+                    except Exception:
+                        prev_token = None
+                if start or (prev_token and prev_token.gen.jac.strip() == ":"):
+                    self.emit(node, i.gen.jac.strip())
                     start = False
                 else:
                     self.emit(node, f" {i.gen.jac}")
@@ -460,7 +466,7 @@ class JacFormatPass(Pass):
         path: list[Token],
         alias: Optional[Name],
         """
-        self.emit(node, node.path_str)
+        self.emit(node, node.dot_path_str)
         if node.alias:
             self.emit(node, " as " + node.alias.gen.jac)
 
@@ -672,6 +678,8 @@ class JacFormatPass(Pass):
                 self.emit(node, i.gen.jac)
             elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
                 self.emit_ln(node, i.gen.jac)
+            elif isinstance(i, ast.SubTag):
+                self.emit(node, i.gen.jac)
             else:
                 if start:
                     self.emit(node, i.gen.jac)

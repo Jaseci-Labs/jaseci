@@ -8,16 +8,16 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeAlias, 
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-from jaclang.plugin.default import ExecutionContext
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
     Architype,
     EdgeArchitype,
-    Memory,
+    NodeAnchor,
     NodeArchitype,
     Root,
     WalkerArchitype,
 )
+from jaclang.runtimelib.context import ExecutionContext
 
 import pluggy
 
@@ -42,19 +42,9 @@ class JacFeature:
     Walker: TypeAlias = WalkerArchitype
 
     @staticmethod
-    def context(session: str = "") -> ExecutionContext:
-        """Create execution context."""
-        return pm.hook.context(session=session)
-
-    @staticmethod
-    def reset_context() -> None:
-        """Reset execution context."""
-        return pm.hook.reset_context()
-
-    @staticmethod
-    def memory_hook() -> Memory | None:
-        """Create memory abstraction."""
-        return pm.hook.memory_hook()
+    def get_context() -> ExecutionContext:
+        """Get current execution context."""
+        return pm.hook.get_context()
 
     @staticmethod
     def make_architype(
@@ -226,7 +216,7 @@ class JacFeature:
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[], EdgeArchitype],
+        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
         edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -274,7 +264,7 @@ class JacFeature:
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Callable[[], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         return pm.hook.build_edge(
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign

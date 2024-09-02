@@ -19,12 +19,16 @@ class SymTabBuildPass(Pass):
         """Before pass."""
         self.cur_sym_tab: list[SymbolTable] = []
 
-    def push_scope(self, name: str, key_node: ast.AstNode, fresh: bool = False) -> None:
+    def push_scope(self, name: str, key_node: ast.AstNode) -> None:
         """Push scope."""
-        if fresh:
+        inherit = key_node.parent
+        if not len(self.cur_sym_tab) and not inherit:
             self.cur_sym_tab.append(SymbolTable(name, key_node))
+        elif not len(self.cur_sym_tab) and inherit:
+            self.cur_sym_tab.append(inherit.sym_tab)
+            self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))
         else:
-            self.cur_sym_tab.append(self.cur_scope.push_scope(name, key_node))
+            self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))
 
     def pop_scope(self) -> SymbolTable:
         """Pop scope."""
@@ -48,7 +52,7 @@ class SymTabBuildPass(Pass):
         mod_path: str,
         is_imported: bool,
         """
-        self.push_scope(node.name, node, fresh=(node == self.ir))
+        self.push_scope(node.name, node)
         self.sync_node_to_scope(node)
         for obj in dir(builtins):
             builtin = ast.Name(
@@ -197,7 +201,7 @@ class SymTabBuildPass(Pass):
             source = node.items.items[0]
             if not isinstance(source, ast.ModulePath) or not source.sub_module:
                 self.error(
-                    f"Module {node.from_loc.path_str if node.from_loc else 'from location'}"
+                    f"Module {node.from_loc.dot_path_str if node.from_loc else 'from location'}"
                     f" not found to include *, or ICE occurred!"
                 )
             else:
