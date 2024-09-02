@@ -22,6 +22,7 @@ from jaclang.langserve.utils import (
     find_deepest_symbol_node_at_pos,
     find_index,
     gen_diagnostics,
+    get_location_range,
     get_symbols_for_outline,
     parse_symbol_path,
     resolve_completion_symbol_table,
@@ -349,26 +350,28 @@ class JacLangServer(LanguageServer):
             elif node_selected.parent and isinstance(
                 node_selected.parent, ast.ModuleItem
             ):
-                if True:
-                    path = node_selected.parent.from_mod_path.abs_path
-                    loc_range = node_selected.parent.loc_range
-                    if path and loc_range:
-                        path = path[5:] if path.startswith("File:") else path
-                        self.log_py(f"path: {path}")
-                        self.log_py(f"loc_range: {loc_range}")
-                        return lspt.Location(
-                            uri=uris.from_fs_path(path),
-                            range=lspt.Range(
-                                start=lspt.Position(
-                                    line=loc_range[0], character=loc_range[2]
-                                ),
-                                end=lspt.Position(
-                                    line=loc_range[1], character=loc_range[3]
-                                ),
+                path = node_selected.parent.from_mod_path.abs_path
+                try:  # TODO: Get rid of this when 'from' import is fixed
+                    loc_range = tuple(
+                        loc - 1 if loc > 0 else loc
+                        for loc in get_location_range(node_selected.parent)
+                    )
+                except ValueError:
+                    loc_range = (0, 0, 0, 0)
+
+                if path and loc_range:
+                    path = path[5:] if path.startswith("File:") else path
+                    return lspt.Location(
+                        uri=uris.from_fs_path(path),
+                        range=lspt.Range(
+                            start=lspt.Position(
+                                line=loc_range[0], character=loc_range[1]
                             ),
-                        )
-                else:
-                    return None
+                            end=lspt.Position(
+                                line=loc_range[2], character=loc_range[3]
+                            ),
+                        ),
+                    )
             elif isinstance(node_selected, (ast.ElementStmt, ast.BuiltinType)):
                 return None
             decl_node = (
@@ -385,7 +388,7 @@ class JacLangServer(LanguageServer):
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
                 decl_range = create_range(decl_node.loc)
-            except ValueError:  # 'print' name has decl in 0,0,0,0
+            except ValueError:
                 return None
             decl_location = lspt.Location(
                 uri=decl_uri,

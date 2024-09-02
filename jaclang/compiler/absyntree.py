@@ -1055,19 +1055,6 @@ class ModuleItem(AstSymbolNode):
         self.abs_path: Optional[str] = None
 
     @property
-    def loc_range(self) -> tuple[int, int, int, int]:
-        """Get location range."""
-        if not self.from_mod_path.sub_module:
-            raise ValueError("Module items should have module path. Not Possible.")
-        lookup = self.from_mod_path.sub_module.sym_tab.lookup(self.sym_name)
-        if not lookup:
-            raise ValueError(
-                "Module items should have a symbol table entry. Not Possible."
-            )
-        loc = lookup.decl.loc
-        return loc.first_line, loc.col_start, loc.col_end, loc.col_end
-
-    @property
     def from_parent(self) -> Import:
         """Get import parent."""
         if (

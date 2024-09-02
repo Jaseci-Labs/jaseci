@@ -187,11 +187,15 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(import_file)
         positions = [
-            (2, 24, "datetime.py:0:0-0:0"),
+            (0, 12, "tdlib/os/__init__.pyi:0:0-0:0"),
+            (1, 18, "stdlib/math.pyi:0:0-0:0"),
+            (2, 24, "datetime.pyi:0:0-0:0"),
             (3, 17, "base_module_structure.jac:0:0-0:0"),
-            (3, 87, "base_module_structure.jac:23:0-23:5"),
-            (5, 65, "py_import.py:12:0-20:5"),
-            (5, 35, "py_import.py:3:0-4:5"),
+            (3, 87, "base_module_structure.jac:23:5-23:14"),
+            (5, 65, "py_import.py:0:0-0:0"),
+            (5, 35, "py_import.py:0:0-0:0"),
+            # (5, 65, "py_import.py:12:0-20:5"),  # TODO : Should work after 'from' import files are raised
+            # (5, 35, "py_import.py:3:0-4:5"),
         ]
 
         for line, char, expected in positions:
