@@ -126,17 +126,14 @@ class JacFormatPass(Pass):
         last_element = None
         for counter, i in enumerate(node.body):
             counter += 1
-            if last_element:
-                if (
-                    i.loc.first_line - last_element.loc.last_line > 1
-                    and not last_element.gen.jac.endswith("\n\n")
-                ):
-                    self.emit_ln(node, "")
+            if last_element and (
+                i.loc.first_line - last_element.loc.last_line > 1
+                and not last_element.gen.jac.endswith("\n\n")
+            ):
+                self.emit_ln(node, "")
             if isinstance(i, ast.Import):
                 self.emit_ln(node, i.gen.jac)
             else:
-                if isinstance(last_element, ast.Import):
-                    self.emit_ln(node, "")
                 if last_element and (
                     isinstance(i, ast.Architype)
                     and isinstance(last_element, ast.Architype)
@@ -146,21 +143,6 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
                 self.emit_ln(node, i.gen.jac)
 
-                # if counter <= len(node.body) - 1:
-                #     if (
-                #         isinstance(i, ast.Ability)
-                #         and isinstance(node.body[counter], ast.Ability)
-                #         and i.gen.jac.endswith(";")
-                #         or (
-                #             isinstance(i, ast.Architype)
-                #             and len(node.body[counter].kid[-1].kid) == 2
-                #             and len(node.body[counter - 1].kid[-1].kid) == 2
-                #         )
-                #         and node.gen.jac.endswith("\n")
-                #     ):
-                #         self.emit(node, "")
-                #     else:
-                #         self.emit_ln(node, "")
             last_element = i
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
@@ -229,8 +211,15 @@ class JacFormatPass(Pass):
         prev_token = None
         for stmt in node.kid:
             line_emiited = False
-            if prev_token:
-                if stmt.loc.first_line - prev_token.loc.last_line > 1:
+            if prev_token and stmt.loc.first_line - prev_token.loc.last_line > 1:
+                if (
+                    stmt.kid
+                    and isinstance(stmt.kid[-1], ast.SubNodeList)
+                    and not isinstance(stmt.kid[-1].kid[-1], ast.CommentToken)
+                ):
+                    self.emit(node, "")
+
+                else:
                     line_emiited = True
                     self.indent_level -= 1
                     self.emit_ln(node, "")
@@ -284,7 +273,6 @@ class JacFormatPass(Pass):
                             self.emit_ln(node, "")
                             self.indent_level += 1
                     else:
-                        # print("I'm here!, printing", stmt.gen)
                         if not node.gen.jac.endswith("\n"):
                             self.indent_level -= 1
                             self.emit_ln(node, "")
@@ -294,14 +282,11 @@ class JacFormatPass(Pass):
                         if prev_token and isinstance(prev_token, ast.Ability):
                             self.emit(node, f"{stmt.gen.jac}")
                         else:
-                            # print("I'm here!, printing", stmt.gen)
                             self.emit(node, stmt.gen.jac)
-                            if not stmt.gen.jac.endswith("postinit;"):
-                                self.indent_level -= 1
-                                self.emit_ln(stmt, "")
-                                # self.emit_ln(node, "")
-                                # print("I'm here!, printed", node.gen)
-                                self.indent_level += 1
+                            self.indent_level -= 1
+                            self.emit_ln(stmt, "")
+                            self.emit_ln(node, "")
+                            self.indent_level += 1
                 elif stmt.gen.jac == ",":
                     self.emit(node, f"{stmt.value} ")
                 elif stmt.value == "=":
@@ -325,9 +310,16 @@ class JacFormatPass(Pass):
                     not isinstance(prev_token.kid[-1], ast.CommentToken)
                     and not line_emiited
                 ):
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
+                    if (
+                        prev_token.kid
+                        and isinstance(prev_token.kid[-1], ast.SubNodeList)
+                        and isinstance(prev_token.kid[-1].kid[-1], ast.CommentToken)
+                    ):
+                        self.emit(node, "")
+                    else:
+                        self.indent_level -= 1
+                        self.emit_ln(node, "")
+                        self.indent_level += 1
                 self.emit(node, stmt.gen.jac)
             else:
                 if prev_token and prev_token.gen.jac.strip() == "{":
@@ -335,7 +327,6 @@ class JacFormatPass(Pass):
                     self.indent_level += 1
                 self.emit(node, stmt.gen.jac)
             prev_token = stmt
-        # print(f"printed: {node.gen}")
 
     def exit_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.
@@ -928,8 +919,6 @@ class JacFormatPass(Pass):
         """Check if the length of the current generated code exceeds the max line length."""
         if max_line_length == 0:
             max_line_length = self.MAX_LINE_LENGTH
-        # print(content)
-        # print(len(content))
         return len(content) > max_line_length
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
@@ -979,7 +968,6 @@ class JacFormatPass(Pass):
                 self.error(
                     f"Binary operator {node.op.value} not supported in bootstrap Jac"
                 )
-        # print(node.gen)
         if isinstance(
             node.kid[-1], (ast.Semi, ast.CommentToken)
         ) and not node.gen.jac.endswith("\n"):

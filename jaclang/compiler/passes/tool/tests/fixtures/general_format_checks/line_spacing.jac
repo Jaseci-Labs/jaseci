@@ -34,6 +34,7 @@ walker decorator_walk {
     can greeter(name: Any) {
         print("Hello, " + name + "!");
     }
+
     # Entry point for the walker
     can start with entry {
         # Apply decorators to greeter
