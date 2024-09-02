@@ -335,7 +335,6 @@ class JacLangServer(LanguageServer):
                 and isinstance(node_selected.parent, ast.ModulePath)
             ):
                 spec = node_selected.parent.abs_path
-                self.log_py(f"spec: {spec}")
                 if spec:
                     spec = spec[5:] if spec.startswith("File:") else spec
                     return lspt.Location(
