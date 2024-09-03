@@ -31,6 +31,7 @@ with entry{
     print(d2.count('a(val')==19,d2.count('#F5E5FF')==2 ,'Edge1' not in d2,d2.count('GenericEdge')==42);
     print(d3.count('a(val')==6,d3.count("GenericEdge")==5,d3.count('#F5E5FF')==1);
     print(d4.count("a(val")==25,d4.count("GenericEdge")==66,d4.count('#FFF0F')==3);
+    print(d5.count("Edge1(val=6)")==2, d5.count("GenericEdge()")==24);
     # print(l3<l2);
     # print(d1);
     # print(d2);
