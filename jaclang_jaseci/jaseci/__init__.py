@@ -15,6 +15,33 @@ class FastAPI:
     """FastAPI Handler."""
 
     __app__ = None
+    __is_imported__: bool | None = None
+
+    @staticmethod
+    def is_imported() -> bool:
+        """Check if fastapi is used."""
+        from jaclang.plugin.feature import JacFeature as Jac
+        from jaclang.runtimelib.machine import JacMachine
+
+        from ..core.architype import (
+            EdgeArchitype,
+            NodeArchitype,
+            ObjectArchitype,
+            Root,
+            WalkerArchitype,
+        )
+
+        if not isinstance(FastAPI.__is_imported__, bool):
+            main = JacMachine.get().loaded_modules.get("__main__")
+            FastAPI.__is_imported__ = getattr(main, "FastAPI", None) is FastAPI
+            if FastAPI.__is_imported__:
+                Jac.RootType = Root  # type: ignore[assignment]
+                Jac.Obj = ObjectArchitype  # type: ignore[assignment]
+                Jac.Node = NodeArchitype  # type: ignore[assignment]
+                Jac.Edge = EdgeArchitype  # type: ignore[assignment]
+                Jac.Walker = WalkerArchitype  # type: ignore[assignment]
+
+        return FastAPI.__is_imported__
 
     @classmethod
     def get(cls) -> _FaststAPI:
