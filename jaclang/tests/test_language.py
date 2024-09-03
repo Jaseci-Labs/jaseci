@@ -376,7 +376,7 @@ class JacLanguageTests(TestCase):
         jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("True"), 14)
+        self.assertEqual(stdout_value.count("True"), 16)
 
     def test_with_contexts(self) -> None:
         """Test walking through edges."""

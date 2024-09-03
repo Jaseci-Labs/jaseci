@@ -903,7 +903,7 @@ class JacBuiltin:
         for source, target, edge in connections:
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
-                f' [label="{html.escape(str(edge.__jac__.architype.__class__.__name__))} "];\n'
+                f' [label="{html.escape(str(edge.__jac__.architype))} "];\n'
             )
         for node_ in visited_nodes:
             color = (
