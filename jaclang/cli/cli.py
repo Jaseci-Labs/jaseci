@@ -8,7 +8,6 @@ import pickle
 import shutil
 import types
 from typing import Optional
-from uuid import UUID
 
 import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
@@ -159,10 +158,9 @@ def get_object(
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
-    if id == "root":
-        data = jctx.root.__getstate__()
-    elif obj := jctx.mem.find_by_id(UUID(id)):
-        data = obj.__getstate__()
+    obj = Jac.get_object(id)
+    if obj:
+        data = obj.__jac__.__getstate__()
     else:
         print(f"Object with id {id} not found.")
 

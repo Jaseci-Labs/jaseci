@@ -12,13 +12,13 @@ from collections import OrderedDict
 from dataclasses import field
 from functools import wraps
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
+from uuid import UUID
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.runtimelib.constructs import (
-    Anchor,
     Architype,
     DSFunc,
     EdgeAnchor,
@@ -44,7 +44,6 @@ import pluggy
 hookimpl = pluggy.HookimplMarker("jac")
 
 __all__ = [
-    "Anchor",
     "EdgeAnchor",
     "GenericEdge",
     "hookimpl",
@@ -71,6 +70,21 @@ class JacFeatureDefaults:
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         return ExecutionContext.get()
+
+    @staticmethod
+    @hookimpl
+    def get_object(id: str) -> Architype | None:
+        if id == "root":
+            return Jac.get_context().root.architype
+        elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
+            return obj.architype
+
+        return None
+
+    @staticmethod
+    @hookimpl
+    def object_ref(obj: Architype) -> str:
+        return obj.__jac__.id.hex
 
     @staticmethod
     @hookimpl

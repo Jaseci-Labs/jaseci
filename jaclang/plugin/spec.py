@@ -50,6 +50,18 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def get_object(id: str) -> Architype | None:
+        """Get object given id.."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def object_ref(obj: Architype) -> str:
+        """Get object given id.."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def make_architype(
         cls: type,
         arch_base: Type[Architype],
