@@ -70,19 +70,19 @@ class ImportPassPassTests(TestCase):
         )
         assert isinstance(build.ir, ast.Module)
         p = {
-            "math": "jaclang/jaclang/vendor/mypy/typeshed/stdlib/math.pyi",
-            "pygame_mock": "pygame_mock/__init__.py",
-            "pygame_mock.color": "pygame_mock/color.py",
-            "pygame_mock.constants": "pygame_mock/constants.py",
-            "argparse": "jaclang/vendor/mypy/typeshed/stdlib/argparse.pyi",
-            "builtins": "jaclang/vendor/mypy/typeshed/stdlib/builtins.pyi",
-            "pygame_mock.display": "pygame_mock/display.py",
-            "os": "jaclang/vendor/mypy/typeshed/stdlib/os/__init__.pyi",
-            "genericpath": "jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi",
+            "math": r"jaclang/jaclang/vendor/mypy/typeshed/stdlib/math.pyi$",
+            "pygame_mock": r"pygame_mock/__init__.pyi$",
+            "pygame_mock.color": r"pygame_mock/color.py$",
+            "pygame_mock.constants": r"pygame_mock/constants.py$",
+            "argparse": r"jaclang/vendor/mypy/typeshed/stdlib/argparse.pyi$",
+            "builtins": r"jaclang/vendor/mypy/typeshed/stdlib/builtins.pyi$",
+            "pygame_mock.display": r"pygame_mock/display.py$",
+            "os": r"jaclang/vendor/mypy/typeshed/stdlib/os/__init__.pyi$",
+            "genericpath": r"jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi$",
         }
         for i in p:
             self.assertIn(i, build.ir.py_raise_map)
-            self.assertIn(p[i], re.sub(r".*fixtures/", "", build.ir.py_raise_map[i]))
+            self.assertRegex(re.sub(r".*fixtures/", "", build.ir.py_raise_map[i]), p[i])
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
