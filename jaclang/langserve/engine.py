@@ -349,7 +349,10 @@ class JacLangServer(LanguageServer):
             elif node_selected.parent and isinstance(
                 node_selected.parent, ast.ModuleItem
             ):
-                path = node_selected.parent.from_mod_path.abs_path
+                path = (
+                    node_selected.parent.abs_path
+                    or node_selected.parent.from_mod_path.abs_path
+                )
                 try:  # TODO: Get rid of this when 'from' import is fixed
                     loc_range = tuple(
                         loc - 1 if loc > 0 else loc
