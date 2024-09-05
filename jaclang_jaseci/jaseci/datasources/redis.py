@@ -3,6 +3,8 @@
 from os import getenv
 from typing import Any
 
+from fakeredis import FakeRedis
+
 from orjson import dumps, loads
 
 from redis.asyncio.client import Redis as _AsyncRedis
@@ -36,12 +38,16 @@ class Redis:
     def get_rd() -> _Redis:
         """Return redis.Redis for Redis connection."""
         if Redis.__redis__ is None:
-            Redis.__redis__ = _Redis.from_url(
-                getenv("REDIS_HOST", "redis://localhost"),
-                port=int(getenv("REDIS_PORT", "6379")),
-                username=getenv("REDIS_USER"),
-                password=getenv("REDIS_PASS"),
-            )
+            if host := getenv("REDIS_HOST"):
+                Redis.__redis__ = _Redis.from_url(
+                    host,
+                    port=int(getenv("REDIS_PORT", "6379")),
+                    username=getenv("REDIS_USER"),
+                    password=getenv("REDIS_PASS"),
+                )
+            else:
+                Redis.__redis__ = FakeRedis()
+
         return Redis.__redis__
 
     @classmethod

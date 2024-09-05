@@ -30,6 +30,7 @@ setup(
         "fastapi-sso==0.15.0",
         "google-auth==2.32.0",
         "asyncer==0.0.8",
+        "fakeredis==2.24.1",
     ],
     package_data={},
     entry_points={
