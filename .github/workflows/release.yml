@@ -1,9 +1,10 @@
 name: Release to PyPI
 
-on:
-  push:
-    tags:
-      - 'v*.*.*'
+on: workflow_dispatch
+# on:
+#   push:
+#     tags:
+#       - 'v*.*.*'
 
 jobs:
   release:
@@ -24,13 +25,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
 
-    - name: Extract version from tag
-      id: get_version
-      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
+    # - name: Extract version from tag
+    #   id: get_version
+    #   run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
 
-    - name: Update version in setup.py
-      run: |
-        sed -i 's/VERSION = ".*"/VERSION = "${{ steps.get_version.outputs.VERSION }}"/' setup.py
+    # - name: Update version in setup.py
+    #   run: |
+    #     sed -i 's/VERSION = ".*"/VERSION = "${{ steps.get_version.outputs.VERSION }}"/' setup.py
 
     - name: Build package
       run: python setup.py sdist bdist_wheel
