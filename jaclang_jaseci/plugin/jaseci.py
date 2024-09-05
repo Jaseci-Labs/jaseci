@@ -248,7 +248,7 @@ class JacPlugin:
     @hookimpl
     def get_context() -> ExecutionContext:
         """Get current execution context."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
             return JaseciContext.get()
         return JacFeatureDefaults.get_context()
 
@@ -261,7 +261,7 @@ class JacPlugin:
         on_exit: list[DSFunc],
     ) -> Type[Architype]:
         """Create a new architype."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
             for i in on_entry + on_exit:
                 i.resolve(cls)
             if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
@@ -308,7 +308,7 @@ class JacPlugin:
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a new architype."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
 
             def decorator(cls: Type[Architype]) -> Type[Architype]:
                 """Decorate class."""
@@ -329,7 +329,7 @@ class JacPlugin:
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a obj architype."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
 
             def decorator(cls: Type[Architype]) -> Type[Architype]:
                 """Decorate class."""
@@ -347,7 +347,7 @@ class JacPlugin:
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
 
             def decorator(cls: Type[Architype]) -> Type[Architype]:
                 """Decorate class."""
@@ -365,7 +365,7 @@ class JacPlugin:
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a walker architype."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
 
             def decorator(cls: Type[Architype]) -> Type[Architype]:
                 """Decorate class."""
@@ -385,7 +385,7 @@ class JacPlugin:
     @hookimpl
     def report(expr: Any) -> None:  # noqa:ANN401
         """Jac's report stmt feature."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
             JaseciContext.get().reports.append(expr)
             return
         JacFeatureDefaults.report(expr=expr)
@@ -394,7 +394,7 @@ class JacPlugin:
     @hookimpl
     def get_root() -> Root:
         """Jac's assign comprehension feature."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
             return JaseciContext.get_root()
         return JacFeatureDefaults.get_root()  # type:ignore[return-value]
 
@@ -402,7 +402,7 @@ class JacPlugin:
     @hookimpl
     def get_root_type() -> Type[Root]:
         """Jac's root getter."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
             return Root
         return JacFeatureDefaults.get_root_type()  # type:ignore[return-value]
 
@@ -414,7 +414,7 @@ class JacPlugin:
         conn_assign: tuple[tuple, tuple] | None,
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-        if FastAPI.is_served():
+        if FastAPI.is_enabled():
             conn_type = conn_type if conn_type else GenericEdge
 
             def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:

@@ -15,11 +15,11 @@ class FastAPI:
     """FastAPI Handler."""
 
     __app__ = None
-    __is_served__: bool | None = None
+    __is_enabled__: bool = False
 
     @staticmethod
-    def serve() -> None:
-        """Tag Fastapi as served."""
+    def enable() -> None:
+        """Tag Fastapi as enabled."""
         from jaclang.plugin.feature import JacFeature as Jac
 
         from ..core.architype import (
@@ -30,7 +30,7 @@ class FastAPI:
             WalkerArchitype,
         )
 
-        FastAPI.__is_served__ = True
+        FastAPI.__is_enabled__ = True
 
         Jac.RootType = Root  # type: ignore[assignment]
         Jac.Obj = ObjectArchitype  # type: ignore[assignment]
@@ -39,19 +39,9 @@ class FastAPI:
         Jac.Walker = WalkerArchitype  # type: ignore[assignment]
 
     @staticmethod
-    def is_served() -> bool:
-        """Check if FastAPI is already served."""
-        if FastAPI.__is_served__ is None:
-            from jaclang.runtimelib.machine import JacMachine
-
-            main = JacMachine.get().loaded_modules.get("__main__")
-            if getattr(main, "FastAPI", None) is FastAPI:
-                FastAPI.serve()
-                return True
-            else:
-                FastAPI.__is_served__ = False
-
-        return FastAPI.__is_served__
+    def is_enabled() -> bool:
+        """Check if FastAPI is already enabled."""
+        return FastAPI.__is_enabled__
 
     @classmethod
     def get(cls) -> _FaststAPI:
