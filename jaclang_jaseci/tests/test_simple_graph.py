@@ -16,7 +16,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         """Reset DB and wait for server."""
-        self.host = "http://0.0.0.0:8001"
+        self.host = "http://0.0.0.0:8000"
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
