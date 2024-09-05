@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
         SHOW_ENDPOINT_RETURNS: true
+        REDIS_HOST: redis://localhost
     services:
       redis:
         image: redis
