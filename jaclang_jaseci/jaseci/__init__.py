@@ -15,13 +15,12 @@ class FastAPI:
     """FastAPI Handler."""
 
     __app__ = None
-    __is_imported__: bool | None = None
+    __is_served__: bool | None = None
 
     @staticmethod
-    def is_imported() -> bool:
-        """Check if fastapi is used."""
+    def serve() -> None:
+        """Tag Fastapi as served."""
         from jaclang.plugin.feature import JacFeature as Jac
-        from jaclang.runtimelib.machine import JacMachine
 
         from ..core.architype import (
             EdgeArchitype,
@@ -31,17 +30,28 @@ class FastAPI:
             WalkerArchitype,
         )
 
-        if not isinstance(FastAPI.__is_imported__, bool):
-            main = JacMachine.get().loaded_modules.get("__main__")
-            FastAPI.__is_imported__ = getattr(main, "FastAPI", None) is FastAPI
-            if FastAPI.__is_imported__:
-                Jac.RootType = Root  # type: ignore[assignment]
-                Jac.Obj = ObjectArchitype  # type: ignore[assignment]
-                Jac.Node = NodeArchitype  # type: ignore[assignment]
-                Jac.Edge = EdgeArchitype  # type: ignore[assignment]
-                Jac.Walker = WalkerArchitype  # type: ignore[assignment]
+        FastAPI.__is_served__ = True
 
-        return FastAPI.__is_imported__
+        Jac.RootType = Root  # type: ignore[assignment]
+        Jac.Obj = ObjectArchitype  # type: ignore[assignment]
+        Jac.Node = NodeArchitype  # type: ignore[assignment]
+        Jac.Edge = EdgeArchitype  # type: ignore[assignment]
+        Jac.Walker = WalkerArchitype  # type: ignore[assignment]
+
+    @staticmethod
+    def is_served() -> bool:
+        """Check if FastAPI is already served."""
+        if FastAPI.__is_served__ is None:
+            from jaclang.runtimelib.machine import JacMachine
+
+            main = JacMachine.get().loaded_modules.get("__main__")
+            if getattr(main, "FastAPI", None) is FastAPI:
+                FastAPI.serve()
+                return True
+            else:
+                FastAPI.__is_served__ = False
+
+        return FastAPI.__is_served__
 
     @classmethod
     def get(cls) -> _FaststAPI:
