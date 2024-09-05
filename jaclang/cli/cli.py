@@ -431,8 +431,8 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
-        jac_import(target=mod, base_path=base)
-        module = jac_machine.loaded_modules.get(mod)
+        jac_import(target=mod, base_path=base, override_name="__main__")
+        module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:
             node = globals().get(initial, eval(initial)) if initial else None

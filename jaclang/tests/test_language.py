@@ -173,7 +173,11 @@ class JacLanguageTests(TestCase):
         """Test the dot gen of nodes and edges of bubblesort."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        jac_import("gendot_bubble_sort", base_path=self.fixture_abs_path("./"))
+        jac_import(
+            "gendot_bubble_sort",
+            base_path=self.fixture_abs_path("./"),
+            override_name="__main__",
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
