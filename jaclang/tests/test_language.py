@@ -39,7 +39,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("sub_abil_sep.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("sub_abil_sep.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -951,3 +951,14 @@ class JacLanguageTests(TestCase):
         self.assertIn("Edges in bar:\n  - Edge: Link", stdout_value)
         self.assertIn("Item value: 0", stdout_value)
         self.assertIn("Created 5 items.", stdout_value)
+
+    def test_object_ref_interface(self) -> None:
+        """Test class method output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("objref.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual(len(stdout_value[0]), 32)
+        self.assertEqual("MyNode(value=0)", stdout_value[1])
+        self.assertEqual("valid: True", stdout_value[2])

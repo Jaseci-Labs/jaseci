@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Optional
 
-if TYPE_CHECKING:
-    from typing import Optional
-    from jaclang.runtimelib.constructs import NodeArchitype
+from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.constructs import Architype, NodeArchitype
 
 
 def dotgen(
@@ -40,3 +39,8 @@ def dotgen(
         node_limit=node_limit,
         dot_file=dot_file,
     )
+
+
+def jid(obj: Architype) -> str:
+    """Get the id of the object."""
+    return Jac.object_ref(obj)
