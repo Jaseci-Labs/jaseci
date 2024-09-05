@@ -1562,6 +1562,8 @@ class JacFormatPass(Pass):
             self.emit(node, f"not {node.operand.gen.jac}")
         elif node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
             self.emit(node, f"{node.op.value} {node.operand.gen.jac}")
+        elif node.op.name in [Tok.BW_AND]:
+            self.emit(node, f"{node.op.value}{node.operand.gen.jac}")
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
 
