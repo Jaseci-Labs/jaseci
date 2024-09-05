@@ -1,6 +1,7 @@
 """Jac Language Features."""
 
 from collections import OrderedDict
+from contextlib import suppress
 from dataclasses import Field, MISSING, fields
 from functools import wraps
 from os import getenv
@@ -33,6 +34,7 @@ from starlette.datastructures import UploadFile as BaseUploadFile
 from ..core.architype import (
     Anchor,
     Architype,
+    BaseAnchor,
     EdgeArchitype,
     GenericEdge,
     NodeAnchor,
@@ -434,3 +436,19 @@ class JacPlugin:
         return JacFeatureDefaults.build_edge(  # type:ignore[return-value]
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
         )
+
+    @staticmethod
+    @hookimpl
+    def get_object(id: str) -> Architype | None:
+        """Get object via reference id."""
+        with suppress(ValueError):
+            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
+                return architype
+
+        return None
+
+    @staticmethod
+    @hookimpl
+    def object_ref(obj: Architype) -> str:
+        """Get object reference id."""
+        return str(obj.__jac__.ref_id)
