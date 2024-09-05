@@ -47,6 +47,16 @@ class JacFeature:
         return pm.hook.get_context()
 
     @staticmethod
+    def get_object(id: str) -> Architype | None:
+        """Get object given id."""
+        return pm.hook.get_object(id=id)
+
+    @staticmethod
+    def object_ref(obj: Architype) -> str:
+        """Get object reference id."""
+        return pm.hook.object_ref(obj=obj)
+
+    @staticmethod
     def make_architype(
         cls: type,
         arch_base: Type[Architype],
