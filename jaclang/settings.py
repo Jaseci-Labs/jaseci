@@ -18,7 +18,7 @@ class Settings:
     print_py_raised_ast: bool = False
 
     # Compiler configuration
-    diable_mtllm: bool = False
+    disable_mtllm: bool = False
     ignore_test_annex: bool = False
 
     # Formatter configuration

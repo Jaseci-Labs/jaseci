@@ -24,7 +24,7 @@ class RegistryPass(Pass):
 
     def enter_module(self, node: ast.Module) -> None:
         """Create registry for each module."""
-        if settings.diable_mtllm:
+        if settings.disable_mtllm:
             self.terminate()
             return None
         node.registry = SemRegistry()
