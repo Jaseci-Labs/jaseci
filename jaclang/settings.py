@@ -19,6 +19,7 @@ class Settings:
 
     # Compiler configuration
     diable_mtllm: bool = False
+    ignore_test_annex: bool = False
 
     # Formatter configuration
     max_line_length: int = 88

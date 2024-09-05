@@ -13,6 +13,7 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass, SymTabBuildPass
+from jaclang.settings import settings
 from jaclang.utils.log import logging
 
 
@@ -105,7 +106,7 @@ class JacImportPass(Pass):
                 or test_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".test.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
-                if mod:
+                if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
