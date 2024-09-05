@@ -218,9 +218,9 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(import_file)
         positions = [
-            (6, 39, "/pygame_mock/__init__.py:2:0-2:0"),
+            (6, 39, "/pygame_mock/__init__.pyi:2:0-2:0"),
             (6, 45, "/pygame_mock/constants.py:3:0-4:1"),
-            (7, 31, "/pygame_mock/__init__.py:2:0-2:0"),
+            (7, 31, "/pygame_mock/__init__.pyi:2:0-2:0"),
             (7, 35, "/pygame_mock/constants.py:3:0-4:1"),
             (20, 51, "/py_imp_test.jac:6:4-6:11"),
             (20, 64, "/pygame_mock/constants.py:4:3-4:15"),

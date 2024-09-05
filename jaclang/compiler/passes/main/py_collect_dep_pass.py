@@ -7,6 +7,8 @@ that are only relevant to actual references source from Jac code.
 from __future__ import annotations
 
 
+import os
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.settings import settings
@@ -28,11 +30,15 @@ class PyCollectDepsPass(Pass):
         if not isinstance(node, ast.AstSymbolNode):
             return
 
+        # Adding the path of the file related to the py import
         path: str = ""
         if isinstance(node, ast.ModulePath):
             if node.path:
                 path = ".".join([i.value for i in node.path])
             node.abs_path = self.ir.py_mod_dep_map.get(path)
+            if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
+                node.abs_path = node.abs_path.replace(".pyi", ".py")
+
         elif isinstance(node, ast.ModuleItem):
             imp = node.parent_of_type(ast.Import)
             mod_path_node = imp.get_all_sub_nodes(ast.ModulePath)[0]
@@ -40,6 +46,8 @@ class PyCollectDepsPass(Pass):
                 path = ".".join([i.value for i in mod_path_node.path])
             path += f".{node.name.value}"
             node.abs_path = self.ir.py_mod_dep_map.get(path)
+            if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
+                node.abs_path = node.abs_path.replace(".pyi", ".py")
 
         if len(node.gen.mypy_ast) == 0:
             return
