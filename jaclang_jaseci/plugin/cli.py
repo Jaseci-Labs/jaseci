@@ -27,6 +27,7 @@ class JacCmd:
             base = base if base else "./"
             mod = mod[:-4]
 
+            FastAPI.enable()
             jctx = ExecutionContext.create()
 
             if filename.endswith(".jac"):
