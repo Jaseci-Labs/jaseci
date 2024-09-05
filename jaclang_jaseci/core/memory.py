@@ -139,7 +139,10 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
                     bulk_write.operations[anchor.__class__].append(
                         InsertOne(anchor.serialize())
                     )
-                elif anchor.has_connect_access(anchor):
+                elif (new_hash := anchor.has_changed()) and anchor.has_connect_access(
+                    anchor
+                ):
+                    anchor.state.full_hash = new_hash
                     if (
                         not DISABLE_AUTO_CLEANUP
                         and isinstance(anchor, NodeAnchor)

@@ -2,6 +2,7 @@
 
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from os import getenv
+from pickle import dumps as pdumps
 from re import IGNORECASE, compile
 from typing import (
     Any,
@@ -248,7 +249,8 @@ class AnchorState:
     """Anchor state handler."""
 
     changes: dict[str, dict[str, Any]] = field(default_factory=dict)
-    hashes: dict[str, int] = field(default_factory=dict)
+    full_hash: int = 0
+    context_hashes: dict[str, int] = field(default_factory=dict)
     deleted: bool | None = None
     connected: bool = False
 
@@ -492,8 +494,8 @@ class BaseAnchor:
                 ) in (
                     architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
                 ):
-                    if (h := hash(dumps(val))) != self.state.hashes.get(key):
-                        self.state.hashes[key] = h
+                    if (h := hash(dumps(val))) != self.state.context_hashes.get(key):
+                        self.state.context_hashes[key] = h
                         set_architype[f"architype.{key}"] = val
             if set_architype:
                 changes["$set"] = set_architype
@@ -563,15 +565,22 @@ class BaseAnchor:
         """Delete Anchor."""
         raise NotImplementedError("destroy must be implemented in subclasses")
 
+    def has_changed(self) -> int:
+        """Check if needs to update."""
+        if self.state.full_hash != (new_hash := hash(pdumps(self.serialize()))):
+            return new_hash
+        return 0
+
     def sync_hash(self) -> None:
         """Sync current serialization hash."""
         if is_dataclass(architype := self.architype) and not isinstance(
             architype, type
         ):
-            self.state.hashes = {
+            self.state.context_hashes = {
                 key: hash(dumps(val))
                 for key, val in architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
             }
+            self.state.full_hash = hash(pdumps(self.serialize()))
 
     def access_level(self, to: Anchor) -> AccessLevel:
         """Access validation."""

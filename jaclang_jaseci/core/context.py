@@ -65,11 +65,13 @@ class JaseciContext(ExecutionContext):
                 architype=object.__new__(Root),
                 id=SUPER_ROOT_ID,
                 access=Permission(),
-                state=AnchorState(),
+                state=AnchorState(connected=True),
                 persistent=True,
                 edges=[],
             )
             system_root.architype.__jac__ = system_root
+            NodeAnchor.Collection.insert_one(system_root.serialize())
+            system_root.sync_hash()
             ctx.mem.set(system_root.id, system_root)
 
         ctx.system_root = system_root
