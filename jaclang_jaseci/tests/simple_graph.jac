@@ -1,5 +1,4 @@
 """Example of simple walker walking nodes."""
-import:py from jaclang_jaseci {FastAPI}
 import:py from jaclang_jaseci.core.architype {BaseAnchor}
 import:py from jaclang_jaseci.core.context {JaseciContext}
 import:py from jaclang_jaseci.jaseci.models {User as BaseUser, NO_PASSWORD}
@@ -453,12 +452,4 @@ walker post_with_body_and_file {
     class __specs__ {
         has auth: bool = False;
     }
-}
-
-with entry:__main__ {
-    FastAPI.start(
-        host="0.0.0.0",
-        port=8001
-        # emailer=SendGridEmailer
-    );
 }
