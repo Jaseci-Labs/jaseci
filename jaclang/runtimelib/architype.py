@@ -3,16 +3,59 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
+from enum import IntEnum
+from logging import getLogger
 from pickle import dumps
 from types import UnionType
-from typing import Any, Callable, Iterable, Optional, TypeVar
+from typing import Any, Callable, ClassVar, Iterable, Optional, TypeVar
 from uuid import UUID, uuid4
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.utils import collect_node_connections
 
+logger = getLogger(__name__)
+
 TARCH = TypeVar("TARCH", bound="Architype")
 TANCH = TypeVar("TANCH", bound="Anchor")
+
+
+class AccessLevel(IntEnum):
+    """Access level enum."""
+
+    NO_ACCESS = -1
+    READ = 0
+    CONNECT = 1
+    WRITE = 2
+
+    @staticmethod
+    def cast(val: int | str | AccessLevel) -> AccessLevel:
+        """Cast access level."""
+        match val:
+            case int():
+                return AccessLevel(val)
+            case str():
+                return AccessLevel[val]
+            case _:
+                return val
+
+
+@dataclass
+class Access:
+    """Access Structure."""
+
+    anchors: dict[str, AccessLevel] = field(default_factory=dict)
+
+    def check(self, anchor: str) -> AccessLevel:
+        """Validate access."""
+        return self.anchors.get(anchor, AccessLevel.NO_ACCESS)
+
+
+@dataclass
+class Permission:
+    """Anchor Access Handler."""
+
+    all: AccessLevel = AccessLevel.NO_ACCESS
+    roots: Access = field(default_factory=Access)
 
 
 @dataclass
@@ -29,21 +72,132 @@ class Anchor:
 
     architype: Architype
     id: UUID = field(default_factory=uuid4)
+    root: Optional[UUID] = None
+    access: Permission = field(default_factory=Permission)
     persistent: bool = False
     hash: int = 0
+
+    ##########################################################################
+    #                             ACCESS CONTROL: TODO: Make Base Type       #
+    ##########################################################################
+
+    def allow_root(
+        self, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Allow all access from target root graph to current Architype."""
+        level = AccessLevel.cast(level)
+        access = self.access.roots
+
+        _root_id = str(root_id)
+        if level != access.anchors.get(_root_id, AccessLevel.NO_ACCESS):
+            access.anchors[_root_id] = level
+
+    def disallow_root(
+        self, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Disallow all access from target root graph to current Architype."""
+        level = AccessLevel.cast(level)
+        access = self.access.roots
+
+        access.anchors.pop(str(root_id), None)
+
+    def unrestrict(self, level: AccessLevel | int | str = AccessLevel.READ) -> None:
+        """Allow everyone to access current Architype."""
+        level = AccessLevel.cast(level)
+        if level != self.access.all:
+            self.access.all = level
+
+    def restrict(self) -> None:
+        """Disallow others to access current Architype."""
+        if self.access.all > AccessLevel.NO_ACCESS:
+            self.access.all = AccessLevel.NO_ACCESS
+
+    def has_read_access(self, to: Anchor) -> bool:
+        """Read Access Validation."""
+        if not (access_level := self.access_level(to) > AccessLevel.NO_ACCESS):
+            logger.info(
+                f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
+            )
+        return access_level
+
+    def has_connect_access(self, to: Anchor) -> bool:
+        """Write Access Validation."""
+        if not (access_level := self.access_level(to) > AccessLevel.READ):
+            logger.info(
+                f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
+            )
+        return access_level
+
+    def has_write_access(self, to: Anchor) -> bool:
+        """Write Access Validation."""
+        if not (access_level := self.access_level(to) > AccessLevel.CONNECT):
+            logger.info(
+                f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
+            )
+        return access_level
+
+    def access_level(self, to: Anchor) -> AccessLevel:
+        """Access validation."""
+        if not to.persistent:
+            return AccessLevel.WRITE
+
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        jctx = Jac.get_context()
+
+        jroot = jctx.root
+
+        # if current root is system_root
+        # if current root id is equal to target anchor's root id
+        # if current root is the target anchor
+        if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
+            return AccessLevel.WRITE
+
+        access_level = AccessLevel.NO_ACCESS
+
+        # if target anchor have set access.all
+        if (to_access := to.access).all > AccessLevel.NO_ACCESS:
+            access_level = to_access.all
+
+        # if target anchor's root have set allowed roots
+        # if current root is allowed to the whole graph of target anchor's root
+        if to.root and isinstance(to_root := jctx.mem.find_one(to.root), Anchor):
+            if to_root.access.all > access_level:
+                access_level = to_root.access.all
+
+            level = to_root.access.roots.check(str(jroot.id))
+            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+                access_level = level
+
+        # if target anchor have set allowed roots
+        # if current root is allowed to target anchor
+        level = to_access.roots.check(str(jroot.id))
+        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            access_level = level
+
+        return access_level
+
+    # ---------------------------------------------------------------------- #
 
     def save(self) -> None:
         """Save Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
 
+        jctx = Jac.get_context()
+
         self.persistent = True
-        Jac.get_context().mem.set(self.id, self)
+        self.root = jctx.root.id
+
+        jctx.mem.set(self.id, self)
 
     def destroy(self) -> None:
         """Destroy Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        Jac.get_context().mem.remove(self.id)
+        jctx = Jac.get_context()
+
+        if jctx.root.has_write_access(self):
+            jctx.mem.remove(self.id)
 
     def is_populated(self) -> bool:
         """Check if state."""
@@ -92,6 +246,8 @@ class Anchor:
             return {
                 "id": self.id,
                 "architype": unlinked,
+                "root": self.root,
+                "access": self.access,
                 "persistent": self.persistent,
             }
         else:
@@ -155,23 +311,30 @@ class NodeAnchor(Anchor):
         target_obj: Optional[list[NodeArchitype]],
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        root = Jac.get_root().__jac__
         ret_edges: list[EdgeArchitype] = []
         for anchor in self.edges:
             if (
                 (source := anchor.source)
                 and (target := anchor.target)
                 and (not filter_func or filter_func([anchor.architype]))
+                and source.architype
+                and target.architype
             ):
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
                     and (not target_obj or target.architype in target_obj)
+                    and root.has_read_access(target)
                 ):
                     ret_edges.append(anchor.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
                     and (not target_obj or source.architype in target_obj)
+                    and root.has_read_access(source)
                 ):
                     ret_edges.append(anchor.architype)
         return ret_edges
@@ -183,23 +346,30 @@ class NodeAnchor(Anchor):
         target_obj: Optional[list[NodeArchitype]],
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        root = Jac.get_root().__jac__
         ret_edges: list[NodeArchitype] = []
         for anchor in self.edges:
             if (
                 (source := anchor.source)
                 and (target := anchor.target)
                 and (not filter_func or filter_func([anchor.architype]))
+                and source.architype
+                and target.architype
             ):
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and self == source
                     and (not target_obj or target.architype in target_obj)
+                    and root.has_read_access(target)
                 ):
                     ret_edges.append(target.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and self == target
                     and (not target_obj or source.architype in target_obj)
+                    and root.has_read_access(source)
                 ):
                     ret_edges.append(source.architype)
         return ret_edges
@@ -242,10 +412,13 @@ class NodeAnchor(Anchor):
         """Destroy Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        for edge in self.edges:
-            edge.destroy()
+        jctx = Jac.get_context()
 
-        Jac.get_context().mem.remove(self.id)
+        if jctx.root.has_write_access(self):
+            for edge in self.edges:
+                edge.destroy()
+
+            jctx.mem.remove(self.id)
 
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
@@ -284,8 +457,11 @@ class EdgeAnchor(Anchor):
         """Destroy Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
 
-        self.detach()
-        Jac.get_context().mem.remove(self.id)
+        jctx = Jac.get_context()
+
+        if jctx.root.has_write_access(self):
+            self.detach()
+            jctx.mem.remove(self.id)
 
     def __getstate__(self) -> dict[str, object]:
         """Serialize Node Anchor."""
@@ -392,8 +568,8 @@ class WalkerAnchor(Anchor):
 class Architype:
     """Architype Protocol."""
 
-    _jac_entry_funcs_: list[DSFunc]
-    _jac_exit_funcs_: list[DSFunc]
+    _jac_entry_funcs_: ClassVar[list[DSFunc]]
+    _jac_exit_funcs_: ClassVar[list[DSFunc]]
 
     def __init__(self) -> None:
         """Create default architype."""
@@ -441,18 +617,20 @@ class WalkerArchitype(Architype):
         self.__jac__ = WalkerAnchor(architype=self)
 
 
+@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_ = []
-    _jac_exit_funcs_ = []
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
 
+@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_ = []
-    _jac_exit_funcs_ = []
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
     def __init__(self) -> None:
         """Create root node."""

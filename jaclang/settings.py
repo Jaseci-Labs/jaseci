@@ -17,6 +17,10 @@ class Settings:
     collect_py_dep_debug: bool = False
     print_py_raised_ast: bool = False
 
+    # Compiler configuration
+    disable_mtllm: bool = False
+    ignore_test_annex: bool = False
+
     # Formatter configuration
     max_line_length: int = 88
 

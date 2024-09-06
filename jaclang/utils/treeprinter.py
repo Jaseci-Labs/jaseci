@@ -123,6 +123,13 @@ def print_ast_tree(
             and not print_py_raise
         ):
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
+        elif isinstance(node, (ast.ModuleItem, ast.ModulePath)):
+            out = (
+                f"{node.__class__.__name__} - {node.sym_name} - "
+                f"abs_path: {node.abs_path}"
+            )
+
+            return out
         elif isinstance(node, AstSymbolNode):
             out = (
                 f"{node.__class__.__name__} - {node.sym_name} - "

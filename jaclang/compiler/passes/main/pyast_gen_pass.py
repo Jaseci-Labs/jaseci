@@ -2641,6 +2641,31 @@ class PyastGenPass(Pass):
             ]
         elif node.op.name in [Tok.STAR_POW]:
             node.gen.py_ast = node.operand.gen.py_ast
+        elif node.op.name in [Tok.BW_AND]:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                                ),
+                                attr="get_object",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="id",
+                                    value=node.operand.gen.py_ast[0],
+                                )
+                            ),
+                        ],
+                    )
+                )
+            ]
         else:
             self.ice(f"Unknown Unary operator {node.op.value}")
 

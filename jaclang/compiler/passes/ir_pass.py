@@ -133,6 +133,8 @@ class Pass(Transform[T]):
         else:
             self.prune_signal = False
         self.cur_node = node
+        if self.term_signal:
+            return node
         self.exit_node(node)
         return node
 

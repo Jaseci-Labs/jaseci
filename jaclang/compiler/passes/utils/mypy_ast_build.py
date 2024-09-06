@@ -26,6 +26,7 @@ from mypy.build import Plugin
 from mypy.build import SearchPaths
 from mypy.build import compute_search_paths
 from mypy.build import find_module_simple
+from mypy.build import find_module_with_reason
 from mypy.build import load_plugins
 from mypy.build import process_graph
 from mypy.options import Options
@@ -707,6 +708,7 @@ __all__ = [
     "BuildSource",
     "BuildSourceSet",
     "FileSystemCache",
+    "find_module_with_reason",
     "compute_search_paths",
     "load_graph",
     "load_plugins",

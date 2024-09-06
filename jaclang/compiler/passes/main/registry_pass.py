@@ -14,6 +14,7 @@ from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.runtimelib.utils import get_sem_scope
+from jaclang.settings import settings
 
 
 class RegistryPass(Pass):
@@ -23,6 +24,9 @@ class RegistryPass(Pass):
 
     def enter_module(self, node: ast.Module) -> None:
         """Create registry for each module."""
+        if settings.disable_mtllm:
+            self.terminate()
+            return None
         node.registry = SemRegistry()
         self.modules_visited.append(node)
 

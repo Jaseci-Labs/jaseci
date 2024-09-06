@@ -29,6 +29,6 @@ edge MyEdge {
     visit [-->];
 }
 
-with entry {
+with entry :__main__ {
     root spawn Creator();
 }

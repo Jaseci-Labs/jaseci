@@ -144,6 +144,52 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("+-- Token", stdout_value)
 
+    def test_import_mod_abs_path(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('import.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertRegex(
+            stdout_value,
+            r"1\:11 \- 1\:13.*ModulePath - os - abs_path\:.*typeshed/stdlib/os/__init__.pyi",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"2\:11 \- 2\:14.*ModulePath - sys - abs_path\:.*typeshed/stdlib/sys/__init__.pyi",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"3\:11 \- 3\:17.*ModulePath - pyfunc - abs_path\:.*fixtures/pyfunc.py",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"4\:11 \- 4\:28.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/inner/__init__.py",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"6\:11 \- 6\:15.*ModulePath - math - abs_path\:.*typeshed/stdlib/math.pyi",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"7\:11 \- 7\:19.*ModulePath - argparse - abs_path\:.*typeshed/stdlib/argparse.pyi",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"8\:16 \- 8\:27.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/__init__.py",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"8\:30 \- 8:35.*ModuleItem - color - abs_path\:.*fixtures/pygame_mock/color.py",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"8\:37 \- 8:44.*ModuleItem - display - abs_path\:.*fixtures/pygame_mock/display.py",
+        )
+
     def test_ast_dotgen(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()

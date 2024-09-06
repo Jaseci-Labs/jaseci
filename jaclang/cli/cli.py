@@ -8,7 +8,6 @@ import pickle
 import shutil
 import types
 from typing import Optional
-from uuid import UUID
 
 import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
@@ -159,10 +158,9 @@ def get_object(
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
-    if id == "root":
-        data = jctx.root.__getstate__()
-    elif obj := jctx.mem.find_by_id(UUID(id)):
-        data = obj.__getstate__()
+    obj = Jac.get_object(id)
+    if obj:
+        data = obj.__jac__.__getstate__()
     else:
         print(f"Object with id {id} not found.")
 
@@ -251,6 +249,8 @@ def enter(
     base = base if base else "./"
     mod = mod[:-4]
 
+    jctx = ExecutionContext.create(session=session, root=root)
+
     if filename.endswith(".jac"):
         ret_module = jac_import(
             target=mod,
@@ -270,10 +270,9 @@ def enter(
                 override_name="__main__" if main else None,
             )
     else:
+        jctx.close()
         JacMachine.detach()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
-
-    jctx = ExecutionContext.create(session=session, root=root, entry=node)
 
     if ret_module:
         (loaded_mod,) = ret_module
@@ -281,8 +280,11 @@ def enter(
             print("Errors occurred while importing the module.")
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
-            if isinstance(architype, WalkerArchitype):
-                Jac.spawn_call(jctx.entry.architype, architype)
+
+            jctx.set_entry_node(node)
+
+            if isinstance(architype, WalkerArchitype) and jctx.validate_access():
+                Jac.spawn_call(jctx.entry_node.architype, architype)
 
     jctx.close()
     JacMachine.detach()
@@ -427,8 +429,8 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
-        jac_import(target=mod, base_path=base)
-        module = jac_machine.loaded_modules.get(mod)
+        jac_import(target=mod, base_path=base, override_name="__main__")
+        module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:
             node = globals().get(initial, eval(initial)) if initial else None

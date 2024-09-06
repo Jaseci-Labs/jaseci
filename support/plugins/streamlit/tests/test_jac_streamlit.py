@@ -2,9 +2,10 @@
 
 import subprocess
 
-from jac_streamlit import AppTest
 
 from jaclang.utils.test import TestCase
+
+from jaclang_streamlit import AppTest
 
 
 class JacStreamlitPlugin(TestCase):

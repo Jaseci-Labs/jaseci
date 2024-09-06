@@ -39,7 +39,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("sub_abil_sep.jac"))  # type: ignore
+        cli.run(self.fixture_abs_path("sub_abil_sep.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -376,7 +376,7 @@ class JacLanguageTests(TestCase):
         jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("True"), 14)
+        self.assertEqual(stdout_value.count("True"), 16)
 
     def test_with_contexts(self) -> None:
         """Test walking through edges."""
@@ -522,7 +522,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
         self.assertIn(
-            '\n\n@ my_decorator \n can say_hello() {\n    """Say hello""" ; ', output
+            '\n\n@ my_decorator \n can say_hello() {\n\n    """Say hello""" ;', output
         )
 
     def test_needs_import_2(self) -> None:
@@ -568,7 +568,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(f.read()), mod_path=py_out_path
                 ),
             ).ir.unparse()
-        self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
+        self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
         self.assertIn("class Circle {\n    can init(radius: float", output)
         self.assertIn("<>node = 90;    \n    print(<>node) ;\n}\n", output)
@@ -1011,3 +1011,14 @@ class JacLanguageTests(TestCase):
             with open(bar_file_path, "w") as bar_file:
 
                 bar_file.write(original_content)
+
+    def test_object_ref_interface(self) -> None:
+        """Test class method output."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("objref.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual(len(stdout_value[0]), 32)
+        self.assertEqual("MyNode(value=0)", stdout_value[1])
+        self.assertEqual("valid: True", stdout_value[2])

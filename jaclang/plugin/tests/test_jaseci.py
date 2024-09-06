@@ -77,8 +77,8 @@ class TestJaseciPlugin(TestCase):
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
             entrypoint="traverse",
-            node=str(obj["id"]),
             args=[],
+            node=str(obj["id"]),
         )
         output = self.capturedOutput.getvalue().strip()
         self.assertEqual(output, "node a\nnode b")
@@ -265,6 +265,327 @@ class TestJaseciPlugin(TestCase):
         )
         self.assertEqual(
             self.capturedOutput.getvalue().strip(),
-            "[b(name='node b')]\n[GenericEdge]",
+            "[b(name='node b')]\n[GenericEdge()]",
         )
+        self._del_session(session)
+
+    def trigger_access_validation_test(
+        self, give_access_to_full_graph: bool, via_all: bool = False
+    ) -> None:
+        """Test different access validation."""
+        self._output2buffer()
+
+        ##############################################
+        #              ALLOW READ ACCESS             #
+        ##############################################
+
+        node_1 = "" if give_access_to_full_graph else self.nodes[0]
+        node_2 = "" if give_access_to_full_graph else self.nodes[1]
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="allow_other_root_access",
+            args=[self.roots[1], 0, via_all],
+            session=session,
+            root=self.roots[0],
+            node=node_1,
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="allow_other_root_access",
+            args=[self.roots[0], 0, via_all],
+            session=session,
+            root=self.roots[1],
+            node=node_2,
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node",
+            args=[20],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node",
+            args=[10],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+        archs = self.capturedOutput.getvalue().strip().split("\n")
+        self.assertTrue(len(archs) == 2)
+
+        # --------- NO UPDATE SHOULD HAPPEN -------- #
+
+        self.assertTrue(archs[0], "A(val=2)")
+        self.assertTrue(archs[1], "A(val=1)")
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="disallow_other_root_access",
+            args=[self.roots[1], via_all],
+            session=session,
+            root=self.roots[0],
+            node=node_1,
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="disallow_other_root_access",
+            args=[self.roots[0], via_all],
+            session=session,
+            root=self.roots[1],
+            node=node_2,
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+        self.assertFalse(self.capturedOutput.getvalue().strip())
+
+        ##############################################
+        #             ALLOW WRITE ACCESS             #
+        ##############################################
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="allow_other_root_access",
+            args=[self.roots[1], "WRITE", via_all],
+            session=session,
+            root=self.roots[0],
+            node=node_1,
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="allow_other_root_access",
+            args=[self.roots[0], "WRITE", via_all],
+            session=session,
+            root=self.roots[1],
+            node=node_2,
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node",
+            args=[20],
+            root=self.roots[0],
+            node=self.nodes[1],
+            session=session,
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node",
+            args=[10],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+        archs = self.capturedOutput.getvalue().strip().split("\n")
+        self.assertTrue(len(archs) == 2)
+
+        # --------- UPDATE SHOULD HAPPEN -------- #
+
+        self.assertTrue(archs[0], "A(val=20)")
+        self.assertTrue(archs[1], "A(val=10)")
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="disallow_other_root_access",
+            args=[self.roots[1], via_all],
+            session=session,
+            root=self.roots[0],
+            node=node_1,
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="disallow_other_root_access",
+            args=[self.roots[0], via_all],
+            session=session,
+            root=self.roots[1],
+            node=node_2,
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+        self.assertFalse(self.capturedOutput.getvalue().strip())
+
+    def test_other_root_access(self) -> None:
+        """Test filtering on node, then visit."""
+        global session
+        session = self.fixture_abs_path("other_root_access.session")
+
+        ##############################################
+        #                CREATE ROOTS                #
+        ##############################################
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="create_other_root",
+            args=[],
+            session=session,
+        )
+        root1 = self.capturedOutput.getvalue().strip()
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="create_other_root",
+            args=[],
+            session=session,
+        )
+        root2 = self.capturedOutput.getvalue().strip()
+
+        ##############################################
+        #           CREATE RESPECTIVE NODES          #
+        ##############################################
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="create_node",
+            args=[1],
+            session=session,
+            root=root1,
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="create_node",
+            args=[2],
+            session=session,
+            root=root2,
+        )
+        nodes = self.capturedOutput.getvalue().strip().split("\n")
+        self.assertTrue(len(nodes) == 2)
+
+        ##############################################
+        #           VISIT RESPECTIVE NODES           #
+        ##############################################
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=root1,
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=root2,
+        )
+        archs = self.capturedOutput.getvalue().strip().split("\n")
+        self.assertEqual(2, len(archs))
+        self.assertTrue(archs[0], "A(val=1)")
+        self.assertTrue(archs[1], "A(val=2)")
+
+        ##############################################
+        #              SWAP TARGET NODE              #
+        #                  NO ACCESS                 #
+        ##############################################
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=root1,
+            node=nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=root2,
+            node=nodes[0],
+        )
+        self.assertFalse(self.capturedOutput.getvalue().strip())
+
+        ##############################################
+        #        TEST DIFFERENT ACCESS OPTIONS       #
+        ##############################################
+
+        self.roots = [root1, root2]
+        self.nodes = nodes
+
+        self.trigger_access_validation_test(give_access_to_full_graph=False)
+        self.trigger_access_validation_test(give_access_to_full_graph=True)
+
+        self.trigger_access_validation_test(
+            give_access_to_full_graph=False, via_all=True
+        )
+        self.trigger_access_validation_test(
+            give_access_to_full_graph=True, via_all=True
+        )
+
         self._del_session(session)

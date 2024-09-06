@@ -563,3 +563,5 @@ class FuseTypeInfoPass(Pass):
             else:
                 if left.type_sym_tab:
                     right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
+                    if right.name_spec.sym:
+                        right.name_spec.sym.add_use(right.name_spec)

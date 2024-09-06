@@ -959,6 +959,7 @@ class ModulePath(AstSymbolNode):
         self.level = level
         self.alias = alias
         self.sub_module: Optional[Module] = None
+        self.abs_path: Optional[str] = None
 
         name_spec = alias if alias else path[0] if path else None
 
@@ -1051,6 +1052,7 @@ class ModuleItem(AstSymbolNode):
             name_spec=alias if alias else name,
             sym_category=SymbolType.MOD_VAR,
         )
+        self.abs_path: Optional[str] = None
 
     @property
     def from_parent(self) -> Import:
