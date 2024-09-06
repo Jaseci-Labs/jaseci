@@ -956,6 +956,7 @@ class JacLanguageTests(TestCase):
         """Test dynamic update of a walker during runtime."""
         session = self.fixture_abs_path("bar_walk.session")
         bar_file_path = self.fixture_abs_path("bar.jac")
+        update_file_path = self.fixture_abs_path("walker_update.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
         cli.enter(
@@ -996,11 +997,8 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         try:
-            cli.enter(
-                filename=bar_file_path,
-                session=session,
-                entrypoint="bar_walk",
-                args=[],
+            cli.run(
+                filename=update_file_path,
             )
             sys.stdout = sys.__stdout__
             stdout_value = captured_output.getvalue()
