@@ -522,7 +522,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
         self.assertIn(
-            '\n\n@ my_decorator \n can say_hello() {\n    """Say hello""" ; ', output
+            '\n\n@ my_decorator \n can say_hello() {\n\n    """Say hello""" ;', output
         )
 
     def test_needs_import_2(self) -> None:
@@ -568,7 +568,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(f.read()), mod_path=py_out_path
                 ),
             ).ir.unparse()
-        self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
+        self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
         self.assertIn("class Circle {\n    can init(radius: float", output)
         self.assertIn("<>node = 90;    \n    print(<>node) ;\n}\n", output)
