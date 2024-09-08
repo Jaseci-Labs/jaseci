@@ -1,0 +1,96 @@
+{
+  "name": "jaclang-extension",
+  "version": "2024.8.14",
+  "displayName": "%extension.displayName%",
+  "description": "%extension.description%",
+  "publisher": "jaseci-labs",
+  "license": "MIT",
+  "icon": "./assets/icon.png",
+  "homepage": "https://www.jac-lang.org/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jaseci-Labs/jaclang/support/vscode_ext/jac"
+  },
+  "galleryBanner": {
+    "color": "#1e415e",
+    "theme": "dark"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Linters",
+    "Formatters",
+    "Snippets",
+    "Data Science",
+    "Machine Learning"
+  ],
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "contributes": {
+
+    "debuggers": [
+      {
+        "type": "jacdebug",
+        "label": "Jac Debug",
+
+        "initialConfigurations": [
+          {
+            "type": "debugpy",
+            "request": "launch",
+            "name": "Run a jac file",
+            "program": "${command:extension.jaclang-extension.getJacPath}",
+            "args" : "run ${file}"
+          }
+        ]
+
+      }
+    ],
+
+    "languages": [
+      {
+        "id": "jac",
+        "aliases": [
+          "The Jac Programming Language",
+          "jac"
+        ],
+        "extensions": [
+          ".jac"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./assets/file-icon.svg",
+          "dark": "./assets/file-icon.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "jac",
+        "scopeName": "source.jac",
+        "path": "./syntaxes/jac.tmLanguage.json"
+      }
+    ]
+  },
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "build": "vsce",
+    "watch": "tsc -b -w",
+    "deploy": "vsce publish --yarn",
+    "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
+  },
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.1",
+    "@types/vscode": "^1.89.0",
+    "@vscode/vsce": "^2.27.0",
+    "typescript": "^5.4.5"
+  }
+}

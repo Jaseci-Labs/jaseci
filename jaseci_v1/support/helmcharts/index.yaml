@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  jaseci:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2022-07-02T02:55:01.912837+05:30"
+    description: A Helm chart for Kubernetes
+    digest: c65e56fd6246f8388444a8787d900189fda8cb3890203886f8a25b5b51a2c574
+    name: jaseci
+    type: application
+    urls:
+    - https://github.com/ashagraw91/jaseci/tree/jaseci_helm_chart/support/helmcharts/jaseci/jaseci-0.1.0.tgz
+    version: 0.1.0
+generated: "2022-07-02T02:55:01.9120244+05:30"

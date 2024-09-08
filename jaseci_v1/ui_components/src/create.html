@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
+  <title>Stencil Component Starter</title>
+
+  <script type="module" src="/build/components.esm.js"></script>
+  <script nomodule src="/build/components.js"></script>
+  <link rel="stylesheet" href="/build/components.css" />
+</head>
+<style>
+  body {
+    width: 100%;
+    margin: 0;
+    height: 100%;
+  }
+</style>
+
+<body>
+  <jsc-app></jsc-app>
+
+  <script>
+    customElements.whenDefined('jsc-app').then(() => {
+      const app = document.querySelector('jsc-app');
+      const config = {
+        siteName: "Comlogger",
+      }
+
+      app.setGlobalConfig(config)
+
+      app.setMarkup(JSON.stringify(
+        [
+          {
+            component: 'Navbar',
+            sections: {
+              links: [
+                { component: 'NavLink', props: { label: 'My Logs', href: 'https://google.com', color: '#fff' } },
+                { component: 'NavLink', props: { label: 'Logout', href: 'https://google.com', color: '#fff' } },
+              ],
+            },
+            props: { label: 'config(siteName)' },
+            css: { background: '#000000' },
+          },
+          {
+            component: 'Container',
+            css: {
+              width: '100%',
+              height: '100%',
+              padding: '10px',
+              display: "flex",
+              justifyContent: "center"
+            },
+            sections: {
+              children: [
+                {
+                  component: "Text",
+                  props: {
+                    variant: "title",
+                    value: "Add a Log Item"
+
+                  }
+                },
+                {
+                  component: "Column",
+                  sections: {
+                    children: [
+                      {
+                        component: "Inputbox",
+                        props: {
+                          label: "Title",
+                          fullWidth: true
+                        }
+                      },
+                      {
+                        component: "Textbox",
+                        props: {
+                          label: "Description",
+                          fullWidth: true
+                        }
+                      },
+                      {
+                        component: "Button",
+                        props: {
+                          label: "Submit"
+                        }
+                      }
+                    ]
+                  },
+                  css: {
+                    width: "500px",
+                    height: "300px",
+                    display: "flex",
+                    paddingTop: "12px",
+                    gap: "24px"
+                  }
+                }
+              ]
+            },
+          },
+        ])
+      );
+    })
+  </script>
+</body>
+
+</html>

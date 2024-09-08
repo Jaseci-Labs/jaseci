@@ -1,0 +1,7 @@
+{
+    "shared": true,
+    "model_name": "prajjwal1/bert-tiny",
+    "model_save_path": "modeloutput",
+    "loss_function": "mse",
+    "loss_type": "dot"
+}

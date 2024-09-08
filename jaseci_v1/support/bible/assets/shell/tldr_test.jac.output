@@ -1,0 +1,8 @@
+Testing "Size of basic graph": [PASSED in 0.00s]
+Testing "Size of a bit fancier graph": [PASSED in 0.01s]
+{
+  "tests": 2,
+  "passed": 2,
+  "failed": 0,
+  "success": true
+}

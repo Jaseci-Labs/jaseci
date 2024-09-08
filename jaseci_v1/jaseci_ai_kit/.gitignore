@@ -1,0 +1,14 @@
+# Test Artifacts
+logoutput/
+modeloutput*/
+pretrained_model
+heads/
+output/
+results/
+train/
+dist/
+audio_file_*
+cloned_audio_file_*
+mypath/
+weights/
+gpt2-trained

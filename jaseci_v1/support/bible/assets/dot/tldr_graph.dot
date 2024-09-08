@@ -1,0 +1,13 @@
+strict digraph root {
+    "n0" [ id="7009be1b8fe1422f884411f0b4f73fe7", label="n0:root"  ]
+    "n1" [ id="54e708d7ee014199b4e0935d24f67b1e", label="n1:person" , name="Joe" ]
+    "n2" [ id="d299d5564cde4feebb7fe5f977015792", label="n2:person" , name="Anon" ]
+    "n3" [ id="18451c19f8bc45d5a713cc860d39faf1", label="n3:person" , name="Anon" ]
+    "n4" [ id="2ec9314073744e3cbb5acb0ba910cf36", label="n4:person" , name="Mike" ]
+    "n0" -> "n2" [ id="e4b4292b7bba4046b6ead175e92766a7", label="e0:strong" ]
+    "n0" -> "n3" [ id="8eba2c94ee6a4edab0702a53a8cb86cc", label="e1:weak" ]
+    "n0" -> "n4" [ id="89ff9ca8e5e6465cabce975bd6de7492", label="e2:weak" ]
+    "n1" -> "n2" [ id="121732b6d23242c18c0c843333076afe", label="e3", dir="both" ]
+    "n3" -> "n4" [ id="146974152b4449c68c56b4ab85c94248", label="e4:strong", dir="both" ]
+    "n0" -> "n1" [ id="73a1c3ec5f11490d882d1cd5ae875234", label="e5:strong" ]
+}

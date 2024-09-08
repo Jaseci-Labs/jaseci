@@ -1,0 +1,4 @@
+Jac's import and include statements provides a propoer superset of python's import semantics with some improvements for imports of Jac modules. That being said, its important to note an important syntax difference in that `from X import Y` is reworked into `import from X, Y`  (`import X` remains in the style of `import X` in Jac). Also there is a `:py` or `:jac` after the import statment to signify which type of import to consider.
+
+- **Python Imports:** Utilize `import:py` to seamlessly import Python libraries, allowing full access to Python's ecosystem within Jac programs, with the same semantics as python.
+- **Jac Imports:** Use `import:jac` for importing Jac-specific modules from `.jac` files with the same symantics as python files with and additional functionality for Jac's impl separation (described later), and static analysis features.

@@ -1,0 +1,20 @@
+jaseci > actions list
+[
+  "net.max",
+  "net.min",
+  "net.root",
+  "rand.seed",
+  ...
+  "date.quantize_to_month",
+  "date.quantize_to_week",
+  "date.quantize_to_day",
+  "date.date_day_diff",
+  "use.question_encode",
+  "use.enc_question",
+  "use.answer_encode",
+  "use.enc_answer",
+  "use.cos_sim_score",
+  "use.dist_score",
+  "use.qa_score"
+]
+jaseci >

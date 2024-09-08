@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: $j{namespace}
+  labels:
+    name: jaseci
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jaseci-account
+  namespace: $j{namespace}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: $j{namespace}
+  name: jaseci-orc
+rules:
+  - apiGroups: [
+      "",
+      "admissionregistration.k8s.io",
+      "apps",
+      "autoscaling",
+      "batch",
+      "certificates.k8s.io",
+      "extensions",
+      "networking.k8s.io",
+      "policy",
+      "rbac.authorization.k8s.io",
+      "storage.k8s.io",
+      "v1",
+      "apiextensions.k8s.io",
+      "apm.k8s.elastic.co",
+      "beat.k8s.elastic.co",
+      "elasticsearch.k8s.elastic.co",
+      "enterprisesearch.k8s.elastic.co",
+      "kibana.k8s.elastic.co",
+      "agent.k8s.elastic.co",
+      "authorization.k8s.io",
+      "autoscaling.k8s.elastic.co",
+      "coordination.k8s.io",
+      "maps.k8s.elastic.co",
+      "stackconfigpolicy.k8s.elastic.co"
+    ]
+    resources: [
+      "events",
+      "certificatesigningrequests",
+      "clusterroles",
+      "clusterrolebindings",
+      "configmaps",
+      "cronjobs",
+      "daemonsets",
+      "deployments.apps",
+      "deployments",
+      "endpoints",
+      "horizontalpodautoscalers",
+      "ingresses",
+      "ingresses/status",
+      "jobs",
+      "limitranges",
+      "mutatingwebhookconfigurations",
+      "namespaces",
+      "networkpolicies",
+      "nodes",
+      "nodes/metrics",
+      "nodes/proxy",
+      "persistentvolumeclaims",
+      "persistentvolumes",
+      "poddisruptionbudgets",
+      "pods",
+      "replicasets",
+      "replicationcontrollers",
+      "resourcequotas",
+      "secrets",
+      "serviceaccounts",
+      "services",
+      "statefulsets",
+      "storageclasses",
+      "validatingwebhookconfigurations",
+      "volumeattachments",
+      "customresourcedefinitions",
+      "apmservers",
+      "apmservers/status",
+      "apmservers/finalizers",
+      "beats",
+      "beats/finalizers",
+      "beats/status",
+      "elasticsearch",
+      "elasticsearches",
+      "elasticsearches/finalizers",
+      "elasticsearches/status",
+      "enterpriselicenses",
+      "enterpriselicenses/status",
+      "enterprisesearches",
+      "enterprisesearches/finalizers",
+      "enterprisesearches/status",
+      "kibanas",
+      "kibanas/status",
+      "kibanas/finalizers",
+      "agents",
+      "agents/finalizers",
+      "agents/status",
+      "subjectaccessreviews",
+      "elasticsearchautoscalers",
+      "elasticsearchautoscalers/finalizers",
+      "elasticsearchautoscalers/status",
+      "leases",
+      "elasticmapsservers",
+      "elasticmapsservers/finalizers",
+      "elasticmapsservers/status",
+      "stackconfigpolicies",
+      "stackconfigpolicies/finalizers",
+      "stackconfigpolicies/status"
+    ]
+    verbs: ["get", "watch", "list", "update", "patch", "create", "delete", "deletecollection"]
+  - nonResourceURLs: [
+      "/metrics"
+    ]
+    verbs: ["get", "watch", "list", "update", "patch", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jaseci-orc-rolebinding-$j{namespace}
+  namespace: $j{namespace}
+subjects:
+  - kind: ServiceAccount
+    name: jaseci-account
+    namespace: $j{namespace}
+roleRef:
+  kind: ClusterRole
+  name: jaseci-orc
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci
+  namespace: $j{namespace}
+spec:
+  selector:
+    pod: jaseci
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaseci-up
+  namespace: $j{namespace}
+data:
+  prod_up: |-
+    jsserv wait_for_db && jsserv makemigrations base && jsserv makemigrations jsx_oauth
+    jsserv makemigrations && jsserv migrate;
+    jsserv runserver 0.0.0.0:80;
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci
+  namespace: $j{namespace}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci
+  template:
+    metadata:
+      labels:
+        pod: jaseci
+      name: jaseci
+    spec:
+      serviceAccountName: jaseci-account
+      containers:
+        - name: jaseci
+          image: jaseci/jaseci:latest
+          resources:
+            requests:
+              memory: "350Mi"
+          imagePullPolicy: IfNotPresent
+          command: [bash, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 80
+          env:
+            - name: KUBE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: password
+$j{env_vars}
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+            - name: jaseci-logs
+              mountPath: /.jaseci_logs/
+          readinessProbe:
+            httpGet:
+              path: /js_public/health
+              port: 80
+              scheme: HTTP
+            successThreshold: 3
+      volumes:
+        - name: prod-script
+          configMap:
+            name: jaseci-up
+        - name: jaseci-logs
+          persistentVolumeClaim:
+            claimName: jaseci-logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: $j{namespace}
+  name: jaseci-logs
+spec:
+  resources:
+    requests:
+      storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jaseci-db-credentials
+  namespace: $j{namespace}
+type: Opaque
+data:
+  user: cG9zdGdyZXM=
+  password: bGlmZWxvZ2lmeWphc2VjaQ==
+---

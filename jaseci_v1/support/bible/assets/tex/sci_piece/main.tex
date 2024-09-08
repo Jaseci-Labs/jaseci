@@ -1,0 +1,106 @@
+\documentclass[9pt,journal,compsoc]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{balance}
+\ifCLASSOPTIONcompsoc
+  \usepackage[nocompress]{cite}
+\else
+  \usepackage{cite}
+\fi
+\ifCLASSINFOpdf
+\else
+ \fi
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+\begin{document}
+
+
+\title{\huge The Case for a Wholistic Serverless Programming Paradigm and Full Stack Automation for AI and Beyond -- The Philosophy of Jaseci and Jac}
+
+
+\author{
+    \IEEEauthorblockN{Jason Mars\IEEEauthorrefmark{1}\IEEEauthorrefmark{2}}
+    \\
+    \IEEEauthorblockA{\IEEEauthorrefmark{1}University of Michigan, \emph{profmars@umich.edu}}
+    \\
+    \IEEEauthorblockA{\IEEEauthorrefmark{2}Jaseci Labs, \emph{jason@jaseci.org}}
+
+
+}
+
+\markboth{Position Paper -- June~2022}%
+{Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for Computer Society Journals}
+
+\IEEEtitleabstractindextext{%
+    \begin{abstract}
+
+    \input{abstract.tex}
+
+
+    \end{abstract}
+
+    % Note that keywords are not normally used for peerreview papers.
+    \begin{IEEEkeywords}
+        Serverless Computing, Artificial intelligence, Warehouse Scale Computing, Runtime Systems, Programming Languages.
+    \end{IEEEkeywords}}
+
+
+\maketitle
+
+
+\IEEEdisplaynontitleabstractindextext
+
+\IEEEpeerreviewmaketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
+
+%\IEEEPARstart{T}{here}
+\input{intro.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Case for a New Computational Model}\label{sec:motivation}
+\input{casefor.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Data Spacial Programming Model with Jac}\label{sec:jac}
+\input{jac.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Diffuse Runtime Execution with Jaseci}\label{sec:arch}
+\input{jaseci.tex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Case Studies and Discussion}\label{sec:casestudy}
+\input{cases.tex}
+
+\balance
+\section{Conclusion}
+\input{conclusion.tex}
+
+\ifCLASSOPTIONcaptionsoff
+    \newpage
+\fi
+
+
+\bibliography{biblio}
+\bibliographystyle{IEEEtran}
+
+\end{document}
+
+

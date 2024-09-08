@@ -1,0 +1,4 @@
+flair
+fastapi
+uvicorn
+pytest

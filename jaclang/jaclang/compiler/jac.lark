@@ -1,0 +1,665 @@
+// Base Module structure
+start: module
+
+module: (doc_tag? element (element_with_doc | element)*)?
+      | doc_tag (element_with_doc (element_with_doc | element)*)?
+
+doc_tag: STRING | DOC_STRING
+element_with_doc: doc_tag element
+
+element: import_stmt
+       | architype
+       | ability
+       | global_var
+       | free_code
+       | py_code_block
+       | test
+
+// Import/Include Statements
+import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
+           | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
+           | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
+           | include_stmt
+
+from_path: (DOT | ELLIPSIS)* import_path
+         | (DOT | ELLIPSIS)+
+
+import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
+import_items: (import_item COMMA)* import_item
+import_item: named_ref (KW_AS NAME)?
+sub_name: COLON NAME
+include_stmt: KW_INCLUDE sub_name? import_path SEMI
+
+// Architypes
+architype: decorators? architype_decl
+         | architype_def
+         | enum
+
+architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
+architype_def: abil_to_arch_chain member_block
+decorators: (DECOR_OP atomic_chain)+
+access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
+
+inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
+               | COLON (atomic_chain COMMA)* atomic_chain COLON
+
+arch_type: KW_WALKER
+          | KW_OBJECT
+          | KW_EDGE
+          | KW_NODE
+          | KW_CLASS
+
+// Architype bodies
+member_block: LBRACE member_stmt* RBRACE
+member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
+has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
+has_assign_list: (has_assign_list COMMA)? typed_has_clause
+typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
+type_tag: COLON expression
+
+// Enumerations
+enum: decorators? enum_decl
+     | enum_def
+
+enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
+enum_def: arch_to_enum_chain enum_block
+enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
+
+enum_stmt: NAME (COLON STRING)? EQ expression
+         | NAME (COLON STRING)?
+         | py_code_block
+         | free_code
+         | abstract_ability
+         | ability
+
+// Abilities
+ability: decorators? KW_ASYNC? ability_decl
+        | decorators? genai_ability
+        | ability_def
+
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) (code_block | SEMI)
+ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
+abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl) KW_BY atomic_call SEMI
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
+func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
+func_decl_params: (param_var COMMA)* param_var
+param_var: (STAR_POW | STAR_MUL)? NAME (COLON STRING)? type_tag (EQ expression)?
+
+// Global variables
+global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
+assignment_list: (assignment_list COMMA)? assignment
+
+// Free code
+free_code: KW_WITH KW_ENTRY sub_name? code_block
+
+// Inline python
+py_code_block: PYNLINE
+
+// Tests
+test: KW_TEST NAME? code_block
+
+// Implementations
+arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
+abil_to_arch_chain: arch_or_ability_chain? arch_ref
+arch_to_abil_chain: arch_or_ability_chain? ability_ref
+arch_to_enum_chain: arch_or_ability_chain? enum_ref
+
+arch_ref: class_ref
+        | object_ref
+        | walker_ref
+        | edge_ref
+        | node_ref
+
+node_ref: NODE_OP named_ref
+edge_ref: EDGE_OP named_ref
+walker_ref: WALKER_OP named_ref
+class_ref: CLASS_OP named_ref
+object_ref: OBJECT_OP named_ref
+enum_ref: ENUM_OP named_ref
+ability_ref: ABILITY_OP named_ref
+
+// Codeblocks and Statements
+code_block: LBRACE statement* RBRACE
+
+statement: import_stmt
+       | ability
+       | architype
+       | if_stmt
+       | while_stmt
+       | for_stmt
+       | try_stmt
+       | match_stmt
+       | with_stmt
+       | global_ref SEMI
+       | nonlocal_ref SEMI
+       | typed_ctx_block
+       | return_stmt SEMI
+       | (yield_expr | KW_YIELD) SEMI
+       | raise_stmt SEMI
+       | assert_stmt SEMI
+       | check_stmt SEMI
+       | assignment SEMI
+       | delete_stmt SEMI
+       | report_stmt SEMI
+       | expression SEMI
+       | ctrl_stmt SEMI
+       | py_code_block
+       | walker_stmt
+       | SEMI
+
+
+// If statements
+if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
+elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
+else_stmt: KW_ELSE code_block
+
+// While statements
+while_stmt: KW_WHILE expression code_block
+
+// For statements
+for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY assignment code_block else_stmt?
+       | KW_ASYNC? KW_FOR atomic_chain KW_IN expression code_block else_stmt?
+
+// Try statements
+try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
+except_list: except_def+
+except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
+finally_stmt: KW_FINALLY code_block
+
+// Match statements
+match_stmt: KW_MATCH expression LBRACE match_case_block+ RBRACE
+match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement+
+
+// Match patterns
+pattern_seq: (or_pattern | as_pattern)
+or_pattern: (pattern BW_OR)* pattern
+as_pattern: or_pattern KW_AS NAME
+
+pattern: literal_pattern
+    | singleton_pattern
+    | capture_pattern
+    | sequence_pattern
+    | mapping_pattern
+    | class_pattern
+
+
+// Match litteral patterns
+literal_pattern: (INT | FLOAT | multistring)
+
+// Match singleton patterns
+singleton_pattern: (NULL | BOOL)
+
+// Match capture patterns
+capture_pattern: NAME
+
+// Match sequence patterns
+sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
+                | LPAREN list_inner_pattern (COMMA list_inner_pattern)* RPAREN
+
+// Match mapping patterns
+mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
+list_inner_pattern: (pattern_seq | STAR_MUL NAME)
+dict_inner_pattern: (literal_pattern COLON pattern_seq | STAR_POW NAME)
+
+// Match class patterns
+class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
+             | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
+
+pattern_list: (pattern_list COMMA)? pattern_seq
+kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
+
+// Context managers
+with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
+expr_as_list: (expr_as COMMA)* expr_as
+expr_as: expression (KW_AS expression)?
+
+// Global and nonlocal statements
+global_ref: GLOBAL_OP name_list
+nonlocal_ref: NONLOCAL_OP name_list
+name_list: (named_ref COMMA)* named_ref
+
+// Data spatial typed context blocks
+typed_ctx_block: RETURN_HINT expression code_block
+
+// Return statements
+return_stmt: KW_RETURN expression?
+
+// Yield statements
+yield_expr: KW_YIELD KW_FROM? expression
+
+// Raise statements
+raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
+
+// Assert statements
+assert_stmt: KW_ASSERT expression (COMMA expression)?
+
+// Check statements
+check_stmt: KW_CHECK expression
+
+// Delete statements
+delete_stmt: KW_DELETE expression
+
+// Report statements
+report_stmt: KW_REPORT expression
+
+// Control statements
+ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
+
+// Data spatial Walker statements
+walker_stmt: visit_stmt
+       | revisit_stmt
+       | disengage_stmt
+       | ignore_stmt
+
+// Visit statements
+visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
+
+// Revisit statements
+revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
+
+// Disengage statements
+disengage_stmt: KW_DISENGAGE SEMI
+
+// Ignore statements
+ignore_stmt: KW_IGNORE expression SEMI
+
+// Assignments
+assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
+          | atomic_chain (COLON STRING)? type_tag (EQ (yield_expr | expression))?
+          | atomic_chain aug_op (yield_expr | expression)
+
+aug_op: RSHIFT_EQ
+       | LSHIFT_EQ
+       | BW_NOT_EQ
+       | BW_XOR_EQ
+       | BW_OR_EQ
+       | BW_AND_EQ
+       | MOD_EQ
+       | DIV_EQ
+       | FLOOR_DIV_EQ
+       | MUL_EQ
+       | SUB_EQ
+       | ADD_EQ
+       | MATMUL_EQ
+       | STAR_POW_EQ
+
+// Expressions
+expression: walrus_assign (KW_IF expression KW_ELSE expression)?
+          | lambda_expr
+
+// Walrus assignments
+walrus_assign: (named_ref WALRUS_EQ)? pipe
+
+// Lambda expressions
+lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
+
+// Pipe expressions
+pipe: (pipe PIPE_FWD)? pipe_back
+
+// Pipe back expressions
+pipe_back: (pipe_back PIPE_BKWD)? elvis_check
+
+// Elvis expressions
+elvis_check: (elvis_check ELVIS_OP)? bitwise_or
+
+// Bitwise expressions
+bitwise_or: (bitwise_or BW_OR)? bitwise_xor
+bitwise_xor: (bitwise_xor BW_XOR)? bitwise_and
+bitwise_and: (bitwise_and BW_AND)? shift
+shift: (shift (RSHIFT | LSHIFT))? logical_or
+
+// Logical and compare expressions
+logical_or: logical_and (KW_OR logical_and)*
+logical_and: logical_not (KW_AND logical_not)*
+logical_not: NOT logical_not | compare
+compare: (arithmetic cmp_op)* arithmetic
+
+cmp_op: KW_ISN
+      | KW_IS
+      | KW_NIN
+      | KW_IN
+      | NE
+      | GTE
+      | LTE
+      | GT
+      | LT
+      | EE
+
+// Arithmetic expressions
+arithmetic: (arithmetic (MINUS | PLUS))? term
+term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? power
+power: (power STAR_POW)? factor
+factor: (BW_NOT | MINUS | PLUS) factor | connect
+
+// Connect expressions
+connect: (connect (connect_op | disconnect_op))? atomic_pipe
+
+// Atomic expressions
+atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
+
+// Atomic pipe back expressions
+atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
+
+// Data spatial spawn expressions
+ds_spawn: (ds_spawn KW_SPAWN)? unpack
+
+// Unpack expressions
+unpack: STAR_MUL? ref
+
+// References (unused)
+ref: BW_AND? pipe_call
+
+// Data spatial calls
+pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
+
+// Subscripted and dotted expressions
+atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
+            | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
+            | (atomic_call | atom | edge_ref_chain)
+
+index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
+           | list_val
+
+// Function calls
+atomic_call: atomic_chain LPAREN param_list? (KW_BY atomic_call)? RPAREN
+
+param_list: expr_list COMMA kw_expr_list
+          | kw_expr_list
+          | expr_list
+
+// Atom
+atom: named_ref
+    | LPAREN (expression | yield_expr) RPAREN
+    | atom_collection
+    | atom_literal
+    | type_ref
+
+atom_literal: builtin_type
+            | NULL
+            | BOOL
+            | multistring
+            | ELLIPSIS
+            | FLOAT
+            | OCT
+            | BIN
+            | HEX
+            | INT
+
+type_ref: TYPE_OP (named_ref | builtin_type)
+
+multistring: (fstring | STRING | DOC_STRING)+
+
+fstring: FSTR_START fstr_parts FSTR_END
+       | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
+
+fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+
+// Collection values
+atom_collection: dict_compr
+               | set_compr
+               | gen_compr
+               | list_compr
+               | dict_val
+               | set_val
+               | tuple_val
+               | list_val
+
+list_compr: LSQUARE expression inner_compr+ RSQUARE
+gen_compr: LPAREN expression inner_compr+ RPAREN
+set_compr: LBRACE expression inner_compr+ RBRACE
+dict_compr: LBRACE kv_pair inner_compr+ RBRACE
+inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN pipe_call (KW_IF walrus_assign)*
+
+dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
+list_val: LSQUARE expr_list? RSQUARE
+tuple_val: LPAREN tuple_list? RPAREN
+set_val: LBRACE expr_list RBRACE
+
+kv_pair: expression COLON expression | STAR_POW expression
+expr_list: (expr_list COMMA)? expression
+
+// Tuples and Jac Tuples
+tuple_list: expression COMMA expr_list COMMA kw_expr_list
+          | expression COMMA kw_expr_list
+          | expression COMMA expr_list
+          | expression COMMA
+          | kw_expr_list
+
+kw_expr_list: (kw_expr_list COMMA)? kw_expr
+kw_expr: named_ref EQ expression | STAR_POW expression
+
+// Data Spatial References
+edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
+edge_op_ref: edge_any | edge_from | edge_to
+edge_to: ARROW_R | ARROW_R_P1 typed_filter_compare_list ARROW_R_P2
+edge_from: ARROW_L | ARROW_L_P1 typed_filter_compare_list ARROW_L_P2
+edge_any: ARROW_BI | ARROW_L_P1 typed_filter_compare_list ARROW_R_P2
+connect_op: connect_from | connect_to | connect_any
+disconnect_op: KW_DELETE edge_op_ref
+connect_to: CARROW_R | CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
+connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
+connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
+
+// Special Comprehensions
+filter_compr: LPAREN NULL_OK filter_compare_list RPAREN
+            | LPAREN TYPE_OP NULL_OK typed_filter_compare_list RPAREN
+assign_compr: LPAREN EQ kw_expr_list RPAREN
+filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
+typed_filter_compare_list: expression (COLON filter_compare_list)?
+filter_compare_item: named_ref cmp_op expression
+
+// Names and references
+named_ref: special_ref
+         | KWESC_NAME
+         | NAME
+
+special_ref: KW_INIT
+            | KW_POST_INIT
+            | KW_ROOT
+            | KW_SUPER
+            | KW_SELF
+            | KW_HERE
+
+// Builtin types
+builtin_type: TYP_TYPE
+            | TYP_ANY
+            | TYP_BOOL
+            | TYP_DICT
+            | TYP_SET
+            | TYP_TUPLE
+            | TYP_LIST
+            | TYP_FLOAT
+            | TYP_INT
+            | TYP_BYTES
+            | TYP_STRING
+
+// Lexer Tokens
+TYP_STRING: "str"
+TYP_INT: "int"
+TYP_FLOAT: "float"
+TYP_LIST: "list"
+TYP_TUPLE: "tuple"
+TYP_SET: "set"
+TYP_DICT: "dict"
+TYP_BOOL: "bool"
+TYP_BYTES: "bytes"
+TYP_ANY: "any"
+TYP_TYPE: "type"
+KW_LET: "let"
+KW_ABSTRACT: "abs"
+KW_CLASS: "class"
+KW_OBJECT: "obj"
+KW_ENUM: "enum"
+KW_NODE: "node"
+KW_IGNORE: "ignore"
+KW_VISIT: "visit"
+KW_REVISIT: "revisit"
+KW_SPAWN: "spawn"
+KW_WITH: "with"
+KW_ENTRY: "entry"
+KW_EXIT: "exit"
+KW_IMPORT: "import"
+KW_INCLUDE: "include"
+KW_FROM: "from"
+KW_AS: "as"
+KW_EDGE: "edge"
+KW_WALKER: "walker"
+KW_ASYNC: "async"
+KW_AWAIT: "await"
+KW_TEST: "test"
+KW_ASSERT: "assert"
+KW_CHECK: "check"
+KW_IF: "if"
+KW_ELIF: "elif"
+KW_ELSE: "else"
+KW_FOR: "for"
+KW_TO: "to"
+KW_BY: "by"
+KW_WHILE: "while"
+KW_CONTINUE: "continue"
+KW_BREAK: "break"
+KW_DISENGAGE: "disengage"
+KW_YIELD: "yield"
+KW_SKIP: "skip"
+KW_REPORT: "report"
+KW_RETURN: "return"
+KW_DELETE: "del"
+KW_TRY: "try"
+KW_EXCEPT: "except"
+KW_FINALLY: "finally"
+KW_RAISE: "raise"
+KW_IN: "in"
+KW_IS: "is"
+KW_PRIV: "priv"
+KW_PUB: "pub"
+KW_PROT: "protect"
+KW_HAS: "has"
+KW_GLOBAL: "glob"
+KW_CAN: "can"
+KW_STATIC: "static"
+KW_OVERRIDE: "override"
+KW_MATCH: "match"
+KW_CASE: "case"
+KW_HERE: "here"
+KW_SELF: "self"
+KW_INIT: "init"
+KW_POST_INIT: "postinit"
+KW_SUPER: "super"
+KW_ROOT: "root"
+
+FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?|\d+([eE][-+]?\d+)/
+DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
+PYNLINE: /::py::(.|\n|\r)*?::py::/
+STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
+BOOL.1: /True|False/
+KW_NIN.1: /\bnot\s+in\b/
+KW_ISN.1: /\bis\s+not\b/
+HEX.1: /0[xX][0-9a-fA-F_]+/
+BIN.1: /0[bB][01_]+/
+OCT.1: /0[oO][0-7_]+/
+INT: /[0-9][0-9_]*/
+NULL.1: /None/
+KWESC_NAME: /<>[a-zA-Z_][a-zA-Z0-9_]*/
+NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+
+ARROW_BI: /<-->/
+ARROW_L: /<--/
+ARROW_R: /-->/
+ARROW_L_P1: /<-\:/
+ARROW_R_P2: /:->/
+ARROW_L_P2: /:-/
+ARROW_R_P1: /-\:/
+CARROW_BI: /<\+\+>/
+CARROW_L: /<\+\+/
+CARROW_R: /\+\+>/
+CARROW_L_P1: /<\+\:/
+CARROW_R_P2: /:\+>/
+CARROW_L_P2: /:\+/
+CARROW_R_P1: /\+\:/
+
+GLOBAL_OP: /:g:|:global:/
+NONLOCAL_OP: /:nl:|:nonlocal:/
+WALKER_OP: /:w:|:walker:/
+NODE_OP: /:n:|:node:/
+EDGE_OP: /:e:|:edge:/
+CLASS_OP: /:cls:|:class:/
+OBJECT_OP: /:o:|:obj:/
+TYPE_OP: /`|:t:|:type:/
+ENUM_OP: /:enum:/
+ABILITY_OP: /:c:|:can:/
+A_PIPE_FWD: /:>/
+A_PIPE_BKWD: /<:/
+PIPE_FWD: /\|>/
+PIPE_BKWD: /<\|/
+DOT_FWD: /\.>/
+DOT_BKWD: /<\./
+RETURN_HINT: /->/
+ELVIS_OP: /\?:/
+NULL_OK: /\?/
+MATMUL_EQ: /@=/
+DECOR_OP: /@/
+
+KW_AND.1: /&&|and/
+KW_OR.1:  /\|\||or/
+ADD_EQ: /\+=/
+SUB_EQ: /-=/
+STAR_POW_EQ: /\*\*\=/
+MUL_EQ: /\*=/
+FLOOR_DIV_EQ: /\/\/=/
+DIV_EQ: /\/=/
+MOD_EQ: /%=/
+BW_AND_EQ: /&=/
+BW_OR_EQ: /\|=/
+BW_XOR_EQ: /\^=/
+BW_NOT_EQ: /~=/
+LSHIFT_EQ: /<<=/
+RSHIFT_EQ: />>=/
+LSHIFT: /<</
+RSHIFT: />>/
+LTE: /<=/
+GTE: />=/
+NE: /!=/
+NOT: "not"
+WALRUS_EQ: /:=/
+COLON: /:/
+LBRACE: /{/
+RBRACE: /}/
+SEMI: /;/
+EE: /==/
+EQ: /=/
+ELLIPSIS: /\.\.\./
+DOT: /\./
+LT: /</
+GT: />/
+COMMA: /,/
+PLUS: /\+/
+MINUS: /-/
+STAR_POW: /\*\*/
+STAR_MUL: /\*/
+FLOOR_DIV: /\/\//
+DIV: /\//
+MOD: /%/
+BW_AND: /&/
+BW_OR: /\|/
+BW_XOR: /\^/
+BW_NOT: /~/
+LPAREN: /\(/
+RPAREN: /\)/
+LSQUARE: /\[/
+RSQUARE: /\]/
+
+// f-string tokens
+FSTR_START.1: "f\""
+FSTR_END: "\""
+FSTR_SQ_START.1: "f'"
+FSTR_SQ_END: "'"
+FSTR_PIECE.-1: /[^\{\}\"]+/
+FSTR_SQ_PIECE.-1: /[^\{\}\']+/
+FSTR_BESC.1: /{{|}}/
+
+COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
+WS.-2: /[ \t\f\r\n]/+
+%ignore COMMENT
+%ignore WS
