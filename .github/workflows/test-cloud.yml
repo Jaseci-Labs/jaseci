@@ -46,7 +46,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        cd ../jaclang
+        cd ../jac
         pip install -e .
         cd ../jac-cloud
         pip install -e .
