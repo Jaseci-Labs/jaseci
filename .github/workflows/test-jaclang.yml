@@ -1,14 +1,21 @@
-name: Tests
+name: Run tests for jaclang
 
 on:
   pull_request:
+    paths:
+      - "jaclang/**"
   push:
     branches:
       - main
+    paths:
+      - "jaclang/**"
 
 jobs:
-  test:
+  test-jaclang:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jaclang
     steps:
     - name: Check out code
       uses: actions/checkout@v2

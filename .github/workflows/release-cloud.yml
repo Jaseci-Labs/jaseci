@@ -1,15 +1,14 @@
-name: Release to PyPI
+name: Release jac-cloud to PYPI
 
 on: workflow_dispatch
-# on:
-#   push:
-#     tags:
-#       - 'v*.*.*'
 
 jobs:
-  release:
+  release-cloud:
     name: Release
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jac-cloud
 
     steps:
     - name: Checkout code
@@ -25,14 +24,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
 
-    # - name: Extract version from tag
-    #   id: get_version
-    #   run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
-
-    # - name: Update version in setup.py
-    #   run: |
-    #     sed -i 's/VERSION = ".*"/VERSION = "${{ steps.get_version.outputs.VERSION }}"/' setup.py
-
     - name: Build package
       run: python setup.py sdist bdist_wheel
 
@@ -42,12 +33,12 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: twine upload dist/*
 
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
+    # - name: Create GitHub Release
+    #   uses: actions/create-release@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     tag_name: ${{ github.ref }}
+    #     release_name: Release ${{ github.ref }}
+    #     draft: false
+    #     prerelease: false

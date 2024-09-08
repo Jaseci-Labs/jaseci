@@ -1,13 +1,21 @@
-name: Run Plugin Tests
+name: Run tests for jac-cloud
 
 on:
   pull_request:
+    paths:
+      - "jac-cloud/**"
   push:
     branches:
       - main
+    paths:
+      - "jac-cloud/**"
+
 jobs:
-  test:
+  test-cloud:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jac-cloud
     env:
         SHOW_ENDPOINT_RETURNS: true
         REDIS_HOST: redis://localhost
@@ -38,13 +46,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        cd ..
-        git clone https://github.com/Jaseci-Labs/jaclang.git
-        cd jaclang
+        cd ../jaclang
         pip install -e .
         cd ../jac-cloud
-        pip install pytest
         pip install -e .
+        pip install pytest
 
     - name: Run tests
       run: |

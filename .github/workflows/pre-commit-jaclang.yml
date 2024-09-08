@@ -1,14 +1,21 @@
-name: Linting and Pre-commit checks
+name: Linting and Pre-commit checks for jaclang
 
 on:
   pull_request:
+    paths:
+      - "jaclang/**"  
   push:
     branches:
       - main
+    paths:
+      - "jaclang/**"  
 
 jobs:
-  pre-commit:
+  pre-commit-jaclang:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jaclang
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -22,4 +29,4 @@ jobs:
       run: pip install pre-commit
 
     - name: Run pre-commit hooks
-      run: pre-commit run --all-files
+      run: pre-commit run --files $(find . -type f)

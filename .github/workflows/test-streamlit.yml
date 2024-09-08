@@ -1,14 +1,21 @@
-name: Plugin Tests
+name: Run tests for jac-streamlit
 
 on:
   pull_request:
+    paths:
+      - "tool_plugins/streamlit/**"
   push:
     branches:
       - main
+    paths:
+      - "tool_plugins/streamlit/**"
 
 jobs:
-    streamlit:
+    test-streamlit:
         runs-on: ubuntu-latest
+        defaults:
+          run:
+            working-directory: tool_plugins/streamlit
         steps:
             - name: Check out code
               uses: actions/checkout@v2
@@ -25,7 +32,7 @@ jobs:
                 pip install pytest
 
             - name: Install Plugin
-              run: pip install -e support/plugins/streamlit
+              run: pip install -e .
 
             - name: Run tests
-              run: pytest support/plugins/streamlit
+              run: pytest 

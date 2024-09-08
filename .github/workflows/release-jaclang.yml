@@ -1,11 +1,14 @@
-name: PyPI Release
+name: Release jaclang to PYPI
 
 on:
   workflow_dispatch:
 
 jobs:
-  release:
+  release-jaclang:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jaclang
 
     steps:
       - name: Checkout code
@@ -22,7 +25,7 @@ jobs:
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry build
           poetry publish
-      - run: pip install githubrelease
-      - run: python scripts/gh_release.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      # - run: pip install githubrelease
+      # - run: python scripts/gh_release.py
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

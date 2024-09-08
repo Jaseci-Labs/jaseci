@@ -1,11 +1,14 @@
-name: PyPI Release
+name: Release jac-mtllm to PYPI
 
 on:
   workflow_dispatch:
 
 jobs:
-  release:
+  release-mtllm:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jac-mtllm
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -23,7 +26,7 @@ jobs:
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry publish
         continue-on-error: true
-      - run: pip install githubrelease markdown-to-json
-      - run: python scripts/gh_release.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      # - run: pip install githubrelease markdown-to-json
+      # - run: python scripts/gh_release.py
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
