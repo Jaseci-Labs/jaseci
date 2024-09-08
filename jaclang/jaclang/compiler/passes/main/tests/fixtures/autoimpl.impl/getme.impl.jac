@@ -1,0 +1,3 @@
+:can:baz {
+    print("baz");
+}

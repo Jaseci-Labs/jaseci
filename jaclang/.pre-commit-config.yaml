@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        exclude: "vendor"
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [pep8-naming, flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, flake8_simplify]
+        exclude: "examples|vendor|langserve/tests|pygame_mock"
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.1
+    hooks:
+      - id: mypy
+        exclude: 'venv|__jac_gen__|tests|stubs|support|vendor|examples/reference|setup.py|generated'
+        args:
+          - --follow-imports=silent
+          - --ignore-missing-imports

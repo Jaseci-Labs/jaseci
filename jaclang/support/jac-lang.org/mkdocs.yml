@@ -1,0 +1,101 @@
+site_name: The Jac Programming Language
+site_url: https://jac-lang.org
+nav:
+    - Home: 'index.md'
+    - Start:
+      - 'start/about.md'
+      - 'start.md'
+      - 'start/installation.md'
+      - 'start/jac_in_a_flash.md'
+    - Learn:
+      - For coders:
+        - 'learn/guide.md'
+        - 'learn/jac_ref.md'
+        - 'learn/impl_docs.md'
+        - 'learn/with_llm.md'
+        - 'learn/tips_tricks.md'
+        - 'learn/jac_plugins.md'
+      - For contributors:
+        - 'learn/contrib.md'
+      - W.I.P:
+        - 'learn/ast_doc.md'
+        - projects:
+          - 'projects/auto_ref.md'
+
+    - Why: 'why.md'
+    # - ~/roadmap$: 'roadmap.md'
+    - Github: https://github.com/Jaseci-Labs/jaclang
+
+theme:
+    logo: 'assets/logo.png'
+    name: 'material'
+    palette:
+        scheme: 'slate'
+        primary: 'black'
+        accent: 'orange'
+    font:
+        text: 'Roboto'
+        code: 'Roboto Mono'
+    features:
+    - content.code.copy
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.path
+    - navigation.footer
+    icon:
+      admonition:
+        note: octicons/tag-16
+        abstract: octicons/checklist-16
+        info: octicons/info-16
+        tip: octicons/squirrel-16
+        success: octicons/check-16
+        question: octicons/question-16
+        warning: octicons/alert-16
+        failure: octicons/x-circle-16
+        danger: octicons/zap-16
+        bug: octicons/bug-16
+        example: octicons/beaker-16
+        quote: octicons/quote-16
+
+markdown_extensions:
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      pygments_style: 'autumn'
+  - pymdownx.inlinehilite
+  # - codehilite:
+  #     linenums: true
+  - pymdownx.snippets:
+      base_path: ['.', '../../']
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          # format: !!python/name:pymdownx.superfences.fence_code_format
+  - attr_list
+  - md_in_html
+  - attr_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  # - pymdownx.emoji:
+  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
+  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - extra.css
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/mastodon
+      link: https://fosstodon.org/@squidfunk
+copyright: Copyright &copy; 2023 - 2024 Jac Hackers Everwhere
+
+plugins:
+  - search
+  - open-in-new-tab

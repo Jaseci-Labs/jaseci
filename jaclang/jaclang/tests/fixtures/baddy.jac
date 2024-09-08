@@ -1,0 +1,3 @@
+can speak {
+    HasFault();
+}
