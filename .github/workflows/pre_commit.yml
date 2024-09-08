@@ -3,12 +3,12 @@ name: Linting and Pre-commit checks
 on:
   pull_request:
     paths:
-      - "jaclang/**"  
+      - "jaclang/**"
   push:
     branches:
       - main
     paths:
-      - "jaclang/**"  
+      - "jaclang/**"
 
 jobs:
   pre-commit:
@@ -26,4 +26,4 @@ jobs:
       run: pip install pre-commit
 
     - name: Run pre-commit hooks
-      run: cd jaclang; pre-commit run --all-files
+      run: pre-commit run --files jaclang/**/* --config jaclang/.pre-commit-config.yaml
