@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 20
       - run: |
-          cd support/vscode_ext/jac/
+          cd jac/support/vscode_ext/jac/
           npm ci
           npm run vsce-package
           npm install --global @vscode/vsce
