@@ -2,8 +2,8 @@
 name = "mtllm"
 version = "0.3.1"
 description = "MTLLM Provides Easy to use APIs for different LLM Providers to be used with Jaseci's Jaclang Programming Language."
-maintainers = ["Chandra Irugalbandara <irugalbandara@ascii.ai>", "Kugesan Sivasothynathan <kugesan.sivasothynathan@jaseci.org>"]
-authors = ["Chandra Irugalbandara <irugalbandara@ascii.ai>", "Kugesan Sivasothynathan <kugesan.sivasothynathan@jaseci.org>"]
+authors = ["Jason Mars <jason@jaseci.org>"]
+maintainers = ["Jason Mars <jason@jaseci.org>"]
 license = "MIT"
 readme = "README.md"
 keywords = ["llm", "jaclang", "jaseci", "mtllm"]
