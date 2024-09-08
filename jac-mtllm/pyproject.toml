@@ -9,8 +9,7 @@ readme = "README.md"
 keywords = ["llm", "jaclang", "jaseci", "mtllm"]
 
 [tool.poetry.dependencies]
-python = "^3.12.0"
-jaclang = "0.7.16"
+jaclang = "~0.7.16"
 loguru = "^0.7.2"
 openai = { version = "^1.30.4", optional = true }
 anthropic = { version = "^0.26.1", optional = true }
