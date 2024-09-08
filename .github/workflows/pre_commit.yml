@@ -26,4 +26,4 @@ jobs:
       run: pip install pre-commit
 
     - name: Run pre-commit hooks
-      run: pre-commit run --all-files --files jaclang --config jaclang/.pre-commit-config.yaml
+      run: cd jaclang; pre-commit run --all-files
