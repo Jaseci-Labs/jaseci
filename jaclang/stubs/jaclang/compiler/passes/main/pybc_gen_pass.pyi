@@ -1,0 +1,6 @@
+import jaclang.compiler.absyntree as ast
+from jaclang.compiler.passes import Pass as Pass
+
+class PyBytecodeGenPass(Pass):
+    def before_pass(self) -> None: ...
+    def enter_module(self, node: ast.Module) -> None: ...

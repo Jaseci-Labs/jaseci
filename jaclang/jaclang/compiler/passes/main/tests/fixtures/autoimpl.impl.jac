@@ -1,0 +1,3 @@
+:can:foo {
+  print("foo");
+}

@@ -1,0 +1,3 @@
+:can:bar {
+  print("bar");
+}
