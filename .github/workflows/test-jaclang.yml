@@ -3,19 +3,19 @@ name: Run tests for jaclang
 on:
   pull_request:
     paths:
-      - "jaclang/**"
+      - "jac/**"
   push:
     branches:
       - main
     paths:
-      - "jaclang/**"
+      - "jac/**"
 
 jobs:
   test-jaclang:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: jaclang
+        working-directory: jac
     steps:
     - name: Check out code
       uses: actions/checkout@v2

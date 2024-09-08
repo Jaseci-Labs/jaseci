@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: jaclang
+        working-directory: jac
 
     steps:
       - name: Checkout code
