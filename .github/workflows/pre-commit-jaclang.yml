@@ -3,12 +3,12 @@ name: Linting and Pre-commit checks for jaclang
 on:
   pull_request:
     paths:
-      - "jaclang/**"  
+      - "jaclang/**"
   push:
     branches:
       - main
     paths:
-      - "jaclang/**"  
+      - "jaclang/**"
 
 jobs:
   pre-commit-jaclang:
