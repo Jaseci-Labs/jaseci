@@ -1,0 +1,4 @@
+{
+    "model_name": "elastic/distilbert-base-uncased-finetuned-conll03-english",
+    "model_save_path": "test"
+}

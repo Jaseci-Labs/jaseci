@@ -1,0 +1,100 @@
+name: jaseci_core Unit Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black flake8==3.7.9 isort
+
+      - name: Install jaseci_core
+        run: |
+          pip3 install jaseci_core/
+      - name: Verify installation
+        run: |
+          jsctl
+      - name: Linting
+        continue-on-error: true
+        run: |
+          flake8 --exclude=settings.py,*migrations*,jac_parse,ci_app --max-line-length=88 --extend-ignore = E203,
+      - name: jaseci_core unit tests
+        if: always()
+        run: |
+          cd jaseci_core/
+          pip install pytest-cov
+          pytest --cov=./ --cov-report=xml
+      # - name: Upload coverage reports to Codecov
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     directory: jaseci_core/
+
+  elastic-action-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      elasticsearch:
+        image: elasticsearch:8.6.2
+        options: >-
+          -e "discovery.type=single-node"
+          -e "ELASTIC_PASSWORD=changeme"
+          --health-cmd "curl --header \"Authorization: basic ZWxhc3RpYzpjaGFuZ2VtZQ==\" https://localhost:9200/_cluster/health -k"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 9200:9200
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+      - name: Install jaseci_core
+        run: |
+          pip3 install jaseci_core/
+      - name: Elastic action tests
+        if: always()
+        run: |
+          cd jaseci_core/
+          pytest -k ElasticTest -x
+        env:
+          ELASTIC_HOST: localhost
+          ELASTIC_AUTH: "basic ZWxhc3RpYzpjaGFuZ2VtZQ=="

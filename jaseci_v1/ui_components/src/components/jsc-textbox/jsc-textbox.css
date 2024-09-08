@@ -1,0 +1,22 @@
+:host {
+  box-sizing: border-box;
+  padding: 4px;
+  display: block;
+}
+
+.textbox {
+  all: unset;
+  appearance: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-brand-7);
+}
+
+:focus.textbox {
+  box-shadow: 0 0 0 0.15rem var(--color-brand-8);
+}
+
+.fullWidth {
+  width: 100%;
+}

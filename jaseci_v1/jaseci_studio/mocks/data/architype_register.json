@@ -1,0 +1,13 @@
+{
+  "architype": {
+    "name": "test_architype",
+    "kind": "walker",
+    "jid": "urn:uuid:0c503fd5-624b-49b8-b4ca-18092d99bacb",
+    "j_timestamp": "2023-01-31T19:11:26.440245",
+    "j_type": "architype",
+    "code_sig": "0f1e0877b38a7f602632f69ce517f124"
+  },
+  "success": true,
+  "errors": [],
+  "response": "Successfully created test_architype architype"
+}

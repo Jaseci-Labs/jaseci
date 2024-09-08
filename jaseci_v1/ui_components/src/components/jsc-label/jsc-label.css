@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+.label {
+  display: inline-block;
+  font-weight: 500;
+  margin-bottom: 4px;
+}

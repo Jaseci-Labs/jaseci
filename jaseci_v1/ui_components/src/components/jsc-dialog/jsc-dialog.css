@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.hidden {
+  display: none;
+  /* Hidden by default */
+}
+
+.modal-overlay {
+  position: fixed;
+  /* Stay in place */
+  z-index: 50;
+  /* Sit on top */
+  padding-top: 100px;
+  /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%;
+  /* Full width */
+  height: 100%;
+  /* Full height */
+  overflow: auto;
+  /* Enable scroll if needed */
+  background-color: hsla(206, 99.8%, 45.1%, 0.632)
+}

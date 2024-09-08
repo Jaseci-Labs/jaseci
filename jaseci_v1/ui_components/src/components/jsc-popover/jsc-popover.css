@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+
+.hidden {
+  display: none;
+  /* Hidden by default */
+}

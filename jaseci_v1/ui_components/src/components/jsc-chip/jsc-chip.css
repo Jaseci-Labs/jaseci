@@ -1,0 +1,12 @@
+:host {
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.chip {
+  padding: 0 10px;
+  border: 1px solid var(--color-brand-8);
+  border-radius: 20px;
+  background: var(--color-brand-3);
+  color: var(--color-brand-11);
+}

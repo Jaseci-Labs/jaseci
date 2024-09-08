@@ -1,0 +1,8 @@
+{
+    "label": "Create a Chatbot for your Website",
+    "position": 11,
+    "link": {
+        "type": "generated-index",
+        "description": "This guide will help you create a chatbot for your website using Langchain and Langflow."
+    }
+}

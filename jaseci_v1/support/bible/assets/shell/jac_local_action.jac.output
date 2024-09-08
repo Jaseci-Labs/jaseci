@@ -1,0 +1,4 @@
+resetting birth year to 1995: {}
+2021-12-04T15:29:06.041077  from  {'context': {'year': '2021-12-04T15:29:06.041077'}, 'anchor': None, 'name': 'setter', 'kind': 'walker', 'jid': 'urn:uuid:74684d30-8fd0-4344-9523-fe680fca87c8', 'j_timestamp': '2021-12-04T15:29:06.040938', 'j_type': 'walker'}
+resetting birth year to 1995: {'name': 'Joe', 'byear': '1995-01-01'}
+1995-01-01  from  {'context': {'year': '2021-12-04T15:29:06.039606'}, 'anchor': None, 'name': 'init', 'kind': 'walker', 'jid': 'urn:uuid:703b03bd-c4c3-4921-a950-578abcd411ff', 'j_timestamp': '2021-12-04T15:29:06.036852', 'j_type': 'walker'}

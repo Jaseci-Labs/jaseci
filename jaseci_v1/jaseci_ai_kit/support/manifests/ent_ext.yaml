@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ent-ext
+spec:
+  selector:
+    pod: ent-ext
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ent-ext-up
+  namespace: default
+data:
+  prod_up: |-
+    git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
+    cd /jaseci/jaseci_core/
+    source install.sh
+    cd /jaseci/jaseci_ai_kit/
+    source install.sh
+    pip install flair==0.10
+    cd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/ent_ext
+    uvicorn jaseci_ai_kit.ent_ext:serv_actions --host 0.0.0.0 --port 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ent-ext
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: ent-ext
+  template:
+    metadata:
+      labels:
+        pod: ent-ext
+      name: ent-ext
+    spec:
+      containers:
+        - name: ent-ext
+          imagePullPolicy: IfNotPresent
+          image: jaseci/jaseci-ai-kit:latest
+          resources:
+            requests:
+              memory: "3Gi"
+          command: [bash, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: ent-ext-up
