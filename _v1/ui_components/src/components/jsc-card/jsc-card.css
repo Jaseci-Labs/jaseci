@@ -1,0 +1,19 @@
+:root {
+  --card-border-fallback: ;
+}
+
+:host {
+  display: block;
+  box-sizing: border-box;
+}
+
+/* @layer utilities {
+  .card-border-color {
+    border-color: var(--b3);
+  }
+} */
+
+.card-bordered {
+  border-color: var(--card-border, hsl(var(--b2, var(--b1)) / var(--tw-border-opacity)));
+  /* @apply card-border-color */
+}

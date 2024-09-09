@@ -1,0 +1,1 @@
+{"int": 5, "float": 5.0, "bool": true, "string": "5", "list": [5, 5.0, true, "5", 5], "dict": {"num": 5}}

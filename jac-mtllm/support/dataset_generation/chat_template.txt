@@ -1,0 +1,2 @@
+<|im_start|>user
+{input}<|im_end|>

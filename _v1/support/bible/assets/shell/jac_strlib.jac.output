@@ -1,0 +1,40 @@
+{
+  "success": true,
+  "report": [
+    "t",
+    "tin",
+    "sting me ",
+    " TESTING ME  ",
+    " testing me  ",
+    " Testing Me  ",
+    " testing me  ",
+    " TeSTING ME  ",
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    2,
+    5,
+    [
+      "tEsting",
+      "me"
+    ],
+    [
+      " t",
+      "sting me  "
+    ],
+    false,
+    false,
+    " tEsting you  ",
+    "tEsting me",
+    "Esting me",
+    "tEsting me  ",
+    "sting me  ",
+    " tEsting me",
+    " tEsting m",
+    true
+  ]
+}

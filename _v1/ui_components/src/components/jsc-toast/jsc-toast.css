@@ -1,0 +1,13 @@
+:host {
+  box-sizing: border-box;
+}
+
+.toast {
+  position: fixed;
+  display: block;
+  box-sizing: border-box;
+  min-width: 200px;
+  padding: 12px 10px;
+  bottom: 30px;
+  right: 30px
+}

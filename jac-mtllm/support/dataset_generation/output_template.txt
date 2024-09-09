@@ -1,0 +1,2 @@
+<|im_start|>assistant
+{output}<|im_end|>

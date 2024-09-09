@@ -1,0 +1,148 @@
+<html lang="en">
+    <head>
+        <meta name="google-signin-scope" content="profile email">
+        <meta name="google-signin-client_id" content="582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com" />
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-social/4.12.0/bootstrap-social.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+        {% if provider == "apple" %}
+        <meta name="appleid-signin-client-id" content="{{client_id}}">
+        <meta name="appleid-signin-scope" content="name email">
+        <meta name="appleid-signin-redirect-uri" content="https://jasecitesting.com/auth/examples/apple/">
+        <meta name="appleid-signin-state" content="{{state}}">
+        <meta name="appleid-signin-use-popup" content="false">
+        {% endif %}
+    </head>
+
+    <body class="row align-items-center">
+        <div class="container">
+            <div class="row justify-content-md-center">
+                <div class="col-12">
+                    <div class="jumbotron text-center">
+                        {% if code or id_token %}
+                        <div class="row justify-content-md-center">
+                            <div class="col-md-9">
+                                <h3>Welcome <b><span id="user-name"></span></b>!</h3>
+                                <div class="jumbotron" style="text-align: left;">
+                                    <h6 class=" h6 display-5">User token details: </h6>
+                                    <pre id="response-details"></pre>
+                                    <hr>
+                                    <h6 class=" h6 display-5">Your user profile data: </h6>
+                                    <pre id="gresp"></pre>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="col-md-12">
+                                <a href="/auth/examples/{{provider}}/" class="btn btn-primary">
+                                    Try Again!
+                                </a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <h1 class="display-4">Welcome!</h1>
+                        <h4 class="display-5"></h4>
+                        <p class="lead">This is a simple example of Jaseci's Social Authentication!</p>
+                        <hr class="my-4">
+                        <p>To continue please click on Sign in button and after successful authentication system will show user profile data</p>
+                        <br>
+                        <div class="row justify-content-md-center">
+                            {% if provider == "google" %}
+                            <h1>Google Identity Services Authorization Token model</h1>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-dark" onclick="client.requestCode();" style="text-transform:none">
+                                    <img width="20px" style="margin-bottom:3px; margin-right:5px" alt="Google sign-in" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" />Login with Google
+                                </button>
+                            </div>
+                            {% elif provider == "github" %}
+                            <div class="col-md-3">
+                                <a href="https://github.com/login/oauth/authorize?client_id=884ba4a9d5deca082eff&redirect_uri=http://localhost:8001/auth/examples/github/&scope=read:user,user:email&state={{state}}" class="btn btn-block btn-social btn-github" style="text-align:center">
+                                    <i class="fa fa-github"></i> Sign in with Github
+                                </a>
+                            </div>
+                            {% elif provider == "facebook" %}
+                            <div class="col-md-3">
+                                <a href="https://www.facebook.com/dialog/oauth/?client_id=3201469443497528&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Fauth%2Fexamples%2Ffacebook%2F&scope=email&state={{state}}" class="btn btn-block btn-social btn-facebook" style="text-align:center">
+                                    <i class="fa fa-facebook"></i> Continue with Facebook
+                                </a>
+                            </div>
+                            {% elif provider == "apple" %}
+                            <div class="col-md-3">
+                                <div id="appleid-signin" data-color="black" data-border="true" data-type="sign in"></div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script>
+const provider = "{{provider}}";
+const redirect_uri = "http://localhost:8001/auth/examples/" + provider + "/";
+{% if code or id_token %}
+let byId = (id) => document.getElementById(id);
+let toggle = (id, hide) => {
+    elem = byId(id);
+    elem.style.display = hide ? "none" : "block";
+    return elem;
+}
+
+let getUser = (data) => {
+    console.log("calling manage with token", data)
+    $.ajax({
+        type: "GET",
+        url: "/user/manage/",
+        headers: {
+            "Authorization": "token " + data,
+            "Content-Type": "application/json",
+        },
+        success: (res) => {
+            byId("user-name").innerText = res.name;
+            toggle("gresp").textContent = JSON.stringify(res, undefined, 2);
+        },
+        error: (xhr, status, error) => alert("Request failed: " + status)
+    });
+}
+
+var request = $.ajax({
+    type: "POST", url: "/auth/" + provider + "/?expires_in=0",
+    data: {
+        id_token: "{{id_token}}",
+        code: "{{code}}",
+        access_token: "",
+        callback_url: redirect_uri
+    },
+    success: (res) => {
+        console.log("response:", res);
+        toggle("response-details").textContent = JSON.stringify(res, undefined, 2);
+        getUser(res.token);
+    },
+    error: (xhr, status, error) => {
+        alert("Error occurs on getting token!");
+        toggle("response-details").textContent = JSON.stringify(
+            JSON.parse(xhr.responseText), undefined, 2
+        );;
+    }
+});
+{% else %}
+    {% if provider == "google" %}
+
+    const client = google.accounts.oauth2.initCodeClient({
+        client_id: "{{client_id}}",
+        scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid",
+        ux_mode: 'redirect',
+        redirect_uri: "http://localhost:8001/auth/examples/" + provider + "/",
+        state: "offline"
+    });
+    {% endif %}
+{% endif %}
+</script>

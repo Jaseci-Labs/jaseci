@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="185pt"
+   height="122pt"
+   viewBox="0 0 185 122"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="Directed_graph_no_background.svg">
+  <metadata
+     id="metadata56">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs54" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1366"
+     inkscape:window-height="721"
+     id="namedview52"
+     showgrid="false"
+     inkscape:zoom="1.7490382"
+     inkscape:cx="115.625"
+     inkscape:cy="59.837483"
+     inkscape:window-x="-4"
+     inkscape:window-y="-4"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <ellipse
+     style="font-size:14px;fill:#ffffff;stroke:#000000;font-family:Times-Roman;fill-opacity:1"
+     cx="45"
+     cy="100"
+     rx="17"
+     ry="17"
+     id="ellipse8"
+     sodipodi:cx="45"
+     sodipodi:cy="100"
+     sodipodi:rx="17"
+     sodipodi:ry="17" />
+  <text
+     x="45"
+     y="105"
+     id="text10"
+     style="font-size:14px;text-anchor:middle;font-family:Times-Roman">1</text>
+  <ellipse
+     style="font-size:14px;fill:#ffffff;stroke:#000000;font-family:Times-Roman;fill-opacity:1"
+     cx="22"
+     cy="32"
+     rx="17"
+     ry="17"
+     id="ellipse13"
+     sodipodi:cx="22"
+     sodipodi:cy="32"
+     sodipodi:rx="17"
+     sodipodi:ry="17" />
+  <text
+     x="22"
+     y="37"
+     id="text15"
+     style="font-size:14px;text-anchor:middle;font-family:Times-Roman">2</text>
+  <path
+     style="font-size:14px;fill:none;stroke:#000000;font-family:Times-Roman"
+     d="M 40,84 C 37,76 34,67 31,58"
+     id="path18"
+     inkscape:connector-curvature="0" />
+  <polygon
+     style="font-size:14px;fill:#000000;stroke:#000000;font-family:Times-Roman"
+     points="28,59 28,48 34,57 28,59 "
+     id="polygon20" />
+  <ellipse
+     style="font-size:14px;fill:#ffffff;stroke:#000000;font-family:Times-Roman;fill-opacity:1"
+     cx="94"
+     cy="46"
+     rx="17"
+     ry="17"
+     id="ellipse23"
+     sodipodi:cx="94"
+     sodipodi:cy="46"
+     sodipodi:rx="17"
+     sodipodi:ry="17" />
+  <text
+     x="94"
+     y="51"
+     id="text25"
+     style="font-size:14px;text-anchor:middle;font-family:Times-Roman">3</text>
+  <path
+     style="font-size:14px;fill:none;stroke:#000000;font-family:Times-Roman"
+     d="M 57,87 C 63,81 69,73 75,67"
+     id="path28"
+     inkscape:connector-curvature="0" />
+  <polygon
+     style="font-size:14px;fill:#000000;stroke:#000000;font-family:Times-Roman"
+     points="73,64 82,59 78,69 73,64 "
+     id="polygon30" />
+  <path
+     style="font-size:14px;fill:none;stroke:#000000;font-family:Times-Roman"
+     d="M 77,43 C 69,42 58,39 49,37"
+     id="path33"
+     inkscape:connector-curvature="0" />
+  <polygon
+     style="font-size:14px;fill:#000000;stroke:#000000;font-family:Times-Roman"
+     points="48,40 39,35 49,34 48,40 "
+     id="polygon35" />
+  <ellipse
+     style="font-size:14px;fill:#ffffff;stroke:#000000;font-family:Times-Roman;fill-opacity:1"
+     cx="163"
+     cy="22"
+     rx="17"
+     ry="17"
+     id="ellipse38"
+     sodipodi:cx="163"
+     sodipodi:cy="22"
+     sodipodi:rx="17"
+     sodipodi:ry="17" />
+  <text
+     x="163"
+     y="27"
+     id="text40"
+     style="font-size:14px;text-anchor:middle;font-family:Times-Roman">4</text>
+  <path
+     style="font-size:14px;fill:none;stroke:#000000;font-family:Times-Roman"
+     d="m 108,35 c 8,-4 19,-7 28,-10"
+     id="path43"
+     inkscape:connector-curvature="0" />
+  <polygon
+     style="font-size:14px;fill:#000000;stroke:#000000;font-family:Times-Roman"
+     points="135,22 146,22 137,28 135,22 "
+     id="polygon45" />
+  <path
+     style="font-size:14px;fill:none;stroke:#000000;font-family:Times-Roman"
+     d="m 150,33 c -8,4 -19,7 -29,10"
+     id="path48"
+     inkscape:connector-curvature="0" />
+  <polygon
+     style="font-size:14px;fill:#000000;stroke:#000000;font-family:Times-Roman"
+     points="122,46 111,46 120,40 122,46 "
+     id="polygon50" />
+</svg>

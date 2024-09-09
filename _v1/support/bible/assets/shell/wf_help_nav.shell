@@ -1,0 +1,36 @@
+jaseci > help
+
+Documented commands (type help <topic>):
+========================================
+alias      check   dev   graph  ls      sentinel
+architype  config  edit  login  object  walker
+
+Undocumented commands:
+======================
+exit  help  quit
+
+jaseci > help graph
+Usage: graph [OPTIONS] COMMAND [ARGS]...
+
+  Group of `graph` commands
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  active  Group of `graph active` commands
+  create  Create a graph instance and return root node graph object
+  delete  Permanently delete graph with given id
+  get     Return the content of the graph with format Valid modes:...
+  list    Provide complete list of all graph objects (list of root node...
+  node    Group of `graph node` commands
+jaseci > graph create --help
+Usage: graph create [OPTIONS]
+
+  Create a graph instance and return root node graph object
+
+Options:
+  -o, --output TEXT    Filename to dump output of this command call.
+  -set_active BOOLEAN
+  --help               Show this message and exit.
+jaseci >

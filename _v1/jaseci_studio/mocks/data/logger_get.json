@@ -1,0 +1,42 @@
+[
+  {
+    "date": "2022-12-02 03:30:11,027",
+    "level": "INFO",
+    "log": "2022-12-02 03:30:11,027 - INFO - post_run: JsOrc is not automated."
+  },
+  {
+    "date": "2022-12-02 03:30:11,479",
+    "level": "ERROR",
+    "log": "2022-12-02 03:30:11,479 - ERROR - start: Skipping MailService due to initialization failure!"
+  },
+  {
+    "date": null,
+    "level": null,
+    "log": "ConnectionRefusedError: [Errno 61] Connection refused"
+  },
+  {
+    "date": "2022-12-02 03:30:11,480",
+    "level": "ERROR",
+    "log": "2022-12-02 03:30:11,480 - ERROR - start: Skipping RedisService due to initialization failure!"
+  },
+  {
+    "date": null,
+    "level": null,
+    "log": "ConnectionError: Error 61 connecting to localhost:6379. Connection refused."
+  },
+  {
+    "date": "2022-12-02 03:30:17,521",
+    "level": "ERROR",
+    "log": "2022-12-02 03:30:17,521 - ERROR - start: Skipping TaskService due to initialization failure!"
+  },
+  {
+    "date": null,
+    "level": null,
+    "log": "OperationalError: Error 61 connecting to localhost:6379. Connection refused."
+  },
+  {
+    "date": "2022-12-02 03:31:00,317",
+    "level": "INFO",
+    "log": "2022-12-02 03:31:00,317 - INFO - log_request_stats: API call to [32mlogger_get[m completed in [33m0.005 seconds[m touched [33m2[m mem / [33m0[m redis / [33m1[m db  ([33m0.2kb[m) and saving [33m0[m objects."
+  }
+]

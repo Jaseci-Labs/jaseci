@@ -1,0 +1,167 @@
+\chapter{Walkers Navigating Graphs}
+\minitoc
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Taking Edges (and Nodes?)}
+
+\subsection{Basic Walks}
+
+%%%%%%%
+\par
+\jaccode{jac_take.jac}{Basic example of walker traveling graph
+}
+
+%%%%%%%
+\par
+\jaccode{jac_take_fanout.jac}{Fan out style takes
+}
+
+\subsection{Breadth First vs Depth First Walks}
+\par
+\jacdotnw{jac_walk_bfs}{.7}{Graph in memory for JC~\ref{jac:jac_walk_bfs.jac}}
+If you've played with the basic \lstinline{take} command a bit you would notice that by default it results in a breadth first traversal of a graph.
+However, the \lstinline{take} command is indeed quite flexible.
+You can specify an orientation of the \lstinline{take} command to navigate with a breadth first or a depth first traversal.
+\par
+\jaccode{jac_walk_bfs.jac}{Breadth first navigation with take vs depth first}
+\par
+Take for example the program shown in JC~\ref{jac:jac_walk_bfs.jac}.
+First we observe the definition of a static three level binary tree with the graph \lstinline{example} on line 3.
+This is a vanilla structure as depicted in Figure~\ref{dot:jac_walk_bfs}.
+Two walkers are present in this example, one walker \lstinline{walk\_with\_breadth}, for which we observe a call to \lstinline{take:bfs -->;} indicating a breadth first traversal, and another walker \lstinline{walk\_with\_breadth}, for which we observe a call to \lstinline{take:bfs -->;} indicating a depth first traversal.
+\par
+As can be seen in its output,
+\par
+\shellout{jac_walk_bfs.jac.output}
+The print statement on line 34 demonstrate the order of nodes visited correspond to the specified traversal order.
+\par
+Additionally, the short hand of \lstinline{take:b -->;}, or \lstinline{take:d -->;} could be used to specify breadth first or depth first traversals respectively.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Skipping and Disengaging}
+With walker traversing graphs with \lstinline{take} commands, Jac introduces a few new handy control statements that are quite handy,
+namely, \lstinline{skip} and \lstinline{disengage}.
+
+\subsection{Skip}
+In the context of a walkers code block, the intuition bethind the abstraction of \lstinline{skip} is that it instructs a walker to stop and forego all remaining computation on the current node and move to the next node (or complete computation if no nodes are queued up). Regardless as to where in the walkers body the \lstinline{skip} occurs, the entire remaining code in the walker is skipped and the walker moves on.
+\par
+The \lstinline{skip} directive can also be used in node/edge abilities. In this context, the \lstinline{skip} simply foregoes the remaining execution of that ability itself.
+\par
+Lets look at an example of a walker using the \lstinline{skip} command.
+
+%%%%%%%
+\par
+\jaccode{jac_nav_skip.jac}{Skipping nodes along a walk}
+\par
+\shellout{jac_nav_skip.jac.output}
+\par
+\jacdotnw{jac_nav_skip}{1}{Graph in memory for JC~\ref{jac:jac_nav_skip.jac} and JC~\ref{jac:jac_nav_disengage.jac}}
+
+JC~\ref{jac:jac_nav_skip.jac} shows an example of the \lstinline{skip} command in practice. The \lstinline{init} walker here traverses a simple chain of nodes as depicted in Figure~\ref{dot:jac_nav_skip}. As can be seen in the output the skip command on line 15 causes only the odd elements to be added to the \lstinline{output} array.
+\par
+The semantics of the \lstinline{skip} command is pretty much identical to the traditional \lstinline{break} commands except it ``breaks'' out of a walker or ability as opposed to a loop. Another way to think of it is as a \lstinline{return} of sorts.
+
+
+\subsection{Disengage}
+Disengage is a statement that can only be used inside a walker's code body and instructs the walker to halt all execution and `disengage' from the graph (i.e. do not visit any more nodes). In practice this is
+essential a skip with a clearing of all future nodes to visit.
+
+\par
+Lets look at an example of a walker using the \lstinline{disengage} command.
+%%%%%%%
+\par
+\jaccode{jac_nav_disengage.jac}{Disengaging walker during walk}
+\par
+\shellout{jac_nav_disengage.jac.output}
+
+
+JC~\ref{jac:jac_nav_disengage.jac} shows an example of the \lstinline{disengage} command. The \lstinline{init} walker here is almost identical to the implementation of JC~\ref{jac:jac_nav_skip.jac} however we've added \lstinline{if(here.id == 7): disengage;} on line 16. This cause our walker to stop its execution and complete its walk resulting in an effective truncation of the \lstinline{output} array.
+\par
+Note that, in addition to a basic \lstinline{disengage;}, Jac also support a disengage-report shorthand of the format \lstinline{disengage report "I'm disengaging";}. This directive results in a final report before the disengage executes.
+
+\subsection{Technical Semantics of Skip and Disengage}
+\par
+There are a number of important semantics of \lstinline{skip} and \lstinline{disengage} to keep in mind:
+\begin{enumerate}
+    \item The \lstinline{skip} statement can be used in the code bodies of walkers and abilities.
+    \item The \lstinline{disengage} statement can only be used in the code body of walkers.
+    \item The \lstinline{with exit} code block is not affected by \lstinline{skip} or \lstinline{disengage} statements. Upon a \lstinline{disengage}, any code in a walker's \lstinline{with exit} block will execute immediately after as the walker is exiting the graph.
+    \item An easy way to think about these semantics is as similar to the behavior of a traditional \lstinline{return} (skip) and a \lstinline{return} and stop walking (disengage).
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Ignoring and Deleting}
+
+%%%%%%%
+\par
+\jaccode{jac_ignore.jac}{Ignoring edges during walk
+}
+
+%%%%%%%
+\par
+\jaccode{jac_destroy.jac}{Destorying nodes/edges during walk
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Reporting Back as you Travel}
+
+%%%%%%%
+\par
+\jaccode{jac_report.jac}{Building reports as you walk
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Yielding Walkers}
+
+So far, we've looked at walkers that will walk the graph carrying state in context (\lstinline{has} variables).
+But you may be wonder what happens after its walk? And does it keep that state like nodes and edges? Short answer is no.
+At the end of each walk a walker's state is cleared by default while node/edge state persists.
+That being said, there are situations where you'd want a walker to keep its state across runs, and perhaps, you may even want a walker to stop during a walk and wait to be explicitly called again updating just a few of it's dynamic state.
+This is where the \lstinline{yield} keyword comes in.
+\par
+Lets look at an example of yield in action.
+\par
+\jaccode{jac_walker_yield.jac}{Simple example of yielding walkers}
+
+
+\par
+The \lstinline{yield} keyword in JC~\ref{jac:jac_walker_yield.jac} instructs the walker \lstinline{simple_yield} to stop walking and wait to be called again, even though the walker is instructed to \lstinline{take -->} edges. In this example, a single next node location is queued up and the walker reports a single \lstinline{here.context} each time it's called, taking only 1 edge per call.
+
+\subsection{Yield Shorthands}
+\par
+Also note \lstinline{yield} can be followed by a number of operations as a shorthand. For example line 14 and 15 in JC~\ref{jac:jac_walker_yield.jac} could be combined to a single line with \lstinline{yield take -->;}. We call this a yield-take. Shorthands include,
+\begin{itemize}
+    \item Yield-Take: \lstinline{yield take -->;}
+    \item Yield-Report: \lstinline{yield report "hi";}
+    \item Yield-Disengage: \lstinline{yield disengage;} and \lstinline{yield disengage report "bye";}
+\end{itemize}
+In each of these cases, the \lstinline{take}, \lstinline{report}, and \lstinline{disengage} executes with the yield.
+
+\subsection{Technical Semantics of Yield}
+\par
+There are a number of important semantics of \lstinline{yield} to keep in mind:
+\begin{enumerate}
+    \item Upon a \lstinline{yield}, a report is returned back and cleared.
+    \item Additional report items from further walking will be return on subsequent \lstinline{yield}s or walk completion.
+    \item Like the \lstinline{take} command, the entire body of the walker will execute on the current node and actually yield at the end of this execution.
+          \begin{itemize}
+              \item \emph{Note: Keep in mind \lstinline{yield} can be combined with \lstinline{disengage} and \lstinline{skip} commands.}
+          \end{itemize}
+    \item If a start node (aka a `prime' node) is specified when continuing a walker after a \lstinline{yield}, if there are additional walk locations the walker is scheduled to travel to, the walker will ignore this prime node and continue from where it left off on its journey.
+    \item If there are no nodes scheduled for the walker to go to next, a prime node must be specified (or the walker will continue from root by default).
+    \item \lstinline{with entry} and \lstinline{with exit} code blocks in the walker are not executed upon continuing from a \lstinline{yield} or executing a \lstinline{yeild} respectively. They execute only once starting and ending a walk though there may be many yields in between.
+    \item The state of which walkers are yielded and to be continued vs which walkers are being freshly run is kept at the level of the \texttt{master} (user) abstraction in Jaseci. At the moment, walkers that are summoned as public has undefined yield semantics. Developers should leverage the more lower level \texttt{walker spawn} and \texttt{walker execute} APIs for customized yield behaviors.
+\end{enumerate}
+
+\subsection{Walkers Yielding Other Walkers (i.e., Yielding Deeply)}
+
+In addition to the utility of calling walkers that yield from client, walkers also benefit from this abstraction when calling other walkers during a non-yielding walk. Lets take a look at a code example.
+\par
+\jaccode{jac_walker_deep_yield.jac}{Walkers yielding other walkers}
+\par
+\jacdot{jac_walker_deep_yield}{.35}{Graph in memory for JC~\ref{jac:jac_walker_deep_yield.jac}}
+As shown in JC~\ref{jac:jac_walker_deep_yield.jac}, the walker \lstinline{deep_yield} does not yield itself, but enjoys the semantics of the yield command in \lstinline{simple_yield}.
+\par
+Figure~\ref{dot:jac_walker_deep_yield} shows the graph created by JC~\ref{jac:jac_walker_deep_yield.jac}. Though \lstinline{deep_yield} does not yield, tt calls \lstinline{simple_yield} 16 times and exits. These 16 calls trigger \lstinline{walker::simple_yield} which in turn creates four chained nodes off of the root node then walks the chain one step at a time while yielding after each step. The result is this very nice 17 node graph with a root node and 3 subtrees with 4 connected nodes each. Yep, this yeilding semantic is very handy indeed!
