@@ -344,7 +344,6 @@ class JacImporter(Importer):
                     reload=reload if reload else False,
                 )
                 try:
-
                     if not codeobj:
                         raise ImportError(f"No bytecode found for {spec.full_target}")
                     with sys_path_context(spec.caller_dir):
