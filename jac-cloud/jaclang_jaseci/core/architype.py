@@ -1,6 +1,7 @@
 """Core constructs for Jac Language."""
 
-from dataclasses import asdict, dataclass, field, fields, is_dataclass
+from dataclasses import asdict as _asdict, dataclass, field, fields, is_dataclass
+from enum import Enum
 from os import getenv
 from pickle import dumps as pdumps
 from re import IGNORECASE, compile
@@ -8,6 +9,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Iterable,
     Mapping,
     TypeVar,
     cast,
@@ -53,6 +55,24 @@ T = TypeVar("T")
 TBA = TypeVar("TBA", bound="BaseArchitype")
 
 
+def asdict_factory(data: Iterable[tuple]) -> dict[str, Any]:
+    """Parse dataclass to dict."""
+    _data = {}
+    for key, value in data:
+        if isinstance(value, Enum):
+            _data[key] = value.name
+        else:
+            _data[key] = value
+    return _data
+
+
+def asdict(obj: object) -> dict[str, Any]:
+    """Override dataclass asdict."""
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return _asdict(obj, dict_factory=asdict_factory)
+    raise ValueError("Object is not a dataclass!")
+
+
 def architype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object) -> T:
     """Parse dict to architype."""
     _to_dataclass(cls, data)
@@ -89,6 +109,12 @@ def _to_dataclass(cls: type[T], data: dict[str, Any]) -> None:
                     ):
                         for key, value in enumerate(target):
                             target[key] = to_dataclass(inner_cls, value)
+                    elif (
+                        issubclass(hint, Enum)
+                        and isinstance(target, str)
+                        and (enum := hint.__members__.get(target))
+                    ):
+                        data[attr.name] = enum
 
 
 @dataclass

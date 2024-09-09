@@ -38,6 +38,12 @@ class User:BaseUser: {
     }
 }
 
+enum Enum {
+    A = "a",
+    B = "b",
+    C = "c"
+}
+
 node A {
     has val: int;
 }
@@ -51,7 +57,7 @@ node C {
 }
 
 obj Child {
-    has val: int, arr: list, json: dict;
+    has val: int, arr: list, json: dict, enum_field: Enum;
 }
 
 obj Parent:Child: {
@@ -59,7 +65,7 @@ obj Parent:Child: {
 }
 
 node Nested {
-    has val: int, arr: list, json: dict, parent: Parent;
+    has val: int, arr: list, json: dict, parent: Parent, enum_field: Enum;
 }
 
 walker create_graph {
@@ -145,9 +151,13 @@ walker create_nested_node {
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2}
-                )
-            ));
+                    json={"a": 1, "b": 2},
+                    enum_field = Enum.C
+                ),
+                enum_field = Enum.B
+            ),
+            enum_field = Enum.A
+        );
         here ++> n;
         return n;
     }
@@ -159,12 +169,15 @@ walker update_nested_node {
         nested.parent.child.json["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
+        nested.parent.child.enum_field = Enum.A;
         nested.parent.json["b"] = 2;
         nested.parent.arr.append(2);
         nested.parent.val = 2;
+        nested.parent.enum_field = Enum.C;
         nested.json["a"] = 1;
         nested.arr.append(1);
         nested.val = 1;
+        nested.enum_field = Enum.B;
         return nested;
     }
 
@@ -172,12 +185,15 @@ walker update_nested_node {
         here.parent.child.json["c"] = 3;
         here.parent.child.arr.append(3);
         here.parent.child.val = 3;
+        here.parent.child.enum_field = Enum.A;
         here.parent.json["b"] = 2;
         here.parent.arr.append(2);
         here.parent.val = 2;
+        here.parent.enum_field = Enum.C;
         here.json["a"] = 1;
         here.arr.append(1);
         here.val = 1;
+        here.enum_field = Enum.B;
         return here;
     }
 }
@@ -216,9 +232,13 @@ walker manual_create_nested_node {
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2}
-                )
-            ));
+                    json={"a": 1, "b": 2},
+                    enum_field = Enum.C
+                ),
+                enum_field = Enum.B
+            ),
+            enum_field = Enum.A
+        );
         here ++> n;
         here.__jac__.apply();
 
@@ -237,12 +257,15 @@ walker manual_update_nested_node {
         nested.parent.child.json["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
+        nested.parent.child.enum_field = Enum.A;
         nested.parent.json["b"] = 2;
         nested.parent.arr.append(2);
         nested.parent.val = 2;
+        nested.parent.enum_field = Enum.C;
         nested.json["a"] = 1;
         nested.arr.append(1);
         nested.val = 1;
+        nested.enum_field = Enum.B;
         nested.__jac__.apply();
 
         # simulate no auto save
