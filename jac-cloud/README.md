@@ -1,4 +1,4 @@
-# **JACLANG JASECI**
+# **jac-cloud**
 
 ### Installation
 ```bash
@@ -10,5 +10,5 @@ pip install jaclang black pre-commit pytest flake8 flake8_import_order flake8_do
 pre-commit install
 ```
 # **REFERENCES**
-### [**Jaseci**](./docs/Jaseci.md)
+### [**jac-cloud**](./docs/Jaseci.md)
 ### [**Environment Variables**](./docs/Environment-Variables.md)

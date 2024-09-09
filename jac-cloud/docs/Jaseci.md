@@ -1,20 +1,20 @@
 [<< back to main](../README.md)
-# **Jaseci**
+# **jac-cloud**
 
 ## **How To Start**
 - `FastAPI.start` will convert walkers to FastAPI endpoints
-- as default, jaseci have base user and sso apis
+- as default, `jac_cloud` have base user and sso apis
 
 ## **Supported Args**
 | **NAME**  | **DESCRIPTION**   | **ENVIRONMENT VARIABLE**  | **DEFAULT**   |
 |-----------|-------------------|---------------------------|---------------|
 | **host**      | your local host   | HOST                      | 0.0.0.0       |
 | **port**      | your local port   | PORT                      | 8000          |
-| **emailer**   | overrided `jaclang_jasec.jaseci.utils.Emailer` | N/A | N/A      |
+| **emailer**   | overrided `jac_cloud.jaseci.utils.Emailer` | N/A | N/A      |
 | {**kwargs} | any fields that's currently supported in `uvicorn.run` | N/A | N/A |
 
 ```python
-import:py from jaclang_jaseci {FastAPI}
+import:py from jac_cloud {FastAPI}
 
 with entry:__main__ {
     FastAPI.start(
@@ -32,7 +32,7 @@ with entry:__main__ {
     - group will be based on allowed `methods` and `path` on specs
     - group 1: `/walker/{walker's name}`
     - group 2: `/walker/{walker's name}/{node}`
-- to control enpoint specification, you need to declare inner `class __specs__ {}` or `obj __specs__ {}`. You may also use `@specs` from `jaclang_jaseci.plugin.jaseci.specs` if you have disabled auto endpoint
+- to control enpoint specification, you need to declare inner `class __specs__ {}` or `obj __specs__ {}`. You may also use `@specs` from `jac_cloud.plugin.jaseci.specs` if you have disabled auto endpoint
 - walker support all kind of http method and all fastapi's supported object as path variable / query parameters / json body / file
 
 ## **Supported specs**
@@ -46,7 +46,7 @@ with entry:__main__ {
 
 ## **Examples**
 ```python
-import:py from jaclang_jaseci {FastAPI}
+import:py from jac_cloud {FastAPI}
 
 walker post_no_body {}
 
