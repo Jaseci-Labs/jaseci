@@ -32,7 +32,7 @@ def get_object_string(obj: Any) -> str:  # noqa: ANN401
         args = ", ".join(
             f"{key}={get_object_string(value)}"
             for key, value in vars(obj).items()
-            if key != "_jac_"
+            if key != "__jac__"
         )
         return f"{obj.__class__.__name__}({args})"
     else:
