@@ -1,0 +1,2 @@
+1995-01-01T00:00:00  from  {'context': {'year': '1995-01-01'}, 'anchor': None, 'name': 'setter', 'kind': 'walker', 'jid': 'urn:uuid:6bbf69c3-b95c-4a88-a783-cb793cec4034', 'j_timestamp': '2021-12-04T15:13:13.441516', 'j_type': 'walker'}
+1995-01-01T00:00:00  from  {'context': {'year': '2021-12-04T15:13:13.440803'}, 'anchor': None, 'name': 'init', 'kind': 'walker', 'jid': 'urn:uuid:7f9d1462-6562-4d4d-ba57-f069c74dfe1e', 'j_timestamp': '2021-12-04T15:13:13.438072', 'j_type': 'walker'}

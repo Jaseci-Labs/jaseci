@@ -1,0 +1,25 @@
+name: Release VSCE
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release-vsce:
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: |
+          cd jac/support/vscode_ext/jac/
+          npm ci
+          npm run vsce-package
+          npm install --global @vscode/vsce
+          vsce publish -p $VSCE_TOKEN
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}

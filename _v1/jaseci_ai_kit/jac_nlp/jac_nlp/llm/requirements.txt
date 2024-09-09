@@ -1,0 +1,8 @@
+transformers
+datasets
+loralib
+sentencepiece
+peft
+bitsandbytes
+scipy
+Xformers

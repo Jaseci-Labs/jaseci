@@ -1,0 +1,11 @@
+Modern production applications are \emph{multi-service}, spanning multiple individual programs (database, memcache, logging, application logic, AI models, etc) interfacing each other over APIs to realize a single product functionality.
+Creating such applications at scale is technically challenging, requires a highly-skilled developer team, is rife with complexity, and is, for many, prohibitively costly.
+This complexity is in stark contrast to the era of computing where a state of the art software product was a single binary that ran on one machine and could be developed by a single programmer.
+Though a number of important abstractions and technologies have emerged to help mitigate the complexity of building multi-service applications, the creation of sophisticated production software in practices is still highly complex and requires a team of engineers.
+
+
+In this work, we present a wholistic top-down re-envisioning of the system stack from the programming language level down through the system architecture to bridge this complexity gap.
+The key goal of our design is to address the critical need for the programmer to articulate solutions with higher level abstractions at the problem level while having the runtime system stack subsume and hide a broad scope of diffuse sub-applications and inter-machine resources.
+This work also presents the design of a production-grade realization of such a system stack architecture called \textbf{Jaseci}, and corresponding programming language \textbf{Jac}.
+Jac and Jaseci has been released as open source and has been leveraged by real product teams to accelerate developing and deploying sophisticated AI products and other applications at scale.
+Jac has been utilized in commercial production environments to accelerate AI development timelines by  $\sim$10x, with the Jaseci runtime automating the decisions and optimizations typically falling in the scope of manual engineering roles on a team such as what should and should not be a microservice and changing those decisions dynamically.

@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "jaclang"
+version = "0.7.18"
+description = "Jac is a unique and powerful programming language that runs on top of Python, offering an unprecedented level of intelligence and intuitive understanding."
+authors = ["Jason Mars <jason@jaseci.org>"]
+maintainers = ["Jason Mars <jason@jaseci.org>"]
+license = "MIT"
+readme = "README.md"
+keywords = [
+    "jac",
+    "jaclang",
+    "jaseci",
+    "python",
+    "programming-language",
+    "machine-learning",
+    "artificial-intelligence",
+]
+repository = "https://github.com/Jaseci-Labs/jaclang"
+homepage = "https://jaseci.org"
+documentation = "https://jac-lang.org"
+
+[tool.poetry.dependencies]
+python = "^3.11.0"
+# Below are vendored in using poetry export and pip download
+# lark = "^1.1.9"
+# mypy = "^1.10.0"
+# pluggy = "^1.5.0"
+# pygls = "^1.3.1"
+
+[tool.poetry.scripts]
+jac = "jaclang.cli.cli:start_cli"
+
+[tool.poetry.extras]
+llm = ["mtllm"]
+streamlit = ["jaclang-streamlit"]
+all = ["mtllm", "jaclang-streamlit"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.1"
+pytest-xdist = "^3.6.1"
+pytest-cov = "^5.0.0"
+pre-commit = "^3.7.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

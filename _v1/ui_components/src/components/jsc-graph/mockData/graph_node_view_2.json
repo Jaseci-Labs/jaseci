@@ -1,0 +1,183 @@
+[
+  {
+    "edge_ids": [],
+    "fast_edges": {
+      "generic": [
+        ["urn:uuid:31ad19b6-abf6-4539-a58e-f66e18382e4c", 0],
+        ["urn:uuid:2028765d-b824-4751-bf17-b38986dd19b4", 0],
+        ["urn:uuid:de573eb4-8090-4249-9cb4-51660e6203eb", 0],
+        ["urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549", 1]
+      ]
+    },
+    "parent_node_ids": [],
+    "member_node_ids": [],
+    "dimension": 0,
+    "name": "app",
+    "kind": "node",
+    "jid": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "j_timestamp": "2022-10-22T16:23:06.889722",
+    "j_type": "node",
+    "j_parent": "urn:uuid:36cf3bed-dbc0-4c0d-a9b9-974c54eb4538",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": [],
+    "context": {}
+  },
+  {
+    "edge_ids": [],
+    "fast_edges": {
+      "generic": [
+        ["urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4", 1],
+        ["urn:uuid:283ef768-5cf9-492f-9d92-ee23c1e3905e", 0],
+        ["urn:uuid:5ec972af-2b6a-413d-969f-6c077c9be750", 0]
+      ]
+    },
+    "parent_node_ids": [],
+    "member_node_ids": [],
+    "dimension": 0,
+    "name": "account",
+    "kind": "node",
+    "jid": "urn:uuid:31ad19b6-abf6-4539-a58e-f66e18382e4c",
+    "j_timestamp": "2022-10-22T16:23:06.890364",
+    "j_type": "node",
+    "j_parent": "urn:uuid:36cf3bed-dbc0-4c0d-a9b9-974c54eb4538",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": [],
+    "context": {}
+  },
+  {
+    "from_node_id": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "to_node_id": "urn:uuid:31ad19b6-abf6-4539-a58e-f66e18382e4c",
+    "bidirected": false,
+    "context": {},
+    "name": "generic",
+    "kind": "edge",
+    "jid": "urn:uuid:9833d912-8fb4-4210-9f50-5314f64a9606",
+    "j_timestamp": "2022-11-25T19:16:22.602602",
+    "j_type": "edge",
+    "j_parent": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": []
+  },
+  {
+    "edge_ids": [],
+    "fast_edges": {
+      "generic": [["urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4", 1]]
+    },
+    "parent_node_ids": [],
+    "member_node_ids": [],
+    "dimension": 0,
+    "name": "logs",
+    "kind": "node",
+    "jid": "urn:uuid:2028765d-b824-4751-bf17-b38986dd19b4",
+    "j_timestamp": "2022-10-22T16:23:06.892408",
+    "j_type": "node",
+    "j_parent": "urn:uuid:36cf3bed-dbc0-4c0d-a9b9-974c54eb4538",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": [],
+    "context": {
+      "groups": ["TRANSACTION", "SYSTEM", "USER", "SELPH"]
+    }
+  },
+  {
+    "from_node_id": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "to_node_id": "urn:uuid:2028765d-b824-4751-bf17-b38986dd19b4",
+    "bidirected": false,
+    "context": {},
+    "name": "generic",
+    "kind": "edge",
+    "jid": "urn:uuid:1ca8d785-1ac9-48b6-b668-fe721d9e7dbc",
+    "j_timestamp": "2022-11-25T19:16:22.602673",
+    "j_type": "edge",
+    "j_parent": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": []
+  },
+  {
+    "edge_ids": [],
+    "fast_edges": {
+      "generic": [
+        ["urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4", 1],
+        ["urn:uuid:7bccb142-e552-4f1e-9026-c30cd3af6be6", 0],
+        ["urn:uuid:5c6cc29f-75dc-4c19-8458-f14f1da9300d", 0],
+        ["urn:uuid:19d5c987-f3af-45c8-8958-835679778b66", 0]
+      ]
+    },
+    "parent_node_ids": [],
+    "member_node_ids": [],
+    "dimension": 0,
+    "name": "selphs",
+    "kind": "node",
+    "jid": "urn:uuid:de573eb4-8090-4249-9cb4-51660e6203eb",
+    "j_timestamp": "2022-10-22T16:23:06.893164",
+    "j_type": "node",
+    "j_parent": "urn:uuid:36cf3bed-dbc0-4c0d-a9b9-974c54eb4538",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": [],
+    "context": {}
+  },
+  {
+    "from_node_id": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "to_node_id": "urn:uuid:de573eb4-8090-4249-9cb4-51660e6203eb",
+    "bidirected": false,
+    "context": {},
+    "name": "generic",
+    "kind": "edge",
+    "jid": "urn:uuid:0ddb0a1c-0d99-48dc-9eef-b427967feb5d",
+    "j_timestamp": "2022-11-25T19:16:22.602724",
+    "j_type": "edge",
+    "j_parent": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": []
+  },
+  {
+    "hd_node_ids": [],
+    "edge_ids": [],
+    "fast_edges": {
+      "generic": [["urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4", 0]]
+    },
+    "parent_node_ids": [],
+    "member_node_ids": [],
+    "dimension": 0,
+    "name": "root",
+    "kind": "node",
+    "jid": "urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549",
+    "j_timestamp": "2022-10-22T16:23:06.838308",
+    "j_type": "graph",
+    "j_parent": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": [],
+    "context": {}
+  },
+  {
+    "from_node_id": "urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549",
+    "to_node_id": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "bidirected": false,
+    "context": {},
+    "name": "generic",
+    "kind": "edge",
+    "jid": "urn:uuid:7ae8163f-c5c2-4277-90d3-54c436bdebe3",
+    "j_timestamp": "2022-11-25T19:16:22.602775",
+    "j_type": "edge",
+    "j_parent": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": []
+  }
+]

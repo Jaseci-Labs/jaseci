@@ -1,0 +1,61 @@
+name: Run tests for jac-cloud
+
+on:
+  pull_request:
+    paths:
+      - "jac-cloud/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "jac-cloud/**"
+
+jobs:
+  test-cloud:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jac-cloud
+    env:
+        SHOW_ENDPOINT_RETURNS: true
+        REDIS_HOST: redis://localhost
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.10.0
+      with:
+        mongodb-replica-set: test-rs
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.12.4
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        cd ../jac
+        pip install -e .
+        cd ../jac-cloud
+        pip install -e .
+        pip install pytest
+
+    - name: Run tests
+      run: |
+        jac clean
+        jac tool gen_parser
+        jac serve jaclang_jaseci/tests/simple_graph.jac --port 8000 &
+        sleep 3
+        pytest

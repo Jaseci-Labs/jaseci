@@ -1,0 +1,4 @@
+librosa>=0.8.0,<=0.9.2
+torch>=1.10.2, <=2.0.0
+openai-whisper==20230314
+soundfile>=0.12.1, <0.13

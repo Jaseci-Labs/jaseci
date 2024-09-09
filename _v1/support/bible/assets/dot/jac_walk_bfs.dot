@@ -1,0 +1,17 @@
+strict digraph root {
+    "n0" [ id="e2186a0d8ea44b17841f509a9b4ee266", label="n0:root"  ]
+    "n1" [ id="8dcd8400a9de42a18f4bbb843b787b94", label="n1:plain"  ]
+    "n2" [ id="ad7e1f4fb3664151b2d24df102d710b5", label="n2:plain"  ]
+    "n3" [ id="ae891a3007bf407d9a2abf070bf4c8a1", label="n3:plain"  ]
+    "n4" [ id="c807348f083344b59b82ea8f6efb2c06", label="n4:plain"  ]
+    "n5" [ id="458d002f8e32494b8798b8000d938c99", label="n5:plain"  ]
+    "n6" [ id="3534d9430c37487483f693c23930f554", label="n6:plain"  ]
+    "n7" [ id="ac1f1c8b6c664e11b0e198de290f107e", label="n7:plain"  ]
+    "n2" -> "n4" [ id="c0c7546e6667475589b1772f5d093428", label="e0" ]
+    "n0" -> "n1" [ id="dbbe0d9345ae42b08125d190244d3a82", label="e1" ]
+    "n1" -> "n5" [ id="3ec561f943ca4ec5ad25f6cd0c55a571", label="e2" ]
+    "n5" -> "n6" [ id="215f8ae86ffe4605bcf162273bb0380b", label="e3" ]
+    "n2" -> "n3" [ id="c665bb4080c64a36ae8b65099b7aa0c8", label="e4" ]
+    "n5" -> "n7" [ id="dca5855be39e40beb90f17a230aac373", label="e5" ]
+    "n1" -> "n2" [ id="914c68ec42e742249044745f68b5a989", label="e6" ]
+}

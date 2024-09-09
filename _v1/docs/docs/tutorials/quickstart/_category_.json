@@ -1,0 +1,8 @@
+{
+    "label": "Quick Start to Jaseci",
+    "position": 1,
+    "link": {
+        "type": "generated-index",
+        "description": "In this section, we'll take a look at how easy it is to get started with a simple Hello World program in Jac."
+    }
+}

@@ -1,0 +1,11 @@
+#!/bin/bash
+PODN=jsbart
+if [[ $1 ]]; then
+    PODN=$1
+fi
+
+for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name');
+  do
+    echo "Copy bart model in" | head -n 1;
+    kubectl cp ~/projects/bart-large-mnli/pytorch_model.bin ${podname}:/bart/facebook/bart-large-mnli/;
+  done

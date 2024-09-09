@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vanillabox
+spec:
+  selector:
+    pod: vanillabox
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vanillabox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: vanillabox
+  template:
+    metadata:
+      labels:
+        pod: vanillabox
+      name: vanillabox
+    spec:
+      containers:
+        - name: vanillabox
+          image: ubuntu
+          command: ["/bin/sleep", "3650d"]
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80

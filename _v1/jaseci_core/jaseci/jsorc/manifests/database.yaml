@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  name: jaseci-db
+  namespace: database
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+  - port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    pod: jaseci-db
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: jaseci-db-credentials
+  namespace: database
+data:
+  password: bGlmZWxvZ2lmeWphc2VjaQ==
+  user: cG9zdGdyZXM=
+type: Opaque
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  creationTimestamp: null
+  name: jaseci-db-pvc
+  namespace: database
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+status:
+  phase: Pending
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  name: jaseci-db
+  namespace: database
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      pod: jaseci-db
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        pod: jaseci-db
+    spec:
+      containers:
+      - env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: jaseci-db-credentials
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: jaseci-db-credentials
+        image: postgres:alpine
+        imagePullPolicy: IfNotPresent
+        name: jaseci-db
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: jaseci-db-volume
+          subPath: jaseci
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: jaseci-db-volume
+        persistentVolumeClaim:
+          claimName: jaseci-db-pvc
+status: {}

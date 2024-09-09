@@ -1,0 +1,48 @@
+:host {
+  display: block;
+}
+
+.hidden {
+  display: none;
+  /* Hidden by default */
+}
+
+.modal-title {
+  font-weight: 600;
+  font-size: 1.25em;
+}
+
+
+.modal-container {
+  position: absolute;
+  min-height: 200px;
+  width: 360px;
+  background: #fff;
+  top: 100px;
+  right: 0;
+  z-index: 100;
+  left: 0;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 1px 4px 0px, rgba(0, 0, 0, 0.02) 0px 0px 2px 1px;
+  padding: 4px 18px;
+}
+
+.close-button {
+  all: unset;
+  background: #E1F0FF;
+  padding: 2px 2px;
+  cursor: pointer;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center
+}
+
+.close-button:hover {
+  background: #CEE7FE;
+}
+
+.close-button:active {
+  background: #B7D9F8;
+}

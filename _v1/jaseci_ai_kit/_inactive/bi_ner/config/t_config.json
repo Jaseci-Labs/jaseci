@@ -1,0 +1,13 @@
+{
+    "train_batch_size": 8,
+    "eval_batch_size": 2,
+    "learning_rate": 3e-05,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1,
+    "num_train_epochs": 2,
+    "gradient_accumulation_steps": 1,
+    "logpath": "logoutput",
+    "seed": 12345,
+    "device": "cuda",
+    "evaluation_strategy": "epoch"
+}

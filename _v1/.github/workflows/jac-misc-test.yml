@@ -1,0 +1,62 @@
+name: Jac_misc Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - jaseci_ai_kit/jac_misc/**
+  pull_request:
+    branches: [ main ]
+    paths:
+      - jaseci_ai_kit/jac_misc/**
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set swap space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 5
+
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1 ffmpeg
+        sudo apt-get install -y espeak-ng
+        python -m pip install --upgrade pip
+
+    - name: Install jaseci_core
+      run: |
+        pip3 install jaseci_core/
+
+    - name: Install jac_misc
+      run: |
+        cd jaseci_ai_kit/jac_misc
+        pip install -e .[all]
+        pip install darts==0.24.0
+        pip install jaseci
+
+    - name: Verify jac_misc installation
+      run: |
+        python -c "import jac_misc"
+
+    - name: Run tests
+      run: |
+        cd jaseci_ai_kit/jac_misc
+        source ../test.sh
