@@ -1,7 +1,7 @@
 """Core constructs for Jac Language."""
 
 from contextvars import ContextVar
-from dataclasses import asdict, is_dataclass
+from dataclasses import is_dataclass
 from os import getenv
 from typing import Any, cast
 
@@ -19,6 +19,7 @@ from .architype import (
     NodeAnchor,
     Permission,
     Root,
+    asdict,
 )
 from .memory import MongoDB
 
