@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Type
+from enum import IntEnum
+from typing import Generic, Type
 from uuid import UUID, uuid4
 
 from .interface import (
+    Anchor,
     EdgeAnchor as _EdgeAnchor,
     EdgeArchitype as _EdgeArchitype,
     GenericEdge as _GenericEdge,
@@ -20,8 +22,47 @@ from .interface import (
 )
 
 
+class AccessLevel(IntEnum):
+    """Access level enum."""
+
+    NO_ACCESS = -1
+    READ = 0
+    CONNECT = 1
+    WRITE = 2
+
+    @staticmethod
+    def cast(val: int | str | AccessLevel) -> AccessLevel:
+        """Cast access level."""
+        match val:
+            case int():
+                return AccessLevel(val)
+            case str():
+                return AccessLevel[val]
+            case _:
+                return val
+
+
+@dataclass
+class Access:
+    """Access Structure."""
+
+    anchors: dict[str, AccessLevel] = field(default_factory=dict)
+
+    def check(self, anchor: str) -> AccessLevel:
+        """Validate access."""
+        return self.anchors.get(anchor, AccessLevel.NO_ACCESS)
+
+
+@dataclass
+class Permission:
+    """Anchor Access Handler."""
+
+    all: AccessLevel = AccessLevel.NO_ACCESS
+    roots: Access = field(default_factory=Access)
+
+
 @dataclass(kw_only=True)
-class JID(_JID[UUID, _ANCHOR]):
+class JID(Generic[_ANCHOR], _JID[UUID, Anchor]):
     """Jaclang Default JID."""
 
     id: UUID = field(default_factory=uuid4)
@@ -31,7 +72,9 @@ class JID(_JID[UUID, _ANCHOR]):
     @property
     def anchor(self) -> _ANCHOR | None:
         """Get anchor by id and type."""
-        return None
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        return Jac.get_context().mem.find_by_id(self)
 
     def __repr__(self) -> str:
         """Override string representation."""
@@ -43,8 +86,18 @@ class JID(_JID[UUID, _ANCHOR]):
 
 
 @dataclass(kw_only=True)
+class AnchorMeta:
+    """Anchor persistence metadata."""
+
+    root: JID["NodeAnchor"] | None = None
+    access: Permission = field(default_factory=Permission)
+    persistent: bool = False
+    hash: int = 0
+
+
+@dataclass(kw_only=True)
 class NodeAnchor(
-    _NodeAnchor[JID["NodeAnchor"], JID["EdgeAnchor"], "NodeArchitype", dict]
+    _NodeAnchor[JID["NodeAnchor"], JID["EdgeAnchor"], "NodeArchitype", dict], AnchorMeta
 ):
     """NodeAnchor Interface."""
 
@@ -63,7 +116,7 @@ class NodeAnchor(
 
 @dataclass(kw_only=True)
 class EdgeAnchor(
-    _EdgeAnchor[JID["EdgeAnchor"], JID["NodeAnchor"], "EdgeArchitype", dict]
+    _EdgeAnchor[JID["EdgeAnchor"], JID["NodeAnchor"], "EdgeArchitype", dict], AnchorMeta
 ):
     """NodeAnchor Interface."""
 
@@ -80,7 +133,9 @@ class EdgeAnchor(
 
 
 @dataclass(kw_only=True)
-class WalkerAnchor(_WalkerAnchor[JID["WalkerAnchor"], "WalkerArchitype", dict]):
+class WalkerAnchor(
+    _WalkerAnchor[JID["WalkerAnchor"], "WalkerArchitype", dict], AnchorMeta
+):
     """NodeAnchor Interface."""
 
     jid = field(default_factory=lambda: JID(type=WalkerAnchor))

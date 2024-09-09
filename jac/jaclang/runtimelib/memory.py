@@ -6,19 +6,18 @@ from dataclasses import dataclass, field
 from pickle import dumps
 from shelve import Shelf, open
 from typing import Callable, Generator, Generic, Iterable, TypeVar
-from uuid import UUID
 
-from .architype import Anchor, NodeAnchor, Root, TANCH
+from .implementation import EdgeAnchor, JID, NodeAnchor, WalkerAnchor, _ANCHOR
 
 ID = TypeVar("ID")
 
 
 @dataclass
-class Memory(Generic[ID, TANCH]):
+class Memory(Generic[ID, _ANCHOR]):
     """Generic Memory Handler."""
 
-    __mem__: dict[ID, TANCH] = field(default_factory=dict)
-    __gc__: set[TANCH] = field(default_factory=set)
+    __mem__: dict[ID, _ANCHOR] = field(default_factory=dict)
+    __gc__: set[_ANCHOR] = field(default_factory=set)
 
     def close(self) -> None:
         """Close memory handler."""
@@ -28,8 +27,8 @@ class Memory(Generic[ID, TANCH]):
     def find(
         self,
         ids: ID | Iterable[ID],
-        filter: Callable[[TANCH], TANCH] | None = None,
-    ) -> Generator[TANCH, None, None]:
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
+    ) -> Generator[_ANCHOR, None, None]:
         """Find anchors from memory by ids with filter."""
         if not isinstance(ids, Iterable):
             ids = [ids]
@@ -43,16 +42,16 @@ class Memory(Generic[ID, TANCH]):
     def find_one(
         self,
         ids: ID | Iterable[ID],
-        filter: Callable[[TANCH], TANCH] | None = None,
-    ) -> TANCH | None:
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
+    ) -> _ANCHOR | None:
         """Find one anchor from memory by ids with filter."""
         return next(self.find(ids, filter), None)
 
-    def find_by_id(self, id: ID) -> TANCH | None:
+    def find_by_id(self, id: ID) -> _ANCHOR | None:
         """Find one by id."""
         return self.__mem__.get(id)
 
-    def set(self, id: ID, data: TANCH) -> None:
+    def set(self, id: ID, data: _ANCHOR) -> None:
         """Save anchor to memory."""
         self.__mem__[id] = data
 
@@ -67,10 +66,10 @@ class Memory(Generic[ID, TANCH]):
 
 
 @dataclass
-class ShelfStorage(Memory[UUID, Anchor]):
+class ShelfStorage(Memory[JID, EdgeAnchor | NodeAnchor | WalkerAnchor]):
     """Shelf Handler."""
 
-    __shelf__: Shelf[Anchor] | None = None
+    __shelf__: Shelf[EdgeAnchor | NodeAnchor | WalkerAnchor] | None = None
 
     def __init__(self, session: str | None = None) -> None:
         """Initialize memory handler."""
@@ -85,44 +84,48 @@ class ShelfStorage(Memory[UUID, Anchor]):
             root = Jac.get_root().__jac__
 
             for anchor in self.__gc__:
-                self.__shelf__.pop(str(anchor.id), None)
-                self.__mem__.pop(anchor.id, None)
+                self.__shelf__.pop(str(anchor.jid), None)
+                self.__mem__.pop(anchor.jid, None)
 
-            for d in self.__mem__.values():
-                if d.persistent and d.hash != hash(dumps(d)):
-                    _id = str(d.id)
-                    if p_d := self.__shelf__.get(_id):
+            for anchor in self.__mem__.values():
+                if anchor.persistent and anchor.hash != hash(dumps(anchor)):
+                    jid = str(anchor.jid)
+                    if source_anchor := self.__shelf__.get(jid):
                         if (
-                            isinstance(p_d, NodeAnchor)
-                            and isinstance(d, NodeAnchor)
-                            and p_d.edges != d.edges
-                            and root.has_connect_access(d)
+                            isinstance(source_anchor, NodeAnchor)
+                            and isinstance(anchor, NodeAnchor)
+                            and source_anchor.edge_ids != anchor.edge_ids
+                            and root.has_connect_access(anchor)
                         ):
-                            if not d.edges:
-                                self.__shelf__.pop(_id, None)
+                            if not anchor.edges:
+                                self.__shelf__.pop(jid, None)
                                 continue
-                            p_d.edges = d.edges
+                            source_anchor.edges = anchor.edges
 
-                        if root.has_write_access(d):
-                            if hash(dumps(p_d.access)) != hash(dumps(d.access)):
-                                p_d.access = d.access
-                            if hash(dumps(d.architype)) != hash(dumps(d.architype)):
-                                p_d.architype = d.architype
+                        if root.has_write_access(anchor):
+                            if hash(dumps(source_anchor.access)) != hash(
+                                dumps(anchor.access)
+                            ):
+                                source_anchor.access = anchor.access
+                            if hash(dumps(anchor.architype)) != hash(
+                                dumps(anchor.architype)
+                            ):
+                                source_anchor.architype = anchor.architype
 
-                        self.__shelf__[_id] = p_d
+                        self.__shelf__[jid] = source_anchor
                     elif not (
-                        isinstance(d, NodeAnchor)
-                        and not isinstance(d.architype, Root)
-                        and not d.edges
+                        isinstance(anchor, NodeAnchor)
+                        and not isinstance(anchor.architype, Root)
+                        and not anchor.edges
                     ):
-                        self.__shelf__[_id] = d
+                        self.__shelf__[jid] = anchor
 
             self.__shelf__.close()
         super().close()
 
     def find(
         self,
-        ids: UUID | Iterable[UUID],
+        ids: JID | Iterable[JID],
         filter: Callable[[Anchor], Anchor] | None = None,
     ) -> Generator[Anchor, None, None]:
         """Find anchors from datasource by ids with filter."""
@@ -144,7 +147,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
         else:
             yield from super().find(ids, filter)
 
-    def find_by_id(self, id: UUID) -> Anchor | None:
+    def find_by_id(self, id: JID) -> Anchor | None:
         """Find one by id."""
         data = super().find_by_id(id)
 
