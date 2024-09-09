@@ -1,8 +1,8 @@
 """Example of simple walker walking nodes."""
-import:py from jaclang_jaseci.core.architype {BaseAnchor}
-import:py from jaclang_jaseci.core.context {JaseciContext}
-import:py from jaclang_jaseci.jaseci.models {User as BaseUser, NO_PASSWORD}
-import:py from jaclang_jaseci.jaseci.utils {SendGridEmailer}
+import:py from jac_cloud.core.architype {BaseAnchor}
+import:py from jac_cloud.core.context {JaseciContext}
+import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
+import:py from jac_cloud.jaseci.utils {SendGridEmailer}
 import:py from dataclasses {dataclass}
 import:py from fastapi {UploadFile}
 

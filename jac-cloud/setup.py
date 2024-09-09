@@ -7,7 +7,7 @@ VERSION = "0.1.0"
 setup(
     name="jac-cloud",
     version=VERSION,
-    packages=find_packages(include=["jaclang_jaseci", "jaclang_jaseci.*"]),
+    packages=find_packages(include=["jac_cloud", "jac_cloud.*"]),
     install_requires=[
         "jaclang~=0.7.17",
         "fastapi~=0.111.0",
@@ -35,8 +35,8 @@ setup(
     package_data={},
     entry_points={
         "jac": [
-            "jac = jaclang_jaseci.plugin.jaseci:JacPlugin",
-            "serve = jaclang_jaseci.plugin.cli:JacCmd",
+            "jac = jac_cloud.plugin.jaseci:JacPlugin",
+            "serve = jac_cloud.plugin.cli:JacCmd",
         ],
     },
     author="Jason Mars",

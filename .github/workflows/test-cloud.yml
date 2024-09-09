@@ -56,6 +56,6 @@ jobs:
       run: |
         jac clean
         jac tool gen_parser
-        jac serve jaclang_jaseci/tests/simple_graph.jac --port 8000 &
+        jac serve jac_cloud/tests/simple_graph.jac --port 8000 &
         sleep 3
         pytest

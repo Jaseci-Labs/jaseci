@@ -82,7 +82,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         res = get(f"{self.host}/openapi.json", timeout=1)
         res.raise_for_status()
 
-        with open("jaclang_jaseci/tests/openapi_specs.json") as file:
+        with open("jac_cloud/tests/openapi_specs.json") as file:
             self.assertEqual(load(file), res.json())
 
     def trigger_create_user_test(self, suffix: str = "") -> None:

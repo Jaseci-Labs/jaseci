@@ -20,7 +20,7 @@ class JacCmd:
 
         @cmd_registry.register
         def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
-            from jaclang_jaseci import FastAPI
+            from jac_cloud import FastAPI
 
             """Serve the jac application."""
             base, mod = os.path.split(filename)
