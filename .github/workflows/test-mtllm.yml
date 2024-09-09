@@ -1,14 +1,21 @@
-name: tests
+name: Run tests for jac-mtllm
 
 on:
   pull_request:
+    paths:
+      - "jac-mtllm/**"
   push:
     branches:
       - main
+    paths:
+      - "jac-mtllm/**"
 
 jobs:
-  test:
+  test-mtllm:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jac-mtllm
     steps:
     - name: Check out code
       uses: actions/checkout@v2

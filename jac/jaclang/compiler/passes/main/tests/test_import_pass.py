@@ -70,7 +70,7 @@ class ImportPassPassTests(TestCase):
         )
         assert isinstance(build.ir, ast.Module)
         p = {
-            "math": r"jaclang/jaclang/vendor/mypy/typeshed/stdlib/math.pyi$",
+            "math": r"jaclang/vendor/mypy/typeshed/stdlib/math.pyi$",
             "pygame_mock": r"pygame_mock/__init__.pyi$",
             "pygame_mock.color": r"pygame_mock/color.py$",
             "pygame_mock.constants": r"pygame_mock/constants.py$",
