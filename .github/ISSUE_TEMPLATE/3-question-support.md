@@ -1,11 +1,10 @@
 ---
-name: "❓ Question or Support Request"
-about: "Questions and requests for support."
+name: "❓ Question, Comment, or Other Request"
+about: "Question, Comment, or Other Request."
 title: ""
 labels: "Type: Question"
 assignees:
 
 ---
 
-## **Describe your question or ask for support.**
-<!-- A clear and concise description of what your doubt is. -->
+## **Describe your question, comment or other request.**
