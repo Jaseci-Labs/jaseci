@@ -6,7 +6,7 @@ import os
 import sys
 import types
 from contextvars import ContextVar
-from typing import Optional
+from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
@@ -55,11 +55,12 @@ class JacMachine:
         full_target: str,
         caller_dir: str,
         cachable: bool = True,
+        reload: bool = False,
     ) -> Optional[types.CodeType]:
         """Retrieve bytecode from the attached JacProgram."""
         if self.jac_program:
             return self.jac_program.get_bytecode(
-                module_name, full_target, caller_dir, cachable
+                module_name, full_target, caller_dir, cachable, reload=reload
             )
         return None
 
@@ -105,6 +106,46 @@ class JacMachine:
             return nodes
         return []
 
+    def update_walker(
+        self, module_name: str, items: Optional[dict[str, Union[str, Optional[str]]]]
+    ) -> tuple[types.ModuleType, ...]:
+        """Reimport the module."""
+        from .importer import JacImporter, ImportPathSpec
+
+        if module_name in self.loaded_modules:
+            try:
+                old_module = self.loaded_modules[module_name]
+                importer = JacImporter(self)
+                spec = ImportPathSpec(
+                    target=module_name,
+                    base_path=self.base_path,
+                    absorb=False,
+                    cachable=True,
+                    mdl_alias=None,
+                    override_name=None,
+                    lng="jac",
+                    items=items,
+                )
+                import_result = importer.run_import(spec, reload=True)
+                ret_items = []
+                if items:
+                    for item_name in items:
+                        if hasattr(old_module, item_name):
+                            new_attr = getattr(import_result.ret_mod, item_name, None)
+                            if new_attr:
+                                ret_items.append(new_attr)
+                                setattr(
+                                    old_module,
+                                    item_name,
+                                    new_attr,
+                                )
+                return (old_module,) if not items else tuple(ret_items)
+            except Exception as e:
+                logger.error(f"Failed to update module {module_name}: {e}")
+        else:
+            logger.warning(f"Module {module_name} not found in loaded modules.")
+        return ()
+
     @staticmethod
     def get(base_path: str = "") -> "JacMachine":
         """Get current jac machine."""
@@ -134,6 +175,7 @@ class JacProgram:
         full_target: str,
         caller_dir: str,
         cachable: bool = True,
+        reload: bool = False,
     ) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
         if self.mod_bundle and isinstance(self.mod_bundle, Module):
@@ -141,7 +183,7 @@ class JacProgram:
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
         gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
         pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
-        if cachable and os.path.exists(pyc_file_path):
+        if cachable and os.path.exists(pyc_file_path) and not reload:
             with open(pyc_file_path, "rb") as f:
                 return marshal.load(f)
 

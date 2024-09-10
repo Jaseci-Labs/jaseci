@@ -952,6 +952,64 @@ class JacLanguageTests(TestCase):
         self.assertIn("Item value: 0", stdout_value)
         self.assertIn("Created 5 items.", stdout_value)
 
+    def test_walker_dynamic_update(self) -> None:
+        """Test dynamic update of a walker during runtime."""
+        session = self.fixture_abs_path("bar_walk.session")
+        bar_file_path = self.fixture_abs_path("bar.jac")
+        update_file_path = self.fixture_abs_path("walker_update.jac")
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.enter(
+            filename=bar_file_path,
+            session=session,
+            entrypoint="bar_walk",
+            args=[],
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        expected_output = "Created 5 items."
+        self.assertIn(expected_output, stdout_value.split("\n"))
+        # Define the new behavior to be added
+        new_behavior = """
+        # New behavior added during runtime
+        can end with `root exit {
+            "bar_walk has been updated with new behavior!" |> print;
+            disengage;
+            }
+        }
+        """
+
+        # Backup the original file content
+        with open(bar_file_path, "r") as bar_file:
+            original_content = bar_file.read()
+
+        # Update the bar.jac file with new behavior
+        with open(bar_file_path, "r+") as bar_file:
+            content = bar_file.read()
+            last_brace_index = content.rfind("}")
+            if last_brace_index != -1:
+                updated_content = content[:last_brace_index] + new_behavior
+                bar_file.seek(0)
+                bar_file.write(updated_content)
+                bar_file.truncate()
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        try:
+            cli.run(
+                filename=update_file_path,
+            )
+            sys.stdout = sys.__stdout__
+            stdout_value = captured_output.getvalue()
+            expected_output = "bar_walk has been updated with new behavior!"
+            self.assertIn(expected_output, stdout_value.split("\n"))
+        finally:
+            # Restore the original content of bar.jac
+            with open(bar_file_path, "w") as bar_file:
+
+                bar_file.write(original_content)
+
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
         captured_output = io.StringIO()
