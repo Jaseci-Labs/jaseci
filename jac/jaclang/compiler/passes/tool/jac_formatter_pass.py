@@ -315,7 +315,16 @@ class JacFormatPass(Pass):
                         and isinstance(prev_token.kid[-1], ast.SubNodeList)
                         and isinstance(prev_token.kid[-1].kid[-1], ast.CommentToken)
                     ):
-                        self.emit(node, "")
+                        if (
+                            prev_token
+                            and stmt.loc.first_line - prev_token.kid[-1].kid[-1].line_no
+                            > 1
+                        ):
+                            self.indent_level -= 1
+                            self.emit_ln(node, "")
+                            self.indent_level += 1
+                        else:
+                            self.emit(node, "")
                     else:
                         self.indent_level -= 1
                         self.emit_ln(node, "")
