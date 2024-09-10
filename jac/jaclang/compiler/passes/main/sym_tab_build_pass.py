@@ -196,7 +196,17 @@ class SymTabBuildPass(Pass):
         """
         if not node.is_absorb:
             for i in node.items.items:
-                i.sym_tab.def_insert(i, single_decl="import item")
+                # i.sym_tab.def_insert(i, single_decl="import item")
+                # if not isinstance(i, ast.ModuleItem):
+                #     continue
+                # if not i.from_mod_path.sub_module:
+                #     continue
+                # lookup = i.from_mod_path.sub_module.sym_tab.lookup(i.name.value)
+                # if lookup:
+                #     lookup.add_use(i.name_spec)
+                #     node.sym_tab.insert(lookup.decl, lookup.access)
+                # else:
+                #     i.sym_tab.def_insert(i, single_decl="import item")
         elif node.is_absorb and node.is_jac:
             source = node.items.items[0]
             if not isinstance(source, ast.ModulePath) or not source.sub_module:
