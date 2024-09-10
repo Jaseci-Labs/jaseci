@@ -5,18 +5,7 @@ from dataclasses import dataclass
 from typing import Generic, Iterable, Type, TypeVar
 
 _ID = TypeVar("_ID")
-_JID = TypeVar("_JID", bound="JID")
-_REF_JID = TypeVar("_REF_JID", bound="JID")
 _ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
-_NODE_ANCHOR = TypeVar("_NODE_ANCHOR", bound="NodeAnchor")
-_EDGE_ANCHOR = TypeVar("_EDGE_ANCHOR", bound="EdgeAnchor")
-_WALKER_ANCHOR = TypeVar("_WALKER_ANCHOR", bound="WalkerAnchor")
-_ARCHITYPE = TypeVar("_ARCHITYPE", bound="Architype")
-_NODE_ARCHITYPE = TypeVar("_NODE_ARCHITYPE", bound="NodeArchitype")
-_EDGE_ARCHITYPE = TypeVar("_EDGE_ARCHITYPE", bound="EdgeArchitype")
-_WALKER_ARCHITYPE = TypeVar("_WALKER_ARCHITYPE", bound="WalkerArchitype")
-
-_BASE_ANCHOR = TypeVar("_BASE_ANCHOR", bound="Anchor")
 
 _SERIALIZE = TypeVar("_SERIALIZE")
 _DESERIALIZE = TypeVar("_DESERIALIZE")
@@ -37,11 +26,11 @@ class JID(Generic[_ID, _ANCHOR], ABC):
 
 
 @dataclass(kw_only=True)
-class Anchor(Generic[_JID, _ARCHITYPE, _SERIALIZE], ABC):
+class Anchor(Generic[_SERIALIZE], ABC):
     """Anchor Interface."""
 
-    jid: _JID
-    architype: _ARCHITYPE
+    jid: JID
+    architype: "Architype"
 
     @abstractmethod
     def __serialize__(self) -> _SERIALIZE:
@@ -54,42 +43,33 @@ class Anchor(Generic[_JID, _ARCHITYPE, _SERIALIZE], ABC):
 
 
 @dataclass(kw_only=True)
-class NodeAnchor(
-    Generic[_JID, _REF_JID, _NODE_ARCHITYPE, _SERIALIZE],
-    Anchor[_JID, "NodeArchitype", _SERIALIZE],
-):
+class NodeAnchor(Anchor[_SERIALIZE]):
     """NodeAnchor Interface."""
 
-    architype: _NODE_ARCHITYPE
-    edge_ids: Iterable[_REF_JID]
+    architype: "NodeArchitype"
+    edge_ids: Iterable[JID]
 
 
 @dataclass(kw_only=True)
-class EdgeAnchor(
-    Generic[_JID, _REF_JID, _EDGE_ARCHITYPE, _SERIALIZE],
-    Anchor[_JID, "EdgeArchitype", _SERIALIZE],
-):
+class EdgeAnchor(Anchor[_SERIALIZE]):
     """EdgeAnchor Interface."""
 
-    architype: _EDGE_ARCHITYPE
-    source_id: _REF_JID
-    target_id: _REF_JID
+    architype: "EdgeArchitype"
+    source_id: JID
+    target_id: JID
 
 
 @dataclass(kw_only=True)
-class WalkerAnchor(
-    Generic[_JID, _WALKER_ARCHITYPE, _SERIALIZE],
-    Anchor[_JID, "WalkerArchitype", _SERIALIZE],
-):
+class WalkerAnchor(Anchor[_SERIALIZE]):
     """WalkerAnchor Interface."""
 
-    architype: _WALKER_ARCHITYPE
+    architype: "WalkerArchitype"
 
 
-class Architype(Generic[_BASE_ANCHOR, _SERIALIZE], ABC):
+class Architype(Generic[_SERIALIZE], ABC):
     """Architype Interface."""
 
-    __jac__: _BASE_ANCHOR
+    __jac__: Anchor
 
     @abstractmethod
     def __serialize__(self) -> _SERIALIZE:
@@ -101,35 +81,29 @@ class Architype(Generic[_BASE_ANCHOR, _SERIALIZE], ABC):
         """Override string parsing."""
 
 
-class NodeArchitype(
-    Generic[_NODE_ANCHOR, _SERIALIZE], Architype[NodeAnchor, _SERIALIZE]
-):
+class NodeArchitype(Architype[_SERIALIZE]):
     """NodeArchitype Interface."""
 
-    __jac__: _NODE_ANCHOR
+    __jac__: NodeAnchor
 
 
-class EdgeArchitype(
-    Generic[_EDGE_ANCHOR, _SERIALIZE], Architype[EdgeAnchor, _SERIALIZE]
-):
+class EdgeArchitype(Architype[_SERIALIZE]):
     """EdgeArchitype Interface."""
 
-    __jac__: _EDGE_ANCHOR
+    __jac__: EdgeAnchor
 
 
-class WalkerArchitype(
-    Generic[_WALKER_ANCHOR, _SERIALIZE], Architype[WalkerAnchor, _SERIALIZE]
-):
+class WalkerArchitype(Architype[_SERIALIZE]):
     """Walker Architype Interface."""
 
-    __jac__: _WALKER_ANCHOR
+    __jac__: WalkerAnchor
 
 
 @dataclass(kw_only=True)
-class Root(NodeArchitype[_NODE_ANCHOR, _SERIALIZE]):
+class Root(NodeArchitype[_SERIALIZE]):
     """Default Root Architype."""
 
 
 @dataclass(kw_only=True)
-class GenericEdge(EdgeArchitype[_EDGE_ANCHOR, _SERIALIZE]):
+class GenericEdge(EdgeArchitype[_SERIALIZE]):
     """Default Edge Architype."""

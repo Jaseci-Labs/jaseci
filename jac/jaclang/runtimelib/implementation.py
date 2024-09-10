@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Generic, Type
 from uuid import UUID, uuid4
 
 from .interface import (
-    Anchor,
     EdgeAnchor as _EdgeAnchor,
     EdgeArchitype as _EdgeArchitype,
     GenericEdge as _GenericEdge,
@@ -62,11 +60,10 @@ class Permission:
 
 
 @dataclass(kw_only=True)
-class JID(Generic[_ANCHOR], _JID[UUID, Anchor]):
+class JID(_JID[UUID, _ANCHOR]):
     """Jaclang Default JID."""
 
     id: UUID = field(default_factory=uuid4)
-    type: Type[_ANCHOR]
     name: str = ""
 
     @property
@@ -96,77 +93,131 @@ class AnchorMeta:
 
 
 @dataclass(kw_only=True)
-class NodeAnchor(
-    _NodeAnchor[JID["NodeAnchor"], JID["EdgeAnchor"], "NodeArchitype", dict], AnchorMeta
-):
+class NodeAnchor(_NodeAnchor["NodeAnchor"], AnchorMeta):
     """NodeAnchor Interface."""
 
-    jid = field(default_factory=lambda: JID(type=NodeAnchor))
-    edge_ids = field(default_factory=set)
+    jid: JID[NodeAnchor] = field(default_factory=lambda: JID(type=NodeAnchor))
+    architype: "NodeArchitype"
+    edge_ids: set[JID[EdgeAnchor]] = field(default_factory=set)
 
-    def __serialize__(self) -> dict:
-        """Override string representation."""
-        return {}
+    def __serialize__(self) -> NodeAnchor:
+        """Override serialization."""
+        return self
 
     @classmethod
-    def __deserialize__(cls, data: dict) -> NodeAnchor:
-        """Override string parsing."""
-        return object.__new__(NodeAnchor)
+    def __deserialize__(cls, data: NodeAnchor) -> NodeAnchor:
+        """Override deserialization."""
+        return data
 
 
 @dataclass(kw_only=True)
-class EdgeAnchor(
-    _EdgeAnchor[JID["EdgeAnchor"], JID["NodeAnchor"], "EdgeArchitype", dict], AnchorMeta
-):
+class EdgeAnchor(_EdgeAnchor["EdgeAnchor"], AnchorMeta):
     """NodeAnchor Interface."""
 
-    jid = field(default_factory=lambda: JID(type=EdgeAnchor))
+    jid: JID[EdgeAnchor] = field(default_factory=lambda: JID(type=EdgeAnchor))
+    architype: "EdgeArchitype"
+    source_id: JID[NodeAnchor]
+    target_id: JID[NodeAnchor]
 
-    def __serialize__(self) -> dict:
-        """Override string representation."""
-        return {}
+    def __serialize__(self) -> EdgeAnchor:
+        """Override serialization."""
+        return self
 
     @classmethod
-    def __deserialize__(cls, data: dict) -> EdgeAnchor:
-        """Override string parsing."""
-        return object.__new__(EdgeAnchor)
+    def __deserialize__(cls, data: EdgeAnchor) -> EdgeAnchor:
+        """Override deserialization."""
+        return data
 
 
 @dataclass(kw_only=True)
-class WalkerAnchor(
-    _WalkerAnchor[JID["WalkerAnchor"], "WalkerArchitype", dict], AnchorMeta
-):
+class WalkerAnchor(_WalkerAnchor["WalkerAnchor"], AnchorMeta):
     """NodeAnchor Interface."""
 
-    jid = field(default_factory=lambda: JID(type=WalkerAnchor))
+    jid: JID[WalkerAnchor] = field(default_factory=lambda: JID(type=WalkerAnchor))
+    architype: "WalkerArchitype"
 
-    def __serialize__(self) -> dict:
-        """Override string representation."""
-        return {}
+    def __serialize__(self) -> WalkerAnchor:
+        """Override serialization."""
+        return self
 
     @classmethod
-    def __deserialize__(cls, data: dict) -> WalkerAnchor:
-        """Override string parsing."""
-        return object.__new__(WalkerAnchor)
+    def __deserialize__(cls, data: WalkerAnchor) -> WalkerAnchor:
+        """Override deserialization."""
+        return data
 
 
-class NodeArchitype(_NodeArchitype[NodeAnchor, dict]):
+class NodeArchitype(_NodeArchitype["NodeArchitype"]):
     """NodeArchitype Interface."""
 
+    __jac__: NodeAnchor
 
-class EdgeArchitype(_EdgeArchitype[EdgeAnchor, dict]):
+    def __serialize__(self) -> NodeArchitype:
+        """Override serialization."""
+        return self
+
+    @classmethod
+    def __deserialize__(cls, data: NodeArchitype) -> NodeArchitype:
+        """Override deserialization."""
+        return data
+
+
+class EdgeArchitype(_EdgeArchitype["EdgeArchitype"]):
     """EdgeArchitype Interface."""
 
+    __jac__: EdgeAnchor
 
-class WalkerArchitype(_WalkerArchitype[WalkerAnchor, dict]):
+    def __serialize__(self) -> EdgeArchitype:
+        """Override serialization."""
+        return self
+
+    @classmethod
+    def __deserialize__(cls, data: EdgeArchitype) -> EdgeArchitype:
+        """Override deserialization."""
+        return data
+
+
+class WalkerArchitype(_WalkerArchitype["WalkerArchitype"]):
     """Walker Architype Interface."""
 
+    __jac__: WalkerAnchor
+
+    def __serialize__(self) -> WalkerArchitype:
+        """Override serialization."""
+        return self
+
+    @classmethod
+    def __deserialize__(cls, data: WalkerArchitype) -> WalkerArchitype:
+        """Override deserialization."""
+        return data
+
 
 @dataclass(kw_only=True)
-class Root(_Root[NodeAnchor, dict]):
+class Root(_Root["Root"]):
     """Default Root Architype."""
+
+    __jac__: NodeAnchor
+
+    def __serialize__(self) -> Root:
+        """Override serialization."""
+        return self
+
+    @classmethod
+    def __deserialize__(cls, data: Root) -> Root:
+        """Override deserialization."""
+        return data
 
 
 @dataclass(kw_only=True)
-class GenericEdge(_GenericEdge[EdgeAnchor, dict]):
-    """Default Root Architype."""
+class GenericEdge(_GenericEdge["GenericEdge"]):
+    """Default Edge Architype."""
+
+    __jac__: EdgeAnchor
+
+    def __serialize__(self) -> GenericEdge:
+        """Override serialization."""
+        return self
+
+    @classmethod
+    def __deserialize__(cls, data: GenericEdge) -> GenericEdge:
+        """Override deserialization."""
+        return data
