@@ -7,7 +7,6 @@ import importlib.util
 import os
 import sys
 import types
-from importlib import util
 from os import getcwd, path
 from typing import Optional, Union
 
@@ -197,11 +196,11 @@ class PythonImporter(Importer):
             if spec.target.startswith("."):
                 spec.target = spec.target.lstrip(".")
                 full_target = path.normpath(path.join(spec.caller_dir, spec.target))
-                imp_spec = util.spec_from_file_location(
+                imp_spec = importlib.util.spec_from_file_location(
                     spec.target, full_target + ".py"
                 )
                 if imp_spec and imp_spec.loader:
-                    imported_module = util.module_from_spec(imp_spec)
+                    imported_module = importlib.util.module_from_spec(imp_spec)
                     sys.modules[imp_spec.name] = imported_module
                     imp_spec.loader.exec_module(imported_module)
                 else:
