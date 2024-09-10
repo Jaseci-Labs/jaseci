@@ -121,27 +121,27 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def exit_assignment(self, node: ast.Assignment) -> None:
-        """Save assignment information."""
-        if node.aug_op:
-            return
+    # def exit_assignment(self, node: ast.Assignment) -> None:
+    #     """Save assignment information."""
+    #     if node.aug_op:
+    #         return
 
-        extracted_type = (
-            "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
-        )
-        scope = get_sem_scope(node)
-        seminfo = SemInfo(
-            node,
-            (
-                node.target.items[0].value
-                if isinstance(node.target.items[0], ast.Name)
-                else ""
-            ),
-            extracted_type,
-            node.semstr.lit_value if node.semstr else "",
-        )
-        if len(self.modules_visited) and self.modules_visited[-1].registry:
-            self.modules_visited[-1].registry.add(scope, seminfo)
+    #     extracted_type = (
+    #         "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
+    #     )
+    #     scope = get_sem_scope(node)
+    #     seminfo = SemInfo(
+    #         node,
+    #         (
+    #             node.target.items[0].value
+    #             if isinstance(node.target.items[0], ast.Name)
+    #             else ""
+    #         ),
+    #         extracted_type,
+    #         node.semstr.lit_value if node.semstr else "",
+    #     )
+    #     if len(self.modules_visited) and self.modules_visited[-1].registry:
+    #         self.modules_visited[-1].registry.add(scope, seminfo)
 
     def exit_name(self, node: ast.Name) -> None:
         """Save name information. for enum stmts."""
