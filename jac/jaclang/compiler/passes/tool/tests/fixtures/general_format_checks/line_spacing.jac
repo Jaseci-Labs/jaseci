@@ -1,9 +1,11 @@
 import:py math;
 
 glob RAD = 5;
+
 glob DIA = 10;
 
 # this comment is for walker
+
 walker decorator_walk {
     can hash(func: Any) {
         can inner(a: Any) {
@@ -39,6 +41,7 @@ walker decorator_walk {
     # Entry point for the walker
 
     can start with entry {
+
         # Apply decorators to greeter
         decorated_greeter = hash(exclaim(tilde(greeter)));
 
@@ -46,7 +49,6 @@ walker decorator_walk {
         decorated_greeter("World");
 
         # this is another comment
-
     }
 }
 
