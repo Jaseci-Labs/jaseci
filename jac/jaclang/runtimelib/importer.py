@@ -340,6 +340,7 @@ class JacImporter(Importer):
                     spec.full_target,
                     caller_dir=spec.caller_dir,
                     cachable=spec.cachable,
+                    reload=reload if reload else False,
                 )
                 try:
                     if not codeobj:
