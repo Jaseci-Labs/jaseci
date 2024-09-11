@@ -1,11 +1,9 @@
 # Setting Up Your Jac Cloud Application
-Jac Cloud is a jaclang plugin that bootstraps your jac application into a running web server. It allows you to serve your jac code as a REST API and interact with it from any client that can make HTTP requests. To set up Jac Cloud, you need to install the `jac-cloud` python package using pip:
+Jac Cloud is a jaclang plugin that bootstraps your jac application into a running web server. It allows you to serve your jac code as a REST API and interact with it from any client that can make HTTP requests. To set up Jac Cloud, you need to install the `jaclang` and `jac-cloud` python package using pip:
 
 ```bash
-pip install jac-cloud
+pip install jaclang==0.7.18 jac-cloud==0.1.1
 ```
-
-**Note**: jac-cloud requires jaclang version 0.7.18 or later. Make sure you have the latest version of jaclang installed.
 
 ## Setting Up Your Database
 Like most API servers, jac-cloud requires a database to store data persistently. Jac-cloud uses mongoDB as the database engine. You will need to have a running mongodb service. You can do this in several ways:
@@ -48,6 +46,12 @@ docker pull mongodb/mongodb-community-server:latest
 docker run --name mongodb -p 27017:27017 -d mongodb/mongodb-community-server:latest --replSet my-rs
 ```
 This command will start a mongoDB container with the name `mongodb` and expose port `27017` to the host machine.
+
+To check that the docker is up and running, run `docker ps` to get the lists of running container and you should see the following:
+```
+CONTAINER ID   IMAGE                                     COMMAND                  CREATED          STATUS              PORTS                       NAMES
+d289c01c3f1c   mongodb/mongodb-community-server:latest   "python3 /usr/local/…"   12 seconds ago   Up 11 seconds       0.0.0.0:27017->27017/tcp    mongodb
+```
 - Install the mongo shell to connect to the mongoDB container. You can install the mongo shell by following the instructions [here](https://www.mongodb.com/docs/mongodb-shell/install/).
 - Connect to the MongoDB Deployment with mongosh
 ```bash
@@ -55,14 +59,17 @@ mongosh --port 27017
 ```
 - **First time only**: The first time you start the mongodb, do the following two quick steps
     - Run the command `mongosh` in another terminal to open the mongo shell.
-    - In the mongo shell, run the following command to initiate the replica set:
+    - In the mongo shell, run the following command to initiate the replica set. This command will initiate the replica set with the default configuration. Feel free to learn more about mongodb replica set [here](https://docs.mongodb.com/manual/tutorial/deploy-replica-set/).
     ```bash
     rs.initiate({_id: "my-rs", members: [{_id: 0, host: "localhost"}]})
     ```
-    This command will initiate the replica set with the default configuration. You can customize the configuration as needed.
-    - Run `Exit` to exit the mongo shell.
+    We should see the following output:
+    ```
+    { ok: 1 }
+    ```
+    - Run `exit` to exit the mongo shell.
 
-Additional setup instructions can be found [here](https://docs.mongodb.com/manual/tutorial/deploy-replica-set/).
+You have successfully set up a running MongoDB service our application can use as the database.
 
 ## Installing your VSCode Extension
 To make your development experience easier, you should install the jac extension for Visual Studio Code. This extension provides syntax highlighting, code snippets, and other features to help you write Jac Cloud code more efficiently. You can install the extension from the Visual Studio Code marketplace [here](https://marketplace.visualstudio.com/items?itemName=jaseci-labs.jaclang-extension).
@@ -70,14 +77,14 @@ To make your development experience easier, you should install the jac extension
 ![Jac Extension](images/1_vscode.png)
 
 ## Your First Jac Cloud Application
-Now that you have your database set up, you can start building your first Jac Cloud application. Create a new file called `app.jac` and add the following code:
+Now that you have your database set up, you can start building your first Jac application. Create a new file called `server.jac` and add the following code:
 
 ```jac
 walker interact {
     can return_message with `root entry {
         report {
-            "message": "Hello, world!"
-        }
+            "response": "Hello, world!"
+        };
     }
 }
 
@@ -86,8 +93,8 @@ walker interact_with_body {
 
     can return_message with `root entry {
         report {
-            "message": "Hello, " + self.name + "!"
-        }
+            "response": "Hello, " + self.name + "!"
+        };
     }
 }
 ```
@@ -106,7 +113,9 @@ This command starts the Jac Cloud server with the database host set to `mongodb:
 
 Now, before we can fully test the API, it is important to know that by default, Jac Cloud requires authentication to access the API. So we need to create a user and get an access token to access the API. You can do this using the Swagger UI or by making HTTP requests. We will show you how to do this using HTTP requests.
 
-To do this, we need to run the following command:
+For this tutorial, we use `curl` to send API requests. You can also use tools like Postman or Insomnia to faciliate this.
+
+Keep the previous terminal with the `jac serve` process running and open a new terminal. In the new termminal, run the following command to register a new user with the email `test@gmail.com` and password `password`.
 
 ```bash
 curl --location 'http://localhost:8000/user/register' \
@@ -118,7 +127,12 @@ curl --location 'http://localhost:8000/user/register' \
 }'
 ```
 
-This command will create a user with the username `test@mail.com` and password `password`. Next, we'll need to login and get the access token. To do this, run the following command:
+We should see
+```json
+{"message":"Successfully Registered!"}
+```
+
+Next, we'll need to login and get the access token. To do this, run the following command:
 
 ```bash
 curl --location 'http://localhost:8000/user/login' \
@@ -130,14 +144,15 @@ curl --location 'http://localhost:8000/user/login' \
 }'
 ```
 
-You should see a response similar to this:
+We should see a response similar to this:
 
 ```json
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2ZGYzN2Y0MjIzNDM2N2QxZDMzMDE1MSIsImVtYWlsIjoidGVzdEBtYWlsLmNvbSIsInJvb3RfaWQiOiI2NmRmMzdmNDIyMzQzNjdkMWQzMzAxNTAiLCJpc19hY3RpdmF0ZWQiOnRydWUsImV4cGlyYXRpb24iOjE3MjYwMzAyNDUsInN0YXRlIjoiZGlCQnJOMHMifQ.oFQ5DuUBwzGVedmk4ktesFIelZR0JH8xx7zU4L_Vu3k","user":{"id":"66df37f42234367d1d330151","email":"test@mail.com","root_id":"66df37f42234367d1d330150","is_activated":true,"expiration":1726030245,"state":"diBBrN0s"}}
 ```
 
-Now that you have your access token copy the access token and use it to access the API. You can now test the API using the following command:
+Save the `token` value. This will be our access token to authenticate with the API for subsequen requests.
 
+Let's now test the `interact` API we created earlier:
 ```bash
 curl -X POST http://localhost:8000/walker/interact -H "Authorization: Bearer <TOKEN>"
 ```
@@ -150,4 +165,4 @@ Replace `<TOKEN>` with the access token you received. This command will return t
 
 You can also do this in the browser by visiting the Swagger docs `http://localhost:8000/docs` and adding the `Authorization` header with the value `Bearer ACCESS TOKEN`.
 
-That's it! You have successfully set up your Jac Cloud application and served your first API. In the [next](2_building-a-rag-chatbot.md) part we will learn how to build a simple conversational agent using Jac Cloud. Stay tuned!
+That's it! You have successfully set up your Jac application and served your first API. In the [next](2_building-a-rag-chatbot.md) part we will learn how to build a simple conversational agent using Jac.
