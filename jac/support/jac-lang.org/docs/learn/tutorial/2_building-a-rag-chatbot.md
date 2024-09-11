@@ -2,17 +2,17 @@
 Now that we have a jac application served up, let's build a simple chatbot using Retrieval Augmented Generation (RAG) with Jac Cloud and Streamlit as our frontend interface.
 
 ### Preparation / Installation
-Make sure you have all the dependencies installed in your environment. If you don't have it installed, you can install it using pip:
+There are a couple of additional dependenices we need here
 ```bash
-pip install jaclang mtllm mtllm[openai] jaclang_streamlit jac-cloud requests langchain_community chromadb langchain pypdf
+pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0
 ```
 
 ## Building a Streamlit Interface
 Before we begin building out our chatbot, let's first build a simple GUI to interact with the chatbot. Streamlit offers several Chat elements, enabling you to build Graphical User Interfaces (GUIs) for conversational agents or chatbots. Leveraging session state along with these elements allows you to construct anything from a basic chatbot to a more advanced, ChatGPT-like experience using purely Python code.
 
-Luckily for us, jaclang has a plugin for streamlit that allows us to build web applications with streamlit using jaclang. In this part of the tutorial, we will build a frontend for our conversational agent using streamlit. You can find more information about the `jaclang_streamlit` plugin [here](https://github.com/Jaseci-Labs/jaclang/blob/main/support/plugins/streamlit/README.md).
+Luckily for us, jaclang has a plugin for streamlit that allows us to build web applications with streamlit using jaclang. In this part of the tutorial, we will build a frontend for our conversational agent using streamlit. You can find more information about the `jac-streamlit` plugin [here](https://github.com/Jaseci-Labs/jaclang/blob/main/support/plugins/streamlit/README.md).
 
-First, let's create a new file called `client.jac` in the root directory of your project. This file will contain the code for the frontend chat interface.
+First, let's create a new file called `client.jac`. This file will contain the code for the frontend chat interface.
 
 We start by importing the necessary modules in Jac:
 
@@ -30,21 +30,20 @@ import:py requests;
 Now let's define a function bootstrap_frontend, which accepts a token for authentication and builds the chat interface.
 
 ```jac
-can bootstrap_frontend (token:str) {
+can bootstrap_frontend (token: str) {
     st.write("Welcome to your Demo Agent!");
 
     # Initialize chat history
     if "messages" not in st.session_state {
         st.session_state.messages = [];
     }
-
+}
 ```
 
 - `st.write()` adds a welcome message to the app.
 - `st.session_state` is used to persist data across user interactions. Here, we're using it to store the chat history (`messages`).
 
-
-Now, let's update the function such that when the page reloads or updates, the previous chat messages are reloaded from `st.session_state.messages`.
+Now, let's update the function such that when the page reloads or updates, the previous chat messages are reloaded from `st.session_state.messages`. Add the following to `bootstrap_frontend`
 
 ```jac
     for message in st.session_state.messages {
@@ -68,14 +67,26 @@ Next, let's capture user input using `st.chat_input()`. This is where users can 
         with st.chat_message("user") {
             st.markdown(prompt);
         }
+    }
 ```
 
 - `st.chat_input()` waits for the user to type a message and submit it.
 - Once the user submits a message, it's appended to the session state's message history and immediately displayed on the screen.
 
-Now we handle the backend interaction. After the user submits a message, the assistant responds. This involves sending the user's message to the backend and displaying the response.
+Now we handle the interaction with the backend server. After the user submits a message, the assistant responds. This involves sending the user's message to the backend, receiving a response from the backend and displaying it.
+
+Add the following to `bootstrap_frontend`.
 
 ```jac
+    if prompt := st.chat_input("What is up?") {
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt});
+
+        # Display user message in chat message container
+        with st.chat_message("user") {
+            st.markdown(prompt);
+        }
+
         # Display assistant response in chat message container
         with st.chat_message("assistant") {
 
@@ -94,14 +105,14 @@ Now we handle the backend interaction. After the user submits a message, the ass
             }
         }
     }
-}
 ```
 
 - The user's input (`prompt`) is sent to the backend using a POST request to the `/walker/interact` endpoint.
+- The `interact` walker, as we created in the last chapter, just returns `Hello World!` for now. This will change as we build out our chatbot.
+    - `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
 - The response from the backend is then displayed using `st.write()`, and the assistant's message is stored in the session state.
-- The `session_id` is hardcoded here for simplicity, but you can make it dynamic based on your application’s needs.
 
-Lastly, we'll define the entry point, which authenticates the user and retrieves the token needed for the bootstrap_frontend function.
+Lastly, we'll define the entry point of `client.jac`. Think `main` function of a python program. We authenticates the user and retrieves the token needed for the `bootstrap_frontend` function.
 
 ```jac
 with entry {
@@ -153,7 +164,7 @@ Now you can run the frontend using the following command:
 jac streamlit client.jac
 ```
 
-If your server is still running, you can chat with your assistant using the streamlit interface. The response will only be "Hello, world!" for now, but we will update it to use the RAG module shortly.
+If your server is still running, you can chat with your assistant using the streamlit interface. The response will only be "Hello, world!" for now, but we will update it to be a fully working chatbot next.
 
 Now let's move on to building the RAG module.
 
@@ -173,12 +184,12 @@ First, let's add a file called `rag.jac` to our project. This file will contain 
 Jac allows you to import Python libraries, making it easy to integrate existing libraries such as langchain, langchain_community, and more. In this RAG engine, we need document loaders, text splitters, embedding functions, and vector stores.
 
 ```jac
+import: py os;
 import: py from langchain_community.document_loaders {PyPDFDirectoryLoader}
 import: py from langchain_text_splitters {RecursiveCharacterTextSplitter}
 import: py from langchain.schema.document {Document}
 import: py from langchain_community.embeddings.ollama {OllamaEmbeddings}
 import: py from langchain_community.vectorstores.chroma {Chroma}
-import: py os;
 ```
 
 - `PyPDFDirectoryLoader` is used to load documents from a directory.
@@ -189,17 +200,23 @@ import: py os;
 Now let's define the `rag_engine` object that will handle the retrieval and generation of responses. The object will have two properties: `file_path` for the location of documents and `chroma_path` for the location of the vector store.
 
 ```jac
-obj rag_engine {
-    has file_path:str="docs";
-    has chroma_path:str = "chroma";
+obj RagEngine {
+    has file_path: str = "docs";
+    has chroma_path: str = "chroma";
+}
 ```
 
-The object will have a `postinit` method that runs automatically upon initialization, loading documents, splitting them into chunks, and adding them to the vector database (Chroma).
+Note: `obj` works similarly as dataclasses in Python.
+
+We will now build out this `RagEngine` object by adding relevant abilities. Abilities, as annotated by the `can` keyword, are analogus to member methods of a Python class. The `can` abilities in the following code snippets shoudld be added inside the `RagEngine` object scope.
+
+
+The object will have a `postinit` method that runs automatically upon initialization, loading documents, splitting them into chunks, and adding them to the vector database (Chroma). `postinit` works similarly to the `__post_init__` in Python dataclasses.
 
 ```jac
     can postinit {
-        documents:list = self.load_documents();
-        chunks:list = self.split_documents(documents);
+        documents: list = self.load_documents();
+        chunks: list = self.split_documents(documents);
         self.add_to_chroma(chunks);
     }
 ```
@@ -240,7 +257,7 @@ Next, let's define the `get_embedding_function` method. The `get_embedding_funct
 Now, each chunk of text needs a unique identifier to ensure that it can be referenced in the vector store. The `add_chunk_id` ability assigns IDs to each chunk, using the format `Page Source:Page Number:Chunk Index`.
 
 ```jac
-    can add_chunk_id(chunks:str) {
+    can add_chunk_id(chunks: str) {
         last_page_id = None;
         current_chunk_index = 0;
 
@@ -295,15 +312,17 @@ Once the documents are split and chunk IDs are assigned, we add them to the Chro
 Next, the `get_from_chroma` ability takes a query and returns the most relevant chunks based on similarity search. This is the core of retrieval-augmented generation, as the engine fetches chunks that are semantically similar to the query.
 
 ```jac
-    can get_from_chroma(query:str,chunck_nos:int=5) {
-        db = Chroma(persist_directory=self.chroma_path, embedding_function=self.get_embedding_function());
+    can get_from_chroma(query: str,chunck_nos: int=5) {
+        db = Chroma(
+            persist_directory=self.chroma_path,
+            embedding_function=self.get_embedding_function()
+        );
         results = db.similarity_search_with_score(query,k=chunck_nos);
         return results;
     }
-}
 ```
 
-To summarize, we define an object called `rag_engine` with two properties: `file_path` and `chroma_path`. The `file_path` property specifies the path to the directory containing the documents we want to retrieve responses from. The `chroma_path` property specifies the path to the directory containing the pre-trained embeddings. We will use these embeddings to retrieve candidate responses.
+To summarize, we define an object called `RagEngine` with two properties: `file_path` and `chroma_path`. The `file_path` property specifies the path to the directory containing the documents we want to retrieve responses from. The `chroma_path` property specifies the path to the directory containing the pre-trained embeddings. We will use these embeddings to retrieve candidate responses.
 
 We define a few methods to load the documents, split them into chunks, and add them to the Chroma vector store. We also define a method to retrieve candidate responses based on a query. Let's break down the code:
 
@@ -333,15 +352,14 @@ ollama serve
 You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document in the `docs` directory for you to test.
 
 ### Setting up your LLM
-Here we are going to use one of the magic features of jaclang called [MTLLM](https://jaseci-labs.github.io/mtllm/). MTTLM facilitates the integration of generative AI models, specifically Large Language Models (LLMs) into programming in an ultra seamless manner right from the Jaclang code. You should have the `mtllm` library installed in your environment. If you don't have it installed, you can install it using `pip install mtllm[OpenAI]`.
+Here we are going to use one of the key features of jaclang called [MTLLM](https://jaseci-labs.github.io/mtllm/), or Meaning-typed LLM. MTTLM facilitates the integration of generative AI models, specifically Large Language Models (LLMs) into programming at the language level.
 
-Create a new file called `server.jac` and add the following code:
+We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start from scratch and add the following.
 
 ```jac
-import:py from mtllm.llms {OpenAI};
+import:py from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name='gpt-4o');
-
 ```
 
 Here we use the OpenAI model gpt-4o as our Large Language Model (LLM). To use OpenAI you will need an API key. You can get an API key by signing up on the OpenAI website [here](https://platform.openai.com/). Once you have your API key, you can set it as an environment variable:
@@ -359,7 +377,7 @@ ollama pull llama3.1
 This will download the `llama3.1` model to your local machine and make it available for inference when you run the `ollama serve` command. If you want use Ollama replace your import statement with the following:
 
 ```jac
-import:py from mtllm.llms {Ollama};
+import:py from mtllm.llms {Ollama}
 
 glob llm = Ollama(model_name='llama3.1');
 ```
@@ -367,27 +385,28 @@ glob llm = Ollama(model_name='llama3.1');
 Now that you have your LLM ready let's create a simple walker that uses the RAG module and MTLLM to generate responses to user queries. First, let's declare the global variables for MTLLM and the RAG engine.
 
 ```jac
-glob llm = OpenAI(model_name='gpt-4o');
+import:jac from rag {RagEngine}
 glob RagEngine:rag_engine = rag_engine();
 ```
 
 - `llm`: This an MTLLM instance of the model utilized by jaclang whenever we make `by llm()` abilities. Here we are using OpenAI's GPT-4 model.
-- `RagEngine`: This is an instance of the `rag_engine` object for document retrieval and processing.
+- `rag_engine`: This is an instance of the `RagEngine` object for document retrieval and processing.
 
-Next, let's define a node called `session` that stores the chat history and status of the session. The session node also has an ability called `llm_chat` that uses the MTLLM model to generate responses based on the chat history, agent role, and context. If you've ever worked with graphs before, you should be familiar with nodes and edges. Nodes are entities that store data, while edges are connections between nodes that represent relationships. In this case, `session` is node in our graph that stores the chat history and status of the session.
+Next, let's define a node called `Session` that stores the chat history and status of the session. The session node also has an ability called `llm_chat` that uses the MTLLM model to generate responses based on the chat history, agent role, and context. If you've ever worked with graphs before, you should be familiar with nodes and edges. Nodes are entities that store data, while edges are connections between nodes that represent relationships. In this case, `Session` is node in our graph that stores the chat history and status of the session.
 
 ```jac
-node session {
+node Session {
     has id: str;
     has chat_history: list[dict];
     has status: int = 1;
 
     can 'Respond to message using chat_history as context and agent_role as the goal of the agent'
-    llm_chat(message:'current message':str,
-            chat_history: 'chat history':list[dict],
-            agent_role:'role of the agent responding':str,
-            context:'retrieved context from documents':list
-            ) -> 'response':str by llm();
+    llm_chat(
+        message:'current message':str,
+        chat_history: 'chat history':list[dict],
+        agent_role:'role of the agent responding':str,
+        context:'retrieved context from documents':list
+    ) -> 'response':str by llm();
 }
 ```
 
@@ -406,13 +425,14 @@ walker interact {
     has session_id: str;
 
     can init_session with `root entry {
-         visit [-->](`?session)(?id == self.session_id) else {
-            session_node = here ++> session(id=self.session_id, chat_history=[], status=1);
+         visit [-->](`?Session)(?id == self.session_id) else {
+            session_node = here ++> Session(id=self.session_id, chat_history=[], status=1);
             print("Session Node Created");
 
             visit session_node;
         }
     }
+}
 ```
 
 **Attributes:**
@@ -423,21 +443,23 @@ walker interact {
 
 Now, let's define the `chat` ability which once the session is initialized, will handle interactions with the user and the document retrieval system.
 
+Add the following ability inside the scope of `interact` walker.
+
 ```jac
-    can chat with session entry {
-
+    can chat with Session entry {
         here.chat_history.append({"role": "user", "content": self.message});
-
-        data = RagEngine.get_from_chroma(query=self.message);
-        response = here.llm_chat(message=self.message, chat_history=here.chat_history, agent_role="You are a conversation agent designed to help users with their queries based on the documents provided", context=data);
+        data = rag_engine.get_from_chroma(query=self.message);
+        response = here.llm_chat(
+            message=self.message,
+            chat_history=here.chat_history,
+            agent_role="You are a conversation agent designed to help users with their queries based on the documents provided",
+            context=data
+        );
 
         here.chat_history.append({"role": "assistant", "content": response});
 
-        report {
-            "response": response
-        };
+        report {"response": response};
     }
-}
 ```
 
 **Logic flow:**
@@ -450,8 +472,8 @@ Now, let's define the `chat` ability which once the session is initialized, will
 
 To summarize:
 
-- We define a `session` node that stores the chat history and status of the session. The session node also has an ability called `llm_chat` that uses the MTLLM model to generate responses based on the chat history, agent role, and context.
-- We define a `interact` walker that initializes a session and generates responses to user queries. The walker uses the `RagEngine` object to retrieve candidate responses and the `llm_chat` ability to generate the final response.
+- We define a `Session` node that stores the chat history and status of the session. The session node also has an ability called `llm_chat` that uses the MTLLM model to generate responses based on the chat history, agent role, and context.
+- We define a `interact` walker that initializes a session and generates responses to user queries. The walker uses the `rag_engine` object to retrieve candidate responses and the `llm_chat` ability to generate the final response.
 
 You can now serve this code using Jac Cloud by running the following command:
 
@@ -459,14 +481,14 @@ You can now serve this code using Jac Cloud by running the following command:
 DATABASE_HOST=mongodb://localhost:27017/?replicaSet=my-rs jac serve server.jac
 ```
 
-Now you can test out your chatbot using the streamlit interface. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
+Now you can test out your chatbot using the client we created earlier. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
 
 You can also try testing out the updated endpoint using the swagger UI at `http://localhost:8000/docs` or using the following curl command:
 
 ```bash
-curl -X POST http://localhost:8000/walkers/interact -d '{"message": "I am having major back pain, what can i do", "session_id": "123"} -H "Authorization: Bearer ACCESS TOKEN"
+curl -X POST http://localhost:8000/walkers/interact -d '{"message": "I am having major back pain, what can i do", "session_id": "123"} -H "Authorization: Bearer <TOKEN>"
 ```
 
-Remember to replace `ACCESS TOKEN` with the access token of your user.
+Remember to replace `<TOKEN>` with the access token you saved. Note you might need to re-login to get an updated token if the token has expired or the server has been restarted since.
 
 In the next part of the tutorial, we will enhance the chatbot by adding dialogue routing capabilities. We will direct the conversation to the appropriate dialogue model based on the user's input.
