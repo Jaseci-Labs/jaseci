@@ -1,5 +1,5 @@
 # RAG + Dialogue Routing Chatbot
-Now that you have built a RAG chatbot, you can enhance it by adding dialogue routing capabilities. Dialogue routing is the process of directing the conversation to the appropriate dialogue model based on the user's input. 
+Now that you have built a RAG chatbot, you can enhance it by adding dialogue routing capabilities. Dialogue routing is the process of directing the conversation to the appropriate dialogue model based on the user's input.
 
 In some cases, the user query that comes in may not be suitable for the RAG model, and it may be better to route the conversation to a different model or a different dialogue system altogether. In this part of the tutorial, you will learn how to build a RAG chatbot with dialogue routing capabilities using Jac Cloud and Streamlit.
 
@@ -105,7 +105,7 @@ We define two new nodes `rag_chat` and `qa_chat` that extend the `chat` node. Th
 
 In the `rag_chat` node, we have a new ability `respond_with_llm` that responds to the user query using the RAG model. The ability retrieves the relevant information from the documents and responds to the user query. In the `qa_chat` node, we have a new ability `respond_with_llm` that responds to the user query using a simple question-answering model.
 
-Lastly, we'll update our `session` node. Instead of directly responding to the user query like before, the `session` will something super cool! 🤯 
+Lastly, we'll update our `session` node. Instead of directly responding to the user query like before, the `session` will something super cool! 🤯
 
 ```jac
 node session {

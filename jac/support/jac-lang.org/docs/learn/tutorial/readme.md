@@ -2,7 +2,7 @@
 In this tutorial, you are going to learn how to build a state-of-the-art conversational AI system with Jac Cloud and the Jac programming language. You will learn the basics of jaclang, how to use large language models, and everything in between, in order to create an end-to-end fully-functional conversational AI system.
 
 ### Preparation / Installation
-- Install dependencies: 
+- Install dependencies:
 ```bash
 pip install jaclang mtllm mtllm[openai] jaclang_streamlit jac-cloud requests langchain_community chromadb langchain pypdf
 ```

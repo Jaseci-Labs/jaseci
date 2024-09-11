@@ -12,7 +12,7 @@ Like most API servers, jac-cloud requires a database to store data persistently.
 
 - Setup MongoDB manually on your local maching
 - Using a container service like docker
-- Using a free cloud service like [MongoDB Atlas](https://www.mongodb.com/products/platform/atlas-database). 
+- Using a free cloud service like [MongoDB Atlas](https://www.mongodb.com/products/platform/atlas-database).
 
 In this tutorial we will show you how to do this manually and also using Docker (recommended).
 
@@ -142,7 +142,7 @@ Now that you have your access token copy the access token and use it to access t
 curl -X POST http://localhost:8000/walker/interact -H "Authorization: Bearer <TOKEN>"
 ```
 
-Replace `<TOKEN>` with the access token you received. This command will return the message "Hello, world!". 
+Replace `<TOKEN>` with the access token you received. This command will return the message "Hello, world!".
 
 ```json
 {"status":200,"reports":[{"response":"Hello, world!"}]}

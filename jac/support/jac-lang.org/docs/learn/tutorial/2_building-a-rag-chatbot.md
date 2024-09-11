@@ -63,7 +63,7 @@ Next, let's capture user input using `st.chat_input()`. This is where users can 
     if prompt := st.chat_input("What is up?") {
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt});
-        
+
         # Display user message in chat message container
         with st.chat_message("user") {
             st.markdown(prompt);
@@ -78,7 +78,7 @@ Now we handle the backend interaction. After the user submits a message, the ass
 ```jac
         # Display assistant response in chat message container
         with st.chat_message("assistant") {
-            
+
             # Call walker API
             response = requests.post("http://localhost:8000/walker/interact", json={"message": prompt, "session_id": "123"},
                 headers={"Authorization": f"Bearer {token}"}
@@ -125,7 +125,7 @@ with entry {
             }
         );
         assert response.status_code == 201;
-        
+
         response = requests.post(
             f"{INSTANCE_URL}/user/login",
             json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD}
@@ -404,7 +404,7 @@ Next we'll define the `interact` walker that initializes a session and generates
 walker interact {
     has message: str;
     has session_id: str;
-    
+
     can init_session with `root entry {
          visit [-->](`?session)(?id == self.session_id) else {
             session_node = here ++> session(id=self.session_id, chat_history=[], status=1);
@@ -421,7 +421,7 @@ walker interact {
 - `session_id`: The unique session identifier.
 - `init_session` ability: Initializes a session based on the session ID. If the session does not exist, it creates a new session node. Note that this ability is triggered on `root entry`. In every graph, there is a special node called `root` that serves as the starting point for the graph. A walker can be spawned on and traverse to any node in the graph. It does **NOT** have to start at the root node, but it can be spawned on the root node to start the traversal.
 
-Now, let's define the `chat` ability which once the session is initialized, will handle interactions with the user and the document retrieval system. 
+Now, let's define the `chat` ability which once the session is initialized, will handle interactions with the user and the document retrieval system.
 
 ```jac
     can chat with session entry {
