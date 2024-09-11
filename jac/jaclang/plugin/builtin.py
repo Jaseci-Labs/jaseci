@@ -19,9 +19,9 @@ def dotgen(
     dot_file: Optional[str] = None,
 ) -> str:
     """Print the dot graph."""
-    from jaclang.plugin.feature import pm
+    from jaclang.plugin.feature import JacBuiltin as JacB, JacFeature as Jac
 
-    root = pm.hook.get_root()
+    root = Jac.get_root()
     node = node if node is not None else root
     depth = depth if depth is not None else -1
     traverse = traverse if traverse is not None else False
@@ -29,7 +29,7 @@ def dotgen(
     edge_limit = edge_limit if edge_limit is not None else 512
     node_limit = node_limit if node_limit is not None else 512
 
-    return pm.hook.dotgen(
+    return JacB.dotgen(
         edge_type=edge_type,
         node=node,
         depth=depth,

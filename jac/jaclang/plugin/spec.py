@@ -35,6 +35,7 @@ from jaclang.runtimelib.context import ExecutionContext
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
+hookmanager = pluggy.PluginManager("jac")
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -355,7 +356,7 @@ class JacBuiltin:
         node: NodeArchitype,
         depth: int,
         traverse: bool,
-        edge_type: list[str],
+        edge_type: Optional[list[str]],
         bfs: bool,
         edge_limit: int,
         node_limit: int,
@@ -379,25 +380,25 @@ class JacAccessValidation:
     """Jac Access Validation Specs."""
 
     @staticmethod
-    @hookspec
+    @hookspec(firstresult=True)
     def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
         raise NotImplementedError
 
     @staticmethod
-    @hookspec
+    @hookspec(firstresult=True)
     def check_connect_access(to: Anchor) -> bool:
         """Write Access Validation."""
         raise NotImplementedError
 
     @staticmethod
-    @hookspec
+    @hookspec(firstresult=True)
     def check_write_access(to: Anchor) -> bool:
         """Write Access Validation."""
         raise NotImplementedError
 
     @staticmethod
-    @hookspec
+    @hookspec(firstresult=True)
     def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
         raise NotImplementedError
@@ -407,7 +408,7 @@ class JacNode:
     """Jac Node Operations."""
 
     @staticmethod
-    @hookspec
+    @hookspec(firstresult=True)
     def get_edges(
         node: NodeAnchor,
         dir: EdgeDir,
@@ -418,7 +419,7 @@ class JacNode:
         raise NotImplementedError
 
     @staticmethod
-    @hookspec
+    @hookspec(firstresult=True)
     def edges_to_nodes(
         node: NodeAnchor,
         dir: EdgeDir,
@@ -427,3 +428,10 @@ class JacNode:
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
         raise NotImplementedError
+
+
+hookmanager.add_hookspecs(JacFeatureSpec)
+hookmanager.add_hookspecs(JacCmdSpec)
+hookmanager.add_hookspecs(JacBuiltin)
+hookmanager.add_hookspecs(JacAccessValidation)
+hookmanager.add_hookspecs(JacNode)

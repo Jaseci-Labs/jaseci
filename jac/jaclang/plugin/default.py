@@ -856,7 +856,7 @@ class JacBuiltin:
         node: NodeArchitype,
         depth: int,
         traverse: bool,
-        edge_type: list[str],
+        edge_type: Optional[list[str]],
         bfs: bool,
         edge_limit: int,
         node_limit: int,
