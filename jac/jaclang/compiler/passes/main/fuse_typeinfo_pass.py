@@ -6,6 +6,7 @@ mypy apis into Jac and use jac py ast in it.
 
 from __future__ import annotations
 
+import re
 from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
@@ -13,7 +14,7 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
-from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
+from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a
 
 
 import mypy.nodes as MypyNodes  # noqa N812
@@ -46,24 +47,24 @@ class FuseTypeInfoPass(Pass):
             )
 
     def __set_sym_table_link(self, node: ast.AstSymbolNode) -> None:
-        typ = node.sym_type.split(".")
         typ_sym_table = self.ir.sym_tab
+        assert isinstance(self.ir, ast.Module)
 
-        if typ[0] == "builtins":
-            return
+        sym_type = node.sym_type
+        if re.match(r"builtins.(list|dict|tuple)", sym_type):
+            sym_type = re.sub(r"\[.*\]", "", sym_type)
+
+        typ = sym_type.split(".")
 
         if node.sym_type == "types.ModuleType" and node.sym:
             node.name_spec.type_sym_tab = node.sym.parent_tab.find_scope(node.sym_name)
 
-        assert isinstance(self.ir, ast.Module)
-
-        if typ_sym_table:
-            for i in typ:
-                if i == self.ir.name:
-                    continue
-                f = typ_sym_table.find_scope(i)
-                if f:
-                    typ_sym_table = f
+        for i in typ:
+            if i == self.ir.name:
+                continue
+            f = typ_sym_table.find_scope(i)
+            if f:
+                typ_sym_table = f
 
         if typ_sym_table != self.ir.sym_tab:
             node.name_spec.type_sym_tab = typ_sym_table
@@ -143,6 +144,11 @@ class FuseTypeInfoPass(Pass):
                         func(self, node)
                         self.__set_sym_table_link(node)
                         self.__collect_python_dependencies(node)
+                
+                # Special handing for BuiltinType
+                elif isinstance(node, ast.BuiltinType):
+                    func(self, node)
+                    self.__set_sym_table_link(node)
 
                 # Jac node doesn't have mypy nodes linked to it
                 else:
@@ -209,11 +215,21 @@ class FuseTypeInfoPass(Pass):
                     f"{type(mypy_node)}"
                 )
 
+    def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
+        print(node.loc)
+        if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
+            return
+        builtins_sym = self.ir.sym_tab.find_scope("builtins").lookup(node.sym_name)
+        if builtins_sym:
+            node.name_spec._sym = builtins_sym
+
     @__handle_node
     def enter_name(self, node: ast.NameAtom) -> None:
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
-
+        if node.sym is None:
+            self.__check_builltin_symbol(node)
+    
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Pass handler for ModulePath nodes."""
@@ -423,7 +439,8 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         """Pass handler for BuiltinType nodes."""
-        self.__collect_type_from_symbol(node)
+        self.__check_builltin_symbol(node)
+        node.name_spec.sym_type = f"builtins.{node.sym_name}"
 
     def get_type_from_instance(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.Instance

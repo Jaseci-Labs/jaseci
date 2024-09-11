@@ -189,6 +189,31 @@ class JacCliTests(TestCase):
             stdout_value,
             r"8\:37 \- 8:44.*ModuleItem - display - abs_path\:.*fixtures/pygame_mock/display.py",
         )
+    
+    def test_builtins_loading(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('builtins_test.jac')}"])
+        
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins_test.builtins.list",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"11\:5 \- 11\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+        )
+
+
 
     def test_ast_dotgen(self) -> None:
         """Testing for print AstTool."""
