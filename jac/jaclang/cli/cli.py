@@ -28,6 +28,7 @@ from jaclang.utils.lang_tools import AstTool
 
 
 Cmd.create_cmd()
+Jac.setup()
 
 
 @cmd_registry.register

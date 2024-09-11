@@ -15,27 +15,31 @@ from logging import getLogger
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
 from uuid import UUID
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import EdgeDir, colors
-from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
+from jaclang.compiler.constant import colors
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.plugin.feature import JacAccessValidation as JacAV, JacFeature as Jac
-from jaclang.plugin.spec import P, T
-from jaclang.runtimelib.constructs import (
+from jaclang.plugin.feature import (
     AccessLevel,
     Anchor,
     Architype,
     DSFunc,
-    EdgeAnchor,
     EdgeArchitype,
+    EdgeDir,
     ExecutionContext,
-    GenericEdge,
-    JacTestCheck,
+    JacAccessValidation as JacAV,
+    JacFeature as Jac,
+    JacNode as JacN,
     NodeAnchor,
     NodeArchitype,
+    P,
+    PyastGenPass,
     Root,
-    WalkerAnchor,
+    T,
     WalkerArchitype,
+    ast,
+)
+from jaclang.runtimelib.constructs import (
+    GenericEdge,
+    JacTestCheck,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
@@ -47,27 +51,22 @@ import pluggy
 hookimpl = pluggy.HookimplMarker("jac")
 logger = getLogger(__name__)
 
-__all__ = [
-    "EdgeAnchor",
-    "GenericEdge",
-    "hookimpl",
-    "JacTestCheck",
-    "NodeAnchor",
-    "WalkerAnchor",
-    "NodeArchitype",
-    "EdgeArchitype",
-    "Root",
-    "WalkerArchitype",
-    "Architype",
-    "DSFunc",
-    "T",
-]
-
 
 class JacFeatureDefaults:
     """Jac Feature."""
 
-    pm = pluggy.PluginManager("jac")
+    @staticmethod
+    @hookimpl
+    def setup() -> None:
+        """Set Class References."""
+        # this should be declared on JacFeature but with _ prefix to avoid class name conflict
+        Jac.EdgeDir = EdgeDir  # type: ignore[attr-defined]
+        Jac.DSFunc = DSFunc  # type: ignore[attr-defined]
+        Jac.RootType = Root  # type: ignore[attr-defined]
+        Jac.Obj = Architype  # type: ignore[attr-defined]
+        Jac.Node = NodeArchitype  # type: ignore[attr-defined]
+        Jac.Edge = EdgeArchitype  # type: ignore[attr-defined]
+        Jac.Walker = WalkerArchitype  # type: ignore[attr-defined]
 
     @staticmethod
     @hookimpl
@@ -78,6 +77,7 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def get_object(id: str) -> Architype | None:
+        """Get object by id."""
         if id == "root":
             return Jac.get_context().root.architype
         elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
@@ -88,6 +88,7 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def object_ref(obj: Architype) -> str:
+        """Get object's id."""
         return obj.__jac__.id.hex
 
     @staticmethod
@@ -448,16 +449,16 @@ class JacFeatureDefaults:
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
-                connected_edges += node.__jac__.get_edges(
-                    dir, filter_func, target_obj=targ_obj_set
+                connected_edges += JacN.get_edges(
+                    node.__jac__, dir, filter_func, target_obj=targ_obj_set
                 )
             return list(set(connected_edges))
         else:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
                 connected_nodes.extend(
-                    node.__jac__.edges_to_nodes(
-                        dir, filter_func, target_obj=targ_obj_set
+                    JacN.edges_to_nodes(
+                        node.__jac__, dir, filter_func, target_obj=targ_obj_set
                     )
                 )
             return list(set(connected_nodes))
@@ -478,14 +479,12 @@ class JacFeatureDefaults:
         right = [right] if isinstance(right, NodeArchitype) else right
         edges = []
 
-        root = Jac.get_root().__jac__
-
         for i in left:
             _left = i.__jac__
-            if root.has_connect_access(_left):
+            if JacAV.check_connect_access(_left):
                 for j in right:
                     _right = j.__jac__
-                    if root.has_connect_access(_right):
+                    if JacAV.check_connect_access(_right):
                         edges.append(edge_spec(_left, _right))
         return right if not edges_only else edges
 
@@ -502,8 +501,6 @@ class JacFeatureDefaults:
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
 
-        root = Jac.get_root().__jac__
-
         for i in left:
             node = i.__jac__
             for anchor in set(node.edges):
@@ -518,7 +515,7 @@ class JacFeatureDefaults:
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
                         and target.architype in right
-                        and root.has_write_access(target)
+                        and JacAV.check_write_access(target)
                     ):
                         anchor.destroy() if anchor.persistent else anchor.detach()
                         disconnect_occurred = True
@@ -526,7 +523,7 @@ class JacFeatureDefaults:
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
                         and source.architype in right
-                        and root.has_write_access(source)
+                        and JacAV.check_write_access(source)
                     ):
                         anchor.destroy() if anchor.persistent else anchor.detach()
                         disconnect_occurred = True
@@ -649,6 +646,7 @@ class JacFeatureDefaults:
     @staticmethod
     @hookimpl
     def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
+        """Jac's get_semstr_type implementation."""
         with open(
             os.path.join(
                 os.path.dirname(file_loc),
@@ -948,6 +946,7 @@ class JacCmdDefaults:
 
 
 class JacAccessValidation:
+    """Jac Access Validation Implementations."""
 
     @staticmethod
     @hookimpl
@@ -1019,3 +1018,75 @@ class JacAccessValidation:
             access_level = level
 
         return access_level
+
+
+class JacNode:
+    """Jac Node Operations."""
+
+    @staticmethod
+    @hookimpl
+    def get_edges(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[EdgeArchitype]:
+        """Get edges connected to this node."""
+        ret_edges: list[EdgeArchitype] = []
+        for anchor in node.edges:
+            if (
+                (source := anchor.source)
+                and (target := anchor.target)
+                and (not filter_func or filter_func([anchor.architype]))
+                and source.architype
+                and target.architype
+            ):
+                if (
+                    dir in [EdgeDir.OUT, EdgeDir.ANY]
+                    and node == source
+                    and (not target_obj or target.architype in target_obj)
+                    and JacAV.check_read_access(target)
+                ):
+                    ret_edges.append(anchor.architype)
+                if (
+                    dir in [EdgeDir.IN, EdgeDir.ANY]
+                    and node == target
+                    and (not target_obj or source.architype in target_obj)
+                    and JacAV.check_read_access(source)
+                ):
+                    ret_edges.append(anchor.architype)
+        return ret_edges
+
+    @staticmethod
+    @hookimpl
+    def edges_to_nodes(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[NodeArchitype]:
+        """Get set of nodes connected to this node."""
+        ret_edges: list[NodeArchitype] = []
+        for anchor in node.edges:
+            if (
+                (source := anchor.source)
+                and (target := anchor.target)
+                and (not filter_func or filter_func([anchor.architype]))
+                and source.architype
+                and target.architype
+            ):
+                if (
+                    dir in [EdgeDir.OUT, EdgeDir.ANY]
+                    and node == source
+                    and (not target_obj or target.architype in target_obj)
+                    and JacAV.check_read_access(target)
+                ):
+                    ret_edges.append(target.architype)
+                if (
+                    dir in [EdgeDir.IN, EdgeDir.ANY]
+                    and node == target
+                    and (not target_obj or source.architype in target_obj)
+                    and JacAV.check_read_access(source)
+                ):
+                    ret_edges.append(source.architype)
+        return ret_edges

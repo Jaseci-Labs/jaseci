@@ -4,22 +4,28 @@ from __future__ import annotations
 
 import ast as ast3
 import types
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeAlias, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
-from jaclang.runtimelib.constructs import (
+from jaclang.plugin.spec import (
     AccessLevel,
     Anchor,
     Architype,
+    DSFunc,
     EdgeArchitype,
+    EdgeDir,
+    ExecutionContext,
+    JacBuiltin,
+    JacCmdSpec,
+    JacFeatureSpec,
     NodeAnchor,
     NodeArchitype,
+    P,
+    PyastGenPass,
     Root,
+    T,
     WalkerArchitype,
+    ast,
 )
-from jaclang.runtimelib.context import ExecutionContext
 
 import pluggy
 
@@ -32,16 +38,10 @@ pm.add_hookspecs(JacBuiltin)
 class JacFeature:
     """Jac Feature."""
 
-    from jaclang.compiler.constant import EdgeDir as EdgeDirType
-    from jaclang.runtimelib.constructs import DSFunc as DSFuncType
-
-    EdgeDir: TypeAlias = EdgeDirType
-    DSFunc: TypeAlias = DSFuncType
-    RootType: TypeAlias = Root
-    Obj: TypeAlias = Architype
-    Node: TypeAlias = NodeArchitype
-    Edge: TypeAlias = EdgeArchitype
-    Walker: TypeAlias = WalkerArchitype
+    @staticmethod
+    def setup() -> None:
+        """Set Class References."""
+        pm.hook.setup()
 
     @staticmethod
     def get_context() -> ExecutionContext:
@@ -397,3 +397,31 @@ class JacAccessValidation:
     def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
         return pm.hook.check_access_level(to=to)
+
+
+class JacNode:
+    """Jac Node Operations."""
+
+    @staticmethod
+    def get_edges(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[EdgeArchitype]:
+        """Get edges connected to this node."""
+        return pm.hook.get_edges(
+            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj
+        )
+
+    @staticmethod
+    def edges_to_nodes(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[NodeArchitype]:
+        """Get set of nodes connected to this node."""
+        return pm.hook.edges_to_nodes(
+            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj
+        )

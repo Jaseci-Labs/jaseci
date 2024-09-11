@@ -11,31 +11,26 @@ from typing import (
     Optional,
     ParamSpec,
     Sequence,
-    TYPE_CHECKING,
     Type,
     TypeVar,
     Union,
 )
 
-import jaclang.compiler.absyntree as ast
+from jaclang.compiler import absyntree as ast
+from jaclang.compiler.constant import EdgeDir
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-
-if TYPE_CHECKING:
-    from jaclang.plugin.default import (
-        Architype,
-        EdgeDir,
-        WalkerArchitype,
-        Root,
-        DSFunc,
-    )
-    from jaclang.runtimelib.constructs import (
-        AccessLevel,
-        Anchor,
-        EdgeArchitype,
-        NodeAnchor,
-        NodeArchitype,
-    )
-    from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.constructs import (
+    AccessLevel,
+    Anchor,
+    Architype,
+    DSFunc,
+    EdgeArchitype,
+    NodeAnchor,
+    NodeArchitype,
+    Root,
+    WalkerArchitype,
+)
+from jaclang.runtimelib.context import ExecutionContext
 
 import pluggy
 
@@ -50,6 +45,12 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def setup() -> None:
+        """Set Class References."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         raise NotImplementedError
@@ -57,13 +58,13 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def get_object(id: str) -> Architype | None:
-        """Get object given id.."""
+        """Get object by id."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
     def object_ref(obj: Architype) -> str:
-        """Get object given id.."""
+        """Get object's id."""
         raise NotImplementedError
 
     @staticmethod
@@ -399,4 +400,30 @@ class JacAccessValidation:
     @hookspec
     def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
+        raise NotImplementedError
+
+
+class JacNode:
+    """Jac Node Operations."""
+
+    @staticmethod
+    @hookspec
+    def get_edges(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[EdgeArchitype]:
+        """Get edges connected to this node."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec
+    def edges_to_nodes(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[NodeArchitype]:
+        """Get set of nodes connected to this node."""
         raise NotImplementedError

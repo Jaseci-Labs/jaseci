@@ -10,7 +10,6 @@ from types import UnionType
 from typing import Any, Callable, ClassVar, Iterable, Optional, TypeVar
 from uuid import UUID, uuid4
 
-from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.utils import collect_node_connections
 
 logger = getLogger(__name__)
@@ -303,76 +302,6 @@ class NodeAnchor(Anchor):
 
     architype: NodeArchitype
     edges: list[EdgeAnchor]
-
-    def get_edges(
-        self,
-        dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
-    ) -> list[EdgeArchitype]:
-        """Get edges connected to this node."""
-        from jaclang.plugin.feature import JacFeature as Jac
-
-        root = Jac.get_root().__jac__
-        ret_edges: list[EdgeArchitype] = []
-        for anchor in self.edges:
-            if (
-                (source := anchor.source)
-                and (target := anchor.target)
-                and (not filter_func or filter_func([anchor.architype]))
-                and source.architype
-                and target.architype
-            ):
-                if (
-                    dir in [EdgeDir.OUT, EdgeDir.ANY]
-                    and self == source
-                    and (not target_obj or target.architype in target_obj)
-                    and root.has_read_access(target)
-                ):
-                    ret_edges.append(anchor.architype)
-                if (
-                    dir in [EdgeDir.IN, EdgeDir.ANY]
-                    and self == target
-                    and (not target_obj or source.architype in target_obj)
-                    and root.has_read_access(source)
-                ):
-                    ret_edges.append(anchor.architype)
-        return ret_edges
-
-    def edges_to_nodes(
-        self,
-        dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
-    ) -> list[NodeArchitype]:
-        """Get set of nodes connected to this node."""
-        from jaclang.plugin.feature import JacFeature as Jac
-
-        root = Jac.get_root().__jac__
-        ret_edges: list[NodeArchitype] = []
-        for anchor in self.edges:
-            if (
-                (source := anchor.source)
-                and (target := anchor.target)
-                and (not filter_func or filter_func([anchor.architype]))
-                and source.architype
-                and target.architype
-            ):
-                if (
-                    dir in [EdgeDir.OUT, EdgeDir.ANY]
-                    and self == source
-                    and (not target_obj or target.architype in target_obj)
-                    and root.has_read_access(target)
-                ):
-                    ret_edges.append(target.architype)
-                if (
-                    dir in [EdgeDir.IN, EdgeDir.ANY]
-                    and self == target
-                    and (not target_obj or source.architype in target_obj)
-                    and root.has_read_access(source)
-                ):
-                    ret_edges.append(source.architype)
-        return ret_edges
 
     def remove_edge(self, edge: EdgeAnchor) -> None:
         """Remove reference without checking sync status."""
