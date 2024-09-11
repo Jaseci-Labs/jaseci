@@ -9,10 +9,10 @@ Jac builds upon Python much like Typescript or Elm builds upon Javascript. Howev
 
 ## Where Are We today
 
-Jac is supported and maintained by a very passionate group that spans the global and researchers at University of Michigan. 
+Jac is supported and maintained by a very passionate group that spans the global and researchers at University of Michigan.
 
 We're very open and welcoming of anyone who might be open to catching the Jac bug. If you're interested in being part of this project and learn more, please feel free to reach out. We'd love to hear from you. We have quite a journey ahead of us, but with dedication and collaboration, we're confident we can make Jac a beloved part of every coder's toolkit.
 
 ## About Jac's Creator
 
-Jac was originally created by Jason Mars, the creator and BDFL (for now at least) of Jac and it's data spatial programming model. Since it's creation many brilliant minds have contributed code and ideas to Jac. 
+Jac was originally created by Jason Mars, the creator and BDFL (for now at least) of Jac and it's data spatial programming model. Since it's creation many brilliant minds have contributed code and ideas to Jac.
