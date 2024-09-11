@@ -8,11 +8,6 @@ nav:
       - "start/installation.md"
       - "start/jac_in_a_flash.md"
   - Learn:
-      - Tutorial:
-          - "learn/tutorial/readme.md"
-          - "learn/tutorial/1_setting-up-jac-cloud.md"
-          - "learn/tutorial/2_building-a-rag-chatbot.md"
-          - "learn/tutorial/3_rag-dialogue-routing-chatbot.md"
       - For coders:
           - "learn/guide.md"
           - "learn/jac_ref.md"
@@ -32,6 +27,11 @@ nav:
   # - ~/roadmap$: 'roadmap.md'
   - Github: https://github.com/Jaseci-Labs/jaclang
 
+  - EECS449:
+      - "learn/tutorial/readme.md"
+      - "learn/tutorial/1_setting-up-jac-cloud.md"
+      - "learn/tutorial/2_building-a-rag-chatbot.md"
+      - "learn/tutorial/3_rag-dialogue-routing-chatbot.md"
 theme:
   logo: "assets/logo.png"
   name: "material"
