@@ -10,6 +10,8 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.constructs import (
+    AccessLevel,
+    Anchor,
     Architype,
     EdgeArchitype,
     NodeAnchor,
@@ -371,3 +373,27 @@ class JacCmd:
     def create_cmd() -> None:
         """Create Jac CLI cmds."""
         return pm.hook.create_cmd()
+
+
+class JacAccessValidation:
+    """Jac Access Validation Specs."""
+
+    @staticmethod
+    def check_read_access(to: Anchor) -> bool:
+        """Read Access Validation."""
+        return pm.hook.check_read_access(to=to)
+
+    @staticmethod
+    def check_connect_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        return pm.hook.check_connect_access(to=to)
+
+    @staticmethod
+    def check_write_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        return pm.hook.check_write_access(to=to)
+
+    @staticmethod
+    def check_access_level(to: Anchor) -> AccessLevel:
+        """Access validation."""
+        return pm.hook.check_access_level(to=to)

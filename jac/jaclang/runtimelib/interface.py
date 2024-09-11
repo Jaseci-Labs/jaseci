@@ -1,8 +1,10 @@
 """Jaclang Runtimelib interfaces."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Generic, Iterable, Type, TypeVar
+from dataclasses import dataclass, field
+from enum import IntEnum
+from typing import ClassVar, Generic, Iterable, Type, TypeVar
+
 
 _ID = TypeVar("_ID")
 _ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
@@ -25,12 +27,53 @@ class JID(Generic[_ID, _ANCHOR], ABC):
         """Get anchor by id and type."""
 
 
+class AccessLevel(IntEnum):
+    """Access level enum."""
+
+    NO_ACCESS = -1
+    READ = 0
+    CONNECT = 1
+    WRITE = 2
+
+    @staticmethod
+    def cast(val: int | str | "AccessLevel") -> "AccessLevel":
+        """Cast access level."""
+        match val:
+            case int():
+                return AccessLevel(val)
+            case str():
+                return AccessLevel[val]
+            case _:
+                return val
+
+
+@dataclass
+class Access:
+    """Access Structure."""
+
+    anchors: dict[str, AccessLevel] = field(default_factory=dict)
+
+    def check(self, anchor: str) -> AccessLevel:
+        """Validate access."""
+        return self.anchors.get(anchor, AccessLevel.NO_ACCESS)
+
+
+@dataclass
+class Permission:
+    """Anchor Access Handler."""
+
+    all: AccessLevel = AccessLevel.NO_ACCESS
+    roots: Access = field(default_factory=Access)
+
+
 @dataclass(kw_only=True)
 class Anchor(Generic[_SERIALIZE], ABC):
     """Anchor Interface."""
 
     jid: JID
     architype: "Architype"
+    root: JID | None
+    access: Permission
 
     @abstractmethod
     def __serialize__(self) -> _SERIALIZE:
@@ -69,7 +112,7 @@ class WalkerAnchor(Anchor[_SERIALIZE]):
 class Architype(Generic[_SERIALIZE], ABC):
     """Architype Interface."""
 
-    __jac__: Anchor
+    __jac__: ClassVar[Anchor]
 
     @abstractmethod
     def __serialize__(self) -> _SERIALIZE:
@@ -84,19 +127,19 @@ class Architype(Generic[_SERIALIZE], ABC):
 class NodeArchitype(Architype[_SERIALIZE]):
     """NodeArchitype Interface."""
 
-    __jac__: NodeAnchor
+    __jac__: ClassVar[NodeAnchor]
 
 
 class EdgeArchitype(Architype[_SERIALIZE]):
     """EdgeArchitype Interface."""
 
-    __jac__: EdgeAnchor
+    __jac__: ClassVar[EdgeAnchor]
 
 
 class WalkerArchitype(Architype[_SERIALIZE]):
     """Walker Architype Interface."""
 
-    __jac__: WalkerAnchor
+    __jac__: ClassVar[WalkerAnchor]
 
 
 @dataclass(kw_only=True)

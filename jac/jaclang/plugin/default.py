@@ -11,6 +11,7 @@ import types
 from collections import OrderedDict
 from dataclasses import field
 from functools import wraps
+from logging import getLogger
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
 from uuid import UUID
 
@@ -18,7 +19,11 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
+from jaclang.plugin.feature import JacAccessValidation as JacAV, JacFeature as Jac
+from jaclang.plugin.spec import P, T
 from jaclang.runtimelib.constructs import (
+    AccessLevel,
+    Anchor,
     Architype,
     DSFunc,
     EdgeAnchor,
@@ -35,13 +40,12 @@ from jaclang.runtimelib.constructs import (
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.runtimelib.utils import traverse_graph
-from jaclang.plugin.feature import JacFeature as Jac  # noqa: I100
-from jaclang.plugin.spec import P, T
 
 
 import pluggy
 
 hookimpl = pluggy.HookimplMarker("jac")
+logger = getLogger(__name__)
 
 __all__ = [
     "EdgeAnchor",
@@ -941,3 +945,77 @@ class JacCmdDefaults:
     def create_cmd() -> None:
         """Create Jac CLI cmds."""
         pass
+
+
+class JacAccessValidation:
+
+    @staticmethod
+    @hookimpl
+    def check_read_access(to: Anchor) -> bool:
+        """Read Access Validation."""
+        if not (access_level := JacAV.check_access_level(to) > AccessLevel.NO_ACCESS):
+            logger.info(
+                f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
+            )
+        return access_level
+
+    @staticmethod
+    @hookimpl
+    def check_connect_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        if not (access_level := JacAV.check_access_level(to) > AccessLevel.READ):
+            logger.info(
+                f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
+            )
+        return access_level
+
+    @staticmethod
+    @hookimpl
+    def check_write_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        if not (access_level := JacAV.check_access_level(to) > AccessLevel.CONNECT):
+            logger.info(
+                f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
+            )
+        return access_level
+
+    @staticmethod
+    @hookimpl
+    def check_access_level(to: Anchor) -> AccessLevel:
+        """Access validation."""
+        if not to.persistent:
+            return AccessLevel.WRITE
+
+        jctx = Jac.get_context()
+
+        jroot = jctx.root
+
+        # if current root is system_root
+        # if current root id is equal to target anchor's root id
+        # if current root is the target anchor
+        if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
+            return AccessLevel.WRITE
+
+        access_level = AccessLevel.NO_ACCESS
+
+        # if target anchor have set access.all
+        if (to_access := to.access).all > AccessLevel.NO_ACCESS:
+            access_level = to_access.all
+
+        # if target anchor's root have set allowed roots
+        # if current root is allowed to the whole graph of target anchor's root
+        if to.root and isinstance(to_root := jctx.mem.find_one(to.root), Anchor):
+            if to_root.access.all > access_level:
+                access_level = to_root.access.all
+
+            level = to_root.access.roots.check(str(jroot.id))
+            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+                access_level = level
+
+        # if target anchor have set allowed roots
+        # if current root is allowed to target anchor
+        level = to_access.roots.check(str(jroot.id))
+        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            access_level = level
+
+        return access_level

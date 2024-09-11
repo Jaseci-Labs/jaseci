@@ -28,7 +28,13 @@ if TYPE_CHECKING:
         Root,
         DSFunc,
     )
-    from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
+    from jaclang.runtimelib.constructs import (
+        AccessLevel,
+        Anchor,
+        EdgeArchitype,
+        NodeAnchor,
+        NodeArchitype,
+    )
     from jaclang.runtimelib.context import ExecutionContext
 
 import pluggy
@@ -365,4 +371,32 @@ class JacCmdSpec:
     @hookspec
     def create_cmd() -> None:
         """Create Jac CLI cmds."""
+        raise NotImplementedError
+
+
+class JacAccessValidation:
+    """Jac Access Validation Specs."""
+
+    @staticmethod
+    @hookspec
+    def check_read_access(to: Anchor) -> bool:
+        """Read Access Validation."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec
+    def check_connect_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec
+    def check_write_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec
+    def check_access_level(to: Anchor) -> AccessLevel:
+        """Access validation."""
         raise NotImplementedError
