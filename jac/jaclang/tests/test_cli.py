@@ -210,7 +210,11 @@ class JacCliTests(TestCase):
         )
         self.assertRegex(
             stdout_value,
-            r"11\:5 \- 11\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
         )
 
     def test_ast_dotgen(self) -> None:

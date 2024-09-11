@@ -216,7 +216,6 @@ class FuseTypeInfoPass(Pass):
                 )
 
     def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
-        print(node.loc)
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
         builtins_sym_tab = self.ir.sym_tab.find_scope("builtins")
@@ -571,6 +570,10 @@ class FuseTypeInfoPass(Pass):
                 type_symtab: Optional[SymbolTable] = self.ir.sym_tab
                 assert isinstance(self.ir, ast.Module)
                 assert isinstance(type_symtab, SymbolTable)
+
+                if re.match(r"builtins.(list|dict|tuple)", node_type):
+                    node_type = re.sub(r"\[.*\]", "", node_type)
+
                 for j in node_type.split("."):
                     if j == self.ir.name:
                         continue
