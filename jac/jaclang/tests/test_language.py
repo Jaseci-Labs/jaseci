@@ -677,6 +677,15 @@ class JacLanguageTests(TestCase):
         self.assertIn("1", stdout_value[0])
         self.assertIn("[2, 3, 4]", stdout_value[1])
 
+    def test_trailing_comma(self) -> None:
+        """Test trailing comma."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("trailing_comma", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Code compiled and ran successfully!", stdout_value)
+
     def test_try_finally(self) -> None:
         """Test try finally."""
         captured_output = io.StringIO()

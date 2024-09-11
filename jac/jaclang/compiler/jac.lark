@@ -25,7 +25,7 @@ from_path: (DOT | ELLIPSIS)* import_path
          | (DOT | ELLIPSIS)+
 
 import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
-import_items: (import_item COMMA)* import_item
+import_items: (import_item COMMA)* import_item COMMA?
 import_item: named_ref (KW_AS NAME)?
 sub_name: COLON NAME
 include_stmt: KW_INCLUDE sub_name? import_path SEMI
@@ -63,7 +63,7 @@ enum: decorators? enum_decl
 
 enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
-enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
+enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
 
 enum_stmt: NAME (COLON STRING)? EQ expression
          | NAME (COLON STRING)?
@@ -83,7 +83,7 @@ abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (
 genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl) KW_BY atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
-func_decl_params: (param_var COMMA)* param_var
+func_decl_params: (param_var COMMA)* param_var COMMA?
 param_var: (STAR_POW | STAR_MUL)? NAME (COLON STRING)? type_tag (EQ expression)?
 
 // Global variables
@@ -412,10 +412,10 @@ set_compr: LBRACE expression inner_compr+ RBRACE
 dict_compr: LBRACE kv_pair inner_compr+ RBRACE
 inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN pipe_call (KW_IF walrus_assign)*
 
-dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
-list_val: LSQUARE expr_list? RSQUARE
+dict_val: LBRACE ((kv_pair COMMA)* kv_pair COMMA?)? RBRACE
+list_val: LSQUARE (expr_list COMMA?)? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
-set_val: LBRACE expr_list RBRACE
+set_val: LBRACE expr_list COMMA? RBRACE
 
 kv_pair: expression COLON expression | STAR_POW expression
 expr_list: (expr_list COMMA)? expression
