@@ -2558,7 +2558,6 @@ class GlobalStmt(CodeBlockStmt):
         """Initialize global statement node."""
         self.target = target
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize global statement node."""
@@ -2612,7 +2611,6 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         self.aug_op = aug_op
         self.is_enum_stmt = is_enum_stmt
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
         AstSemStrNode.__init__(self, semstr=semstr)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
 
@@ -3047,7 +3045,6 @@ class KVPair(AstNode):
         self.key = key
         self.value = value
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -3079,7 +3076,6 @@ class KWPair(AstNode):
         self.key = key
         self.value = value
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -3112,7 +3108,6 @@ class InnerCompr(AstAsyncNode):
         self.collection = collection
         self.conditional = conditional
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
         AstAsyncNode.__init__(self, is_async=is_async)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3556,7 +3551,6 @@ class DisconnectOp(WalkerStmtOnlyNode):
         """Initialize disconnect op reference expression node."""
         self.edge_spec = edge_spec
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
         WalkerStmtOnlyNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3584,7 +3578,6 @@ class ConnectOp(AstNode):
         self.conn_assign = conn_assign
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""

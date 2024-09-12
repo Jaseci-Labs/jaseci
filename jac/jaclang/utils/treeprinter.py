@@ -143,6 +143,8 @@ def print_ast_tree(
                 )
                 out += f" SymbolPath: {symbol}"
             return out
+        elif isinstance(node, ast.Expr):
+            return f"{node.__class__.__name__} - Type: {node.expr_type}"
         else:
             return f"{node.__class__.__name__}, {access}"
 
