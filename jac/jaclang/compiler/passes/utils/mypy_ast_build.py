@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import os
+from types import MethodType
 from typing import Callable, TYPE_CHECKING, TextIO
 
 from jaclang.compiler.absyntree import AstNode
@@ -11,11 +12,13 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import (
     FuseTypeInfoPass,
 )
+from jaclang.utils.helpers import pascal_to_snake
 
 import mypy.build as myb
 import mypy.checkexpr as mycke
 import mypy.errors as mye
 import mypy.fastparse as myfp
+import mypy.nodes as mypy_nodes
 from mypy.build import BuildSource
 from mypy.build import BuildSourceSet
 from mypy.build import FileSystemCache
@@ -34,6 +37,55 @@ from mypy.semanal_main import semantic_analysis_for_scc
 
 if TYPE_CHECKING:
     from mypy.report import Reports  # Avoid unconditional slow import
+
+
+# All the expression nodes of mypy.
+EXPRESSION_NODES = (
+    mypy_nodes.AssertTypeExpr,
+    mypy_nodes.AssignmentExpr,
+    mypy_nodes.AwaitExpr,
+    mypy_nodes.BytesExpr,
+    mypy_nodes.CallExpr,
+    mypy_nodes.CastExpr,
+    mypy_nodes.ComparisonExpr,
+    mypy_nodes.ComplexExpr,
+    mypy_nodes.ConditionalExpr,
+    mypy_nodes.DictionaryComprehension,
+    mypy_nodes.DictExpr,
+    mypy_nodes.EllipsisExpr,
+    mypy_nodes.EnumCallExpr,
+    mypy_nodes.Expression,
+    mypy_nodes.FloatExpr,
+    mypy_nodes.GeneratorExpr,
+    mypy_nodes.IndexExpr,
+    mypy_nodes.IntExpr,
+    mypy_nodes.LambdaExpr,
+    mypy_nodes.ListComprehension,
+    mypy_nodes.ListExpr,
+    mypy_nodes.MemberExpr,
+    mypy_nodes.NamedTupleExpr,
+    mypy_nodes.NameExpr,
+    mypy_nodes.NewTypeExpr,
+    mypy_nodes.OpExpr,
+    mypy_nodes.ParamSpecExpr,
+    mypy_nodes.PromoteExpr,
+    mypy_nodes.RefExpr,
+    mypy_nodes.RevealExpr,
+    mypy_nodes.SetComprehension,
+    mypy_nodes.SetExpr,
+    mypy_nodes.SliceExpr,
+    mypy_nodes.StarExpr,
+    mypy_nodes.StrExpr,
+    mypy_nodes.SuperExpr,
+    mypy_nodes.TupleExpr,
+    mypy_nodes.TypeAliasExpr,
+    mypy_nodes.TypedDictExpr,
+    mypy_nodes.TypeVarExpr,
+    mypy_nodes.TypeVarTupleExpr,
+    mypy_nodes.UnaryExpr,
+    mypy_nodes.YieldExpr,
+    mypy_nodes.YieldFromExpr,
+)
 
 
 mypy_to_jac_node_map: dict[
@@ -131,63 +183,45 @@ class ExpressionChecker(mycke.ExpressionChecker):
         """Override to mypy expression checker for direct AST pass through."""
         super().__init__(tc, msg, plugin, per_line_checking_time_ns)
 
-    def visit_list_expr(self, e: mycke.ListExpr) -> mycke.Type:
-        """Type check a list expression [...]."""
-        out = super().visit_list_expr(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
+        # For every expression there, create attach a method on this instance (self) named "enter_expr()"
+        for expr_node in EXPRESSION_NODES:
+            method_name = "visit_" + pascal_to_snake(expr_node.__name__)
 
-    def visit_set_expr(self, e: mycke.SetExpr) -> mycke.Type:
-        """Type check a set expression {...}."""
-        out = super().visit_set_expr(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
+            # We call the super() version of the method so ensure the parent class has the method or else continue.
+            if not hasattr(mycke.ExpressionChecker, method_name):
+                continue
 
-    def visit_tuple_expr(self, e: myfp.TupleExpr) -> myb.Type:
-        """Type check a tuple expression (...)."""
-        out = super().visit_tuple_expr(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
+            # If the method already overriden then don't override it again here. Continue. Note that the method exists
+            # on the parent class and if it's also exists on this class and it's a different object that means it's
+            # overrident method.
+            if getattr(mycke.ExpressionChecker, method_name) != getattr(
+                ExpressionChecker, method_name
+            ):
+                continue
 
-    def visit_dict_expr(self, e: myfp.DictExpr) -> myb.Type:
-        """Type check a dictionary expression {...}."""
-        out = super().visit_dict_expr(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
+            # Since the "closure" function bellow captures the method name inside it, we cannot use it directly as the
+            # "method_name" variable is used inside a loop and by the time the closure close the "method_name" value,
+            # it'll be changed by the loop, so we need another method ("make_closure") to persist the value.
+            def make_closure(method_name: str):  # noqa: ANN201
+                def closure(
+                    self: ExpressionChecker,
+                    e: mycke.Expression,
+                    *args,  # noqa: ANN002
+                    **kwargs,  # noqa: ANN003
+                ) -> mycke.Type:
+                    # Ignore B023 here since we bind loop variable properly but flake8 raise a false alarm
+                    # (in some version of it), a bug in flake8 (https://github.com/PyCQA/flake8-bugbear/issues/269).
+                    out = getattr(mycke.ExpressionChecker, method_name)(  # noqa: B023
+                        self, e, *args, **kwargs
+                    )
+                    FuseTypeInfoPass.node_type_hash[e] = out
+                    return out
 
-    def visit_list_comprehension(self, e: myfp.ListComprehension) -> myb.Type:
-        """Type check a list comprehension."""
-        out = super().visit_list_comprehension(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
+                return closure
 
-    def visit_set_comprehension(self, e: myfp.SetComprehension) -> myb.Type:
-        """Type check a set comprehension."""
-        out = super().visit_set_comprehension(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
-
-    def visit_generator_expr(self, e: myfp.GeneratorExpr) -> myb.Type:
-        """Type check a generator expression."""
-        out = super().visit_generator_expr(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
-
-    def visit_dictionary_comprehension(
-        self, e: myfp.DictionaryComprehension
-    ) -> myb.Type:
-        """Type check a dict comprehension."""
-        out = super().visit_dictionary_comprehension(e)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
-
-    def visit_member_expr(
-        self, e: myfp.MemberExpr, is_lvalue: bool = False
-    ) -> myb.Type:
-        """Type check a member expr."""
-        out = super().visit_member_expr(e, is_lvalue)
-        FuseTypeInfoPass.node_type_hash[e] = out
-        return out
+            # Attach the new "visit_expr()" method to this instance.
+            method = make_closure(method_name)
+            setattr(self, method_name, MethodType(method, self))
 
 
 class State(myb.State):
