@@ -1,5 +1,5 @@
 # Introduction
-In this tutorial, you are going to learn how to build a state-of-the-art conversational AI system with Jac Cloud and the Jac programming language and other popular open source python libraries. You will learn the basics of jaclang, how to use large language models, and everything in between, in order to create an end-to-end fully-functional conversational AI system. This tutorial requires Python 3.12 or higher. 
+In this tutorial, you are going to learn how to build a state-of-the-art conversational AI system with Jac Cloud and the Jac programming language and other popular open source python libraries. You will learn the basics of jaclang, how to use large language models, and everything in between, in order to create an end-to-end fully-functional conversational AI system. This tutorial requires Python 3.12 or higher.
 
 ### Open Source Tools and Libraries Used (all pypi packages)
 | **Project**            | **Description**                                                                                                                                                                                                                                        |
