@@ -2,7 +2,7 @@
 Jac Cloud is a jaclang plugin that bootstraps your jac application into a running web server. It allows you to serve your jac code as a REST API and interact with it from any client that can make HTTP requests. To set up Jac Cloud, you need to install the `jaclang` and `jac-cloud` python package using pip:
 
 ```bash
-pip install jaclang==0.7.18 jac-cloud==0.1.1
+pip install jaclang==0.7.19 jac-cloud==0.1.1
 ```
 
 ## Setting Up Your Database
