@@ -1,4 +1,4 @@
-# Building a RAG Chatbot with Jac Cloud and Streamlit
+# Building a RAG Chatbot with Jac Cloud and Streamlit (Part 2/3)
 Now that we have a jac application served up, let's build a simple chatbot using Retrieval Augmented Generation (RAG) with Jac Cloud and Streamlit as our frontend interface.
 
 ### Preparation / Installation
