@@ -3,7 +3,7 @@
 from contextvars import ContextVar
 from dataclasses import is_dataclass
 from os import getenv
-from typing import Any, cast
+from typing import Any, NotRequired, TypedDict, cast
 
 from bson import ObjectId
 
@@ -31,6 +31,14 @@ SUPER_ROOT_ID = ObjectId("000000000000000000000000")
 PUBLIC_ROOT_ID = ObjectId("000000000000000000000001")
 SUPER_ROOT = NodeAnchor.ref(f"n::{SUPER_ROOT_ID}")
 PUBLIC_ROOT = NodeAnchor.ref(f"n::{PUBLIC_ROOT_ID}")
+
+
+class ContextResponse(TypedDict):
+    """Default Context Response."""
+
+    status: int
+    reports: NotRequired[list[Any]]
+    returns: NotRequired[list[Any]]
 
 
 class JaseciContext(ExecutionContext):
@@ -122,9 +130,9 @@ class JaseciContext(ExecutionContext):
         """Get current root."""
         return cast(Root, JaseciContext.get().root.architype)
 
-    def response(self, returns: list[Any], status: int = 200) -> dict[str, Any]:
+    def response(self, returns: list[Any], status: int = 200) -> ContextResponse:
         """Return serialized version of reports."""
-        resp = {"status": status, "returns": returns}
+        resp: ContextResponse = {"status": status, "returns": returns}
 
         if self.reports:
             for key, val in enumerate(self.reports):

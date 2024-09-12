@@ -44,7 +44,7 @@ from ..core.architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import ExecutionContext, JaseciContext
+from ..core.context import ContextResponse, ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
 from ..jaseci.security import authenticator
 
@@ -182,7 +182,10 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
             walker_method = getattr(walker_router, method)
 
-            settings: dict[str, list[Any]] = {"tags": ["walker"]}
+            settings: dict[str, Any] = {
+                "tags": ["walker"],
+                "response_model": ContextResponse,
+            }
             if auth:
                 settings["dependencies"] = cast(list, authenticator)
 
