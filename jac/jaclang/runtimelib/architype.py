@@ -7,7 +7,7 @@ from enum import IntEnum
 from logging import getLogger
 from pickle import dumps
 from types import UnionType
-from typing import Any, Callable, ClassVar, Iterable, Optional, TypeVar
+from typing import Any, Callable, ClassVar, Optional, TypeVar
 from uuid import UUID, uuid4
 
 from jaclang.runtimelib.utils import collect_node_connections
@@ -303,13 +303,6 @@ class NodeAnchor(Anchor):
     architype: NodeArchitype
     edges: list[EdgeAnchor]
 
-    def remove_edge(self, edge: EdgeAnchor) -> None:
-        """Remove reference without checking sync status."""
-        for idx, ed in enumerate(self.edges):
-            if ed.id == edge.id:
-                self.edges.pop(idx)
-                break
-
     def gen_dot(self, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         visited_nodes: set[NodeAnchor] = set()
@@ -332,10 +325,6 @@ class NodeAnchor(Anchor):
             with open(dot_file, "w") as f:
                 f.write(dot_content + "}")
         return dot_content + "}"
-
-    def spawn_call(self, walk: WalkerAnchor) -> WalkerArchitype:
-        """Invoke data spatial call."""
-        return walk.spawn_call(self)
 
     def destroy(self) -> None:
         """Destroy Anchor."""
@@ -368,20 +357,6 @@ class EdgeAnchor(Anchor):
     target: NodeAnchor
     is_undirected: bool
 
-    def __post_init__(self) -> None:
-        """Populate edge to source and target."""
-        self.source.edges.append(self)
-        self.target.edges.append(self)
-
-    def detach(self) -> None:
-        """Detach edge from nodes."""
-        self.source.remove_edge(self)
-        self.target.remove_edge(self)
-
-    def spawn_call(self, walk: WalkerAnchor) -> WalkerArchitype:
-        """Invoke data spatial call."""
-        return walk.spawn_call(self.target)
-
     def destroy(self) -> None:
         """Destroy Anchor."""
         from jaclang.plugin.feature import JacFeature as Jac
@@ -389,7 +364,7 @@ class EdgeAnchor(Anchor):
         jctx = Jac.get_context()
 
         if jctx.root.has_write_access(self):
-            self.detach()
+            Jac.detach(self)
             jctx.mem.remove(self.id)
 
     def __getstate__(self) -> dict[str, object]:
@@ -417,81 +392,6 @@ class WalkerAnchor(Anchor):
     next: list[Anchor] = field(default_factory=list)
     ignores: list[Anchor] = field(default_factory=list)
     disengaged: bool = False
-
-    def visit_node(self, anchors: Iterable[NodeAnchor | EdgeAnchor]) -> bool:
-        """Walker visits node."""
-        before_len = len(self.next)
-        for anchor in anchors:
-            if anchor not in self.ignores:
-                if isinstance(anchor, NodeAnchor):
-                    self.next.append(anchor)
-                elif isinstance(anchor, EdgeAnchor):
-                    if target := anchor.target:
-                        self.next.append(target)
-                    else:
-                        raise ValueError("Edge has no target.")
-        return len(self.next) > before_len
-
-    def ignore_node(self, anchors: Iterable[NodeAnchor | EdgeAnchor]) -> bool:
-        """Walker ignores node."""
-        before_len = len(self.ignores)
-        for anchor in anchors:
-            if anchor not in self.ignores:
-                if isinstance(anchor, NodeAnchor):
-                    self.ignores.append(anchor)
-                elif isinstance(anchor, EdgeAnchor):
-                    if target := anchor.target:
-                        self.ignores.append(target)
-                    else:
-                        raise ValueError("Edge has no target.")
-        return len(self.ignores) > before_len
-
-    def disengage_now(self) -> None:
-        """Disengage walker from traversal."""
-        self.disengaged = True
-
-    def spawn_call(self, node: Anchor) -> WalkerArchitype:
-        """Invoke data spatial call."""
-        if walker := self.architype:
-            self.path = []
-            self.next = [node]
-            while len(self.next):
-                if current_node := self.next.pop(0).architype:
-                    for i in current_node._jac_entry_funcs_:
-                        if not i.trigger or isinstance(walker, i.trigger):
-                            if i.func:
-                                i.func(current_node, walker)
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-                    for i in walker._jac_entry_funcs_:
-                        if not i.trigger or isinstance(current_node, i.trigger):
-                            if i.func:
-                                i.func(walker, current_node)
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-                    for i in walker._jac_exit_funcs_:
-                        if not i.trigger or isinstance(current_node, i.trigger):
-                            if i.func:
-                                i.func(walker, current_node)
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-                    for i in current_node._jac_exit_funcs_:
-                        if not i.trigger or isinstance(walker, i.trigger):
-                            if i.func:
-                                i.func(current_node, walker)
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-            self.ignores = []
-            return walker
-        raise Exception(f"Invalid Reference {self.id}")
 
 
 class Architype:

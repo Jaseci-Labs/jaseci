@@ -11,6 +11,7 @@ from jaclang.plugin.spec import (
     Anchor,
     Architype,
     DSFunc,
+    EdgeAnchor,
     EdgeArchitype,
     EdgeDir,
     ExecutionContext,
@@ -26,7 +27,115 @@ from jaclang.plugin.spec import (
 )
 
 
-class JacFeature:
+class JacAccessValidation:
+    """Jac Access Validation Specs."""
+
+    @staticmethod
+    def check_read_access(to: Anchor) -> bool:
+        """Read Access Validation."""
+        return hookmanager.hook.check_read_access(to=to)
+
+    @staticmethod
+    def check_connect_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        return hookmanager.hook.check_connect_access(to=to)
+
+    @staticmethod
+    def check_write_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        return hookmanager.hook.check_write_access(to=to)
+
+    @staticmethod
+    def check_access_level(to: Anchor) -> AccessLevel:
+        """Access validation."""
+        return hookmanager.hook.check_access_level(to=to)
+
+
+class JacNode:
+    """Jac Node Operations."""
+
+    @staticmethod
+    def get_edges(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[EdgeArchitype]:
+        """Get edges connected to this node."""
+        return hookmanager.hook.get_edges(
+            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj
+        )
+
+    @staticmethod
+    def edges_to_nodes(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[NodeArchitype]:
+        """Get set of nodes connected to this node."""
+        return hookmanager.hook.edges_to_nodes(
+            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj
+        )
+
+    @staticmethod
+    def remove_edge(node: NodeAnchor, edge: EdgeAnchor) -> None:
+        """Remove reference without checking sync status."""
+        return hookmanager.hook.remove_edge(node=node, edge=edge)
+
+
+class JacEdge:
+    """Jac Edge Operations."""
+
+    @staticmethod
+    def detach(edge: EdgeAnchor) -> None:
+        """Detach edge from nodes."""
+        return hookmanager.hook.detach(edge=edge)
+
+
+class JacWalker:
+    """Jac Edge Operations."""
+
+    @staticmethod
+    def visit_node(
+        walker: WalkerArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
+    ) -> bool:  # noqa: ANN401
+        """Jac's visit stmt feature."""
+        return hookmanager.hook.visit_node(walker=walker, expr=expr)
+
+    @staticmethod
+    def ignore(
+        walker: WalkerArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
+    ) -> bool:  # noqa: ANN401
+        """Jac's ignore stmt feature."""
+        return hookmanager.hook.ignore(walker=walker, expr=expr)
+
+    @staticmethod
+    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+        """Jac's spawn operator feature."""
+        return hookmanager.hook.spawn_call(op1=op1, op2=op2)
+
+    @staticmethod
+    def disengage(walker: WalkerArchitype) -> bool:
+        """Jac's disengage stmt feature."""
+        return hookmanager.hook.disengage(walker=walker)
+
+
+class JacFeature(JacAccessValidation, JacNode, JacEdge, JacWalker):
     """Jac Feature."""
 
     @staticmethod
@@ -156,47 +265,9 @@ class JacFeature:
         return hookmanager.hook.has_instance_default(gen_func=gen_func)
 
     @staticmethod
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
-        """Jac's spawn operator feature."""
-        return hookmanager.hook.spawn_call(op1=op1, op2=op2)
-
-    @staticmethod
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
         return hookmanager.hook.report(expr=expr)
-
-    @staticmethod
-    def ignore(
-        walker: WalkerArchitype,
-        expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
-        ),
-    ) -> bool:  # noqa: ANN401
-        """Jac's ignore stmt feature."""
-        return hookmanager.hook.ignore(walker=walker, expr=expr)
-
-    @staticmethod
-    def visit_node(
-        walker: WalkerArchitype,
-        expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
-        ),
-    ) -> bool:  # noqa: ANN401
-        """Jac's visit stmt feature."""
-        return hookmanager.hook.visit_node(walker=walker, expr=expr)
-
-    @staticmethod
-    def disengage(walker: WalkerArchitype) -> bool:  # noqa: ANN401
-        """Jac's disengage stmt feature."""
-        return hookmanager.hook.disengage(walker=walker)
 
     @staticmethod
     def edge_ref(
@@ -391,55 +462,3 @@ class JacCmd:
     def create_cmd() -> None:
         """Create Jac CLI cmds."""
         return hookmanager.hook.create_cmd()
-
-
-class JacAccessValidation:
-    """Jac Access Validation Specs."""
-
-    @staticmethod
-    def check_read_access(to: Anchor) -> bool:
-        """Read Access Validation."""
-        return hookmanager.hook.check_read_access(to=to)
-
-    @staticmethod
-    def check_connect_access(to: Anchor) -> bool:
-        """Write Access Validation."""
-        return hookmanager.hook.check_connect_access(to=to)
-
-    @staticmethod
-    def check_write_access(to: Anchor) -> bool:
-        """Write Access Validation."""
-        return hookmanager.hook.check_write_access(to=to)
-
-    @staticmethod
-    def check_access_level(to: Anchor) -> AccessLevel:
-        """Access validation."""
-        return hookmanager.hook.check_access_level(to=to)
-
-
-class JacNode:
-    """Jac Node Operations."""
-
-    @staticmethod
-    def get_edges(
-        node: NodeAnchor,
-        dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
-    ) -> list[EdgeArchitype]:
-        """Get edges connected to this node."""
-        return hookmanager.hook.get_edges(
-            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj
-        )
-
-    @staticmethod
-    def edges_to_nodes(
-        node: NodeAnchor,
-        dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
-    ) -> list[NodeArchitype]:
-        """Get set of nodes connected to this node."""
-        return hookmanager.hook.edges_to_nodes(
-            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj
-        )
