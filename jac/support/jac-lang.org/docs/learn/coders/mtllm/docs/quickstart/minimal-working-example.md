@@ -48,7 +48,7 @@ can translate(eng_sentence: str, target_lang: str) -> str by llm;
 with entry {
     print(translate("Hello World", "Language spoken in Somalia"));
 }
-```
+    ```
 
 Thats it! 🎊
 

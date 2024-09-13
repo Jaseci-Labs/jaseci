@@ -29,11 +29,11 @@ nav:
               - Tutorials: 
                   - "learn/coders/mtllm/docs/tutorials/rpg_game.md"
               - API Reference:
-                  - "learn/coders/mtllm/docs/api_ref/mtllm.md"
+                  - "learn/coders/mtllm/docs/api/api_ref/mtllm.md"
               - Tips and Tricks:
-                  - "learn/coders/mtllm/docs/create_own_lm.md"
-                  - "learn/coders/mtllm/docs/existing_application.md"
-                  - "learn/coders/mtllm/docs/when_to_use_semstrings.md"
+                  - "learn/coders/mtllm/docs/tips-n-tricks/create_own_lm.md"
+                  - "learn/coders/mtllm/docs/tips-n-tricks/existing_application.md"
+                  - "learn/coders/mtllm/docs/tips-n-tricks/when_to_use_semstrings.md"
 
           - "learn/tips_tricks.md"
           - "learn/jac_plugins.md"
