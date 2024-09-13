@@ -13,6 +13,28 @@ nav:
           - "learn/jac_ref.md"
           - "learn/impl_docs.md"
           - "learn/with_llm.md"
+          - MTLLM:
+              - Quick Start: 
+                  - "learn/coders/mtllm/docs/quickstart/installation.md"
+                  - "learn/coders/mtllm//docs/quickstart/minimal-working-example.md"
+              - Design and Implementation: 
+                  - "learn/coders/mtllm/docs/design_impl/inference_engine.md"
+                  - "learn/coders/mtllm/docs/design_impl/sem_registry.md"
+              - Building Blocks: 
+                  - "learn/coders/mtllm/docs/building_blocks/language_models.md"
+                  - "learn/coders/mtllm/docs/building_blocks/semstrings.md"
+                  - "learn/coders/mtllm/docs/building_blocks/functions_methods.md"
+                  - "learn/coders/mtllm/docs/building_blocks/object_init.md"
+                  - "learn/coders/mtllm/docs/building_blocks/Multimodality.md"
+              - Tutorials: 
+                  - "learn/coders/mtllm/docs/tutorials/rpg_game.md"
+              - API Reference:
+                  - "learn/coders/mtllm/docs/api_ref/mtllm.md"
+              - Tips and Tricks:
+                  - "learn/coders/mtllm/docs/create_own_lm.md"
+                  - "learn/coders/mtllm/docs/existing_application.md"
+                  - "learn/coders/mtllm/docs/when_to_use_semstrings.md"
+
           - "learn/tips_tricks.md"
           - "learn/jac_plugins.md"
       - For contributors:
