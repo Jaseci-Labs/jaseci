@@ -36,8 +36,6 @@ class FuseTypeInfoPass(Pass):
         if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
 
-        # TODO: Make (AstSymbolNode::name_spec.sym_typ and Expr::expr_type) the same
-        # TODO: Introduce AstTypedNode to be a common parent for Expr and AstSymbolNode
         if isinstance(node, ast.Expr):
             self.enter_expr(node)
 
@@ -274,7 +272,7 @@ class FuseTypeInfoPass(Pass):
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
             mytype: MyType = self.node_type_hash[mypy_node]
-            node.expr_type = self.__call_type_handler(mytype) or ""
+            node.sym_type = self.__call_type_handler(mytype) or ""
 
         # Set they symbol type for collection expression.
         #
@@ -476,7 +474,9 @@ class FuseTypeInfoPass(Pass):
 
     def get_type_from_instance(self, mypy_type: MypyTypes.Instance) -> Optional[str]:
         """Get type info from mypy type Instance."""
-        return str(mypy_type)
+        #  NOTE: Returning str(mypy_type) won't work since for literal values it would be
+        # like Literal['foo'] instead of builtins.str, so we need to get the type fullname.
+        return mypy_type.type.fullname
 
     def get_type_from_callable_type(
         self, mypy_type: MypyTypes.CallableType
@@ -574,7 +574,7 @@ class FuseTypeInfoPass(Pass):
             left = atom_trailer_unwind[i - 1]
             right = atom_trailer_unwind[i]
 
-            assert isinstance(left, ast.AstSymbolNode)
+            assert isinstance(left, (ast.Expr, ast.AstSymbolNode))
             assert isinstance(right, ast.AstSymbolNode)
 
             if isinstance(right, ast.IndexSlice):

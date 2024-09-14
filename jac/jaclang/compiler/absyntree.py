@@ -348,7 +348,28 @@ class Expr(AstNode):
 
     def __init__(self) -> None:
         """Initialize expression node."""
-        self.expr_type = ""
+        self._sym_type: str = "NoType"
+        self._type_sym_tab: Optional[SymbolTable] = None
+
+    @property
+    def sym_type(self) -> str:
+        """Get symbol type."""
+        return self._sym_type
+
+    @sym_type.setter
+    def sym_type(self, sym_type: str) -> None:
+        """Set symbol type."""
+        self._sym_type = sym_type
+
+    @property
+    def type_sym_tab(self) -> Optional[SymbolTable]:
+        """Get type symbol table."""
+        return self._type_sym_tab
+
+    @type_sym_tab.setter
+    def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
+        """Set type symbol table."""
+        self._type_sym_tab = type_sym_tab
 
 
 class AtomExpr(Expr, AstSymbolStubNode):
@@ -439,8 +460,6 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         self._sym_name: str = ""
         self._sym_category: SymbolType = SymbolType.UNKNOWN
         self._py_ctx_func: Type[ast3.AST] = ast3.Load
-        self._sym_type: str = "NoType"
-        self._type_sym_tab: Optional[SymbolTable] = None
         AtomExpr.__init__(self)
 
     @property
@@ -478,26 +497,6 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     def py_ctx_func(self, py_ctx_func: Type[ast3.AST]) -> None:
         """Set python context function."""
         self._py_ctx_func = py_ctx_func
-
-    @property
-    def sym_type(self) -> str:
-        """Get symbol type."""
-        return self._sym_type
-
-    @sym_type.setter
-    def sym_type(self, sym_type: str) -> None:
-        """Set symbol type."""
-        self._sym_type = sym_type
-
-    @property
-    def type_sym_tab(self) -> Optional[SymbolTable]:
-        """Get type symbol table."""
-        return self._type_sym_tab
-
-    @type_sym_tab.setter
-    def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
-        """Set type symbol table."""
-        self._type_sym_tab = type_sym_tab
 
     @property
     def sem_token(self) -> Optional[tuple[SemTokType, SemTokMod]]:
