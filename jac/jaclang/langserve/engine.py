@@ -247,10 +247,10 @@ class JacLangServer(LanguageServer):
                     for base_name in temp_tab.owner.base_classes.items:
                         if isinstance(base_name, ast.Name) and base_name.sym:
                             base.append(base_name.sym)
-                    for baseClassSymbol in base:
-                        if baseClassSymbol.fetch_sym_tab:
+                    for base_class_symbol in base:
+                        if base_class_symbol.fetch_sym_tab:
                             completion_items += collect_all_symbols_in_scope(
-                                baseClassSymbol.fetch_sym_tab,
+                                base_class_symbol.fetch_sym_tab,
                                 up_tree=False,
                             )
 
