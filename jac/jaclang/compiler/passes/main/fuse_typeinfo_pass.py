@@ -483,6 +483,21 @@ class FuseTypeInfoPass(Pass):
                 if self_obj.type_sym_tab and isinstance(right_obj, ast.AstSymbolNode):
                     self_obj.type_sym_tab.def_insert(right_obj)
 
+        # Support adding the correct type symbol table in case of ModuleType
+        # This will only work for target=Val & target1=target2=val and
+        #   target is a moduleType
+        # it won't work in case of
+        #   - target1, target2 = Val1, Val2  <-- tuples need more attention
+        #   - target = a.b.c                 <-- will be fixed after thakee's PR
+        #   - a.b.c = val                    <-- will be fixed after thakee's PR
+        for target in node.target.items:
+            if (
+                isinstance(target, ast.Name)
+                and target.sym_type == "types.ModuleType"
+                and isinstance(node.value, ast.Name)
+            ):
+                target.type_sym_tab = node.value.type_sym_tab
+
     def expand_atom_trailer(self, node_list: list[ast.AstNode]) -> list[ast.AstNode]:
         """Expand the atom trailer object in a list of AstNode."""
         out: list[ast.AstNode] = []
