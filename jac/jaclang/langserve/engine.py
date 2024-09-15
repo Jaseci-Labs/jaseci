@@ -25,7 +25,6 @@ from jaclang.langserve.utils import (
     get_location_range,
     get_symbols_for_outline,
     parse_symbol_path,
-    resolve_completion_symbol_table,
 )
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
@@ -188,14 +187,73 @@ class JacLangServer(LanguageServer):
             if not node_selected
             else node_selected.sym_tab
         )
-        current_tab = self.modules[file_path].ir._sym_tab
         current_symbol_table = mod_tab
 
         if completion_trigger == ".":
             if current_symbol_path:
-                completion_items = resolve_completion_symbol_table(
-                    mod_tab, current_symbol_path, current_tab
-                )
+                temp_tab = mod_tab
+                for symbol in current_symbol_path:
+                    if symbol == "self":
+                        is_ability_def = (
+                            temp_tab.owner
+                            if isinstance(temp_tab.owner, ast.AbilityDef)
+                            else temp_tab.owner.find_parent_of_type(ast.AbilityDef)
+                        )
+                        if not is_ability_def:
+                            archi_owner = mod_tab.owner.find_parent_of_type(
+                                ast.Architype
+                            )
+                            temp_tab = (
+                                archi_owner._sym_tab
+                                if archi_owner and archi_owner._sym_tab
+                                else mod_tab
+                            )
+                            continue
+                        else:
+                            archi_owner = (
+                                (
+                                    is_ability_def.decl_link.find_parent_of_type(
+                                        ast.Architype
+                                    )
+                                )
+                                if is_ability_def.decl_link
+                                else None
+                            )
+                            temp_tab = (
+                                archi_owner.sym_tab
+                                if archi_owner and archi_owner.sym_tab
+                                else temp_tab
+                            )
+                            continue
+                    symb = temp_tab.lookup(symbol)
+                    if symb:
+                        fetc_tab = symb.fetch_sym_tab
+                        if fetc_tab:
+                            temp_tab = fetc_tab
+                        else:
+                            temp_tab = (
+                                symb.defn[0].type_sym_tab
+                                if symb.defn[0].type_sym_tab
+                                else temp_tab
+                            )
+                    else:
+                        break
+                completion_items = collect_all_symbols_in_scope(temp_tab, up_tree=False)
+                if (
+                    isinstance(temp_tab.owner, ast.Architype)
+                    and temp_tab.owner.base_classes
+                ):
+                    base = []
+                    for base_name in temp_tab.owner.base_classes.items:
+                        if isinstance(base_name, ast.Name) and base_name.sym:
+                            base.append(base_name.sym)
+                    for base_class_symbol in base:
+                        if base_class_symbol.fetch_sym_tab:
+                            completion_items += collect_all_symbols_in_scope(
+                                base_class_symbol.fetch_sym_tab,
+                                up_tree=False,
+                            )
+
             else:
                 completion_items = []
         else:
