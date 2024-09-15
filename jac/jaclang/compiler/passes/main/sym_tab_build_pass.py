@@ -51,21 +51,6 @@ class SymTabBuildPass(Pass):
         """
         self.push_scope(node.name, node)
         self.sync_node_to_scope(node)
-        # for obj in dir(builtins):
-        #     builtin = ast.Name(
-        #         file_path=node.loc.mod_path,
-        #         name=Tok.NAME,
-        #         value=str(obj),
-        #         line=0,
-        #         end_line=0,
-        #         col_start=0,
-        #         col_end=0,
-        #         pos_start=0,
-        #         pos_end=0,
-        #     )
-        #     self.sync_node_to_scope(builtin)
-        #     builtin.sym_tab.def_insert(builtin)
-        # self.def_insert(ast.Name.gen_stub_from_node(node.name, "root"))
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
