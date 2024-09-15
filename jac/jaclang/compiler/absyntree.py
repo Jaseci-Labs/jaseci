@@ -4212,7 +4212,7 @@ class Literal(Token, AtomExpr):
         raise NotImplementedError
 
 
-class BuiltinType(Name, Literal, NameAtom):
+class BuiltinType(Name, Literal):
     """Type node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR

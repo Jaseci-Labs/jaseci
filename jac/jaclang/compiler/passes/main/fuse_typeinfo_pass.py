@@ -14,7 +14,7 @@ from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
-from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a
+from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
 
 
 import mypy.nodes as MypyNodes  # noqa N812
@@ -147,7 +147,7 @@ class FuseTypeInfoPass(Pass):
 
                 # Special handing for BuiltinType
                 elif isinstance(node, ast.BuiltinType):
-                    func(self, node)
+                    func(self, node)  # type: ignore
                     self.__set_sym_table_link(node)
 
                 # Jac node doesn't have mypy nodes linked to it
