@@ -214,6 +214,10 @@ class AstNode:
             raise NotImplementedError(f"Node {type(self).__name__} is not valid.")
         return res
 
+    def kid_of_type(self, typ: Type[T]) -> list[T]:
+        """Get kids of a specific type."""
+        return self._sub_node_tab.get(typ, [])
+
 
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
@@ -1053,6 +1057,7 @@ class ModuleItem(AstSymbolNode):
             sym_category=SymbolType.MOD_VAR,
         )
         self.abs_path: Optional[str] = None
+        self.is_imported: bool = False
 
     @property
     def from_parent(self) -> Import:
