@@ -156,7 +156,7 @@ class FuseTypeInfoPass(Pass):
                 # Special handing for BuiltinType
                 elif isinstance(node, ast.BuiltinType):
                     func(self, node)  # type: ignore
-                    self.__set_sym_table_link(node)
+                    self.__set_type_sym_table_link(node)
 
                 # Jac node doesn't have mypy nodes linked to it
                 else:
@@ -248,7 +248,6 @@ class FuseTypeInfoPass(Pass):
         if builtins_sym:
             node.name_spec._sym = builtins_sym
 
-
     collection_types_map = {
         ast.ListVal: "builtins.list",
         ast.SetVal: "builtins.set",
@@ -272,7 +271,7 @@ class FuseTypeInfoPass(Pass):
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
             mytype: MyType = self.node_type_hash[mypy_node]
-            node.sym_type = self.__call_type_handler(mytype) or ""
+            node.sym_type = self.__call_type_handler(mytype) or node.sym_type
 
         # Set they symbol type for collection expression.
         #
@@ -474,9 +473,13 @@ class FuseTypeInfoPass(Pass):
 
     def get_type_from_instance(self, mypy_type: MypyTypes.Instance) -> Optional[str]:
         """Get type info from mypy type Instance."""
-        #  NOTE: Returning str(mypy_type) won't work since for literal values it would be
+        #  FIXME: Returning str(mypy_type) won't work for literal values since it would be
         # like Literal['foo'] instead of builtins.str, so we need to get the type fullname.
-        return mypy_type.type.fullname
+        # Not sure if this is the best way to do it.
+        ret = str(mypy_type)
+        if ret.startswith("Literal[") and ret.endswith("]"):
+            return mypy_type.type.fullname
+        return ret
 
     def get_type_from_callable_type(
         self, mypy_type: MypyTypes.CallableType
@@ -587,7 +590,7 @@ class FuseTypeInfoPass(Pass):
 
                     # right index slice is a range then it's type is the same as left
                     if right.is_range:
-                        right.name_spec.sym_type = left.sym_type
+                        right.sym_type = left.sym_type
                         continue
 
                 # left type is a dictionary
@@ -600,7 +603,7 @@ class FuseTypeInfoPass(Pass):
                 else:
                     continue
 
-                right.name_spec.sym_type = node_type
+                right.sym_type = node_type
 
                 # Getting the correct symbol table and link it
                 type_symtab: Optional[SymbolTable] = self.ir.sym_tab
@@ -616,7 +619,7 @@ class FuseTypeInfoPass(Pass):
                     type_symtab = type_symtab.find_scope(j)
                     if type_symtab is None:
                         break
-                right.name_spec.type_sym_tab = type_symtab
+                right.type_sym_tab = type_symtab
 
             else:
                 if left.type_sym_tab:
