@@ -396,7 +396,7 @@ Now that you have your LLM ready let's create a simple walker that uses the RAG 
 
 ```jac
 import:jac from rag {RagEngine}
-glob RagEngine:rag_engine = rag_engine();
+glob rag_engine:RagEngine = RagEngine();
 ```
 
 - `llm`: This an MTLLM instance of the model utilized by jaclang whenever we make `by llm()` abilities. Here we are using OpenAI's GPT-4 model.
