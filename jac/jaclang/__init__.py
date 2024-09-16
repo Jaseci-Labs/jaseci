@@ -1,17 +1,18 @@
 """The Jac Programming Language."""
 
-from jaclang.plugin.default import (  # noqa: E402
+from jaclang.plugin.default import (
     JacBuiltin,
     JacCmdDefaults,
-    JacFeatureDefaults,
+    JacFeatureImpl,
 )
-from jaclang.plugin.feature import JacFeature, pm  # noqa: E402
+from jaclang.plugin.feature import JacFeature, hookmanager
 
 jac_import = JacFeature.jac_import
 
-pm.register(JacFeatureDefaults)
-pm.register(JacBuiltin)
-pm.register(JacCmdDefaults)
-pm.load_setuptools_entrypoints("jac")
+
+hookmanager.register(JacFeatureImpl)
+hookmanager.register(JacBuiltin)
+hookmanager.register(JacCmdDefaults)
+hookmanager.load_setuptools_entrypoints("jac")
 
 __all__ = ["jac_import"]
