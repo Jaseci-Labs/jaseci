@@ -42,7 +42,7 @@ from jaclang.runtimelib.constructs import (
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
-from jaclang.runtimelib.utils import traverse_graph
+from jaclang.runtimelib.utils import collect_node_connections, traverse_graph
 
 
 import pluggy
@@ -53,6 +53,47 @@ logger = getLogger(__name__)
 
 class JacAccessValidationImpl:
     """Jac Access Validation Implementations."""
+
+    @staticmethod
+    @hookimpl
+    def allow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Allow all access from target root graph to current Architype."""
+        level = AccessLevel.cast(level)
+        access = anchor.access.roots
+
+        _root_id = str(root_id)
+        if level != access.anchors.get(_root_id, AccessLevel.NO_ACCESS):
+            access.anchors[_root_id] = level
+
+    @staticmethod
+    @hookimpl
+    def disallow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Disallow all access from target root graph to current Architype."""
+        level = AccessLevel.cast(level)
+        access = anchor.access.roots
+
+        access.anchors.pop(str(root_id), None)
+
+    @staticmethod
+    @hookimpl
+    def unrestrict(
+        anchor: Anchor, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Allow everyone to access current Architype."""
+        level = AccessLevel.cast(level)
+        if level != anchor.access.all:
+            anchor.access.all = level
+
+    @staticmethod
+    @hookimpl
+    def restrict(anchor: Anchor) -> None:
+        """Disallow others to access current Architype."""
+        if anchor.access.all > AccessLevel.NO_ACCESS:
+            anchor.access.all = AccessLevel.NO_ACCESS
 
     @staticmethod
     @hookimpl
@@ -128,6 +169,31 @@ class JacAccessValidationImpl:
 
 class JacNodeImpl:
     """Jac Node Operations."""
+
+    @staticmethod
+    @hookimpl
+    def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        visited_nodes: set[NodeAnchor] = set()
+        connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
+        unique_node_id_dict = {}
+
+        collect_node_connections(node.__jac__, visited_nodes, connections)
+        dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
+        for idx, i in enumerate([nodes_.architype for nodes_ in visited_nodes]):
+            unique_node_id_dict[i] = (i.__class__.__name__, str(idx))
+            dot_content += f'{idx} [label="{i}"];\n'
+        dot_content += 'edge [color="gray", style="solid"];\n'
+
+        for pair in list(set(connections)):
+            dot_content += (
+                f"{unique_node_id_dict[pair[0]][1]} -> {unique_node_id_dict[pair[1]][1]}"
+                f' [label="{pair[2]}"];\n'
+            )
+        if dot_file:
+            with open(dot_file, "w") as f:
+                f.write(dot_content + "}")
+        return dot_content + "}"
 
     @staticmethod
     @hookimpl
@@ -763,7 +829,7 @@ class JacFeatureImpl(JacAccessValidationImpl, JacNodeImpl, JacEdgeImpl, JacWalke
                         and target.architype in right
                         and Jac.check_write_access(target)
                     ):
-                        anchor.destroy() if anchor.persistent else Jac.detach(anchor)
+                        Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
@@ -771,7 +837,7 @@ class JacFeatureImpl(JacAccessValidationImpl, JacNodeImpl, JacEdgeImpl, JacWalke
                         and source.architype in right
                         and Jac.check_write_access(source)
                     ):
-                        anchor.destroy() if anchor.persistent else Jac.detach(anchor)
+                        Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
                         disconnect_occurred = True
 
         return disconnect_occurred
@@ -812,9 +878,13 @@ class JacFeatureImpl(JacAccessValidationImpl, JacNodeImpl, JacEdgeImpl, JacWalke
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
             edge = conn_type() if isinstance(conn_type, type) else conn_type
-            edge.__attach__(source, target, is_undirected)
 
-            eanch = edge.__jac__
+            eanch = edge.__jac__ = EdgeAnchor(
+                architype=edge,
+                source=source,
+                target=target,
+                is_undirected=is_undirected,
+            )
             source.edges.append(eanch)
             target.edges.append(eanch)
 
@@ -825,12 +895,43 @@ class JacFeatureImpl(JacAccessValidationImpl, JacNodeImpl, JacEdgeImpl, JacWalke
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
-                eanch.save()
-                target.save()
-                source.save()
+                Jac.save(eanch)
+                Jac.save(target)
+                Jac.save(source)
             return edge
 
         return builder
+
+    @staticmethod
+    @hookimpl
+    def save(obj: Architype | Anchor) -> None:
+        """Destroy object."""
+        anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+
+        jctx = Jac.get_context()
+
+        anchor.persistent = True
+        anchor.root = jctx.root.id
+
+        jctx.mem.set(anchor.id, anchor)
+
+    @staticmethod
+    @hookimpl
+    def destroy(obj: Architype | Anchor) -> None:
+        """Destroy object."""
+        anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+
+        if Jac.check_write_access(anchor):
+            match anchor:
+                case NodeAnchor():
+                    for edge in anchor.edges:
+                        Jac.destroy(edge)
+                case EdgeAnchor():
+                    Jac.detach(anchor)
+                case _:
+                    pass
+
+            Jac.get_context().mem.remove(anchor.id)
 
     @staticmethod
     @hookimpl

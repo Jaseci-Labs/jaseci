@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import types
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
+from uuid import UUID
 
 from jaclang.plugin.spec import (
     AccessLevel,
@@ -31,6 +32,32 @@ class JacAccessValidation:
     """Jac Access Validation Specs."""
 
     @staticmethod
+    def allow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Allow all access from target root graph to current Architype."""
+        hookmanager.hook.allow_root(anchor=anchor, root_id=root_id, level=level)
+
+    @staticmethod
+    def disallow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Disallow all access from target root graph to current Architype."""
+        hookmanager.hook.disallow_root(anchor=anchor, root_id=root_id, level=level)
+
+    @staticmethod
+    def unrestrict(
+        anchor: Anchor, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Allow everyone to access current Architype."""
+        hookmanager.hook.unrestrict(anchor=anchor, level=level)
+
+    @staticmethod
+    def restrict(anchor: Anchor) -> None:
+        """Disallow others to access current Architype."""
+        hookmanager.hook.restrict(anchor=anchor)
+
+    @staticmethod
     def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
         return hookmanager.hook.check_read_access(to=to)
@@ -53,6 +80,11 @@ class JacAccessValidation:
 
 class JacNode:
     """Jac Node Operations."""
+
+    @staticmethod
+    def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        return hookmanager.hook.node_dot(node=node, dot_file=dot_file)
 
     @staticmethod
     def get_edges(
@@ -343,6 +375,20 @@ class JacFeature(JacAccessValidation, JacNode, JacEdge, JacWalker):
         return hookmanager.hook.build_edge(
             is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
         )
+
+    @staticmethod
+    def save(
+        obj: Architype | Anchor,
+    ) -> None:
+        """Destroy object."""
+        hookmanager.hook.save(obj=obj)
+
+    @staticmethod
+    def destroy(
+        obj: Architype | Anchor,
+    ) -> None:
+        """Destroy object."""
+        hookmanager.hook.destroy(obj=obj)
 
     @staticmethod
     def get_semstr_type(

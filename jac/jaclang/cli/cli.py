@@ -284,7 +284,9 @@ def enter(
 
             jctx.set_entry_node(node)
 
-            if isinstance(architype, WalkerArchitype) and jctx.validate_access():
+            if isinstance(architype, WalkerArchitype) and Jac.check_read_access(
+                jctx.entry_node
+            ):
                 Jac.spawn_call(jctx.entry_node.architype, architype)
 
     jctx.close()

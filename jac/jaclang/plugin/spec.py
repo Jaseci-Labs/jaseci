@@ -15,6 +15,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from uuid import UUID
 
 from jaclang.compiler import absyntree as ast
 from jaclang.compiler.constant import EdgeDir
@@ -47,6 +48,36 @@ class JacAccessValidationSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def allow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Allow all access from target root graph to current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def disallow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Disallow all access from target root graph to current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def unrestrict(
+        anchor: Anchor, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
+        """Allow everyone to access current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def restrict(anchor: Anchor) -> None:
+        """Disallow others to access current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
         raise NotImplementedError
@@ -72,6 +103,12 @@ class JacAccessValidationSpec:
 
 class JacNodeSpec:
     """Jac Node Operations."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
@@ -354,6 +391,22 @@ class JacFeatureSpec(JacAccessValidationSpec, JacNodeSpec, JacEdgeSpec, JacWalke
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def save(
+        obj: Architype | Anchor,
+    ) -> None:
+        """Destroy object."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def destroy(
+        obj: Architype | Anchor,
+    ) -> None:
+        """Destroy object."""
         raise NotImplementedError
 
     @staticmethod
