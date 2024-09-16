@@ -3,7 +3,7 @@
 import inspect
 from typing import List, Type
 
-from jaclang.plugin.default import JacFeatureDefaults
+from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature
 from jaclang.plugin.spec import JacFeatureSpec
 from jaclang.utils.test import TestCase
@@ -46,7 +46,7 @@ class TestFeatures(TestCase):
         """Test if JacFeature, JacFeatureDefaults, and JacFeatureSpec have synced methods."""
         # Get methods of each class
         jac_feature_methods = self.get_methods(JacFeature)
-        jac_feature_defaults_methods = self.get_methods(JacFeatureDefaults)
+        jac_feature_defaults_methods = self.get_methods(JacFeatureImpl)
         jac_feature_spec_methods = self.get_methods(JacFeatureSpec)
 
         # Check if all methods are the same in all classes
