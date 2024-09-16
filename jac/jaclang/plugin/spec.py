@@ -11,36 +11,232 @@ from typing import (
     Optional,
     ParamSpec,
     Sequence,
-    TYPE_CHECKING,
     Type,
     TypeVar,
     Union,
 )
+from uuid import UUID
 
-import jaclang.compiler.absyntree as ast
+from jaclang.compiler import absyntree as ast
+from jaclang.compiler.constant import EdgeDir
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-
-if TYPE_CHECKING:
-    from jaclang.plugin.default import (
-        Architype,
-        EdgeDir,
-        WalkerArchitype,
-        Root,
-        DSFunc,
-    )
-    from jaclang.runtimelib.constructs import EdgeArchitype, NodeAnchor, NodeArchitype
-    from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.constructs import (
+    AccessLevel,
+    Anchor,
+    Architype,
+    DSFunc,
+    EdgeAnchor,
+    EdgeArchitype,
+    NodeAnchor,
+    NodeArchitype,
+    Root,
+    WalkerArchitype,
+)
+from jaclang.runtimelib.context import ExecutionContext
 
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
+hookmanager = pluggy.PluginManager("jac")
 
 T = TypeVar("T")
 P = ParamSpec("P")
 
 
-class JacFeatureSpec:
+class JacAccessValidationSpec:
+    """Jac Access Validation Specs."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def allow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str
+    ) -> None:
+        """Allow all access from target root graph to current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def disallow_root(
+        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str
+    ) -> None:
+        """Disallow all access from target root graph to current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def unrestrict(anchor: Anchor, level: AccessLevel | int | str) -> None:
+        """Allow everyone to access current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def restrict(anchor: Anchor) -> None:
+        """Disallow others to access current Architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def check_read_access(to: Anchor) -> bool:
+        """Read Access Validation."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def check_connect_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def check_write_access(to: Anchor) -> bool:
+        """Write Access Validation."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def check_access_level(to: Anchor) -> AccessLevel:
+        """Access validation."""
+        raise NotImplementedError
+
+
+class JacNodeSpec:
+    """Jac Node Operations."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def node_dot(node: NodeArchitype, dot_file: Optional[str]) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_edges(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[EdgeArchitype]:
+        """Get edges connected to this node."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def edges_to_nodes(
+        node: NodeAnchor,
+        dir: EdgeDir,
+        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        target_obj: Optional[list[NodeArchitype]],
+    ) -> list[NodeArchitype]:
+        """Get set of nodes connected to this node."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def remove_edge(node: NodeAnchor, edge: EdgeAnchor) -> None:
+        """Remove reference without checking sync status."""
+        raise NotImplementedError
+
+
+class JacEdgeSpec:
+    """Jac Edge Operations."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def detach(edge: EdgeAnchor) -> None:
+        """Detach edge from nodes."""
+        raise NotImplementedError
+
+
+class JacWalkerSpec:
+    """Jac Edge Operations."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def visit_node(
+        walker: WalkerArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
+    ) -> bool:  # noqa: ANN401
+        """Jac's visit stmt feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def ignore(
+        walker: WalkerArchitype,
+        expr: (
+            list[NodeArchitype | EdgeArchitype]
+            | list[NodeArchitype]
+            | list[EdgeArchitype]
+            | NodeArchitype
+            | EdgeArchitype
+        ),
+    ) -> bool:
+        """Jac's ignore stmt feature."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+        """Invoke data spatial call."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def disengage(walker: WalkerArchitype) -> bool:
+        """Jac's disengage stmt feature."""
+        raise NotImplementedError
+
+
+class JacBuiltinSpec:
+    """Jac Builtins."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: Optional[list[str]],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
+        """Print the dot graph."""
+        raise NotImplementedError
+
+
+class JacCmdSpec:
+    """Jac CLI command."""
+
+    @staticmethod
+    @hookspec
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        raise NotImplementedError
+
+
+class JacFeatureSpec(
+    JacAccessValidationSpec,
+    JacNodeSpec,
+    JacEdgeSpec,
+    JacWalkerSpec,
+    JacBuiltinSpec,
+    JacCmdSpec,
+):
     """Jac Feature."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def setup() -> None:
+        """Set Class References."""
+        raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
@@ -51,13 +247,13 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def get_object(id: str) -> Architype | None:
-        """Get object given id.."""
+        """Get object by id."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
     def object_ref(obj: Architype) -> str:
-        """Get object given id.."""
+        """Get object's id."""
         raise NotImplementedError
 
     @staticmethod
@@ -160,50 +356,8 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
-        """Jac's spawn operator feature."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
     def report(expr: Any) -> Any:  # noqa: ANN401
         """Jac's report stmt feature."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def ignore(
-        walker: WalkerArchitype,
-        expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
-        ),
-    ) -> bool:
-        """Jac's ignore stmt feature."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def visit_node(
-        walker: WalkerArchitype,
-        expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
-        ),
-    ) -> bool:  # noqa: ANN401
-        """Jac's visit stmt feature."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def disengage(walker: WalkerArchitype) -> bool:  # noqa: ANN401
-        """Jac's disengage stmt feature."""
         raise NotImplementedError
 
     @staticmethod
@@ -275,6 +429,22 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def save(
+        obj: Architype | Anchor,
+    ) -> None:
+        """Destroy object."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def destroy(
+        obj: Architype | Anchor,
+    ) -> None:
+        """Destroy object."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def get_semstr_type(
         file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
@@ -339,30 +509,4 @@ class JacFeatureSpec:
         raise NotImplementedError
 
 
-class JacBuiltin:
-    """Jac Builtins."""
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def dotgen(
-        node: NodeArchitype,
-        depth: int,
-        traverse: bool,
-        edge_type: list[str],
-        bfs: bool,
-        edge_limit: int,
-        node_limit: int,
-        dot_file: Optional[str],
-    ) -> str:
-        """Print the dot graph."""
-        raise NotImplementedError
-
-
-class JacCmdSpec:
-    """Jac CLI command."""
-
-    @staticmethod
-    @hookspec
-    def create_cmd() -> None:
-        """Create Jac CLI cmds."""
-        raise NotImplementedError
+hookmanager.add_hookspecs(JacFeatureSpec)
