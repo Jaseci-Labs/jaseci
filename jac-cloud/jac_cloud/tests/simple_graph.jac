@@ -484,3 +484,28 @@ walker custom_status_code {
         Jac.get_context().status = self.status;
     }
 }
+
+walker different_return {
+
+    can enter1 with `root entry {
+    }
+
+    can enter2 with A entry -> int {
+    }
+
+    can enter3 with B entry -> str {
+    }
+
+    can enter4 with C entry -> bool {
+    }
+
+    can enter5 with Nested entry -> Parent {
+    }
+
+    can enter6 with `root entry -> list | dict {
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
