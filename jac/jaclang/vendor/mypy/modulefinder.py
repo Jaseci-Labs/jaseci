@@ -813,18 +813,18 @@ def compute_search_paths(
     # We only use site packages for this check
     for site in site_packages:
         assert site not in lib_path
-        if (
-            site in mypypath
-            or any(p.startswith(site + os.path.sep) for p in mypypath)
-            or (os.path.altsep and any(p.startswith(site + os.path.altsep) for p in mypypath))
-        ):
-            print(f"{site} is in the MYPYPATH. Please remove it.", file=sys.stderr)
-            print(
-                "See https://mypy.readthedocs.io/en/stable/running_mypy.html"
-                "#how-mypy-handles-imports for more info",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        # if (
+        #     site in mypypath
+        #     or any(p.startswith(site + os.path.sep) for p in mypypath)
+        #     or (os.path.altsep and any(p.startswith(site + os.path.altsep) for p in mypypath))
+        # ):
+        #     print(f"{site} is in the MYPYPATH. Please remove it.", file=sys.stderr)
+        #     print(
+        #         "See https://mypy.readthedocs.io/en/stable/running_mypy.html"
+        #         "#how-mypy-handles-imports for more info",
+        #         file=sys.stderr,
+        #     )
+        #     sys.exit(1)
 
     return SearchPaths(
         python_path=tuple(reversed(python_path)),

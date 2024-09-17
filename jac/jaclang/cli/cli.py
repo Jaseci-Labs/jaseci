@@ -4,6 +4,7 @@ import ast as ast3
 import importlib
 import marshal
 import os
+import pathlib
 import pickle
 import shutil
 import types
@@ -497,6 +498,9 @@ def start_cli() -> None:
     Returns:
     - None
     """
+    os.environ["MYPYPATH"] = str(
+        pathlib.Path(os.path.dirname(__file__)).parent / "stubs"
+    )
     parser = cmd_registry.parser
     args = parser.parse_args()
     cmd_registry.args = args
