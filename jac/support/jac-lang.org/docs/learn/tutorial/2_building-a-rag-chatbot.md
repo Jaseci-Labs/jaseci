@@ -358,7 +358,7 @@ ollama serve
 
 ### Adding your documents
 
-You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document in the `docs` directory for you to test.
+You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document [here](docs/clinical_medicine.pdf) for you to test with. Create a new directory called `docs` in the root of your project and add your documents to this directory.
 
 ### Setting up your LLM
 
