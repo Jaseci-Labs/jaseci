@@ -1,14 +1,14 @@
-# Creating a Level Generator for an RPG Game
+# <span style="color: orange">Creating a Level Generator for an RPG Game
 
 Procedurally generated maps in video games has become a hot topic in the recent years among the gaming community. the algorithms for generating these maps are extremely complected, and requires months of development to build such algorithms. Instead of symbolically written programs, what if we can use generative models to generate these maps?
 
 In this Tutorial we will show you how you can generate game maps for a simple game where the map can be expressed using a list of strings.
 
-## What is a level?
+## <span style="color: orange">What is a level?
 
 A level can be represented in this hypothetical game using a list of strings shown below.
 
-```python
+```jac
 glob level = [  'BBBBBBBBBB',
                 'B....E...B',
                 'B.P......B',
@@ -22,18 +22,18 @@ glob level = [  'BBBBBBBBBB',
 
 In this level each character represent a different element in the map,
 
-- 'B': Walls
-- '.': Floor
-- 'E': Enemy
-- 'P': Player
+- 'B'   : Walls
+- '.'   : Floor
+- 'E'   : Enemy
+- 'P'   : Player
 
-## Building a level map generator?
+## <span style="color: orange">Building a level map generator?
 
 The straightforward approach to build a map generator is to ask from the LLM to directly generate such a map as a list of strings. MTLLM allows you to do this by defining a function or a method. However, here we would discuss a more object oriented way of programming with LLMs which allow the model to 'think' using objects.
 
-### Level Configuration
+### <span style="color: orange">Level Configuration
 
-```python | level_manager.jac
+```jac
 obj Level {
     has name: str,
         difficulty: int;
@@ -50,11 +50,11 @@ Each level should have a basic configuration which describes the level in an abs
 
 However, filling in the values for fields requires a cognitive capacity, for which will use an LLM later on.
 
-### Building the Map Elements
+### <span style="color: orange">Building the Map Elements
 
-- **A coordinate system**
+- <span style="color: orange">**A coordinate system**
 
-```python | level_manager.jac
+```jac
 obj Position {
     has x: int,
         y: int;
@@ -63,9 +63,9 @@ obj Position {
 
 As the map we are aiming to generate is a 2D map the position of each object on the map can be designated using the ```Position``` custom type. It is simply representing a cartesian 2D coordinate system.
 
-- **Object to Represent a Wall**
+- <span style="color: orange">**Object to Represent a Wall**
 
-```python | level_manager.jac
+```jac
 obj Wall {
     has start_pos: Position,
         end_pos: Position;
@@ -74,9 +74,9 @@ obj Wall {
 
 The wall object represents a straight wall, as all obstacles in the 2D map can be represented by a collection of intersecting wall objects. Here each wall object will have a start position as well as a stop position
 
-- **Map represented using objects**
+- <span style="color: orange">**Map represented using objects**
 
-```python | level_manager.jac
+```jac
 obj Map {
     has level: Level;
     has walls: list[Wall],
@@ -88,11 +88,11 @@ obj Map {
 
 This Map object will hold the exact positions of all objects in the map. This is the object that we will generate using MT-LLM. Each field of this object is one of or a derivative of the custom types which we described above.
 
-### The Level Manager
+### <span style="color: orange">The Level Manager
 
 To manage all the generations we can define a Level manager object which can hold a directory of previous levels configurations and maps, which can be used to feed the LLM to give context about the play style of the player. We will be using the OpenAI GPT-4o as the LLM in this tutorial.
 
-```python | level_manager.jac
+```jac
 import:py from mtllm.llms, OpenAI;
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -126,7 +126,7 @@ We have three methods defined under the level manager. Each will handle a separa
 
 The implementation of the above methods are as follows.
 
-```python | level_manager.jac
+```jac
 :obj:LevelManager:can:get_next_level {
     self.current_level += 1;
     # Keeping Only the Last 3 Levels
@@ -134,12 +134,14 @@ The implementation of the above methods are as follows.
         self.prev_levels.pop(0);
         self.prev_level_maps.pop(0);
     }
+
     # Generating the New Level
     new_level = self.create_next_level(
         self.prev_levels,
         self.current_difficulty,
         20, 20
     );
+
     self.prev_levels.append(new_level);
     # Generating the Map of the New Level
     new_level_map = Map(level=new_level by llm());
@@ -148,6 +150,7 @@ The implementation of the above methods are as follows.
     if self.current_level % 2 == 0 {
         self.current_difficulty += 1;
     }
+
     return (new_level, new_level_map);
 }
 ```
@@ -158,7 +161,7 @@ In the ```get_next_level``` method there are two llm calls which we will discuss
 
 - ```Line 14``` : Here the programmer is initiating a Map object while passing in only the level parameter with the newly generated ```level``` object and ask the LLM to fill in the rest of the fields by generating the relevant types. This nested type approach ensures the output is formatted according to how you expect them to be.
 
-```python | level_manager.jac
+```jac
 :obj:LevelManager:can:get_map {
     map_tiles = [['.' for _ in range(map.level.width)] for _ in range(map.level.height)];
     for wall in map.walls {
@@ -168,6 +171,7 @@ In the ```get_next_level``` method there are two llm calls which we will discuss
             }
         }
     }
+
     for obs in map.small_obstacles {
         map_tiles[obs.y-1][obs.x-1] = 'B';
     }
@@ -182,9 +186,9 @@ In the ```get_next_level``` method there are two llm calls which we will discuss
 }
 ```
 
-### Running the Program
+### <span style="color: orange">Running the Program
 
-```python
+```jac
 with entry {
     level_manager = LevelManager();
     for _ in range(2) {
@@ -197,7 +201,7 @@ with entry {
 
 This program will now generate two consecutive maps and print them on the terminal. by running this jac file using ```jac run level_manager.jac``` you can simply test your program.
 
-## A full scale game demo
+## <span style="color: orange">A full scale game demo
 
 For the sake of this tutorial we have not included the entire development of an actual game. The full game is available on our [jac-lang repo](https://github.com/Jaseci-Labs/jaclang/tree/main/examples/rpg_game). A sample demonstration of the game can be viewed below.
 

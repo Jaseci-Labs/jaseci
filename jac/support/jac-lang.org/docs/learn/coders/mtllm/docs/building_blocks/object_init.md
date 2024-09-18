@@ -1,4 +1,4 @@
-# Object Initialization
+# <span style="color: orange">Object Initialization
 
 As MTLLM is really great at handling typed outputs, we have added the ability to initialize a new object with only providing few of the required fields. MTLLM will automatically fill the rest of the fields based on the given context.
 
@@ -6,7 +6,7 @@ This behavior is very hard to achieve in other languages, but with MTLLM, it is 
 
 In the following example, we are initializing a new object of type `Task` with only providing the `description` field. The `time_in_min` and `priority_out_of_10` fields are automatically filled by the MTLLM based on the given context after a step of reasoning.
 
-```python
+```jac
 import:py from mtllm.llms, OpenAI, Ollama;
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -33,7 +33,7 @@ with entry {
     print(tasks);
 }
 ```
-```python
+```jac
 # Output
 [
     Task(description='Have some sleep', time_in_min=30, priority_out_of_10=5),
@@ -46,7 +46,7 @@ with entry {
 
 Here is another example with nested custom types,
 
-```python
+```jac
 import:py from jaclang.core.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -70,7 +70,7 @@ with entry {
     print(person);
 }
 ```
-```python
+```jac
 # Output
 Person(name='Alice', age=21, employer=Employer(name='LMQL Inc', location='Zurich, Switzerland'), job='engineer')
 ```

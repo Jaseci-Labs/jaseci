@@ -1,14 +1,14 @@
-# Semstrings
+# <span style="color: orange">Semstrings
 
 The core idea behind MT-LLM is that if the program has been written in a readable manner, with type-safety, an LLM would be able to understand the task required to be performed using _meaning_ embedded within the code.
 
 However, there are instanced where this is not the case for all instances. Hence, a new _meaning_ insertion code abstraction called "**semstrings**" has been introduced in MT-LLM.
 
-## Where code is not meaningful enough!
+## <span style="color: orange">Where code is not meaningful enough!
 
 Lets look into an instance where the existing code constructs are not sufficient to describe the meaning of the code for an LLM.
 
-```python | apple.jac
+```jac
 import:py from mtllm.llms, OpenAI;
 
 glob llm = OpenAI();
@@ -34,14 +34,14 @@ with entry {
 
 This is a partial code that can be used as a shopkeeping app where each item name is tagged with its category. However, in this example, you can observe in line 16 that the item name is passed in as 'apple' which can be ambiguous for an LLM as apple can mean the fruit, as well as a tech product. To resolve this problem we can use much more descriptive variable names. For instance, instead of ```item``` we can use ```tech_item```. How ever, adding more descriptive names for objects, variables and functions will hinder the reusability of object fields as the reference names are too long.
 
-## Semstrings to uplift 'meaning'
+## <span style="color: orange">Semstrings to uplift 'meaning'
 
 
 As the existing code abstractions does not fully allow the programmer to express their meaning we have added an extra feature you can use to embed meaning directly as text, into your code. We call these text annotations as **semstrings**.
 
 Lets see how we can add semstring to the existing program above.
 
-```python | apple.jac
+```jac
 import:py from mtllm.llms, OpenAI;
 
 glob llm = OpenAI();
@@ -69,36 +69,36 @@ with entry {
 ```
 In this example we add semstrings that add semantic meaning to existing code constructs such as variables, objects and functions. The semstring of each item is linked with its signature which are called when generating the prompt for the LLM. These small descriptions adds more context for the LLM to give a much more accurate response.
 
-## How to add semstrings?
+## <span style="color: orange">How to add semstrings?
 
 The below examples show different instances where semstrings can be inserted.
 
-### Variables / Object Fields Declaration
+### <span style="color: orange">Variables / Object Fields Declaration
 
-```python
+```jac
 glob name: 'semstring': str = 'sample value'
 ```
-### Function / Method Declaration
+### <span style="color: orange">Function / Method Declaration
 
-```python
+```jac
 can 'semstring'
 function_name(arg_1: 'semstring': type ...) {
     #function body
 }
 ```
 
-### Object / Class Declaration
+### <span style="color: orange">Object / Class Declaration
 
-```python
+```jac
 obj 'semstring' object_name {
     # Object fields
     # Object methods
 }
 ```
 
-### With ```by llm()```
+### <span style="color: orange">With ```by llm()```
 
-```python
+```jac
 can 'semstring_for_action'
 function_name (arg_1:'semstring_input': type ...)
 -> 'semstring_output': type

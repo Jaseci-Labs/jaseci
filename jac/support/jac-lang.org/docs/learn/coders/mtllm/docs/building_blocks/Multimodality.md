@@ -1,12 +1,12 @@
-# Multimodality
+# <span style="color: orange">Multimodality
 
 For MTLLM to have actual neurosymbolic powers, it needs to be able to handle multimodal inputs and outputs. This means that it should be able to understand text, images, and videos. In this section, we will discuss how MTLLM can handle multimodal inputs.
 
-## Image
+## <span style="color: orange">Image
 
 MTLLM can handle images as inputs. You can provide an image as input to the MTLLM Function or Method using the `Image` format of mtllm. Here is an example of how you can provide an image as input to the MTLLM Function or Method:
 
-```python
+```jac
 import:py from mtllm.llms, OpenAI;
 import:py from mtllm, Image;
 
@@ -43,11 +43,11 @@ Person(full_name='Albert Einstein', yod=1955, personality=Personality.INTROVERT)
 
 In the above example, we have provided an image of a person ("Albert Einstein") as input to the `get_person_info` method. The method returns the information of the person in the image. The output of the method is a `Person` object with the name, year of death, and personality of the person in the image.
 
-## Video
+## <span style="color: orange">Video
 
 Similarly, MTLLM can handle videos as inputs. You can provide a video as input to the MTLLM Function or Method using the `Video` format of mtllm. Here is an example of how you can provide a video as input to the MTLLM Function or Method:
 
-```python
+```jac
 import:py from mtllm.llms, OpenAI;
 import:py from mtllm, Video;
 
@@ -64,7 +64,7 @@ with entry {
 ```
 
 Input Video (mugen.mp4):
-[mugen.mp4](https://github.com/Jaseci-Labs/mtllm/blob/main/examples/vision/mugen.mp4)
+[mugen.mp4](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/examples/vision/mugen.mp4)
 
 ```python
 # Output
@@ -72,7 +72,3 @@ True
 ```
 
 In the above example, we have provided a video of a character ("Mugen") as input to the `is_aligned` method. The method checks if the text is aligned with the video. The output of the method is a boolean value indicating whether the text is aligned with the video.
-
-## Audio
-
-We are working on adding support for audio inputs to MTLLM. Stay tuned for updates on this feature.

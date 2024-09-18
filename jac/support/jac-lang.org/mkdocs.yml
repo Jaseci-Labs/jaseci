@@ -12,8 +12,8 @@ nav:
           - "learn/guide.md"
           - "learn/jac_ref.md"
           - "learn/impl_docs.md"
-          - "learn/with_llm.md"
           - MTLLM:
+              - "learn/with_llm.md"
               - Quick Start:
                   - "learn/coders/mtllm/docs/quickstart/installation.md"
                   - "learn/coders/mtllm//docs/quickstart/minimal-working-example.md"
@@ -28,13 +28,6 @@ nav:
                   - "learn/coders/mtllm/docs/building_blocks/Multimodality.md"
               - Tutorials:
                   - "learn/coders/mtllm/docs/tutorials/rpg_game.md"
-              - API Reference:
-                  - "learn/coders/mtllm/docs/api/api_ref/mtllm.md"
-              - Tips and Tricks:
-                  - "learn/coders/mtllm/docs/tips-n-tricks/create_own_lm.md"
-                  - "learn/coders/mtllm/docs/tips-n-tricks/existing_application.md"
-                  - "learn/coders/mtllm/docs/tips-n-tricks/when_to_use_semstrings.md"
-
           - "learn/tips_tricks.md"
           - "learn/jac_plugins.md"
       - For contributors:

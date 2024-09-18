@@ -1,12 +1,12 @@
-# Functions and Methods
+# <span style="color: orange">Functions and Methods
 
 Functions and methods play a crucial role in implementing various functionalities in a traditional GenAI application. In jaclang, we have designed these functions and methods to be highly flexible and powerful. Surprisingly, they don't even require a function or method body thanks to the MTLLM `by <your_llm>` syntax. This section will guide you on how to effectively utilize functions and methods in jaclang using MTLLM.
 
-## Functions
+## <span style="color: orange">Functions
 
 Functions/Abilities in jaclang are defined using the `can` keyword. They can be used to define a set of actions. Normal function looks like this in jaclang:
 
-```python
+```jac
 can <function_name>(<parameter : parameter_type>, ..) -> <return_type> {
     <function_body>;
 }
@@ -14,7 +14,7 @@ can <function_name>(<parameter : parameter_type>, ..) -> <return_type> {
 
 In a traditional GenAI application, you would make API calls inside the function body to perform the desired action. However, in jaclang, you can define the function using the `by <your_llm>` syntax. This way, you can define the function without a body and let the MTLLM model handle the implementation. Here is an example:
 
-```python
+```jac
 can greet(name: str) -> str by <your_llm>();
 ```
 
@@ -22,7 +22,7 @@ In the above example, the `greet` function takes a `name` parameter of type `str
 
 Below is an example where we define a function `get_expert` that takes a question as input and returns the best expert to answer the question in string format using mtllm with openai model with the method `Reason`. `get_answer` function takes a question and an expert as input and returns the answer to the question using mtllm with openai model without any method. and we can call these function as normal functions.
 
-```python
+```jac
 import:py from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -40,7 +40,7 @@ with entry {
 
 Here's another example,
 
-```python
+```jac
 import:py from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -57,7 +57,7 @@ with entry {
 In the above example, the `joke_punchline` function returns a tuple of two strings, which are the joke and its punchline. The function is defined using the `by <your_llm>` syntax, which means the implementation is handled by the MTLLM. You can add semstr to the function to make it more specific.
 
 
-## Methods
+## <span style="color: orange">Methods
 
 Methods in jaclang are also defined using the `can` keyword. They can be used to define a set of actions that are specific to a class. Normal method looks like this in jaclang:
 
@@ -72,7 +72,7 @@ obj ClassName {
 
 In a traditional GenAI application, you would make API calls inside the method body to perform the desired action while using `self` keyword to get necessary information. However, in jaclang, you can define the method using the `by <your_llm>` syntax. This way, you can define the method without a body and let the MTLLM model handle the implementation. Here is an example:
 
-```python
+```jac
 obj Person {
     has name: str;
     can greet() -> str by <your_llm>(incl_info=(self));
@@ -83,7 +83,7 @@ In the above example, the `greet` method returns a `str`. The method is defined 
 
 In the below example, we define a class `Essay` with a method `get_essay_judgement` that takes a criteria as input and returns the judgement for the essay based on the criteria using mtllm with openai model after a step of `Reasoning`. `get_reviewer_summary` method takes a dictionary of judgements as input and returns the summary of the reviewer based on the judgements using mtllm with openai model. `give_grade` method takes the summary as input and returns the grade for the essay using mtllm with openai model. and we can call these methods as normal methods.
 
-```python
+```jac
 import:py from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -119,11 +119,11 @@ with entry {
 }
 ```
 
-## Ability to Understand Typed Inputs and Outputs
+## <span style="color: orange">Ability to Understand Typed Inputs and Outputs
 
 MTLLM is able to represent typed inputs in a way that is understandable to the model. Sametime, this makes the model to generate outputs in the expected output type without any additional information. Here is an example:
 
-```python
+```jac
 import:py from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -157,5 +157,3 @@ Person(full_name='Martin Luther King Jr.', yod=1968, personality=Personality.INT
 ```
 
 In the above example, the `get_person_info` function takes a `name` parameter of type `str` and returns a `Person` object. The `Person` object has three attributes: `full_name` of type `str`, `yod` of type `int`, and `personality` of type `Personality`. The `Personality` enum has two values: `INTROVERT` and `EXTROVERT`. The function is defined using the `by <your_llm>` syntax, which means the implementation is handled by the MTLLM. The model is able to understand the typed inputs and outputs and generate the output in the expected type.
-
-![magic](https://media1.tenor.com/m/IOEsG9ldvhAAAAAd/mr-bean.gif)

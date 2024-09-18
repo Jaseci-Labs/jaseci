@@ -1,4 +1,6 @@
-# Installation
+# <span style="color: orange; font-weight: bold">MTLLM Documentation</span>
+
+## <span style="color: orange">Installation</span>
 
 To install MTLLM run,
 

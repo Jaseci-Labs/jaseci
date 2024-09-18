@@ -1,33 +1,12 @@
-<!-- Designed and Implemented by Chandra Irugalbandara -->
+# <span style="color: orange">SemRegistry, SemInfo, and SemScope
 
-# SemRegistry, SemInfo, and SemScope
-
-## Overview
+## <span style="color: orange">Overview
 
 The semantic registry system in the MTLLM framework consists of three main classes: `SemInfo`, `SemScope`, and `SemRegistry`. These classes work together to provide a structured way of storing and retrieving semantic information about various elements in a program. This document outlines the design and implementation details of each class.
 
-> :Mermaid
->
-> sequenceDiagram
->     participant C as Compiler
->     participant R as SemRegistry
->     participant S as SemScope
->     participant I as SemInfo
->     participant F as File System
->     C->>R: Initialize SemRegistry
->     loop For each AST node
->         C->>R: Get or Create SemScope
->         R->>S: Create if not exists
->         C->>I: Create SemInfo
->         C->>S: Add SemInfo to SemScope
->         S->>I: Store SemInfo
->     end
->     C->>R: Finalize Registry
->     R->>F: Save to Pickle File
+## <span style="color: orange">SemInfo
 
-## SemInfo
-
-### Design
+### <span style="color: orange">Design
 
 `SemInfo` is designed to encapsulate semantic information for individual elements in a program. It stores three key pieces of information:
 
@@ -35,7 +14,7 @@ The semantic registry system in the MTLLM framework consists of three main class
 2. `type`: The type of the element (optional)
 3. `semstr`: A semantic string describing the element
 
-### Implementation
+### <span style="color: orange">Implementation
 
 ```python
 class SemInfo:
@@ -48,13 +27,13 @@ class SemInfo:
         return f"{self.semstr} ({self.type}) ({self.name})"
 ```
 
-#### Key Features:
+#### <span style="color: orange">Key Features:
 - Simple initialization with optional `type` and `semstr`
 - String representation includes all three attributes for easy debugging and display
 
-## SemScope
+## <span style="color: orange">SemScope
 
-### Design
+### <span style="color: orange">Design
 
 `SemScope` represents a scope in the program, which can be nested. It includes:
 
@@ -67,7 +46,7 @@ Additional features include:
 - Static method to create a `SemScope` from a string representation
 - Property to get the scope as a type string
 
-### Implementation
+### <span style="color: orange">Implementation
 
 ```python
 class SemScope:
@@ -108,15 +87,15 @@ class SemScope:
         return type_str
 ```
 
-#### Key Features:
+#### <span style="color: orange">Key Features:
 - Nested structure representation through the `parent` attribute
 - String representation shows the full scope hierarchy
 - `get_scope_from_str` allows reconstruction of a `SemScope` hierarchy from a string
 - `as_type_str` property provides a string representation of the scope as a type, useful for type checking and inference
 
-## SemRegistry
+## <span style="color: orange">SemRegistry
 
-### Design
+### <span style="color: orange">Design
 
 `SemRegistry` serves as the main container and manager for semantic information. It stores `SemInfo` objects organized by `SemScope`. Key features include:
 
@@ -125,7 +104,7 @@ class SemScope:
 3. Flexible lookup functionality
 4. Utility methods for accessing and displaying the registry contents
 
-### Implementation
+### <span style="color: orange">Implementation
 
 ```python
 class SemRegistry:
@@ -186,14 +165,14 @@ class SemRegistry:
                 print(f"  {i.name} {i.type} {i.semstr}")
 ```
 
-#### Key Features:
+#### <span style="color: orange">Key Features:
 - Efficient storage using a dictionary with `SemScope` as keys and lists of `SemInfo` as values
 - `add` method handles the case of existing scopes and adds new `SemInfo` objects to the appropriate list
 - Flexible `lookup` method allows searching by scope, name, or type, with various combinations
 - `module_scope` property provides quick access to the top-level scope
 - `pp` (pretty print) method for easy debugging and inspection of the registry contents
 
-## Usage and Interaction
+## <span style="color: orange">Usage and Interaction
 
 These classes work together to provide a comprehensive system for managing semantic information:
 

@@ -1,15 +1,15 @@
-# Using MTLLM in your existing Application
+# <span style="color: orange">Using MTLLM in your existing Application
 
 As Jaclang is a language that supersets Python, you can easily integrate it into your existing Python application. This guide will show you how to do that by integrating a AI feature into a simple Task Manager application build using Python.
 
-## Python Task Manager Application
+## <span style="color: orange">Python Task Manager Application
 
 Let's start by creating a simple Task Manager application using Python. The application will have the following features:
 1. Add a task
 2. View all tasks
 3. Delete a task
 
-```python | task_manager.py
+```python
 tasks: list[str] = []
 
 def add_task(task: str) - > None:
@@ -52,13 +52,13 @@ You can run the application using the following command:
 python task_manager.py
 ```
 
-## Integrating Jaclang
+## <span style="color: orange">Integrating Jaclang
 
 Currently the Tasks in the Task Manager are just strings. Let's add a feature where when the user adds a task, the application will decide the priority of the task and the estimated time to complete the task based on the previous tasks.
 
-### Creating the Jac Module
+### <span style="color: orange">Creating the Jac Module
 
-```python | taskman.jac
+```jac
 import:py from mtllm.llms, OpenAI;
 
 glob llm = OpenAI();
@@ -75,9 +75,9 @@ by llm(method="Reason");
 
 Just like that with a few lines of code, you have a AI powered Task Manager. The `create_task` function will take the description of the task and the previous tasks and return a Task object with the priority and estimated time to complete the task.
 
-### Integrating the Jac Module
+### <span style="color: orange">Integrating the Jac Module
 
-```python | task_manager.py
+```python
 from jaclang import jac_import
 
 # Importing the create_task function

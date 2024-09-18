@@ -1,17 +1,17 @@
-# Create Your Own Language Model
+# <span style="color: orange">Create Your Own Language Model
 
 This guide will help you to bring your own language model to be used with MTLLM. This is helpful if you have a self-hosted Language Model or you are using a different service that is not currently supported by MTLLM.
 
->  **IMPORTANT**
+> <span style="color: orange"> **IMPORTANT**
 >
 > This assumes that you have a proper understanding on how to inference with your language model. If you are not sure about this, please refer to the documentation of your language model.
 
-## Steps
+## <span style="color: orange">Steps
 
-1. Create a new class that inherits from `BaseLLM` class.
+- Create a new class that inherits from `BaseLLM` class.
 
 In Python,
-```python | my_llm.py
+```python
 from mtllm.llms.base import BaseLLM
 
 class MyLLM(BaseLLM):
@@ -28,7 +28,7 @@ class MyLLM(BaseLLM):
 ```
 
 In Jaclang,
-```python | my_llm.jac
+```jac
 import:py from mtlm.llms.base, BaseLLM;
 
 class MyLLM:BaseLLM: {
@@ -47,20 +47,20 @@ class MyLLM:BaseLLM: {
 }
 ```
 
-2. Initialize your model with the required parameters.
+- Initialize your model with the required parameters.
 
-```python | app.jac
+```jac
 import:jac from my_llm, MyLLM; # For Jaclang
 import:py from my_llm, MyLLM; # For Python
 
 llm = MyLLM();
 ```
 
-## Changing the Prompting Techniques
+## <span style="color: orange">Changing the Prompting Techniques
 
 You can change the prompting techniques overriding the the following parameters in your class.
 
-```python | my_llm.py
+```python
 from mtllm.llms.base import BaseLLM
 
 class MyLLM(BaseLLM):
@@ -82,6 +82,6 @@ Check the [API Reference](/docs/api/mtllm) for more information on prompting tec
 
 Thats it! You have successfully created your own Language Model to be used with MTLLM.
 
->  **NOTICE**
+>  <span style="color: orange">**NOTICE**
 >
 > We are constantly adding new LMs to the library. If you want to add a new LM, please open an issue [here](https://github.com/Jaseci-Labs/mtllm/issues).

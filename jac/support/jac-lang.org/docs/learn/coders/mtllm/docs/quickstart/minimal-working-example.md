@@ -1,13 +1,13 @@
-# Minimal Working Example
+# <span style="color: orange"> Minimal Working Example
 
 Here we will walk you through a minimal working example of using MTLLM to generate translate a sentence from English to a target language.
 
-## Setup
+## <span style="color: orange">Setup
 
-Before we start, make sure you have installed MTLLM & Jaclang. If not, follow the instructions [here](/docs/quickstart/installation).
+Before we start, make sure you have installed MTLLM & Jaclang.
 Following code snippet will be our starting point:
 
-```python | translator.jac
+```jac
 can translate(eng_sentence: str, target_lang: str) -> str {
     """Normally this would include the translation logic such as calling an API.
     For the sake of this example, we will return a dummy translated sentence."""
@@ -22,13 +22,13 @@ with entry {
 
 Assuming we went with API based translation, `target_lang` would be the language code of the target language. For example, `es` for Spanish, `fr` for French, etc. But Assume that you don't know the language code for the target language, or you would like to provide a context to `target_lang` instead of a language code. for example `Spanish` instead of `es` or `Language spoken in Somalia`. This is where you need the help of LLMs.
 
-## Using MTLLM
+## <span style="color: orange">Using MTLLM
 
-### Import the LLM You Want to Use
+### <span style="color: orange">Import the LLM You Want to Use
 
 For this example, we will use OpenAI's GPT-3.5-turbo (default).
 
-```python | translator.jac
+```jac
 import:py from mtllm.llms, OpenAI;
 
 llm = OpenAI();
@@ -36,9 +36,9 @@ llm = OpenAI();
 # Rest of the code
 ```
 
-### Remove the Ability Body and Add `by LLM` keyword
+### <span style="color: orange">Remove the Ability Body and Add `by LLM` keyword
 
-```python | translator.jac
+```jac
 import:py from mtllm.llms, OpenAI;
 
 llm = OpenAI();
@@ -59,11 +59,11 @@ Makesure to export your OpenAI API key as an environment variable `OPENAI_API_KE
 jac run translator.jac
 ```
 
-## Adding Additional Support to the LLMs
+## <span style="color: orange">Adding Additional Support to the LLMs
 
 In this example, we dont need to add any additional support to the LLMs. But if you want to add additional support, you can do so by adding `SemStrings` to variables, output type hint and abilities the following code snippet:
 
-```python | translator.jac
+```jac
 import:py from mtllm.llms, OpenAI;
 
 llm = OpenAI();
