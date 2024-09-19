@@ -580,8 +580,13 @@ class TestJacLangServer(TestCase):
         circle_impl_syn_err_impl_file = uris.from_fs_path(
             self.fixture_abs_path("circle_pure_syntax_err.impl.jac")
         )
-        status = lsp.quick_check(circle_impl_syn_err_impl_file)
-        self.assertEqual(False, status)
+        with self.assertLogs(level="ERROR") as cm:
+            status = lsp.quick_check(circle_impl_syn_err_impl_file)
+            self.assertEqual(False, status)
+            self.assertIn(
+                "/tests/fixtures/circle_pure_syntax_err.impl.jac, line 11, col 5: Syntax Error",
+                str(cm.output),
+            )
 
     def test_syntax_diagnosis(self) -> None:
         """Test that the server shows an error if there is a syntax error."""
@@ -595,7 +600,16 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(circle_impl_syn_err_file)
         pos = lspt.Position(10, 5)
-        quick_status = lsp.quick_check(circle_impl_syn_err_file)
-        deep_status = lsp.deep_check(circle_impl_syn_err_file, pos)
-        self.assertEqual(True, quick_status)
-        self.assertEqual(False, deep_status)
+        with self.assertLogs(level="ERROR") as cm:
+            quick_status = lsp.quick_check(circle_impl_syn_err_file)
+            deep_status = lsp.deep_check(circle_impl_syn_err_file, pos)
+            self.assertEqual(True, quick_status)
+            self.assertEqual(False, deep_status)
+            self.assertIn(
+                "/circle_pure_syntax_err.impl.jac, line 11, col 5: Syntax Error: Unex",
+                str(cm.output),
+            )
+            self.assertIn(
+                "line 25, col 5: Ability has no body. Perhaps an impl must be imported.",
+                str(cm.output),
+            )
