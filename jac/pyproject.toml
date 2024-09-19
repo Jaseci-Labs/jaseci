@@ -41,6 +41,13 @@ pytest-xdist = "^3.6.1"
 pytest-cov = "^5.0.0"
 pre-commit = "^3.7.1"
 
+[tool.poetry.package.include]
+files = [
+    { include = "jaclang", from = "src" },
+    { include = "stubs/jaclang", from = "src" },
+    { include = "jaclang/py.typed" }
+]
+
 [tool.mypy]
 mypy_path = ["stubs"]
 
