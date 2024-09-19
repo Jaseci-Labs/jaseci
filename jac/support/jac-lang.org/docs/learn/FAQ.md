@@ -1,4 +1,5 @@
-- How to define a node?
+- What is node and how to define a node?
+  - It is an archetype that can be part of a graph object structure.
   ```jac
     node node_name{
         has node_property: int;
@@ -15,7 +16,7 @@
     # bidirection
     node_1 <++> node_2;
   ```
-
+  
 - What is custom edge?
   - When we connect nodes simply, they are connected using generic edge. In Jac, we can connect nodes with our custom edges in which we can have our prefered properties and abilities for edge.
   ```jac
@@ -34,7 +35,7 @@
   
 - How to delete a node?
 
-- How to delete connection between two nodes?
+- How to delete connection/edge between two nodes?
   ```jac
     node_1 del --> node_2;
   ```
@@ -44,6 +45,14 @@
        node_1 ++> nodes; 
     }
 ```
+
+- What is walker and how to define a walker?
+  - It is used to define archetypes that perform actions or traverse nodes and edges within a graph.
+    ```jac
+    walker walker_name {
+      can walker_ability with `specific_node entry;
+    }
+    ```
 
 - How to get all the visitable nodes from a node/ list of nodes?
 ```jac
