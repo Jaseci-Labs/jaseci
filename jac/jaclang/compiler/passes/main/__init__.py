@@ -13,7 +13,7 @@ from .type_check_pass import JacTypeCheckPass  # noqa: I100
 from .registry_pass import RegistryPass  # noqa: I100
 
 
-pass_schedule = py_code_gen
+pass_schedule = py_code_gen  # type: ignore[has-type]
 
 __all__ = [
     "SubNodeTabPass",
