@@ -4250,6 +4250,7 @@ class Int(Literal):
 class String(Literal):
     """String node type for Jac Ast."""
 
+    is_doc = False
     SYMBOL_TYPE = SymbolType.STRING
 
     @property
@@ -4257,7 +4258,6 @@ class String(Literal):
         """Return literal value in its python type."""
         if isinstance(self.value, bytes):
             return self.value
-        prefix_len = 3 if self.value.startswith(("'''", '"""')) else 1
         if any(
             self.value.startswith(prefix)
             and self.value[len(prefix) :].startswith(("'", '"'))
@@ -4266,8 +4266,14 @@ class String(Literal):
             return eval(self.value)
 
         elif self.value.startswith(("'", '"')):
-            ret_str = self.value[prefix_len:-prefix_len]
-            return ret_str.encode().decode("unicode_escape", errors="backslashreplace")
+            repr_str = self.value.encode().decode("unicode_escape")
+            if self.is_doc or (
+                self.value.startswith('"""') and self.value.endswith('"""') and not self.find_parent_of_type(FString)
+            ):
+                return repr_str[3:-3]
+            if not self.find_parent_of_type(FString):
+                return repr_str[1:-1]
+            return repr_str
         else:
             return self.value
 

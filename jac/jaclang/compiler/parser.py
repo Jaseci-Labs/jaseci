@@ -154,7 +154,12 @@ class JacParser(Pass):
             doc_tag (element_with_doc (element_with_doc | element)*)?
             """
             doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
-            body = kid[1:] if doc else kid
+            if doc:
+                print(doc.is_doc)
+                body = kid[1:]
+                doc.is_doc = True
+            else:
+                body = kid
             body = [i for i in body if isinstance(i, ast.ElementStmt)]
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
@@ -180,6 +185,8 @@ class JacParser(Pass):
             """
             if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.String):
                 kid[1].doc = kid[0]
+                print('opo doc ', kid[0].is_doc)
+                kid[1].doc.is_doc = True
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
             else:
@@ -1106,6 +1113,8 @@ class JacParser(Pass):
                 and isinstance(kid[1], ast.AstDocNode)
                 and isinstance(kid[0], ast.String)
             ):
+                print('is doc 2 ', kid[1].is_doc)
+                kid[0].is_doc = True
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 ret = self.nu(kid[1])
