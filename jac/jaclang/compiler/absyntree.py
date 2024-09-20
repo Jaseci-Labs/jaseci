@@ -4268,7 +4268,9 @@ class String(Literal):
         elif self.value.startswith(("'", '"')):
             repr_str = self.value.encode().decode("unicode_escape")
             if self.is_doc or (
-                self.value.startswith('"""') and self.value.endswith('"""') and not self.find_parent_of_type(FString)
+                self.value.startswith('"""')
+                and self.value.endswith('"""')
+                and not self.find_parent_of_type(FString)
             ):
                 return repr_str[3:-3]
             if not self.find_parent_of_type(FString):

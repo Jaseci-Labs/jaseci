@@ -155,7 +155,6 @@ class JacParser(Pass):
             """
             doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
             if doc:
-                print(doc.is_doc)
                 body = kid[1:]
                 doc.is_doc = True
             else:
@@ -185,7 +184,6 @@ class JacParser(Pass):
             """
             if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.String):
                 kid[1].doc = kid[0]
-                print('opo doc ', kid[0].is_doc)
                 kid[1].doc.is_doc = True
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
@@ -1113,7 +1111,6 @@ class JacParser(Pass):
                 and isinstance(kid[1], ast.AstDocNode)
                 and isinstance(kid[0], ast.String)
             ):
-                print('is doc 2 ', kid[1].is_doc)
                 kid[0].is_doc = True
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
