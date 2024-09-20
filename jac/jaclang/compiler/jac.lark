@@ -364,9 +364,9 @@ index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
 // Function calls
 atomic_call: atomic_chain LPAREN param_list? (KW_BY atomic_call)? RPAREN
 
-param_list: expr_list COMMA kw_expr_list
-          | kw_expr_list
-          | expr_list
+param_list: expr_list COMMA kw_expr_list COMMA?
+          | kw_expr_list COMMA?
+          | expr_list COMMA?
 
 // Atom
 atom: named_ref
@@ -421,11 +421,11 @@ kv_pair: expression COLON expression | STAR_POW expression
 expr_list: (expr_list COMMA)? expression
 
 // Tuples and Jac Tuples
-tuple_list: expression COMMA expr_list COMMA kw_expr_list
-          | expression COMMA kw_expr_list
-          | expression COMMA expr_list
+tuple_list: expression COMMA expr_list COMMA kw_expr_list COMMA?
+          | expression COMMA kw_expr_list COMMA?
+          | expression COMMA expr_list COMMA?
           | expression COMMA
-          | kw_expr_list
+          | kw_expr_list COMMA?
 
 kw_expr_list: (kw_expr_list COMMA)? kw_expr
 kw_expr: named_ref EQ expression | STAR_POW expression
