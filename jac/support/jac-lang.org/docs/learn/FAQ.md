@@ -1,5 +1,5 @@
 - What is node and how to define a node?
-  - It is an archetype that can be part of a graph object structure.
+  - It is an architype that can be part of a graph object structure.
   ```jac
     node node_name{
         has node_property: int;
@@ -9,7 +9,7 @@
     }
   ```
 
-- How to delete a node?
+- How to delete a node?    # TODO
     ```jac
         del node_name;
     ```
