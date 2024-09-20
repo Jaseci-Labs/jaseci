@@ -19,6 +19,11 @@ repository = "https://github.com/Jaseci-Labs/jaclang"
 homepage = "https://jaseci.org"
 documentation = "https://jac-lang.org"
 
+packages = [
+    { include = "jaclang" },
+   { include = "stubs/jaclang" },
+]
+
 [tool.poetry.dependencies]
 python = "^3.11.0"
 # Below are vendored in using poetry export and pip download
@@ -41,15 +46,8 @@ pytest-xdist = "^3.6.1"
 pytest-cov = "^5.0.0"
 pre-commit = "^3.7.1"
 
-[tool.poetry.package.include]
-files = [
-    { include = "jaclang", from = "src" },
-    { include = "stubs/jaclang", from = "src" },
-    { include = "jaclang/py.typed" }
-]
-
 [tool.mypy]
-mypy_path = ["stubs"]
+mypy_path = "stubs/jaclang"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

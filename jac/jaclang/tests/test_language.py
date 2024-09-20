@@ -749,6 +749,16 @@ class JacLanguageTests(TestCase):
         imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
         self.assertEqual(len(imp.import_table), 1)
 
+    def test_mypy_config(self)->None:
+        file_name = os.path.join(self.fixture_abs_path("./"), "mypy_time.jac")
+        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+        import time
+        start = time.time()
+        jac_file_to_pass(file_name, schedule=py_code_gen_typed)
+        end = time.time()
+        tot_time = end - start
+        self.assertLess(tot_time, 5)
+
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
         captured_output = io.StringIO()
