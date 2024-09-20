@@ -21,7 +21,7 @@
     # bidirection
     node_1 <++> node_2;
   ```
-  
+
 - What is custom edge?
   - When we connect nodes simply, they are connected using generic edge. In Jac, we can connect nodes with our custom edges in which we can have our prefered properties and abilities for edge.
   ```jac
@@ -29,15 +29,15 @@
         has edge_property: int = 10;
     }
   ```
-  
+
 - How to connect nodes with custom edge?
   ```jac
     # connect without specifying property value
     node_1 +: edge_name :+> node_2;
     # connect with specific property value
-    node_1 +: edge_name :edge_property= 15: +> node_2; 
+    node_1 +: edge_name :edge_property= 15: +> node_2;
   ```
-  
+
 - How to delete connection/edge between two nodes?
   ```jac
     node_1 del --> node_2;
@@ -77,7 +77,7 @@
           node_list[i] ++> node_list[i+1];
       }
   ```
-  
+
 - How to connect list of nodes with a single node in parallel
   ```jac
       node_1 ++> node_list;
@@ -86,7 +86,7 @@
 - How to make mesh with two list of nodes
   ```jac
       node_list_1 ++> node_list_2;
-  ``` 
+  ```
 
 - How to spawn a walker from root?
   ```jac

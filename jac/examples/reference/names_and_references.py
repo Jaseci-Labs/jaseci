@@ -1,18 +1,31 @@
+from dataclasses import dataclass, field
+
+
+@dataclass
 class Animal:
-    def __init__(self, animal_type):
-        self.animal_type = animal_type
+    species: str
+    sound: str
 
 
+@dataclass
 class Dog(Animal):
-    def __init__(self, breed):
-        super().__init__("Dog")
-        self.breed = breed
-        self.sound = ""
-        self._post_init()
+    breed: str
+    trick: str = field(init=False)
 
-    def _post_init(self):
-        self.sound = "woof woof"
+    def __post_init__(self):
+        self.trick = "Roll over"
 
 
-dog1 = Dog(breed="Labrador")
-print(dog1.animal_type, dog1.breed, dog1.sound)
+@dataclass
+class Cat(Animal):
+
+    def __init__(self, fur_color: str):
+        super().__init__(species="Cat", sound="Meow!")
+        self.fur_color = fur_color
+
+
+dog = Dog(breed="Labrador", species="Dog", sound="Woof!")
+cat = Cat(fur_color="Tabby")
+
+print(f'The dog is a {dog.breed} and says "{dog.sound}"')
+print(f"The cat's fur color is {cat.fur_color}")

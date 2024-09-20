@@ -1,24 +1,28 @@
 obj Animal {
-    can init(species: str) {
-        self.species = species;
-    }
+    has species: str;
+    has sound: str;
+
 }
 
 obj Dog :Animal: {
-    can init(breed: str) {
-        super.init(species='Dog');
-        self.breed = breed;
-        self.sound = "";
-        self.postinit();
+    has breed: str;
+    has trick: str by postinit;
+
+    can postinit {
+        self.trick = "Roll over";
     }
-    can postinit;
 }
 
-:obj:Dog:can:postinit {
-    self.sound = 'woof woof';
+obj Cat :Animal: {
+    can init(fur_color: str) {
+        super.init(species="Cat", sound="Meow!");
+        self.fur_color = fur_color;
+    }
 }
 
 with entry {
-    dog1 = Dog("Labrador");
-    print(dog1.species, dog1.breed, dog1.sound);
+    dog = Dog(breed="Labrador", species="Dog", sound="Woof!");
+    cat = Cat(fur_color="Tabby");
+    print(f'The dog is a {dog.breed} and says "{dog.sound}"');
+    print(f"The cat's fur color is {cat.fur_color}");
 }
