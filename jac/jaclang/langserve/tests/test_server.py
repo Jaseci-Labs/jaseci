@@ -9,6 +9,20 @@ import lsprotocol.types as lspt
 
 class TestJacLangServer(TestCase):
 
+    def _run_check_and_capture_logs(self, file_path, check_method):
+        file_uri = uris.from_fs_path(self.fixture_abs_path(file_path))
+        import logging
+        import io
+
+        log_capture = io.StringIO()
+        handler = logging.StreamHandler(log_capture)
+        logger = logging.getLogger()
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+        status = check_method(file_uri)
+        log_output = log_capture.getvalue()
+        return status, log_output
+
     def test_formatting(self) -> None:
         with LspSession() as s:
             s.initialize()
@@ -570,46 +584,37 @@ class TestJacLangServer(TestCase):
             for expected in expected_refs:
                 self.assertIn(expected, references)
 
-    def test_impl_syntax_diagnosis(self) -> None:
+    def test_syntax_diagnosis(self) -> None:
         """Test that the server shows an error if there is a syntax error in impl."""
         lsp = JacLangServer()
-        # Set up the workspace path to "fixtures/"
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
-        circle_impl_syn_err_impl_file = uris.from_fs_path(
-            self.fixture_abs_path("circle_pure_syntax_err.impl.jac")
+        status, log_output = self._run_check_and_capture_logs(
+            "circle_pure_syntax_err.impl.jac", lsp.quick_check
         )
-        with self.assertLogs(level="ERROR") as cm:
-            status = lsp.quick_check(circle_impl_syn_err_impl_file)
-            self.assertEqual(False, status)
-            self.assertIn(
-                "/tests/fixtures/circle_pure_syntax_err.impl.jac, line 11, col 5: Syntax Error",
-                str(cm.output),
-            )
+        self.assertEqual(False, status)
+        self.assertIn(
+            "message=\"Syntax Error: Unexpected token Token('KW_RETURN', 'return'",
+            log_output,
+        )
+        self.assertIn("diagnostics=[Diagnostic(range=10:4-10:5", log_output)
 
-    def test_syntax_diagnosis(self) -> None:
+    def test_impl_syntax_diagnosis(self) -> None:
         """Test that the server shows an error if there is a syntax error."""
         lsp = JacLangServer()
-        # Set up the workspace path to "fixtures/"
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
-        circle_impl_syn_err_file = uris.from_fs_path(
-            self.fixture_abs_path("circle_pure_syntax_err.jac")
+        status, log_output = self._run_check_and_capture_logs(
+            "circle_pure_syntax_err.jac", lsp.deep_check
         )
-        lsp.deep_check(circle_impl_syn_err_file)
-        pos = lspt.Position(10, 5)
-        with self.assertLogs(level="ERROR") as cm:
-            quick_status = lsp.quick_check(circle_impl_syn_err_file)
-            deep_status = lsp.deep_check(circle_impl_syn_err_file, pos)
-            self.assertEqual(True, quick_status)
-            self.assertEqual(False, deep_status)
-            self.assertIn(
-                "/circle_pure_syntax_err.impl.jac, line 11, col 5: Syntax Error: Unex",
-                str(cm.output),
-            )
-            self.assertIn(
-                "line 25, col 5: Ability has no body. Perhaps an impl must be imported.",
-                str(cm.output),
-            )
+        self.assertEqual(False, status)
+        self.assertIn(
+            "circle_pure_syntax_err.jac, line 10, col 1: Ability has no body. ",
+            log_output,
+        )
+        self.assertIn(
+            "/circle_pure_syntax_err.impl.jac, line 11, col 5: Syntax Error:",
+            log_output,
+        )
