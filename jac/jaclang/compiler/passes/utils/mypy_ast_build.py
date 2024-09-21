@@ -618,7 +618,12 @@ def load_graph(
         dependencies = [
             dep
             for dep in st.dependencies
-            if st.priorities.get(dep) != PRI_INDIRECT and "jaclang.vendor" not in dep
+            if st.priorities.get(dep) != PRI_INDIRECT
+            and (
+                "jaclang.vendor" not in dep
+                and "jaclang.compiler" not in dep
+                and "jaclang.runtimelib" not in dep
+            )
         ]
         if not manager.use_fine_grained_cache():
             # TODO: Ideally we could skip here modules that appeared in st.suppressed
