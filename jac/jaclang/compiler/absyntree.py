@@ -248,9 +248,9 @@ class AstSymbolNode(AstNode):
         return self.name_spec.py_ctx_func
 
     @property
-    def sym_type(self) -> str:
+    def expr_type(self) -> str:
         """Get symbol type."""
-        return self.name_spec.sym_type
+        return self.name_spec.expr_type
 
     @property
     def type_sym_tab(self) -> Optional[SymbolTable]:
@@ -352,12 +352,12 @@ class Expr(AstNode):
         self._type_sym_tab: Optional[SymbolTable] = None
 
     @property
-    def sym_type(self) -> str:
+    def expr_type(self) -> str:
         """Get symbol type."""
         return self._sym_type
 
-    @sym_type.setter
-    def sym_type(self, sym_type: str) -> None:
+    @expr_type.setter
+    def expr_type(self, sym_type: str) -> None:
         """Set symbol type."""
         self._sym_type = sym_type
 
@@ -485,7 +485,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     @property
     def clean_type(self) -> str:
         """Get clean type."""
-        ret_type = self.sym_type.replace("builtins.", "").replace("NoType", "")
+        ret_type = self.expr_type.replace("builtins.", "").replace("NoType", "")
         return ret_type
 
     @property
