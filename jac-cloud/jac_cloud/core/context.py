@@ -8,6 +8,7 @@ from typing import Any, NotRequired, TypedDict, cast
 from bson import ObjectId
 
 from fastapi import Request
+from fastapi.responses import ORJSONResponse
 
 from jaclang.runtimelib.context import ExecutionContext
 
@@ -46,6 +47,7 @@ class JaseciContext(ExecutionContext):
 
     mem: MongoDB
     reports: list
+    status: int
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor
@@ -68,6 +70,7 @@ class JaseciContext(ExecutionContext):
         ctx.request = request
         ctx.mem = MongoDB()
         ctx.reports = []
+        ctx.status = 200
 
         if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
             system_root = NodeAnchor(
@@ -130,9 +133,9 @@ class JaseciContext(ExecutionContext):
         """Get current root."""
         return cast(Root, JaseciContext.get().root.architype)
 
-    def response(self, returns: list[Any], status: int = 200) -> ContextResponse:
+    def response(self, returns: list[Any]) -> ORJSONResponse:
         """Return serialized version of reports."""
-        resp: ContextResponse = {"status": status, "returns": returns}
+        resp: ContextResponse = {"status": self.status, "returns": returns}
 
         if self.reports:
             for key, val in enumerate(self.reports):
@@ -145,7 +148,7 @@ class JaseciContext(ExecutionContext):
         if not SHOW_ENDPOINT_RETURNS:
             resp.pop("returns")
 
-        return resp
+        return ORJSONResponse(resp, status_code=self.status)
 
     def clean_response(
         self, key: str | int, val: Any, obj: list | dict  # noqa: ANN401
