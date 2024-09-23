@@ -2833,15 +2833,15 @@ class JacParser(Pass):
                 # The chomp will be like this:
                 #     expression, COMMA, [subnode_list, [COMMA, [kw_expr_list, [COMMA]]]]
                 # Pop the first expression from chomp.
-                first_expr = chomp[0]   # Get the first expression.
-                chomp = chomp[2:]       # Get rid of expr and comma.
+                first_expr = chomp[0]  # Get the first expression.
+                chomp = chomp[2:]  # Get rid of expr and comma.
 
             # The chomp will be like this:
             #     [subnode_list, [COMMA, [kw_expr_list, [COMMA]]]]
             expr_list = []
             if len(chomp):
                 expr_list = chomp[0].kid  # Get the kids subnode list.
-                chomp = chomp[2:]         # Get rid of the subnode list and a comma if exists.
+                chomp = chomp[2:]  # Get rid of the subnode list and a comma if exists.
                 if len(chomp):
                     # The chomp will be like this: [kw_expr_list, [COMMA]]
                     expr_list = [*expr_list, *chomp[0].kid]
@@ -3000,11 +3000,16 @@ class JacParser(Pass):
                       | kw_expr_list COMMA?
                       | expr_list    COMMA?
             """
-            ends_with_comma = (len(kid) > 1 and isinstance(kid[-1], ast.Token)
-                               and kid[-1].name == 'COMMA')
+            ends_with_comma = (
+                len(kid) > 1
+                and isinstance(kid[-1], ast.Token)
+                and kid[-1].name == "COMMA"
+            )
             if len(kid) == 1 or (len(kid) == 2 and ends_with_comma):
                 if isinstance(kid[0], ast.SubNodeList):
-                    if ends_with_comma:  # Append the trailing comma to the subnode list.
+                    if (
+                        ends_with_comma
+                    ):  # Append the trailing comma to the subnode list.
                         kid[0].kid.append(kid[1])
                     return self.nu(kid[0])
                 else:
