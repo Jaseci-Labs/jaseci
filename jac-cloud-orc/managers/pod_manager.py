@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from kubernetes import client, config
+import time
 
 app = FastAPI()
 
@@ -13,7 +14,7 @@ class JacPodManager:
     def create_pod(self):
         """Create a Kubernetes pod to dynamically import and run a module."""
         # Load Kubernetes config
-        config.load_kube_config()  # or config.load_incluster_config() if running in-cluster
+        config.load_incluster_config()
 
         v1 = client.CoreV1Api()
 
@@ -37,7 +38,18 @@ class JacPodManager:
 
         # Create the pod in Kubernetes
         v1.create_namespaced_pod(namespace=self.namespace, body=pod_manifest)
-        return {"message": f"Pod {self.pod_name} created."}
+        print(f"Pod {self.pod_name} created. Waiting for pod to be ready...")
+
+        # Wait for the pod to be in 'Running' state and get its IP
+        while True:
+            pod_info = v1.read_namespaced_pod(
+                name=self.pod_name, namespace=self.namespace
+            )
+            if pod_info.status.phase == "Running":
+                pod_ip = pod_info.status.pod_ip
+                print(f"Pod {self.pod_name} is running with IP {pod_ip}")
+                return {"message": f"Pod {self.pod_name} created", "pod_ip": pod_ip}
+            time.sleep(2)
 
     def delete_pod(self):
         """Delete the Kubernetes pod."""

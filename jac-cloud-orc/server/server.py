@@ -28,4 +28,4 @@ def serve(module_name):
 if __name__ == "__main__":
     import sys
 
-    serve(sys.argv[1])  # Pass the module name to the server at runtime
+    serve(sys.argv[1])
