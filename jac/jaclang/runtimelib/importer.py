@@ -195,6 +195,8 @@ class PythonImporter(Importer):
             loaded_items: list = []
             if spec.target.startswith("."):
                 spec.target = spec.target.lstrip(".")
+                if len(spec.target.split(".")) > 1:
+                    spec.target = spec.target.split(".")[-1]
                 full_target = path.normpath(path.join(spec.caller_dir, spec.target))
                 imp_spec = importlib.util.spec_from_file_location(
                     spec.target, full_target + ".py"
