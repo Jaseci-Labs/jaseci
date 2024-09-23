@@ -163,7 +163,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             if jctx.validate_access():
                 wlk.spawn_call(jctx.entry_node)
                 jctx.close()
-                return ORJSONResponse(jctx.response(wlk.returns))
+                return jctx.response(wlk.returns)
             else:
                 jctx.close()
                 raise HTTPException(
