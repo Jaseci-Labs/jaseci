@@ -54,6 +54,11 @@ class Symbol:
         out.reverse()
         return ".".join(out)
 
+    @property
+    def fetch_sym_tab(self) -> Optional[SymbolTable]:
+        """Get symbol table."""
+        return self.parent_tab.find_scope(self.sym_name)
+
     def add_defn(self, node: ast.NameAtom) -> None:
         """Add defn."""
         self.defn.append(node)

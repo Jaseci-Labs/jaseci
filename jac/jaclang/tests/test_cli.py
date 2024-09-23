@@ -190,6 +190,33 @@ class JacCliTests(TestCase):
             r"8\:37 \- 8:44.*ModuleItem - display - abs_path\:.*fixtures/pygame_mock/display.py",
         )
 
+    def test_builtins_loading(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('builtins_test.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins_test.builtins.list",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
+        )
+
     def test_ast_dotgen(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()
@@ -218,8 +245,8 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 7)
-        self.assertEqual(stdout_value.count("builtins.int"), 2)
-        self.assertEqual(stdout_value.count("builtins.str"), 7)
+        self.assertEqual(stdout_value.count("builtins.int"), 3)
+        self.assertEqual(stdout_value.count("builtins.str"), 10)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""

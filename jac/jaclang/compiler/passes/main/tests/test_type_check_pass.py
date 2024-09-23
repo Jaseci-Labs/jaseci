@@ -59,6 +59,6 @@ class MypyTypeCheckPassTests(TestCase):
         self.assertIn("HasVar - species - Type: builtins.str", out)
         self.assertIn("myDog - Type: type_info.Dog", out)
         self.assertIn("Body - Type: type_info.Dog.Body", out)
-        self.assertEqual(out.count("Type: builtins.str"), 28)
+        self.assertEqual(out.count("Type: builtins.str"), 34)
         for i in lis:
             self.assertNotIn(i, out)
