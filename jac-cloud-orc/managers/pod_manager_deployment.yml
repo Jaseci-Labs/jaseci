@@ -1,3 +1,12 @@
+# Service Account for Pod Manager
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: smartimportsa  # Name of the service account
+  namespace: default  # Default namespace
+
+
+# Deployment for Pod Manager
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,12 +23,16 @@ spec:
       labels:
         app: pod-manager
     spec:
+      serviceAccountName: smartimportsa  # Use the service account
       containers:
       - name: pod-manager
         image: ashishmahendra/jac-pod-manager:latest 
         ports:
         - containerPort: 8000 
+
 ---
+
+# Service to expose the Pod Manager FastAPI
 apiVersion: v1
 kind: Service
 metadata:

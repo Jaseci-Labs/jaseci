@@ -10,7 +10,8 @@ def get_pod_ip(module_name: str) -> str:
 
     if response.status_code == 200:
         pod_info = response.json()
-        return pod_info["pod_ip"]
+        print(f"Pod and Service Info: {pod_info}")
+        return pod_info["service_ip"]
     else:
         raise Exception(
             f"Failed to create pod: {response.status_code}, {response.text}"
