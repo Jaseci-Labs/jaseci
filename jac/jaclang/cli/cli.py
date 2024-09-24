@@ -18,7 +18,6 @@ from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.builtin import dotgen
-from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
@@ -27,7 +26,7 @@ from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
 
-Cmd.create_cmd()
+Jac.create_cmd()
 Jac.setup()
 
 
@@ -161,7 +160,7 @@ def get_object(
     data = {}
     obj = Jac.get_object(id)
     if obj:
-        data = obj.__jac__.__getstate__()
+        data = obj.__jac__.__serialize__()
     else:
         print(f"Object with id {id} not found.")
 

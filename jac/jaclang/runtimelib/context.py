@@ -7,7 +7,7 @@ from contextvars import ContextVar
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
-from .architype import NodeAnchor, Root
+from .interface import NodeAnchor, Root
 from .memory import Memory, ShelfStorage
 
 

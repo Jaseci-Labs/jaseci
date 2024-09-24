@@ -3,7 +3,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import ClassVar, Generic, Iterable, Type, TypeVar
+from types import UnionType
+from typing import Any, Callable, ClassVar, Generic, Iterable, Type, TypeVar
 
 
 _ID = TypeVar("_ID")
@@ -145,3 +146,16 @@ class Root(NodeArchitype[_SERIALIZE]):
 @dataclass(kw_only=True)
 class GenericEdge(EdgeArchitype[_SERIALIZE]):
     """Default Edge Architype."""
+
+
+@dataclass(eq=False)
+class DSFunc:
+    """Data Spatial Function."""
+
+    name: str
+    trigger: type | UnionType | tuple[type | UnionType, ...] | None
+    func: Callable[[Any, Any], Any] | None = None
+
+    def resolve(self, cls: type) -> None:
+        """Resolve the function."""
+        self.func = getattr(cls, self.name)

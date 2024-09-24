@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.constructs import Architype, NodeArchitype
+from jaclang.plugin.feature import Architype, JacFeature as Jac, NodeArchitype
 
 
 def dotgen(
@@ -19,7 +18,7 @@ def dotgen(
     dot_file: Optional[str] = None,
 ) -> str:
     """Print the dot graph."""
-    from jaclang.plugin.feature import JacBuiltin as JacB, JacFeature as Jac
+    from jaclang.plugin.feature import JacFeature as Jac
 
     root = Jac.get_root()
     node = node if node is not None else root
@@ -29,7 +28,7 @@ def dotgen(
     edge_limit = edge_limit if edge_limit is not None else 512
     node_limit = node_limit if node_limit is not None else 512
 
-    return JacB.dotgen(
+    return Jac.dotgen(
         edge_type=edge_type,
         node=node,
         depth=depth,

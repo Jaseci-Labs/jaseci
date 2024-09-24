@@ -12,6 +12,7 @@ from typing import (
     ParamSpec,
     Sequence,
     Type,
+    TypeAlias,
     TypeVar,
     Union,
 )
@@ -20,19 +21,18 @@ from uuid import UUID
 from jaclang.compiler import absyntree as ast
 from jaclang.compiler.constant import EdgeDir
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-from jaclang.runtimelib.constructs import (
+from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.interface import (
     AccessLevel,
-    Anchor,
-    Architype,
     DSFunc,
     EdgeAnchor,
     EdgeArchitype,
     NodeAnchor,
     NodeArchitype,
     Root,
+    WalkerAnchor,
     WalkerArchitype,
 )
-from jaclang.runtimelib.context import ExecutionContext
 
 import pluggy
 
@@ -41,6 +41,9 @@ hookmanager = pluggy.PluginManager("jac")
 
 T = TypeVar("T")
 P = ParamSpec("P")
+
+Anchor: TypeAlias = NodeAnchor | EdgeAnchor | WalkerAnchor
+Architype: TypeAlias = NodeArchitype | EdgeArchitype | WalkerArchitype
 
 
 class JacAccessValidationSpec:
@@ -195,7 +198,43 @@ class JacWalkerSpec:
         raise NotImplementedError
 
 
-class JacFeatureSpec(JacAccessValidationSpec, JacNodeSpec, JacEdgeSpec, JacWalkerSpec):
+class JacBuiltin:
+    """Jac Builtins."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: Optional[list[str]],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
+        """Print the dot graph."""
+        raise NotImplementedError
+
+
+class JacCmdSpec:
+    """Jac CLI command."""
+
+    @staticmethod
+    @hookspec
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        raise NotImplementedError
+
+
+class JacFeatureSpec(
+    JacAccessValidationSpec,
+    JacNodeSpec,
+    JacEdgeSpec,
+    JacWalkerSpec,
+    JacBuiltin,
+    JacCmdSpec,
+):
     """Jac Feature."""
 
     @staticmethod
@@ -475,35 +514,4 @@ class JacFeatureSpec(JacAccessValidationSpec, JacNodeSpec, JacEdgeSpec, JacWalke
         raise NotImplementedError
 
 
-class JacBuiltin:
-    """Jac Builtins."""
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def dotgen(
-        node: NodeArchitype,
-        depth: int,
-        traverse: bool,
-        edge_type: Optional[list[str]],
-        bfs: bool,
-        edge_limit: int,
-        node_limit: int,
-        dot_file: Optional[str],
-    ) -> str:
-        """Print the dot graph."""
-        raise NotImplementedError
-
-
-class JacCmdSpec:
-    """Jac CLI command."""
-
-    @staticmethod
-    @hookspec
-    def create_cmd() -> None:
-        """Create Jac CLI cmds."""
-        raise NotImplementedError
-
-
 hookmanager.add_hookspecs(JacFeatureSpec)
-hookmanager.add_hookspecs(JacCmdSpec)
-hookmanager.add_hookspecs(JacBuiltin)

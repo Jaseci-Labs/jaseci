@@ -177,6 +177,42 @@ class JacWalker:
         return hookmanager.hook.disengage(walker=walker)
 
 
+class JacBuiltin:
+    """Jac Builtins."""
+
+    @staticmethod
+    def dotgen(
+        node: NodeArchitype,
+        depth: int,
+        traverse: bool,
+        edge_type: Optional[list[str]],
+        bfs: bool,
+        edge_limit: int,
+        node_limit: int,
+        dot_file: Optional[str],
+    ) -> str:
+        """Generate Dot file for visualizing nodes and edges."""
+        return hookmanager.hook.dotgen(
+            node=node,
+            depth=depth,
+            traverse=traverse,
+            edge_type=edge_type,
+            bfs=bfs,
+            edge_limit=edge_limit,
+            node_limit=node_limit,
+            dot_file=dot_file,
+        )
+
+
+class JacCmd:
+    """Jac CLI command."""
+
+    @staticmethod
+    def create_cmd() -> None:
+        """Create Jac CLI cmds."""
+        return hookmanager.hook.create_cmd()
+
+
 class JacClassReferences:
     """Default Classes References."""
 
@@ -189,7 +225,15 @@ class JacClassReferences:
     Walker: ClassVar[TypeAlias] = WalkerArchitype
 
 
-class JacFeature(JacClassReferences, JacAccessValidation, JacNode, JacEdge, JacWalker):
+class JacFeature(
+    JacClassReferences,
+    JacAccessValidation,
+    JacNode,
+    JacEdge,
+    JacWalker,
+    JacBuiltin,
+    JacCmd,
+):
     """Jac Feature."""
 
     @staticmethod
@@ -494,39 +538,3 @@ class JacFeature(JacClassReferences, JacAccessValidation, JacNode, JacEdge, JacW
     def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
         """Get the by LLM call args."""
         return hookmanager.hook.get_by_llm_call_args(_pass=_pass, node=node)
-
-
-class JacBuiltin:
-    """Jac Builtins."""
-
-    @staticmethod
-    def dotgen(
-        node: NodeArchitype,
-        depth: int,
-        traverse: bool,
-        edge_type: Optional[list[str]],
-        bfs: bool,
-        edge_limit: int,
-        node_limit: int,
-        dot_file: Optional[str],
-    ) -> str:
-        """Generate Dot file for visualizing nodes and edges."""
-        return hookmanager.hook.dotgen(
-            node=node,
-            depth=depth,
-            traverse=traverse,
-            edge_type=edge_type,
-            bfs=bfs,
-            edge_limit=edge_limit,
-            node_limit=node_limit,
-            dot_file=dot_file,
-        )
-
-
-class JacCmd:
-    """Jac CLI command."""
-
-    @staticmethod
-    def create_cmd() -> None:
-        """Create Jac CLI cmds."""
-        return hookmanager.hook.create_cmd()
