@@ -14,7 +14,7 @@ Like most API servers, jac-cloud requires a database to store data persistently.
 
 In this tutorial we will show you how to do this manually and also using Docker (recommended).
 
-### Running a Mongodb Replica Set Manually
+### Running a Mongodb Replica Set Locally
 To set up a mongodb replica set, follow these steps:
 
 - Running a mongoDB replica set locally.
@@ -99,7 +99,8 @@ walker interact_with_body {
 }
 ```
 
-This code defines two walkers, `hello_world_no_body` and `hello_world_with_body`. The `hello_world_no_body` walker returns a simple message "Hello, world!" when called. The `hello_world_with_body` walker takes a `name` parameter and returns a message "Hello, `name`!". No need to worry about what a walker is for now. Think of it as a function that can be called as an API endpoint.
+This code defines two walkers: `interact` and `interact_with_body`. The `interact` walker returns a simple message "Hello, world!" when called. The `interact_with_body` walker takes a `name` parameter and returns a message "Hello, `name`!". 
+You don't need to worry about what a walker is for now. Just think of it as a function that can be called as an API endpoint.
 
 Now, let's serve this code using Jac Cloud by running the following command:
 
@@ -113,7 +114,7 @@ This command starts the Jac Cloud server with the database host set to `mongodb:
 
 Now, before we can fully test the API, it is important to know that by default, Jac Cloud requires authentication to access the API. So we need to create a user and get an access token to access the API. You can do this using the Swagger UI or by making HTTP requests. We will show you how to do this using HTTP requests.
 
-For this tutorial, we use `curl` to send API requests. You can also use tools like Postman or Insomnia to faciliate this.
+For this tutorial, we use `curl` to send API requests. You can also use tools like [Postman](https://www.postman.com/downloads/) or [Insomnia](https://insomnia.rest/product/automated-testing) to faciliate this.
 
 Keep the previous terminal with the `jac serve` process running and open a new terminal. In the new termminal, run the following command to register a new user with the email `test@gmail.com` and password `password`.
 
