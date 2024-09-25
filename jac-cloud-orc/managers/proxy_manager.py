@@ -6,7 +6,7 @@ class ModuleProxy:
     @staticmethod
     def get_module_proxy(pod_name, module_name):
         # Establish gRPC connection with the pod
-        channel = grpc.insecure_channel(f"{pod_name}:50051")
+        channel = grpc.insecure_channel(f"{pod_name}:30051")
         stub = module_service_pb2_grpc.ModuleServiceStub(channel)
 
         class ModuleRemoteProxy:
