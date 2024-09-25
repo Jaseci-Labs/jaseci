@@ -15,7 +15,6 @@ from typing import (
     TypeAlias,
     Union,
 )
-from uuid import UUID
 
 from jaclang.plugin.spec import (
     AccessLevel,
@@ -26,6 +25,7 @@ from jaclang.plugin.spec import (
     EdgeArchitype,
     EdgeDir,
     ExecutionContext,
+    JID,
     NodeAnchor,
     NodeArchitype,
     P,
@@ -43,17 +43,21 @@ class JacAccessValidation:
 
     @staticmethod
     def allow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+        anchor: Anchor,
+        root_jid: JID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Allow all access from target root graph to current Architype."""
-        hookmanager.hook.allow_root(anchor=anchor, root_id=root_id, level=level)
+        hookmanager.hook.allow_root(anchor=anchor, root_jid=root_jid, level=level)
 
     @staticmethod
     def disallow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+        anchor: Anchor,
+        root_jid: JID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
-        hookmanager.hook.disallow_root(anchor=anchor, root_id=root_id, level=level)
+        hookmanager.hook.disallow_root(anchor=anchor, root_jid=root_jid, level=level)
 
     @staticmethod
     def unrestrict(
@@ -247,9 +251,9 @@ class JacFeature(
         return hookmanager.hook.get_context()
 
     @staticmethod
-    def get_object(id: str) -> Architype | None:
+    def get_object(jid: JID) -> Architype | None:
         """Get object given id."""
-        return hookmanager.hook.get_object(id=id)
+        return hookmanager.hook.get_object(jid=jid)
 
     @staticmethod
     def object_ref(obj: Architype) -> str:

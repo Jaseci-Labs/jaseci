@@ -13,35 +13,36 @@ from dataclasses import field
 from functools import wraps
 from logging import getLogger
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
-from uuid import UUID
 
 from jaclang.compiler.constant import colors
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.plugin.feature import (
     AccessLevel,
-    Anchor,
-    Architype,
     DSFunc,
-    EdgeAnchor,
-    EdgeArchitype,
     EdgeDir,
-    ExecutionContext,
     JacFeature as Jac,
-    NodeAnchor,
-    NodeArchitype,
     P,
     PyastGenPass,
-    Root,
     T,
-    WalkerArchitype,
     ast,
 )
-from jaclang.runtimelib.constructs import (
+from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.implementation import (
+    Anchor,
+    Architype,
+    EdgeAnchor,
+    EdgeArchitype,
     GenericEdge,
-    JacTestCheck,
+    JID,
+    NodeAnchor,
+    NodeArchitype,
+    Root,
+    WalkerArchitype,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.memory import ShelfStorage
+from jaclang.runtimelib.test import JacTestCheck
 from jaclang.runtimelib.utils import collect_node_connections, traverse_graph
 
 
@@ -57,26 +58,30 @@ class JacAccessValidationImpl:
     @staticmethod
     @hookimpl
     def allow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+        anchor: Anchor,
+        root_jid: JID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
         access = anchor.access.roots
 
-        _root_id = str(root_id)
-        if level != access.anchors.get(_root_id, AccessLevel.NO_ACCESS):
-            access.anchors[_root_id] = level
+        _root_jid = str(root_jid)
+        if level != access.anchors.get(_root_jid, AccessLevel.NO_ACCESS):
+            access.anchors[_root_jid] = level
 
     @staticmethod
     @hookimpl
     def disallow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+        anchor: Anchor,
+        root_jid: JID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
         access = anchor.access.roots
 
-        access.anchors.pop(str(root_id), None)
+        access.anchors.pop(str(root_jid), None)
 
     @staticmethod
     @hookimpl
@@ -448,11 +453,13 @@ class JacFeatureImpl(JacAccessValidationImpl, JacNodeImpl, JacEdgeImpl, JacWalke
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
+    def get_object(jid: JID) -> Architype | None:
         """Get object by id."""
+        jctx = Jac.get_context()
+        mem: ShelfStorage = jctx.mem
         if id == "root":
-            return Jac.get_context().root.architype
-        elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
+            return jctx.root.architype
+        elif obj := mem.find_by_id(jid):
             return obj.architype
 
         return None
