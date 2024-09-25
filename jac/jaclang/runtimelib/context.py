@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import unittest
 from contextvars import ContextVar
-from typing import Any, Callable, Optional, cast
+from typing import Callable, Optional, cast
 from uuid import UUID
 
-from .interface import NodeAnchor, Root
-from .memory import Memory, ShelfStorage
+from .implementation import NodeAnchor, Root
+from .interface import ExecutionContext as BaseExecutionContext
+from .memory import ShelfStorage
 
 
 EXECUTION_CONTEXT = ContextVar[Optional["ExecutionContext"]]("ExecutionContext")
@@ -21,14 +22,8 @@ SUPER_ROOT_ANCHOR = NodeAnchor(
 SUPER_ROOT_ARCHITYPE.__jac__ = SUPER_ROOT_ANCHOR
 
 
-class ExecutionContext:
+class ExecutionContext(BaseExecutionContext):
     """Execution Context."""
-
-    mem: Memory
-    reports: list[Any]
-    system_root: NodeAnchor
-    root: NodeAnchor
-    entry_node: NodeAnchor
 
     def init_anchor(
         self,

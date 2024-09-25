@@ -1,10 +1,12 @@
 """Jaclang Runtimelib interfaces."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import IntEnum
 from types import UnionType
-from typing import Any, Callable, ClassVar, Generic, Iterable, Type, TypeVar
+from typing import Any, Callable, ClassVar, Generator, Generic, Iterable, Type, TypeVar
 
 
 _ID = TypeVar("_ID")
@@ -12,6 +14,11 @@ _ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
 
 _SERIALIZE = TypeVar("_SERIALIZE")
 _DESERIALIZE = TypeVar("_DESERIALIZE")
+
+
+#########################################################################################
+#                                      ID / ACCESS                                      #
+#########################################################################################
 
 
 @dataclass(kw_only=True)
@@ -62,6 +69,11 @@ class Permission:
     roots: Access = field(default_factory=Access)
 
 
+#########################################################################################
+#                                        ANCHORS                                        #
+#########################################################################################
+
+
 @dataclass(kw_only=True)
 class Anchor(Generic[_SERIALIZE], ABC):
     """Anchor Interface."""
@@ -103,6 +115,11 @@ class WalkerAnchor(Anchor[_SERIALIZE]):
     """WalkerAnchor Interface."""
 
     architype: "WalkerArchitype"
+
+
+#########################################################################################
+#                                       ARCHITYPES                                      #
+#########################################################################################
 
 
 class Architype(Generic[_SERIALIZE], ABC):
@@ -159,3 +176,111 @@ class DSFunc:
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
         self.func = getattr(cls, self.name)
+
+
+#########################################################################################
+#                                   MEMORY INTERFACES                                   #
+#########################################################################################
+
+
+@dataclass
+class Memory(Generic[_ID, _ANCHOR]):
+    """Generic Memory Handler."""
+
+    __mem__: dict[_ID, _ANCHOR] = field(default_factory=dict)
+    __gc__: set[_ID] = field(default_factory=set)
+
+    def close(self) -> None:
+        """Close memory handler."""
+        self.__mem__.clear()
+        self.__gc__.clear()
+
+    def find(
+        self,
+        ids: _ID | Iterable[_ID],
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
+    ) -> Generator[_ANCHOR, None, None]:
+        """Find anchors from memory by ids with filter."""
+        if not isinstance(ids, Iterable):
+            ids = [ids]
+
+        return (
+            anchor
+            for id in ids
+            if (anchor := self.__mem__.get(id)) and (not filter or filter(anchor))
+        )
+
+    def find_one(
+        self,
+        ids: _ID | Iterable[_ID],
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
+    ) -> _ANCHOR | None:
+        """Find one anchor from memory by ids with filter."""
+        return next(self.find(ids, filter), None)
+
+    def find_by_id(self, id: _ID) -> _ANCHOR | None:
+        """Find one by id."""
+        return self.__mem__.get(id)
+
+    def set(self, id: _ID, data: _ANCHOR) -> None:
+        """Save anchor to memory."""
+        self.__mem__[id] = data
+
+    def remove(self, ids: _ID | Iterable[_ID]) -> None:
+        """Remove anchor/s from memory."""
+        if not isinstance(ids, Iterable):
+            ids = [ids]
+
+        for id in ids:
+            if self.__mem__.pop(id, None):
+                self.__gc__.add(id)
+
+
+#########################################################################################
+#                                        CONTEXT                                        #
+#########################################################################################
+
+
+class ExecutionContext(ABC):
+    """Execution Context."""
+
+    mem: Memory
+    reports: list[Any]
+    system_root: NodeAnchor
+    root: NodeAnchor
+    entry_node: NodeAnchor
+
+    @abstractmethod
+    def init_anchor(
+        self,
+        anchor_id: str | None,
+        default: NodeAnchor,
+    ) -> NodeAnchor:
+        """Load initial anchors."""
+
+    def set_entry_node(self, entry_node: str | None) -> None:
+        """Override entry."""
+        self.entry_node = self.init_anchor(entry_node, self.root)
+
+    @abstractmethod
+    def close(self) -> None:
+        """Close current ExecutionContext."""
+
+    @staticmethod
+    @abstractmethod
+    def create(
+        session: str | None = None,
+        root: str | None = None,
+        auto_close: bool = True,
+    ) -> ExecutionContext:
+        """Create ExecutionContext."""
+
+    @staticmethod
+    @abstractmethod
+    def get() -> ExecutionContext:
+        """Get current ExecutionContext."""
+
+    @staticmethod
+    @abstractmethod
+    def get_root() -> Root:
+        """Get current root."""

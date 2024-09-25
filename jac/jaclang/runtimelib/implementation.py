@@ -19,7 +19,8 @@ from .interface import (
     _ANCHOR,
 )
 
-ANCHOR_TYPES: TypeAlias = "NodeAnchor" | "EdgeAnchor" | "WalkerAnchor"
+Anchor: TypeAlias = "NodeAnchor" | "EdgeAnchor" | "WalkerAnchor"
+Architype: TypeAlias = "NodeArchitype" | "EdgeArchitype" | "WalkerArchitype"
 logger = getLogger(__name__)
 
 
