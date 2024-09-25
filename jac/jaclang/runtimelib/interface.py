@@ -6,15 +6,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import IntEnum
 from types import UnionType
-from typing import Any, Callable, ClassVar, Generator, Generic, Iterable, Type, TypeVar
+from typing import Any, Callable, Generator, Generic, Iterable, Type, TypeVar
 
 
 _ID = TypeVar("_ID")
 _ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
+_NODE_ANCHOR = TypeVar("_NODE_ANCHOR", bound="NodeAnchor")
 
 _SERIALIZE = TypeVar("_SERIALIZE")
 _DESERIALIZE = TypeVar("_DESERIALIZE")
-
 
 #########################################################################################
 #                                      ID / ACCESS                                      #
@@ -125,7 +125,7 @@ class WalkerAnchor(Anchor[_SERIALIZE]):
 class Architype(Generic[_SERIALIZE], ABC):
     """Architype Interface."""
 
-    __jac__: ClassVar[Anchor]
+    __jac__: Anchor
 
     @abstractmethod
     def __serialize__(self) -> _SERIALIZE:
@@ -140,19 +140,19 @@ class Architype(Generic[_SERIALIZE], ABC):
 class NodeArchitype(Architype[_SERIALIZE]):
     """NodeArchitype Interface."""
 
-    __jac__: ClassVar[NodeAnchor]
+    __jac__: NodeAnchor
 
 
 class EdgeArchitype(Architype[_SERIALIZE]):
     """EdgeArchitype Interface."""
 
-    __jac__: ClassVar[EdgeAnchor]
+    __jac__: EdgeAnchor
 
 
 class WalkerArchitype(Architype[_SERIALIZE]):
     """Walker Architype Interface."""
 
-    __jac__: ClassVar[WalkerAnchor]
+    __jac__: WalkerAnchor
 
 
 @dataclass(kw_only=True)
@@ -241,24 +241,24 @@ class Memory(Generic[_ID, _ANCHOR]):
 #########################################################################################
 
 
-class ExecutionContext(ABC):
+class ExecutionContext(Generic[_NODE_ANCHOR], ABC):
     """Execution Context."""
 
     mem: Memory
     reports: list[Any]
-    system_root: NodeAnchor
-    root: NodeAnchor
-    entry_node: NodeAnchor
+    system_root: _NODE_ANCHOR
+    root: _NODE_ANCHOR
+    entry_node: _NODE_ANCHOR
 
     @abstractmethod
     def init_anchor(
         self,
-        anchor_id: str | None,
-        default: NodeAnchor,
-    ) -> NodeAnchor:
+        anchor_jid: JID | None,
+        default: _NODE_ANCHOR,
+    ) -> _NODE_ANCHOR:
         """Load initial anchors."""
 
-    def set_entry_node(self, entry_node: str | None) -> None:
+    def set_entry_node(self, entry_node: JID | None) -> None:
         """Override entry."""
         self.entry_node = self.init_anchor(entry_node, self.root)
 

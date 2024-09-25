@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import ClassVar, TypeAlias
+from re import IGNORECASE, compile
+from typing import Type, TypeAlias
 from uuid import UUID, uuid4
 
 from .interface import (
@@ -19,6 +20,13 @@ from .interface import (
     _ANCHOR,
 )
 
+
+JID_REGEX = compile(
+    r"^(n|e|w):([^:]*):([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+    IGNORECASE,
+)
+
+
 Anchor: TypeAlias = "NodeAnchor" | "EdgeAnchor" | "WalkerAnchor"
 Architype: TypeAlias = "NodeArchitype" | "EdgeArchitype" | "WalkerArchitype"
 logger = getLogger(__name__)
@@ -28,8 +36,41 @@ logger = getLogger(__name__)
 class JID(_JID[UUID, _ANCHOR]):
     """Jaclang Default JID."""
 
-    id: UUID = field(default_factory=uuid4)
-    name: str = ""
+    id: UUID
+    name: str
+
+    def __init__(
+        self: JID[Anchor],
+        id: str | UUID | None = None,
+        type: Type[Anchor] | None = None,
+        name: str = "",
+    ) -> None:
+        """Override JID initializer."""
+        match id:
+            case str():
+                if matched := JID_REGEX.search(id):
+                    self.id = UUID(matched.group(3))
+                    self.name = matched.group(2)
+                    match matched.group(1).lower():
+                        case "n":
+                            self.type = NodeAnchor
+                        case "e":
+                            self.type = EdgeAnchor
+                        case _:
+                            self.type = WalkerAnchor
+                    return
+                raise ValueError("Not a valid JID format!")
+            case UUID():
+                self.id = id
+            case None:
+                self.id = uuid4()
+            case _:
+                raise ValueError("Not a valid id for JID!")
+
+        if type is None:
+            raise ValueError("Type is required from non string JID!")
+        self.type = type
+        self.name = name
 
     def __repr__(self) -> str:
         """Override string representation."""
@@ -111,7 +152,7 @@ class WalkerAnchor(_WalkerAnchor["WalkerAnchor"]):
 class NodeArchitype(_NodeArchitype["NodeArchitype"]):
     """NodeArchitype Interface."""
 
-    __jac__: ClassVar[NodeAnchor]
+    __jac__: NodeAnchor
 
     def __serialize__(self) -> NodeArchitype:
         """Override serialization."""
@@ -126,7 +167,7 @@ class NodeArchitype(_NodeArchitype["NodeArchitype"]):
 class EdgeArchitype(_EdgeArchitype["EdgeArchitype"]):
     """EdgeArchitype Interface."""
 
-    __jac__: ClassVar[EdgeAnchor]
+    __jac__: EdgeAnchor
 
     def __serialize__(self) -> EdgeArchitype:
         """Override serialization."""
@@ -141,7 +182,7 @@ class EdgeArchitype(_EdgeArchitype["EdgeArchitype"]):
 class WalkerArchitype(_WalkerArchitype["WalkerArchitype"]):
     """Walker Architype Interface."""
 
-    __jac__: ClassVar[WalkerAnchor]
+    __jac__: WalkerAnchor
 
     def __serialize__(self) -> WalkerArchitype:
         """Override serialization."""

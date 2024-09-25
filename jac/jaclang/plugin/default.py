@@ -106,7 +106,7 @@ class JacAccessValidationImpl:
         """Read Access Validation."""
         if not (access_level := Jac.check_access_level(to) > AccessLevel.NO_ACCESS):
             logger.info(
-                f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
+                f"Current root doesn't have read access to {to.__class__.__name__}[{to.jid}]"
             )
         return access_level
 
@@ -116,7 +116,7 @@ class JacAccessValidationImpl:
         """Write Access Validation."""
         if not (access_level := Jac.check_access_level(to) > AccessLevel.READ):
             logger.info(
-                f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
+                f"Current root doesn't have connect access to {to.__class__.__name__}[{to.jid}]"
             )
         return access_level
 
@@ -126,7 +126,7 @@ class JacAccessValidationImpl:
         """Write Access Validation."""
         if not (access_level := Jac.check_access_level(to) > AccessLevel.CONNECT):
             logger.info(
-                f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
+                f"Current root doesn't have write access to {to.__class__.__name__}[{to.jid}]"
             )
         return access_level
 
@@ -138,13 +138,13 @@ class JacAccessValidationImpl:
             return AccessLevel.WRITE
 
         jctx = Jac.get_context()
-
+        jmem: ShelfStorage = jctx.mem
         jroot = jctx.root
 
         # if current root is system_root
         # if current root id is equal to target anchor's root id
         # if current root is the target anchor
-        if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
+        if jroot == jctx.system_root or jroot.jid == to.root or jroot == to:
             return AccessLevel.WRITE
 
         access_level = AccessLevel.NO_ACCESS
@@ -155,7 +155,7 @@ class JacAccessValidationImpl:
 
         # if target anchor's root have set allowed roots
         # if current root is allowed to the whole graph of target anchor's root
-        if to.root and isinstance(to_root := jctx.mem.find_one(to.root), Anchor):
+        if to.root and isinstance(to_root := jmem.find_one(to.root), Anchor):
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
