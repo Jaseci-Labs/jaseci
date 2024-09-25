@@ -394,7 +394,9 @@ class JacFormatPass(Pass):
                     indented = True
                 for count, j in enumerate(i.kid):
                     if j.gen.jac == ",":
-                        if i.kid[count + 1].gen.jac.startswith("#"):
+                        if len(i.kid) > count + 1 and i.kid[
+                            count + 1
+                        ].gen.jac.startswith("#"):
                             self.indent_level -= 1
                             self.emit(node, f"{j.gen.jac} ")
                             self.indent_level += 1

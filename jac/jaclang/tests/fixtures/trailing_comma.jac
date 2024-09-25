@@ -60,13 +60,13 @@ with entry {
     tuple_2_2 = ("foo", "bar", "baz", );
 
     foo_instance1 = foo11(val=90);
-    foo_instance1_2 = foo11(val=90,);  # TODO: FORMATTER: trailing comma is not supported
+    foo_instance1_2 = foo11(val=90, );
 
     foo_instance3 = foo11(2, 34, val3=90);
-    foo_instance3_2 = foo11(2,34,val3=90,);  # TODO: FORMATTER: trailing comma is not supported
+    foo_instance3_2 = foo11(2, 34, val3=90, );
 
-    foo_instance4 = foo11(2, 34,val3=90, val4=90);
-    foo_instance4_2 = foo11(2, 34,val3=90, val4=90,);   # TODO: FORMATTER: trailing comma is not supported
+    foo_instance4 = foo11(2, 34, val3=90, val4=90);
+    foo_instance4_2 = foo11(2, 34, val3=90, val4=90, );
 
     func_tuple = (foo_instance1, foo_instance3_2, len(tuple1_2));
     func_tuple_with_trail_comma = (foo_instance1, foo_instance3_2, len(tuple1_2), );
