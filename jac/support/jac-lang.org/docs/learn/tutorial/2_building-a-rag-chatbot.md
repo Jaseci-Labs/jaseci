@@ -1,14 +1,21 @@
 # Building a RAG Chatbot with Jac Cloud and Streamlit (Part 2/3)
 
-Now that we have a jac application served up, let's build a simple chatbot using Retrieval Augmented Generation (RAG) with Jac Cloud and Streamlit as our frontend interface.
+Now that we have a jac application served up, In this section, we'll build a simple chatbot using **Retrieval Augmented Generation (RAG)** with **Jac Cloud** for the backend and **Streamlit** for the frontend interface.
 
 ### Preparation / Installation
 
-There are a couple of additional dependenices we need here
+Before we start, let's install a few additional dependencies. Run the following command in your terminal:
 
 ```bash
 pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0
 ```
+
+- `mtllm`: A toolkit for multi-task learning with language models.
+- `jac-streamlit`: A plugin that integrates jaclang with Streamlit.
+- `langchain`, `langchain_community`: Essential tools for handling the language generation logic in your chatbot.
+- `chromadb`: A vector database to store and retrieve embeddings.
+- `pypdf`: A Python library to handle PDF documents.
+
 
 ## Building a Streamlit Interface
 
@@ -16,22 +23,20 @@ Before we begin building out our chatbot, let's first build a simple GUI to inte
 
 Luckily for us, jaclang has a plugin for streamlit that allows us to build web applications with streamlit using jaclang. In this part of the tutorial, we will build a frontend for our conversational agent using streamlit. You can find more information about the `jac-streamlit` plugin [here](https://github.com/Jaseci-Labs/jaclang/blob/main/support/plugins/streamlit/README.md).
 
-First, let's create a new file called `client.jac`. This file will contain the code for the frontend chat interface.
+Begin by creating a file named `client.jac`. This file will define the frontend logic for interacting with users and displaying responses from the chatbot.
 
-We start by importing the necessary modules in Jac:
+First, import the necessary Python libraries that will handle the user interface (UI) and API communication:
 
-- `streamlit` (for frontend UI components)
-- `requests` (for making API calls)
 
 ```jac
 import:py streamlit as st;
 import:py requests;
 ```
 
-- `streamlit` will handle the user interface (UI) of the chatbot.
-- `requests` will handle API calls to our backend.
+- `streamlit`: Handle the user interface (UI) of the chatbot.
+- `requests`: Handle API calls to our backend.
 
-Now let's define a function bootstrap_frontend, which accepts a token for authentication and builds the chat interface.
+Now let's define a function `bootstrap_frontend`, which is the core of the user interface. It is responsible for rendering the welcome message, initializing the chat history, and interacting with the backend.
 
 ```jac
 can bootstrap_frontend (token: str) {
@@ -44,25 +49,35 @@ can bootstrap_frontend (token: str) {
 }
 ```
 
-- `st.write()` adds a welcome message to the app.
-- `st.session_state` is used to persist data across user interactions. Here, we're using it to store the chat history (`messages`).
+- `st.write("Welcome to your Demo Agent!")`: This displays a welcome message on the page.
+- `st.session_state`: Streamlit's `session_state` is used to persist the data (in this case, the chat history) across multiple interactions. Here, we initialize `st.session_state.messages` to store the messages between the user and the assistant.
 
-Now, let's update the function such that when the page reloads or updates, the previous chat messages are reloaded from `st.session_state.messages`. Add the following to `bootstrap_frontend`
+Next, we need to ensure that the chat history is reloaded when the page is refreshed or updated. The following code snippet does that by iterating through the stored messages and rendering them on the interface:
 
 ```jac
+can bootstrap_frontend(token:str){
+    //
+    //
+
     for message in st.session_state.messages {
         with st.chat_message(message["role"]) {
             st.markdown(message["content"]);
         }
     }
+}
 ```
 
-- This block loops through the stored messages in the session state.
-- For each message, we use `st.chat_message()` to display the message by its role (either `"user"` or `"assistant"`).
+- `for message in st.session_state.messages`: This loop goes through each message stored in `st.session_state.messages`.
+- `st.chat_message(message["role"])`: Displays each message by its role (either `"user"` or `"assistant"`)
+
 
 Next, let's capture user input using `st.chat_input()`. This is where users can type their message to the chatbot.
 
 ```jac
+can bootstrap_frontend(token:str){
+    //
+    //
+
     if prompt := st.chat_input("What is up?") {
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt});
@@ -72,16 +87,23 @@ Next, let's capture user input using `st.chat_input()`. This is where users can 
             st.markdown(prompt);
         }
     }
+}
 ```
 
-- `st.chat_input()` waits for the user to type a message and submit it.
-- Once the user submits a message, it's appended to the session state's message history and immediately displayed on the screen.
+- `st.chat_input("What is up?")`: This waits for the user to type a message. The text typed by the user is stored in the variable `prompt`.
+- `st.session_state.messages.append(...)`: The user’s message is added to the session's chat history. Each message is stored as a dictionary with two keys: "role" (indicating whether the message is from the user or the assistant) and "content" (the actual text).
+- `with st.chat_message("user")`: The message is displayed in the chat box under the "user" role.
 
-Now we handle the interaction with the backend server. After the user submits a message, the assistant responds. This involves sending the user's message to the backend, receiving a response from the backend and displaying it.
+Now we handle the interaction with the backend server. After capturing the user's input, it will send to the backend, retrieve the assistant's response, and display it,
 
-Add the following to `bootstrap_frontend`.
+Modify the `bootstrap_frontend` as follows;
 
 ```jac
+
+can bootstrap_frontend(token:str){
+    //
+    //
+
     if prompt := st.chat_input("What is up?") {
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt});
@@ -109,14 +131,14 @@ Add the following to `bootstrap_frontend`.
             }
         }
     }
+}
 ```
 
-- The user's input (`prompt`) is sent to the backend using a POST request to the `/walker/interact` endpoint.
-- The `interact` walker, as we created in the last chapter, just returns `Hello World!` for now. This will change as we build out our chatbot.
-  - `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
+- `requests.post(...)`: This sends the user’s message (stored in `prompt`) to the backend using an HTTP POST request. The message is sent as JSON with a "message" key, and a "session_id" is also included, but `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
+- The backend is the `interact` walker, which we created in the last chapter, it just returns `Hello World!` for now. This will change as we build out our chatbot.
 - The response from the backend is then displayed using `st.write()`, and the assistant's message is stored in the session state.
 
-Lastly, we'll define the entry point of `client.jac`. Think `main` function of a python program. We authenticates the user and retrieves the token needed for the `bootstrap_frontend` function.
+Lastly, we'll define the entry point of our program. Think about the `main` function of a python program. Here we authenticates the user and retrieves the token needed for the `bootstrap_frontend` function. Add the following code block to the `client.jac`
 
 ```jac
 with entry {
@@ -169,7 +191,7 @@ Now you can run the frontend using the following command:
 jac streamlit client.jac
 ```
 
-If your server is still running, you can chat with your assistant using the streamlit interface. The response will only be "Hello, world!" for now, but we will update it to be a fully working chatbot next.
+If your server is still running, you can chat with your assistant using the streamlit interface which is opening in your browser. The response will only be "Hello, world!" for now, but we will update it to be a fully working chatbot next.
 
 Now let's move on to building the RAG module.
 
