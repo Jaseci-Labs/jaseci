@@ -468,8 +468,13 @@ def py2jac(filename: str) -> None:
     """
     if filename.endswith(".py"):
         with open(filename, "r") as f:
+            file_source = f.read()
             code = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(ast3.parse(f.read()), mod_path=filename),
+                input_ir=ast.PythonModuleAst(
+                    ast3.parse(file_source),
+                    mod_path=filename,
+                    file_source=file_source,
+                ),
             ).ir.unparse()
         print(code)
     else:

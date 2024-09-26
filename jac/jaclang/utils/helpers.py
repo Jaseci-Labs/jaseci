@@ -182,6 +182,76 @@ def dump_traceback(e: Exception) -> str:
     return trace_dump
 
 
+# TODO: After implementing the TextRange (or simillar named) class to mark a text range
+# refactor the parameter to accept an instace of that text range object.
+def pretty_print_source_location(
+    file_path: str,
+    file_source: str,
+    error_line: int,
+    pos_start: int,
+    pos_end: int,
+) -> str:
+    """Pretty print internal method for the pretty_print method."""
+    # NOTE: The Line numbers and the column numbers are starts with 1.
+    # We print totally 5 lines (error line and above 2 and bellow 2).
+
+    # The width of the line number we'll be printing (more of a settings).
+    line_num_width: int = 5
+
+    idx: int = pos_start  # Pointer for the current character.
+
+    if file_source == "" or file_path == "":
+        return ""
+
+    start_line: int = error_line - 2
+    if start_line < 1:
+        start_line = 1
+    end_line: int = start_line + 5  # Index is exclusive.
+
+    # Get the first character of the [start_line].
+    curr_line: int = error_line
+    while idx > 0 and curr_line >= start_line:
+        idx -= 1
+        if idx == 0:
+            break
+        if file_source[idx] == "\n":
+            curr_line -= 1
+
+    assert idx == 0 or file_source[idx] == "\n"
+    if idx != 0:
+        idx += 1  # Enter the line.
+
+    pretty_dump = ""
+
+    # Print each lines.
+    curr_line = start_line
+    while curr_line < end_line:
+        pretty_dump += f"%{line_num_width}d | " % curr_line
+
+        idx_line_start = idx
+        while idx < len(file_source) and file_source[idx] != "\n":
+            idx += 1  # Run to the line end.
+        pretty_dump += file_source[idx_line_start:idx]
+        pretty_dump += "\n"
+
+        if curr_line == error_line:  # Print the current line with indicator.
+            pretty_dump += f"%{line_num_width}s | " % " "
+
+            spaces = ""
+            for idx_pre in range(idx_line_start, pos_start):
+                spaces += "\t" if file_source[idx_pre] == "\t" else " "
+
+            err_token_len = pos_end - pos_start
+            pretty_dump += spaces + ("~" * err_token_len) + "\n"
+
+        if idx == len(file_source):
+            break
+        curr_line += 1
+        idx += 1
+
+    return pretty_dump
+
+
 class Jdb(pdb.Pdb):
     """Jac debugger."""
 

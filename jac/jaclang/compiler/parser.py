@@ -44,11 +44,19 @@ class JacParser(Pass):
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
+            catch_error.file_source = self.source.code
             catch_error.line_no = e.line
             catch_error.end_line = e.line
             catch_error.c_start = e.column
             catch_error.c_end = e.column + 1
-            self.error(f"Syntax Error: {e}", node_override=catch_error)
+            catch_error.pos_start = e.pos_in_stream or 0
+            catch_error.pos_end = catch_error.pos_start + 1
+
+            error_msg = "Syntax Error"
+            if len(e.args) >= 1 and isinstance(e.args[0], str):
+                error_msg += e.args[0]
+            self.error(error_msg, node_override=catch_error)
+
         except Exception as e:
             self.error(f"Internal Error: {e}")
         return ast.Module(
@@ -66,6 +74,7 @@ class JacParser(Pass):
         """Process comment."""
         return ast.CommentToken(
             file_path=mod.loc.mod_path,
+            file_source=mod.loc.file_source,
             name=token.type,
             value=token.value,
             line=token.line if token.line is not None else 0,
@@ -1229,6 +1238,7 @@ class JacParser(Pass):
                     ast.BuiltinType(
                         name=kid[0].name,
                         file_path=self.parse_ref.mod_path,
+                        file_source=self.parse_ref.source.code,
                         value=kid[0].value,
                         line=kid[0].loc.first_line,
                         end_line=kid[0].loc.last_line,
@@ -3985,6 +3995,7 @@ class JacParser(Pass):
                 token.value = token.value.replace("::py::", "")
             ret = ret_type(
                 file_path=self.parse_ref.mod_path,
+                file_source=self.parse_ref.source.code,
                 name=token.type,
                 value=token.value[2:] if token.type == Tok.KWESC_NAME else token.value,
                 line=token.line if token.line is not None else 0,
