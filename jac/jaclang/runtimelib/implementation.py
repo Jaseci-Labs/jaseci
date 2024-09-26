@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from logging import getLogger
 from re import IGNORECASE, compile
-from typing import Type, TypeAlias, TypeVar
+from typing import Generic, Type, TypeAlias, TypeVar
 from uuid import UUID, uuid4
 
 from .interface import (
@@ -33,12 +33,11 @@ logger = getLogger(__name__)
 
 
 @dataclass(kw_only=True)
-class JID(_JID[UUID, Anchor]):
+class JID(Generic[_ANCHOR], _JID):
     """Jaclang Default JID."""
 
     id: UUID
-    type: Type[Anchor]
-    name: str
+    type: Type[_ANCHOR]
 
     def __init__(
         self,
@@ -52,13 +51,14 @@ class JID(_JID[UUID, Anchor]):
                 if matched := JID_REGEX.search(id):
                     self.id = UUID(matched.group(3))
                     self.name = matched.group(2)
+                    # currently no way to base hinting on string regex!
                     match matched.group(1).lower():
                         case "n":
-                            self.type = NodeAnchor
+                            self.type = NodeAnchor  # type: ignore [assignment]
                         case "e":
-                            self.type = EdgeAnchor
+                            self.type = EdgeAnchor  # type: ignore [assignment]
                         case _:
-                            self.type = WalkerAnchor
+                            self.type = WalkerAnchor  # type: ignore [assignment]
                     return
                 raise ValueError("Not a valid JID format!")
             case UUID():
@@ -103,9 +103,6 @@ class NodeAnchor(_NodeAnchor["NodeAnchor"]):
     def __deserialize__(cls, data: NodeAnchor) -> NodeAnchor:
         """Override deserialization."""
         return data
-
-
-aa = JID(id=UUID(), type=NodeAnchor)
 
 
 @dataclass(kw_only=True)

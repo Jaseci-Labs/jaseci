@@ -17,7 +17,6 @@ from typing import (
 )
 
 
-_ID = TypeVar("_ID")
 _ANCHOR = TypeVar("_ANCHOR", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", covariant=True)
 _NODE_ANCHOR = TypeVar("_NODE_ANCHOR", bound="NodeAnchor")
 
@@ -30,10 +29,10 @@ _DESERIALIZE = TypeVar("_DESERIALIZE")
 
 
 @dataclass(kw_only=True)
-class JID(Generic[_ID, _ANCHOR], ABC):
+class JID(Generic[_ANCHOR], ABC):
     """Jaclang ID Interface."""
 
-    id: _ID
+    id: Any
     type: Type[_ANCHOR]
     name: str
 
@@ -83,12 +82,12 @@ class Permission:
 
 
 @dataclass(kw_only=True)
-class Anchor(Generic[_ID, _SERIALIZE], ABC):
+class Anchor(Generic[_SERIALIZE], ABC):
     """Anchor Interface."""
 
-    jid: JID[_ID, NodeAnchor] | JID[_ID, EdgeAnchor] | JID[_ID, WalkerAnchor]
+    jid: JID[NodeAnchor] | JID[EdgeAnchor] | JID[WalkerAnchor]
     architype: "NodeArchitype" | "EdgeArchitype" | "WalkerArchitype"
-    root: JID[_ID, NodeAnchor] | None
+    root: JID[NodeAnchor] | None
     access: Permission
 
     @abstractmethod
@@ -102,29 +101,29 @@ class Anchor(Generic[_ID, _SERIALIZE], ABC):
 
 
 @dataclass(kw_only=True)
-class NodeAnchor(Anchor[_ID, _SERIALIZE]):
+class NodeAnchor(Anchor[_SERIALIZE]):
     """NodeAnchor Interface."""
 
-    jid: JID[_ID, NodeAnchor]
+    jid: JID[NodeAnchor]
     architype: "NodeArchitype"
-    edge_ids: Iterable[JID[_ID, EdgeAnchor]]
+    edge_ids: Iterable[JID[EdgeAnchor]]
 
 
 @dataclass(kw_only=True)
-class EdgeAnchor(Anchor[_ID, _SERIALIZE]):
+class EdgeAnchor(Anchor[_SERIALIZE]):
     """EdgeAnchor Interface."""
 
-    jid: JID[_ID, EdgeAnchor]
+    jid: JID[EdgeAnchor]
     architype: "EdgeArchitype"
-    source_id: JID[_ID, NodeAnchor]
-    target_id: JID[_ID, NodeAnchor]
+    source_id: JID[NodeAnchor]
+    target_id: JID[NodeAnchor]
 
 
 @dataclass(kw_only=True)
-class WalkerAnchor(Anchor[_ID, _SERIALIZE]):
+class WalkerAnchor(Anchor[_SERIALIZE]):
     """WalkerAnchor Interface."""
 
-    jid: JID[_ID, WalkerAnchor]
+    jid: JID[WalkerAnchor]
     architype: "WalkerArchitype"
 
 
@@ -195,11 +194,11 @@ class DSFunc:
 
 
 @dataclass
-class Memory(Generic[_ID, _ANCHOR]):
+class Memory(Generic[_ANCHOR]):
     """Generic Memory Handler."""
 
-    __mem__: dict[JID[_ID, _ANCHOR], _ANCHOR] = field(default_factory=dict)
-    __gc__: set[JID[_ID, _ANCHOR]] = field(default_factory=set)
+    __mem__: dict[JID[_ANCHOR], _ANCHOR] = field(default_factory=dict)
+    __gc__: set[JID[_ANCHOR]] = field(default_factory=set)
 
     def close(self) -> None:
         """Close memory handler."""
@@ -208,7 +207,7 @@ class Memory(Generic[_ID, _ANCHOR]):
 
     def find(
         self,
-        ids: JID[_ID, _ANCHOR] | Iterable[JID[_ID, _ANCHOR]],
+        ids: JID[_ANCHOR] | Iterable[JID[_ANCHOR]],
         filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
     ) -> Generator[_ANCHOR, None, None]:
         """Find anchors from memory by ids with filter."""
@@ -225,13 +224,13 @@ class Memory(Generic[_ID, _ANCHOR]):
 
     def find_one(
         self,
-        ids: JID[_ID, _ANCHOR] | Iterable[JID[_ID, _ANCHOR]],
+        ids: JID[_ANCHOR] | Iterable[JID[_ANCHOR]],
         filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
     ) -> _ANCHOR | None:
         """Find one anchor from memory by ids with filter."""
         return next(self.find(ids, filter), None)
 
-    def find_by_id(self, id: JID[_ID, _ANCHOR]) -> _ANCHOR | None:
+    def find_by_id(self, id: JID[_ANCHOR]) -> _ANCHOR | None:
         """Find one by id."""
         return self.__mem__.get(id)
 
@@ -239,7 +238,7 @@ class Memory(Generic[_ID, _ANCHOR]):
         """Save anchor to memory."""
         self.__mem__[data.jid] = data
 
-    def remove(self, ids: JID[_ID, _ANCHOR] | Iterable[JID[_ID, _ANCHOR]]) -> None:
+    def remove(self, ids: JID[_ANCHOR] | Iterable[JID[_ANCHOR]]) -> None:
         """Remove anchor/s from memory."""
         if not isinstance(ids, Iterable):
             ids = [ids]
