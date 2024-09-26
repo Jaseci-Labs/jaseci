@@ -7,14 +7,20 @@ from pickle import dumps
 from shelve import Shelf, open
 from typing import Callable, Generator, Iterable, TypeVar
 
-from .implementation import Anchor, JID, NodeAnchor, Root
+from .implementation import (
+    Anchor,
+    EdgeAnchor,
+    JID,
+    NodeAnchor,
+    Root,
+    WalkerAnchor,
+    _ANCHOR,
+)
 from .interface import Memory
-
-ID = TypeVar("ID")
 
 
 @dataclass
-class ShelfStorage(Memory[JID[Anchor], Anchor]):
+class ShelfStorage(Memory[JID, Anchor]):
     """Shelf Handler."""
 
     __shelf__: Shelf[Anchor] | None = None
@@ -69,9 +75,9 @@ class ShelfStorage(Memory[JID[Anchor], Anchor]):
 
     def find(
         self,
-        ids: JID[Anchor] | Iterable[JID[Anchor]],
-        filter: Callable[[Anchor], Anchor] | None = None,
-    ) -> Generator[Anchor, None, None]:
+        ids: JID[_ANCHOR] | Iterable[JID[_ANCHOR]],
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
+    ) -> Generator[_ANCHOR, None, None]:
         """Find anchors from datasource by ids with filter."""
         if not isinstance(ids, Iterable):
             ids = [ids]
@@ -91,7 +97,7 @@ class ShelfStorage(Memory[JID[Anchor], Anchor]):
         else:
             yield from super().find(ids, filter)
 
-    def find_by_id(self, id: JID[Anchor]) -> Anchor | None:
+    def find_by_id(self, id: JID[_ANCHOR]) -> _ANCHOR | None:
         """Find one by id."""
         data = super().find_by_id(id)
 

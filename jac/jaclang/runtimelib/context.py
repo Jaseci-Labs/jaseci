@@ -14,9 +14,7 @@ from .memory import ShelfStorage
 
 EXECUTION_CONTEXT = ContextVar[Optional["ExecutionContext"]]("ExecutionContext")
 
-SUPER_ROOT_JID = JID[NodeAnchor](
-    id=UUID("00000000-0000-0000-0000-000000000000"), type=NodeAnchor
-)
+SUPER_ROOT_JID = JID(id=UUID("00000000-0000-0000-0000-000000000000"), type=NodeAnchor)
 SUPER_ROOT_ARCHITYPE = object.__new__(Root)
 SUPER_ROOT_ANCHOR = NodeAnchor(
     jid=SUPER_ROOT_JID, architype=SUPER_ROOT_ARCHITYPE, persistent=False, edge_ids=set()

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from logging import getLogger
 from re import IGNORECASE, compile
-from typing import Type, TypeAlias
+from typing import Type, TypeAlias, TypeVar
 from uuid import UUID, uuid4
 
 from .interface import (
@@ -17,7 +17,6 @@ from .interface import (
     Permission,
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
-    _ANCHOR,
 )
 
 
@@ -27,22 +26,24 @@ JID_REGEX = compile(
 )
 
 
+_ANCHOR = TypeVar("_ANCHOR", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", covariant=True)
 Anchor: TypeAlias = "NodeAnchor" | "EdgeAnchor" | "WalkerAnchor"
 Architype: TypeAlias = "NodeArchitype" | "EdgeArchitype" | "WalkerArchitype"
 logger = getLogger(__name__)
 
 
 @dataclass(kw_only=True)
-class JID(_JID[UUID, _ANCHOR]):
+class JID(_JID[UUID, Anchor]):
     """Jaclang Default JID."""
 
     id: UUID
+    type: Type[Anchor]
     name: str
 
     def __init__(
-        self: JID[Anchor],
+        self,
         id: str | UUID | None = None,
-        type: Type[Anchor] | None = None,
+        type: Type[_ANCHOR] | None = None,
         name: str = "",
     ) -> None:
         """Override JID initializer."""
@@ -85,7 +86,7 @@ class JID(_JID[UUID, _ANCHOR]):
 class NodeAnchor(_NodeAnchor["NodeAnchor"]):
     """NodeAnchor Interface."""
 
-    jid: JID[NodeAnchor] = field(default_factory=lambda: JID(type=NodeAnchor))
+    jid: JID["NodeAnchor"] = field(default_factory=lambda: JID(type=NodeAnchor))
     architype: "NodeArchitype"
     root: JID["NodeAnchor"] | None = None
     access: Permission = field(default_factory=Permission)
@@ -102,6 +103,9 @@ class NodeAnchor(_NodeAnchor["NodeAnchor"]):
     def __deserialize__(cls, data: NodeAnchor) -> NodeAnchor:
         """Override deserialization."""
         return data
+
+
+aa = JID(id=UUID(), type=NodeAnchor)
 
 
 @dataclass(kw_only=True)
