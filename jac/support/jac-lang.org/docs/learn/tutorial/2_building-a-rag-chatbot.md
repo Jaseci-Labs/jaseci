@@ -185,7 +185,7 @@ In the entry block:
 - Once logged in, the token is extracted and printed.
 - Finally, `bootstrap_frontend(token)` is called with the obtained token.
 
-Now you can run the frontend using the following command:
+Now you can run the application using the following command:
 
 ```bash
 jac streamlit client.jac

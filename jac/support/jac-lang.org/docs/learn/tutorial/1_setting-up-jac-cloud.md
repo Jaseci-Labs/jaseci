@@ -99,7 +99,7 @@ walker interact_with_body {
 }
 ```
 
-This code defines two walkers: `interact` and `interact_with_body`. The `interact` walker returns a simple message "Hello, world!" when called. The `interact_with_body` walker takes a `name` parameter and returns a message "Hello, `name`!". 
+This code defines two walkers: `interact` and `interact_with_body`. The `interact` walker returns a simple message "Hello, world!" when called. The `interact_with_body` walker takes a `name` parameter and returns a message "Hello, `name`!".
 You don't need to worry about what a walker is for now. Just think of it as a function that can be called as an API endpoint.
 
 Now, let's serve this code using Jac Cloud by running the following command:
