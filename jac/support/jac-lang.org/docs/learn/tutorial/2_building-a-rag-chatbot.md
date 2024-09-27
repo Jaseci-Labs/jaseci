@@ -79,7 +79,7 @@ Next, let's capture user input using `st.chat_input()`. This is where users can 
 
 Now we handle the interaction with the backend server. After the user submits a message, the assistant responds. This involves sending the user's message to the backend, receiving a response from the backend and displaying it.
 
-Add the following to `bootstrap_frontend`.
+Replace the block above with the following.
 
 ```jac
     if prompt := st.chat_input("What is up?") {
@@ -116,7 +116,7 @@ Add the following to `bootstrap_frontend`.
   - `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
 - The response from the backend is then displayed using `st.write()`, and the assistant's message is stored in the session state.
 
-Lastly, we'll define the entry point of `client.jac`. Think `main` function of a python program. We authenticates the user and retrieves the token needed for the `bootstrap_frontend` function.
+Lastly, we'll define the entry point of `client.jac`. Think `main` function of a python program. We authenticates the user and retrieves the token needed for the `bootstrap_frontend` function. Place the following **outside** of `bootstrap_frontend`.
 
 ```jac
 with entry {
@@ -349,6 +349,8 @@ ollama pull nomic-embed-text
 ```
 
 This will download the `nomic-embed-text` model to your local machine.
+
+A list of Ollama models can be found [here](https://ollama.com/library).
 
 Next, you can make this model available for inference by running the following command:
 
