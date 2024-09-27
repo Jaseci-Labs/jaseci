@@ -111,14 +111,14 @@ POST http://pod-manager.your-domain.com/run_module
 
 **Query Parameters**:
 
-- `module_name`: Name of the module (e.g., `math`)
-- `method_name`: Name of the method to invoke (e.g., `sqrt`)
+- `module_name`: Name of the module (e.g., `numpy`)
+- `method_name`: Name of the method to invoke (e.g., `array`)
 
 **Request Body**:
 
 ```json
 {
-    "args": [16],
+    "args": [16, 20, 24],
     "kwargs": {}
 }
 ```
@@ -127,16 +127,16 @@ POST http://pod-manager.your-domain.com/run_module
 
 ```bash
 curl -X POST \
-  'http://pod-manager.your-domain.com/run_module?module_name=math&method_name=sqrt' \
+  'http://pod-manager.your-domain.com/run_module?module_name=numpy&method_name=array' \
   -H 'Content-Type: application/json' \
-  -d '{"args": [16], "kwargs": {}}'
+  -d '{"args": [16, 20, 24], "kwargs": {}}'
 ```
 
 **Sample Response**:
 
 ```json
 {
-    "result": 4.0
+    "result": [16, 20, 24],
 }
 ```
 
