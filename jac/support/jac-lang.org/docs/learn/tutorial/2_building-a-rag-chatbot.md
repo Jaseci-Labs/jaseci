@@ -282,14 +282,19 @@ Now, each chunk of text needs a unique identifier to ensure that it can be refer
             chunk_id = f'{current_page_id}:{current_chunk_index}';
             last_page_id = current_page_id;
 
+            # Generate a hash of the chunk content to detect duplicates
+            # or: chunk_content_hash = hash_md5(chunk.content);
+            chunk_content_hash = hashlib.md5(chunk.content.encode('utf-8')).hexdigest();
+
             chunk.metadata['id'] = chunk_id;
+            chunk.metadata['content_hash'] = chunk_content_hash;
         }
 
         return chunks;
     }
 ```
 
-Once the documents are split and chunk IDs are assigned, we add them to the Chroma vector database. The `add_to_chroma` ability checks for existing documents in the database and only adds new chunks to avoid duplication.
+Once the documents are split and chunk IDs are assigned, we add them to the Chroma vector database. The `add_to_chroma` ability checks for existing documents in the database and only adds new chunks to avoid duplication by checking chunk_id and chunk_content_hash.
 
 ```jac
     can add_to_chroma(chunks: list[Document]) {
@@ -298,10 +303,11 @@ Once the documents are split and chunk IDs are assigned, we add them to the Chro
 
         existing_items = db.get(include=[]);
         existing_ids = set(existing_items['ids']);
+        existing_hashes = set(item['metadata'].get('content_hash') for item in existing_items);
 
         new_chunks = [];
         for chunk in chunks_with_ids {
-            if chunk.metadata['id'] not in existing_ids {
+            if chunk.metadata['id'] not in existing_ids and chunk.metadata['content_hash'] not in existing_hashes {
                 new_chunks.append(chunk);
             }
         }
@@ -427,7 +433,7 @@ node Session {
 - `status`: Tracks the state of the session.
 - `llm_chat` ability: Takes the current message, chat history, agent role, and retrieved document context as inputs. This ability uses the LLM to generate a response based on these inputs. All without the need for any prompt engineering!! Wow!
 
-Next we'll define the `interact` walker that initializes a session and generates responses to user queries. Let's briefly discuss what a walker is and does. In a nutshell, a walker is a mechanism for traversing the graph. It moves from node to node, executing abilities and interacting with the data stored in the nodes. In this case, the `interact` walker is responsible for handling user interactions and generating responses. This is one of the key componets of jaclang that makes it so powerful! Super cool right? 🤯
+Next we'll define the `interact` walker that initializes a session and generates responses to user queries. Let's briefly discuss what a walker is and does. In a nutshell, a walker is a mechanism for traversing the graph. It moves from node to node, executing abilities and interacting with the data stored in the nodes. In this case, the `interact` walker is responsible for handling user interactions and generating responses. This is one of the key componets of jaclang that makes it so powerful! Super cool right? ??
 
 ```jac
 walker interact {
@@ -478,7 +484,7 @@ Add the following ability inside the scope of `interact` walker.
 - The RAG engine retrieves candidate responses based on the user's message.
 - The MTLLM model generates a response based on the user's message, chat history, agent role, and retrieved context.
 - The assistant's response is added to the chat history.
-- The response is reported back to the frontend. Here we are the using the special `report` keyword. This is one of the key feature of jac-cloud and operates a bit like a return statement but it does not stop the execution of the walker. It simply add whatever is reported to the response object that is sent back to the frontend. Isn't that cool? 🤩
+- The response is reported back to the frontend. Here we are the using the special `report` keyword. This is one of the key feature of jac-cloud and operates a bit like a return statement but it does not stop the execution of the walker. It simply add whatever is reported to the response object that is sent back to the frontend. Isn't that cool? ??
 
 To summarize:
 
