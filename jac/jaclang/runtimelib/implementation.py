@@ -26,8 +26,9 @@ JID_REGEX = compile(
 )
 
 
-_ANCHORS = TypeVar(
-    "_ANCHORS", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", covariant=True
+_ANCHORS = TypeVar("_ANCHORS", "NodeAnchor", "EdgeAnchor", "WalkerAnchor")
+_ANCHORS_C = TypeVar(
+    "_ANCHORS_C", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", covariant=True
 )
 Anchor: TypeAlias = "NodeAnchor" | "EdgeAnchor" | "WalkerAnchor"
 Architype: TypeAlias = "NodeArchitype" | "EdgeArchitype" | "WalkerArchitype"
@@ -35,16 +36,16 @@ logger = getLogger(__name__)
 
 
 @dataclass(kw_only=True)
-class JID(Generic[_ANCHORS], _JID):
+class JID(Generic[_ANCHORS_C], _JID):
     """Jaclang Default JID."""
 
     id: UUID
-    type: Type[_ANCHORS]
+    type: Type[_ANCHORS_C]
 
     def __init__(
         self,
         id: str | UUID | None = None,
-        type: Type[_ANCHORS] | None = None,
+        type: Type[_ANCHORS_C] | None = None,
         name: str = "",
     ) -> None:
         """Override JID initializer."""

@@ -16,7 +16,8 @@ from typing import (
     TypeVar,
 )
 
-_ANCHOR = TypeVar("_ANCHOR", bound="Anchor", covariant=True)
+_JID = TypeVar("_JID", bound="JID")
+_ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
 _ANCHORS = TypeVar(
     "_ANCHORS", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", covariant=True
 )
@@ -31,11 +32,11 @@ _DESERIALIZE = TypeVar("_DESERIALIZE")
 
 
 @dataclass(kw_only=True)
-class JID(Generic[_ANCHOR], ABC):
+class JID(Generic[_ANCHORS], ABC):
     """Jaclang ID Interface."""
 
     id: Any
-    type: Type[_ANCHOR]
+    type: Type[_ANCHORS]
     name: str
 
 
@@ -195,40 +196,61 @@ class DSFunc:
 #########################################################################################
 
 
-class Memory(ABC):
+@dataclass
+class Memory(Generic[_JID, _ANCHOR]):
     """Generic Memory Handler."""
 
-    @abstractmethod
+    __mem__: dict[_JID, _ANCHOR] = field(default_factory=dict)
+    __gc__: set[_JID] = field(default_factory=set)
+
     def close(self) -> None:
         """Close memory handler."""
+        self.__mem__.clear()
+        self.__gc__.clear()
 
-    @abstractmethod
     def find(
         self,
-        ids: JID[_ANCHORS] | Iterable[JID[_ANCHORS]],
-        filter: Callable[[_ANCHORS], _ANCHORS] | None = None,
-    ) -> Generator[_ANCHORS, None, None]:
+        ids: _JID | Iterable[_JID],
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
+    ) -> Generator[_ANCHOR, None, None]:
         """Find anchors from memory by ids with filter."""
+        if not isinstance(ids, Iterable):
+            ids = [ids]
+
+        for id in ids:
+            if (
+                (anchor := self.__mem__.get(id))
+                and isinstance(anchor, id.type)
+                and (not filter or filter(anchor))
+            ):
+                yield anchor
 
     def find_one(
         self,
-        ids: JID[_ANCHORS] | Iterable[JID[_ANCHORS]],
-        filter: Callable[[_ANCHORS], _ANCHORS] | None = None,
-    ) -> _ANCHORS | None:
+        ids: _JID | Iterable[_JID],
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
+    ) -> _ANCHOR | None:
         """Find one anchor from memory by ids with filter."""
         return next(self.find(ids, filter), None)
 
-    @abstractmethod
-    def find_by_id(self, id: JID[_ANCHORS]) -> _ANCHORS | None:
+    def find_by_id(self, id: _JID) -> _ANCHOR | None:
         """Find one by id."""
+        if (anchor := self.__mem__.get(id)) and isinstance(anchor, id.type):
+            return anchor
+        return None
 
-    @abstractmethod
-    def set(self, id: JID[_ANCHORS], data: Anchor) -> None:
+    def set(self, id: _JID, data: _ANCHOR) -> None:
         """Save anchor to memory."""
+        self.__mem__[id] = data
 
-    @abstractmethod
-    def remove(self, ids: JID[_ANCHORS] | Iterable[JID[_ANCHORS]]) -> None:
+    def remove(self, ids: _JID | Iterable[_JID]) -> None:
         """Remove anchor/s from memory."""
+        if not isinstance(ids, Iterable):
+            ids = [ids]
+
+        for id in ids:
+            self.__mem__.pop(id, None)
+            self.__gc__.add(id)
 
 
 #########################################################################################
