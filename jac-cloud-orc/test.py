@@ -1,6 +1,4 @@
 import requests
-import grpc
-from grpc_local import module_service_pb2_grpc, module_service_pb2
 
 
 def get_service_info(module_name: str) -> dict:
@@ -24,51 +22,37 @@ def get_service_info(module_name: str) -> dict:
         )
 
 
-def run_client(ingress_host: str, ingress_path: str, method_name: str, args: list):
+def run_module_via_pod_manager(module_name: str, method_name: str, args: list):
     """
-    This function sets up a gRPC client that connects to the service exposed
-    through Ingress and executes the specified method.
-
-    Arguments:
-        ingress_host: The host of the Ingress controller (e.g., "bcsaiassist.apps.bcstechnology.com.au").
-        ingress_path: The path where the service is exposed via Ingress (e.g., "/api/numpy-grpc").
-        method_name: The name of the method to execute on the gRPC server.
-        args: A list of arguments to pass to the method.
+    This function sends a request to the pod manager to run a module's method
+    with the given arguments.
     """
-    # gRPC uses the host header for routing; hence we only use the host here
-    credentials = grpc.ssl_channel_credentials()
+    pod_manager_url = f"http://smartimport.apps.bcstechnology.com.au/run_module"
 
-    channel = grpc.secure_channel(f"", credentials)
+    # Pass module_name and method_name as query parameters, and args as the body
+    params = {"module_name": module_name, "method_name": method_name}
 
-    # Create the stub for the gRPC service
-    stub = module_service_pb2_grpc.ModuleServiceStub(channel)
+    # Ensure args is included in the JSON payload
+    data = {"args": args}
 
-    # Construct the request with the method name and arguments
-    request = module_service_pb2.MethodRequest(
-        method_name=method_name,
-        args=[str(arg) for arg in args],  # Convert arguments to string as needed
-    )
+    response = requests.post(pod_manager_url, params=params, json=data)
 
-    # Make the request and get the response
-    response = stub.ExecuteMethod(request)
-
-    print(f"Result from gRPC server: {response.result}")
+    if response.status_code == 200:
+        result = response.json().get("result")
+        print(f"Result from module {module_name}: {result}")
+    else:
+        print(f"Error: {response.status_code}, {response.text}")
 
 
 if __name__ == "__main__":
-    # The name of the module to import and run in the Kubernetes pod
     module_name = "numpy"
 
     # Get the pod and service information from the pod manager
     pod_info = get_service_info(module_name)
 
-    # Extract the Ingress host and path
-    ingress_host = pod_info["ingress_host"]
-    ingress_path = pod_info["ingress_path"]
-
     # The method name and arguments for the gRPC call
     method_name = "array"
     args = [1, 2, 3]
 
-    # Call the gRPC service through the Ingress
-    run_client(ingress_host, ingress_path, method_name, args)
+    # Send the request to the Pod Manager
+    run_module_via_pod_manager(module_name, method_name, args)

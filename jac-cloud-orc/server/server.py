@@ -10,9 +10,26 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
         self.module = importlib.import_module(module_name)
 
     def ExecuteMethod(self, request, context):
-        method = getattr(self.module, request.method_name)
-        result = method(*request.args)
-        return module_service_pb2.MethodResponse(result=str(result))
+        try:
+            # Get the method from the module
+            method = getattr(self.module, request.method_name)
+
+            # Wrap args in a list if the method is 'numpy.array'
+            if request.method_name == "array" and hasattr(self.module, "array"):
+                args = [request.args]  # numpy expects a list of arguments
+            else:
+                args = request.args  # Regular case: no need to wrap
+
+            # Call the method with the provided arguments
+            result = method(*args)
+
+            # Return the result as a string
+            return module_service_pb2.MethodResponse(result=str(result))
+        except Exception as e:
+            # Handle any errors during method execution
+            context.set_details(f"gRPC error: {str(e)}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return module_service_pb2.MethodResponse(result=f"Error: {str(e)}")
 
 
 def serve(module_name):
@@ -31,5 +48,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python server.py <module_name>")
         sys.exit(1)
-    sys.argv[1]
-    serve(sys.argv[1])
+
+    # Take module name from command-line argument
+    module_name = sys.argv[1]
+    serve(module_name)

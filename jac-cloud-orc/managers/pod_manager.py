@@ -1,247 +1,184 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from kubernetes import client, config
-from kubernetes.client.rest import ApiException
+import grpc
 import time
+from grpc_local import module_service_pb2_grpc, module_service_pb2
+from fastapi import FastAPI, Query, Body
+from pydantic import BaseModel
+from typing import List
 
 app = FastAPI()
 
 
-class JacPodManager:
-    def __init__(self, module_name: str):
-        self.module_name = module_name
-        self.pod_name = f"{module_name}-pod"
-        self.service_name = f"{module_name}-service"
-        self.ingress_name = "smartimport-ingress"
-        self.namespace = "default"
+class PodManager:
+    def __init__(self):
+        # Load Kubernetes configuration (for in-cluster use)
+        config.load_incluster_config()
+        self.v1 = client.CoreV1Api()
 
-    def create_pod(self):
-        """Create a Kubernetes pod, service, and ingress to dynamically import and run a module."""
+    def create_pod(self, module_name: str):
+        """Create a pod and service for the given module."""
+        pod_name = f"{module_name}-pod"
+        service_name = f"{module_name}-service"
+
+        # Check if the pod already exists
         try:
-            # Load Kubernetes config (for in-cluster use)
-            config.load_incluster_config()
-            v1 = client.CoreV1Api()
-
-            # Check if the pod already exists
-            try:
-                pod_info = v1.read_namespaced_pod(
-                    name=self.pod_name, namespace=self.namespace
+            pod_info = self.v1.read_namespaced_pod(name=pod_name, namespace="default")
+            if pod_info.status.phase == "Running":
+                print(f"Pod {pod_name} is already running.")
+                return {"message": f"Pod {pod_name} is already running."}
+            else:
+                raise HTTPException(
+                    status_code=409, detail=f"Pod {pod_name} exists but is not running."
                 )
-                if pod_info.status.phase == "Running":
-                    pod_ip = pod_info.status.pod_ip
-                    print(f"Pod {self.pod_name} is already running with IP {pod_ip}")
-                else:
-                    raise Exception(f"Pod {self.pod_name} exists but is not running.")
-            except ApiException as e:
-                if e.status == 404:
-                    # If the pod does not exist, create it
-                    pod_manifest = {
-                        "apiVersion": "v1",
-                        "kind": "Pod",
-                        "metadata": {
-                            "name": self.pod_name,
-                            "labels": {"app": self.pod_name},
-                        },
-                        "spec": {
-                            "containers": [
-                                {
-                                    "name": "module-container",
-                                    "image": "ashishmahendra/jac-cloud-orc:latest",
-                                    "env": [
-                                        {
-                                            "name": "MODULE_NAME",
-                                            "value": self.module_name,
-                                        }
-                                    ],
-                                    "ports": [{"containerPort": 50051}],
-                                }
-                            ],
-                            "restartPolicy": "Never",
-                        },
-                    }
-
-                    # Create the pod in Kubernetes
-                    v1.create_namespaced_pod(
-                        namespace=self.namespace, body=pod_manifest
-                    )
-                    print(
-                        f"Pod {self.pod_name} created. Waiting for pod to be ready..."
-                    )
-
-                    # Wait for the pod to be in 'Running' state and get its IP
-                    max_retries = 30  # Timeout after 30 retries (~1 minute)
-                    retries = 0
-                    while retries < max_retries:
-                        pod_info = v1.read_namespaced_pod(
-                            name=self.pod_name, namespace=self.namespace
-                        )
-                        if pod_info.status.phase == "Running":
-                            pod_ip = pod_info.status.pod_ip
-                            print(f"Pod {self.pod_name} is running with IP {pod_ip}")
-                            break
-                        time.sleep(2)
-                        retries += 1
-                    else:
-                        raise Exception(
-                            f"Timeout: Pod {self.pod_name} failed to reach 'Running' state."
-                        )
-
-            # Check if the service already exists
-            try:
-                service_info = v1.read_namespaced_service(
-                    name=self.service_name, namespace=self.namespace
-                )
-                service_ip = service_info.spec.cluster_ip
-                print(
-                    f"Service {self.service_name} already exists with IP {service_ip}"
-                )
-            except ApiException as e:
-                if e.status == 404:
-                    # If the service does not exist, create it
-                    service_manifest = {
-                        "apiVersion": "v1",
-                        "kind": "Service",
-                        "metadata": {"name": self.service_name},
-                        "spec": {
-                            "selector": {
-                                "app": self.pod_name
-                            },  # Assumes the pod has this label
-                            "ports": [
-                                {
-                                    "protocol": "TCP",
-                                    "port": 50051,  # Service port
-                                    "targetPort": 50051,  # Target container port
-                                }
-                            ],
-                            "type": "ClusterIP",  # Use ClusterIP, as Ingress will handle external access
-                        },
-                    }
-
-                    # Create the service in Kubernetes
-                    v1.create_namespaced_service(
-                        namespace=self.namespace, body=service_manifest
-                    )
-                    print(f"Service {self.service_name} created to expose the pod.")
-                    service_info = v1.read_namespaced_service(
-                        name=self.service_name, namespace=self.namespace
-                    )
-                    service_ip = service_info.spec.cluster_ip
-
-            networking_v1 = client.NetworkingV1Api()
-            try:
-                ingress_info = networking_v1.read_namespaced_ingress(
-                    name=self.ingress_name, namespace=self.namespace
-                )
-                print(
-                    f"Ingress {self.ingress_name} already exists. Updating with new path..."
-                )
-
-                # Check if path already exists, if not, add the path
-                existing_paths = ingress_info.spec.rules[0].http.paths
-                path_exists = any(
-                    path.backend.service.name == self.service_name
-                    for path in existing_paths
-                )
-
-                if not path_exists:
-                    new_path = {
-                        "path": f"/api/{self.module_name}-grpc",
-                        "pathType": "Prefix",
-                        "backend": {
-                            "service": {
-                                "name": self.service_name,
-                                "port": {"number": 50051},
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                # Pod does not exist, so create it
+                pod_manifest = {
+                    "apiVersion": "v1",
+                    "kind": "Pod",
+                    "metadata": {
+                        "name": pod_name,
+                        "labels": {"app": pod_name},
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "module-container",
+                                "image": "ashishmahendra/jac-cloud-orc:0.2",
+                                "env": [{"name": "MODULE_NAME", "value": module_name}],
+                                "ports": [{"containerPort": 50051}],
                             }
-                        },
-                    }
-                    ingress_info.spec.rules[0].http.paths.append(new_path)
-                    networking_v1.replace_namespaced_ingress(
-                        name=self.ingress_name,
-                        namespace=self.namespace,
-                        body=ingress_info,
-                    )
-                    print(
-                        f"Added path /api/{self.module_name}-grpc to Ingress {self.ingress_name}."
-                    )
-            except ApiException as e:
-                if e.status == 404:
-                    # If the ingress does not exist, create it
-                    ingress_manifest = {
-                        "apiVersion": "networking.k8s.io/v1",
-                        "kind": "Ingress",
-                        "metadata": {
-                            "name": self.ingress_name,
-                            "annotations": {
-                                "nginx.ingress.kubernetes.io/backend-protocol": "GRPC",  # Enable gRPC in Ingress
-                            },
-                        },
-                        "spec": {
-                            "rules": [
-                                {
-                                    "host": "smartimport.apps.bcstechnology.com.au",
-                                    "http": {
-                                        "paths": [
-                                            {
-                                                "path": f"/api/{self.module_name}-grpc",
-                                                "pathType": "Prefix",
-                                                "backend": {
-                                                    "service": {
-                                                        "name": self.service_name,
-                                                        "port": {"number": 50051},
-                                                    }
-                                                },
-                                            }
-                                        ]
-                                    },
-                                }
-                            ],
-                        },
-                    }
+                        ],
+                        "restartPolicy": "Never",
+                    },
+                }
+                self.v1.create_namespaced_pod(namespace="default", body=pod_manifest)
+                print(f"Pod {pod_name} created.")
+                self.wait_for_pod_ready(pod_name)
 
-                    # Create the Ingress in Kubernetes
-                    networking_v1.create_namespaced_ingress(
-                        namespace=self.namespace, body=ingress_manifest
-                    )
-                    print(
-                        f"Ingress {self.ingress_name} created with path /api/{self.module_name}-grpc."
-                    )
+        # Create Service
+        try:
+            service_info = self.v1.read_namespaced_service(
+                name=service_name, namespace="default"
+            )
+            print(f"Service {service_name} already exists.")
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                service_manifest = {
+                    "apiVersion": "v1",
+                    "kind": "Service",
+                    "metadata": {"name": service_name},
+                    "spec": {
+                        "selector": {"app": pod_name},
+                        "ports": [
+                            {"protocol": "TCP", "port": 50051, "targetPort": 50051}
+                        ],
+                        "type": "ClusterIP",
+                    },
+                }
+                self.v1.create_namespaced_service(
+                    namespace="default", body=service_manifest
+                )
+                print(f"Service {service_name} created.")
 
-            # Return pod, service, and ingress details
-            return {
-                "pod_ip": pod_ip,
-                "service_ip": service_ip,
-                "ingress_host": f"smartimport.apps.bcstechnology.com.au",
-                "ingress_path": f"/api/{self.module_name}-grpc",
-            }
+        return {"message": f"Pod {pod_name} and service {service_name} created."}
 
-        except ApiException as e:
-            print(f"Kubernetes API Error: {e.status} {e.reason}")
-            print(f"Details: {e.body}")
-            raise Exception(f"Failed to create pod, service, and ingress: {e.reason}")
+    def delete_pod(self, module_name: str):
+        """Delete the pod and service for the given module."""
+        pod_name = f"{module_name}-pod"
+        service_name = f"{module_name}-service"
 
-        except Exception as e:
-            print(f"General Error: {str(e)}")
-            raise Exception(f"Failed to create pod, service, and ingress: {str(e)}")
+        # Delete Pod
+        try:
+            self.v1.delete_namespaced_pod(name=pod_name, namespace="default")
+            print(f"Pod {pod_name} deleted.")
+        except client.exceptions.ApiException as e:
+            raise HTTPException(status_code=404, detail=f"Pod {pod_name} not found.")
 
-    def delete_pod(self):
-        """Delete the Kubernetes pod."""
-        config.load_kube_config()
-        v1 = client.CoreV1Api()
-        v1.delete_namespaced_pod(name=self.pod_name, namespace=self.namespace)
-        return {"message": f"Pod {self.pod_name} deleted."}
+        # Delete Service
+        try:
+            self.v1.delete_namespaced_service(name=service_name, namespace="default")
+            print(f"Service {service_name} deleted.")
+        except client.exceptions.ApiException as e:
+            raise HTTPException(
+                status_code=404, detail=f"Service {service_name} not found."
+            )
+
+        return {"message": f"Pod {pod_name} and service {service_name} deleted."}
+
+    def wait_for_pod_ready(self, pod_name: str):
+        """Wait until the pod is ready."""
+        max_retries = 30
+        retries = 0
+        while retries < max_retries:
+            pod_info = self.v1.read_namespaced_pod(name=pod_name, namespace="default")
+            if pod_info.status.phase == "Running":
+                print(f"Pod {pod_name} is running with IP {pod_info.status.pod_ip}")
+                return
+            retries += 1
+            time.sleep(2)
+        raise Exception(f"Timeout: Pod {pod_name} failed to reach 'Running' state.")
+
+    def get_pod_service_ip(self, module_name: str) -> str:
+        """Look up the service IP for the pod corresponding to the module."""
+        service_name = f"{module_name}-service"
+        try:
+            service_info = self.v1.read_namespaced_service(
+                name=service_name, namespace="default"
+            )
+            return service_info.spec.cluster_ip
+        except client.exceptions.ApiException as e:
+            raise HTTPException(
+                status_code=404, detail=f"Service for module {module_name} not found."
+            )
+
+    def forward_to_pod(self, service_ip: str, method_name: str, args: list):
+        """Forward the gRPC request to the pod service and return the result."""
+        channel = grpc.insecure_channel(f"{service_ip}:50051")
+        stub = module_service_pb2_grpc.ModuleServiceStub(channel)
+        request = module_service_pb2.MethodRequest(
+            method_name=method_name,
+            args=[str(arg) for arg in args],
+        )
+        try:
+            response = stub.ExecuteMethod(request)
+            return response.result
+        except grpc.RpcError as e:
+            raise HTTPException(status_code=500, detail=f"gRPC error: {e.details()}")
+
+
+pod_manager = PodManager()
+
+
+class RunModuleRequest(BaseModel):
+    args: List[int]
+
+
+@app.post("/run_module")
+async def run_module(
+    module_name: str = Query(..., description="Name of the module"),
+    method_name: str = Query(..., description="Name of the method"),
+    request: RunModuleRequest = Body(..., description="Arguments for the method"),
+):
+    """API endpoint to receive the request and forward it to the respective pod."""
+    # Ensure the pod and service exist for the module
+    pod_manager.create_pod(module_name)
+
+    # Get the pod service IP for the given module
+    service_ip = pod_manager.get_pod_service_ip(module_name)
+
+    # Forward the request to the corresponding pod via gRPC
+    result = pod_manager.forward_to_pod(service_ip, method_name, request.args)
+
+    return {"result": result}
 
 
 @app.post("/create_pod/{module_name}")
 def create_pod(module_name: str):
-    manager = JacPodManager(module_name=module_name)
-    return manager.create_pod()
+    return pod_manager.create_pod(module_name)
 
 
 @app.delete("/delete_pod/{module_name}")
 def delete_pod(module_name: str):
-    manager = JacPodManager(module_name=module_name)
-    return manager.delete_pod()
-
-
-@app.get("/")
-def health():
-    return "I'm healthy."
+    return pod_manager.delete_pod(module_name)

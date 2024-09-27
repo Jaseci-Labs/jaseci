@@ -1,10 +1,13 @@
 FROM python:3.12-slim
 
 # Install dependencies
-RUN pip install fastapi uvicorn kubernetes
+RUN pip install fastapi uvicorn kubernetes grpcio grpcio-tools python-multipart
 
 # Copy the application code
-COPY pod_manager.py /app/pod_manager.py
+COPY managers/pod_manager.py /app/pod_manager.py
+COPY grpc_local /app/grpc_local
+
+
 WORKDIR /app
 
 # Expose the FastAPI port
