@@ -14,4 +14,5 @@ with entry{
     print(f'"""again""" ');
     print(f'"""again"""   ');
     print(len(f'hello {a}"""hello"""'));
+    print(len(f"hello {a}'''hello'''"));
 }
