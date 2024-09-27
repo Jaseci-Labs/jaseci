@@ -5,20 +5,25 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pickle import dumps
 from shelve import Shelf, open
-from typing import Callable, Generator, Generic, Iterable, TypeVar
+from typing import Callable, Generator, Iterable, Mapping, TypeVar, TypeAlias
 from uuid import UUID
 
-from .architype import Anchor, NodeAnchor, Root, TANCH
+from .implementation import (
+    Anchor,
+    EdgeAnchor,
+    JID,
+    NodeAnchor,
+    Root,
+    WalkerAnchor,
+    _ANCHORS,
+)
+from .interface import Anchor as BaseAnchor, JID as BaseJID, Memory
 
-ID = TypeVar("ID")
+JIDS: TypeAlias = JID[NodeAnchor] | JID[EdgeAnchor] | JID[WalkerAnchor]
 
 
-@dataclass
-class Memory(Generic[ID, TANCH]):
+class Memory(ABC):
     """Generic Memory Handler."""
-
-    __mem__: dict[ID, TANCH] = field(default_factory=dict)
-    __gc__: set[TANCH] = field(default_factory=set)
 
     def close(self) -> None:
         """Close memory handler."""
@@ -27,54 +32,61 @@ class Memory(Generic[ID, TANCH]):
 
     def find(
         self,
-        ids: ID | Iterable[ID],
-        filter: Callable[[TANCH], TANCH] | None = None,
-    ) -> Generator[TANCH, None, None]:
+        ids: JID[_ANCHORS] | Iterable[JID[_ANCHORS]],
+        filter: Callable[[_ANCHORS], _ANCHORS] | None = None,
+    ) -> Generator[_ANCHORS, None, None]:
         """Find anchors from memory by ids with filter."""
         if not isinstance(ids, Iterable):
             ids = [ids]
 
-        return (
-            anchor
-            for id in ids
-            if (anchor := self.__mem__.get(id)) and (not filter or filter(anchor))
-        )
+        for id in ids:
+            if (
+                (anchor := self.__mem__.get(id))
+                and isinstance(anchor, id.type)
+                and (not filter or filter(anchor))
+            ):
+                yield anchor
 
     def find_one(
         self,
-        ids: ID | Iterable[ID],
-        filter: Callable[[TANCH], TANCH] | None = None,
-    ) -> TANCH | None:
+        ids: JID[_ANCHORS] | Iterable[JID[_ANCHORS]],
+        filter: Callable[[_ANCHORS], _ANCHORS] | None = None,
+    ) -> _ANCHORS | None:
         """Find one anchor from memory by ids with filter."""
         return next(self.find(ids, filter), None)
 
-    def find_by_id(self, id: ID) -> TANCH | None:
+    def find_by_id(self, id: JID[_ANCHORS]) -> _ANCHORS | None:
         """Find one by id."""
-        return self.__mem__.get(id)
+        if (anchor := self.__mem__.get(id)) and isinstance(anchor, id.type):
+            return anchor
+        return None
 
-    def set(self, id: ID, data: TANCH) -> None:
+    def set(self, id: JID[_ANCHORS], data: Anchor) -> None:
         """Save anchor to memory."""
         self.__mem__[id] = data
 
-    def remove(self, ids: ID | Iterable[ID]) -> None:
+    def remove(self, ids: JID[_ANCHORS] | Iterable[JID[_ANCHORS]]) -> None:
         """Remove anchor/s from memory."""
         if not isinstance(ids, Iterable):
             ids = [ids]
 
         for id in ids:
-            if anchor := self.__mem__.pop(id, None):
-                self.__gc__.add(anchor)
+            if self.__mem__.pop(id, None):
+                self.__gc__.add(id)
 
 
 @dataclass
-class ShelfStorage(Memory[UUID, Anchor]):
+class ShelfStorage(Memory):
     """Shelf Handler."""
 
+    __mem__: dict[JIDS, Anchor] = field(default_factory=dict)
+    __gc__: set[JIDS] = field(default_factory=set)
     __shelf__: Shelf[Anchor] | None = None
 
     def __init__(self, session: str | None = None) -> None:
         """Initialize memory handler."""
-        super().__init__()
+        self.__mem__ = {}
+        self.__gc__ = set()
         self.__shelf__ = open(session) if session else None  # noqa: SIM115
 
     def close(self) -> None:
@@ -116,13 +128,14 @@ class ShelfStorage(Memory[UUID, Anchor]):
                         self.__shelf__[_id] = d
 
             self.__shelf__.close()
-        super().close()
+        self.__mem__.clear()
+        self.__gc__.clear()
 
     def find(
         self,
-        ids: UUID | Iterable[UUID],
-        filter: Callable[[Anchor], Anchor] | None = None,
-    ) -> Generator[Anchor, None, None]:
+        ids: JID[_ANCHORS] | Iterable[JID[_ANCHORS]],
+        filter: Callable[[_ANCHORS], _ANCHORS] | None = None,
+    ) -> Generator[_ANCHORS, None, None]:
         """Find anchors from datasource by ids with filter."""
         if not isinstance(ids, Iterable):
             ids = [ids]
@@ -140,9 +153,15 @@ class ShelfStorage(Memory[UUID, Anchor]):
                 if anchor and (not filter or filter(anchor)):
                     yield anchor
         else:
-            yield from super().find(ids, filter)
+            for id in ids:
+                if (
+                    (anchor := self.__mem__.get(id))
+                    and isinstance(anchor, id.type)
+                    and (not filter or filter(anchor))
+                ):
+                    yield anchor
 
-    def find_by_id(self, id: UUID) -> Anchor | None:
+    def find_by_id(self, id: JID[_ANCHORS]) -> _ANCHORS | None:
         """Find one by id."""
         data = super().find_by_id(id)
 
@@ -150,6 +169,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
             not data
             and isinstance(self.__shelf__, Shelf)
             and (data := self.__shelf__.get(str(id)))
+            and isinstance(data, id.type)
         ):
             self.__mem__[id] = data
 
