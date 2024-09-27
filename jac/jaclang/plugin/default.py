@@ -915,9 +915,10 @@ class JacBuiltin:
             'fillcolor="invis", fontcolor="black"];\n'
         )
         for source, target, edge in connections:
+            edge_label = html.escape(str(edge._jac_.architype))
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
-                f' [label="{html.escape(str(edge.__jac__.architype))} "];\n'
+                f' [label="{edge_label if "GenericEdge" not in edge_label else ""} "];\n'
             )
         for node_ in visited_nodes:
             color = (
