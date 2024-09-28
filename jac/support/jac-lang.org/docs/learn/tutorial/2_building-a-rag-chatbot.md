@@ -1,13 +1,17 @@
 # Building a RAG Chatbot with Jac Cloud and Streamlit (Part 2/3)
+
 Now that we have a jac application served up, let's build a simple chatbot using Retrieval Augmented Generation (RAG) with Jac Cloud and Streamlit as our frontend interface.
 
 ### Preparation / Installation
+
 There are a couple of additional dependenices we need here
+
 ```bash
 pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0
 ```
 
 ## Building a Streamlit Interface
+
 Before we begin building out our chatbot, let's first build a simple GUI to interact with the chatbot. Streamlit offers several Chat elements, enabling you to build Graphical User Interfaces (GUIs) for conversational agents or chatbots. Leveraging session state along with these elements allows you to construct anything from a basic chatbot to a more advanced, ChatGPT-like experience using purely Python code.
 
 Luckily for us, jaclang has a plugin for streamlit that allows us to build web applications with streamlit using jaclang. In this part of the tutorial, we will build a frontend for our conversational agent using streamlit. You can find more information about the `jac-streamlit` plugin [here](https://github.com/Jaseci-Labs/jaclang/blob/main/support/plugins/streamlit/README.md).
@@ -109,7 +113,7 @@ Add the following to `bootstrap_frontend`.
 
 - The user's input (`prompt`) is sent to the backend using a POST request to the `/walker/interact` endpoint.
 - The `interact` walker, as we created in the last chapter, just returns `Hello World!` for now. This will change as we build out our chatbot.
-    - `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
+  - `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
 - The response from the backend is then displayed using `st.write()`, and the assistant's message is stored in the session state.
 
 Lastly, we'll define the entry point of `client.jac`. Think `main` function of a python program. We authenticates the user and retrieves the token needed for the `bootstrap_frontend` function.
@@ -153,6 +157,7 @@ with entry {
 ```
 
 In the entry block:
+
 - First, we define the backend URL and test user credentials.
 - We attempt to log the user in. If login fails, we register the user and then log them in.
 - Once logged in, the token is extracted and printed.
@@ -169,27 +174,30 @@ If your server is still running, you can chat with your assistant using the stre
 Now let's move on to building the RAG module.
 
 ## What is Retrieval Augmented Generation?
+
 Retrieval Augmented Generation is a technique that combines the benefits of retrieval-based and generative conversational AI models. In a retrieval-based model, the model retrieves semantically similar content based on the input. In a generative model, the model generates a response from scratch based on the input. Retrieval Augmented Generation combines these two concepts by first retrieving a set of candidate responses / relevant content and then generating a response based on the retrieved candidates.
 
 ![Retrieval Augmented Generation](images/2_rag.png)
 
 ## Building a Retrieval Augmented Generation Module
+
 In this part we'll be building a simple Retrieval Augmented Generation module using jaclang and adding it to our application. We will use a simple embedding-based retrieval model to retrieve candidate responses and a generative model to generate the final response. Embeddings are vector representations of words or sentences that capture semantic information. We will use the Ollama embeddings model to generate embeddings for the documents and the Chroma vector store to store the embeddings.
 
 ![RAG Module](images/2_rag_search.png)
 
 ### Adding the Retrieval Module
+
 First, let's add a file called `rag.jac` to our project. This file will contain the code for the Retrieval Augmented Generation module.
 
 Jac allows you to import Python libraries, making it easy to integrate existing libraries such as langchain, langchain_community, and more. In this RAG engine, we need document loaders, text splitters, embedding functions, and vector stores.
 
 ```jac
-import: py os;
-import: py from langchain_community.document_loaders {PyPDFDirectoryLoader}
-import: py from langchain_text_splitters {RecursiveCharacterTextSplitter}
-import: py from langchain.schema.document {Document}
-import: py from langchain_community.embeddings.ollama {OllamaEmbeddings}
-import: py from langchain_community.vectorstores.chroma {Chroma}
+import:py os;
+import:py from langchain_community.document_loaders {PyPDFDirectoryLoader}
+import:py from langchain_text_splitters {RecursiveCharacterTextSplitter}
+import:py from langchain.schema.document {Document}
+import:py from langchain_community.embeddings.ollama {OllamaEmbeddings}
+import:py from langchain_community.vectorstores.chroma {Chroma}
 ```
 
 - `PyPDFDirectoryLoader` is used to load documents from a directory.
@@ -209,7 +217,6 @@ obj RagEngine {
 Note: `obj` works similarly as dataclasses in Python.
 
 We will now build out this `RagEngine` object by adding relevant abilities. Abilities, as annotated by the `can` keyword, are analogus to member methods of a Python class. The `can` abilities in the following code snippets shoudld be added inside the `RagEngine` object scope.
-
 
 The object will have a `postinit` method that runs automatically upon initialization, loading documents, splitting them into chunks, and adding them to the vector database (Chroma). `postinit` works similarly to the `__post_init__` in Python dataclasses.
 
@@ -334,6 +341,7 @@ We define a few methods to load the documents, split them into chunks, and add t
 - The `get_from_chroma` method retrieves candidate responses based on a query from the Chroma vector store.
 
 ### Setting up Ollama Embeddings
+
 Before we can use the Ollama embeddings model, we need to set it up. You can download the Ollama from the [Ollama website](https://ollama.com/). Once you have downloaded Ollama, you download your desired model by runnnig the following command:
 
 ```bash
@@ -349,9 +357,11 @@ ollama serve
 ```
 
 ### Adding your documents
-You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document in the `docs` directory for you to test.
+
+You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document [here](docs/clinical_medicine.pdf) for you to test with. Create a new directory called `docs` in the root of your project and add your documents to this directory.
 
 ### Setting up your LLM
+
 Here we are going to use one of the key features of jaclang called [MTLLM](https://jaseci-labs.github.io/mtllm/), or Meaning-typed LLM. MTTLM facilitates the integration of generative AI models, specifically Large Language Models (LLMs) into programming at the language level.
 
 We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start from scratch and add the following.
@@ -386,7 +396,7 @@ Now that you have your LLM ready let's create a simple walker that uses the RAG 
 
 ```jac
 import:jac from rag {RagEngine}
-glob RagEngine:rag_engine = rag_engine();
+glob rag_engine:RagEngine = RagEngine();
 ```
 
 - `llm`: This an MTLLM instance of the model utilized by jaclang whenever we make `by llm()` abilities. Here we are using OpenAI's GPT-4 model.

@@ -243,7 +243,7 @@ walker manual_create_nested_node {
         here.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().mem;
+        jsrc = Jac.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -269,7 +269,7 @@ walker manual_update_nested_node {
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().mem;
+        jsrc = Jac.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -285,7 +285,7 @@ walker manual_detach_nested_node {
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().mem;
+        jsrc = Jac.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -310,7 +310,7 @@ walker manual_delete_nested_node {
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().mem;
+        jsrc = Jac.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -334,7 +334,7 @@ walker manual_delete_nested_edge {
         nested_edge.__jac__.apply();
 
         # simulate no auto save
-        jsrc = JaseciContext.get().mem;
+        jsrc = Jac.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -474,5 +474,13 @@ walker post_with_body_and_file {
 
     class __specs__ {
         has auth: bool = False;
+    }
+}
+
+walker custom_status_code {
+    has status: int;
+
+    can enter with `root entry {
+        Jac.get_context().status = self.status;
     }
 }

@@ -7,6 +7,7 @@ symbols are available for matching.
 
 import ast as py_ast
 import os
+import pathlib
 from typing import Optional
 
 
@@ -202,10 +203,7 @@ class PyImportPass(JacImportPass):
     def before_pass(self) -> None:
         """Only run pass if settings are set to raise python."""
         super().before_pass()
-
-    def annex_impl(self, node: ast.Module) -> None:
-        """Annex impl and test modules."""
-        return None
+        self.__load_builtins()
 
     def __get_current_module(self, node: ast.AstNode) -> str:
         parent = node.find_parent_of_type(ast.Module)
@@ -390,3 +388,33 @@ class PyImportPass(JacImportPass):
         except Exception as e:
             self.error(f"Failed to import python module {mod_path}")
             raise e
+        return None
+
+    def __load_builtins(self) -> None:
+        """Pyraise builtins to help with builtins auto complete."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+
+        assert isinstance(self.ir, ast.Module)
+
+        file_to_raise = str(
+            pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
+            / "vendor"
+            / "mypy"
+            / "typeshed"
+            / "stdlib"
+            / "builtins.pyi"
+        )
+        with open(file_to_raise, "r", encoding="utf-8") as f:
+            mod = PyastBuildPass(
+                input_ir=ast.PythonModuleAst(
+                    py_ast.parse(f.read()), mod_path=file_to_raise
+                ),
+            ).ir
+            mod.parent = self.ir
+            SubNodeTabPass(input_ir=mod, prior=self)
+            SymTabBuildPass(input_ir=mod, prior=self)
+            mod.parent = None
+
+    def annex_impl(self, node: ast.Module) -> None:
+        """Annex impl and test modules."""
+        return None
