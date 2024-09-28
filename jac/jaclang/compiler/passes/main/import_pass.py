@@ -51,7 +51,9 @@ class JacImportPass(Pass):
             self.import_jac_module(node=i)
 
     def attach_mod_to_node(
-        self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
+        self,
+        node: ast.ModulePath | ast.ModuleItem,
+        mod: ast.Module | ast.Architype | ast.ArchDef | ast.Ability | None,
     ) -> None:
         """Attach a module to a node."""
         if mod:
@@ -231,21 +233,21 @@ class PyImportPass(JacImportPass):
                 self.__process_import(imp_node)
 
     def __process_import_from(self, imp_node: ast.Import) -> None:
-        """Process the imports in form of `from X import I`."""
+        """Process imports in the form of `from X import I`."""
         assert isinstance(self.ir, ast.Module)
         assert imp_node.from_loc is not None
 
-        # strategy here is to try to import the python module X then
-        # run PyImportPass again on this then try to search for the
-        # needed decl in this module
+        # Attempt to import the Python module X and process it
         imported_mod = self.__import_py_module(
             parent_node_path=self.__get_current_module(imp_node),
             mod_path=imp_node.from_loc.dot_path_str,
-            temp_import=True,  # To prevent the pass from saving this module
+            temp_import=True,  # Prevents saving the module during this pass
         )
-        if imported_mod is None:
+
+        if not imported_mod:
             return
 
+        # Update the imported module's raise map and re-run the import pass
         imported_mod.py_raise_map = self.ir.py_raise_map
         PyImportPass(input_ir=imported_mod, prior=None)
 
@@ -254,46 +256,64 @@ class PyImportPass(JacImportPass):
             if decl_item.is_imported:
                 continue
 
-            # Checking if the needed decl is a module
-            for mod in imported_mod.kid_of_type(ast.Module):
-                if decl_item.sym_name == mod.name:
-                    self.attach_mod_to_node(decl_item, mod)
-                    self.run_again = False
-                    SymTabBuildPass(input_ir=mod, prior=self)
-                    decl_item.is_imported = True
-                    break
-
-            if decl_item.is_imported:
+            # Try to match the declaration with a module
+            if self.__process_module_declaration(decl_item, imported_mod):
                 continue
 
-            # Checking if the needed decl is an Ability
-            for ab in imported_mod.kid_of_type(ast.Ability):
-                if decl_item.sym_name == ab.name_ref.sym_name:
-                    # self.attach_mod_to_node(decl_item, mod)
-                    # self.run_again = False
-                    # SymTabBuildPass(input_ir=mod, prior=self)
-                    print(
-                        "Need to find a proper way to link this Ability::",
-                        decl_item.sym_name,
-                    )
-                    decl_item.is_imported = True
-                    break
-
-            if decl_item.is_imported:
+            # Try to match the declaration with an ability
+            if self.__process_ability_declaration(decl_item, imported_mod):
                 continue
 
-            # Checking if the needed decl is an Architype
-            for arch in imported_mod.kid_of_type(ast.Architype):
-                if decl_item.sym_name == arch.sym_name:
-                    # self.attach_mod_to_node(decl_item, mod)
-                    # self.run_again = False
-                    # SymTabBuildPass(input_ir=mod, prior=self)
-                    print(
-                        "Need to find a proper way to link this Architype::",
-                        decl_item.sym_name,
-                    )
-                    decl_item.is_imported = True
-                    break
+            # Try to match the declaration with an architype
+            if self.__process_architype_declaration(decl_item, imported_mod):
+                continue
+
+            self.log_warning(
+                f"Couldn't find a decl matching {decl_item.sym_name}", decl_item
+            )
+
+    def __process_module_declaration(
+        self, decl_item: ast.ModuleItem, imported_mod: ast.Module
+    ) -> bool:
+        """Process the case where the declaration is a module."""
+        for mod in imported_mod.kid_of_type(ast.Module):
+            if decl_item.sym_name == mod.name:
+                self.attach_mod_to_node(decl_item, mod)
+                self.run_again = False
+                SymTabBuildPass(input_ir=mod, prior=self)
+                decl_item.is_imported = True
+                return True
+        return False
+
+    def __process_ability_declaration(
+        self, decl_item: ast.ModuleItem, imported_mod: ast.Module
+    ) -> bool:
+        """Process the case where the declaration is an ability."""
+        for ab in imported_mod.kid_of_type(ast.Ability):
+            if decl_item.sym_name == ab.name_ref.sym_name:
+                self.attach_mod_to_node(decl_item, ab)
+                self.run_again = False
+                SymTabBuildPass(
+                    input_ir=decl_item.parent_of_type(ast.Module), prior=self
+                )
+                decl_item.is_imported = True
+                return True
+        return False
+
+    def __process_architype_declaration(
+        self, decl_item: ast.ModuleItem, imported_mod: ast.Module
+    ) -> bool:
+        """Process the case where the declaration is an architype."""
+        for arch in imported_mod.kid_of_type(ast.Architype):
+            if decl_item.sym_name == arch.sym_name:
+                self.attach_mod_to_node(decl_item, arch)
+                self.run_again = False
+                SymTabBuildPass(
+                    input_ir=decl_item.parent_of_type(ast.Module), prior=self
+                )
+                decl_item.is_imported = True
+                return True
+        return False
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
