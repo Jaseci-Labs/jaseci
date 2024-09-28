@@ -7,7 +7,7 @@ Now that we have a jac application served up, let's build a simple chatbot using
 There are a couple of additional dependenices we need here
 
 ```bash
-pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0
+pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0 ollama==0.3.12
 ```
 
 ## Building a Streamlit Interface
@@ -60,7 +60,7 @@ Now, let's update the function such that when the page reloads or updates, the p
 - This block loops through the stored messages in the session state.
 - For each message, we use `st.chat_message()` to display the message by its role (either `"user"` or `"assistant"`).
 
-Next, let's capture user input using `st.chat_input()`. This is where users can type their message to the chatbot.
+Next, let's capture user input using `st.chat_input()`. This is where users can type their message to the chatbot (this section doesn't need to be added to the code, add the next code section below instead).
 
 ```jac
     if prompt := st.chat_input("What is up?") {
