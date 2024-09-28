@@ -272,7 +272,9 @@ class PyImportPass(JacImportPass):
     ) -> bool:
         """Process the case where the declaration is a module."""
         for mod in imported_mod.kid_of_type(ast.Module):
-            if decl_item.sym_name == mod.name:
+            if decl_item.name.sym_name == mod.name:
+                if decl_item.alias:
+                    mod.name = decl_item.alias.sym_name
                 self.attach_mod_to_node(decl_item, mod)
                 self.run_again = False
                 SymTabBuildPass(input_ir=mod, prior=self)
@@ -285,7 +287,10 @@ class PyImportPass(JacImportPass):
     ) -> bool:
         """Process the case where the declaration is an ability."""
         for ab in imported_mod.kid_of_type(ast.Ability):
-            if decl_item.sym_name == ab.name_ref.sym_name:
+            assert isinstance(ab, ast.Ability)
+            if decl_item.name.sym_name == ab.name_ref.sym_name:
+                if decl_item.alias:
+                    ab.name_ref._sym_name = decl_item.alias.sym_name
                 self.attach_mod_to_node(decl_item, ab)
                 self.run_again = False
                 SymTabBuildPass(
@@ -300,7 +305,9 @@ class PyImportPass(JacImportPass):
     ) -> bool:
         """Process the case where the declaration is an architype."""
         for arch in imported_mod.kid_of_type(ast.Architype):
-            if decl_item.sym_name == arch.sym_name:
+            if decl_item.name.sym_name == arch.sym_name:
+                if decl_item.alias:
+                    arch.name._sym_name = decl_item.alias.sym_name
                 self.attach_mod_to_node(decl_item, arch)
                 self.run_again = False
                 SymTabBuildPass(
