@@ -265,12 +265,7 @@ class PyImportPass(JacImportPass):
                 continue
 
             # Try to match the declaration with an architype
-            if self.__process_architype_declaration(decl_item, imported_mod):
-                continue
-
-            self.log_warning(
-                f"Couldn't find a decl matching {decl_item.sym_name}", decl_item
-            )
+            self.__process_architype_declaration(decl_item, imported_mod)
 
     def __process_module_declaration(
         self, decl_item: ast.ModuleItem, imported_mod: ast.Module
