@@ -160,11 +160,11 @@ class JacMachine:
         else:
             raise ValueError(f"Node {node_name} not found.")
 
-    def spawn_walker(self, walker_name: str) -> WalkerArchitype:
+    def spawn_walker(self, walker_name: str, attributes: dict) -> WalkerArchitype:
         """Spawn a walker instance of the given walker_name."""
         walker_class = self.get_architype("__main__", walker_name)
         if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
-            walker_instance = walker_class()
+            walker_instance = walker_class(**attributes)
             return walker_instance
         else:
             raise ValueError(f"Walker {walker_name} not found.")
