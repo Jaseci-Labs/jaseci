@@ -211,7 +211,7 @@ In this part we'll be building a simple Retrieval Augmented Generation module us
 
 First, let's add a file called `rag.jac` to our project. This file will contain the code for the Retrieval Augmented Generation module.
 
-Jac allows you to import Python libraries, making it easy to integrate existing libraries such as langchain, langchain_community, and more. In this RAG engine, we need document loaders, text splitters, embedding functions, and vector stores.
+Jac allows you to import Python libraries, making it easy to integrate existing libraries such as [Langchain](https://www.langchain.com), [Langchain Community](https://pypi.org/project/langchain-community/), and more. In this RAG engine, we need document loaders, text splitters, embedding functions, and vector stores.
 
 ```jac
 import:py os;
@@ -222,10 +222,10 @@ import:py from langchain_community.embeddings.ollama {OllamaEmbeddings}
 import:py from langchain_community.vectorstores.chroma {Chroma}
 ```
 
-- `PyPDFDirectoryLoader` is used to load documents from a directory.
-- `RecursiveCharacterTextSplitter` is used to split the documents into chunks.
-- `OllamaEmbeddings` is used to generate embeddings from document chunks.
-- `Chroma` is our vector store for storing the embeddings.
+- `PyPDFDirectoryLoader`: Used to load documents from a directory.
+- `RecursiveCharacterTextSplitter`: Used to split the documents into chunks.
+- `OllamaEmbeddings`: Used to generate embeddings from document chunks.
+- `Chroma`: Our vector store for storing the embeddings.
 
 Now let's define the `rag_engine` object that will handle the retrieval and generation of responses. The object will have two properties: `file_path` for the location of documents and `chroma_path` for the location of the vector store.
 
@@ -236,11 +236,14 @@ obj RagEngine {
 }
 ```
 
-Note: `obj` works similarly as dataclasses in Python.
 
 We will now build out this `RagEngine` object by adding relevant abilities. Abilities, as annotated by the `can` keyword, are analogus to member methods of a Python class. The `can` abilities in the following code snippets shoudld be added inside the `RagEngine` object scope.
 
-The object will have a `postinit` method that runs automatically upon initialization, loading documents, splitting them into chunks, and adding them to the vector database (Chroma). `postinit` works similarly to the `__post_init__` in Python dataclasses.
+>
+> Note:
+> `obj` in `jaclang` works similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) in Python. `postinit` works similarly to the `__post_init__` in Python dataclasses.
+
+The `obj` will have a `postinit` ability that runs automatically upon initialization, loading documents, splitting them into chunks, and adding them to the vector database (Chroma).
 
 ```jac
     can postinit {
@@ -248,20 +251,14 @@ The object will have a `postinit` method that runs automatically upon initializa
         chunks: list = self.split_documents(documents);
         self.add_to_chroma(chunks);
     }
-```
 
-- The `load_documents` method loads the documents from the specified directory.
-- The `split_documents` method splits the documents into chunks.
-- The `add_to_chroma` method adds the chunks to the Chroma vector store.
-
-Let's define the `load_documents` method and the `split_documents` method.
-
-```jac
+    // Load documents from a directory
     can load_documents {
         document_loader = PyPDFDirectoryLoader(self.file_path);
         return document_loader.load();
     }
 
+    // Split documents into manageable chunks
     can split_documents(documents: list[Document]) {
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=800,
         chunk_overlap=80,
@@ -271,19 +268,28 @@ Let's define the `load_documents` method and the `split_documents` method.
     }
 ```
 
-- The `load_documents` method loads the documents from the specified directory using the `PyPDFDirectoryLoader` class.
-- The `split_documents` method splits the documents into chunks using the `RecursiveCharacterTextSplitter` class. This ensures that documents are broken down into manageable chunks for better embedding and retrieval performance.
+- The `load_documents` ability loads the documents from the specified directory using the `PyPDFDirectoryLoader` class and returns a list of documents that will later be split and processed.
+- The `split_documents` ability splits the documents into chunks using the `RecursiveCharacterTextSplitter` class. This ensures that documents are broken down into manageable chunks for better embedding and retrieval performance.
+- The `add_to_chroma` This part of the code hasn't been fully defined yet, but the purpose of the `add_to_chroma` method will be to take the document chunks and store them in the Chroma vector database for future retrieval. We'll later enhance this code to complete that functionality.
 
-Next, let's define the `get_embedding_function` method. The `get_embedding_function` ability uses the `OllamaEmbeddings `model to create embeddings for the document chunks. These embeddings are crucial for semantic search in the vector database.
+Next, let's define the `get_embedding_function` ability. This ability uses the `OllamaEmbeddings` model to create embeddings for the document chunks. TThese embeddings are used to represent the semantic meaning of each chunk and will be crucial for performing similarity searches.
 
 ```jac
+obj RagEngine {
+    \\
+    \\
+
     can get_embedding_function {
         embeddings = OllamaEmbeddings(model='nomic-embed-text');
         return embeddings;
     }
+}
 ```
 
-Now, each chunk of text needs a unique identifier to ensure that it can be referenced in the vector store. The `add_chunk_id` ability assigns IDs to each chunk, using the format `Page Source:Page Number:Chunk Index`.
+- The `OllamaEmbeddings` model is used to generate text embeddings with the nomic-embed-text model, which is designed for efficient text-based embedding.
+- This method returns an embedding function that converts text into vector representations that can be stored in Chroma.
+
+Now, each chunk of text needs a unique identifier to ensure that it can be referenced in the vector store. The `add_chunk_id` ability assigns IDs to each chunk, using the format `Page Source:Page Number:Chunk Index`. These IDs are necessary to ensure each chunk is correctly referenced in the Chroma vector database.
 
 ```jac
     can add_chunk_id(chunks: str) {
@@ -311,7 +317,7 @@ Now, each chunk of text needs a unique identifier to ensure that it can be refer
     }
 ```
 
-Once the documents are split and chunk IDs are assigned, we add them to the Chroma vector database. The `add_to_chroma` ability checks for existing documents in the database and only adds new chunks to avoid duplication.
+Once the documents are split and chunk IDs are assigned, we add them to the Chroma vector database. The `add_to_chroma` ability stores the chunks in the Chroma database, checking for duplicates and only adding new chunks.
 
 ```jac
     can add_to_chroma(chunks: list[Document]) {
@@ -338,7 +344,7 @@ Once the documents are split and chunk IDs are assigned, we add them to the Chro
     }
 ```
 
-Next, the `get_from_chroma` ability takes a query and returns the most relevant chunks based on similarity search. This is the core of retrieval-augmented generation, as the engine fetches chunks that are semantically similar to the query.
+Finally, the `get_from_chroma` ability takes a query and returns the most relevant chunks based on similarity search. This is the core of retrieval-augmented generation, as the engine fetches chunks that are semantically similar to the query.
 
 ```jac
     can get_from_chroma(query: str,chunck_nos: int=5) {
@@ -351,16 +357,116 @@ Next, the `get_from_chroma` ability takes a query and returns the most relevant 
     }
 ```
 
+**Complete RagEngine Code:**
+
+Here is the complete implementation of the RagEngine:
+
+```jac
+import:py os;
+import:py from langchain_community.document_loaders {PyPDFDirectoryLoader}
+import:py from langchain_text_splitters {RecursiveCharacterTextSplitter}
+import:py from langchain.schema.document {Document}
+import:py from langchain_community.embeddings.ollama {OllamaEmbeddings}
+import:py from langchain_community.vectorstores.chroma {Chroma}
+
+obj RagEngine {
+    has file_path: str = "docs";
+    has chroma_path: str = "chroma";
+
+    can postinit {
+        documents: list = self.load_documents();
+        chunks: list = self.split_documents(documents);
+        self.add_to_chroma(chunks);
+    }
+
+    can load_documents {
+        document_loader = PyPDFDirectoryLoader(self.file_path);
+        return document_loader.load();
+    }
+
+    can split_documents(documents: list[Document]) {
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=800,
+        chunk_overlap=80,
+        length_function=len,
+        is_separator_regex=False);
+        return text_splitter.split_documents(documents);
+    }
+
+    can get_embedding_function {
+        embeddings = OllamaEmbeddings(model='nomic-embed-text');
+        return embeddings;
+    }
+
+    can add_chunk_id(chunks: str) {
+        last_page_id = None;
+        current_chunk_index = 0;
+
+        for chunk in chunks {
+            source = chunk.metadata.get('source');
+            page = chunk.metadata.get('page');
+            current_page_id = f'{source}:{page}';
+
+            if current_page_id == last_page_id {
+                current_chunk_index +=1;
+            } else {
+                current_chunk_index = 0;
+            }
+
+            chunk_id = f'{current_page_id}:{current_chunk_index}';
+            last_page_id = current_page_id;
+
+            chunk.metadata['id'] = chunk_id;
+        }
+
+        return chunks;
+    }
+
+    can add_to_chroma(chunks: list[Document]) {
+        db = Chroma(persist_directory=self.chroma_path, embedding_function=self.get_embedding_function());
+        chunks_with_ids = self.add_chunk_id(chunks);
+
+        existing_items = db.get(include=[]);
+        existing_ids = set(existing_items['ids']);
+
+        new_chunks = [];
+        for chunk in chunks_with_ids {
+            if chunk.metadata['id'] not in existing_ids {
+                new_chunks.append(chunk);
+            }
+        }
+
+        if len(new_chunks) {
+            print('adding new documents');
+            new_chunk_ids = [chunk.metadata['id'] for chunk in new_chunks];
+            db.add_documents(new_chunks, ids=new_chunk_ids);
+        } else {
+            print('no new documents to add');
+        }
+    }
+
+    can get_from_chroma(query: str,chunck_nos: int=5) {
+        db = Chroma(
+            persist_directory=self.chroma_path,
+            embedding_function=self.get_embedding_function()
+        );
+        results = db.similarity_search_with_score(query,k=chunck_nos);
+        return results;
+    }
+}
+
+
+```
+
 To summarize, we define an object called `RagEngine` with two properties: `file_path` and `chroma_path`. The `file_path` property specifies the path to the directory containing the documents we want to retrieve responses from. The `chroma_path` property specifies the path to the directory containing the pre-trained embeddings. We will use these embeddings to retrieve candidate responses.
 
-We define a few methods to load the documents, split them into chunks, and add them to the Chroma vector store. We also define a method to retrieve candidate responses based on a query. Let's break down the code:
+We defined abilities to load the documents, split them into chunks, and add them to the Chroma vector store. We also define a ability to retrieve candidate responses based on a query. Let's break down the code:
 
-- The `load_documents` method loads the documents from the specified directory using the `PyPDFDirectoryLoader` class.
-- The `split_documents` method splits the documents into chunks using the `RecursiveCharacterTextSplitter` class from the `langchain_text_splitters` module.
-- The `get_embedding_function` method initializes the Ollama embeddings model.
-- The `add_chunk_id` method generates unique IDs for the chunks based on the source and page number.
-- The `add_to_chroma` method adds the chunks to the Chroma vector store.
-- The `get_from_chroma` method retrieves candidate responses based on a query from the Chroma vector store.
+- The `load_documents` ability loads the documents from the specified directory using the `PyPDFDirectoryLoader` class and returns a list of documents that will later be split and processed.
+- The `split_documents` ability splits the documents into chunks using the `RecursiveCharacterTextSplitter` class from the `langchain_text_splitters` module.
+- The `get_embedding_function` ability initializes the Ollama embeddings model.
+- The `add_chunk_id` ability generates unique IDs for the chunks based on the source and page number.
+- The `add_to_chroma` ability adds the chunks to the Chroma vector store.
+- The `get_from_chroma` ability retrieves candidate responses based on a query from the Chroma vector store.
 
 ### Setting up Ollama Embeddings
 
