@@ -154,7 +154,7 @@ class JacMachine:
     def spawn_node(self, node_name: str, attributes: dict) -> NodeArchitype:
         """Spawn a node instance of the given node_name with attributes."""
         node_class = self.get_architype("__main__", node_name)
-        if node_class and issubclass(node_class, NodeArchitype):
+        if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
             node_instance = node_class(**attributes)
             return node_instance
         else:
@@ -163,13 +163,15 @@ class JacMachine:
     def spawn_walker(self, walker_name: str) -> WalkerArchitype:
         """Spawn a walker instance of the given walker_name."""
         walker_class = self.get_architype("__main__", walker_name)
-        if walker_class and issubclass(walker_class, WalkerArchitype):
+        if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
             walker_instance = walker_class()
             return walker_instance
         else:
             raise ValueError(f"Walker {walker_name} not found.")
 
-    def get_architype(self, module_name: str, architype_name: str) -> Architype:
+    def get_architype(
+        self, module_name: str, architype_name: str
+    ) -> Optional[Architype]:
         """Retrieve an architype class from a module."""
         module = self.loaded_modules.get(module_name)
         if module:
