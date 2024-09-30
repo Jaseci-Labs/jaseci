@@ -492,33 +492,34 @@ You can add your documents to the `docs` directory. The documents should be in P
 
 Here we are going to use one of the key features of jaclang called [MTLLM](https://jaseci-labs.github.io/mtllm/), or Meaning-typed LLM. MTTLM facilitates the integration of generative AI models, specifically Large Language Models (LLMs) into programming at the language level.
 
-We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start from scratch and add the following.
-
-```jac
-import:py from mtllm.llms {OpenAI}
-
-glob llm = OpenAI(model_name='gpt-4o');
-```
-
-Here we use the OpenAI model gpt-4o as our Large Language Model (LLM). To use OpenAI you will need an API key. You can get an API key by signing up on the OpenAI website [here](https://platform.openai.com/). Once you have your API key, you can set it as an environment variable:
-
-```bash
-export OPENAI_API_KEY=""
-```
-
-Using OpenAI is not required. You can replace this with any other LLM you want to use. For example, you can also you any Ollama generative model as your LLM. When using Ollama make sure you have the model downloaded and serving on your local machine by running the following command:
-
-```bash
-ollama pull llama3.1
-```
-
-This will download the `llama3.1` model to your local machine and make it available for inference when you run the `ollama serve` command. If you want use Ollama replace your import statement with the following:
+We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start fresh and add the following lines to use Olama as your LLM:
 
 ```jac
 import:py from mtllm.llms {Ollama}
 
 glob llm = Ollama(model_name='llama3.1');
 ```
+
+Ollama provides various powerful generative models, such as llama3.1. Before using Ollama in your project, make sure you have downloaded and are serving the model on your local machine. You can do this by running the following commands:
+
+```bash
+ollama pull llama3.1
+```
+This will download the `llama3.1` model to your local machine and make it available for inference when you run the `ollama serve` command.
+
+> **Note:**
+> You can also use OpenAI model gpt-4o as your Large Language Model (LLM), To use OpenAI you will need an API key. You can get an API key by signing up on the OpenAI website [here](https://platform.openai.com/). Once you have your API key, you can set it as an environment variable:
+> ```bash
+> export OPENAI_API_KEY=""
+> ```
+>
+> Also replace your import statement with the following:
+> ```jac
+> import:py from mtllm.llms {OpenAI}
+> glob llm = OpenAI(model_name='gpt-4o');
+> ```
+
+
 
 Now that you have your LLM ready let's create a simple walker that uses the RAG module and MTLLM to generate responses to user queries. First, let's declare the global variables for MTLLM and the RAG engine.
 
