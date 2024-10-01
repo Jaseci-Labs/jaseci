@@ -46,17 +46,17 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.unrestrict(here.__jac__, self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            Jac.allow_root(here.__jac__, UUID(self.root_id), self.level);
+            Jac.allow_root(here, UUID(self.root_id), self.level);
         }
     }
 
     can enter_nested with A entry {
         if self.via_all {
-            Jac.unrestrict(here.__jac__, self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            Jac.allow_root(here.__jac__, UUID(self.root_id), self.level);
+            Jac.allow_root(here, UUID(self.root_id), self.level);
         }
     }
 }
@@ -66,17 +66,17 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.restrict(here.__jac__);
+            Jac.restrict(here);
         } else {
-            Jac.disallow_root(here.__jac__, UUID(self.root_id));
+            Jac.disallow_root(here, UUID(self.root_id));
         }
     }
 
     can enter_nested with A entry {
         if self.via_all {
-            Jac.restrict(here.__jac__);
+            Jac.restrict(here);
         } else {
-            Jac.disallow_root(here.__jac__, UUID(self.root_id));
+            Jac.disallow_root(here, UUID(self.root_id));
         }
     }
 }

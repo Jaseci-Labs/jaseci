@@ -57,11 +57,11 @@ class JacAccessValidationImpl:
     @staticmethod
     @hookimpl
     def allow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
-        access = anchor.access.roots
+        access = architype.__jac__.access.roots
 
         _root_id = str(root_id)
         if level != access.anchors.get(_root_id, AccessLevel.NO_ACCESS):
@@ -70,26 +70,28 @@ class JacAccessValidationImpl:
     @staticmethod
     @hookimpl
     def disallow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
-        access = anchor.access.roots
+        access = architype.__jac__.access.roots
 
         access.anchors.pop(str(root_id), None)
 
     @staticmethod
     @hookimpl
-    def unrestrict(anchor: Anchor, level: AccessLevel | int | str) -> None:
+    def unrestrict(architype: Architype, level: AccessLevel | int | str) -> None:
         """Allow everyone to access current Architype."""
+        anchor = architype.__jac__
         level = AccessLevel.cast(level)
         if level != anchor.access.all:
             anchor.access.all = level
 
     @staticmethod
     @hookimpl
-    def restrict(anchor: Anchor) -> None:
+    def restrict(architype: Architype) -> None:
         """Disallow others to access current Architype."""
+        anchor = architype.__jac__
         if anchor.access.all > AccessLevel.NO_ACCESS:
             anchor.access.all = AccessLevel.NO_ACCESS
 
@@ -358,7 +360,7 @@ class JacWalkerImpl:
             if isinstance(op2, NodeArchitype):
                 node = op2.__jac__
             elif isinstance(op2, EdgeArchitype):
-                node = op2.__jac__.source
+                node = op2.__jac__.target
             else:
                 raise TypeError("Invalid target object")
         elif isinstance(op2, WalkerArchitype):
@@ -367,7 +369,7 @@ class JacWalkerImpl:
             if isinstance(op1, NodeArchitype):
                 node = op1.__jac__
             elif isinstance(op1, EdgeArchitype):
-                node = op1.__jac__.source
+                node = op1.__jac__.target
             else:
                 raise TypeError("Invalid target object")
         else:
@@ -532,16 +534,7 @@ class JacFeatureImpl(
     @hookimpl
     def setup() -> None:
         """Set Class References."""
-        ########################################################################################
-        #                                 REFERENCE FOR PLUGIN                                 #
-        ########################################################################################
-        # Jac.EdgeDir = EdgeDir
-        # Jac.DSFunc = DSFunc
-        # Jac.RootType = Root
-        # Jac.Obj = Architype
-        # Jac.Node = NodeArchitype
-        # Jac.Edge = EdgeArchitype
-        # Jac.Walker = WalkerArchitype
+        pass
 
     @staticmethod
     @hookimpl

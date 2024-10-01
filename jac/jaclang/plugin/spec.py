@@ -49,7 +49,7 @@ class JacAccessValidationSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def allow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         raise NotImplementedError
@@ -57,20 +57,20 @@ class JacAccessValidationSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def disallow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def unrestrict(anchor: Anchor, level: AccessLevel | int | str) -> None:
+    def unrestrict(architype: Architype, level: AccessLevel | int | str) -> None:
         """Allow everyone to access current Architype."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def restrict(anchor: Anchor) -> None:
+    def restrict(architype: Architype) -> None:
         """Disallow others to access current Architype."""
         raise NotImplementedError
 
