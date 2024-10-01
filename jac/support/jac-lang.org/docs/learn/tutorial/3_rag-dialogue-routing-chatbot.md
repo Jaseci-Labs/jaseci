@@ -28,6 +28,41 @@ node Router {
 
 The `router` node has an ability called `classify` that takes the user query as input and classifies it into one of the `ChatType` states using the ` by llm` feature from MTLLM.
 
+
+<!-- The 'infer' walker should be put before the chat nodes, because the 'can' in chat nodes used the infer walker.  -->
+Next, we'll add a new walker called `infer`. The `infer` walker contains the logic for routing the user query to the appropriate dialogue model based on the classification from the `Router` node.
+
+```jac
+walker infer {
+    has message:str;
+    has chat_history: list[dict];
+
+    can init_router with `root entry {
+        visit [-->](`?Router) else {
+            router_node = here ++> Router();
+            router_node ++> RagChat();
+            router_node ++> QAChat();
+            visit router_node;
+        }
+    }
+}
+```
+
+Here we have a new ability `init_router` that initializes the `Router` node and creates and edge to two new nodes `RagChat` and `QAChat`. These nodes will be used to handle the RAG and QA models respectively. We'll define these nodes later. Let's finish the `infer` walker first.
+
+The following `can` abilities should be added to the `infer` walker scope.
+
+We add an ability `route` that classifies the user query using the `Router` node and routes it to the appropriate node based on the classification.
+
+
+```jac
+    can route with Router entry {
+        classification = here.classify(message = self.message);
+        visit [-->](`?Chat)(?chat_type==classification);
+    }
+```
+
+
 Let's now define two different modes of chatbots that the router can direct the request to accordingly.
 
 ```jac
@@ -69,38 +104,6 @@ We define two new nodes `RagChat` and `QAChat` that extend the `Chat` node. The 
 In the `RagChat` node, we have a new ability `respond_with_llm` that responds to the user query using the RAG model. The ability retrieves the relevant information from the documents and responds to the user query. In the `QAChat` node, we have a new ability `respond_with_llm` that responds to the user query using a simple question-answering model.
 
 
-Next, we'll add a new walker called `infer`. The `infer` walker contains the logic for routing the user query to the appropriate dialogue model based on the classification from the `Router` node.
-
-```jac
-walker infer {
-    has message:str;
-    has chat_history: list[dict];
-
-    can init_router with `root entry {
-        visit [-->](`?Router) else {
-            router_node = here ++> Router();
-            router_node ++> RagChat();
-            router_node ++> QAChat();
-            visit router_node;
-        }
-    }
-}
-```
-
-Here we have a new ability `init_router` that initializes the `Router` node and creates and edge to two new nodes `RagChat` and `QAChat`. These nodes will be used to handle the RAG and QA models respectively. We'll define these nodes later. Let's finish the `infer` walker first.
-
-The following `can` abilities should be added to the `infer` walker scope.
-
-We add an ability `route` that classifies the user query using the `Router` node and routes it to the appropriate node based on the classification.
-
-
-```jac
-    can route with Router entry {
-        classification = here.classify(message = self.message);
-        visit [-->](`?Chat)(?chat_type==classification);
-    }
-```
-
 Lastly, we'll update our `Session` node. We will maintain a record of previous conversation histories so the chatbot can have a continuous back-and-forth conversation with memories of previous interactions.
 
 Add the following `chat` abilities to the `Session` node scope.
@@ -121,7 +124,8 @@ node Session {
 
 In our updated `Session` node, we have a new ability `chat` that is triggered by the `interact` walker. This means that when the interact walker traverses to the `Session` node, it will trigger the `chat` ability. The `chat` ability will then spawns the `infer` walker on `root`. The `infer` walker will execute its logic to route the user query to the appropriate dialogue model based on the classification. The response from the dialogue model is then appended to the `infer` walker's object and reported back to the frontend. This is the magic of Data Spacial programming!
 
-**Note*+: the `can chat with Session entry` ability needs to be removed from the `interact` walker.
+<!-- Note revised -->
+**Note*+: the `can chat with Session entry` ability needs to be removed from the `interact` walker, and `Session` node should be put AFTER `interact` and `infer` walker (for example, put at the end of the whole sever.jac), bacause after the changing of abilities, `Session` calls `interact` and `infer` in its new ability.
 
 
 To summarize, here are the changes we made to our RAG chatbot to add dialogue routing capabilities:
