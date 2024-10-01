@@ -7,7 +7,6 @@ from pickle import dumps as pdumps
 from re import IGNORECASE, compile
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Iterable,
     Mapping,
@@ -20,7 +19,6 @@ from typing import (
 
 from bson import ObjectId
 
-from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.architype import (
     Access as _Access,
     AccessLevel,
@@ -389,43 +387,6 @@ class BaseAnchor:
         """Push update that there's edge that has been removed."""
         self.pull("edges", anchor)
 
-    def allow_root(
-        self, root: "BaseAnchor", level: AccessLevel | int | str = AccessLevel.READ
-    ) -> None:
-        """Allow all access from target root graph to current Architype."""
-        level = AccessLevel.cast(level)
-        access = self.access.roots
-        if (ref_id := root.ref_id) and level != access.anchors.get(
-            ref_id, AccessLevel.NO_ACCESS
-        ):
-            access.anchors[ref_id] = level
-            self._set.update({f"access.roots.anchors.{ref_id}": level.name})
-            self._unset.pop(f"access.roots.anchors.{ref_id}", None)
-
-    def disallow_root(
-        self, root: Anchor, level: AccessLevel | int | str = AccessLevel.READ
-    ) -> None:
-        """Disallow all access from target root graph to current Architype."""
-        level = AccessLevel.cast(level)
-        access = self.access.roots
-
-        if (ref_id := root.ref_id) and access.anchors.pop(ref_id, None) is not None:
-            self._unset.update({f"access.roots.anchors.{ref_id}": True})
-            self._set.pop(f"access.roots.anchors.{ref_id}", None)
-
-    def unrestrict(self, level: AccessLevel | int | str = AccessLevel.READ) -> None:
-        """Allow everyone to access current Architype."""
-        level = AccessLevel.cast(level)
-        if level != self.access.all:
-            self.access.all = level
-            self._set.update({"access.all": level.name})
-
-    def restrict(self) -> None:
-        """Disallow others to access current Architype."""
-        if self.access.all > AccessLevel.NO_ACCESS:
-            self.access.all = AccessLevel.NO_ACCESS
-            self._set.update({"access.all": AccessLevel.NO_ACCESS.name})
-
     ####################################################
     #                POPULATE OPERATIONS               #
     ####################################################
@@ -461,14 +422,16 @@ class BaseAnchor:
         bulk_write: BulkWrite,
     ) -> None:
         """Save Anchor."""
-        if self.state.deleted is False and self.has_write_access(self):  # type: ignore[attr-defined]
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        if self.state.deleted is False and Jac.check_write_access(self):  # type: ignore[arg-type]
             self.state.deleted = True
             self.delete(bulk_write)
         elif not self.state.connected:
             self.state.connected = True
             self.sync_hash()
             self.insert(bulk_write)
-        elif self.has_connect_access(self):  # type: ignore[attr-defined]
+        elif Jac.check_connect_access(self):  # type: ignore[arg-type]
             self.update(bulk_write, True)
 
     def apply(self, session: ClientSession | None = None) -> BulkWrite:
@@ -507,9 +470,9 @@ class BaseAnchor:
         ############################################################
         #                     POPULATE CONTEXT                     #
         ############################################################
-        from .context import JaseciContext
+        from jaclang.plugin.feature import JacFeature as Jac
 
-        if JaseciContext.get().root.has_write_access(self):
+        if Jac.check_write_access(self):  # type: ignore[arg-type]
             set_architype = changes.pop("$set", {})
             if is_dataclass(architype := self.architype) and not isinstance(
                 architype, type
@@ -587,10 +550,6 @@ class BaseAnchor:
         """Append Delete Query."""
         raise NotImplementedError("delete must be implemented in subclasses")
 
-    def destroy(self) -> None:
-        """Delete Anchor."""
-        raise NotImplementedError("destroy must be implemented in subclasses")
-
     def has_changed(self) -> int:
         """Check if needs to update."""
         if self.state.full_hash != (new_hash := hash(pdumps(self.serialize()))):
@@ -607,49 +566,6 @@ class BaseAnchor:
                 for key, val in architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
             }
             self.state.full_hash = hash(pdumps(self.serialize()))
-
-    def access_level(self, to: Anchor) -> AccessLevel:
-        """Access validation."""
-        if not to.persistent:
-            return AccessLevel.WRITE
-
-        from .context import JaseciContext
-
-        jctx = JaseciContext.get()
-
-        jroot = jctx.root
-
-        # if current root is system_root
-        # if current root id is equal to target anchor's root id
-        # if current root is the target anchor
-        if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
-            return AccessLevel.WRITE
-
-        access_level = AccessLevel.NO_ACCESS
-
-        # if target anchor have set access.all
-        if (to_access := to.access).all > AccessLevel.NO_ACCESS:
-            access_level = to_access.all
-
-        # if target anchor's root have set allowed roots
-        # if current root is allowed to the whole graph of target anchor's root
-        if to.root and isinstance(
-            to_root := jctx.mem.find_by_id(NodeAnchor.ref(f"n::{to.root}")), Anchor
-        ):
-            if to_root.access.all > access_level:
-                access_level = to_root.access.all
-
-            level = to_root.access.roots.check(jroot.ref_id)
-            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
-                access_level = level
-
-        # if target anchor have set allowed roots
-        # if current root is allowed to target anchor
-        level = to_access.roots.check(jroot.ref_id)
-        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
-            access_level = level
-
-        return access_level
 
     # ---------------------------------------------------------------------- #
 
@@ -760,47 +676,6 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
 
         bulk_write.del_node(self.id)
 
-    def destroy(self) -> None:
-        """Delete Anchor."""
-        if self.state.deleted is None:
-            from .context import JaseciContext
-
-            jctx = JaseciContext.get()
-
-            if jctx.root.has_write_access(self):
-
-                self.state.deleted = False
-
-                for edge in self.edges:
-                    edge.destroy()
-                jctx.mem.remove(self.id)
-
-    def get_edges(
-        self,
-        dir: EdgeDir,
-        filter_func: Callable[[list["EdgeArchitype"]], list["EdgeArchitype"]] | None,
-        target_obj: list["NodeArchitype"] | None,
-    ) -> list["EdgeArchitype"]:
-        """Get edges connected to this node."""
-        from .context import JaseciContext
-
-        JaseciContext.get().mem.populate_data(self.edges)
-
-        return super().get_edges(dir, filter_func, target_obj)
-
-    def edges_to_nodes(
-        self,
-        dir: EdgeDir,
-        filter_func: Callable[[list["EdgeArchitype"]], list["EdgeArchitype"]] | None,
-        target_obj: list["NodeArchitype"] | None,
-    ) -> list["NodeArchitype"]:
-        """Get set of nodes connected to this node."""
-        from .context import JaseciContext
-
-        JaseciContext.get().mem.populate_data(self.edges)
-
-        return super().edges_to_nodes(dir, filter_func, target_obj)
-
     def serialize(self) -> dict[str, object]:
         """Serialize Node Anchor."""
         return {
@@ -848,11 +723,6 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
             anchor.sync_hash()
             return anchor
 
-    def __post_init__(self) -> None:
-        """Populate edge to source and target."""
-        # remove parent trigger
-        pass
-
     @classmethod
     def ref(cls, ref_id: str) -> "EdgeAnchor":
         """Return EdgeAnchor instance if existing."""
@@ -882,25 +752,6 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
             target.build_query(bulk_write)
 
         bulk_write.del_edge(self.id)
-
-    def destroy(self) -> None:
-        """Delete Anchor."""
-        if self.state.deleted is None:
-            from .context import JaseciContext
-
-            jctx = JaseciContext.get()
-
-            if jctx.root.has_write_access(self):
-                self.state.deleted = False
-                self.detach()
-                jctx.mem.remove(self.id)
-
-    def detach(self) -> None:
-        """Detach edge from nodes."""
-        self.source.remove_edge(self)
-        self.source.disconnect_edge(self)
-        self.target.remove_edge(self)
-        self.target.disconnect_edge(self)
 
     def serialize(self) -> dict[str, object]:
         """Serialize Node Anchor."""
@@ -972,61 +823,6 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
         """Append Delete Query."""
         bulk_write.del_walker(self.id)
 
-    def destroy(self) -> None:
-        """Delete Anchor."""
-        if self.state.deleted is None:
-            from .context import JaseciContext
-
-            jctx = JaseciContext.get()
-
-            if jctx.root.has_write_access(self):
-                self.state.deleted = False
-                jctx.mem.remove(self.id)
-
-    def spawn_call(self, node: Anchor) -> "WalkerArchitype":
-        """Invoke data spatial call."""
-        if walker := self.architype:
-            self.path = []
-            self.next = [node]
-            self.returns = []
-            while len(self.next):
-                if current_node := self.next.pop(0).architype:
-                    for i in current_node._jac_entry_funcs_:
-                        if not i.trigger or isinstance(walker, i.trigger):
-                            if i.func:
-                                self.returns.append(i.func(current_node, walker))
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-                    for i in walker._jac_entry_funcs_:
-                        if not i.trigger or isinstance(current_node, i.trigger):
-                            if i.func:
-                                self.returns.append(i.func(walker, current_node))
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-                    for i in walker._jac_exit_funcs_:
-                        if not i.trigger or isinstance(current_node, i.trigger):
-                            if i.func:
-                                self.returns.append(i.func(walker, current_node))
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-                    for i in current_node._jac_exit_funcs_:
-                        if not i.trigger or isinstance(walker, i.trigger):
-                            if i.func:
-                                self.returns.append(i.func(current_node, walker))
-                            else:
-                                raise ValueError(f"No function {i.name} to call.")
-                        if self.disengaged:
-                            return walker
-            self.ignores = []
-            return walker
-        raise Exception(f"Invalid Reference {self.id}")
-
 
 @dataclass(eq=False, repr=False, kw_only=True)
 class ObjectAnchor(BaseAnchor, Anchor):  # type: ignore[misc]
@@ -1081,7 +877,7 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
 
     __jac__: NodeAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create node architype."""
         self.__jac__ = NodeAnchor(
             architype=self,
@@ -1102,27 +898,6 @@ class EdgeArchitype(BaseArchitype, _EdgeArchitype):
 
     __jac__: EdgeAnchor
 
-    def __attach__(
-        self,
-        source: NodeAnchor,
-        target: NodeAnchor,
-        is_undirected: bool,
-    ) -> None:
-        """Attach EdgeAnchor properly."""
-        jac = self.__jac__ = EdgeAnchor(
-            architype=self,
-            name=self.__class__.__name__,
-            source=source,
-            target=target,
-            is_undirected=is_undirected,
-            access=Permission(),
-            state=AnchorState(),
-        )
-        source.edges.append(jac)
-        target.edges.append(jac)
-        source.connect_edge(jac)
-        target.connect_edge(jac)
-
     @classmethod
     def __ref_cls__(cls) -> str:
         """Get class naming."""
@@ -1134,7 +909,7 @@ class WalkerArchitype(BaseArchitype, _WalkerArchitype):
 
     __jac__: WalkerAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create walker architype."""
         self.__jac__ = WalkerAnchor(
             architype=self,
@@ -1154,7 +929,7 @@ class ObjectArchitype(BaseArchitype, Architype):
 
     __jac__: ObjectAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create default architype."""
         self.__jac__ = ObjectAnchor(
             architype=self,
@@ -1171,26 +946,6 @@ class GenericEdge(EdgeArchitype):
     _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
     _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
-    def __attach__(
-        self,
-        source: NodeAnchor,
-        target: NodeAnchor,
-        is_undirected: bool,
-    ) -> None:
-        """Attach EdgeAnchor properly."""
-        jac = self.__jac__ = EdgeAnchor(
-            architype=self,
-            source=source,
-            target=target,
-            is_undirected=is_undirected,
-            access=Permission(),
-            state=AnchorState(),
-        )
-        source.edges.append(jac)
-        target.edges.append(jac)
-        source.connect_edge(jac)
-        target.connect_edge(jac)
-
 
 @dataclass(eq=False)
 class Root(NodeArchitype):
@@ -1199,7 +954,7 @@ class Root(NodeArchitype):
     _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
     _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create node architype."""
         self.__jac__ = NodeAnchor(
             architype=self,

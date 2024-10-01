@@ -115,9 +115,8 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
 
     def get_bulk_write(self) -> BulkWrite:
         """Sync memory to database."""
-        from .context import JaseciContext
+        from jaclang.plugin.feature import JacFeature as Jac
 
-        JaseciContext
         bulk_write = BulkWrite()
 
         for anchor in self.__gc__:
@@ -139,8 +138,8 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
                     bulk_write.operations[anchor.__class__].append(
                         InsertOne(anchor.serialize())
                     )
-                elif (new_hash := anchor.has_changed()) and anchor.has_connect_access(
-                    anchor
+                elif (new_hash := anchor.has_changed()) and Jac.check_connect_access(
+                    anchor  # type: ignore[arg-type]
                 ):
                     anchor.state.full_hash = new_hash
                     if (
