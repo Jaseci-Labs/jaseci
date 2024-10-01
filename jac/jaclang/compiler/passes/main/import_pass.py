@@ -200,10 +200,19 @@ class JacImportPass(Pass):
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
 
+    __call_count: int = 0
+
     def before_pass(self) -> None:
-        """Only run pass if settings are set to raise python."""
+        """Run before the pass is called."""
+        PyImportPass.__call_count += 1
         super().before_pass()
-        self.__load_builtins()
+
+    def after_pass(self) -> None:
+        """Run after the pass is called."""
+        if PyImportPass.__call_count == 1:
+            self.__load_builtins()
+        PyImportPass.__call_count -= 1
+        return super().after_pass()
 
     def __get_current_module(self, node: ast.AstNode) -> str:
         parent = node.find_parent_of_type(ast.Module)
@@ -246,6 +255,9 @@ class PyImportPass(JacImportPass):
             return
 
         # Update the imported module's raise map and re-run the import pass
+        # This is not correct, we won't follow the imports of the imported mods
+        # this will affect using module B that is imported in module
+        #    A when A is imported
         imported_mod.py_raise_map = self.ir.py_raise_map
         PyImportPass(input_ir=imported_mod, prior=None)
 
@@ -263,7 +275,12 @@ class PyImportPass(JacImportPass):
                 continue
 
             # Try to match the declaration with an architype
-            self.__process_architype_declaration(decl_item, imported_mod)
+            if self.__process_architype_declaration(decl_item, imported_mod):
+                continue
+
+            # Try to match the declaration with an assignment
+            if self.__process_var_declarations(decl_item, imported_mod):
+                continue
 
     def __process_module_declaration(
         self, decl_item: ast.ModuleItem, imported_mod: ast.Module
@@ -295,6 +312,7 @@ class PyImportPass(JacImportPass):
                     input_ir=decl_item.parent_of_type(ast.Module), prior=self
                 )
                 decl_item.is_imported = True
+                ab.is_raised_from_py = True
                 return True
         return False
 
@@ -311,6 +329,31 @@ class PyImportPass(JacImportPass):
                 SymTabBuildPass(
                     input_ir=decl_item.parent_of_type(ast.Module), prior=self
                 )
+                arch.is_raised_from_py = True
+                decl_item.is_imported = True
+                return True
+        return False
+
+    def __process_var_declarations(
+        self, decl_item: ast.ModuleItem, imported_mod: ast.Module
+    ) -> bool:
+        # An issue migh happen here if the variaable was initialized with
+        # a specific value then was re-assigned again and i added the ast of
+        # the first assignment in the current mod.
+        # TODO: Need to make sure that import pass won't affect the PyOutPass
+        for var_assignment in imported_mod.kid_of_type(ast.Assignment):
+            var = var_assignment.target.items[0]
+            if not isinstance(var, ast.Name):
+                continue
+            if decl_item.name.sym_name == var.sym_name:
+                if decl_item.alias:
+                    var.name_spec._sym_name = decl_item.alias.sym_name
+                self.attach_mod_to_node(decl_item, var_assignment)
+                self.run_again = False
+                SymTabBuildPass(
+                    input_ir=decl_item.parent_of_type(ast.Module), prior=self
+                )
+                var_assignment.is_raised_from_py = True
                 decl_item.is_imported = True
                 return True
         return False
@@ -348,7 +391,10 @@ class PyImportPass(JacImportPass):
 
         assert isinstance(self.ir, ast.Module)
 
-        python_raise_map = self.ir.py_raise_map
+        # We need this as when you create a new project the imported mods won't be
+        # imported until it's used and auto completion won't be able to find the imported
+        # decls as they aren't used yet :(
+        python_raise_map = self.ir.py_mod_dep_map
         file_to_raise: Optional[str] = None
 
         if mod_path in python_raise_map:
@@ -388,7 +434,6 @@ class PyImportPass(JacImportPass):
         except Exception as e:
             self.error(f"Failed to import python module {mod_path}")
             raise e
-        return None
 
     def __load_builtins(self) -> None:
         """Pyraise builtins to help with builtins auto complete."""

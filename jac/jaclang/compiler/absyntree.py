@@ -49,6 +49,7 @@ class AstNode:
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+        self.is_raised_from_py: bool = False
 
     @property
     def sym_tab(self) -> SymbolTable:
@@ -57,7 +58,7 @@ class AstNode:
         if not self._sym_tab:
             raise ValueError(
                 f"Symbol table not set for {type(self).__name__}. Impossible.\n"
-                f"Node: {self.pp()}\n"
+                f"Node: {self.pp()}{self.loc.mod_path}\n"
                 f"Parent: {self.parent.pp() if self.parent else None}\n"
             )
         return self._sym_tab
@@ -638,7 +639,6 @@ class Module(AstDocNode):
         self.py_raise_map: dict[str, str] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
-        self.is_raised_from_py: bool = False
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 

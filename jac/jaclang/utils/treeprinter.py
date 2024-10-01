@@ -118,17 +118,35 @@ def print_ast_tree(
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif (
-            isinstance(node, ast.Module)
+            isinstance(node, ast.ElementStmt)
             and node.is_raised_from_py
             and not print_py_raise
         ):
-            return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
+            name = (
+                node.name
+                if isinstance(node, ast.Module)
+                else (
+                    node.target.items[0].sym_name
+                    if isinstance(node, ast.Assignment)
+                    else (
+                        node.name_ref._sym_name
+                        if isinstance(node, ast.Ability)
+                        else (
+                            node.name._sym_name
+                            if isinstance(node, ast.Architype)
+                            else ""
+                        )
+                    )
+                )
+            )
+            return (
+                f"{node.__class__.__name__} - Python{type(node).__name__}Raised: {name}"
+            )
         elif isinstance(node, (ast.ModuleItem, ast.ModulePath)):
             out = (
                 f"{node.__class__.__name__} - {node.sym_name} - "
                 f"abs_path: {node.abs_path}"
             )
-
             return out
         elif isinstance(node, AstSymbolNode):
             out = (
@@ -199,7 +217,7 @@ def print_ast_tree(
     if isinstance(root, ast.AstNode):
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if (
-            isinstance(root, ast.Module)
+            isinstance(root, (ast.Module, ast.Architype, ast.Ability, ast.Assignment))
             and root.is_raised_from_py
             and not print_py_raise
         ):
