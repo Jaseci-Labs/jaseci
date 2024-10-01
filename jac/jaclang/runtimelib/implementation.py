@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import getLogger
+from pickle import dumps
 from re import IGNORECASE, compile
 from typing import Generic, Type, TypeAlias, TypeVar
 from uuid import UUID, uuid4
@@ -83,6 +84,10 @@ class JID(Generic[_ANCHORS_C], _JID):
     def __str__(self) -> str:
         """Override string parsing."""
         return f"{self.type.__class__.__name__[:1].lower()}:{self.name}:{self.id}"
+
+    def __hash__(self) -> int:
+        """Return default hasher."""
+        return hash(dumps(self))
 
 
 @dataclass(kw_only=True)

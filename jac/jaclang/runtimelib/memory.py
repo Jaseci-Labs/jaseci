@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pickle import dumps
 from shelve import Shelf, open
-from typing import Callable, Generator, Generic, Iterable, Mapping, TypeVar, TypeAlias
-from uuid import UUID
+from typing import Callable, Generator, Iterable
 
 from .implementation import (
     Anchor,
-    EdgeAnchor,
     JID,
     NodeAnchor,
     Root,
-    WalkerAnchor,
     _ANCHORS,
 )
 from .interface import Memory
@@ -43,18 +40,18 @@ class ShelfStorage(Memory[JID, Anchor]):
 
             for d in self.__mem__.values():
                 if d.persistent and d.hash != hash(dumps(d)):
-                    _id = str(d.id)
-                    if p_d := self.__shelf__.get(_id):
+                    _jid = str(d.jid)
+                    if p_d := self.__shelf__.get(_jid):
                         if (
                             isinstance(p_d, NodeAnchor)
                             and isinstance(d, NodeAnchor)
-                            and p_d.edges != d.edges
+                            and p_d.edge_ids != d.edge_ids
                             and Jac.check_connect_access(d)
                         ):
-                            if not d.edges:
-                                self.__shelf__.pop(_id, None)
+                            if not d.edge_ids:
+                                self.__shelf__.pop(_jid, None)
                                 continue
-                            p_d.edges = d.edges
+                            p_d.edge_ids = d.edge_ids
 
                         if Jac.check_write_access(d):
                             if hash(dumps(p_d.access)) != hash(dumps(d.access)):
@@ -62,13 +59,13 @@ class ShelfStorage(Memory[JID, Anchor]):
                             if hash(dumps(p_d.architype)) != hash(dumps(d.architype)):
                                 p_d.architype = d.architype
 
-                        self.__shelf__[_id] = p_d
+                        self.__shelf__[_jid] = p_d
                     elif not (
                         isinstance(d, NodeAnchor)
                         and not isinstance(d.architype, Root)
-                        and not d.edges
+                        and not d.edge_ids
                     ):
-                        self.__shelf__[_id] = d
+                        self.__shelf__[_jid] = d
 
             self.__shelf__.close()
         self.__mem__.clear()

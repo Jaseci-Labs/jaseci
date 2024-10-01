@@ -21,8 +21,6 @@ _ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
 _ANCHORS = TypeVar(
     "_ANCHORS", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", covariant=True
 )
-_NODE_ANCHOR = TypeVar("_NODE_ANCHOR", bound="NodeAnchor")
-
 _SERIALIZE = TypeVar("_SERIALIZE")
 _DESERIALIZE = TypeVar("_DESERIALIZE")
 
