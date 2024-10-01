@@ -21,6 +21,7 @@ _ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
 _ANCHORS = TypeVar(
     "_ANCHORS", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", covariant=True
 )
+_NODE_ANCHOR = TypeVar("_NODE_ANCHOR", bound="NodeAnchor")
 _SERIALIZE = TypeVar("_SERIALIZE")
 _DESERIALIZE = TypeVar("_DESERIALIZE")
 
@@ -256,22 +257,21 @@ class Memory(Generic[_JID, _ANCHOR]):
 #########################################################################################
 
 
-@dataclass
-class ExecutionContext(ABC):
+class ExecutionContext(Generic[_NODE_ANCHOR], ABC):
     """Execution Context."""
 
     mem: Memory
     reports: list[Any]
-    system_root: NodeAnchor
-    root: NodeAnchor
-    entry_node: NodeAnchor
+    system_root: _NODE_ANCHOR
+    root: _NODE_ANCHOR
+    entry_node: _NODE_ANCHOR
 
     @abstractmethod
     def init_anchor(
         self,
         anchor_jid: str | None,
-        default: NodeAnchor,
-    ) -> NodeAnchor:
+        default: _NODE_ANCHOR,
+    ) -> _NODE_ANCHOR:
         """Load initial anchors."""
 
     def set_entry_node(self, entry_node: str | None) -> None:
@@ -298,5 +298,5 @@ class ExecutionContext(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_root() -> Root:
+    def get_root() -> NodeArchitype:
         """Get current root."""
