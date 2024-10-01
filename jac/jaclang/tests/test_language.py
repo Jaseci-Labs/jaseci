@@ -1010,6 +1010,18 @@ class JacLanguageTests(TestCase):
 
                 bar_file.write(original_content)
 
+    def test_dynamic_spawn_architype(self):
+        """Test that the walker and node can be spawned and behaves as expected."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("dynamic_architype.jac"))
+        output = captured_output.getvalue().strip()
+
+        expected_outputs = ["Value: 1", "Value: 3", "Value: 2"]
+
+        for expected in expected_outputs:
+            self.assertIn(expected, output.split("\n"))
+
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
         captured_output = io.StringIO()

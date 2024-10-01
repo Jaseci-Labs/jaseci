@@ -151,7 +151,11 @@ class JacMachine:
             logger.warning(f"Module {module_name} not found in loaded modules.")
         return ()
 
-    def spawn_node(self, node_name: str, attributes: dict) -> NodeArchitype:
+    def spawn_node(
+        self,
+        node_name: str,
+        attributes: Union[dict, None] = None,
+    ) -> NodeArchitype:
         """Spawn a node instance of the given node_name with attributes."""
         node_class = self.get_architype("__main__", node_name)
         if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
@@ -160,10 +164,16 @@ class JacMachine:
         else:
             raise ValueError(f"Node {node_name} not found.")
 
-    def spawn_walker(self, walker_name: str, attributes: dict) -> WalkerArchitype:
+    def spawn_walker(
+        self,
+        walker_name: str,
+        attributes: Union[dict, None] = None,
+    ) -> WalkerArchitype:
         """Spawn a walker instance of the given walker_name."""
         walker_class = self.get_architype("__main__", walker_name)
         if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
+            if attributes is None:
+                attributes = {}
             walker_instance = walker_class(**attributes)
             return walker_instance
         else:
