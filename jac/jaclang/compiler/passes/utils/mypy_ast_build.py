@@ -615,11 +615,14 @@ def load_graph(
         # - In this case A's cached *direct* dependencies are still valid
         #   (since direct dependencies reflect the imports found in the source)
         #   but A's cached *indirect* dependency on C is wrong.
+        print(st.path)
         dependencies = [
             dep
             for dep in st.dependencies
             if st.priorities.get(dep) != PRI_INDIRECT and "jaclang.vendor" not in dep
         ]
+        for d in dependencies:
+            print("\t", d)
         if not manager.use_fine_grained_cache():
             # TODO: Ideally we could skip here modules that appeared in st.suppressed
             # because they are not in build with `follow-imports=skip`.

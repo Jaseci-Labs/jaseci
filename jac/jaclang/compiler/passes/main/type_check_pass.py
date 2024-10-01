@@ -56,6 +56,7 @@ class JacTypeCheckPass(Pass):
             #     / "stubs"
             # )
         ]
+        options.exclude = ["jaclang"]
         if top_module_path != "":
             options.mypy_path.append(top_module_path)
 
