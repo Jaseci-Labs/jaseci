@@ -5,13 +5,12 @@ from __future__ import annotations
 import ast as ast3
 import sys
 from contextlib import contextmanager
-from typing import Callable, Iterator, TYPE_CHECKING
+from typing import Callable, Iterator
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.semtable import SemScope
-
-if TYPE_CHECKING:
-    from jaclang.runtimelib.constructs import NodeAnchor, NodeArchitype
+from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.interface import EdgeArchitype, NodeAnchor, NodeArchitype
 
 
 @contextmanager
@@ -35,18 +34,21 @@ def collect_node_connections(
     """Nodes and edges representing the graph are collected in visited_nodes and connections."""
     if current_node not in visited_nodes:
         visited_nodes.add(current_node)
-        edges = current_node.edges
-        for edge_ in edges:
-            target = edge_.target
-            if target:
-                connections.add(
-                    (
-                        current_node.architype,
-                        target.architype,
-                        edge_.__class__.__name__,
-                    )
+        for edge_id in current_node.edge_ids:
+            if not isinstance(
+                edge := Jac.get_object(edge_id), EdgeArchitype
+            ) or not isinstance(
+                target := Jac.get_object(edge.__jac__.target_id), NodeArchitype
+            ):
+                continue
+            connections.add(
+                (
+                    current_node.architype,
+                    target,
+                    edge.__class__.__name__,
                 )
-                collect_node_connections(target, visited_nodes, connections)
+            )
+            collect_node_connections(target.__jac__, visited_nodes, connections)
 
 
 def traverse_graph(
@@ -65,20 +67,28 @@ def traverse_graph(
     edge_limit: int,
 ) -> None:
     """Traverse the graph using Breadth-First Search (BFS) or Depth-First Search (DFS)."""
-    for edge in node.__jac__.edges:
-        is_self_loop = id(edge.source) == id(edge.target)
-        is_in_edge = edge.target == node.__jac__
-        if (traverse and is_in_edge) or edge.architype.__class__.__name__ in edge_type:
+    nanch = node.__jac__
+    for edge_id in nanch.edge_ids:
+        if not isinstance(edge := Jac.get_object(edge_id), EdgeArchitype):
             continue
-        if is_self_loop:
-            continue  # lets skip self loop for a while, need to handle it later
-        elif (other_nda := edge.target if not is_in_edge else edge.source) and (
-            other_nd := other_nda.architype
-        ):
+
+        eanch = edge.__jac__
+        if eanch.source_id == eanch.target_id:
+            continue  # lets skip self loop for a while, need to handle it later [ old is_self_loop ]
+
+        if not isinstance(
+            source := Jac.get_object(eanch.source_id), NodeArchitype
+        ) or not isinstance(target := Jac.get_object(eanch.target_id), NodeArchitype):
+            continue
+
+        is_in_edge = target == nanch
+
+        if (traverse and is_in_edge) or edge.__class__.__name__ in edge_type:
+            continue
+
+        if other_nd := target if not is_in_edge else source:
             new_con = (
-                (node, other_nd, edge.architype)
-                if not is_in_edge
-                else (other_nd, node, edge.architype)
+                (node, other_nd, edge) if not is_in_edge else (other_nd, node, edge)
             )
             if node in node_depths and node_depths[node] is not None:
                 if other_nd in node_depths:

@@ -19,26 +19,26 @@ from jaclang.compiler.constant import colors
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.plugin.feature import (
     AccessLevel,
-    Anchor,
-    Architype,
     DSFunc,
-    EdgeAnchor,
-    EdgeArchitype,
     EdgeDir,
-    ExecutionContext,
     JacFeature as Jac,
-    NodeAnchor,
-    NodeArchitype,
     P,
     PyastGenPass,
-    Root,
     T,
-    WalkerArchitype,
     ast,
 )
-from jaclang.runtimelib.constructs import (
+from jaclang.runtimelib.context import ExecutionContext, JacTestCheck
+from jaclang.runtimelib.implementation import (
+    Anchor,
+    Architype,
+    EdgeAnchor,
+    EdgeArchitype,
     GenericEdge,
-    JacTestCheck,
+    JID,
+    NodeAnchor,
+    NodeArchitype,
+    Root,
+    WalkerArchitype,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
@@ -99,7 +99,7 @@ class JacAccessValidationImpl:
         """Read Access Validation."""
         if not (access_level := Jac.check_access_level(to) > AccessLevel.NO_ACCESS):
             logger.info(
-                f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
+                f"Current root doesn't have read access to {to.__class__.__name__}[{to.jid}]"
             )
         return access_level
 
@@ -109,7 +109,7 @@ class JacAccessValidationImpl:
         """Write Access Validation."""
         if not (access_level := Jac.check_access_level(to) > AccessLevel.READ):
             logger.info(
-                f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
+                f"Current root doesn't have connect access to {to.__class__.__name__}[{to.jid}]"
             )
         return access_level
 
@@ -119,7 +119,7 @@ class JacAccessValidationImpl:
         """Write Access Validation."""
         if not (access_level := Jac.check_access_level(to) > AccessLevel.CONNECT):
             logger.info(
-                f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
+                f"Current root doesn't have write access to {to.__class__.__name__}[{to.jid}]"
             )
         return access_level
 
@@ -130,14 +130,14 @@ class JacAccessValidationImpl:
         if not to.persistent:
             return AccessLevel.WRITE
 
-        jctx = Jac.get_context()
+        jctx: ExecutionContext = Jac.get_context()
 
         jroot = jctx.root
 
         # if current root is system_root
         # if current root id is equal to target anchor's root id
         # if current root is the target anchor
-        if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
+        if jroot == jctx.system_root or jroot.jid == to.root or jroot == to:
             return AccessLevel.WRITE
 
         access_level = AccessLevel.NO_ACCESS
@@ -152,13 +152,13 @@ class JacAccessValidationImpl:
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
-            level = to_root.access.roots.check(str(jroot.id))
+            level = to_root.access.roots.check(str(jroot.jid))
             if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
-        level = to_access.roots.check(str(jroot.id))
+        level = to_access.roots.check(str(jroot.jid))
         if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
             access_level = level
 
@@ -551,20 +551,18 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
+    def get_object(jid: JID) -> Architype | None:
         """Get object by id."""
-        if id == "root":
-            return Jac.get_context().root.architype
-        elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
+        if obj := Jac.get_context().mem.find_by_id(jid):
             return obj.architype
 
         return None
 
     @staticmethod
     @hookimpl
-    def object_ref(obj: Architype) -> str:
+    def object_ref(obj: Architype) -> JID:
         """Get object's id."""
-        return obj.__jac__.id.hex
+        return obj.__jac__.jid
 
     @staticmethod
     @hookimpl
@@ -1013,7 +1011,7 @@ class JacFeatureImpl(
         """Destroy object."""
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        jctx = Jac.get_context()
+        jctx: ExecutionContext = Jac.get_context()
 
         anchor.persistent = True
         anchor.root = jctx.root.id
