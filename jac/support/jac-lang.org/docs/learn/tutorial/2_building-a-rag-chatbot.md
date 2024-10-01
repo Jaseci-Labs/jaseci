@@ -357,105 +357,7 @@ Finally, the `get_from_chroma` ability takes a query and returns the most releva
     }
 ```
 
-**Complete RagEngine Code:**
-
-Here is the complete implementation of the RagEngine:
-
-```jac
-import:py os;
-import:py from langchain_community.document_loaders {PyPDFDirectoryLoader}
-import:py from langchain_text_splitters {RecursiveCharacterTextSplitter}
-import:py from langchain.schema.document {Document}
-import:py from langchain_community.embeddings.ollama {OllamaEmbeddings}
-import:py from langchain_community.vectorstores.chroma {Chroma}
-
-obj RagEngine {
-    has file_path: str = "docs";
-    has chroma_path: str = "chroma";
-
-    can postinit {
-        documents: list = self.load_documents();
-        chunks: list = self.split_documents(documents);
-        self.add_to_chroma(chunks);
-    }
-
-    can load_documents {
-        document_loader = PyPDFDirectoryLoader(self.file_path);
-        return document_loader.load();
-    }
-
-    can split_documents(documents: list[Document]) {
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=800,
-        chunk_overlap=80,
-        length_function=len,
-        is_separator_regex=False);
-        return text_splitter.split_documents(documents);
-    }
-
-    can get_embedding_function {
-        embeddings = OllamaEmbeddings(model='nomic-embed-text');
-        return embeddings;
-    }
-
-    can add_chunk_id(chunks: str) {
-        last_page_id = None;
-        current_chunk_index = 0;
-
-        for chunk in chunks {
-            source = chunk.metadata.get('source');
-            page = chunk.metadata.get('page');
-            current_page_id = f'{source}:{page}';
-
-            if current_page_id == last_page_id {
-                current_chunk_index +=1;
-            } else {
-                current_chunk_index = 0;
-            }
-
-            chunk_id = f'{current_page_id}:{current_chunk_index}';
-            last_page_id = current_page_id;
-
-            chunk.metadata['id'] = chunk_id;
-        }
-
-        return chunks;
-    }
-
-    can add_to_chroma(chunks: list[Document]) {
-        db = Chroma(persist_directory=self.chroma_path, embedding_function=self.get_embedding_function());
-        chunks_with_ids = self.add_chunk_id(chunks);
-
-        existing_items = db.get(include=[]);
-        existing_ids = set(existing_items['ids']);
-
-        new_chunks = [];
-        for chunk in chunks_with_ids {
-            if chunk.metadata['id'] not in existing_ids {
-                new_chunks.append(chunk);
-            }
-        }
-
-        if len(new_chunks) {
-            print('adding new documents');
-            new_chunk_ids = [chunk.metadata['id'] for chunk in new_chunks];
-            db.add_documents(new_chunks, ids=new_chunk_ids);
-        } else {
-            print('no new documents to add');
-        }
-    }
-
-    can get_from_chroma(query: str,chunck_nos: int=5) {
-        db = Chroma(
-            persist_directory=self.chroma_path,
-            embedding_function=self.get_embedding_function()
-        );
-        results = db.similarity_search_with_score(query,k=chunck_nos);
-        return results;
-    }
-}
-
-
-```
+The complete implementation of the RagEngine should look like [this](code/rag.jac).
 
 To summarize, we define an object called `RagEngine` with two properties: `file_path` and `chroma_path`. The `file_path` property specifies the path to the directory containing the documents we want to retrieve responses from. The `chroma_path` property specifies the path to the directory containing the pre-trained embeddings. We will use these embeddings to retrieve candidate responses.
 
@@ -486,7 +388,7 @@ ollama serve
 
 ### Adding your documents
 
-You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document [here](docs/clinical_medicine.pdf) for you to test with. Create a new directory called `docs` in the root of your project and add your documents to this directory.
+You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document [here](code/docs/clinical_medicine.pdf) for you to test with. Create a new directory called `docs` in the root of your project and add your documents to this directory.
 
 ### Setting up your LLM
 
@@ -518,7 +420,6 @@ This will download the `llama3.1` model to your local machine and make it availa
 > import:py from mtllm.llms {OpenAI}
 > glob llm = OpenAI(model_name='gpt-4o');
 > ```
-
 
 
 Now that you have your LLM ready let's create a simple walker that uses the RAG module and MTLLM to generate responses to user queries. First, let's declare the global variables for MTLLM and the RAG engine.
@@ -614,18 +515,20 @@ To summarize:
 - We define a `Session` node that stores the chat history and status of the session. The session node also has an ability called `llm_chat` that uses the MTLLM model to generate responses based on the chat history, agent role, and context.
 - We define a `interact` walker that initializes a session and generates responses to user queries. The walker uses the `rag_engine` object to retrieve candidate responses and the `llm_chat` ability to generate the final response.
 
+The implementation of the `server.jac` at this point should look like [this](code/server_old.jac).
+
 You can now serve this code using Jac Cloud by running the following command:
 
 ```bash
 DATABASE_HOST=mongodb://localhost:27017/?replicaSet=my-rs jac serve server.jac
 ```
 
-Now you can test out your chatbot using the client we created earlier. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
+Now you can test out your chatbot using the client (`jac streamlit client.jac`) we created earlier. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
 
 You can also try testing out the updated endpoint using the swagger UI at `http://localhost:8000/docs` or using the following curl command:
 
 ```bash
-curl -X POST http://localhost:8000/walkers/interact -d '{"message": "I am having major back pain, what can i do", "session_id": "123"} -H "Authorization: Bearer <TOKEN>"
+curl -X POST http://localhost:8000/walkers/interact -d '{"message": "I am having major back pain, what can i do", "session_id": "123"}' -H "Authorization: Bearer <TOKEN>"
 ```
 
 Remember to replace `<TOKEN>` with the access token you saved. Note you might need to re-login to get an updated token if the token has expired or the server has been restarted since.
