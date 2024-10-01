@@ -848,11 +848,6 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
             anchor.sync_hash()
             return anchor
 
-    def __post_init__(self) -> None:
-        """Populate edge to source and target."""
-        # remove parent trigger
-        pass
-
     @classmethod
     def ref(cls, ref_id: str) -> "EdgeAnchor":
         """Return EdgeAnchor instance if existing."""
@@ -1081,7 +1076,7 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
 
     __jac__: NodeAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create node architype."""
         self.__jac__ = NodeAnchor(
             architype=self,
@@ -1134,7 +1129,7 @@ class WalkerArchitype(BaseArchitype, _WalkerArchitype):
 
     __jac__: WalkerAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create walker architype."""
         self.__jac__ = WalkerAnchor(
             architype=self,
@@ -1154,7 +1149,7 @@ class ObjectArchitype(BaseArchitype, Architype):
 
     __jac__: ObjectAnchor
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create default architype."""
         self.__jac__ = ObjectAnchor(
             architype=self,
@@ -1199,7 +1194,7 @@ class Root(NodeArchitype):
     _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
     _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         """Create node architype."""
         self.__jac__ = NodeAnchor(
             architype=self,
