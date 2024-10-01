@@ -7,28 +7,24 @@ from contextvars import ContextVar
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
-from .architype import NodeAnchor, Root
-from .memory import Memory, ShelfStorage
+from .implementation import JID, NodeAnchor, Root
+from .interface import ExecutionContext as BaseExecution
+from .memory import ShelfStorage
 
 
 EXECUTION_CONTEXT = ContextVar[Optional["ExecutionContext"]]("ExecutionContext")
 
-SUPER_ROOT_UUID = UUID("00000000-0000-0000-0000-000000000000")
+SUPER_ROOT_JID = JID(UUID("00000000-0000-0000-0000-000000000000"), type=NodeAnchor)
 SUPER_ROOT_ARCHITYPE = object.__new__(Root)
-SUPER_ROOT_ANCHOR = NodeAnchor(
-    id=SUPER_ROOT_UUID, architype=SUPER_ROOT_ARCHITYPE, persistent=False, edges=[]
-)
+SUPER_ROOT_ANCHOR = NodeAnchor(jid=SUPER_ROOT_JID, architype=SUPER_ROOT_ARCHITYPE)
 SUPER_ROOT_ARCHITYPE.__jac__ = SUPER_ROOT_ANCHOR
 
 
-class ExecutionContext:
+class ExecutionContext(BaseExecution[NodeAnchor]):
     """Execution Context."""
 
-    mem: Memory
+    mem: ShelfStorage
     reports: list[Any]
-    system_root: NodeAnchor
-    root: NodeAnchor
-    entry_node: NodeAnchor
 
     def init_anchor(
         self,
@@ -37,7 +33,7 @@ class ExecutionContext:
     ) -> NodeAnchor:
         """Load initial anchors."""
         if anchor_id:
-            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
+            if isinstance(anchor := self.mem.find_by_id(JID(anchor_id)), NodeAnchor):
                 return anchor
             raise ValueError(f"Invalid anchor id {anchor_id} !")
         return default
@@ -63,11 +59,11 @@ class ExecutionContext:
         ctx.reports = []
 
         if not isinstance(
-            system_root := ctx.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
+            system_root := ctx.mem.find_by_id(SUPER_ROOT_JID), NodeAnchor
         ):
             system_root = Root().__jac__
-            system_root.id = SUPER_ROOT_UUID
-            ctx.mem.set(system_root.id, system_root)
+            system_root.jid = SUPER_ROOT_JID
+            ctx.mem.set(system_root.jid, system_root)
 
         ctx.system_root = system_root
 
