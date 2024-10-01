@@ -1010,7 +1010,7 @@ class JacLanguageTests(TestCase):
 
                 bar_file.write(original_content)
 
-    def test_dynamic_spawn_architype(self):
+    def test_dynamic_spawn_architype(self) -> None:
         """Test that the walker and node can be spawned and behaves as expected."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
