@@ -43,29 +43,35 @@ class JacAccessValidation:
 
     @staticmethod
     def allow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+        architype: Architype,
+        root_id: UUID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Allow all access from target root graph to current Architype."""
-        hookmanager.hook.allow_root(anchor=anchor, root_id=root_id, level=level)
+        hookmanager.hook.allow_root(architype=architype, root_id=root_id, level=level)
 
     @staticmethod
     def disallow_root(
-        anchor: Anchor, root_id: UUID, level: AccessLevel | int | str = AccessLevel.READ
+        architype: Architype,
+        root_id: UUID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
-        hookmanager.hook.disallow_root(anchor=anchor, root_id=root_id, level=level)
+        hookmanager.hook.disallow_root(
+            architype=architype, root_id=root_id, level=level
+        )
 
     @staticmethod
     def unrestrict(
-        anchor: Anchor, level: AccessLevel | int | str = AccessLevel.READ
+        architype: Architype, level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
         """Allow everyone to access current Architype."""
-        hookmanager.hook.unrestrict(anchor=anchor, level=level)
+        hookmanager.hook.unrestrict(architype=architype, level=level)
 
     @staticmethod
-    def restrict(anchor: Anchor) -> None:
+    def restrict(architype: Architype) -> None:
         """Disallow others to access current Architype."""
-        hookmanager.hook.restrict(anchor=anchor)
+        hookmanager.hook.restrict(architype=architype)
 
     @staticmethod
     def check_read_access(to: Anchor) -> bool:
