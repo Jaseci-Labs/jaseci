@@ -51,7 +51,7 @@
     walker walker_name {
       can walker_ability with `specific_node entry;
     }
-      ```
+    ```
 
 ??? question "How to visit all the Successor nodes of a node/ list of nodes?"
     - A walker can visit all successor nodes (directly connected nodes):
