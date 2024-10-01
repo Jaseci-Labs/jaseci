@@ -95,7 +95,6 @@ node QAChat :Chat: {
     }
 }
 
-
 node Session {
     can chat with interact entry {
         self.chat_history.append({"role": "user", "content": here.message});
