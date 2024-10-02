@@ -37,7 +37,7 @@ from jaclang.runtimelib.context import ExecutionContext
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
-hookmanager = pluggy.PluginManager("jac")
+plugin_manager = pluggy.PluginManager("jac")
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -509,4 +509,4 @@ class JacFeatureSpec(
         raise NotImplementedError
 
 
-hookmanager.add_hookspecs(JacFeatureSpec)
+plugin_manager.add_hookspecs(JacFeatureSpec)
