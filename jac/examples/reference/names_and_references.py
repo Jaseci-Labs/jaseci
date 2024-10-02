@@ -27,5 +27,6 @@ class Cat(Animal):
 dog = Dog(breed="Labrador", species="Dog", sound="Woof!")
 cat = Cat(fur_color="Tabby")
 
-print(f'The dog is a {dog.breed} and says "{dog.sound}"')
-print(f"The cat's fur color is {cat.fur_color}")
+print(dog.breed, dog.sound, dog.trick)
+# print(f'The dog is a {dog.breed} and says "{dog.sound}"')
+# print(f"The cat's fur color is {cat.fur_color}")
