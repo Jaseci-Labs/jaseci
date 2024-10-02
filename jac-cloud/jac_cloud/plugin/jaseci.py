@@ -391,7 +391,7 @@ class JacNodePlugin:
         target_obj: list[NodeArchitype] | None,
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
-        if FastAPI.enable():
+        if FastAPI.is_enabled():
             JaseciContext.get().mem.populate_data(node.edges)
 
         return JacFeatureImpl.get_edges(
@@ -407,7 +407,7 @@ class JacNodePlugin:
         target_obj: list[NodeArchitype] | None,
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
-        if FastAPI.enable():
+        if FastAPI.is_enabled():
             JaseciContext.get().mem.populate_data(node.edges)
 
         return JacFeatureImpl.edges_to_nodes(

@@ -19,6 +19,7 @@ from typing import (
 
 from bson import ObjectId
 
+from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import (
     Access as _Access,
     AccessLevel,
@@ -422,8 +423,6 @@ class BaseAnchor:
         bulk_write: BulkWrite,
     ) -> None:
         """Save Anchor."""
-        from jaclang.plugin.feature import JacFeature as Jac
-
         if self.state.deleted is False and Jac.check_write_access(self):  # type: ignore[arg-type]
             self.state.deleted = True
             self.delete(bulk_write)
@@ -470,7 +469,6 @@ class BaseAnchor:
         ############################################################
         #                     POPULATE CONTEXT                     #
         ############################################################
-        from jaclang.plugin.feature import JacFeature as Jac
 
         if Jac.check_write_access(self):  # type: ignore[arg-type]
             set_architype = changes.pop("$set", {})

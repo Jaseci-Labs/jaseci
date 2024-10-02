@@ -6,6 +6,7 @@ from typing import Callable, Generator, Iterable, TypeVar, cast
 
 from bson import ObjectId
 
+from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.memory import Memory
 
 
@@ -115,8 +116,6 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
 
     def get_bulk_write(self) -> BulkWrite:
         """Sync memory to database."""
-        from jaclang.plugin.feature import JacFeature as Jac
-
         bulk_write = BulkWrite()
 
         for anchor in self.__gc__:
