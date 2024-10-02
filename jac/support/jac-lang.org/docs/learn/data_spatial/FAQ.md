@@ -1,5 +1,5 @@
 ??? question "What is node and how to define a node?"
-    - Nodes are archetypes that form part of a graph. They can hold properties. You define nodes with attributes and values:
+    - Nodes are architypes that form part of a graph. They can hold properties. You define nodes with attributes and values:
     ```jac
       node node_name{
           has node_property: int;
@@ -16,7 +16,7 @@
     ```
 
 ??? question "How to connect two nodes?"
-    - Nodes can be connected using generic edges (default) or custom edges (defined with specific properties). 
+    - Nodes can be connected using generic edges (default) or custom edges (defined with specific properties).
     ```jac
       node_1 ++> node_2; # uni directional edge
       node_1 <++> node_2; # bidirectional edge
@@ -46,7 +46,7 @@
     ```
 
 ??? question "What is walker and how to define a walker?"
-    - A walker is an archetype that performs actions within the graph. It can traverse nodes through edges, performing operations at each step.
+    - A walker is an architype that performs actions within the graph. It can traverse nodes through edges, performing operations at each step.
     ```jac
     walker walker_name {
       can walker_ability with `specific_node entry;
