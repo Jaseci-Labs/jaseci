@@ -1010,6 +1010,18 @@ class JacLanguageTests(TestCase):
 
                 bar_file.write(original_content)
 
+    def test_dynamic_spawn_architype(self) -> None:
+        """Test that the walker and node can be spawned and behaves as expected."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("dynamic_architype.jac"))
+        output = captured_output.getvalue().strip()
+
+        expected_outputs = ["Value: 1", "Value: 3", "Value: 2"]
+
+        for expected in expected_outputs:
+            self.assertIn(expected, output.split("\n"))
+
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
         captured_output = io.StringIO()
@@ -1020,3 +1032,13 @@ class JacLanguageTests(TestCase):
         self.assertEqual(len(stdout_value[0]), 32)
         self.assertEqual("MyNode(value=0)", stdout_value[1])
         self.assertEqual("valid: True", stdout_value[2])
+
+    def test_match_multi_ex(self) -> None:
+        """Test match case with multiple expressions."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("match_multi_ex", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("Ten", stdout_value[0])
+        self.assertEqual("ten", stdout_value[1])

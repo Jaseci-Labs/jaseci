@@ -3589,7 +3589,7 @@ class JacParser(Pass):
             match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
             """
             pattern = kid[1]
-            guard = kid[3] if len(kid) > 4 else None
+            guard = kid[3] if isinstance(kid[3], ast.Expr) else None
             stmts = [i for i in kid if isinstance(i, ast.CodeBlockStmt)]
             if isinstance(pattern, ast.MatchPattern) and isinstance(
                 guard, (ast.Expr, type(None))

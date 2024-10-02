@@ -19,13 +19,13 @@ class SemInfo:
         self,
         node: ast.AstNode,
         name: str,
-        type: Optional[str] = None,
+        type_str: Optional[str] = None,
         semstr: str = "",
     ) -> None:
         """Initialize the class."""
-        self.node = node
+        self.node_type = type(node)
         self.name = name
-        self.type = type
+        self.type = type_str
         self.semstr = semstr
 
     def __repr__(self) -> str:
@@ -40,7 +40,7 @@ class SemInfo:
         self_scope = str(scope) + f".{self.name}({self.type})"
         _, children = sem_registry.lookup(scope=SemScope.get_scope_from_str(self_scope))
         if filter and children and isinstance(children, list):
-            return [i for i in children if isinstance(i.node, filter)]
+            return [i for i in children if i.node_type == filter]
         return children if children and isinstance(children, list) else []
 
 
