@@ -12,7 +12,6 @@ nav:
           - "learn/guide.md"
           - "learn/jac_ref.md"
           - "learn/impl_docs.md"
-          - "learn/with_llm.md"
           - Data Spatial:
               - "learn/data_spatial/reference.md"
               - "learn/data_spatial/examples.md"
