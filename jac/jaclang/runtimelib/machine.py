@@ -155,9 +155,10 @@ class JacMachine:
         self,
         node_name: str,
         attributes: Optional[dict] = None,
+        module_name: str = "__main__",
     ) -> NodeArchitype:
         """Spawn a node instance of the given node_name with attributes."""
-        node_class = self.get_architype("__main__", node_name)
+        node_class = self.get_architype(module_name, node_name)
         if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
             if attributes is None:
                 attributes = {}
@@ -170,9 +171,10 @@ class JacMachine:
         self,
         walker_name: str,
         attributes: Optional[dict] = None,
+        module_name: str = "__main__",
     ) -> WalkerArchitype:
         """Spawn a walker instance of the given walker_name."""
-        walker_class = self.get_architype("__main__", walker_name)
+        walker_class = self.get_architype(module_name, walker_name)
         if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
             if attributes is None:
                 attributes = {}
