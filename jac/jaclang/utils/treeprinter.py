@@ -113,7 +113,7 @@ def print_ast_tree(
                     if node.sym
                     else "<No Symbol is associated with this node>"
                 )
-                out += f" SymbolPath: {symbol}"
+                out += f", SymbolPath: {symbol}"
             return out
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"

@@ -282,6 +282,16 @@ class JacFormatPass(Pass):
                         if prev_token and isinstance(prev_token, ast.Ability):
                             self.emit(node, f"{stmt.gen.jac}")
                         else:
+                            token_before = self.token_before(stmt)
+                            if (
+                                token_before is not None
+                                and isinstance(token_before, ast.Token)
+                                and token_before.name == Tok.LBRACE
+                                and stmt.loc.first_line - token_before.loc.last_line > 1
+                            ):
+                                self.indent_level -= 1
+                                self.emit_ln(node, "")
+                                self.indent_level += 1
                             self.emit(node, stmt.gen.jac)
                             self.indent_level -= 1
                             self.emit_ln(stmt, "")

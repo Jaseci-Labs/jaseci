@@ -12,7 +12,22 @@ nav:
           - "learn/guide.md"
           - "learn/jac_ref.md"
           - "learn/impl_docs.md"
-          - "learn/with_llm.md"
+          - MTLLM:
+              - "learn/with_llm.md"
+              - Quick Start:
+                  - "learn/coders/mtllm/docs/quickstart/installation.md"
+                  - "learn/coders/mtllm//docs/quickstart/minimal-working-example.md"
+              - Design and Implementation:
+                  - "learn/coders/mtllm/docs/design_impl/inference_engine.md"
+                  - "learn/coders/mtllm/docs/design_impl/sem_registry.md"
+              - Building Blocks:
+                  - "learn/coders/mtllm/docs/building_blocks/language_models.md"
+                  - "learn/coders/mtllm/docs/building_blocks/semstrings.md"
+                  - "learn/coders/mtllm/docs/building_blocks/functions_methods.md"
+                  - "learn/coders/mtllm/docs/building_blocks/object_init.md"
+                  - "learn/coders/mtllm/docs/building_blocks/Multimodality.md"
+              - Tutorials:
+                  - "learn/coders/mtllm/docs/tutorials/rpg_game.md"
           - "learn/tips_tricks.md"
           - "learn/jac_plugins.md"
       - For contributors:
@@ -27,6 +42,11 @@ nav:
   # - ~/roadmap$: 'roadmap.md'
   - Github: https://github.com/Jaseci-Labs/jaclang
 
+  - EECS449:
+      - "learn/tutorial/readme.md"
+      - "learn/tutorial/1_setting-up-jac-cloud.md"
+      - "learn/tutorial/2_building-a-rag-chatbot.md"
+      - "learn/tutorial/3_rag-dialogue-routing-chatbot.md"
 theme:
   logo: "assets/logo.png"
   name: "material"

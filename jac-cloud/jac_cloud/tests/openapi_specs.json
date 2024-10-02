@@ -546,7 +546,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -594,7 +596,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -624,7 +628,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -672,7 +678,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -702,7 +710,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -750,7 +760,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -780,7 +792,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -828,7 +842,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -858,7 +874,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -906,7 +924,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -936,7 +956,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -984,7 +1006,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1014,7 +1038,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1062,7 +1088,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1092,7 +1120,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1140,7 +1170,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1170,7 +1202,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1218,7 +1252,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1248,7 +1284,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1296,7 +1334,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1326,7 +1366,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1374,7 +1416,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1404,7 +1448,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1452,7 +1498,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1482,7 +1530,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1530,7 +1580,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1560,7 +1612,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1608,7 +1662,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1638,7 +1694,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1686,7 +1744,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1726,7 +1786,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1794,7 +1856,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1834,7 +1898,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1902,7 +1968,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -1932,7 +2000,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -1980,7 +2050,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2020,7 +2092,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2088,7 +2162,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2118,7 +2194,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     }
@@ -2166,7 +2244,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2212,7 +2292,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2274,7 +2356,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2324,7 +2408,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2390,7 +2476,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2436,7 +2524,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2480,7 +2570,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2542,7 +2634,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2602,7 +2696,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2667,7 +2763,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2730,7 +2828,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2811,7 +2911,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2890,7 +2992,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -2955,7 +3059,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3018,7 +3124,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3081,7 +3189,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3144,7 +3254,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3207,7 +3319,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3270,7 +3384,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3323,7 +3439,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3376,7 +3494,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3457,7 +3577,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3536,7 +3658,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3615,7 +3739,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3694,7 +3820,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3773,7 +3901,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3852,7 +3982,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3921,7 +4053,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -3990,7 +4124,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -4030,7 +4166,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -4098,7 +4236,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -4138,7 +4278,9 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
                             }
                         }
                     },
@@ -4196,7 +4338,193 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/walker/custom_status_code": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/custom_status_code",
+                "operationId": "api_root_walker_custom_status_code_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/custom_status_code_body_model"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/walker/custom_status_code/{node}": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/custom_status_code/{node}",
+                "operationId": "api_entry_walker_custom_status_code__node__post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "node",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Node"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/custom_status_code_body_model"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/walker/different_return": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/different_return",
+                "operationId": "api_root_walker_different_return_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/walker/different_return/{node}": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/different_return/{node}",
+                "operationId": "api_entry_walker_different_return__node__post",
+                "parameters": [
+                    {
+                        "name": "node",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Node"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__"
+                                }
                             }
                         }
                     },
@@ -4368,6 +4696,137 @@
                 ],
                 "title": "Body_api_root_walker_post_with_file_post"
             },
+            "Child": {
+                "properties": {
+                    "val": {
+                        "type": "integer",
+                        "title": "Val"
+                    },
+                    "arr": {
+                        "items": {},
+                        "type": "array",
+                        "title": "Arr"
+                    },
+                    "json": {
+                        "type": "object",
+                        "title": "Json"
+                    },
+                    "enum_field": {
+                        "enum": [],
+                        "title": "Enum",
+                        "description": "Create a collection of name/value pairs.\n\nExample enumeration:\n\n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n  <Color.RED: 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\n- name lookup:\n\n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations can be iterated over, and know how many members they have:\n\n>>> len(Color)\n3\n\n>>> list(Color)\n[<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]\n\nMethods can be added to enumerations, and members can have their own\nattributes -- see the documentation for details."
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "val",
+                    "arr",
+                    "json",
+                    "enum_field"
+                ],
+                "title": "Child"
+            },
+            "ContextResponse_NoneType_": {
+                "properties": {
+                    "status": {
+                        "type": "integer",
+                        "title": "Status"
+                    },
+                    "reports": {
+                        "anyOf": [
+                            {
+                                "items": {},
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reports"
+                    },
+                    "returns": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "null"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Returns"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "status"
+                ],
+                "title": "ContextResponse"
+            },
+            "ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__": {
+                "properties": {
+                    "status": {
+                        "type": "integer",
+                        "title": "Status"
+                    },
+                    "reports": {
+                        "anyOf": [
+                            {
+                                "items": {},
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reports"
+                    },
+                    "returns": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "boolean"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/Parent"
+                                        },
+                                        {
+                                            "items": {},
+                                            "type": "array"
+                                        },
+                                        {
+                                            "type": "object"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Returns"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "status"
+                ],
+                "title": "ContextResponse"
+            },
             "DetachSSO": {
                 "properties": {
                     "platform": {
@@ -4382,6 +4841,11 @@
                 "title": "DetachSSO",
                 "description": "Attach SSO Request Model."
             },
+            "Enum": {
+                "enum": [],
+                "title": "Enum",
+                "description": "Create a collection of name/value pairs.\n\nExample enumeration:\n\n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n  <Color.RED: 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\n- name lookup:\n\n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations can be iterated over, and know how many members they have:\n\n>>> len(Color)\n3\n\n>>> list(Color)\n[<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]\n\nMethods can be added to enumerations, and members can have their own\nattributes -- see the documentation for details."
+            },
             "HTTPValidationError": {
                 "properties": {
                     "detail": {
@@ -4394,6 +4858,40 @@
                 },
                 "type": "object",
                 "title": "HTTPValidationError"
+            },
+            "Parent": {
+                "properties": {
+                    "val": {
+                        "type": "integer",
+                        "title": "Val"
+                    },
+                    "arr": {
+                        "items": {},
+                        "type": "array",
+                        "title": "Arr"
+                    },
+                    "json": {
+                        "type": "object",
+                        "title": "Json"
+                    },
+                    "enum_field": {
+                        "enum": [],
+                        "title": "Enum",
+                        "description": "Create a collection of name/value pairs.\n\nExample enumeration:\n\n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n  <Color.RED: 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\n- name lookup:\n\n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations can be iterated over, and know how many members they have:\n\n>>> len(Color)\n3\n\n>>> list(Color)\n[<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]\n\nMethods can be added to enumerations, and members can have their own\nattributes -- see the documentation for details."
+                    },
+                    "child": {
+                        "$ref": "#/components/schemas/Child"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "val",
+                    "arr",
+                    "json",
+                    "enum_field",
+                    "child"
+                ],
+                "title": "Parent"
             },
             "UserChangePassword": {
                 "properties": {
@@ -4592,6 +5090,19 @@
                     "c"
                 ],
                 "title": "combination2_body_model"
+            },
+            "custom_status_code_body_model": {
+                "properties": {
+                    "status": {
+                        "type": "integer",
+                        "title": "Status"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "status"
+                ],
+                "title": "custom_status_code_body_model"
             },
             "disallow_other_root_access_body_model": {
                 "properties": {

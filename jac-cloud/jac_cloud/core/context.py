@@ -1,13 +1,14 @@
 """Core constructs for Jac Language."""
 
 from contextvars import ContextVar
-from dataclasses import is_dataclass
+from dataclasses import dataclass, is_dataclass
 from os import getenv
-from typing import Any, cast
+from typing import Any, Generic, TypeVar, cast
 
 from bson import ObjectId
 
 from fastapi import Request
+from fastapi.responses import ORJSONResponse
 
 from jaclang.runtimelib.context import ExecutionContext
 
@@ -32,12 +33,32 @@ PUBLIC_ROOT_ID = ObjectId("000000000000000000000001")
 SUPER_ROOT = NodeAnchor.ref(f"n::{SUPER_ROOT_ID}")
 PUBLIC_ROOT = NodeAnchor.ref(f"n::{PUBLIC_ROOT_ID}")
 
+RT = TypeVar("RT")
+
+
+@dataclass
+class ContextResponse(Generic[RT]):
+    """Default Context Response."""
+
+    status: int
+    reports: list[Any] | None = None
+    returns: list[RT] | None = None
+
+    def __serialize__(self) -> dict[str, Any]:
+        """Serialize response."""
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if value is not None and not key.startswith("_")
+        }
+
 
 class JaseciContext(ExecutionContext):
     """Execution Context."""
 
     mem: MongoDB
     reports: list
+    status: int
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor
@@ -60,6 +81,7 @@ class JaseciContext(ExecutionContext):
         ctx.request = request
         ctx.mem = MongoDB()
         ctx.reports = []
+        ctx.status = 200
 
         if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
             system_root = NodeAnchor(
@@ -122,22 +144,22 @@ class JaseciContext(ExecutionContext):
         """Get current root."""
         return cast(Root, JaseciContext.get().root.architype)
 
-    def response(self, returns: list[Any], status: int = 200) -> dict[str, Any]:
+    def response(self, returns: list[Any]) -> ORJSONResponse:
         """Return serialized version of reports."""
-        resp = {"status": status, "returns": returns}
+        resp = ContextResponse[Any](status=self.status)
 
         if self.reports:
             for key, val in enumerate(self.reports):
                 self.clean_response(key, val, self.reports)
-            resp["reports"] = self.reports
+            resp.reports = self.reports
 
         for key, val in enumerate(returns):
             self.clean_response(key, val, returns)
 
-        if not SHOW_ENDPOINT_RETURNS:
-            resp.pop("returns")
+        if SHOW_ENDPOINT_RETURNS:
+            resp.returns = returns
 
-        return resp
+        return ORJSONResponse(resp.__serialize__(), status_code=self.status)
 
     def clean_response(
         self, key: str | int, val: Any, obj: list | dict  # noqa: ANN401

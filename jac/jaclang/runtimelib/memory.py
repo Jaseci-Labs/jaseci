@@ -106,7 +106,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
                         if root.has_write_access(d):
                             if hash(dumps(p_d.access)) != hash(dumps(d.access)):
                                 p_d.access = d.access
-                            if hash(dumps(d.architype)) != hash(dumps(d.architype)):
+                            if hash(dumps(p_d.architype)) != hash(dumps(d.architype)):
                                 p_d.architype = d.architype
 
                         self.__shelf__[_id] = p_d
