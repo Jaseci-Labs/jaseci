@@ -217,6 +217,23 @@ class JacCliTests(TestCase):
             r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
         )
 
+    def test_expr_types(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('expr_type.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        self.assertRegex(
+            stdout_value, r"4\:9 \- 4\:14.*BinaryExpr \- Type\: builtins.int"
+        )
+        self.assertRegex(
+            stdout_value, r"7\:9 \- 7\:17.*FuncCall \- Type\: builtins.float"
+        )
+
     def test_ast_dotgen(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()
