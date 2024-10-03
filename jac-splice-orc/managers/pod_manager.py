@@ -2,6 +2,7 @@
 
 import os
 import time
+import subprocess
 from typing import Any, List
 
 from fastapi import Body, FastAPI, HTTPException, Query
@@ -31,6 +32,46 @@ class PodManager:
             except config.ConfigException:
                 config.load_kube_config()
         self.v1 = client.CoreV1Api()
+    def get_loadbalancer_url(service_name, namespace):
+        try:
+
+        # Fetch the external IP or hostname using kubectl
+          result_ip = subprocess.run(
+             ["kubectl", "get", "svc", service_name, "-n", namespace, "-o", "jsonpath={.status.loadBalancer.ingress[0].ip}"],
+             capture_output=True, text=True, check=True
+        )
+          result_hostname = subprocess.run(
+            ["kubectl", "get", "svc", service_name, "-n", namespace, "-o", "jsonpath={.status.loadBalancer.ingress[0].hostname}"],
+            capture_output=True, text=True, check=True
+        )
+
+        # If the result contains an IP, return it
+          if result_ip.stdout:
+            return result_ip.stdout.strip()
+
+        # If the result contains a hostname, return it
+          if result_hostname.stdout:
+            return result_hostname.stdout.strip()
+
+          return "No LoadBalancer URL found (external IP or hostname missing)."
+
+        except subprocess.CalledProcessError as e:
+          return f"Error executing kubectl command: {e}"
+        
+    def create_namespace(namespace_name):
+        try:
+        # Run the kubectl command to create a namespace
+          result = subprocess.run(
+            ["kubectl", "create", "namespace", namespace_name],
+            capture_output=True, text=True, check=True
+        )
+        
+        # Return success message if the namespace is created successfully
+          return f"Namespace '{namespace_name}' created successfully."
+
+        except subprocess.CalledProcessError as e:
+        # If there's an error, return the error message
+          return f"Error creating namespace: {e.stderr}"
 
     def create_pod(self, module_name: str, module_config: dict) -> Any:
         """Create a pod and service for the given module."""
