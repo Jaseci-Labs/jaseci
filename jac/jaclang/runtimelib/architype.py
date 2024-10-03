@@ -526,6 +526,14 @@ class WalkerAnchor(Anchor):
         if walker := self.architype:
             self.path = []
             self.next = [node]
+            if self.next:
+                current_node = self.next[-1].architype
+                for i in walker._jac_entry_funcs_:
+                    if not i.trigger:
+                        if i.func:
+                            i.func(walker, current_node)
+                        else:
+                            raise ValueError(f"No function {i.name} to call.")
             while len(self.next):
                 if current_node := self.next.pop(0).architype:
                     for i in current_node._jac_entry_funcs_:
@@ -538,16 +546,20 @@ class WalkerAnchor(Anchor):
                             return walker
                     for i in walker._jac_entry_funcs_:
                         if not i.trigger or isinstance(current_node, i.trigger):
-                            if i.func:
+                            if i.func and i.trigger:
                                 i.func(walker, current_node)
+                            elif not i.trigger:
+                                continue
                             else:
                                 raise ValueError(f"No function {i.name} to call.")
                         if self.disengaged:
                             return walker
                     for i in walker._jac_exit_funcs_:
                         if not i.trigger or isinstance(current_node, i.trigger):
-                            if i.func:
+                            if i.func and i.trigger:
                                 i.func(walker, current_node)
+                            elif not i.trigger:
+                                continue
                             else:
                                 raise ValueError(f"No function {i.name} to call.")
                         if self.disengaged:
@@ -560,6 +572,12 @@ class WalkerAnchor(Anchor):
                                 raise ValueError(f"No function {i.name} to call.")
                         if self.disengaged:
                             return walker
+            for i in walker._jac_exit_funcs_:
+                if not i.trigger:
+                    if i.func:
+                        i.func(walker, current_node)
+                    else:
+                        raise ValueError(f"No function {i.name} to call.")
             self.ignores = []
             return walker
         raise Exception(f"Invalid Reference {self.id}")

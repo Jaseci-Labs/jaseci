@@ -677,6 +677,15 @@ class JacLanguageTests(TestCase):
         self.assertIn("1", stdout_value[0])
         self.assertIn("[2, 3, 4]", stdout_value[1])
 
+    def test_trailing_comma(self) -> None:
+        """Test trailing comma."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("trailing_comma", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Code compiled and ran successfully!", stdout_value)
+
     def test_try_finally(self) -> None:
         """Test try finally."""
         captured_output = io.StringIO()
@@ -1042,3 +1051,16 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertEqual("Ten", stdout_value[0])
         self.assertEqual("ten", stdout_value[1])
+
+    def test_entry_exit(self) -> None:
+        """Test entry and exit behavior of walker."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("entry_exit", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Entering at the beginning of walker:  Root()", stdout_value[0])
+        self.assertIn("entry_count=1, exit_count=1", str(stdout_value[12]))
+        self.assertIn(
+            "Exiting at the end of walker:  test_node(value=", stdout_value[11]
+        )
