@@ -1016,7 +1016,6 @@ class JacLanguageTests(TestCase):
         finally:
             # Restore the original content of bar.jac
             with open(bar_file_path, "w") as bar_file:
-
                 bar_file.write(original_content)
 
     def test_dynamic_spawn_architype(self) -> None:
@@ -1024,12 +1023,40 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         cli.run(self.fixture_abs_path("dynamic_architype.jac"))
+
         output = captured_output.getvalue().strip()
+        output_lines = output.split("\n")
 
-        expected_outputs = ["Value: 1", "Value: 3", "Value: 2"]
+        # Expected outputs for spawned entities
+        expected_spawned_node = "Spawned Node:"
+        expected_spawned_walker = "Spawned Walker:"
+        expected_spawned_external_node = "Spawned External node:"
 
-        for expected in expected_outputs:
-            self.assertIn(expected, output.split("\n"))
+        # Check for the spawned messages
+        self.assertTrue(
+            any(expected_spawned_node in line for line in output_lines),
+            f"Expected '{expected_spawned_node}' in output.",
+        )
+        self.assertTrue(
+            any(expected_spawned_walker in line for line in output_lines),
+            f"Expected '{expected_spawned_walker}' in output.",
+        )
+        self.assertTrue(
+            any(expected_spawned_external_node in line for line in output_lines),
+            f"Expected '{expected_spawned_external_node}' in output.",
+        )
+
+        # Expected values from the walker traversal
+        expected_values = ["Value: 0", "Value: 1", "Value: 2", "Value: 3"]
+
+        # Each expected value should appear twice (once for test_node, once for Item)
+        for val in expected_values:
+            occurrences = [line for line in output_lines if line.strip() == val]
+            self.assertEqual(
+                len(occurrences),
+                2,
+                f"Expected '{val}' to appear 2 times, but found {len(occurrences)}.",
+            )
 
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
