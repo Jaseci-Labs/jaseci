@@ -37,6 +37,41 @@ We can retrieve all visitable nodes from a node in specific directions.
 ??? example "Graph Image"
     ![Image](Images/visiting.png)
 
+
+
+##  <span style="color: orange">DS Entry-Exit
+
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/data_spatial/ds_entry_exit.jac"
+    ```
+??? tip "Output"
+    ```txt
+    Entering at the beginning of walker:  Root()
+    Visiting node :  test_node(value=1)
+    Visiting node :  test_node(value=0)
+    Exiting at the end of walker:  test_node(value=0)
+    test_walker(visited_nodes=[test_node(value=1), test_node(value=0)], entry_count=1, exit_count=1)
+    ```
+
+!!! Abstract  "can log_entry with entry"
+    -  This ability is triggered once when the walker is spawned. It is essentially the "entry point" of the walker’s operation.
+    In the example, it logs the entry at the beginning, increments entry_count by 1, and prints the node where the walker starts (in this case, the root node).
+    !!! Info ""
+        - This DS function is called once at the beginning of the walker’s traversal before visiting any nodes.
+
+!!! Abstract "can log_visit with test_node exit"
+    - This ability is executed each time the walker visits a node of type test_node during its traversal.
+    In the example, whenever the walker visits a test_node, it prints the node and appends the node to visited_nodes.
+    !!! Info ""
+        - This DS function operates during traversal and is called on each node of type test_node the walker visits.
+
+!!! Abstract "can log_exit with exit"
+    - This ability is triggered once when the walker finishes its traversal, marking the end of its operation.
+    In the example, it logs the exit point, increments exit_count by 1, and prints the final node visited.
+    !!! Info ""
+        - This DS function is executed at the end of the walker's execution, after all nodes have been visited.
+
 ##  <span style="color: orange">Walker Definition
 === "Jac"
     ```jac linenums="1"
