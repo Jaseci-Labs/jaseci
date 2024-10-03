@@ -80,3 +80,31 @@ We can retrieve all visitable nodes from a node in specific directions.
 ??? example "Graph Image"
     ![Image](Images/define_walker.png)
 
+## <span style="color: orange">Example 1
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/data_spatial/ds_example_1.jac"
+    ```
+??? example "Graph Image"
+    ![Image](Images/ds_example_1.png)
+
+??? info "Code Explanation"
+    - Create nodes
+        1. `node_1 = a(value=5);` new node created with node class a, its value 5 and assigned to variable node_1.
+        2. `node_2 = a();` New node created with node class a, its default value and assigned to variable node_2.
+
+    - Connect nodes
+        1. `root ++> node_1;`
+        node_1 is connected to root node with generic edge.
+        2. `node_1 +:b(value=10):+> node_3;` node_3 is connected to node_1 by custom edge with edge class b and its value 5.
+        3. `node_1 +:b():+> node_2; `
+        node_5 is connected to node_1 by custom edge with edge class b and its default value.
+
+    - Delete edge
+        1. `node_1 del --> node_2;`
+        edge between node_1 and node_2 is deleted.
+
+    - Delete node
+        1. `del node_3;`  node_3 is deleted.
+
+
