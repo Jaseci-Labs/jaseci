@@ -80,10 +80,10 @@ We can retrieve all visitable nodes from a node in specific directions.
 ??? example "Graph Image"
     ![Image](Images/define_walker.png)
 
-## <span style="color: orange">Example 1
+## <span style="color: orange">Node Connections
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/data_spatial/ds_example_1.jac"
+    --8<-- "examples/data_spatial/node_connections.jac"
     ```
 ??? example "Graph Image"
     ![Image](Images/ds_example_1.png)
