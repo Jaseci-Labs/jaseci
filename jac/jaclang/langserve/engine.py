@@ -80,23 +80,28 @@ class JacLangServer(LanguageServer):
                     impl_parent=self.modules[file_path],
                 )
 
-    def quick_check(self, file_path: str) -> bool:
+    def quick_check(self, file_path: str) -> tuple[bool, list[lspt.Diagnostic]]:
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
             build = jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
+            diagnostics = gen_diagnostics(
+                file_path, build.errors_had, build.warnings_had
+            )
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(file_path, build.errors_had, build.warnings_had),
+                diagnostics,
             )
-            return len(build.errors_had) == 0
+            return len(build.errors_had) == 0, diagnostics
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
-            return False
+            return False, []
 
-    def deep_check(self, file_path: str, annex_view: Optional[str] = None) -> bool:
+    def deep_check(
+        self, file_path: str, annex_view: Optional[str] = None
+    ) -> tuple[bool, list[lspt.Diagnostic] | Exception]:
         """Rebuild a file and its dependencies."""
         try:
             start_time = time.time()
@@ -117,29 +122,27 @@ class JacLangServer(LanguageServer):
                 return self.deep_check(
                     uris.from_fs_path(discover), annex_view=file_path
                 )
-
+            diagnostics = gen_diagnostics(
+                annex_view if annex_view else file_path,
+                build.errors_had,
+                build.warnings_had,
+            )
             self.publish_diagnostics(
                 annex_view if annex_view else file_path,
-                gen_diagnostics(
-                    annex_view if annex_view else file_path,
-                    build.errors_had,
-                    build.warnings_had,
-                ),
+                diagnostics,
             )
             if annex_view:
-                self.publish_diagnostics(
+                diagnostics = gen_diagnostics(
                     file_path,
-                    gen_diagnostics(
-                        file_path,
-                        build.errors_had,
-                        build.warnings_had,
-                    ),
+                    build.errors_had,
+                    build.warnings_had,
                 )
+                self.publish_diagnostics(file_path, diagnostics)
             self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
-            return len(build.errors_had) == 0
+            return len(build.errors_had) == 0, diagnostics
         except Exception as e:
             self.log_error(f"Error during deep check: {e}")
-            return False
+            return False, e
 
     async def launch_quick_check(self, uri: str) -> None:
         """Analyze and publish diagnostics."""
@@ -151,7 +154,9 @@ class JacLangServer(LanguageServer):
         """Analyze and publish diagnostics."""
 
         async def run_in_executor(
-            func: Callable[[str, Optional[str]], bool],
+            func: Callable[
+                [str, Optional[str]], tuple[bool, list[lspt.Diagnostic] | Exception]
+            ],
             file_path: str,
             annex_view: Optional[str] = None,
         ) -> None:
