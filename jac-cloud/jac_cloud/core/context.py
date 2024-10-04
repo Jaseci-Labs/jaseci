@@ -8,7 +8,6 @@ from typing import Any, Generic, TypeVar, cast
 from bson import ObjectId
 
 from fastapi import Request
-from fastapi.responses import ORJSONResponse
 
 from jaclang.runtimelib.context import ExecutionContext
 
@@ -144,7 +143,7 @@ class JaseciContext(ExecutionContext):
         """Get current root."""
         return cast(Root, JaseciContext.get().root.architype)
 
-    def response(self, returns: list[Any]) -> ORJSONResponse:
+    def response(self, returns: list[Any]) -> dict[str, Any]:
         """Return serialized version of reports."""
         resp = ContextResponse[Any](status=self.status)
 
@@ -159,7 +158,7 @@ class JaseciContext(ExecutionContext):
         if SHOW_ENDPOINT_RETURNS:
             resp.returns = returns
 
-        return ORJSONResponse(resp.__serialize__(), status_code=self.status)
+        return resp.__serialize__()
 
     def clean_response(
         self, key: str | int, val: Any, obj: list | dict  # noqa: ANN401

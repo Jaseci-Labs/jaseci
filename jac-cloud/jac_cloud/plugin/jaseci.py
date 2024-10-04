@@ -48,6 +48,7 @@ from ..core.architype import (
 from ..core.context import ContextResponse, ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
 from ..jaseci.security import authenticator
+from ..jaseci.utils import log_entry, log_exit
 
 
 T = TypeVar("T")
@@ -151,6 +152,13 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             pl = cast(BaseModel, payload).model_dump()
             body = pl.get("body", {})
 
+            log = log_entry(
+                cls.__name__,
+                user.email if (user := getattr(request, "_user", None)) else None,
+                pl,
+                node,
+            )
+
             if isinstance(body, BaseUploadFile) and body_model:
                 body = loads(syncify(body.read)())
                 try:
@@ -164,13 +172,19 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             if jctx.validate_access():
                 wlk.spawn_call(jctx.entry_node)
                 jctx.close()
-                return jctx.response(wlk.returns)
+
+                resp = jctx.response(wlk.returns)
+                log_exit(resp, log)
+
+                return ORJSONResponse(resp, jctx.status)
             else:
+                error = {
+                    "error": f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!"
+                }
                 jctx.close()
-                raise HTTPException(
-                    403,
-                    f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!",
-                )
+
+                log_exit(error, log)
+                raise HTTPException(403, error)
 
         def api_root(
             request: Request,
