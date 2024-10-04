@@ -27,10 +27,9 @@ with entry {
         {'value': 99},
         node_arch.__name__
     );
-    print(node_obj);
     walker_obj = JacMachine.get().spawn_walker(
         'dynamic_walker',
         module_name=walker_arch.__name__
     );
-    root spawn walker_obj;
+    node_obj spawn walker_obj;
 }

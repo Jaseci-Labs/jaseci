@@ -1058,6 +1058,22 @@ class JacLanguageTests(TestCase):
                 f"Expected '{val}' to appear 2 times, but found {len(occurrences)}.",
             )
 
+    def test_dynamic_architype_creation(self) -> None:
+        """Test that the walker and node can be spawned and behaves as expected."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("create_dynamic_architype.jac"))
+
+        output = captured_output.getvalue().strip()
+        # Expected outputs for spawned entities
+        expected_spawned_walker = "Dynamic Node Value: 99"
+
+        # Check for the spawned messages
+        self.assertTrue(
+            expected_spawned_walker in output,
+            f"Expected '{expected_spawned_walker}' in output.",
+        )
+
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
         captured_output = io.StringIO()
