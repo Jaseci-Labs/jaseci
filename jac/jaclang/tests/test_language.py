@@ -212,6 +212,20 @@ class JacLanguageTests(TestCase):
         self.assertEqual(stdout_value.count(r"\\\\"), 2)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
 
+    def test_fstring_multiple_quotation(self) -> None:
+        """Test fstring with multiple quotation."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import(
+            "compiler/passes/main/tests/fixtures/fstrings",
+            base_path=self.fixture_abs_path("../../"),
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "11 13 12 12 11 12 12")
+        self.assertEqual(stdout_value.split("\n")[1], '12 12 """hello"""  18 18')
+        self.assertEqual(stdout_value.split("\n")[2], "11 12 11 12 11 18 23")
+
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()

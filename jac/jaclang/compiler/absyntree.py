@@ -4292,15 +4292,7 @@ class String(Literal):
                     and isinstance(self.parent.parent, FString)
                 )
             ):
-                # if self.parent and isinstance(self.parent, MultiString) and self.parent.parent:
-                # if self.parent :
-                # print("FSTRING", self.parent.parent, self.parent.parent.parent)
                 return repr_str[1:-1]
-            # if self.parent and isinstance(
-            #     self.parent, SubNodeList
-            # ) and self.parent.parent and isinstance(self.parent.parent, FString):
-            #     print("FSTRING")
-            #     return repr_str[1:-1]
             return repr_str
         else:
             return self.value
