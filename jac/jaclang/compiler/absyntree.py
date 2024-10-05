@@ -4261,7 +4261,6 @@ class Int(Literal):
 class String(Literal):
     """String node type for Jac Ast."""
 
-    is_doc = False
     SYMBOL_TYPE = SymbolType.STRING
 
     @property
@@ -4278,8 +4277,6 @@ class String(Literal):
 
         elif self.value.startswith(("'", '"')):
             repr_str = self.value.encode().decode("unicode_escape")
-            # if self.is_doc or (
-            # self.value.startswith('"""')
             if (
                 self.value.startswith('"""')
                 and self.value.endswith('"""')
