@@ -2873,24 +2873,24 @@ class FString(AtomExpr):
         if deep:
             res = self.parts.normalize(deep) if self.parts else res
         new_kid: list[AstNode] = []
-        is_sq = isinstance(self.kid[0], Token) and self.kid[0].name == Tok.FSTR_SQ_START
+        is_single_quote = (
+            isinstance(self.kid[0], Token) and self.kid[0].name == Tok.FSTR_SQ_START
+        )
         if self.parts:
-            (
+            if is_single_quote:
                 new_kid.append(self.gen_token(Tok.FSTR_SQ_START))
-                if is_sq
-                else new_kid.append(self.gen_token(Tok.FSTR_START))
-            )
+            else:
+                new_kid.append(self.gen_token(Tok.FSTR_START))
             for i in self.parts.items:
                 if isinstance(i, String):
                     i.value = (
                         "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
                     )
             new_kid.append(self.parts)
-            (
+            if is_single_quote:
                 new_kid.append(self.gen_token(Tok.FSTR_SQ_END))
-                if is_sq
-                else new_kid.append(self.gen_token(Tok.FSTR_END))
-            )
+            else:
+                new_kid.append(self.gen_token(Tok.FSTR_END))
         self.set_kids(nodes=new_kid)
         return res
 
