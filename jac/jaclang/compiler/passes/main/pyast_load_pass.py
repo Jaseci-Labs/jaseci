@@ -1147,19 +1147,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 token_type = "STRING"
             else:
                 token_type = f"{value_type.__name__.upper()}"
-
             if value_type == str:
-                value = repr(node.value)
-                sq = False
-                if value.startswith("'") and value.endswith("'"):
-                    sq = True
-                if value.startswith('"') and value.endswith('"'):
-                    sq = False
-                value = (
-                    f'"{repr(node.value)[1:-1]}"'
-                    if not sq
-                    else f"'{repr(node.value)[1:-1]}'"
-                )
+                raw_repr = repr(node.value)
+                quote = "'" if raw_repr.startswith("'") else '"'
+                value = f"{quote}{raw_repr[1:-1]}{quote}"
             else:
                 value = str(node.value)
             return type_mapping[value_type](
