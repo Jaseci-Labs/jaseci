@@ -635,6 +635,7 @@ class Module(AstDocNode):
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
+        self.py_needed_items: Optional[dict[str, Optional[str]]] = None
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -1105,6 +1106,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         self.name = name
         self.arch_type = arch_type
         self.base_classes = base_classes
+        self.ignore_uses: bool = False
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,

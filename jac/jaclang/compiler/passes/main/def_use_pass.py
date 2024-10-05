@@ -31,6 +31,11 @@ class DefUsePass(Pass):
         semstr: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
         """
+        # Ignore getting the uses for Architypes in case of items
+        # not added in symTable because of python from import
+        if node.ignore_uses:
+            return
+
         node.sym_tab.inherit_baseclasses_sym(node)
 
         def inform_from_walker(node: ast.AstNode) -> None:
