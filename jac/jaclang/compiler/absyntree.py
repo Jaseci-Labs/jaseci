@@ -2875,13 +2875,24 @@ class FString(AtomExpr):
         if deep:
             res = self.parts.normalize(deep) if self.parts else res
         new_kid: list[AstNode] = []
+        is_single_quote = (
+            isinstance(self.kid[0], Token) and self.kid[0].name == Tok.FSTR_SQ_START
+        )
         if self.parts:
+            if is_single_quote:
+                new_kid.append(self.gen_token(Tok.FSTR_SQ_START))
+            else:
+                new_kid.append(self.gen_token(Tok.FSTR_START))
             for i in self.parts.items:
                 if isinstance(i, String):
                     i.value = (
                         "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
                     )
             new_kid.append(self.parts)
+            if is_single_quote:
+                new_kid.append(self.gen_token(Tok.FSTR_SQ_END))
+            else:
+                new_kid.append(self.gen_token(Tok.FSTR_END))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -4259,7 +4270,6 @@ class String(Literal):
         """Return literal value in its python type."""
         if isinstance(self.value, bytes):
             return self.value
-        prefix_len = 3 if self.value.startswith(("'''", '"""')) else 1
         if any(
             self.value.startswith(prefix)
             and self.value[len(prefix) :].startswith(("'", '"'))
@@ -4268,8 +4278,23 @@ class String(Literal):
             return eval(self.value)
 
         elif self.value.startswith(("'", '"')):
-            ret_str = self.value[prefix_len:-prefix_len]
-            return ret_str.encode().decode("unicode_escape", errors="backslashreplace")
+            repr_str = self.value.encode().decode("unicode_escape")
+            if (
+                self.value.startswith('"""')
+                and self.value.endswith('"""')
+                and not self.find_parent_of_type(FString)
+            ):
+                return repr_str[3:-3]
+            if (not self.find_parent_of_type(FString)) or (
+                not (
+                    self.parent
+                    and isinstance(self.parent, SubNodeList)
+                    and self.parent.parent
+                    and isinstance(self.parent.parent, FString)
+                )
+            ):
+                return repr_str[1:-1]
+            return repr_str
         else:
             return self.value
 
