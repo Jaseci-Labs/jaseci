@@ -51,7 +51,7 @@ class JacTypeCheckPass(Pass):
         options.ignore_missing_imports = True
         options.cache_dir = Con.JAC_MYPY_CACHE
         options.mypy_path = [
-            # str(  # TODO: Remove me, this was the wrong way to point to stubs
+            # str( # TODO: Remove me, this was the wrong way to point to stubs
             #     pathlib.Path(os.path.dirname(__file__)).parent.parent.parent.parent
             #     / "stubs"
             # )
