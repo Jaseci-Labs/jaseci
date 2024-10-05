@@ -1010,6 +1010,18 @@ class JacLanguageTests(TestCase):
 
                 bar_file.write(original_content)
 
+    def test_dynamic_spawn_architype(self) -> None:
+        """Test that the walker and node can be spawned and behaves as expected."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("dynamic_architype.jac"))
+        output = captured_output.getvalue().strip()
+
+        expected_outputs = ["Value: 1", "Value: 3", "Value: 2"]
+
+        for expected in expected_outputs:
+            self.assertIn(expected, output.split("\n"))
+
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
         captured_output = io.StringIO()
@@ -1030,3 +1042,16 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertEqual("Ten", stdout_value[0])
         self.assertEqual("ten", stdout_value[1])
+
+    def test_entry_exit(self) -> None:
+        """Test entry and exit behavior of walker."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("entry_exit", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Entering at the beginning of walker:  Root()", stdout_value[0])
+        self.assertIn("entry_count=1, exit_count=1", str(stdout_value[12]))
+        self.assertIn(
+            "Exiting at the end of walker:  test_node(value=", stdout_value[11]
+        )

@@ -1,4 +1,4 @@
-# Generative AI in Jaclang - MTLLM
+# <span style="color: orange"> Generative AI in Jaclang - MTLLM
 
 Jaclang facilitates the integration of generative AI models, specifically Large Language Models (LLMs) into programming in an ultra seamless manner. We name this functionality as <span style="color:orange;">MTLLM</span>, meaning "Meaning-typed LLMs". There is an extensive research journey which you can dive into, available on arxiv.org. (Link available at the bottom of this page)
 
@@ -14,15 +14,15 @@ Jaclang facilitates the integration of generative AI models, specifically Large 
 
     <!-- [:octicons-arrow-right-24: Getting started](#) -->
 
-    [REPO](https://github.com/Jaseci-Labs/mtllm){ .md-button}
+    [REPO](https://github.com/Jaseci-Labs/jaseci/tree/main/jac-mtllm){ .md-button}
 
--   __MTLLM Documentation__
+-   __Get Started with MTLLM__
 
     ---
 
     *You can refer to our official documentation for MTLLM*
 
-    [DOCS](https://jaseci-labs.github.io/mtllm/){ .md-button}
+    [DOCS](../learn/coders/mtllm/docs/quickstart/installation.md){ .md-button}
 
 </div>
 
@@ -31,7 +31,7 @@ Jaclang facilitates the integration of generative AI models, specifically Large 
 [Semstrings](#introducing-semstrings).
  This new feature eliminates the need for explicit prompting and allows for a more streamlined coding experience. -->
 
-## MTLLM in a FLASH
+<!-- ## MTLLM in a FLASH
 
 ### Getting MTLLM setup
 
@@ -125,7 +125,7 @@ The main change of this methods with the above approach is that a separate funct
 
 **Semstrings?**
 
-You may have noticed in both methodologies we are using a string annotation on Line:7 amd Line:8. This is called a semstring, which is an optional feature of MTLLM, which can be used for adding additional context to attributes, abilities as well as objects. Look into our [full documentation for semstrings](https://jaseci-labs.github.io/mtllm/docs/building-blocks/semstrings) to get a better insight.
+You may have noticed in both methodologies we are using a string annotation on Line:7 amd Line:8. This is called a semstring, which is an optional feature of MTLLM, which can be used for adding additional context to attributes, abilities as well as objects. Look into our [full documentation for semstrings](https://jaseci-labs.github.io/mtllm/docs/building-blocks/semstrings) to get a better insight. -->
 <!-- ### Model Initialization
 
 To incorporate a Large Language Model (LLM) into code, initialize it by importing from the ```mtllm.llms``` module built into the langauge.

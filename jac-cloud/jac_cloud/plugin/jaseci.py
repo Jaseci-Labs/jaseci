@@ -6,7 +6,8 @@ from dataclasses import Field, MISSING, fields
 from functools import wraps
 from os import getenv
 from re import compile
-from typing import Any, Callable, Type, TypeVar, cast, get_type_hints
+from types import NoneType
+from typing import Any, Callable, Type, TypeAlias, TypeVar, Union, cast, get_type_hints
 
 from asyncer import syncify
 
@@ -163,7 +164,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             if jctx.validate_access():
                 wlk.spawn_call(jctx.entry_node)
                 jctx.close()
-                return ORJSONResponse(jctx.response(wlk.returns))
+                return jctx.response(wlk.returns)
             else:
                 jctx.close()
                 raise HTTPException(
@@ -182,9 +183,22 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
             walker_method = getattr(walker_router, method)
 
+            raw_types: list[Type] = [
+                get_type_hints(jef.func).get("return", NoneType)
+                for jef in (*cls._jac_entry_funcs_, *cls._jac_exit_funcs_)
+            ]
+
+            if raw_types:
+                if len(raw_types) > 1:
+                    ret_types: TypeAlias = Union[*raw_types]  # type: ignore[valid-type]
+                else:
+                    ret_types = raw_types[0]  # type: ignore[misc]
+            else:
+                ret_types = NoneType  # type: ignore[misc]
+
             settings: dict[str, Any] = {
                 "tags": ["walker"],
-                "response_model": ContextResponse,
+                "response_model": ContextResponse[ret_types],
             }
             if auth:
                 settings["dependencies"] = cast(list, authenticator)
