@@ -511,13 +511,11 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
-            '"""Enum for shape types"""\nenum ShapeType{ CIRCLE = "Circle",\n',
+            '"""Enum for shape types"""\nenum ShapeType{ CIRCLE = \'Circle\',\n',
             output,
         )
-        self.assertIn(
-            "UNKNOWN = \"Unknown\",\n::py::\nprint('hello')\n::py::\n }", output
-        )
-        self.assertIn('assert x == 5 , "x should be equal to 5" ;', output)
+        self.assertIn("\nUNKNOWN = 'Unknown',\n::py::\nprint('hello')\n::", output)
+        self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
@@ -783,7 +781,7 @@ class JacLanguageTests(TestCase):
         settings.print_py_raised_ast = True
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
-        self.assertIn(' |   +-- String - "Loop compl', jac_ast)
+        self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
         self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 269)
         captured_output = io.StringIO()
         sys.stdout = captured_output

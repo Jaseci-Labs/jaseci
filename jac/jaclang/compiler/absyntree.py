@@ -2873,13 +2873,24 @@ class FString(AtomExpr):
         if deep:
             res = self.parts.normalize(deep) if self.parts else res
         new_kid: list[AstNode] = []
+        is_sq = isinstance(self.kid[0], Token) and self.kid[0].name == Tok.FSTR_SQ_START
         if self.parts:
+            (
+                new_kid.append(self.gen_token(Tok.FSTR_SQ_START))
+                if is_sq
+                else new_kid.append(self.gen_token(Tok.FSTR_START))
+            )
             for i in self.parts.items:
                 if isinstance(i, String):
                     i.value = (
                         "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
                     )
             new_kid.append(self.parts)
+            (
+                new_kid.append(self.gen_token(Tok.FSTR_SQ_END))
+                if is_sq
+                else new_kid.append(self.gen_token(Tok.FSTR_END))
+            )
         self.set_kids(nodes=new_kid)
         return res
 
@@ -4273,8 +4284,23 @@ class String(Literal):
                 and not self.find_parent_of_type(FString)
             ):
                 return repr_str[3:-3]
-            if not self.find_parent_of_type(FString):
+            if (not self.find_parent_of_type(FString)) or (
+                not (
+                    self.parent
+                    and isinstance(self.parent, SubNodeList)
+                    and self.parent.parent
+                    and isinstance(self.parent.parent, FString)
+                )
+            ):
+                # if self.parent and isinstance(self.parent, MultiString) and self.parent.parent:
+                # if self.parent :
+                # print("FSTRING", self.parent.parent, self.parent.parent.parent)
                 return repr_str[1:-1]
+            # if self.parent and isinstance(
+            #     self.parent, SubNodeList
+            # ) and self.parent.parent and isinstance(self.parent.parent, FString):
+            #     print("FSTRING")
+            #     return repr_str[1:-1]
             return repr_str
         else:
             return self.value

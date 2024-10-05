@@ -1148,14 +1148,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else:
                 token_type = f"{value_type.__name__.upper()}"
 
+            if value_type == str:
+                value = repr(node.value)
+                sq = False
+                if value.startswith("'") and value.endswith("'"):
+                    sq = True
+                if value.startswith('"') and value.endswith('"'):
+                    sq = False
+                value = (
+                    f'"{repr(node.value)[1:-1]}"'
+                    if not sq
+                    else f"'{repr(node.value)[1:-1]}'"
+                )
+            else:
+                value = str(node.value)
             return type_mapping[value_type](
                 file_path=self.mod_path,
                 name=token_type,
-                value=(
-                    f'"{repr(node.value)[1:-1]}"'
-                    if value_type == str
-                    else str(node.value)
-                ),
+                value=value,
                 line=node.lineno,
                 end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
@@ -2625,7 +2635,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def convert_to_doc(self, string: ast.String) -> None:
         """Convert a string to a docstring."""
-        string.value = f'""{string.value}""'
+        string.value = f'"""{string.value[1:-1]}"""'
 
     def aug_op_map(self, tok_dict: dict, op: ast.Token) -> str:
         """aug_mapper."""
