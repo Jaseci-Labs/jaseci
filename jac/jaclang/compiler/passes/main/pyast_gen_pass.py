@@ -1058,7 +1058,11 @@ class PyastGenPass(Pass):
                         args=[
                             self.sync(ast3.Constant(value=i.sym_name)),
                             (
-                                i.signature.arch_tag_info.gen.py_ast[0]
+                                self.sync(
+                                    ast3.Constant(
+                                        value=f"{i.signature.arch_tag_info.gen.py_ast[0].id}"
+                                    )
+                                )
                                 if i.signature.arch_tag_info
                                 else self.sync(ast3.Constant(value=None))
                             ),
