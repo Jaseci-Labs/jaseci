@@ -11,7 +11,12 @@ from typing import Optional, Union
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
-from jaclang.runtimelib.architype import EdgeArchitype, NodeArchitype, WalkerArchitype
+from jaclang.runtimelib.architype import (
+    Architype,
+    EdgeArchitype,
+    NodeArchitype,
+    WalkerArchitype,
+)
 from jaclang.utils.log import logging
 
 
@@ -145,6 +150,47 @@ class JacMachine:
         else:
             logger.warning(f"Module {module_name} not found in loaded modules.")
         return ()
+
+    def spawn_node(
+        self,
+        node_name: str,
+        attributes: Optional[dict] = None,
+        module_name: str = "__main__",
+    ) -> NodeArchitype:
+        """Spawn a node instance of the given node_name with attributes."""
+        node_class = self.get_architype(module_name, node_name)
+        if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
+            if attributes is None:
+                attributes = {}
+            node_instance = node_class(**attributes)
+            return node_instance
+        else:
+            raise ValueError(f"Node {node_name} not found.")
+
+    def spawn_walker(
+        self,
+        walker_name: str,
+        attributes: Optional[dict] = None,
+        module_name: str = "__main__",
+    ) -> WalkerArchitype:
+        """Spawn a walker instance of the given walker_name."""
+        walker_class = self.get_architype(module_name, walker_name)
+        if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
+            if attributes is None:
+                attributes = {}
+            walker_instance = walker_class(**attributes)
+            return walker_instance
+        else:
+            raise ValueError(f"Walker {walker_name} not found.")
+
+    def get_architype(
+        self, module_name: str, architype_name: str
+    ) -> Optional[Architype]:
+        """Retrieve an architype class from a module."""
+        module = self.loaded_modules.get(module_name)
+        if module:
+            return getattr(module, architype_name, None)
+        return None
 
     @staticmethod
     def get(base_path: str = "") -> "JacMachine":

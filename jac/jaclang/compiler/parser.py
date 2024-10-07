@@ -429,7 +429,7 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.ModuleItem]:
             """Grammar rule.
 
-            import_items: (import_item COMMA)* import_item
+            import_items: (import_item COMMA)* import_item COMMA?
             """
             ret = ast.SubNodeList[ast.ModuleItem](
                 items=[i for i in kid if isinstance(i, ast.ModuleItem)],
@@ -693,7 +693,7 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.EnumBlockStmt]:
             """Grammar rule.
 
-            enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
+            enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
             """
             ret = ast.SubNodeList[ast.EnumBlockStmt](items=[], delim=Tok.COMMA, kid=kid)
             ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
@@ -1022,7 +1022,7 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.ParamVar]:
             """Grammar rule.
 
-            func_decl_params: (param_var COMMA)* param_var
+            func_decl_params: (param_var COMMA)* param_var COMMA?
             """
             ret = ast.SubNodeList[ast.ParamVar](
                 items=[i for i in kid if isinstance(i, ast.ParamVar)],
@@ -1267,29 +1267,30 @@ class JacParser(Pass):
         def statement(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
             """Grammar rule.
 
-            statement: py_code_block
-                    | walker_stmt
-                    | return_stmt SEMI
-                    | report_stmt SEMI
-                    | delete_stmt SEMI
-                    | ctrl_stmt SEMI
-                    | assert_stmt SEMI
-                    | raise_stmt SEMI
-                    | with_stmt
+            statement: import_stmt
+                    | ability
+                    | architype
+                    | if_stmt
                     | while_stmt
                     | for_stmt
                     | try_stmt
-                    | if_stmt
-                    | expression SEMI
-                    | (yield_expr | KW_YIELD) SEMI
-                    | static_assignment
-                    | assignment SEMI
+                    | match_stmt
+                    | with_stmt
                     | global_ref SEMI
                     | nonlocal_ref SEMI
                     | typed_ctx_block
-                    | ability
-                    | architype
-                    | import_stmt
+                    | return_stmt SEMI
+                    | (yield_expr | KW_YIELD) SEMI
+                    | raise_stmt SEMI
+                    | assert_stmt SEMI
+                    | check_stmt SEMI
+                    | assignment SEMI
+                    | delete_stmt SEMI
+                    | report_stmt SEMI
+                    | expression SEMI
+                    | ctrl_stmt SEMI
+                    | py_code_block
+                    | walker_stmt
                     | SEMI
             """
             if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:
@@ -2180,30 +2181,21 @@ class JacParser(Pass):
         def arithmetic(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            arithmetic: term MINUS arithmetic
-                      | term PLUS arithmetic
-                      | term
+            arithmetic: (arithmetic (MINUS | PLUS))? term
             """
             return self.binary_expr_unwind(kid)
 
         def term(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            term: factor MOD term
-                 | factor DIV term
-                 | factor FLOOR_DIV term
-                 | factor STAR_MUL term
-                 | factor
+            term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? power
             """
             return self.binary_expr_unwind(kid)
 
         def factor(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            factor: power
-                  | BW_NOT factor
-                  | MINUS factor
-                  | PLUS factor
+            factor: (BW_NOT | MINUS | PLUS) factor | connect
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
@@ -2221,8 +2213,7 @@ class JacParser(Pass):
         def power(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            power: connect STAR_POW power
-                  | connect
+            power: (power STAR_POW)? factor
             """
             return self.binary_expr_unwind(kid)
 
@@ -2513,8 +2504,7 @@ class JacParser(Pass):
         def yield_expr(self, kid: list[ast.AstNode]) -> ast.YieldExpr:
             """Grammar rule.
 
-            yield_expr:
-                | KW_YIELD KW_FROM? expression
+            yield_expr: KW_YIELD KW_FROM? expression
             """
             if isinstance(kid[-1], ast.Expr):
                 return self.nu(
@@ -2565,7 +2555,7 @@ class JacParser(Pass):
         def multistring(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
 
-            multistring: (fstring | STRING)+
+            multistring: (fstring | STRING | DOC_STRING)+
             """
             valid_strs = [i for i in kid if isinstance(i, (ast.String, ast.FString))]
             if len(valid_strs) == len(kid):
@@ -2582,6 +2572,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             fstring: FSTR_START fstr_parts FSTR_END
+                | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
             """
             if len(kid) == 2:
                 return self.nu(
@@ -2605,7 +2596,7 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.String | ast.ExprStmt]:
             """Grammar rule.
 
-            fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
+            fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
             valid_parts: list[ast.String | ast.ExprStmt] = [
                 (
@@ -2651,7 +2642,7 @@ class JacParser(Pass):
         def list_val(self, kid: list[ast.AstNode]) -> ast.ListVal:
             """Grammar rule.
 
-            list_val: LSQUARE expr_list? RSQUARE
+            list_val: LSQUARE (expr_list COMMA?)? RSQUARE
             """
             if len(kid) == 2:
                 return self.nu(
@@ -2695,7 +2686,7 @@ class JacParser(Pass):
         def set_val(self, kid: list[ast.AstNode]) -> ast.SetVal:
             """Grammar rule.
 
-            set_val: LBRACE expr_list RBRACE
+            set_val: LBRACE expr_list COMMA? RBRACE
             """
             if len(kid) == 2:
                 return self.nu(
@@ -2822,25 +2813,37 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.Expr | ast.KWPair]:
             """Grammar rule.
 
-            tuple_list: expression COMMA expr_list COMMA kw_expr_list
-                    | expression COMMA kw_expr_list
-                    | expression COMMA expr_list
-                    | expression COMMA
-                    | kw_expr_list
+            tuple_list: expression COMMA expr_list    COMMA kw_expr_list COMMA?
+                      | expression COMMA kw_expr_list COMMA?
+                      | expression COMMA expr_list    COMMA?
+                      | expression COMMA
+                      | kw_expr_list COMMA?
             """
             chomp = [*kid]
             first_expr = None
             if isinstance(chomp[0], ast.SubNodeList):
+                # The chomp will be like this:
+                #     kw_expr_list, [COMMA]
+                if len(chomp) > 1:
+                    # Add the comma to the subnode list if it exists, otherwise the last comma will not be a part of
+                    # the ast, we need it for formatting.
+                    chomp[0].kid.append(chomp[1])
                 return self.nu(chomp[0])
             else:
-                first_expr = chomp[0]
-                chomp = chomp[2:]
+                # The chomp will be like this:
+                #     expression, COMMA, [subnode_list, [COMMA, [kw_expr_list, [COMMA]]]]
+                # Pop the first expression from chomp.
+                first_expr = chomp[0]  # Get the first expression.
+                chomp = chomp[2:]  # Get rid of expr and comma.
+
+            # The chomp will be like this:
+            #     [subnode_list, [COMMA, [kw_expr_list, [COMMA]]]]
             expr_list = []
             if len(chomp):
-                expr_list = chomp[0].kid
-                chomp = chomp[1:]
+                expr_list = chomp[0].kid  # Get the kids subnode list.
+                chomp = chomp[2:]  # Get rid of the subnode list and a comma if exists.
                 if len(chomp):
-                    chomp = chomp[1:]
+                    # The chomp will be like this: [kw_expr_list, [COMMA]]
                     expr_list = [*expr_list, *chomp[0].kid]
             expr_list = [first_expr, *expr_list]
             valid_kid = [i for i in expr_list if isinstance(i, (ast.Expr, ast.KWPair))]
@@ -2855,7 +2858,7 @@ class JacParser(Pass):
         def dict_val(self, kid: list[ast.AstNode]) -> ast.DictVal:
             """Grammar rule.
 
-            dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
+            dict_val: LBRACE ((kv_pair COMMA)* kv_pair COMMA?)? RBRACE
             """
             ret = ast.DictVal(
                 kv_pairs=[],
@@ -2912,7 +2915,7 @@ class JacParser(Pass):
         def gen_compr(self, kid: list[ast.AstNode]) -> ast.GenCompr:
             """Grammar rule.
 
-            gen_compr: LSQUARE expression inner_compr+ RSQUARE
+            gen_compr: LPAREN expression inner_compr+ RPAREN
             """
             comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
             if isinstance(kid[1], ast.Expr):
@@ -2929,7 +2932,7 @@ class JacParser(Pass):
         def set_compr(self, kid: list[ast.AstNode]) -> ast.SetCompr:
             """Grammar rule.
 
-            set_compr: LSQUARE expression inner_compr+ RSQUARE
+            set_compr: LBRACE expression inner_compr+ RBRACE
             """
             comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
             if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.InnerCompr):
@@ -2993,12 +2996,21 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.Expr | ast.KWPair]:
             """Grammar rule.
 
-            param_list: expr_list COMMA kw_expr_list
-                    | kw_expr_list
-                    | expr_list
+            param_list: expr_list    COMMA kw_expr_list COMMA?
+                      | kw_expr_list COMMA?
+                      | expr_list    COMMA?
             """
-            if len(kid) == 1:
+            ends_with_comma = (
+                len(kid) > 1
+                and isinstance(kid[-1], ast.Token)
+                and kid[-1].name == "COMMA"
+            )
+            if len(kid) == 1 or (len(kid) == 2 and ends_with_comma):
                 if isinstance(kid[0], ast.SubNodeList):
+                    if (
+                        ends_with_comma
+                    ):  # Append the trailing comma to the subnode list.
+                        kid[0].kid.append(kid[1])
                     return self.nu(kid[0])
                 else:
                     raise self.ice()
@@ -3146,7 +3158,7 @@ class JacParser(Pass):
         def type_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
-            type_ref: TYPE_OP name_ref
+            type_ref: TYPE_OP (named_ref | builtin_type)
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
                 return self.nu(
