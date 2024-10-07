@@ -252,13 +252,18 @@ logger.setLevel(Level[getenv("LOGGER_LEVEL", "DEBUG")].value)
 
 handler = MixedTimedRotatingFileHandler(
     getenv("LOGGER_FILE_PATH", "/tmp/jac_cloud_logs/jac-cloud.log"),
-    when=getenv("LOGGER_TIME_INTERVAL", "d"),
-    backup_count=int(getenv("LOGGER_MAX_BACKUP", "5")),
-    max_bytes=int(getenv("LOGGER_MAX_FILE_SIZE", "10000000")),
+    when=getenv("LOGGER_ROLLOVER_INTERVAL", "d"),
+    backup_count=int(getenv("LOGGER_MAX_BACKUP", "-1")),
+    max_bytes=int(getenv("LOGGER_ROLLOVER_MAX_FILE_SIZE", "10000000")),
     utc=getenv("LOGGER_USE_UTC") == "true",
 )
 handler.setFormatter(StdlibFormatter())
 logger.addHandler(handler)
+
+
+def log_dumps(payload: dict[str, Any] | list[Any]) -> str:
+    """Dump dictionary log."""
+    return dumps(payload, separators=DEFAULT_SEPARATORS)
 
 
 def log_entry(
@@ -268,7 +273,7 @@ def log_entry(
     log: dict[str, Any] = {
         "api_name": api,
         "caller_name": caller,
-        "payload": dumps(payload, separators=DEFAULT_SEPARATORS),
+        "payload": log_dumps(payload),
         "entry_node": node,
     }
     msg = str(
@@ -286,7 +291,7 @@ def log_entry(
 def log_exit(response: dict[str, Any], log: dict[str, Any] | None = None) -> None:
     """Log metadata on exit."""
     log = log or {}
-    log["api_response"] = dumps(response, separators=DEFAULT_SEPARATORS)
+    log["api_response"] = log_dumps(response)
     log["extra_fields"] = list(log.keys())
     log_msg = str(
         f"Returning call from {log["caller_name"]}"

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from random import choice
 from string import ascii_letters, digits
 
-from .logger import log_entry, log_exit, logger
+from .logger import log_dumps, log_entry, log_exit, logger
 from .mail import Emailer, SendGridEmailer
 
 
@@ -29,6 +29,7 @@ __all__ = [
     "random_string",
     "utc_datetime",
     "utc_timestamp",
+    "log_dumps",
     "log_entry",
     "log_exit",
     "logger",
