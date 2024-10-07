@@ -217,6 +217,41 @@ class JacCliTests(TestCase):
             r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
         )
 
+    def test_expr_type_info(self) -> None:
+        """Testing for expression type infomation."""
+        from jaclang.settings import settings
+
+        settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('expr_type_info.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"4:4 - 4:9.*CompareExpr - Type: builtins.bool",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"5:3 - 5:22.*FuncCall - Type: builtins.str",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"6:3 - 6:11.*AtomTrailer - Type: builtins.int",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"7:3 - 7:8.*BinaryExpr - Type: builtins.int",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"8:3 - 8:12.*UnaryExpr - Type: builtins.bool",
+        )
+
     def test_ast_dotgen(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()
