@@ -629,10 +629,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     @hookimpl
     def report(expr: Any) -> None:  # noqa:ANN401
         """Jac's report stmt feature."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.report(expr=expr)
-
-        JaseciContext.get().reports.append(expr)
+        Jac.get_context().reports.append(expr)
 
     @staticmethod
     @hookimpl
