@@ -1,12 +1,17 @@
-
 with entry {
+    a = 4;
+    b = 7;
+    c = a + b; # OpExpr.
+    d = a + b + c;
 
-  (1 < 2);  # ComparisonExpr.
-  ('a' + 'b').upper(); # CallExpr.
-  [1,2][0]; # IndexExpr.
-  1 + 2; # OpExpr.
-  not False; # UnaryExpr.
+    h = float(a); # CallExpr.
 
+    (1 < 2);  # ComparisonExpr.
+    ('a' + 'b').upper(); # CallExpr.
+    [1,2][0]; # IndexExpr.
+    not False; # UnaryExpr.
+    "a" if True else "b"; # ConditionalExpr.
+    [i for i in range(10)]; # ListComprehension.
 }
 
 # Remaining expressions to test:
@@ -16,7 +21,6 @@ with entry {
 # BytesExpr,
 # CastExpr,
 # ComplexExpr,
-# ConditionalExpr,
 # DictionaryComprehension,
 # DictExpr,
 # EllipsisExpr,
@@ -26,7 +30,6 @@ with entry {
 # GeneratorExpr,
 # IntExpr,
 # LambdaExpr,
-# ListComprehension,
 # ListExpr,
 # MemberExpr,
 # NamedTupleExpr,
@@ -47,6 +50,5 @@ with entry {
 # TypedDictExpr,
 # TypeVarExpr,
 # TypeVarTupleExpr,
-# UnaryExpr,
 # YieldExpr,
 # YieldFromExpr,
