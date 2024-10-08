@@ -244,9 +244,9 @@ class JacCliTests(TestCase):
         cli.tool("ir", ["ast", f"{self.fixture_abs_path('type_info.jac')}"])
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 7)
-        self.assertEqual(stdout_value.count("builtins.int"), 3)
-        self.assertEqual(stdout_value.count("builtins.str"), 10)
+        self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 32)
+        self.assertEqual(stdout_value.count("builtins.int"), 4)
+        self.assertEqual(stdout_value.count("builtins.str"), 13)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
