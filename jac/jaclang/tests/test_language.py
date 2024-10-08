@@ -80,6 +80,18 @@ class JacLanguageTests(TestCase):
             "\nValue: 5\nValue: 6\nValue: 7\nFinal Value: 8\nDone walking.\n",
         )
 
+    def test_simple_walk_by_edge(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("micro.simple_walk_by_edge", base_path=self.examples_abs_path(""))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "Visited 1\nVisited 2\n",
+        )
+
     def test_guess_game(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
