@@ -47,12 +47,15 @@ def run_module_via_pod_manager(module_name: str, method_name: str, args: list):
 if __name__ == "__main__":
     module_name = "numpy"
 
-    # Get the pod and service information from the pod manager
-    pod_info = get_service_info(module_name)
+    # # Get the pod and service information from the pod manager
+    # pod_info = get_service_info(module_name)
 
-    # The method name and arguments for the gRPC call
-    method_name = "array"
-    args = [1, 2, 3]
+    # # The method name and arguments for the gRPC call
+    # method_name = "array"
+    # args = [1, 2, 3]
 
-    # Send the request to the Pod Manager
-    run_module_via_pod_manager(module_name, method_name, args)
+    # # Send the request to the Pod Manager
+    # run_module_via_pod_manager(module_name, method_name, args)
+    from jaclang.settings import settings
+
+    print(settings.modules_to_remote)

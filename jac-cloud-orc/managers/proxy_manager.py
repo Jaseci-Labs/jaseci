@@ -1,20 +1,70 @@
-import grpc
-from grpc import module_service_pb2_grpc
+import requests
+
+
+class PodManagerProxy:
+    def __init__(self, pod_manager_url: str):
+        self.pod_manager_url = pod_manager_url
+
+    def create_pod(self, module_name: str):
+        """Send a request to the pod manager to create the pod and service."""
+        response = requests.post(f"{self.pod_manager_url}/create_pod/{module_name}")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"Failed to create pod: {response.text}")
+
+    def delete_pod(self, module_name: str):
+        """Send a request to the pod manager to delete the pod and service."""
+        response = requests.delete(f"{self.pod_manager_url}/delete_pod/{module_name}")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"Failed to delete pod: {response.text}")
+
+    def run_module(self, module_name: str, method_name: str, args: list):
+        """Send a request to the pod manager to run a module's method."""
+        response = requests.post(
+            f"{self.pod_manager_url}/run_module",
+            params={"module_name": module_name, "method_name": method_name},
+            json={"args": args},
+        )
+        if response.status_code == 200:
+            return response.json().get("result")
+        else:
+            raise Exception(f"Failed to run module: {response.text}")
 
 
 class ModuleProxy:
-    @staticmethod
-    def get_module_proxy(pod_name, module_name):
-        # Establish gRPC connection with the pod
-        channel = grpc.insecure_channel(f"{pod_name}:30051")
-        stub = module_service_pb2_grpc.ModuleServiceStub(channel)
+    def __init__(self, pod_manager_url: str):
+        self.pod_manager = PodManagerProxy(pod_manager_url)
+
+    def get_module_proxy(self, module_name):
+        """Creates a proxy object for the module running in the pod."""
+        self.pod_manager.create_pod(module_name)
 
         class ModuleRemoteProxy:
-            def __getattr__(self, name):
+            def __init__(self, module_name, pod_manager):
+                self.module_name = module_name
+                self.pod_manager = pod_manager
+
+            def __getattr__(self, method_name):
                 def method(*args, **kwargs):
-                    # Send gRPC request to the pod
-                    return stub.execute_method(name, *args, **kwargs)
+                    # Forward method call to the pod via the pod manager
+                    return self.pod_manager.run_module(
+                        self.module_name, method_name, list(args)
+                    )
 
                 return method
 
-        return ModuleRemoteProxy()
+        return ModuleRemoteProxy(module_name, self.pod_manager)
+
+
+# Example usage
+if __name__ == "__main__":
+    pod_manager_url = "http://smartimport.apps.bcstechnology.com.au/"
+    proxy = ModuleProxy(pod_manager_url)
+    numpy_proxy = proxy.get_module_proxy("numpy")
+
+    # Call methods of the numpy module remotely
+    result = numpy_proxy.array([1, 2, 3])
+    print(f"Result: {result}")
