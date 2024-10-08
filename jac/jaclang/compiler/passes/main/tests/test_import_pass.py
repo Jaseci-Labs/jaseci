@@ -98,7 +98,7 @@ class ImportPassPassTests(TestCase):
                     )
                 )
             ),
-            11,
+            7,
         )
 
     # def test_py_resolve_list(self) -> None:
