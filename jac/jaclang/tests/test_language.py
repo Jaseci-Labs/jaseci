@@ -1059,7 +1059,7 @@ class JacLanguageTests(TestCase):
             )
 
     def test_dynamic_architype_creation(self) -> None:
-        """Test that the walker and node can be spawned and behaves as expected."""
+        """Test that the walker and node can be created dynamically."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         cli.run(self.fixture_abs_path("create_dynamic_architype.jac"))
@@ -1073,6 +1073,22 @@ class JacLanguageTests(TestCase):
             expected_spawned_walker in output,
             f"Expected '{expected_spawned_walker}' in output.",
         )
+
+    def test_dynamic_architype_creation_rel_import(self) -> None:
+        """Test that the walker and node can be created dynamically, with relative import."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("arch_rel_import_creation.jac"))
+
+        output = captured_output.getvalue().strip().splitlines()
+        # Expected outputs for spawned entities
+        expected_values = ["DynamicWalker Started", "UtilityNode Data: 42"]
+        for val in expected_values:
+            # Check for the spawned messages
+            self.assertTrue(
+                val in output,
+                f"Expected '{val}' in output.",
+            )
 
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
