@@ -118,6 +118,7 @@ class JacMachine:
         module_name: Optional[str] = None,
         base_path: Optional[str] = None,
         cachable: bool = False,
+        keep_temporary_files: bool = False,
     ) -> Optional[types.ModuleType]:
         """Dynamically creates architypes (nodes, walkers, etc.) from Jac source code."""
         from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
@@ -164,7 +165,8 @@ class JacMachine:
             logger.error(f"Error importing dynamic module '{module_name}': {e}")
             return None
         finally:
-            os.remove(tmp_file_path)
+            if not keep_temporary_files and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
 
     def update_walker(
         self, module_name: str, items: Optional[dict[str, Union[str, Optional[str]]]]
