@@ -877,19 +877,23 @@ class JacFeatureImpl(
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
-                connected_edges += Jac.get_edges(
+                edges = Jac.get_edges(
                     node.__jac__, dir, filter_func, target_obj=targ_obj_set
                 )
-            return list(set(connected_edges))
+                connected_edges.extend(
+                    edge for edge in edges if edge not in connected_edges
+                )
+            return connected_edges
         else:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
-                connected_nodes.extend(
-                    Jac.edges_to_nodes(
-                        node.__jac__, dir, filter_func, target_obj=targ_obj_set
-                    )
+                nodes = Jac.edges_to_nodes(
+                    node.__jac__, dir, filter_func, target_obj=targ_obj_set
                 )
-            return list(set(connected_nodes))
+                connected_nodes.extend(
+                    node for node in nodes if node not in connected_nodes
+                )
+            return connected_nodes
 
     @staticmethod
     @hookimpl
