@@ -80,6 +80,18 @@ class JacLanguageTests(TestCase):
             "\nValue: 5\nValue: 6\nValue: 7\nFinal Value: 8\nDone walking.\n",
         )
 
+    def test_simple_walk_by_edge(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("micro.simple_walk_by_edge", base_path=self.examples_abs_path(""))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "Visited 1\nVisited 2\n",
+        )
+
     def test_guess_game(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
@@ -101,7 +113,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             stdout_value,
-            "<link href='{'new_val': 3, 'where': 'from_foo'} rel='stylesheet'\nTrue\n",
+            "<link href='{'new_val': 3, 'where': 'from_foo'}' rel='stylesheet'>\nTrue\n",
         )
 
     def test_chandra_bugs2(self) -> None:
@@ -211,6 +223,20 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count(r"\\\\"), 2)
         self.assertEqual(stdout_value.count("<class 'bytes'>"), 3)
+
+    def test_fstring_multiple_quotation(self) -> None:
+        """Test fstring with multiple quotation."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import(
+            "compiler/passes/main/tests/fixtures/fstrings",
+            base_path=self.fixture_abs_path("../../"),
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "11 13 12 12 11 12 12")
+        self.assertEqual(stdout_value.split("\n")[1], '12 12 """hello"""  18 18')
+        self.assertEqual(stdout_value.split("\n")[2], "11 12 11 12 11 18 23")
 
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
@@ -511,13 +537,11 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
-            '"""Enum for shape types"""\nenum ShapeType{ CIRCLE = "Circle",\n',
+            '"""Enum for shape types"""\nenum ShapeType{ CIRCLE = \'Circle\',\n',
             output,
         )
-        self.assertIn(
-            "UNKNOWN = \"Unknown\",\n::py::\nprint('hello')\n::py::\n }", output
-        )
-        self.assertIn('assert x == 5 , "x should be equal to 5" ;', output)
+        self.assertIn("\nUNKNOWN = 'Unknown',\n::py::\nprint('hello')\n::", output)
+        self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
@@ -792,7 +816,7 @@ class JacLanguageTests(TestCase):
         settings.print_py_raised_ast = True
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
-        self.assertIn(' |   +-- String - "Loop compl', jac_ast)
+        self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
         self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 269)
         captured_output = io.StringIO()
         sys.stdout = captured_output

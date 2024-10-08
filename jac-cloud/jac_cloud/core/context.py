@@ -65,10 +65,6 @@ class JaseciContext(ExecutionContext):
     base: ExecutionContext
     request: Request
 
-    def validate_access(self) -> bool:
-        """Validate access."""
-        return self.root.has_read_access(self.entry_node)
-
     def close(self) -> None:
         """Clean up context."""
         self.mem.close()
