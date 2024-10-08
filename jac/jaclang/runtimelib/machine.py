@@ -127,23 +127,17 @@ class JacMachine:
 
         if base_path and not os.path.exists(base_path):
             os.makedirs(base_path)
-
         if not module_name:
-            module_name = "_dynamic_module_"
-
-            with tempfile.NamedTemporaryFile(
-                mode="w",
-                suffix=".jac",
-                prefix=module_name,
-                dir=base_path,
-                delete=False,
-            ) as tmp_file:
-                tmp_file_path = tmp_file.name
-                tmp_file.write(source_code)
-        else:
-            tmp_file_path = os.path.join(base_path, module_name + ".jac")
-            with open(tmp_file_path, "w") as f:
-                f.write(source_code)
+            module_name = f"_dynamic_module_{len(self.loaded_modules)}"
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".jac",
+            prefix=module_name + "_",
+            dir=base_path,
+            delete=False,
+        ) as tmp_file:
+            tmp_file_path = tmp_file.name
+            tmp_file.write(source_code)
 
         try:
             importer = JacImporter(self)
@@ -164,7 +158,7 @@ class JacMachine:
             import_result = importer.run_import(spec, reload=False)
             module = import_result.ret_mod
 
-            self.loaded_modules[tmp_module_name] = module
+            self.loaded_modules[module_name] = module
             return module
         except Exception as e:
             logger.error(f"Error importing dynamic module '{module_name}': {e}")
