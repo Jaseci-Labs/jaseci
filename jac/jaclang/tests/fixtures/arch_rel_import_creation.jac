@@ -19,7 +19,7 @@ here.display_data();
 with entry {
     node_arch = JacMachine.get().create_architype_from_source(
         dynamic_module_source,
-        module_name="dynamic_module
+        module_name="dynamic_module"
     );
     walker_obj = JacMachine.get().spawn_walker(
         'DynamicWalker',
