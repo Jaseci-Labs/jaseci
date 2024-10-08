@@ -254,16 +254,26 @@ class PyImportPass(JacImportPass):
         )
 
         if imported_mod:
-            if imp_node.loc.mod_path == imported_mod.loc.mod_path:
-                self.__debug_print(
-                    f"Cycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
-                )
-                return
-            elif imported_mod.name == "builtins":
+            parent: Optional[ast.Module] = imported_mod
+            while parent is not None:
+                if parent.loc.mod_path == imported_mod.loc.mod_path:
+                    self.__debug_print(
+                        f"Cycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
+                    )
+                    return
+                else:
+                    if imported_mod.parent:
+                        assert isinstance(imported_mod.parent, ast.Module)
+                        parent = imported_mod.parent
+                    else:
+                        parent = None
+
+            if imported_mod.name == "builtins":
                 self.__debug_print(
                     f"Ignoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
                 )
                 return
+
             self.__debug_print(
                 f"Attaching {imported_mod.name} into {self.__get_current_module(imp_node)}"
             )
