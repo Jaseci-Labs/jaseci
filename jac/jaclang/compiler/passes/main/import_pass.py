@@ -199,7 +199,8 @@ class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
 
     def __debug_print(self, msg: str) -> None:
-        self.log_info("[PyImportPass] " + msg)
+        if settings.py_import_pass_debug:
+            self.log_info("[PyImportPass] " + msg)
 
     def before_pass(self) -> None:
         """Only run pass if settings are set to raise python."""
@@ -227,17 +228,16 @@ class PyImportPass(JacImportPass):
 
         if imp_node.is_py and not i.sub_module:
             if imp_node.from_loc:
-                self.__debug_print(
-                    f'Processing import from node at href={self.__get_current_module(imp_node)} \
-                    path="{imp_node.loc.mod_path}, {imp_node.loc}"'
-                )
+                msg = "Processing import from node at href="
+                msg += self.__get_current_module(imp_node)
+                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                self.__debug_print(msg)
                 self.__process_import_from(imp_node)
             else:
-                self.__debug_print(
-                    f'Processing import node at href=\
-                        {self.__get_current_module(imp_node)} \
-                        path="{imp_node.loc.mod_path}, {imp_node.loc}"'
-                )
+                msg = "Processing import node at href="
+                msg += self.__get_current_module(imp_node)
+                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                self.__debug_print(msg)
                 self.__process_import(imp_node)
 
     def __process_import_from(self, imp_node: ast.Import) -> None:
@@ -254,6 +254,16 @@ class PyImportPass(JacImportPass):
         )
 
         if imported_mod:
+            if imp_node.loc.mod_path == imported_mod.loc.mod_path:
+                self.__debug_print(
+                    f"Cycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
+            elif imported_mod.name == "builtins":
+                self.__debug_print(
+                    f"Ignoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
             self.__debug_print(
                 f"Attaching {imported_mod.name} into {self.__get_current_module(imp_node)}"
             )
@@ -288,6 +298,16 @@ class PyImportPass(JacImportPass):
             ),
         )
         if imported_mod:
+            if imp_node.loc.mod_path == imported_mod.loc.mod_path:
+                self.__debug_print(
+                    f"Cycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
+            elif imported_mod.name == "builtins":
+                self.__debug_print(
+                    f"Ignoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
             self.__debug_print(
                 f"Attaching {imported_mod.name} into {self.__get_current_module(imp_node)}"
             )
