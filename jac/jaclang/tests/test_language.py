@@ -1147,3 +1147,12 @@ class JacLanguageTests(TestCase):
         self.assertIn(
             "Exiting at the end of walker:  test_node(value=", stdout_value[11]
         )
+
+    def test_visit_order(self) -> None:
+        """Test entry and exit behavior of walker."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("visit_order", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)
