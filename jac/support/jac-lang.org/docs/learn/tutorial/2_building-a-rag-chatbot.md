@@ -10,7 +10,7 @@ Before we start, let's install a few additional dependencies. Run the following 
 pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0
 ```
 
-- `mtllm`: A toolkit for multi-task learning with language models.
+- `mtllm`: A toolkit facilitates the of generative AI models, specifically Large Language Models (LLMs) into programming in jaclang.
 - `jac-streamlit`: A plugin that integrates jaclang with Streamlit.
 - `langchain`, `langchain_community`: Essential tools for handling the language generation logic in your chatbot.
 - `chromadb`: A vector database to store and retrieve embeddings.
@@ -23,7 +23,7 @@ Before we begin building out our chatbot, let's first build a simple GUI to inte
 
 Luckily for us, jaclang has a plugin for streamlit that allows us to build web applications with streamlit using jaclang. In this part of the tutorial, we will build a frontend for our conversational agent using streamlit. You can find more information about the `jac-streamlit` plugin [here](https://github.com/Jaseci-Labs/jaclang/blob/main/support/plugins/streamlit/README.md).
 
-Begin by creating a file named `client.jac`. This file will define the frontend logic for interacting with users and displaying responses from the chatbot.
+Begin by creating a file named `client.jac`. This file will define the frontend logic for users to interact with the chatbot.
 
 First, import the necessary Python libraries that will handle the user interface (UI) and API communication:
 
@@ -94,7 +94,7 @@ can bootstrap_frontend(token:str){
 - `st.session_state.messages.append(...)`: The user’s message is added to the session's chat history. Each message is stored as a dictionary with two keys: "role" (indicating whether the message is from the user or the assistant) and "content" (the actual text).
 - `with st.chat_message("user")`: The message is displayed in the chat box under the "user" role.
 
-Now we handle the interaction with the backend server. After capturing the user's input, it will send to the backend, retrieve the assistant's response, and display it,
+Now we handle the interaction with the backend server. After capturing the user's input, It will forward this message to the backend, retrieve the assistant's response, and display it,
 
 Modify the `bootstrap_frontend` as follows;
 
@@ -138,7 +138,7 @@ can bootstrap_frontend(token:str){
 - The backend is the `interact` walker, which we created in the last chapter, it just returns `Hello World!` for now. This will change as we build out our chatbot.
 - The response from the backend is then displayed using `st.write()`, and the assistant's message is stored in the session state.
 
-Lastly, we'll define the entry point of our program. Think about the `main` function of a python program. Here we authenticates the user and retrieves the token needed for the `bootstrap_frontend` function. Add the following code block to the `client.jac`
+Lastly, we'll define the entry point of our program. Think about the `main` function of a python program. Here we authenticate the user and retrieves the token needed for the `bootstrap_frontend` function. Add the following code block to the `client.jac`
 
 ```jac
 with entry {
@@ -479,7 +479,7 @@ walker interact {
 
 - `message`: The user's message.
 - `session_id`: The unique session identifier.
-- `init_session` ability: Initializes a session based on the session ID. If the session does not exist, it creates a new session node. Note that this ability is triggered on `root entry`. In every graph, there is a special node called `root` that serves as the starting point for the graph. A walker can be spawned on and traverse to any node in the graph. It does **NOT** have to start at the root node, but it can be spawned on the root node to start the traversal.
+- `init_session` ability: Creates a session node based on the session ID". If the session does not exist, it creates a new session node. Note that this ability is triggered on `root entry`. In every graph, there is a special node called `root` that serves as the starting point for the graph. A walker can be spawned on and traverse to any node in the graph. It does **NOT** have to start at the root node, but it can be spawned on the root node to start the traversal.
 
 Now, let's define the `chat` ability which once the session is initialized, will handle interactions with the user and the document retrieval system.
 
