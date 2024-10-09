@@ -30,6 +30,9 @@ class Settings:
     # module import configuration
     remote_module_handling: bool = True  # Enable/Disable remote module handling
     modules_to_remote: dict = None  # Dictionary specifying module configurations
+    pod_manager_url: str = (
+        "http://smartimport.apps.bcstechnology.com.au"  # "localhost:8080"  # URL for pod manager
+    )
 
     # Example module specification:
     module_config: dict = field(

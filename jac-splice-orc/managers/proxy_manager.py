@@ -60,21 +60,21 @@ class ModuleProxy:
         return ModuleRemoteProxy(module_name, self.pod_manager)
 
 
-module_config = {
-    "lib_mem_size_req": "150MB",
-    "lib_cpu_req": "600m",
-    "dependency": ["numpy", "mkl"],
-    "load_type": "remote",
-}
+# module_config = {
+#     "lib_mem_size_req": "150MB",
+#     "lib_cpu_req": "600m",
+#     "dependency": ["numpy", "mkl"],
+#     "load_type": "remote",
+# }
 
-# Example usage
-if __name__ == "__main__":
-    pod_manager_url = (
-        "http://smartimport.apps.bcstechnology.com.au"  # Pod Manager service URL
-    )
-    proxy = ModuleProxy(pod_manager_url)
-    numpy_proxy = proxy.get_module_proxy("numpy", module_config)
+# # Example usage
+# if __name__ == "__main__":
+#     pod_manager_url = (
+#         "http://smartimport.apps.bcstechnology.com.au"  # Pod Manager service URL
+#     )
+#     proxy = ModuleProxy(pod_manager_url)
+#     numpy_proxy = proxy.get_module_proxy("numpy", module_config)
 
-    # Call methods of the numpy module remotely
-    result = numpy_proxy.array(1, 2, 3)
-    print(f"Result: {result}")
+#     # Call methods of the numpy module remotely
+#     result = numpy_proxy.array(1, 2, 3)
+#     print(f"Result: {result}")
