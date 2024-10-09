@@ -75,7 +75,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         expect_error: bool = False,
     ) -> dict | int:
         """Call walker post API."""
-        res = post(f"{self.host}/{api}", json=json)
+        res = post(f"{self.host}/walker/{api}", json=json)
 
         if not expect_error:
             res.raise_for_status()
@@ -85,7 +85,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     def check_server(self) -> None:
         """Retrieve OpenAPI Specs JSON."""
-        res = get(f"{self.host}/")
+        res = get(f"{self.host}/healthz/")
         res.raise_for_status()
         self.assertEqual(200, res.status_code)
 
