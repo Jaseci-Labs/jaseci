@@ -248,9 +248,9 @@ class AstSymbolNode(AstNode):
         return self.name_spec.py_ctx_func
 
     @property
-    def sym_type(self) -> str:
+    def expr_type(self) -> str:
         """Get symbol type."""
-        return self.name_spec.sym_type
+        return self.name_spec.expr_type
 
     @property
     def type_sym_tab(self) -> Optional[SymbolTable]:
@@ -346,6 +346,31 @@ class WalkerStmtOnlyNode(AstNode):
 class Expr(AstNode):
     """Expr node type for Jac Ast."""
 
+    def __init__(self) -> None:
+        """Initialize expression node."""
+        self._sym_type: str = "NoType"
+        self._type_sym_tab: Optional[SymbolTable] = None
+
+    @property
+    def expr_type(self) -> str:
+        """Get symbol type."""
+        return self._sym_type
+
+    @expr_type.setter
+    def expr_type(self, sym_type: str) -> None:
+        """Set symbol type."""
+        self._sym_type = sym_type
+
+    @property
+    def type_sym_tab(self) -> Optional[SymbolTable]:
+        """Get type symbol table."""
+        return self._type_sym_tab
+
+    @type_sym_tab.setter
+    def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
+        """Set type symbol table."""
+        self._type_sym_tab = type_sym_tab
+
 
 class AtomExpr(Expr, AstSymbolStubNode):
     """AtomExpr node type for Jac Ast."""
@@ -435,8 +460,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         self._sym_name: str = ""
         self._sym_category: SymbolType = SymbolType.UNKNOWN
         self._py_ctx_func: Type[ast3.AST] = ast3.Load
-        self._sym_type: str = "NoType"
-        self._type_sym_tab: Optional[SymbolTable] = None
+        AtomExpr.__init__(self)
 
     @property
     def sym(self) -> Optional[Symbol]:
@@ -461,7 +485,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     @property
     def clean_type(self) -> str:
         """Get clean type."""
-        ret_type = self.sym_type.replace("builtins.", "").replace("NoType", "")
+        ret_type = self.expr_type.replace("builtins.", "").replace("NoType", "")
         return ret_type
 
     @property
@@ -473,26 +497,6 @@ class NameAtom(AtomExpr, EnumBlockStmt):
     def py_ctx_func(self, py_ctx_func: Type[ast3.AST]) -> None:
         """Set python context function."""
         self._py_ctx_func = py_ctx_func
-
-    @property
-    def sym_type(self) -> str:
-        """Get symbol type."""
-        return self._sym_type
-
-    @sym_type.setter
-    def sym_type(self, sym_type: str) -> None:
-        """Set symbol type."""
-        self._sym_type = sym_type
-
-    @property
-    def type_sym_tab(self) -> Optional[SymbolTable]:
-        """Get type symbol table."""
-        return self._type_sym_tab
-
-    @type_sym_tab.setter
-    def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
-        """Set type symbol table."""
-        self._type_sym_tab = type_sym_tab
 
     @property
     def sem_token(self) -> Optional[tuple[SemTokType, SemTokMod]]:
@@ -2527,6 +2531,7 @@ class AwaitExpr(Expr):
         """Initialize sync statement node."""
         self.target = target
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize sync statement node."""
@@ -2655,6 +2660,7 @@ class BinaryExpr(Expr):
         self.right = right
         self.op = op
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2689,6 +2695,7 @@ class CompareExpr(Expr):
         self.rights = rights
         self.ops = ops
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2720,6 +2727,7 @@ class BoolExpr(Expr):
         self.values = values
         self.op = op
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2750,6 +2758,7 @@ class LambdaExpr(Expr):
         self.signature = signature
         self.body = body
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2782,6 +2791,7 @@ class UnaryExpr(Expr):
         self.operand = operand
         self.op = op
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2809,6 +2819,7 @@ class IfElseExpr(Expr):
         self.value = value
         self.else_value = else_value
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -2839,6 +2850,7 @@ class MultiString(AtomExpr):
         """Initialize multi string expression node."""
         self.strings = strings
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.STRING)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2865,6 +2877,7 @@ class FString(AtomExpr):
         """Initialize fstring expression node."""
         self.parts = parts
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.STRING)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2906,6 +2919,7 @@ class ListVal(AtomExpr):
         """Initialize value node."""
         self.values = values
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2934,6 +2948,7 @@ class SetVal(AtomExpr):
         """Initialize value node."""
         self.values = values
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2962,6 +2977,7 @@ class TupleVal(AtomExpr):
         """Initialize tuple value node."""
         self.values = values
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3005,6 +3021,7 @@ class DictVal(AtomExpr):
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3138,6 +3155,7 @@ class ListCompr(AtomExpr):
         self.out_expr = out_expr
         self.compr = compr
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3213,6 +3231,7 @@ class DictCompr(AtomExpr):
         self.kv_pair = kv_pair
         self.compr = compr
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3251,6 +3270,7 @@ class AtomTrailer(Expr):
         self.is_null_ok = is_null_ok
         self.is_genai = is_genai
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
@@ -3296,6 +3316,7 @@ class AtomUnit(Expr):
         """Initialize atom unit expression node."""
         self.value = value
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
@@ -3323,6 +3344,7 @@ class YieldExpr(Expr):
         self.expr = expr
         self.with_from = with_from
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize yield statement node."""
@@ -3354,6 +3376,7 @@ class FuncCall(Expr):
         self.params = params
         self.genai_call = genai_call
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
@@ -3388,6 +3411,7 @@ class IndexSlice(AtomExpr):
         self.step = step
         self.is_range = is_range
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = True) -> bool:
@@ -3430,6 +3454,7 @@ class ArchRef(AtomExpr):
         self.arch_name = arch_name
         self.arch_type = arch_type
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolNode.__init__(
             self,
             sym_name=arch_name.sym_name,
@@ -3460,6 +3485,7 @@ class EdgeRefTrailer(Expr):
         self.chain = chain
         self.edges_only = edges_only
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
@@ -3489,6 +3515,7 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         WalkerStmtOnlyNode.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
@@ -3619,6 +3646,7 @@ class FilterCompr(AtomExpr):
         self.f_type = f_type
         self.compares = compares
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3656,6 +3684,7 @@ class AssignCompr(AtomExpr):
         """Initialize assign compr expression node."""
         self.assigns = assigns
         AstNode.__init__(self, kid=kid)
+        Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -4214,6 +4243,7 @@ class Literal(Token, AtomExpr):
             pos_end=pos_end,
         )
         AstSymbolStubNode.__init__(self, sym_type=self.SYMBOL_TYPE)
+        Expr.__init__(self)
 
     @property
     def lit_value(
