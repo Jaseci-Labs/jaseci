@@ -633,6 +633,38 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 data["reports"],
             )
 
+    def trigger_visit_sequence(self) -> None:
+        """Test visit sequence."""
+        res = post(f"{self.host}/walker/visit_sequence").json()
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            [
+                "walker entry",
+                "walker enter to root",
+                "a-1",
+                "a-2",
+                "a-3",
+                "a-4",
+                "a-5",
+                "a-6",
+                "b-1",
+                "b-2",
+                "b-3",
+                "b-4",
+                "b-5",
+                "b-6",
+                "c-1",
+                "c-2",
+                "c-3",
+                "c-4",
+                "c-5",
+                "c-6",
+                "walker exit",
+            ],
+            res["returns"],
+        )
+
     async def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -722,3 +754,9 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_upload_file()
+
+        ###################################################
+        #                  VISIT SEQUENCE                 #
+        ###################################################
+
+        self.trigger_visit_sequence()

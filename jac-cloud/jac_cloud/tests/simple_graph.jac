@@ -272,3 +272,60 @@ walker custom_report {
         has auth: bool = False;
     }
 }
+
+walker Walker {
+    class __specs__ {
+        has private: bool = True;
+    }
+}
+
+node Node {
+    has val: str;
+
+    can entry1 with entry {
+        return f"{self.val}-2";
+    }
+
+    # with 'visit_sequence' (string class reference) is not yet supported
+    can entry3 with Walker entry {
+        return f"{self.val}-3";
+    }
+
+    # with 'visit_sequence' (string class reference) is not yet supported
+    can exit1 with Walker exit {
+        return f"{self.val}-4";
+    }
+
+    can exit2 with exit {
+        return f"{self.val}-5";
+    }
+}
+walker visit_sequence:Walker: {
+    can entry1 with entry {
+        return "walker entry";
+    }
+
+    can entry2 with `root entry {
+        here ++> Node(val = "a");
+        here ++> Node(val = "b");
+        here ++> Node(val = "c");
+        visit [-->];
+        return "walker enter to root";
+    }
+
+    can entry3 with Node entry {
+        return f"{here.val}-1";
+    }
+
+    can exit1 with Node exit {
+        return f"{here.val}-6";
+    }
+
+    can exit2 with exit {
+        return "walker exit";
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
