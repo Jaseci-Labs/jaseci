@@ -8,14 +8,14 @@ from typing import Any, Type, cast, get_type_hints
 
 from asyncer import syncify
 
-from fastapi import Depends, FastAPI, File, Response, UploadFile, status
+from fastapi import APIRouter, Depends, FastAPI, File, Response, UploadFile, status
 from fastapi.responses import ORJSONResponse
 
 from jaclang import jac_import
+from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import (
     Anchor,
     Architype,
-    WalkerAnchor,
     WalkerArchitype,
 )
 from jaclang.runtimelib.context import ExecutionContext
@@ -79,7 +79,7 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
     return consts
 
 
-def populate_apis(app: FastAPI, cls: Type[WalkerArchitype]) -> None:
+def populate_apis(router: APIRouter, cls: Type[WalkerArchitype]) -> None:
     """Generate FastAPI endpoint based on WalkerArchitype class."""
     body: dict[str, Any] = {}
     files: dict[str, Any] = {}
@@ -129,8 +129,7 @@ def populate_apis(app: FastAPI, cls: Type[WalkerArchitype]) -> None:
         jctx = ExecutionContext.create(session=getenv("DATABASE", "database"))
         jctx.set_entry_node(node)
 
-        wlk: WalkerAnchor = cls(**body, **pl["files"]).__jac__
-        wlk.spawn_call(jctx.entry_node)
+        Jac.spawn_call(cls(**body, **pl["files"]), jctx.entry_node.architype)
         jctx.close()
 
         return response(jctx.reports, getattr(jctx, "status", 200))
@@ -140,8 +139,8 @@ def populate_apis(app: FastAPI, cls: Type[WalkerArchitype]) -> None:
     ) -> Response:
         return api_entry(None, payload)
 
-    app.post(url := f"/{cls.__name__}", summary=url)(api_root)
-    app.post(url := f"/{cls.__name__}/{{node}}", summary=url)(api_entry)
+    router.post(url := f"/{cls.__name__}", summary=url)(api_root)
+    router.post(url := f"/{cls.__name__}/{{node}}", summary=url)(api_entry)
 
 
 def serve_mini(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
@@ -173,15 +172,20 @@ def serve_mini(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     app = FastAPI()
+    healtz_router = APIRouter(prefix="/healthz", tags=["monitoring"])
+    walker_router = APIRouter(prefix="/walker", tags=["walker"])
 
-    @app.get("/", status_code=status.HTTP_200_OK)
+    @healtz_router.get("/", status_code=status.HTTP_200_OK)
     def healthz() -> Response:
         """Healthz API."""
         return Response()
 
     for obj in module.__dict__.values():
         if isclass(obj) and issubclass(obj, WalkerArchitype):
-            populate_apis(app, obj)
+            populate_apis(walker_router, obj)
+
+    app.include_router(healtz_router)
+    app.include_router(walker_router)
 
     run(app, host=host, port=port)
 

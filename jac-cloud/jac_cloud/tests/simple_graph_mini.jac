@@ -186,7 +186,7 @@ walker visit_nested_node {
 walker delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        nested.__jac__.destroy();
+        Jac.destroy(nested);
         # nested.__jac__.apply();
 
         report [-->(`?Nested)];
@@ -196,7 +196,7 @@ walker delete_nested_node {
 walker delete_nested_edge {
     can enter_root with `root entry {
         nested_edge = :e:[-->][0];
-        nested_edge.__jac__.destroy();
+        Jac.destroy(nested_edge);
 
         report [-->(`?Nested)];
     }

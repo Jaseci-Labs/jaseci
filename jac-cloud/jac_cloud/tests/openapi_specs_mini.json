@@ -5,11 +5,14 @@
         "version": "0.1.0"
     },
     "paths": {
-        "/": {
+        "/healthz/": {
             "get": {
+                "tags": [
+                    "monitoring"
+                ],
                 "summary": "Healthz",
                 "description": "Healthz API.",
-                "operationId": "healthz__get",
+                "operationId": "healthz_healthz__get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -22,10 +25,13 @@
                 }
             }
         },
-        "/create_graph": {
+        "/walker/create_graph": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/create_graph",
-                "operationId": "api_root_create_graph_post",
+                "operationId": "api_root_walker_create_graph_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -38,10 +44,13 @@
                 }
             }
         },
-        "/create_graph/{node}": {
+        "/walker/create_graph/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/create_graph/{node}",
-                "operationId": "api_entry_create_graph__node__post",
+                "operationId": "api_entry_walker_create_graph__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -82,10 +91,13 @@
                 }
             }
         },
-        "/traverse_graph": {
+        "/walker/traverse_graph": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/traverse_graph",
-                "operationId": "api_root_traverse_graph_post",
+                "operationId": "api_root_walker_traverse_graph_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -98,10 +110,13 @@
                 }
             }
         },
-        "/traverse_graph/{node}": {
+        "/walker/traverse_graph/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/traverse_graph/{node}",
-                "operationId": "api_entry_traverse_graph__node__post",
+                "operationId": "api_entry_walker_traverse_graph__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -142,10 +157,13 @@
                 }
             }
         },
-        "/detach_node": {
+        "/walker/detach_node": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/detach_node",
-                "operationId": "api_root_detach_node_post",
+                "operationId": "api_root_walker_detach_node_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -158,10 +176,13 @@
                 }
             }
         },
-        "/detach_node/{node}": {
+        "/walker/detach_node/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/detach_node/{node}",
-                "operationId": "api_entry_detach_node__node__post",
+                "operationId": "api_entry_walker_detach_node__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -202,10 +223,13 @@
                 }
             }
         },
-        "/update_graph": {
+        "/walker/update_graph": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/update_graph",
-                "operationId": "api_root_update_graph_post",
+                "operationId": "api_root_walker_update_graph_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -218,10 +242,13 @@
                 }
             }
         },
-        "/update_graph/{node}": {
+        "/walker/update_graph/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/update_graph/{node}",
-                "operationId": "api_entry_update_graph__node__post",
+                "operationId": "api_entry_walker_update_graph__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -262,10 +289,13 @@
                 }
             }
         },
-        "/create_nested_node": {
+        "/walker/create_nested_node": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/create_nested_node",
-                "operationId": "api_root_create_nested_node_post",
+                "operationId": "api_root_walker_create_nested_node_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -278,10 +308,13 @@
                 }
             }
         },
-        "/create_nested_node/{node}": {
+        "/walker/create_nested_node/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/create_nested_node/{node}",
-                "operationId": "api_entry_create_nested_node__node__post",
+                "operationId": "api_entry_walker_create_nested_node__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -322,10 +355,13 @@
                 }
             }
         },
-        "/update_nested_node": {
+        "/walker/update_nested_node": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/update_nested_node",
-                "operationId": "api_root_update_nested_node_post",
+                "operationId": "api_root_walker_update_nested_node_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -338,10 +374,13 @@
                 }
             }
         },
-        "/update_nested_node/{node}": {
+        "/walker/update_nested_node/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/update_nested_node/{node}",
-                "operationId": "api_entry_update_nested_node__node__post",
+                "operationId": "api_entry_walker_update_nested_node__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -382,10 +421,13 @@
                 }
             }
         },
-        "/detach_nested_node": {
+        "/walker/detach_nested_node": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/detach_nested_node",
-                "operationId": "api_root_detach_nested_node_post",
+                "operationId": "api_root_walker_detach_nested_node_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -398,10 +440,13 @@
                 }
             }
         },
-        "/detach_nested_node/{node}": {
+        "/walker/detach_nested_node/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/detach_nested_node/{node}",
-                "operationId": "api_entry_detach_nested_node__node__post",
+                "operationId": "api_entry_walker_detach_nested_node__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -442,10 +487,13 @@
                 }
             }
         },
-        "/visit_nested_node": {
+        "/walker/visit_nested_node": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/visit_nested_node",
-                "operationId": "api_root_visit_nested_node_post",
+                "operationId": "api_root_walker_visit_nested_node_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -458,10 +506,13 @@
                 }
             }
         },
-        "/visit_nested_node/{node}": {
+        "/walker/visit_nested_node/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/visit_nested_node/{node}",
-                "operationId": "api_entry_visit_nested_node__node__post",
+                "operationId": "api_entry_walker_visit_nested_node__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -502,10 +553,13 @@
                 }
             }
         },
-        "/delete_nested_node": {
+        "/walker/delete_nested_node": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/delete_nested_node",
-                "operationId": "api_root_delete_nested_node_post",
+                "operationId": "api_root_walker_delete_nested_node_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -518,10 +572,13 @@
                 }
             }
         },
-        "/delete_nested_node/{node}": {
+        "/walker/delete_nested_node/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/delete_nested_node/{node}",
-                "operationId": "api_entry_delete_nested_node__node__post",
+                "operationId": "api_entry_walker_delete_nested_node__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -562,10 +619,13 @@
                 }
             }
         },
-        "/delete_nested_edge": {
+        "/walker/delete_nested_edge": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/delete_nested_edge",
-                "operationId": "api_root_delete_nested_edge_post",
+                "operationId": "api_root_walker_delete_nested_edge_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -578,10 +638,13 @@
                 }
             }
         },
-        "/delete_nested_edge/{node}": {
+        "/walker/delete_nested_edge/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/delete_nested_edge/{node}",
-                "operationId": "api_entry_delete_nested_edge__node__post",
+                "operationId": "api_entry_walker_delete_nested_edge__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -622,10 +685,13 @@
                 }
             }
         },
-        "/allow_other_root_access": {
+        "/walker/allow_other_root_access": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/allow_other_root_access",
-                "operationId": "api_root_allow_other_root_access_post",
+                "operationId": "api_root_walker_allow_other_root_access_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -658,10 +724,13 @@
                 }
             }
         },
-        "/allow_other_root_access/{node}": {
+        "/walker/allow_other_root_access/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/allow_other_root_access/{node}",
-                "operationId": "api_entry_allow_other_root_access__node__post",
+                "operationId": "api_entry_walker_allow_other_root_access__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -712,10 +781,13 @@
                 }
             }
         },
-        "/disallow_other_root_access": {
+        "/walker/disallow_other_root_access": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/disallow_other_root_access",
-                "operationId": "api_root_disallow_other_root_access_post",
+                "operationId": "api_root_walker_disallow_other_root_access_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -748,10 +820,13 @@
                 }
             }
         },
-        "/disallow_other_root_access/{node}": {
+        "/walker/disallow_other_root_access/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/disallow_other_root_access/{node}",
-                "operationId": "api_entry_disallow_other_root_access__node__post",
+                "operationId": "api_entry_walker_disallow_other_root_access__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -802,10 +877,13 @@
                 }
             }
         },
-        "/post_no_body": {
+        "/walker/post_no_body": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_no_body",
-                "operationId": "api_root_post_no_body_post",
+                "operationId": "api_root_walker_post_no_body_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -818,10 +896,13 @@
                 }
             }
         },
-        "/post_no_body/{node}": {
+        "/walker/post_no_body/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_no_body/{node}",
-                "operationId": "api_entry_post_no_body__node__post",
+                "operationId": "api_entry_walker_post_no_body__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -862,10 +943,13 @@
                 }
             }
         },
-        "/post_with_body": {
+        "/walker/post_with_body": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_with_body",
-                "operationId": "api_root_post_with_body_post",
+                "operationId": "api_root_walker_post_with_body_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -898,10 +982,13 @@
                 }
             }
         },
-        "/post_with_body/{node}": {
+        "/walker/post_with_body/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_with_body/{node}",
-                "operationId": "api_entry_post_with_body__node__post",
+                "operationId": "api_entry_walker_post_with_body__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -952,10 +1039,13 @@
                 }
             }
         },
-        "/get_no_body": {
+        "/walker/get_no_body": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/get_no_body",
-                "operationId": "api_root_get_no_body_post",
+                "operationId": "api_root_walker_get_no_body_post",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -968,10 +1058,13 @@
                 }
             }
         },
-        "/get_no_body/{node}": {
+        "/walker/get_no_body/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/get_no_body/{node}",
-                "operationId": "api_entry_get_no_body__node__post",
+                "operationId": "api_entry_walker_get_no_body__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1012,10 +1105,13 @@
                 }
             }
         },
-        "/get_with_query": {
+        "/walker/get_with_query": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/get_with_query",
-                "operationId": "api_root_get_with_query_post",
+                "operationId": "api_root_walker_get_with_query_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1048,10 +1144,13 @@
                 }
             }
         },
-        "/get_with_query/{node}": {
+        "/walker/get_with_query/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/get_with_query/{node}",
-                "operationId": "api_entry_get_with_query__node__post",
+                "operationId": "api_entry_walker_get_with_query__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1102,10 +1201,13 @@
                 }
             }
         },
-        "/get_all_query": {
+        "/walker/get_all_query": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/get_all_query",
-                "operationId": "api_root_get_all_query_post",
+                "operationId": "api_root_walker_get_all_query_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1138,10 +1240,13 @@
                 }
             }
         },
-        "/get_all_query/{node}": {
+        "/walker/get_all_query/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/get_all_query/{node}",
-                "operationId": "api_entry_get_all_query__node__post",
+                "operationId": "api_entry_walker_get_all_query__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1192,10 +1297,13 @@
                 }
             }
         },
-        "/post_path_var": {
+        "/walker/post_path_var": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_path_var",
-                "operationId": "api_root_post_path_var_post",
+                "operationId": "api_root_walker_post_path_var_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1228,10 +1336,13 @@
                 }
             }
         },
-        "/post_path_var/{node}": {
+        "/walker/post_path_var/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_path_var/{node}",
-                "operationId": "api_entry_post_path_var__node__post",
+                "operationId": "api_entry_walker_post_path_var__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1282,10 +1393,13 @@
                 }
             }
         },
-        "/combination1": {
+        "/walker/combination1": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/combination1",
-                "operationId": "api_root_combination1_post",
+                "operationId": "api_root_walker_combination1_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1318,10 +1432,13 @@
                 }
             }
         },
-        "/combination1/{node}": {
+        "/walker/combination1/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/combination1/{node}",
-                "operationId": "api_entry_combination1__node__post",
+                "operationId": "api_entry_walker_combination1__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1372,10 +1489,13 @@
                 }
             }
         },
-        "/combination2": {
+        "/walker/combination2": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/combination2",
-                "operationId": "api_root_combination2_post",
+                "operationId": "api_root_walker_combination2_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1408,10 +1528,13 @@
                 }
             }
         },
-        "/combination2/{node}": {
+        "/walker/combination2/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/combination2/{node}",
-                "operationId": "api_entry_combination2__node__post",
+                "operationId": "api_entry_walker_combination2__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1462,15 +1585,18 @@
                 }
             }
         },
-        "/post_with_file": {
+        "/walker/post_with_file": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_with_file",
-                "operationId": "api_root_post_with_file_post",
+                "operationId": "api_root_walker_post_with_file_post",
                 "requestBody": {
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/Body_api_root_post_with_file_post"
+                                "$ref": "#/components/schemas/Body_api_root_walker_post_with_file_post"
                             }
                         }
                     },
@@ -1498,10 +1624,13 @@
                 }
             }
         },
-        "/post_with_file/{node}": {
+        "/walker/post_with_file/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_with_file/{node}",
-                "operationId": "api_entry_post_with_file__node__post",
+                "operationId": "api_entry_walker_post_with_file__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1525,7 +1654,7 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/Body_api_entry_post_with_file__node__post"
+                                "$ref": "#/components/schemas/Body_api_entry_walker_post_with_file__node__post"
                             }
                         }
                     }
@@ -1552,15 +1681,18 @@
                 }
             }
         },
-        "/post_with_body_and_file": {
+        "/walker/post_with_body_and_file": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_with_body_and_file",
-                "operationId": "api_root_post_with_body_and_file_post",
+                "operationId": "api_root_walker_post_with_body_and_file_post",
                 "requestBody": {
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/Body_api_root_post_with_body_and_file_post"
+                                "$ref": "#/components/schemas/Body_api_root_walker_post_with_body_and_file_post"
                             }
                         }
                     },
@@ -1588,10 +1720,13 @@
                 }
             }
         },
-        "/post_with_body_and_file/{node}": {
+        "/walker/post_with_body_and_file/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/post_with_body_and_file/{node}",
-                "operationId": "api_entry_post_with_body_and_file__node__post",
+                "operationId": "api_entry_walker_post_with_body_and_file__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1615,7 +1750,7 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/Body_api_entry_post_with_body_and_file__node__post"
+                                "$ref": "#/components/schemas/Body_api_entry_walker_post_with_body_and_file__node__post"
                             }
                         }
                     }
@@ -1642,10 +1777,13 @@
                 }
             }
         },
-        "/custom_status_code": {
+        "/walker/custom_status_code": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/custom_status_code",
-                "operationId": "api_root_custom_status_code_post",
+                "operationId": "api_root_walker_custom_status_code_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1678,10 +1816,13 @@
                 }
             }
         },
-        "/custom_status_code/{node}": {
+        "/walker/custom_status_code/{node}": {
             "post": {
+                "tags": [
+                    "walker"
+                ],
                 "summary": "/custom_status_code/{node}",
-                "operationId": "api_entry_custom_status_code__node__post",
+                "operationId": "api_entry_walker_custom_status_code__node__post",
                 "parameters": [
                     {
                         "name": "node",
@@ -1735,7 +1876,7 @@
     },
     "components": {
         "schemas": {
-            "Body_api_entry_post_with_body_and_file__node__post": {
+            "Body_api_entry_walker_post_with_body_and_file__node__post": {
                 "properties": {
                     "body": {
                         "type": "string",
@@ -1762,9 +1903,9 @@
                     "single",
                     "multiple"
                 ],
-                "title": "Body_api_entry_post_with_body_and_file__node__post"
+                "title": "Body_api_entry_walker_post_with_body_and_file__node__post"
             },
-            "Body_api_entry_post_with_file__node__post": {
+            "Body_api_entry_walker_post_with_file__node__post": {
                 "properties": {
                     "single": {
                         "type": "string",
@@ -1797,9 +1938,9 @@
                     "single",
                     "multiple"
                 ],
-                "title": "Body_api_entry_post_with_file__node__post"
+                "title": "Body_api_entry_walker_post_with_file__node__post"
             },
-            "Body_api_root_post_with_body_and_file_post": {
+            "Body_api_root_walker_post_with_body_and_file_post": {
                 "properties": {
                     "body": {
                         "type": "string",
@@ -1826,9 +1967,9 @@
                     "single",
                     "multiple"
                 ],
-                "title": "Body_api_root_post_with_body_and_file_post"
+                "title": "Body_api_root_walker_post_with_body_and_file_post"
             },
-            "Body_api_root_post_with_file_post": {
+            "Body_api_root_walker_post_with_file_post": {
                 "properties": {
                     "single": {
                         "type": "string",
@@ -1861,7 +2002,7 @@
                     "single",
                     "multiple"
                 ],
-                "title": "Body_api_root_post_with_file_post"
+                "title": "Body_api_root_walker_post_with_file_post"
             },
             "HTTPValidationError": {
                 "properties": {
