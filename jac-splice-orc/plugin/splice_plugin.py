@@ -1,18 +1,23 @@
+"""JAC Splice-Orchestrator Plugin."""
+
 import types
 from typing import Optional, Union
 
-from jaclang.plugin.default import hookimpl
-from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.settings import settings
+
 from managers.proxy_manager import ModuleProxy
+
 import pluggy
+
 
 hookimpl = pluggy.HookimplMarker("jac")
 
 
 class SpliceOrcPlugin:
+    """JAC Splice-Orchestrator Plugin."""
+
     @staticmethod
     @hookimpl
     def jac_import(

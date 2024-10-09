@@ -14,7 +14,7 @@ metadata:
   labels:
     app: pod-manager
 spec:
-  replicas: 1  
+  replicas: 1
   selector:
     matchLabels:
       app: pod-manager
@@ -26,9 +26,9 @@ spec:
       serviceAccountName: smartimportsa  # Use the service account
       containers:
       - name: pod-manager
-        image: ashishmahendra/jac-pod-manager:0.9 
+        image: ashishmahendra/jac-pod-manager:0.9
         ports:
-        - containerPort: 8000 
+        - containerPort: 8000
 
 ---
 
@@ -42,6 +42,6 @@ spec:
     app: pod-manager
   ports:
     - protocol: TCP
-      port: 8000 
-      targetPort: 8000  
-  type: LoadBalancer  
+      port: 8000
+      targetPort: 8000
+  type: LoadBalancer
