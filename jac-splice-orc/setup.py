@@ -8,6 +8,7 @@ setup(
     author_email="jason@jaseci.org",
     packages=find_packages(),
     install_requires=[
+        "jaclang~=0.7.17",
         "fastapi",
         "uvicorn",
         "grpcio",
@@ -16,8 +17,8 @@ setup(
         "pydantic",
     ],
     entry_points={
-        "jaclang.plugins": [
-            "splice_orc = plugin.splice_plugin",
+        "jac": [
+            "splice_orc = plugin.splice_plugin:SpliceOrcPlugin",
         ],
     },
     python_requires=">=3.11",

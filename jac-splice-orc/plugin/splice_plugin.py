@@ -2,6 +2,7 @@ import types
 from typing import Optional, Union
 
 from jaclang.plugin.default import hookimpl
+from jaclang.plugin.spec import JacBuiltin, JacCmdSpec, JacFeatureSpec, P, T
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.settings import settings
@@ -76,6 +77,3 @@ class SpliceOrcPlugin:
             if absorb or not items
             else tuple(import_result.ret_items)
         )
-
-
-plugin = SpliceOrcPlugin()
