@@ -10,6 +10,7 @@ from typing import (
     ClassVar,
     Iterable,
     Mapping,
+    Self,
     TypeVar,
     cast,
     get_args,
@@ -31,7 +32,6 @@ from jaclang.runtimelib.architype import (
     NodeAnchor as _NodeAnchor,
     NodeArchitype as _NodeArchitype,
     Permission as _Permission,
-    TANCH,
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
 )
@@ -396,7 +396,7 @@ class BaseAnchor:
         """Check if populated."""
         return "architype" in self.__dict__
 
-    def make_stub(self: "BaseAnchor | TANCH") -> "BaseAnchor | TANCH":
+    def make_stub(self) -> Self:
         """Return unsynced copy of anchor."""
         if self.is_populated():
             unloaded = object.__new__(self.__class__)
@@ -496,7 +496,7 @@ class BaseAnchor:
             ############################################################
             #                   POPULATE ADDED EDGES                   #
             ############################################################
-            added_edges: set[BaseAnchor | Anchor] = (
+            added_edges: set[BaseAnchor] = (
                 changes.get("$addToSet", {}).get("edges", {}).get("$each", [])
             )
             if added_edges:
@@ -514,7 +514,7 @@ class BaseAnchor:
             ############################################################
             #                  POPULATE REMOVED EDGES                  #
             ############################################################
-            pulled_edges: set[BaseAnchor | Anchor] = (
+            pulled_edges: set[BaseAnchor] = (
                 changes.get("$pull", {}).get("edges", {}).get("$in", [])
             )
             if pulled_edges:
@@ -611,7 +611,7 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
     """Node Anchor."""
 
     architype: "NodeArchitype"
-    edges: list["EdgeAnchor"]
+    edges: list["EdgeAnchor"]  # type: ignore[assignment]
 
     class Collection(BaseCollection["NodeAnchor"]):
         """NodeAnchor collection interface."""
@@ -768,7 +768,6 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     architype: "WalkerArchitype"
     path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
-    returns: list[Any] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     disengaged: bool = False
 

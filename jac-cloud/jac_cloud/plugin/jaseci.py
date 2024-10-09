@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from contextlib import suppress
-from dataclasses import Field, MISSING, fields
+from dataclasses import Field, MISSING, fields, is_dataclass
 from functools import wraps
 from os import getenv
 from re import compile
@@ -47,7 +47,6 @@ from ..core.architype import (
     ObjectArchitype,
     Permission,
     Root,
-    WalkerAnchor,
     WalkerArchitype,
 )
 from ..core.context import ContextResponse, ExecutionContext, JaseciContext
@@ -94,7 +93,7 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
     return consts
 
 
-def populate_apis(cls: Type[WalkerArchitype]) -> None:
+def populate_apis(cls: Type[Architype]) -> None:
     """Generate FastAPI endpoint based on WalkerArchitype class."""
     if (specs := get_specs(cls)) and not specs.private:
         path: str = specs.path or ""
@@ -113,18 +112,19 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 as_query += PATH_VARIABLE_REGEX.findall(path)
 
         hintings = get_type_hints(cls)
-        for f in fields(cls):
-            f_name = f.name
-            f_type = hintings[f_name]
-            if f_type in FILE_TYPES:
-                files[f_name] = gen_model_field(f_type, f, True)
-            else:
-                consts = gen_model_field(f_type, f)
-
-                if as_query == "*" or f_name in as_query:
-                    query[f_name] = consts
+        if is_dataclass(cls):
+            for f in fields(cls):
+                f_name = f.name
+                f_type = hintings[f_name]
+                if f_type in FILE_TYPES:
+                    files[f_name] = gen_model_field(f_type, f, True)
                 else:
-                    body[f_name] = consts
+                    consts = gen_model_field(f_type, f)
+
+                    if as_query == "*" or f_name in as_query:
+                        query[f_name] = consts
+                    else:
+                        body[f_name] = consts
 
         payload: dict[str, Any] = {
             "query": (
@@ -165,11 +165,10 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
             jctx = JaseciContext.create(request, NodeAnchor.ref(node) if node else None)
 
-            wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
+            wlk = cls(**body, **pl["query"], **pl["files"]).__jac__
             if Jac.check_read_access(jctx.entry_node):
                 Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
-                jctx.close()
-                return jctx.response(wlk.returns)
+                return jctx.response()
             else:
                 jctx.close()
                 raise HTTPException(
@@ -684,76 +683,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             return JacFeatureImpl.object_ref(obj=obj)
 
         return str(obj.__jac__.ref_id)
-
-    @staticmethod
-    @hookimpl
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
-        """Invoke data spatial call."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.spawn_call(
-                op1=op1, op2=op2
-            )  # type:ignore[return-value]
-
-        if isinstance(op1, WalkerArchitype):
-            warch = op1
-            walker = op1.__jac__
-            if isinstance(op2, NodeArchitype):
-                node = op2.__jac__
-            elif isinstance(op2, EdgeArchitype):
-                node = op2.__jac__.target
-            else:
-                raise TypeError("Invalid target object")
-        elif isinstance(op2, WalkerArchitype):
-            warch = op2
-            walker = op2.__jac__
-            if isinstance(op1, NodeArchitype):
-                node = op1.__jac__
-            elif isinstance(op1, EdgeArchitype):
-                node = op1.__jac__.target
-            else:
-                raise TypeError("Invalid target object")
-        else:
-            raise TypeError("Invalid walker object")
-
-        walker.path = []
-        walker.next = [node]
-        walker.returns = []
-        while len(walker.next):
-            if current_node := walker.next.pop(0).architype:
-                for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(current_node, warch))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
-                    if walker.disengaged:
-                        return warch
-                for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(warch, current_node))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
-                    if walker.disengaged:
-                        return warch
-                for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(warch, current_node))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
-                    if walker.disengaged:
-                        return warch
-                for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(current_node, warch))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
-                    if walker.disengaged:
-                        return warch
-        walker.ignores = []
-        return warch
 
     @staticmethod
     @hookimpl

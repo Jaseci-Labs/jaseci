@@ -57,7 +57,8 @@ class JaseciContext(ExecutionContext):
     """Execution Context."""
 
     mem: MongoDB
-    reports: list
+    reports: list[Any]
+    returns: list[Any]
     status: int
     system_root: NodeAnchor
     root: NodeAnchor
@@ -77,6 +78,7 @@ class JaseciContext(ExecutionContext):
         ctx.request = request
         ctx.mem = MongoDB()
         ctx.reports = []
+        ctx.returns = []
         ctx.status = 200
 
         if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
@@ -140,8 +142,10 @@ class JaseciContext(ExecutionContext):
         """Get current root."""
         return cast(Root, JaseciContext.get().root.architype)
 
-    def response(self, returns: list[Any]) -> ORJSONResponse:
+    def response(self) -> ORJSONResponse:
         """Return serialized version of reports."""
+        self.close()
+
         resp = ContextResponse[Any](status=self.status)
 
         if self.reports:
@@ -149,11 +153,11 @@ class JaseciContext(ExecutionContext):
                 self.clean_response(key, val, self.reports)
             resp.reports = self.reports
 
-        for key, val in enumerate(returns):
-            self.clean_response(key, val, returns)
+        for key, val in enumerate(self.returns):
+            self.clean_response(key, val, self.returns)
 
         if SHOW_ENDPOINT_RETURNS:
-            resp.returns = returns
+            resp.returns = self.returns
 
         return ORJSONResponse(resp.__serialize__(), status_code=self.status)
 

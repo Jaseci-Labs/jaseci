@@ -26,6 +26,7 @@ class ExecutionContext:
 
     mem: Memory
     reports: list[Any]
+    returns: list[Any]
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor
@@ -61,6 +62,7 @@ class ExecutionContext:
         ctx = ExecutionContext()
         ctx.mem = ShelfStorage(session)
         ctx.reports = []
+        ctx.returns = []
 
         if not isinstance(
             system_root := ctx.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor

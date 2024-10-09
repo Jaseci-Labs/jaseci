@@ -509,3 +509,61 @@ walker different_return {
         has auth: bool = False;
     }
 }
+
+node Node {
+    has val: str;
+
+    can entry1 with entry {
+        return f"{self.val}-4";
+    }
+
+    ######################################################
+    #      NOT SUPPORTED YET IF IT'S DECLARED FIRST      #
+    ######################################################
+    #
+    # can entry2 with "Walker" entry {
+    #     return 5;
+    # }
+    #
+    # can exit1 with "Walker" exit {
+    #     return 6;
+    # }
+    #
+    ######################################################
+    # -------------------------------------------------- #
+    ######################################################
+
+
+    can exit2 with exit {
+        return f"{self.val}-7";
+    }
+}
+walker visit_sequence {
+    can entry1 with entry {
+        return 1;
+    }
+
+    can entry2 with `root entry {
+        root ++> Node(val = "a");
+        root ++> Node(val = "b");
+        root ++> Node(val = "c");
+        visit [-->];
+        return 2;
+    }
+
+    can entry3 with Node entry {
+        return f"{here.val}-3";
+    }
+
+    can exit1 with Node exit {
+        return f"{here.val}-8";
+    }
+
+    can exit2 with exit {
+        return 9;
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
