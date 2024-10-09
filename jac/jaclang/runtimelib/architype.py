@@ -219,9 +219,9 @@ class WalkerAnchor(Anchor):
     """Walker Anchor."""
 
     architype: WalkerArchitype
-    path: list[Anchor] = field(default_factory=list)
-    next: list[Anchor] = field(default_factory=list)
-    ignores: list[Anchor] = field(default_factory=list)
+    path: list[NodeAnchor] = field(default_factory=list)
+    next: list[NodeAnchor] = field(default_factory=list)
+    ignores: list[NodeAnchor] = field(default_factory=list)
     disengaged: bool = False
 
 

@@ -766,10 +766,10 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     """Walker Anchor."""
 
     architype: "WalkerArchitype"
-    path: list[Anchor] = field(default_factory=list)
-    next: list[Anchor] = field(default_factory=list)
+    path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
+    next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     returns: list[Any] = field(default_factory=list)
-    ignores: list[Anchor] = field(default_factory=list)
+    ignores: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     disengaged: bool = False
 
     class Collection(BaseCollection["WalkerAnchor"]):
