@@ -16,8 +16,9 @@ class PodManager:
         config.load_incluster_config()
         self.v1 = client.CoreV1Api()
 
-    def create_pod(self, module_name: str):
+    def create_pod(self, module_name: str, module_config: dict):
         """Create a pod and service for the given module."""
+        print("Creating pod %s, with config: %s" % (module_name, module_config))
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
 
@@ -162,9 +163,6 @@ async def run_module(
     request: RunModuleRequest = Body(..., description="Arguments for the method"),
 ):
     """API endpoint to receive the request and forward it to the respective pod."""
-    # Ensure the pod and service exist for the module
-    pod_manager.create_pod(module_name)
-
     # Get the pod service IP for the given module
     service_ip = pod_manager.get_pod_service_ip(module_name)
 
@@ -175,8 +173,8 @@ async def run_module(
 
 
 @app.post("/create_pod/{module_name}")
-def create_pod(module_name: str):
-    return pod_manager.create_pod(module_name)
+def create_pod(module_name: str, module_config: dict = Body(...)):
+    return pod_manager.create_pod(module_name, module_config)
 
 
 @app.delete("/delete_pod/{module_name}")
