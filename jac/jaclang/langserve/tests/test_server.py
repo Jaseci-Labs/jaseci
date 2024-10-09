@@ -569,3 +569,34 @@ class TestJacLangServer(TestCase):
             )
             for expected in expected_refs:
                 self.assertIn(expected, references)
+
+    def test_syntax_diagnosis(self) -> None:
+        """Test that the server shows an error if there is a syntax error in impl."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        file_path = "circle_pure_syntax_err.impl.jac"
+        file_uri = uris.from_fs_path(self.fixture_abs_path(file_path))
+        status, log_output = lsp.quick_check(file_uri)
+        self.assertEqual(False, status)
+        self.assertIn(
+            "message=\"Syntax Error: Unexpected token Token('KW_RETURN', 'return'",
+            str(log_output),
+        )
+        self.assertIn("[Diagnostic(range=10:4-10:5,", str(log_output))
+
+    def test_impl_syntax_diagnosis(self) -> None:
+        """Test that the server shows an error if there is a syntax error."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        file_path = "circle_pure_syntax_err.jac"
+        file_uri = uris.from_fs_path(self.fixture_abs_path(file_path))
+        status, log_output = lsp.deep_check(file_uri)
+        self.assertEqual(False, status)
+        self.assertIn(
+            "empty body on ClassDef",
+            str(log_output),
+        )
