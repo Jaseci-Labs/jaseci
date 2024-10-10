@@ -121,7 +121,7 @@ node Session {
 
 In our updated `Session` node, we have a new ability `chat` that is triggered by the `interact` walker. This means that when the interact walker traverses to the `Session` node, it will trigger the `chat` ability. The `chat` ability will then spawns the `infer` walker on `root`. The `infer` walker will execute its logic to route the user query to the appropriate dialogue model based on the classification. The response from the dialogue model is then appended to the `infer` walker's object and reported back to the frontend. This is the magic of Data Spacial programming!
 
-**Note*+: the `can chat with Session entry` ability needs to be removed from the `interact` walker.
+**Note*+: the `can chat with Session entry` ability needs to be removed from the `interact` walker. The final `server.jac` should look like [this](code/server.jac).
 
 
 To summarize, here are the changes we made to our RAG chatbot to add dialogue routing capabilities:
