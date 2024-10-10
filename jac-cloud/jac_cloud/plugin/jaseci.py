@@ -718,7 +718,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         walker.path = []
         walker.next = [node]
         walker.returns = []
-    
+
         if walker.next:
             current_node = walker.next[-1].architype
             for i in warch._jac_entry_funcs_:
