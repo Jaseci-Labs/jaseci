@@ -29,6 +29,12 @@ class UserRegistration(BaseModel):
             data["password"] = pbkdf2_sha512.hash(self.password).encode()
         return data
 
+    def printable(self) -> dict:
+        """Return BaseModel.model_dump where the password is hashed."""
+        data = self.model_dump(exclude={"password"})
+        data["password"] = "****"
+        return data
+
 
 @dataclass(kw_only=True)
 class User:

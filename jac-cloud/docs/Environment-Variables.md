@@ -25,6 +25,13 @@
 | RESET_CODE_TIMEOUT | Password reset code expiration in hours | 24 |
 | SENDGRID_HOST | Sendgrid host used for hyperlinking verification/reset code | http://localhost:8000 |
 | SENDGRID_API_KEY | Sendgrid api key | null    |
+| LOGGER_NAME   | Specified logger name | app   |
+| LOGGER_LEVEL  | Control log level     | debug |
+| LOGGER_FILE_PATH | Log directory and name | /tmp/jac_cloud_logs/jac-cloud.log |
+| LOGGER_ROLLOVER_INTERVAL | M = every minute, H = hourly, D = daily, W = weekly | D |
+| LOGGER_MAX_BACKUP | Maximum number of backup files before it will deletes old file. Non positive value will not have maximum | -1 |
+| LOGGER_ROLLOVER_MAX_FILE_SIZE | Maximum file size in bytes before it will rollover to new file | 10000000 |
+| LOGGER_USE_UTC | If logger will use UTC | false |
 
 # **SSO Supported Enviroment Variable**
 ## Supported Platform

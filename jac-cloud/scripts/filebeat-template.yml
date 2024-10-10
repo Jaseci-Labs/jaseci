@@ -1,0 +1,15 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /tmp/jac_cloud_logs/*-jac-cloud-*.log
+    - /tmp/jac_cloud_logs/jac-cloud.log
+
+output.elasticsearch:
+  hosts: ["localhost:9200"]
+  protocol: https
+  api_key: "id:api_key"
+  index: "filebeat-testing"
+
+setup.template.name: "filebeat"
+setup.template.pattern: "filebeat-*"
