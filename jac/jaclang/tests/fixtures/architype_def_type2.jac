@@ -13,6 +13,6 @@ node MyNode{
 }
 
 with entry{
-    Node_1=a();
+    Node_1=MyNode();
     Node_1 spawn MyWalker();
 }
