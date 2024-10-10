@@ -8,6 +8,6 @@ glob z = 20;
 
 obj:priv Myobj{}
 
-with entry {
+with entry:__main__ {
     print(a, X, y, z);
 }

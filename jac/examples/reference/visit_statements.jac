@@ -2,6 +2,7 @@ walker Visitor {
     can travel with `root entry {
         visit [-->] else {
             visit root;
+            disengage;
         }
     }
 }

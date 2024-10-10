@@ -706,10 +706,12 @@ class JacParser(Pass):
                     | NAME (COLON STRING)?
                     | py_code_block
                     | free_code
+                    | abstract_ability
+                    | ability
             """
-            if isinstance(kid[0], ast.PyInlineCode):
+            if isinstance(kid[0], (ast.PyInlineCode, ast.Ability)):
                 return self.nu(kid[0])
-            if isinstance(kid[0], (ast.Name)):
+            elif isinstance(kid[0], (ast.Name)):
                 if (
                     len(kid) >= 3
                     and isinstance(kid[-1], ast.Expr)
