@@ -718,6 +718,15 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         walker.path = []
         walker.next = [node]
         walker.returns = []
+
+        if walker.next:
+            current_node = walker.next[-1].architype
+            for i in warch._jac_entry_funcs_:
+                if not i.trigger:
+                    if i.func:
+                        walker.returns.append(i.func(warch, current_node))
+                    else:
+                        raise ValueError(f"No function {i.name} to call.")
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
                 for i in current_node._jac_entry_funcs_:
@@ -730,16 +739,20 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                         return warch
                 for i in warch._jac_entry_funcs_:
                     if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func:
+                        if i.func and i.trigger:
                             walker.returns.append(i.func(warch, current_node))
+                        elif not i.trigger:
+                            continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_exit_funcs_:
                     if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func:
+                        if i.func and i.trigger:
                             walker.returns.append(i.func(warch, current_node))
+                        elif not i.trigger:
+                            continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
@@ -752,6 +765,12 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
+        for i in warch._jac_exit_funcs_:
+            if not i.trigger:
+                if i.func:
+                    walker.returns.append(i.func(warch, current_node))
+                else:
+                    raise ValueError(f"No function {i.name} to call.")
         walker.ignores = []
         return warch
 
