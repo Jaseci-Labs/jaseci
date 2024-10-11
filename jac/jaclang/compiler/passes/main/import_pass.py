@@ -254,7 +254,7 @@ class PyImportPass(JacImportPass):
         )
 
         if imported_mod:
-            parent: Optional[ast.Module] = imported_mod.parent
+            parent: Optional[ast.AstNode] = imported_mod.parent
             while parent is not None:
                 if parent.loc.mod_path == imported_mod.loc.mod_path:
                     self.__debug_print(
