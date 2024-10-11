@@ -248,6 +248,22 @@ class JacCliTests(TestCase):
         self.assertEqual(stdout_value.count("builtins.int"), 4)
         self.assertEqual(stdout_value.count("builtins.str"), 13)
 
+    def test_py_base_class_inh(self) -> None:
+        """Testing for type info inside the ast tool."""
+        from jaclang.settings import settings
+
+        captured_output = io.StringIO()
+        settings.ast_symbol_info_detailed = True
+        sys.stdout = captured_output
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('base_class_inh.jac')}"])
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn(
+            "Name - start - Type: builtins.int,  SymbolTable: int, SymbolPath: base_class_inh.A.start",
+            stdout_value,
+        )
+        settings.ast_symbol_info_detailed = False
+
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
         if os.path.exists(f"{self.fixture_abs_path('needs_import.jir')}"):
