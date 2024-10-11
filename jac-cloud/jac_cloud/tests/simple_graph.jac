@@ -423,13 +423,32 @@ walker post_path_var {
     }
 }
 
+walker post_all_excluded {
+    has a: str = "";
+    has b: str = "";
+
+    class __specs__ {
+        has excluded: str = "*", auth: bool = False;
+    }
+}
+
+walker post_partial_excluded {
+    has a: str;
+    has b: str = "";
+
+    class __specs__ {
+        has excluded: str = "b";
+    }
+}
+
 walker combination1 {
     has a: str;
     has b: str;
     has c: str;
+    has d: str = "";
 
     class __specs__ {
-        has methods: list = ["post", "get"], as_query: list = ["a", "b"];
+        has methods: list = ["post", "get"], as_query: list = ["a", "b"], excluded: str = "d";
     }
 }
 
@@ -438,9 +457,14 @@ walker combination2 {
     has a: str;
     has b: str;
     has c: str;
+    has d: str = "";
+    has e: str = "";
 
     class __specs__ {
-        has path: str = "/{a}", methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"], as_query: list = ["b"];
+        has path: str = "/{a}",
+        methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"],
+        as_query: list = ["b"],
+        excluded: list = ["d", "e"];
     }
 }
 

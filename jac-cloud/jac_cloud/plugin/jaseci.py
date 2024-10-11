@@ -99,7 +99,8 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
     if (specs := get_specs(cls)) and not specs.private:
         path: str = specs.path or ""
         methods: list = specs.methods or []
-        as_query: str | list = specs.as_query or []
+        as_query: str | list[str] = specs.as_query or []
+        excluded: str | list[str] = specs.excluded or []
         auth: bool = specs.auth or False
 
         query: dict[str, Any] = {}
@@ -113,18 +114,36 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 as_query += PATH_VARIABLE_REGEX.findall(path)
 
         hintings = get_type_hints(cls)
-        for f in fields(cls):
-            f_name = f.name
-            f_type = hintings[f_name]
-            if f_type in FILE_TYPES:
-                files[f_name] = gen_model_field(f_type, f, True)
-            else:
-                consts = gen_model_field(f_type, f)
+        if excluded != "*":
+            if isinstance(excluded, str):
+                excluded = [excluded]
 
-                if as_query == "*" or f_name in as_query:
-                    query[f_name] = consts
+            for f in fields(cls):
+                if f.name in excluded:
+                    if f.default is MISSING and not callable(f.default_factory):
+                        raise AttributeError(
+                            f"{cls.__name__} {f.name} should have default or default_factory."
+                        )
+                    continue
+
+                f_name = f.name
+                f_type = hintings[f_name]
+                if f_type in FILE_TYPES:
+                    files[f_name] = gen_model_field(f_type, f, True)
                 else:
-                    body[f_name] = consts
+                    consts = gen_model_field(f_type, f)
+
+                    if as_query == "*" or f_name in as_query:
+                        query[f_name] = consts
+                    else:
+                        body[f_name] = consts
+        elif any(
+            f.default is MISSING and not callable(f.default_factory)
+            for f in fields(cls)
+        ):
+            raise AttributeError(
+                f"{cls.__name__} fields should all have default or default_factory."
+            )
 
         payload: dict[str, Any] = {
             "query": (
@@ -221,7 +240,8 @@ def specs(
     *,
     path: str = "",
     methods: list[str] = ["post"],  # noqa: B006
-    as_query: str | list = [],  # noqa: B006
+    as_query: str | list[str] = [],  # noqa: B006
+    excluded: str | list[str] = [],  # noqa: B006
     auth: bool = True,
     private: bool = False,
 ) -> Callable:
@@ -232,13 +252,15 @@ def specs(
             p = path
             m = methods
             aq = as_query
+            ex = excluded
             a = auth
             pv = private
 
             class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = p
                 methods: list[str] = m
-                as_query: str | list = aq
+                as_query: str | list[str] = aq
+                excluded: str | list[str] = ex
                 auth: bool = a
                 private: bool = pv
 
@@ -259,6 +281,7 @@ class DefaultSpecs:
     path: str = ""
     methods: list[str] = ["post"]
     as_query: str | list[str] = []
+    excluded: str | list[str] = []
     auth: bool = True
     private: bool = False
 
