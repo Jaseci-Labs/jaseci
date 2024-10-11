@@ -263,8 +263,8 @@ class PyImportPass(JacImportPass):
                     return
                 else:
                     if imported_mod.parent:
-                        assert isinstance(imported_mod.parent, ast.Module)
-                        parent = imported_mod.parent
+                        # assert isinstance(imported_mod.parent, ast.Module)
+                        parent = parent.parent
                     else:
                         parent = None
 
