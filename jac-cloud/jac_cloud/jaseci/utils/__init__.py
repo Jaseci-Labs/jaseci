@@ -1,10 +1,10 @@
 """Jaseci Utilities."""
 
-import logging
 from datetime import datetime, timedelta, timezone
 from random import choice
 from string import ascii_letters, digits
 
+from .logger import log_dumps, log_entry, log_exit, logger
 from .mail import Emailer, SendGridEmailer
 
 
@@ -23,14 +23,14 @@ def utc_timestamp(**addons: int) -> int:
     return int(utc_datetime(**addons).timestamp())
 
 
-logger = logging.getLogger(__name__)
-# logger.addHandler(logging.StreamHandler(sys.stdout))
-
 __all__ = [
     "Emailer",
     "SendGridEmailer",
     "random_string",
     "utc_datetime",
     "utc_timestamp",
+    "log_dumps",
+    "log_entry",
+    "log_exit",
     "logger",
 ]

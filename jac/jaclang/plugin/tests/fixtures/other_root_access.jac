@@ -36,7 +36,7 @@ walker create_node {
 walker create_other_root {
     can enter with `root entry {
         other_root = `root().__jac__;
-        other_root.save();
+        Jac.save(other_root);
         print(other_root.id);
     }
 }
@@ -46,17 +46,17 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            here.__jac__.unrestrict(self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            here.__jac__.allow_root(UUID(self.root_id), self.level);
+            Jac.allow_root(here, UUID(self.root_id), self.level);
         }
     }
 
     can enter_nested with A entry {
         if self.via_all {
-            here.__jac__.unrestrict(self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            here.__jac__.allow_root(UUID(self.root_id), self.level);
+            Jac.allow_root(here, UUID(self.root_id), self.level);
         }
     }
 }
@@ -66,17 +66,17 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            here.__jac__.restrict();
+            Jac.restrict(here);
         } else {
-            here.__jac__.disallow_root(UUID(self.root_id));
+            Jac.disallow_root(here, UUID(self.root_id));
         }
     }
 
     can enter_nested with A entry {
         if self.via_all {
-            here.__jac__.restrict();
+            Jac.restrict(here);
         } else {
-            here.__jac__.disallow_root(UUID(self.root_id));
+            Jac.disallow_root(here, UUID(self.root_id));
         }
     }
 }

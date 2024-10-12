@@ -4,6 +4,7 @@ import inspect
 import marshal
 import os
 import sys
+import tempfile
 import types
 from contextvars import ContextVar
 from typing import Optional, Union
@@ -110,6 +111,62 @@ class JacMachine:
                     nodes.append(name)
             return nodes
         return []
+
+    def create_architype_from_source(
+        self,
+        source_code: str,
+        module_name: Optional[str] = None,
+        base_path: Optional[str] = None,
+        cachable: bool = False,
+        keep_temporary_files: bool = False,
+    ) -> Optional[types.ModuleType]:
+        """Dynamically creates architypes (nodes, walkers, etc.) from Jac source code."""
+        from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
+
+        if not base_path:
+            base_path = self.base_path or os.getcwd()
+
+        if base_path and not os.path.exists(base_path):
+            os.makedirs(base_path)
+        if not module_name:
+            module_name = f"_dynamic_module_{len(self.loaded_modules)}"
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".jac",
+            prefix=module_name + "_",
+            dir=base_path,
+            delete=False,
+        ) as tmp_file:
+            tmp_file_path = tmp_file.name
+            tmp_file.write(source_code)
+
+        try:
+            importer = JacImporter(self)
+            tmp_file_basename = os.path.basename(tmp_file_path)
+            tmp_module_name, _ = os.path.splitext(tmp_file_basename)
+
+            spec = ImportPathSpec(
+                target=tmp_module_name,
+                base_path=base_path,
+                absorb=False,
+                cachable=cachable,
+                mdl_alias=None,
+                override_name=module_name,
+                lng="jac",
+                items=None,
+            )
+
+            import_result = importer.run_import(spec, reload=False)
+            module = import_result.ret_mod
+
+            self.loaded_modules[module_name] = module
+            return module
+        except Exception as e:
+            logger.error(f"Error importing dynamic module '{module_name}': {e}")
+            return None
+        finally:
+            if not keep_temporary_files and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
 
     def update_walker(
         self, module_name: str, items: Optional[dict[str, Union[str, Optional[str]]]]
