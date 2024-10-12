@@ -50,12 +50,6 @@ class JacTypeCheckPass(Pass):
         options = myab.myb.Options()
         options.ignore_missing_imports = True
         options.cache_dir = Con.JAC_MYPY_CACHE
-        options.mypy_path = [
-            # str( # TODO: Remove me, this was the wrong way to point to stubs
-            #     pathlib.Path(os.path.dirname(__file__)).parent.parent.parent.parent
-            #     / "stubs"
-            # )
-        ]
         if top_module_path != "":
             options.mypy_path.append(top_module_path)
 
@@ -116,6 +110,14 @@ class JacTypeCheckPass(Pass):
             old_graph=mypy_graph,
             new_modules=new_modules,  # To parse the dependancies of modules
         )
+        mypy_graph = {
+            k: v
+            for k, v in mypy_graph.items()
+            if (
+                k.startswith("jaclang.plugin")
+                or not (k.startswith("jaclang.") or k.startswith("mypy."))
+            )
+        }
         for i in mypy_graph:
             self.ir.py_mod_dep_map[i] = mypy_graph[i].xpath
             for j in mypy_graph[i].dependencies:

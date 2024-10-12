@@ -59,6 +59,9 @@ class Settings:
         """Override settings from environment variables if available."""
         for key in [f.name for f in fields(self)]:
             env_value = os.getenv("JACLANG_" + key.upper())
+            env_value = (
+                env_value if env_value is not None else os.getenv("JAC_" + key.upper())
+            )
             if env_value is not None:
                 setattr(self, key, self.convert_type(env_value))
 

@@ -12,3 +12,4 @@ pre-commit install
 # **REFERENCES**
 ### [**jac-cloud**](./docs/Jaseci.md)
 ### [**Environment Variables**](./docs/Environment-Variables.md)
+### [**Logger**](./docs/Logger.md)

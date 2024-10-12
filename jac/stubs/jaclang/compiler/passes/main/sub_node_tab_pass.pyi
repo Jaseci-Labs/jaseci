@@ -1,6 +1,0 @@
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass as Pass
-
-class SubNodeTabPass(Pass):
-    def enter_node(self, node: ast.AstNode) -> None: ...
-    def exit_node(self, node: ast.AstNode) -> None: ...
