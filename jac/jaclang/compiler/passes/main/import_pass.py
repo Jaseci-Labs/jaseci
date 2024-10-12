@@ -278,12 +278,19 @@ class PyImportPass(JacImportPass):
                 f"Attaching {imported_mod.name} into {self.__get_current_module(imp_node)}"
             )
 
+            if imported_mod.py_needed_items is not None:
+                self.__debug_print(
+                    "Module was imported again with a different set of needed items, Ignoring this import for now !!!"
+                )
+                return
+
             imported_mod.py_needed_items = {}
             for i in imp_node.items.items:
                 assert isinstance(i, ast.ModuleItem)
                 imported_mod.py_needed_items[i.name.sym_name] = (
                     i.alias.sym_name if i.alias else None
                 )
+            self.__debug_print(f"Needed items are {imported_mod.py_needed_items}")
 
             self.attach_mod_to_node(imp_node.from_loc, imported_mod)
             SymTabBuildPass(input_ir=imported_mod, prior=self)
