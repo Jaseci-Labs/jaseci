@@ -40,7 +40,7 @@ nav:
 
   - Why: "why.md"
   # - ~/roadmap$: 'roadmap.md'
-  - Github: https://github.com/Jaseci-Labs/jaclang
+  - Github: https://github.com/Jaseci-Labs/jaseci
 
   - EECS449:
       - "learn/tutorial/readme.md"
