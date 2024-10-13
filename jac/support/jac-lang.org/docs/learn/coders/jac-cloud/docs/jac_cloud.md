@@ -1,30 +1,14 @@
-[<< back to main](../README.md)
-# **jac-cloud**
+# Jac Cloud
 
 ## **How To Start**
-- `FastAPI.start` will convert walkers to FastAPI endpoints
-- as default, `jac_cloud` have base user and sso apis
+Just replace `jac run` with `jac serve` and you are now running your jac application as an API server.
 
-## **Supported Args**
-| **NAME**  | **DESCRIPTION**   | **ENVIRONMENT VARIABLE**  | **DEFAULT**   |
-|-----------|-------------------|---------------------------|---------------|
-| **host**      | your local host   | HOST                      | 0.0.0.0       |
-| **port**      | your local port   | PORT                      | 8000          |
-| **emailer**   | overrided `jac_cloud.jaseci.utils.Emailer` | N/A | N/A      |
-| {**kwargs} | any fields that's currently supported in `uvicorn.run` | N/A | N/A |
 
-```python
-import:py from jac_cloud {FastAPI}
+`jac serve main.jac`
 
-with entry:__main__ {
-    FastAPI.start(
-        host="0.0.0.0",
-        port=8001
-    );
-}
-```
-## **OPENAPI** (`/docs`)
-![Default APIs](https://private-user-images.githubusercontent.com/74129725/355489885-ea5406a0-7a49-4fd2-b77d-10555e5100fb.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI5NTQ5ODksIm5iZiI6MTcyMjk1NDY4OSwicGF0aCI6Ii83NDEyOTcyNS8zNTU0ODk4ODUtZWE1NDA2YTAtN2E0OS00ZmQyLWI3N2QtMTA1NTVlNTEwMGZiLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDYlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA2VDE0MzEyOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTk1MjNiM2EzYjI1MzM1Njk5MzdjNDRkYjExMzdiMzQ3MjczNzY1ODdkYTVhNmNlNGRiMjNmOWI2ZGQxMDY4ODgmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.nW6DNC3BBf98J0VGdpstXtsRdVrLIc85EJOo_00YyTs "Default APIs")
+Optionally, specif host and port with `--host` and `--port`.
+
+Once starts, navigate to `/docs` to access the built-in API docs.
 
 
 ## **Walker Endpoints**
@@ -137,13 +121,6 @@ walker post_with_body_and_file {
     obj __specs__ {
         static has auth: bool = False;
     }
-}
-
-with entry:__main__ {
-    FastAPI.start(
-        host="0.0.0.0",
-        port=8001
-    );
 }
 ```
 
