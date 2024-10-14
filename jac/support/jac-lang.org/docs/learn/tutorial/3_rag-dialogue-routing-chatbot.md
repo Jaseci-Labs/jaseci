@@ -64,7 +64,7 @@ node QAChat :Chat: {
 }
 ```
 
-We define two new nodes `RagChat` and `QAChat` that extend the `Chat` node. The `RagChat` node is used for the RAG model, and the `QAChat` node is used for a simple question-answering model. Both nodes have the ability `respond` that responds to the user query using the respective model.
+We define two new nodes `RagChat` and `QAChat` which is inherited from the `Chat` node. The `RagChat` node is used for the RAG model, and the `QAChat` node is used for a simple question-answering model. Both nodes have the ability `respond` that responds to the user query using the respective model.
 
 In the `RagChat` node, we have a new ability `respond_with_llm` that responds to the user query using the RAG model. The ability retrieves the relevant information from the documents and responds to the user query. In the `QAChat` node, we have a new ability `respond_with_llm` that responds to the user query using a simple question-answering model.
 
@@ -87,7 +87,7 @@ walker infer {
 }
 ```
 
-Here we have a new ability `init_router` that initializes the `Router` node and creates and edge to two new nodes `RagChat` and `QAChat`. These nodes will be used to handle the RAG and QA models respectively. We'll define these nodes later. Let's finish the `infer` walker first.
+Here we have a new ability `init_router` that initializes the `Router` node if the `Router` node doesn't exists and creates and edge to two new nodes `RagChat` and `QAChat`. These nodes will be used to handle the RAG and QA models respectively. We'll define these nodes later. Let's finish the `infer` walker first.
 
 The following `can` abilities should be added to the `infer` walker scope.
 
