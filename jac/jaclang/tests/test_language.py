@@ -237,6 +237,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual(stdout_value.split("\n")[0], "11 13 12 12 11 12 12")
         self.assertEqual(stdout_value.split("\n")[1], '12 12 """hello"""  18 18')
         self.assertEqual(stdout_value.split("\n")[2], "11 12 11 12 11 18 23")
+        self.assertEqual(stdout_value.split("\n")[3], 'hello klkl"""')
 
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
