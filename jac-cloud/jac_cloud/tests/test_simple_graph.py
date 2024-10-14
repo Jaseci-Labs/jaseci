@@ -665,6 +665,25 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
             res["returns"],
         )
 
+    def trigger_spawn_test(self) -> None:
+        """Test spawn call behavior of walker."""
+        res = self.post_api("WalkerTestSpawn")
+        self.assertEqual(200, res["status"])
+        reports = res["reports"]
+        self.assertIn("Walker entry: Root()", reports[0]["message"])
+        self.assertIn("Node entry: Root()", reports[1]["message"])
+        for i in range(5):
+            self.assertIn(f"Node exit: NodeTest(value={i})", reports[i + 2]["message"])
+        self.assertIn("Walker exit: NodeTest(value=4)", reports[7]["message"])
+        visitor_report = res["reports"][-1]
+        visited_nodes = visitor_report["context"]["visited_nodes"]
+        entry_count = visitor_report["context"]["entry_count"]
+        exit_count = visitor_report["context"]["exit_count"]
+
+        self.assertEqual(visited_nodes, [f"NodeTest(value={i})" for i in range(5)])
+        self.assertEqual(entry_count, 1)
+        self.assertEqual(exit_count, 1)
+
     async def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -760,3 +779,4 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_visit_sequence()
+        self.trigger_spawn_test()
