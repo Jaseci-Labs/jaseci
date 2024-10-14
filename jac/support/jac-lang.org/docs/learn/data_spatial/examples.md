@@ -20,6 +20,20 @@ Lines 17-21 demonstrate how to retrieve visitable or reachable nodes from a give
     ![Image](Images/custom_edge.png)
 
 ## <span style="color: orange">Filtering
+
+#### <span style="color: White">Filtering Based on Edge Types and Attributes
+
+We can filter nodes based on specific edge attributes, such as filtering by edge values to retrieve a subset of connected nodes.
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/data_spatial/edge_filtering.jac"
+    ```
+
+??? example "Graph Image"
+    ![Image](Images/edge_filtering.png)
+
+#### <span style="color: White">Filtering Based on Node Types and Attributes
+
 We can filter specific types of nodes from a list of visitable nodes based on their type, and further apply conditions on node attributes to refine the results.
 === "Jac"
     ```jac linenums="1"
