@@ -89,6 +89,9 @@ class ImportPassPassTests(TestCase):
         state = jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
         )
+        for i in state.ir.get_all_sub_nodes(ast.Module):
+            if i.is_raised_from_py:
+                print(i.name, i.py_needed_items)
         self.assertEqual(
             len(
                 list(
@@ -98,7 +101,7 @@ class ImportPassPassTests(TestCase):
                     )
                 )
             ),
-            7,
+            11,  # number is incresed because we add the AST of the module in case of import from
         )
 
     # def test_py_resolve_list(self) -> None:

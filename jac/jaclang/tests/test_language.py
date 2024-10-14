@@ -817,7 +817,7 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop compl", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 269)  # 2320
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 586)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
