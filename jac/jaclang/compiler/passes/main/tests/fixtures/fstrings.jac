@@ -42,6 +42,8 @@ with entry {
         len(f_s1), len(f_s2)
     ) ;
     """sdfsdf\nsdfsdfsdfsd dffgdfgd.""" ;
+    c1 = '''hello klkl"""''';
+    print(c1) ;
 }
 can func() {;
 }
