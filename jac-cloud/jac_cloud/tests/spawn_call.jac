@@ -33,5 +33,7 @@ with entry {
         root ++> (next:=test_node(value=i));
     }
     visitor = root spawn test_walker();
-    print(visitor.visited_nodes);
+    print("Visited nodes: ",visitor.visited_nodes);
+    print("Entry counts: ",visitor.entry_count);
+    print("Exit counts: ",visitor.exit_count);
 }
