@@ -32,27 +32,18 @@ class SpliceOrcPlugin:
         reload_module: Optional[bool],
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process with Kubernetes Pod Integration."""
-        print("Importing %s" % target)
-        # Check if the target module is configured for remote execution
         if (
             target in settings.module_config
             and settings.module_config[target]["load_type"] == "remote"
         ):
-            # Handle remote import using ProxyManager
-            print(f"Loading module '{target}' remotely via Kubernetes.")
-
-            # Initialize the ProxyManager for Kubernetes pod management
             proxy = ModuleProxy(settings.pod_manager_url)
 
-            # This will handle pod creation, module loading, and execution
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=settings.module_config[target]
             )
 
-            # Return the proxy for remote execution of methods
             return (remote_module_proxy,)
 
-        # Default import process if not a remote module
         spec = ImportPathSpec(
             target,
             base_path,
@@ -69,10 +60,8 @@ class SpliceOrcPlugin:
             jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None))
 
         if lng == "py":
-            # Import using PythonImporter if it's a Python module
             import_result = PythonImporter(JacMachine.get()).run_import(spec)
         else:
-            # Otherwise, import using JacImporter
             import_result = JacImporter(JacMachine.get()).run_import(
                 spec, reload_module
             )

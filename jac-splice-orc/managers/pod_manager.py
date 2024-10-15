@@ -6,30 +6,28 @@ import time
 from grpc_local import module_service_pb2_grpc, module_service_pb2
 from fastapi import FastAPI, Query, Body
 from pydantic import BaseModel
-from typing import List
+from typing import List, Any
 
 app = FastAPI()
 
 
 class PodManager:
     def __init__(self):
-        # Load Kubernetes configuration (for in-cluster use)
         config.load_incluster_config()
         self.v1 = client.CoreV1Api()
 
     def create_pod(self, module_name: str, module_config: dict):
         """Create a pod and service for the given module."""
         print("Creating pod %s, with config: %s" % (module_name, module_config))
-        image_name = os.getenv("IMAGE_NAME", "ashishmahendra/jac-cloud-orc:0.2")  # Default image name
+        image_name = os.getenv(
+            "IMAGE_NAME", "ashishmahendra/jac-cloud-orc:0.3"
+        )  # Default image name
 
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
-
-        # Check if the pod already exists
         try:
             pod_info = self.v1.read_namespaced_pod(name=pod_name, namespace="default")
             if pod_info.status.phase == "Running":
-                print(f"Pod {pod_name} is already running.")
                 return {"message": f"Pod {pod_name} is already running."}
             else:
                 raise HTTPException(
@@ -50,7 +48,6 @@ class PodManager:
                             {
                                 "name": "module-container",
                                 "image": f"{image_name}",
-                                "image": "ashishmahendra/jac-cloud-orc:0.2",
                                 "env": [{"name": "MODULE_NAME", "value": module_name}],
                                 "ports": [{"containerPort": 50051}],
                             }
@@ -157,7 +154,7 @@ pod_manager = PodManager()
 
 
 class RunModuleRequest(BaseModel):
-    args: List[int]
+    args: List[Any]
 
 
 @app.post("/run_module")
@@ -167,7 +164,6 @@ async def run_module(
     request: RunModuleRequest = Body(..., description="Arguments for the method"),
 ):
     """API endpoint to receive the request and forward it to the respective pod."""
-    # Get the pod service IP for the given module
     service_ip = pod_manager.get_pod_service_ip(module_name)
 
     # Forward the request to the corresponding pod via gRPC
