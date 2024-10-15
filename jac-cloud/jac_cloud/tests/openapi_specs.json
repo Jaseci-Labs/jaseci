@@ -5451,11 +5451,16 @@
                         "title": "Val"
                     },
                     "arr": {
-                        "items": {},
+                        "items": {
+                            "type": "integer"
+                        },
                         "type": "array",
                         "title": "Arr"
                     },
                     "json": {
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
                         "type": "object",
                         "title": "Json"
                     },
@@ -5614,11 +5619,16 @@
                         "title": "Val"
                     },
                     "arr": {
-                        "items": {},
+                        "items": {
+                            "type": "integer"
+                        },
                         "type": "array",
                         "title": "Arr"
                     },
                     "json": {
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
                         "type": "object",
                         "title": "Json"
                     },
