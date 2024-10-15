@@ -533,3 +533,19 @@ walker different_return {
         has auth: bool = False;
     }
 }
+
+walker custom_report {
+    can enter1 with `root entry {
+        report 1;
+        report 2;
+        report 3;
+
+        Jac.report({
+            "testing": 1
+        }, True);
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}

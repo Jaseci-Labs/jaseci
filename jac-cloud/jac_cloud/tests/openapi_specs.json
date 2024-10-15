@@ -547,7 +547,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Create Graph Post"
                                 }
                             }
                         }
@@ -597,7 +603,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Create Graph  Node  Post"
                                 }
                             }
                         }
@@ -629,7 +641,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Traverse Graph Post"
                                 }
                             }
                         }
@@ -679,7 +697,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Traverse Graph  Node  Post"
                                 }
                             }
                         }
@@ -711,7 +735,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Detach Node Post"
                                 }
                             }
                         }
@@ -761,7 +791,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Detach Node  Node  Post"
                                 }
                             }
                         }
@@ -793,7 +829,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Update Graph Post"
                                 }
                             }
                         }
@@ -843,7 +885,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Update Graph  Node  Post"
                                 }
                             }
                         }
@@ -875,7 +923,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Create Nested Node Post"
                                 }
                             }
                         }
@@ -925,7 +979,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Create Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -957,7 +1017,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Update Nested Node Post"
                                 }
                             }
                         }
@@ -1007,7 +1073,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Update Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1039,7 +1111,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Detach Nested Node Post"
                                 }
                             }
                         }
@@ -1089,7 +1167,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Detach Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1121,7 +1205,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Visit Nested Node Post"
                                 }
                             }
                         }
@@ -1171,7 +1261,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Visit Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1203,7 +1299,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Manual Create Nested Node Post"
                                 }
                             }
                         }
@@ -1253,7 +1355,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Manual Create Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1285,7 +1393,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Manual Update Nested Node Post"
                                 }
                             }
                         }
@@ -1335,7 +1449,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Manual Update Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1367,7 +1487,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Manual Detach Nested Node Post"
                                 }
                             }
                         }
@@ -1417,7 +1543,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Manual Detach Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1449,7 +1581,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Delete Nested Node Post"
                                 }
                             }
                         }
@@ -1499,7 +1637,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Delete Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1531,7 +1675,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Manual Delete Nested Node Post"
                                 }
                             }
                         }
@@ -1581,7 +1731,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Manual Delete Nested Node  Node  Post"
                                 }
                             }
                         }
@@ -1613,7 +1769,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Delete Nested Edge Post"
                                 }
                             }
                         }
@@ -1663,7 +1825,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Delete Nested Edge  Node  Post"
                                 }
                             }
                         }
@@ -1695,7 +1863,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Manual Delete Nested Edge Post"
                                 }
                             }
                         }
@@ -1745,7 +1919,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Manual Delete Nested Edge  Node  Post"
                                 }
                             }
                         }
@@ -1787,7 +1967,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Allow Other Root Access Post"
                                 }
                             }
                         }
@@ -1857,7 +2043,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Allow Other Root Access  Node  Post"
                                 }
                             }
                         }
@@ -1899,7 +2091,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Disallow Other Root Access Post"
                                 }
                             }
                         }
@@ -1969,7 +2167,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Disallow Other Root Access  Node  Post"
                                 }
                             }
                         }
@@ -2001,7 +2205,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post No Body Post"
                                 }
                             }
                         }
@@ -2051,7 +2261,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post No Body  Node  Post"
                                 }
                             }
                         }
@@ -2093,7 +2309,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post With Body Post"
                                 }
                             }
                         }
@@ -2163,7 +2385,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post With Body  Node  Post"
                                 }
                             }
                         }
@@ -2195,7 +2423,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Get No Body Get"
                                 }
                             }
                         }
@@ -2245,7 +2479,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Get No Body  Node  Get"
                                 }
                             }
                         }
@@ -2293,7 +2533,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Get With Query Get"
                                 }
                             }
                         }
@@ -2357,7 +2603,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Get With Query  Node  Get"
                                 }
                             }
                         }
@@ -2409,7 +2661,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Get All Query Get"
                                 }
                             }
                         }
@@ -2477,7 +2735,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Get All Query  Node  Get"
                                 }
                             }
                         }
@@ -2525,7 +2789,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post Path Var  A  Post"
                                 }
                             }
                         }
@@ -2571,7 +2841,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post Path Var  A  Get"
                                 }
                             }
                         }
@@ -2635,7 +2911,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post Path Var  Node   A  Post"
                                 }
                             }
                         }
@@ -2697,7 +2979,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post Path Var  Node   A  Get"
                                 }
                             }
                         }
@@ -2729,7 +3017,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post All Excluded Post"
                                 }
                             }
                         }
@@ -2769,7 +3063,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post All Excluded  Node  Post"
                                 }
                             }
                         }
@@ -2811,7 +3111,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post Partial Excluded Post"
                                 }
                             }
                         }
@@ -2881,7 +3187,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post Partial Excluded  Node  Post"
                                 }
                             }
                         }
@@ -2948,7 +3260,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination1 Post"
                                 }
                             }
                         }
@@ -3013,7 +3331,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination1 Get"
                                 }
                             }
                         }
@@ -3096,7 +3420,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination1  Node  Post"
                                 }
                             }
                         }
@@ -3177,7 +3507,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination1  Node  Get"
                                 }
                             }
                         }
@@ -3244,7 +3580,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Post"
                                 }
                             }
                         }
@@ -3309,7 +3651,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Get"
                                 }
                             }
                         }
@@ -3374,7 +3722,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Put"
                                 }
                             }
                         }
@@ -3439,7 +3793,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Patch"
                                 }
                             }
                         }
@@ -3504,7 +3864,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Delete"
                                 }
                             }
                         }
@@ -3569,7 +3935,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Head"
                                 }
                             }
                         }
@@ -3624,7 +3996,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Trace"
                                 }
                             }
                         }
@@ -3679,7 +4057,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Combination2  A  Options"
                                 }
                             }
                         }
@@ -3762,7 +4146,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Post"
                                 }
                             }
                         }
@@ -3843,7 +4233,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Get"
                                 }
                             }
                         }
@@ -3924,7 +4320,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Put"
                                 }
                             }
                         }
@@ -4005,7 +4407,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Patch"
                                 }
                             }
                         }
@@ -4086,7 +4494,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Delete"
                                 }
                             }
                         }
@@ -4167,7 +4581,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Head"
                                 }
                             }
                         }
@@ -4238,7 +4658,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Trace"
                                 }
                             }
                         }
@@ -4309,7 +4735,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Combination2  Node   A  Options"
                                 }
                             }
                         }
@@ -4351,7 +4783,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post With File Post"
                                 }
                             }
                         }
@@ -4421,7 +4859,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post With File  Node  Post"
                                 }
                             }
                         }
@@ -4463,7 +4907,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Post With Body And File Post"
                                 }
                             }
                         }
@@ -4523,7 +4973,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Post With Body And File  Node  Post"
                                 }
                             }
                         }
@@ -4565,7 +5021,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Custom Status Code Post"
                                 }
                             }
                         }
@@ -4635,7 +5097,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Custom Status Code  Node  Post"
                                 }
                             }
                         }
@@ -4667,7 +5135,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Different Return Post"
                                 }
                             }
                         }
@@ -4707,7 +5181,97 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Different Return  Node  Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/walker/custom_report": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/custom_report",
+                "operationId": "api_root_walker_custom_report_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Root Walker Custom Report Post"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/walker/custom_report/{node}": {
+            "post": {
+                "tags": [
+                    "walker",
+                    "walker"
+                ],
+                "summary": "/custom_report/{node}",
+                "operationId": "api_entry_walker_custom_report__node__post",
+                "parameters": [
+                    {
+                        "name": "node",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Node"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ContextResponse_NoneType_"
+                                        },
+                                        {}
+                                    ],
+                                    "title": "Response Api Entry Walker Custom Report  Node  Post"
                                 }
                             }
                         }

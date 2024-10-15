@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from contextlib import suppress
-from dataclasses import Field, MISSING, fields
+from dataclasses import Field, MISSING, fields, is_dataclass
 from functools import wraps
 from os import getenv
 from re import compile
@@ -115,36 +115,38 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 as_query += PATH_VARIABLE_REGEX.findall(path)
 
         hintings = get_type_hints(cls)
-        if excluded != "*":
-            if isinstance(excluded, str):
-                excluded = [excluded]
 
-            for f in fields(cls):
-                if f.name in excluded:
-                    if f.default is MISSING and not callable(f.default_factory):
-                        raise AttributeError(
-                            f"{cls.__name__} {f.name} should have default or default_factory."
-                        )
-                    continue
+        if is_dataclass(cls):
+            if excluded != "*":
+                if isinstance(excluded, str):
+                    excluded = [excluded]
 
-                f_name = f.name
-                f_type = hintings[f_name]
-                if f_type in FILE_TYPES:
-                    files[f_name] = gen_model_field(f_type, f, True)
-                else:
-                    consts = gen_model_field(f_type, f)
+                for f in fields(cls):
+                    if f.name in excluded:
+                        if f.default is MISSING and not callable(f.default_factory):
+                            raise AttributeError(
+                                f"{cls.__name__} {f.name} should have default or default_factory."
+                            )
+                        continue
 
-                    if as_query == "*" or f_name in as_query:
-                        query[f_name] = consts
+                    f_name = f.name
+                    f_type = hintings[f_name]
+                    if f_type in FILE_TYPES:
+                        files[f_name] = gen_model_field(f_type, f, True)
                     else:
-                        body[f_name] = consts
-        elif any(
-            f.default is MISSING and not callable(f.default_factory)
-            for f in fields(cls)
-        ):
-            raise AttributeError(
-                f"{cls.__name__} fields should all have default or default_factory."
-            )
+                        consts = gen_model_field(f_type, f)
+
+                        if as_query == "*" or f_name in as_query:
+                            query[f_name] = consts
+                        else:
+                            body[f_name] = consts
+            elif any(
+                f.default is MISSING and not callable(f.default_factory)
+                for f in fields(cls)
+            ):
+                raise AttributeError(
+                    f"{cls.__name__} fields should all have default or default_factory."
+                )
 
         payload: dict[str, Any] = {
             "query": (
@@ -197,6 +199,9 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
                 jctx.close()
 
+                if jctx.custom is not MISSING:
+                    return jctx.custom
+
                 resp = jctx.response(wlk.returns)
                 log_exit(resp, log)
 
@@ -236,7 +241,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
             settings: dict[str, Any] = {
                 "tags": ["walker"],
-                "response_model": ContextResponse[ret_types],
+                "response_model": ContextResponse[ret_types] | Any,
             }
             if auth:
                 settings["dependencies"] = cast(list, authenticator)
@@ -620,19 +625,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 on_entry=on_entry,
                 on_exit=on_exit,
             )
-            populate_apis(cls)
+            populate_apis(cls)  # type: ignore[arg-type]
             return cls
 
         return decorator
-
-    @staticmethod
-    @hookimpl
-    def report(expr: Any) -> None:  # noqa:ANN401
-        """Jac's report stmt feature."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.report(expr=expr)
-
-        JaseciContext.get().reports.append(expr)
 
     @staticmethod
     @hookimpl
