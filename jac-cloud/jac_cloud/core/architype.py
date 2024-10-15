@@ -896,7 +896,11 @@ class BaseArchitype:
         jac_classes: dict[str, Any] | None = getattr(cls, "__jac_classes__", None)
         if not jac_classes or not (jac_class := jac_classes.get(name)):
             jac_classes = cls.__set_classes__()
-            jac_class = jac_classes.get(name, cls)
+            if (jac_class := jac_classes.get(name)) is None:
+                logger.warning(
+                    f"Can't find {cls.__name__} {name}. Defaulting to base {cls.__name__}."
+                )
+                return cls
 
         return jac_class
 
