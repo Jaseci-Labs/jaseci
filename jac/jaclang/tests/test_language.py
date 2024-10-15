@@ -492,7 +492,7 @@ class JacLanguageTests(TestCase):
         jac_import("enum_inside_archtype", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual("2\n", stdout_value)
+        self.assertIn("2 Accessing privileged Data", stdout_value)
 
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
