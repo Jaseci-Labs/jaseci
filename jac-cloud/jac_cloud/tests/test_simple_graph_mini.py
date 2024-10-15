@@ -86,7 +86,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     def check_server(self) -> None:
         """Retrieve OpenAPI Specs JSON."""
-        res = get(f"{self.host}/healthz/")
+        res = get(f"{self.host}/healthz")
         res.raise_for_status()
         self.assertEqual(200, res.status_code)
 
@@ -269,7 +269,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.assertEqual(200, res["status"])
         self.assertEqual([[]], res["reports"])
 
-    async def nested_count_should_be(self, node: int, edge: int) -> None:
+    def nested_count_should_be(self, node: int, edge: int) -> None:
         """Test nested node count."""
         jctx = ExecutionContext.create(session=self.database)
 
@@ -294,7 +294,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
         jctx.close()
 
-    async def trigger_custom_status_code(self) -> None:
+    def trigger_custom_status_code(self) -> None:
         """Test custom status code."""
         for acceptable_code in [200, 201, 202, 203, 205, 206, 207, 208, 226]:
             res = self.post_api("custom_status_code", {"status": acceptable_code})
@@ -385,33 +385,33 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
         self.clear_db()
 
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test()
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_update_nested_node_test()
         self.trigger_detach_nested_node_test()
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         ###################################################
         #                   VIA DESTROY                   #
         ###################################################
 
         self.trigger_create_nested_node_test()
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_delete_nested_node_test()
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test()
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_delete_nested_edge_test()
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         ###################################################
         #                  CUSTOM STATUS                  #
         ###################################################
 
-        await self.trigger_custom_status_code()
+        self.trigger_custom_status_code()

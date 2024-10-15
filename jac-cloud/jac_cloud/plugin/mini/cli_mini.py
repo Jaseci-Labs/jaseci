@@ -180,7 +180,7 @@ def serve_mini(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
     healtz_router = APIRouter(prefix="/healthz", tags=["monitoring"])
     walker_router = APIRouter(prefix="/walker", tags=["walker"])
 
-    @healtz_router.get("/", status_code=status.HTTP_200_OK)
+    @healtz_router.get("", status_code=status.HTTP_200_OK)
     def healthz() -> Response:
         """Healthz API."""
         return Response()

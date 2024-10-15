@@ -111,7 +111,8 @@ components:
     Child:
       properties:
         arr:
-          items: {}
+          items:
+            type: integer
           title: Arr
           type: array
         enum_field:
@@ -127,6 +128,8 @@ components:
           enum: []
           title: Enum
         json:
+          additionalProperties:
+            type: integer
           title: Json
           type: object
         val:
@@ -225,7 +228,8 @@ components:
     Parent:
       properties:
         arr:
-          items: {}
+          items:
+            type: integer
           title: Arr
           type: array
         child:
@@ -243,6 +247,8 @@ components:
           enum: []
           title: Enum
         json:
+          additionalProperties:
+            type: integer
           title: Json
           type: object
         val:

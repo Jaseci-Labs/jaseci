@@ -21,7 +21,7 @@ node C {
 }
 
 obj Child {
-    has val: int, arr: list, json: dict, enum_field: Enum;
+    has val: int, arr: list[int], json: dict[str, int], enum_field: Enum;
 }
 
 obj Parent:Child: {
@@ -29,7 +29,7 @@ obj Parent:Child: {
 }
 
 node Nested {
-    has val: int, arr: list, json: dict, parent: Parent, enum_field: Enum;
+    has val: int, arr: list[int], json: dict[str, int], parent: Parent, enum_field: Enum;
 }
 
 walker create_graph {
@@ -207,17 +207,17 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            here.__jac__.unrestrict(self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            here.__jac__.allow_root(UUID(self.root_id), self.level);
+            Jac.allow_root(here, UUID(self.root_id), self.level);
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            here.__jac__.unrestrict(self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            here.__jac__.allow_root(UUID(self.root_id), self.level);
+            Jac.allow_root(here, UUID(self.root_id), self.level);
         }
     }
 }
@@ -227,17 +227,17 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            here.__jac__.restrict();
+            Jac.restrict(here);
         } else {
-            here.__jac__.disallow_root(UUID(self.root_id));
+            Jac.disallow_root(here, UUID(self.root_id));
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            here.__jac__.restrict();
+            Jac.restrict(here);
         } else {
-            here.__jac__.disallow_root(UUID(self.root_id));
+            Jac.disallow_root(here, UUID(self.root_id));
         }
     }
 }
@@ -252,19 +252,53 @@ walker post_with_body {
     has a: str;
 }
 
-walker get_no_body {}
+walker get_no_body {
+    class __specs__ {
+        has methods: list = ["get"];
+    }
+}
 
 walker get_with_query {
     has a: str;
+
+    class __specs__ {
+        has methods: list = ["get"], as_query: list = ["a"];
+    }
 }
 
 walker get_all_query {
     has a: str;
     has b: str;
+
+    class __specs__ {
+        has methods: list = ["get"], as_query: list = "*", auth: bool = False;
+    }
 }
 
 walker post_path_var {
     has a: str;
+
+    class __specs__ {
+        has path: str = "/{a}", methods: list = ["post", "get"];
+    }
+}
+
+walker post_all_excluded {
+    has a: str = "";
+    has b: str = "";
+
+    class __specs__ {
+        has excluded: str = "*", auth: bool = False;
+    }
+}
+
+walker post_partial_excluded {
+    has a: str;
+    has b: str = "";
+
+    class __specs__ {
+        has excluded: str = "b";
+    }
 }
 
 walker combination1 {
@@ -272,6 +306,10 @@ walker combination1 {
     has b: str;
     has c: str;
     has d: str = "";
+
+    class __specs__ {
+        has methods: list = ["post", "get"], as_query: list = ["a", "b"], excluded: str = "d";
+    }
 }
 
 
@@ -281,6 +319,13 @@ walker combination2 {
     has c: str;
     has d: str = "";
     has e: str = "";
+
+    class __specs__ {
+        has path: str = "/{a}",
+        methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"],
+        as_query: list = ["b"],
+        excluded: list = ["d", "e"];
+    }
 }
 
 walker post_with_file {
@@ -294,6 +339,8 @@ walker post_with_file {
         print(self.multiple);
         print(self.singleOptional);
     }
+
+    class __specs__ {}
 }
 
 walker post_with_body_and_file {
@@ -308,6 +355,10 @@ walker post_with_body_and_file {
         print(self.single);
         print(self.multiple);
     }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
 }
 
 walker custom_status_code {
@@ -315,5 +366,30 @@ walker custom_status_code {
 
     can enter with `root entry {
         Jac.get_context().status = self.status;
+    }
+}
+
+walker different_return {
+
+    can enter1 with `root entry {
+    }
+
+    can enter2 with A entry -> int {
+    }
+
+    can enter3 with B entry -> str {
+    }
+
+    can enter4 with C entry -> bool {
+    }
+
+    can enter5 with Nested entry -> Parent {
+    }
+
+    can enter6 with `root entry -> list | dict {
+    }
+
+    class __specs__ {
+        has auth: bool = False;
     }
 }

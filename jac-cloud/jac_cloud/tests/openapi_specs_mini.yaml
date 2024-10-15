@@ -223,6 +223,28 @@ components:
       - a
       title: get_with_query_body_model
       type: object
+    post_all_excluded_body_model:
+      properties:
+        a:
+          title: A
+          type: string
+        b:
+          title: B
+          type: string
+      title: post_all_excluded_body_model
+      type: object
+    post_partial_excluded_body_model:
+      properties:
+        a:
+          title: A
+          type: string
+        b:
+          title: B
+          type: string
+      required:
+      - a
+      title: post_partial_excluded_body_model
+      type: object
     post_path_var_body_model:
       properties:
         a:
@@ -246,10 +268,10 @@ info:
   version: 0.1.0
 openapi: 3.1.0
 paths:
-  /healthz/:
+  /healthz:
     get:
       description: Healthz API.
-      operationId: healthz_healthz__get
+      operationId: healthz_healthz_get
       responses:
         '200':
           content:
@@ -721,6 +743,45 @@ paths:
       summary: /detach_node/{node}
       tags:
       - walker
+  /walker/different_return:
+    post:
+      operationId: api_root_walker_different_return_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: /different_return
+      tags:
+      - walker
+  /walker/different_return/{node}:
+    post:
+      operationId: api_entry_walker_different_return__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /different_return/{node}
+      tags:
+      - walker
   /walker/disallow_other_root_access:
     post:
       operationId: api_root_walker_disallow_other_root_access_post
@@ -931,6 +992,63 @@ paths:
       summary: /get_with_query/{node}
       tags:
       - walker
+  /walker/post_all_excluded:
+    post:
+      operationId: api_root_walker_post_all_excluded_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_all_excluded_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /post_all_excluded
+      tags:
+      - walker
+  /walker/post_all_excluded/{node}:
+    post:
+      operationId: api_entry_walker_post_all_excluded__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_all_excluded_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /post_all_excluded/{node}
+      tags:
+      - walker
   /walker/post_no_body:
     post:
       operationId: api_root_walker_post_no_body_post
@@ -968,6 +1086,63 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: /post_no_body/{node}
+      tags:
+      - walker
+  /walker/post_partial_excluded:
+    post:
+      operationId: api_root_walker_post_partial_excluded_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_partial_excluded_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /post_partial_excluded
+      tags:
+      - walker
+  /walker/post_partial_excluded/{node}:
+    post:
+      operationId: api_entry_walker_post_partial_excluded__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_partial_excluded_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /post_partial_excluded/{node}
       tags:
       - walker
   /walker/post_path_var:
