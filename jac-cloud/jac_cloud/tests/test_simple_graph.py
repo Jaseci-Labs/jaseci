@@ -1,12 +1,13 @@
 """JacLang Jaseci Unit Test."""
 
 from contextlib import suppress
-from json import load
 from os import getenv
 from typing import Literal, overload
 from unittest.async_case import IsolatedAsyncioTestCase
 
 from httpx import get, post
+
+from yaml import safe_load
 
 from ..jaseci.datasources import Collection
 
@@ -79,11 +80,11 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
-        res = get(f"{self.host}/openapi.json", timeout=1)
+        res = get(f"{self.host}/openapi.yaml", timeout=1)
         res.raise_for_status()
 
-        with open("jac_cloud/tests/openapi_specs.json") as file:
-            self.assertEqual(load(file), res.json())
+        with open("jac_cloud/tests/openapi_specs.yaml") as file:
+            self.assertEqual(safe_load(file), safe_load(res.text))
 
     def trigger_create_user_test(self, suffix: str = "") -> None:
         """Test User Creation."""
@@ -490,7 +491,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
             self.post_api(f"visit_nested_node/{nested_node['id']}", expect_error=True),
         )
 
-    async def nested_count_should_be(self, node: int, edge: int) -> None:
+    def nested_count_should_be(self, node: int, edge: int) -> None:
         """Test nested node count."""
         self.assertEqual(node, self.q_node.count_documents({"name": "Nested"}))
         self.assertEqual(
@@ -505,7 +506,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
             ),
         )
 
-    async def trigger_custom_status_code(self) -> None:
+    def trigger_custom_status_code(self) -> None:
         """Test custom status code."""
         for acceptable_code in [200, 201, 202, 203, 205, 206, 207, 208, 226]:
             res = self.post_api("custom_status_code", {"status": acceptable_code})
@@ -602,51 +603,51 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         #                   VIA DETACH                    #
         ###################################################
 
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test()
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_update_nested_node_test()
         self.trigger_detach_nested_node_test()
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test(manual=True)
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_update_nested_node_test(manual=True)
         self.trigger_detach_nested_node_test(manual=True)
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         ###################################################
         #                   VIA DESTROY                   #
         ###################################################
 
         self.trigger_create_nested_node_test()
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_delete_nested_node_test()
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test(manual=True)
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_delete_nested_node_test(manual=True)
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test()
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         self.trigger_delete_nested_edge_test()
-        await self.nested_count_should_be(node=0, edge=0)
+        self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test(manual=True)
-        await self.nested_count_should_be(node=1, edge=1)
+        self.nested_count_should_be(node=1, edge=1)
 
         # only automatic cleanup remove nodes that doesn't have edges
         # manual save still needs to trigger the destroy for that node
         self.trigger_delete_nested_edge_test(manual=True)
-        await self.nested_count_should_be(node=1, edge=0)
+        self.nested_count_should_be(node=1, edge=0)
 
         self.trigger_access_validation_test(give_access_to_full_graph=False)
         self.trigger_access_validation_test(give_access_to_full_graph=True)
@@ -662,7 +663,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         #                  CUSTOM STATUS                  #
         ###################################################
 
-        await self.trigger_custom_status_code()
+        self.trigger_custom_status_code()
 
         ###################################################
         #                  CUSTOM REPORT                  #
