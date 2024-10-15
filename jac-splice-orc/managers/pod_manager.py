@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from kubernetes import client, config
 import grpc
@@ -19,6 +20,8 @@ class PodManager:
     def create_pod(self, module_name: str, module_config: dict):
         """Create a pod and service for the given module."""
         print("Creating pod %s, with config: %s" % (module_name, module_config))
+        image_name = os.getenv("IMAGE_NAME", "ashishmahendra/jac-cloud-orc:0.2")  # Default image name
+
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
 
@@ -46,6 +49,7 @@ class PodManager:
                         "containers": [
                             {
                                 "name": "module-container",
+                                "image": f"{image_name}",
                                 "image": "ashishmahendra/jac-cloud-orc:0.2",
                                 "env": [{"name": "MODULE_NAME", "value": module_name}],
                                 "ports": [{"containerPort": 50051}],
