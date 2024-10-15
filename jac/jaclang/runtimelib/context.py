@@ -42,10 +42,6 @@ class ExecutionContext:
             raise ValueError(f"Invalid anchor id {anchor_id} !")
         return default
 
-    def validate_access(self) -> bool:
-        """Validate access."""
-        return self.root.has_read_access(self.entry_node)
-
     def set_entry_node(self, entry_node: str | None) -> None:
         """Override entry."""
         self.entry_node = self.init_anchor(entry_node, self.root)

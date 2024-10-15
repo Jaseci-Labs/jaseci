@@ -281,7 +281,7 @@ walker manual_detach_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
         detached = here del--> [-->(`?Nested)];
-        nested.__jac__.destroy();
+        Jac.destroy(nested);
         nested.__jac__.apply();
 
         # simulate no auto save
@@ -296,7 +296,7 @@ walker manual_detach_nested_node {
 walker delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        nested.__jac__.destroy();
+        Jac.destroy(nested);
         # nested.__jac__.apply();
 
         report [-->(`?Nested)];
@@ -306,7 +306,7 @@ walker delete_nested_node {
 walker manual_delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        nested.__jac__.destroy();
+        Jac.destroy(nested);
         nested.__jac__.apply();
 
         # simulate no auto save
@@ -321,7 +321,7 @@ walker manual_delete_nested_node {
 walker delete_nested_edge {
     can enter_root with `root entry {
         nested_edge = :e:[-->][0];
-        nested_edge.__jac__.destroy();
+        Jac.destroy(nested_edge);
 
         report [-->(`?Nested)];
     }
@@ -330,7 +330,7 @@ walker delete_nested_edge {
 walker manual_delete_nested_edge {
     can enter_root with `root entry {
         nested_edge = :e:[-->][0];
-        nested_edge.__jac__.destroy();
+        Jac.destroy(nested_edge);
         nested_edge.__jac__.apply();
 
         # simulate no auto save
@@ -347,17 +347,17 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            here.__jac__.unrestrict(self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            here.__jac__.allow_root(BaseAnchor.ref(self.root_id), self.level);
+            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            here.__jac__.unrestrict(self.level);
+            Jac.unrestrict(here, self.level);
         } else {
-            here.__jac__.allow_root(BaseAnchor.ref(self.root_id), self.level);
+            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 }
@@ -367,17 +367,17 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            here.__jac__.restrict();
+            Jac.restrict(here);
         } else {
-            here.__jac__.disallow_root(BaseAnchor.ref(self.root_id));
+            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            here.__jac__.restrict();
+            Jac.restrict(here);
         } else {
-            here.__jac__.disallow_root(BaseAnchor.ref(self.root_id));
+            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 }
@@ -423,13 +423,32 @@ walker post_path_var {
     }
 }
 
+walker post_all_excluded {
+    has a: str = "";
+    has b: str = "";
+
+    class __specs__ {
+        has excluded: str = "*", auth: bool = False;
+    }
+}
+
+walker post_partial_excluded {
+    has a: str;
+    has b: str = "";
+
+    class __specs__ {
+        has excluded: str = "b";
+    }
+}
+
 walker combination1 {
     has a: str;
     has b: str;
     has c: str;
+    has d: str = "";
 
     class __specs__ {
-        has methods: list = ["post", "get"], as_query: list = ["a", "b"];
+        has methods: list = ["post", "get"], as_query: list = ["a", "b"], excluded: str = "d";
     }
 }
 
@@ -438,9 +457,14 @@ walker combination2 {
     has a: str;
     has b: str;
     has c: str;
+    has d: str = "";
+    has e: str = "";
 
     class __specs__ {
-        has path: str = "/{a}", methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"], as_query: list = ["b"];
+        has path: str = "/{a}",
+        methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"],
+        as_query: list = ["b"],
+        excluded: list = ["d", "e"];
     }
 }
 
