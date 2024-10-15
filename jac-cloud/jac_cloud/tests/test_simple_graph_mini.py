@@ -370,6 +370,11 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 Exception, self.post_api, "custom_status_code", {"status": invalid_code}
             )
 
+    def trigger_custom_report(self) -> None:
+        """Test custom status code."""
+        res = self.post_api("custom_report")
+        self.assertEqual({"testing": 1}, res)
+
     def trigger_upload_file(self) -> None:
         """Test upload file."""
         with open("jac_cloud/tests/simple_graph.jac", mode="br") as s:
@@ -390,19 +395,19 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6992,
+                                "size": 7113,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6992,
+                                "size": 7113,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6992,
+                                "size": 7113,
                             },
                         ],
                         "singleOptional": None,
@@ -410,6 +415,33 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 ],
                 data["reports"],
             )
+
+    def trigger_reset_graph(self) -> None:
+        """Test custom status code."""
+        res = self.post_api("populate_graph")
+        self.assertEqual(200, res["status"])
+
+        res = self.post_api("traverse_populated_graph")
+        self.assertEqual(200, res["status"])
+        reports = res["reports"]
+
+        root = reports.pop(0)
+        self.assertEqual({}, root["context"])
+
+        for idx in range(0, 62):
+            self.assertEqual({"id": idx % 2}, reports[idx]["context"])
+
+        res = self.post_api("check_populated_graph")
+        self.assertEqual(200, res["status"])
+        self.assertEqual([125], res["reports"])
+
+        res = self.post_api("purge_populated_graph")
+        self.assertEqual(200, res["status"])
+        self.assertEqual([124], res["reports"])
+
+        res = self.post_api("check_populated_graph")
+        self.assertEqual(200, res["status"])
+        self.assertEqual([1], res["reports"])
 
     async def test_all_features(self) -> None:
         """Test Full Features."""
@@ -458,7 +490,19 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.trigger_custom_status_code()
 
         ###################################################
+        #                  CUSTOM REPORT                  #
+        ###################################################
+
+        self.trigger_custom_report()
+
+        ###################################################
         #                   FILE UPLOAD                   #
         ###################################################
 
         self.trigger_upload_file()
+
+        ###################################################
+        #                   TEST PURGER                   #
+        ###################################################
+
+        self.trigger_reset_graph()

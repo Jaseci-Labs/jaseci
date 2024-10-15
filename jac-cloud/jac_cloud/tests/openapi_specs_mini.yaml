@@ -338,6 +338,45 @@ paths:
       summary: /allow_other_root_access/{node}
       tags:
       - walker
+  /walker/check_populated_graph:
+    post:
+      operationId: api_root_walker_check_populated_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: /check_populated_graph
+      tags:
+      - walker
+  /walker/check_populated_graph/{node}:
+    post:
+      operationId: api_entry_walker_check_populated_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /check_populated_graph/{node}
+      tags:
+      - walker
   /walker/combination1:
     post:
       operationId: api_root_walker_combination1_post
@@ -528,6 +567,45 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: /create_nested_node/{node}
+      tags:
+      - walker
+  /walker/custom_report:
+    post:
+      operationId: api_root_walker_custom_report_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: /custom_report
+      tags:
+      - walker
+  /walker/custom_report/{node}:
+    post:
+      operationId: api_entry_walker_custom_report__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /custom_report/{node}
       tags:
       - walker
   /walker/custom_status_code:
@@ -992,6 +1070,45 @@ paths:
       summary: /get_with_query/{node}
       tags:
       - walker
+  /walker/populate_graph:
+    post:
+      operationId: api_root_walker_populate_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: /populate_graph
+      tags:
+      - walker
+  /walker/populate_graph/{node}:
+    post:
+      operationId: api_entry_walker_populate_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /populate_graph/{node}
+      tags:
+      - walker
   /walker/post_all_excluded:
     post:
       operationId: api_root_walker_post_all_excluded_post
@@ -1373,6 +1490,45 @@ paths:
       summary: /post_with_file/{node}
       tags:
       - walker
+  /walker/purge_populated_graph:
+    post:
+      operationId: api_root_walker_purge_populated_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: /purge_populated_graph
+      tags:
+      - walker
+  /walker/purge_populated_graph/{node}:
+    post:
+      operationId: api_entry_walker_purge_populated_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /purge_populated_graph/{node}
+      tags:
+      - walker
   /walker/traverse_graph:
     post:
       operationId: api_root_walker_traverse_graph_post
@@ -1410,6 +1566,45 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: /traverse_graph/{node}
+      tags:
+      - walker
+  /walker/traverse_populated_graph:
+    post:
+      operationId: api_root_walker_traverse_populated_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: /traverse_populated_graph
+      tags:
+      - walker
+  /walker/traverse_populated_graph/{node}:
+    post:
+      operationId: api_entry_walker_traverse_populated_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /traverse_populated_graph/{node}
       tags:
       - walker
   /walker/update_graph:

@@ -416,3 +416,125 @@ walker different_return {
         has auth: bool = False;
     }
 }
+
+walker custom_report {
+    can enter1 with `root entry {
+        report 1;
+        report 2;
+        report 3;
+
+        Jac.report({
+            "testing": 1
+        }, True);
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
+
+##################################################################
+#                           FOR PURGER                           #
+##################################################################
+
+node D {
+    has id: int;
+}
+
+node E {
+    has id: int;
+}
+
+node F {
+    has id: int;
+}
+
+node G {
+    has id: int;
+}
+
+node H {
+    has id: int;
+}
+
+
+walker populate_graph {
+    can setup1 with `root entry {
+        for i in range(2) {
+            here ++> D(id=i);
+        }
+        visit [-->];
+    }
+
+    can setup2 with D entry {
+        for i in range(2) {
+            here ++> E(id=i);
+        }
+        visit [-->];
+    }
+
+    can setup3 with E entry {
+        for i in range(2) {
+            here ++> F(id=i);
+        }
+        visit [-->];
+    }
+
+    can setup4 with F entry {
+        for i in range(2) {
+            here ++> G(id=i);
+        }
+        visit [-->];
+    }
+
+    can setup5 with G entry {
+        for i in range(2) {
+            here ++> H(id=i);
+        }
+        visit [-->];
+    }
+}
+
+walker traverse_populated_graph {
+    can enter1 with `root entry {
+        report here;
+        visit [-->];
+    }
+
+    can enter2 with D entry {
+        report here;
+        visit [-->];
+    }
+
+    can enter3 with E entry {
+        report here;
+        visit [-->];
+    }
+
+    can enter4 with F entry {
+        report here;
+        visit [-->];
+    }
+
+    can enter5 with G entry {
+        report here;
+        visit [-->];
+    }
+
+    can enter6 with H entry {
+        report here;
+        visit [-->];
+    }
+}
+
+walker purge_populated_graph {
+    can purge with `root entry {
+        report Jac.reset_graph();
+    }
+}
+
+walker check_populated_graph {
+    can enter with `root entry {
+        report len(Jac.get_context().mem.__shelf__.values());
+    }
+}

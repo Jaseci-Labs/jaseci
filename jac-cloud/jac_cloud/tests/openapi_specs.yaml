@@ -841,6 +841,59 @@ paths:
       tags:
       - walker
       - walker
+  /walker/check_populated_graph:
+    post:
+      operationId: api_root_walker_check_populated_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Check Populated Graph Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: /check_populated_graph
+      tags:
+      - walker
+      - walker
+  /walker/check_populated_graph/{node}:
+    post:
+      operationId: api_entry_walker_check_populated_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Check Populated Graph  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /check_populated_graph/{node}
+      tags:
+      - walker
+      - walker
   /walker/combination1:
     get:
       operationId: api_root_walker_combination1_get
@@ -2789,6 +2842,59 @@ paths:
       tags:
       - walker
       - walker
+  /walker/populate_graph:
+    post:
+      operationId: api_root_walker_populate_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Populate Graph Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: /populate_graph
+      tags:
+      - walker
+      - walker
+  /walker/populate_graph/{node}:
+    post:
+      operationId: api_entry_walker_populate_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Populate Graph  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /populate_graph/{node}
+      tags:
+      - walker
+      - walker
   /walker/post_all_excluded:
     post:
       operationId: api_root_walker_post_all_excluded_post
@@ -3313,6 +3419,59 @@ paths:
       tags:
       - walker
       - walker
+  /walker/purge_populated_graph:
+    post:
+      operationId: api_root_walker_purge_populated_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Purge Populated Graph Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: /purge_populated_graph
+      tags:
+      - walker
+      - walker
+  /walker/purge_populated_graph/{node}:
+    post:
+      operationId: api_entry_walker_purge_populated_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Purge Populated Graph  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /purge_populated_graph/{node}
+      tags:
+      - walker
+      - walker
   /walker/traverse_graph:
     post:
       operationId: api_root_walker_traverse_graph_post
@@ -3363,6 +3522,59 @@ paths:
       security:
       - HTTPBearer: []
       summary: /traverse_graph/{node}
+      tags:
+      - walker
+      - walker
+  /walker/traverse_populated_graph:
+    post:
+      operationId: api_root_walker_traverse_populated_graph_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Traverse Populated Graph Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: /traverse_populated_graph
+      tags:
+      - walker
+      - walker
+  /walker/traverse_populated_graph/{node}:
+    post:
+      operationId: api_entry_walker_traverse_populated_graph__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Traverse Populated Graph  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /traverse_populated_graph/{node}
       tags:
       - walker
       - walker

@@ -246,6 +246,12 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
+    def reset_graph(root: Optional[Root]) -> int:
+        """Purge current or target graph."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def get_object(id: str) -> Architype | None:
         """Get object by id."""
         raise NotImplementedError
