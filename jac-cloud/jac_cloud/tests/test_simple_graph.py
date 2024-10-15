@@ -1,12 +1,13 @@
 """JacLang Jaseci Unit Test."""
 
 from contextlib import suppress
-from json import load
 from os import getenv
 from typing import Literal, overload
 from unittest.async_case import IsolatedAsyncioTestCase
 
 from httpx import get, post
+
+from yaml import safe_load
 
 from ..jaseci.datasources import Collection
 
@@ -79,11 +80,11 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
-        res = get(f"{self.host}/openapi.json", timeout=1)
+        res = get(f"{self.host}/openapi.yaml", timeout=1)
         res.raise_for_status()
 
-        with open("jac_cloud/tests/openapi_specs.json") as file:
-            self.assertEqual(load(file), res.json())
+        with open("jac_cloud/tests/openapi_specs.yaml") as file:
+            self.assertEqual(safe_load(file), safe_load(res.text))
 
     def trigger_create_user_test(self, suffix: str = "") -> None:
         """Test User Creation."""

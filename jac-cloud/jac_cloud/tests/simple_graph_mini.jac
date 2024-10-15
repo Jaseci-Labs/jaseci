@@ -252,45 +252,26 @@ walker post_with_body {
     has a: str;
 }
 
-walker get_no_body {
-    class __specs__ {
-        has methods: list = ["get"];
-    }
-}
+walker get_no_body {}
 
 walker get_with_query {
     has a: str;
-
-    class __specs__ {
-        has methods: list = ["get"], as_query: list = ["a"];
-    }
 }
 
 walker get_all_query {
     has a: str;
     has b: str;
-
-    class __specs__ {
-        has methods: list = ["get"], as_query: list = "*", auth: bool = False;
-    }
 }
 
 walker post_path_var {
     has a: str;
-
-    class __specs__ {
-        has path: str = "/{a}", methods: list = ["post", "get"];
-    }
 }
 
 walker combination1 {
     has a: str;
     has b: str;
     has c: str;
-
-    class __specs__ {
-        has methods: list = ["post", "get"], as_query: list = ["a", "b"];
-    }
+    has d: str = "";
 }
 
 
@@ -298,10 +279,8 @@ walker combination2 {
     has a: str;
     has b: str;
     has c: str;
-
-    class __specs__ {
-        has path: str = "/{a}", methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"], as_query: list = ["b"];
-    }
+    has d: str = "";
+    has e: str = "";
 }
 
 walker post_with_file {
@@ -315,8 +294,6 @@ walker post_with_file {
         print(self.multiple);
         print(self.singleOptional);
     }
-
-    class __specs__ {}
 }
 
 walker post_with_body_and_file {
@@ -331,12 +308,7 @@ walker post_with_body_and_file {
         print(self.single);
         print(self.multiple);
     }
-
-    class __specs__ {
-        has auth: bool = False;
-    }
 }
-
 
 walker custom_status_code {
     has status: int;
