@@ -343,6 +343,16 @@ walker WalkerTestSpawn {
     has entry_count: int = 0;
     has exit_count: int = 0;
 
+    can first_entry with entry{
+        for i in range(5) {
+            root ++> (next := NodeTest(value=i));
+        }
+        visitor = root spawn WalkerTestSpawn();
+        print("Visited nodes: ", visitor.visited_nodes);
+        print("Entry counts: ", visitor.entry_count);
+        print("Exit counts: ", visitor.exit_count);
+    }
+
     can walker_entry with entry {
         print("Walker entry: ", here);
         self.entry_count += 1;
@@ -362,14 +372,4 @@ walker WalkerTestSpawn {
         print("Walker exit: ", here);
         self.exit_count += 1;
     }
-}
-
-with entry {
-    for i in range(5) {
-        root ++> (next := NodeTest(value=i));
-    }
-    visitor = root spawn WalkerTestSpawn();
-    print("Visited nodes: ", visitor.visited_nodes);
-    print("Entry counts: ", visitor.entry_count);
-    print("Exit counts: ", visitor.exit_count);
 }
