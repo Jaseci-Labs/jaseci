@@ -371,9 +371,9 @@ class JacFeature(
         return plugin_manager.hook.has_instance_default(gen_func=gen_func)
 
     @staticmethod
-    def report(expr: Any) -> Any:  # noqa: ANN401
+    def report(expr: Any, custom: bool = False) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
-        return plugin_manager.hook.report(expr=expr)
+        plugin_manager.hook.report(expr=expr, custom=custom)
 
     @staticmethod
     def edge_ref(

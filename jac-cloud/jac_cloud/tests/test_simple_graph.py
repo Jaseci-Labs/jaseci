@@ -581,6 +581,11 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 Exception, self.post_api, "custom_status_code", {"status": invalid_code}
             )
 
+    def trigger_custom_report(self) -> None:
+        """Test custom status code."""
+        res = self.post_api("custom_report")
+        self.assertEqual({"testing": 1}, res)
+
     async def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -658,3 +663,9 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         await self.trigger_custom_status_code()
+
+        ###################################################
+        #                  CUSTOM REPORT                  #
+        ###################################################
+
+        self.trigger_custom_report()

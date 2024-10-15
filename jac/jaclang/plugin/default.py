@@ -855,8 +855,13 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def report(expr: Any) -> Any:  # noqa: ANN401
+    def report(expr: Any, custom: bool) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
+        ctx = Jac.get_context()
+        if custom:
+            ctx.custom = expr
+        else:
+            ctx.reports.append(expr)
 
     @staticmethod
     @hookimpl
