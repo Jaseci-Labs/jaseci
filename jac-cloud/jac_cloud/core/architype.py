@@ -1,6 +1,13 @@
 """Core constructs for Jac Language."""
 
-from dataclasses import asdict as _asdict, dataclass, field, fields, is_dataclass
+from dataclasses import (
+    MISSING,
+    asdict as _asdict,
+    dataclass,
+    field,
+    fields,
+    is_dataclass,
+)
 from enum import Enum
 from os import getenv
 from pickle import dumps as pdumps
@@ -76,7 +83,31 @@ def architype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object)
     """Parse dict to architype."""
     _to_dataclass(cls, data)
     architype = object.__new__(cls)
-    architype.__init__(**data, **kwargs)  # type: ignore[misc]
+    hintings = get_type_hints(cls)
+    if is_dataclass(cls):
+        for attr in fields(cls):
+            if (val := data.pop(attr.name, MISSING)) is MISSING:
+                if attr.default is not MISSING:
+                    setattr(architype, attr.name, attr.default)
+                elif attr.default_factory is not MISSING and callable(
+                    attr.default_factory
+                ):
+                    setattr(architype, attr.name, attr.default_factory())
+                else:
+                    raise ValueError(
+                        f"{cls.__name__} requires {attr.name} field with type {hintings[attr.name]}"
+                    )
+            else:
+                hinter = hintings[attr.name]
+                if isinstance(val, hinter):
+                    setattr(architype, attr.name, val)
+                else:
+                    raise ValueError(
+                        f"Data from datasource has type {val.__class__.__name__}"
+                        f" but {cls.__name__}.{attr.name} requires {hinter}."
+                    )
+    architype.__dict__.update(data)
+    architype.__dict__.update(kwargs)
     return architype
 
 
@@ -865,7 +896,11 @@ class BaseArchitype:
         jac_classes: dict[str, Any] | None = getattr(cls, "__jac_classes__", None)
         if not jac_classes or not (jac_class := jac_classes.get(name)):
             jac_classes = cls.__set_classes__()
-            jac_class = jac_classes.get(name, cls)
+            if (jac_class := jac_classes.get(name)) is None:
+                logger.warning(
+                    f"Can't find {cls.__name__} {name}. Defaulting to base {cls.__name__}."
+                )
+                return cls
 
         return jac_class
 
