@@ -57,7 +57,7 @@ node C {
 }
 
 obj Child {
-    has val: int, arr: list, json: dict, enum_field: Enum;
+    has val: int, arr: list[int], json: dict[str, int], enum_field: Enum;
 }
 
 obj Parent:Child: {
@@ -65,7 +65,7 @@ obj Parent:Child: {
 }
 
 node Nested {
-    has val: int, arr: list, json: dict, parent: Parent, enum_field: Enum;
+    has val: int, arr: list[int], json: dict[str, int], parent: Parent, enum_field: Enum;
 }
 
 walker create_graph {

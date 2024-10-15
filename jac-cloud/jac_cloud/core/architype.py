@@ -99,7 +99,8 @@ def architype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object)
                     )
             else:
                 hinter = hintings[attr.name]
-                if isinstance(val, hinter):
+                origin = get_origin(hinter)
+                if isinstance(val, origin or hinter):
                     setattr(architype, attr.name, val)
                 else:
                     raise ValueError(
