@@ -503,6 +503,37 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
+    def reset_graph(root: Root | None = None) -> int:
+        """Purge current or target graph."""
+        if not FastAPI.is_enabled():
+            return JacFeatureImpl.reset_graph(root=root)  # type: ignore[arg-type]
+
+        ctx = JaseciContext.get()
+        ranchor = root.__jac__ if root else ctx.root
+
+        deleted_count = 0  # noqa: SIM113
+
+        for node in NodeAnchor.Collection.find(
+            {"_id": {"$ne": ranchor.id}, "root": ranchor.id}
+        ):
+            ctx.mem.__mem__[node.id] = node
+            Jac.destroy(node)
+            deleted_count += 1
+
+        for edge in EdgeAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[edge.id] = edge
+            Jac.destroy(edge)
+            deleted_count += 1
+
+        for walker in WalkerAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[walker.id] = walker
+            Jac.destroy(walker)
+            deleted_count += 1
+
+        return deleted_count
+
+    @staticmethod
+    @hookimpl
     def make_architype(
         cls: type,
         arch_base: Type[Architype],
