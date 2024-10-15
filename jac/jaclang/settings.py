@@ -2,7 +2,8 @@
 
 import configparser
 import os
-from dataclasses import dataclass, fields, field
+from dataclasses import dataclass, field, fields
+from typing import Optional, Any
 
 
 @dataclass
@@ -29,7 +30,9 @@ class Settings:
 
     # module import configuration
     remote_module_handling: bool = True  # Enable/Disable remote module handling
-    modules_to_remote: dict = None  # Dictionary specifying module configurations
+    modules_to_remote: Optional[dict[Any, Any]] = (
+        None  # Dictionary specifying module configurations
+    )
     pod_manager_url: str = (
         "http://smartimport.apps.bcstechnology.com.au"  # "localhost:8080"  # URL for pod manager
     )
@@ -69,7 +72,7 @@ class Settings:
         self.load_env_vars()
         self.load_modules_to_remote()
 
-    def load_modules_to_remote(self) -> dict:
+    def load_modules_to_remote(self) -> None:
         """Load the modules configuration from the config file or environment."""
         # Load the `modules_to_remote` dict from config file
         config_parser = configparser.ConfigParser()
