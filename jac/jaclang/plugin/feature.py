@@ -255,6 +255,11 @@ class JacFeature(
         return plugin_manager.hook.get_context()
 
     @staticmethod
+    def reset_graph(root: Optional[Root] = None) -> int:
+        """Purge current or target graph."""
+        return plugin_manager.hook.reset_graph(root=root)
+
+    @staticmethod
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
         return plugin_manager.hook.get_object(id=id)

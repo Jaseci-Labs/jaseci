@@ -387,15 +387,15 @@ class BaseAnchor:
     def add_to_set(self, field: str, anchor: Anchor, remove: bool = False) -> None:
         """Add to set."""
         if field not in (add_to_set := self._add_to_set):
-            add_to_set[field] = {"$each": set()}
+            add_to_set[field] = {"$each": []}
 
-        ops: set = add_to_set[field]["$each"]
+        ops: list = add_to_set[field]["$each"]
 
         if remove:
             if anchor in ops:
                 ops.remove(anchor)
         else:
-            ops.add(anchor)
+            ops.append(anchor)
             self.pull(field, anchor, True)
 
     def pull(self, field: str, anchor: Anchor, remove: bool = False) -> None:
@@ -432,9 +432,10 @@ class BaseAnchor:
         """Return unsynced copy of anchor."""
         if self.is_populated():
             unloaded = object.__new__(self.__class__)
-            unloaded.name = self.name
-            unloaded.id = self.id
-            return unloaded
+            # this will be refactored on abstraction
+            unloaded.name = self.name  # type: ignore[attr-defined]
+            unloaded.id = self.id  # type: ignore[attr-defined]
+            return unloaded  # type: ignore[return-value]
         return self
 
     def populate(self) -> None:
@@ -535,7 +536,7 @@ class BaseAnchor:
                 _added_edges = []
                 for anchor in added_edges:
                     if propagate:
-                        anchor.build_query(bulk_write)
+                        anchor.build_query(bulk_write)  # type: ignore[operator]
                     _added_edges.append(anchor.ref_id)
                 changes["$addToSet"]["edges"]["$each"] = _added_edges
             else:
@@ -552,9 +553,10 @@ class BaseAnchor:
             if pulled_edges:
                 _pulled_edges = []
                 for anchor in pulled_edges:
-                    if propagate and anchor.state.deleted is not True:
-                        anchor.state.deleted = True
-                        bulk_write.del_edge(anchor.id)
+                    # will be refactored on abstraction
+                    if propagate and anchor.state.deleted is not True:  # type: ignore[attr-defined]
+                        anchor.state.deleted = True  # type: ignore[attr-defined]
+                        bulk_write.del_edge(anchor.id)  # type: ignore[attr-defined, arg-type]
                     _pulled_edges.append(anchor.ref_id)
 
                 if added_edges:
@@ -643,7 +645,7 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
     """Node Anchor."""
 
     architype: "NodeArchitype"
-    edges: list["EdgeAnchor"]
+    edges: list["EdgeAnchor"]  # type: ignore[assignment]
 
     class Collection(BaseCollection["NodeAnchor"]):
         """NodeAnchor collection interface."""

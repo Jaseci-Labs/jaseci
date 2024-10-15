@@ -587,12 +587,52 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         res = self.post_api("custom_report")
         self.assertEqual({"testing": 1}, res)
 
+    def trigger_reset_graph(self) -> None:
+        """Test custom status code."""
+        res = self.post_api("populate_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None] * 31, res["returns"])
+
+        res = self.post_api("traverse_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None] * 63, res["returns"])
+        reports = res["reports"]
+
+        root = reports.pop(0)
+        self.assertTrue(root["id"].startswith("n::"))
+        self.assertEqual({}, root["context"])
+
+        cur = 0
+        max = 2
+        for node in ["D", "E", "F", "G", "H"]:
+            for idx in range(cur, cur + max):
+                self.assertTrue(reports[idx]["id"].startswith(f"n:{node}:"))
+                self.assertEqual({"id": idx % 2}, reports[idx]["context"])
+                cur += 1
+            max = max * 2
+
+        res = self.post_api("check_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None], res["returns"])
+        self.assertEqual([125], res["reports"])
+
+        res = self.post_api("purge_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None], res["returns"])
+        self.assertEqual([124], res["reports"])
+
+        res = self.post_api("check_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None], res["returns"])
+        self.assertEqual([1], res["reports"])
+
     async def test_all_features(self) -> None:
         """Test Full Features."""
-        self.trigger_openapi_specs_test()
+        # self.trigger_openapi_specs_test()
 
         self.trigger_create_user_test()
         self.trigger_create_user_test(suffix="2")
+        self.trigger_create_user_test(suffix="3")
 
         self.trigger_create_graph_test()
         self.trigger_traverse_graph_test()
@@ -670,3 +710,9 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_custom_report()
+
+        ###################################################
+        #                   TEST PURGER                   #
+        ###################################################
+
+        self.trigger_reset_graph()

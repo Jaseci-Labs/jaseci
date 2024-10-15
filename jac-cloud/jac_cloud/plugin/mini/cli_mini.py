@@ -87,14 +87,15 @@ def populate_apis(router: APIRouter, cls: Type[WalkerArchitype]) -> None:
     files: dict[str, Any] = {}
 
     hintings = get_type_hints(cls)
-    for f in fields(cls):
-        f_name = f.name
-        f_type = hintings[f_name]
-        if f_type in FILE_TYPES:
-            files[f_name] = gen_model_field(f_type, f, True)
-        else:
-            consts = gen_model_field(f_type, f)
-            body[f_name] = consts
+    if is_dataclass(cls):
+        for f in fields(cls):
+            f_name = f.name
+            f_type = hintings[f_name]
+            if f_type in FILE_TYPES:
+                files[f_name] = gen_model_field(f_type, f, True)
+            else:
+                consts = gen_model_field(f_type, f)
+                body[f_name] = consts
 
     payload: dict[str, Any] = {
         "files": (
@@ -133,6 +134,9 @@ def populate_apis(router: APIRouter, cls: Type[WalkerArchitype]) -> None:
 
         Jac.spawn_call(cls(**body, **pl["files"]), jctx.entry_node.architype)
         jctx.close()
+
+        if jctx.custom is not MISSING:
+            return jctx.custom
 
         return response(jctx.reports, getattr(jctx, "status", 200))
 
