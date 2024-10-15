@@ -11,6 +11,8 @@ from asyncer import syncify
 from fastapi import APIRouter, Depends, FastAPI, File, Response, UploadFile, status
 from fastapi.responses import ORJSONResponse
 
+from jac_cloud.jaseci.utils import populate_yaml_specs
+
 from jaclang import jac_import
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import (
@@ -172,6 +174,9 @@ def serve_mini(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     app = FastAPI()
+
+    populate_yaml_specs(app)
+
     healtz_router = APIRouter(prefix="/healthz", tags=["monitoring"])
     walker_router = APIRouter(prefix="/walker", tags=["walker"])
 
