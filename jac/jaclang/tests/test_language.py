@@ -1176,3 +1176,18 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)
+
+    def test_visit_sequence(self) -> None:
+        """Test conn assign on edges."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("visit_sequence", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        self.assertEqual(
+            "walker entry\nwalker enter to root\n"
+            "a-1\na-2\na-3\na-4\na-5\na-6\n"
+            "b-1\nb-2\nb-3\nb-4\nb-5\nb-6\n"
+            "c-1\nc-2\nc-3\nc-4\nc-5\nc-6\n"
+            "walker exit\n",
+            captured_output.getvalue(),
+        )
