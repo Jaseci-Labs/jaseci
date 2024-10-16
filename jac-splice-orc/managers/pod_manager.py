@@ -25,11 +25,11 @@ class PodManager:
         """Initialize Kubernetes client."""
         if os.getenv("TEST_ENV") == "true":
             print("Running in test environment, skipping Kubernetes config.")
-            return
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        else:
+            try:
+                config.load_incluster_config()
+            except config.ConfigException:
+                config.load_kube_config()
         self.v1 = client.CoreV1Api()
 
     def create_pod(self, module_name: str, module_config: dict) -> Any:
