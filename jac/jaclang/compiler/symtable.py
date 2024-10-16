@@ -256,8 +256,9 @@ class SymbolTable:
                     isinstance(base_cls, ast.AstSymbolNode)
                     and (found := self.use_lookup(base_cls))
                     and found
+                    and found.fetch_sym_tab
                 ):
-                    self.inherit.append(found.decl.sym_tab)
+                    self.inherit.append(found.fetch_sym_tab)
                     base_cls.name_spec.name_of = found.decl.name_of
 
     def pp(self, depth: Optional[int] = None) -> str:

@@ -4,6 +4,8 @@ This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
 
+from typing import Optional
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
@@ -15,6 +17,7 @@ class SymTabBuildPass(Pass):
     def before_pass(self) -> None:
         """Before pass."""
         self.cur_sym_tab: list[SymbolTable] = []
+        self.__py_needed_items: list[Optional[dict[str, Optional[str]]]] = []
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> None:
         """Push scope."""
@@ -27,14 +30,25 @@ class SymTabBuildPass(Pass):
         else:
             self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))
 
+        if isinstance(self.cur_scope.owner, ast.Module):
+            self.__py_needed_items.append(self.cur_scope.owner.py_needed_items)
+        else:
+            self.__py_needed_items.append(None)
+
     def pop_scope(self) -> SymbolTable:
         """Pop scope."""
+        self.__py_needed_items.pop()
         return self.cur_sym_tab.pop()
 
     @property
     def cur_scope(self) -> SymbolTable:
         """Return current scope."""
         return self.cur_sym_tab[-1]
+
+    @property
+    def cur_py_needed_items(self) -> Optional[dict[str, Optional[str]]]:
+        """Return current py_needed_items object."""
+        return self.__py_needed_items[-1]
 
     def sync_node_to_scope(self, node: ast.AstNode) -> None:
         """Sync node to scope."""
@@ -49,8 +63,21 @@ class SymTabBuildPass(Pass):
         mod_path: str,
         is_imported: bool,
         """
-        self.push_scope(node.name, node)
-        self.sync_node_to_scope(node)
+        # This to check the python import from cases
+        # for example: from math import floor
+        # In the py_import all the math AST is loaded but here in symbolTable
+        # building, only floor will be added to the symbolTable
+
+        # We don't need to create a new scope all what we need is to add
+        # the parent scope of the python module to be the current scope
+        if node.is_raised_from_py and node.py_needed_items:
+            assert node.parent is not None
+            assert node.parent.sym_tab is not None
+            self.cur_sym_tab.append(node.parent.sym_tab)
+            self.__py_needed_items.append(node.py_needed_items)
+        else:
+            self.push_scope(node.name, node)
+            self.sync_node_to_scope(node)
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -61,6 +88,9 @@ class SymTabBuildPass(Pass):
         mod_path: str,
         is_imported: bool,
         """
+        if node.is_raised_from_py and node.py_needed_items:
+            self.__py_needed_items.pop()
+            return
         self.pop_scope()
 
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
@@ -232,6 +262,16 @@ class SymTabBuildPass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
+        if self.cur_py_needed_items:
+            if node.name.sym_name not in self.cur_py_needed_items:
+                node.ignore_uses = True  # No need to get uses of this node
+                return
+            elif self.cur_py_needed_items[node.name.sym_name] is not None:
+                alias_val = self.cur_py_needed_items[node.name.sym_name]
+                assert isinstance(alias_val, str)
+                # node.name._sym_name = alias_val
+                node.name_spec._sym_name = alias_val
+
         self.sync_node_to_scope(node)
         node.sym_tab.def_insert(node, access_spec=node, single_decl="architype")
         self.push_scope(node.name.value, node)
@@ -248,6 +288,12 @@ class SymTabBuildPass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
+        if (
+            self.cur_py_needed_items
+            and node.name.sym_name not in self.cur_py_needed_items
+        ):
+            return
+
         self.pop_scope()
 
     def enter_arch_def(self, node: ast.ArchDef) -> None:
@@ -286,6 +332,14 @@ class SymTabBuildPass(Pass):
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
         """
+        if self.cur_py_needed_items:
+            if node.name_ref.sym_name not in self.cur_py_needed_items:
+                return
+            elif self.cur_py_needed_items[node.name_ref.sym_name]:
+                alias_val = self.cur_py_needed_items[node.name_ref.sym_name]
+                assert isinstance(alias_val, str)
+                node.name_ref._sym_name = alias_val
+
         self.sync_node_to_scope(node)
         node.sym_tab.def_insert(node, access_spec=node, single_decl="ability")
         self.push_scope(node.sym_name, node)
@@ -311,6 +365,12 @@ class SymTabBuildPass(Pass):
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
         """
+        if (
+            self.cur_py_needed_items
+            and node.name_ref.sym_name not in self.__py_needed_items
+        ):
+            return
+
         self.pop_scope()
 
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
@@ -465,6 +525,8 @@ class SymTabBuildPass(Pass):
         elseifs: Optional['ElseIfs'],
         else_body: Optional['ElseStmt'],
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -476,6 +538,8 @@ class SymTabBuildPass(Pass):
         elseifs: Optional['ElseIfs'],
         else_body: Optional['ElseStmt'],
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_else_if(self, node: ast.ElseIf) -> None:
@@ -483,6 +547,8 @@ class SymTabBuildPass(Pass):
 
         elseifs: list['IfStmt'],
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope("elif_stmt", node)
         self.sync_node_to_scope(node)
 
@@ -491,6 +557,8 @@ class SymTabBuildPass(Pass):
 
         elseifs: list['IfStmt'],
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_else_stmt(self, node: ast.ElseStmt) -> None:
@@ -498,6 +566,8 @@ class SymTabBuildPass(Pass):
 
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -506,6 +576,8 @@ class SymTabBuildPass(Pass):
 
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_expr_stmt(self, node: ast.ExprStmt) -> None:
@@ -513,6 +585,8 @@ class SymTabBuildPass(Pass):
 
         expr: ExprType,
         """
+        if self.cur_py_needed_items:
+            return
         self.sync_node_to_scope(node)
 
     def enter_try_stmt(self, node: ast.TryStmt) -> None:
@@ -522,6 +596,8 @@ class SymTabBuildPass(Pass):
         excepts: Optional['ExceptList'],
         finally_body: Optional['FinallyStmt'],
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -532,6 +608,8 @@ class SymTabBuildPass(Pass):
         excepts: Optional['ExceptList'],
         finally_body: Optional['FinallyStmt'],
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_except(self, node: ast.Except) -> None:
@@ -541,6 +619,8 @@ class SymTabBuildPass(Pass):
         name: Optional[Token],
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -551,6 +631,8 @@ class SymTabBuildPass(Pass):
         name: Optional[Token],
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_finally_stmt(self, node: ast.FinallyStmt) -> None:
@@ -558,6 +640,8 @@ class SymTabBuildPass(Pass):
 
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -566,6 +650,8 @@ class SymTabBuildPass(Pass):
 
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_iter_for_stmt(self, node: ast.IterForStmt) -> None:
@@ -576,6 +662,8 @@ class SymTabBuildPass(Pass):
         count_by: ExprType,
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -587,6 +675,8 @@ class SymTabBuildPass(Pass):
         count_by: ExprType,
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
@@ -598,6 +688,8 @@ class SymTabBuildPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -610,6 +702,8 @@ class SymTabBuildPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_name(self, node: ast.Name) -> None:
@@ -632,6 +726,8 @@ class SymTabBuildPass(Pass):
         condition: ExprType,
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -641,6 +737,8 @@ class SymTabBuildPass(Pass):
         condition: ExprType,
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_with_stmt(self, node: ast.WithStmt) -> None:
@@ -649,6 +747,8 @@ class SymTabBuildPass(Pass):
         exprs: 'ExprAsItemList',
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
 
@@ -658,6 +758,8 @@ class SymTabBuildPass(Pass):
         exprs: 'ExprAsItemList',
         body: 'CodeBlock',
         """
+        if self.cur_py_needed_items:
+            return
         self.pop_scope()
 
     def enter_expr_as_item(self, node: ast.ExprAsItem) -> None:
