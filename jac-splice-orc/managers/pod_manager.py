@@ -1,26 +1,36 @@
+"""This module provides a FastAPI-based API for managing Kubernetes pods."""
+
 import os
-from fastapi import FastAPI, HTTPException
-from kubernetes import client, config
-import grpc
 import time
-from grpc_local import module_service_pb2_grpc, module_service_pb2
-from fastapi import FastAPI, Query, Body
+from typing import Any, List
+
+from fastapi import Body, FastAPI, HTTPException, Query
+
+import grpc
+
+from grpc_local import module_service_pb2, module_service_pb2_grpc
+
+from kubernetes import client, config
+
 from pydantic import BaseModel
-from typing import List, Any
+
 
 app = FastAPI()
 
 
 class PodManager:
-    def __init__(self):
+    """Manages Kubernetes pods and services for modules."""
+
+    def __init__(self) -> None:
+        """Initialize Kubernetes client."""
         config.load_incluster_config()
         self.v1 = client.CoreV1Api()
 
-    def create_pod(self, module_name: str, module_config: dict):
+    def create_pod(self, module_name: str, module_config: dict) -> Any:
         """Create a pod and service for the given module."""
         print("Creating pod %s, with config: %s" % (module_name, module_config))
         image_name = os.getenv(
-            "IMAGE_NAME", "ashishmahendra/jac-cloud-orc:0.3"
+            "IMAGE_NAME", "ashishmahendra/jac-splice-orc:0.4.0"
         )  # Default image name
 
         pod_name = f"{module_name}-pod"
@@ -61,9 +71,7 @@ class PodManager:
 
         # Create Service
         try:
-            service_info = self.v1.read_namespaced_service(
-                name=service_name, namespace="default"
-            )
+            _ = self.v1.read_namespaced_service(name=service_name, namespace="default")
             print(f"Service {service_name} already exists.")
         except client.exceptions.ApiException as e:
             if e.status == 404:
@@ -86,7 +94,7 @@ class PodManager:
 
         return {"message": f"Pod {pod_name} and service {service_name} created."}
 
-    def delete_pod(self, module_name: str):
+    def delete_pod(self, module_name: str) -> Any:
         """Delete the pod and service for the given module."""
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
@@ -95,21 +103,21 @@ class PodManager:
         try:
             self.v1.delete_namespaced_pod(name=pod_name, namespace="default")
             print(f"Pod {pod_name} deleted.")
-        except client.exceptions.ApiException as e:
+        except client.exceptions.ApiException:
             raise HTTPException(status_code=404, detail=f"Pod {pod_name} not found.")
 
         # Delete Service
         try:
             self.v1.delete_namespaced_service(name=service_name, namespace="default")
             print(f"Service {service_name} deleted.")
-        except client.exceptions.ApiException as e:
+        except client.exceptions.ApiException:
             raise HTTPException(
                 status_code=404, detail=f"Service {service_name} not found."
             )
 
         return {"message": f"Pod {pod_name} and service {service_name} deleted."}
 
-    def wait_for_pod_ready(self, pod_name: str):
+    def wait_for_pod_ready(self, pod_name: str) -> None:
         """Wait until the pod is ready."""
         max_retries = 30
         retries = 0
@@ -130,12 +138,12 @@ class PodManager:
                 name=service_name, namespace="default"
             )
             return service_info.spec.cluster_ip
-        except client.exceptions.ApiException as e:
+        except client.exceptions.ApiException:
             raise HTTPException(
                 status_code=404, detail=f"Service for module {module_name} not found."
             )
 
-    def forward_to_pod(self, service_ip: str, method_name: str, args: list):
+    def forward_to_pod(self, service_ip: str, method_name: str, args: list) -> Any:
         """Forward the gRPC request to the pod service and return the result."""
         channel = grpc.insecure_channel(f"{service_ip}:50051")
         stub = module_service_pb2_grpc.ModuleServiceStub(channel)
@@ -154,6 +162,8 @@ pod_manager = PodManager()
 
 
 class RunModuleRequest(BaseModel):
+    """Request for running a module."""
+
     args: List[Any]
 
 
@@ -162,8 +172,8 @@ async def run_module(
     module_name: str = Query(..., description="Name of the module"),
     method_name: str = Query(..., description="Name of the method"),
     request: RunModuleRequest = Body(..., description="Arguments for the method"),
-):
-    """API endpoint to receive the request and forward it to the respective pod."""
+) -> Any:
+    """Run a module and return the result."""
     service_ip = pod_manager.get_pod_service_ip(module_name)
 
     # Forward the request to the corresponding pod via gRPC
@@ -173,10 +183,12 @@ async def run_module(
 
 
 @app.post("/create_pod/{module_name}")
-def create_pod(module_name: str, module_config: dict = Body(...)):
+def create_pod(module_name: str, module_config: dict = Body(...)) -> Any:
+    """Create a pod and service for the given module and return the result."""
     return pod_manager.create_pod(module_name, module_config)
 
 
 @app.delete("/delete_pod/{module_name}")
-def delete_pod(module_name: str):
+def delete_pod(module_name: str) -> Any:
+    """Delete the pod and service for the given module and return the result."""
     return pod_manager.delete_pod(module_name)

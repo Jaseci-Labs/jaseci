@@ -26,9 +26,12 @@ spec:
       serviceAccountName: smartimportsa  # Use the service account
       containers:
       - name: pod-manager
-        image: ashishmahendra/jac-pod-manager:0.9
+        image: ashishmahendra/jac-splice-orc:0.4.0
         ports:
         - containerPort: 8000
+        env:
+        - name: SERVICE_TYPE
+          value: "pod_manager"
 
 ---
 
