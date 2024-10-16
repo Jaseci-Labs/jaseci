@@ -28,7 +28,9 @@ def mock_kubernetes_and_grpc():
         PodManager, "delete_pod"
     ) as mock_delete_pod, mock.patch.object(
         PodManager, "forward_to_pod"
-    ) as mock_forward_to_pod:
+    ) as mock_forward_to_pod, mock.patch.object(
+        PodManager, "get_pod_service_ip"
+    ) as mock_get_pod_service_ip:
 
         # Mock load_incluster_config to avoid loading in-cluster config during tests
         mock_load_incluster_config.return_value = None
@@ -43,6 +45,9 @@ def mock_kubernetes_and_grpc():
         mock_delete_pod.return_value = {
             "message": "Pod numpy-pod and service numpy-service deleted."
         }
+
+        # Mock get_pod_service_ip to avoid real Kubernetes API calls
+        mock_get_pod_service_ip.return_value = "127.0.0.1"  # Return a mock IP address
 
         # Mock gRPC method call to return expected value
         mock_forward_to_pod.return_value = "[1, 2, 3, 4]"
