@@ -23,7 +23,10 @@ class PodManager:
 
     def __init__(self) -> None:
         """Initialize Kubernetes client."""
-        config.load_incluster_config()
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
         self.v1 = client.CoreV1Api()
 
     def create_pod(self, module_name: str, module_config: dict) -> Any:
