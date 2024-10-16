@@ -370,6 +370,38 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 Exception, self.post_api, "custom_status_code", {"status": invalid_code}
             )
 
+    def trigger_custom_report(self) -> None:
+        """Test custom status code."""
+        res = self.post_api("custom_report")
+        self.assertEqual({"testing": 1}, res)
+
+    def trigger_reset_graph(self) -> None:
+        """Test custom status code."""
+        res = self.post_api("populate_graph")
+        self.assertEqual(200, res["status"])
+
+        res = self.post_api("traverse_populated_graph")
+        self.assertEqual(200, res["status"])
+        reports = res["reports"]
+
+        root = reports.pop(0)
+        self.assertEqual({}, root["context"])
+
+        for idx in range(0, 62):
+            self.assertEqual({"id": idx % 2}, reports[idx]["context"])
+
+        res = self.post_api("check_populated_graph")
+        self.assertEqual(200, res["status"])
+        self.assertEqual([125], res["reports"])
+
+        res = self.post_api("purge_populated_graph")
+        self.assertEqual(200, res["status"])
+        self.assertEqual([124], res["reports"])
+
+        res = self.post_api("check_populated_graph")
+        self.assertEqual(200, res["status"])
+        self.assertEqual([1], res["reports"])
+
     async def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -415,3 +447,15 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_custom_status_code()
+
+        ###################################################
+        #                  CUSTOM REPORT                  #
+        ###################################################
+
+        self.trigger_custom_report()
+
+        ###################################################
+        #                   TEST PURGER                   #
+        ###################################################
+
+        self.trigger_reset_graph()

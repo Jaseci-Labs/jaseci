@@ -12,7 +12,7 @@ from collections import OrderedDict
 from dataclasses import field
 from functools import wraps
 from logging import getLogger
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 from uuid import UUID
 
 from jaclang.compiler.constant import colors
@@ -42,6 +42,7 @@ from jaclang.runtimelib.constructs import (
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import collect_node_connections, traverse_graph
 
 
@@ -560,6 +561,29 @@ class JacFeatureImpl(
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         return ExecutionContext.get()
+
+    @staticmethod
+    @hookimpl
+    def reset_graph(root: Optional[Root] = None) -> int:
+        """Purge current or target graph."""
+        ctx = Jac.get_context()
+        mem = cast(ShelfStorage, ctx.mem)
+        ranchor = root.__jac__ if root else ctx.root
+
+        deleted_count = 0
+        for anchor in (
+            anchors.values()
+            if isinstance(anchors := mem.__shelf__, Shelf)
+            else mem.__mem__.values()
+        ):
+            if anchor == ranchor or anchor.root != ranchor.id:
+                continue
+
+            if loaded_anchor := mem.find_by_id(anchor.id):
+                deleted_count += 1
+                Jac.destroy(loaded_anchor)
+
+        return deleted_count
 
     @staticmethod
     @hookimpl
