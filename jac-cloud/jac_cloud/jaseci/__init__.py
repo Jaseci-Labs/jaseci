@@ -10,7 +10,7 @@ from fastapi.responses import ORJSONResponse
 
 from uvicorn import run as _run
 
-from .utils import Emailer, logger
+from .utils import Emailer, logger, populate_yaml_specs
 
 
 class FastAPI:
@@ -58,6 +58,8 @@ class FastAPI:
                 yield
 
             cls.__app__ = _FaststAPI(lifespan=lifespan)
+
+            populate_yaml_specs(cls.__app__)
 
             from .routers import healthz_router, sso_router, user_router
             from ..plugin.jaseci import walker_router

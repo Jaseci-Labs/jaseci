@@ -237,6 +237,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual(stdout_value.split("\n")[0], "11 13 12 12 11 12 12")
         self.assertEqual(stdout_value.split("\n")[1], '12 12 """hello"""  18 18')
         self.assertEqual(stdout_value.split("\n")[2], "11 12 11 12 11 18 23")
+        self.assertEqual(stdout_value.split("\n")[3], 'hello klkl"""')
 
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
@@ -491,7 +492,7 @@ class JacLanguageTests(TestCase):
         jac_import("enum_inside_archtype", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual("2\n", stdout_value)
+        self.assertIn("2 Accessing privileged Data", stdout_value)
 
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
@@ -503,10 +504,13 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
 
         with open(file_name, "r") as f:
-            parsed_ast = py_ast.parse(f.read())
+            file_source = f.read()
+            parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast, orig_src=ast.JacSource(file_source, file_name)
+                    ),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
@@ -528,9 +532,11 @@ class JacLanguageTests(TestCase):
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.py")
         with open(py_out_path) as f:
+            file_source = f.read()
             output = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(
-                    py_ast.parse(f.read()), mod_path=py_out_path
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
         # print(output)
@@ -559,10 +565,14 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
 
         with open(file_name, "r") as f:
-            parsed_ast = py_ast.parse(f.read())
+            file_source = f.read()
+            parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast,
+                        orig_src=ast.JacSource(file_source, file_name),
+                    ),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
@@ -587,9 +597,11 @@ class JacLanguageTests(TestCase):
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.py")
         with open(py_out_path) as f:
+            file_source = f.read()
             output = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(
-                    py_ast.parse(f.read()), mod_path=py_out_path
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
         self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
@@ -607,10 +619,14 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
 
         with open(file_name, "r") as f:
-            parsed_ast = py_ast.parse(f.read())
+            file_source = f.read()
+            parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast,
+                        orig_src=ast.JacSource(file_source, file_name),
+                    ),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
@@ -634,9 +650,11 @@ class JacLanguageTests(TestCase):
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.py")
         with open(py_out_path) as f:
+            file_source = f.read()
             output = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(
-                    py_ast.parse(f.read()), mod_path=py_out_path
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
         self.assertIn("if 0 <= x<= 5 {", output)
@@ -761,9 +779,11 @@ class JacLanguageTests(TestCase):
                 module_path + ".py",
             )
             with open(file_path) as f:
+                file_source = f.read()
                 jac_ast = PyastBuildPass(
                     input_ir=ast.PythonModuleAst(
-                        py_ast.parse(f.read()), mod_path=file_path
+                        py_ast.parse(file_source),
+                        orig_src=ast.JacSource(file_source, file_path),
                     )
                 )
             settings.print_py_raised_ast = True

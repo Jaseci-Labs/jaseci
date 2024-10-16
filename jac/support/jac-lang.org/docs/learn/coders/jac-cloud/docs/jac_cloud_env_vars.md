@@ -1,4 +1,3 @@
-[<< back to main](../README.md)
 # **Supported Environment Variable**
 
 | **NAME**  | **DESCRIPTION**   | **DEFAULT**   |

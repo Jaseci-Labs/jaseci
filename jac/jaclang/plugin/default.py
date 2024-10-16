@@ -510,9 +510,10 @@ class JacBuiltinImpl:
             'fillcolor="invis", fontcolor="black"];\n'
         )
         for source, target, edge in connections:
+            edge_label = html.escape(str(edge.__jac__.architype))
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
-                f' [label="{html.escape(str(edge.__jac__.architype))} "];\n'
+                f' [label="{edge_label if "GenericEdge" not in edge_label else ""}"];\n'
             )
         for node_ in visited_nodes:
             color = (
@@ -854,8 +855,13 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def report(expr: Any) -> Any:  # noqa: ANN401
+    def report(expr: Any, custom: bool) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
+        ctx = Jac.get_context()
+        if custom:
+            ctx.custom = expr
+        else:
+            ctx.reports.append(expr)
 
     @staticmethod
     @hookimpl

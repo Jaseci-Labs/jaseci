@@ -5,7 +5,7 @@
 # Quick Start: Integration with Elasitc
 * Assuming you have a running Elastic instance, you just need to use filebeat to ingest the log files into elastic.
 * We provide a template filebeat config file to get started at `scripts/filebeat-template.yaml`. If you want to adopt the default configuration, simply change the `hosts` and `api_key` field.
-  * Change the hosts field to point to your elastic instance. 
+  * Change the hosts field to point to your elastic instance.
 
 > :warning: It seems that filebeat automatically append a 9200 port to the host URL if no port is specified. If your elastic instance is behind a load balancer and simply has a URL without a custom port, you will need to add either :80 or :443 to the hosts config. For example, `hosts: ["https://my_elastic_instance.me.com:443/]`
 

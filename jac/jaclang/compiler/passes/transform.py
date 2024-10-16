@@ -7,6 +7,7 @@ from typing import Generic, Optional, Type
 
 from jaclang.compiler.absyntree import AstNode, T
 from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.utils.helpers import pretty_print_source_location
 from jaclang.utils.log import logging
 
 
@@ -28,7 +29,30 @@ class Alert:
 
     def __repr__(self) -> str:
         """Return string representation of alert."""
-        return self.__str__()
+        return self.as_log()
+
+    def as_log(self) -> str:
+        """Return the alert as a single line log as opposed to the pretty print."""
+        file_path: str = self.loc.mod_path
+        if file_path == "":
+            return self.msg  # There are error messages without file references.
+
+        line: int = self.loc.first_line
+        column: int = self.loc.col_start
+        return f"{file_path}:{line}:{column} {self.msg}"
+
+    def pretty_print(self) -> str:
+        """Pretty pritns the Alert to show the alert with source location."""
+        pretty_dump = pretty_print_source_location(
+            self.loc.mod_path,
+            self.loc.orig_src.code,
+            self.loc.first_line,
+            self.loc.pos_start,
+            self.loc.pos_end,
+        )
+        if pretty_dump != "":
+            pretty_dump = "\n" + pretty_dump
+        return self.as_log() + pretty_dump
 
 
 class Transform(ABC, Generic[T]):
@@ -59,7 +83,7 @@ class Transform(ABC, Generic[T]):
             self.__class__,
         )
         self.errors_had.append(alrt)
-        self.logger.error(str(alrt))
+        self.logger.error(alrt.as_log())
 
     def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
         """Pass Error."""
@@ -69,7 +93,7 @@ class Transform(ABC, Generic[T]):
             self.__class__,
         )
         self.warnings_had.append(alrt)
-        self.logger.warning(str(alrt))
+        self.logger.warning(alrt.as_log())
 
     def log_info(self, msg: str) -> None:
         """Log info."""

@@ -54,8 +54,11 @@ jobs:
 
     - name: Run tests
       run: |
-        jac clean
-        jac tool gen_parser
+        jac clean && jac tool gen_parser
+        jac serve jac_cloud/tests/simple_graph_mini.jac --port 8001 &
+        sleep 3 && pytest -s jac_cloud/tests/test_simple_graph_mini.py
+
+        export DATABASE_HOST="mongodb://localhost/?retryWrites=true&w=majority"
+        jac clean && jac tool gen_parser
         jac serve jac_cloud/tests/simple_graph.jac --port 8000 &
-        sleep 3
-        pytest
+        sleep 3 && pytest -s jac_cloud/tests/test_simple_graph.py
