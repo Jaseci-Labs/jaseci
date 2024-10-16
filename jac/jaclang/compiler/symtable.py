@@ -88,6 +88,14 @@ class SymbolTable:
         self.tab: dict[str, Symbol] = {}
         self.inherit: list[SymbolTable] = []
 
+    def get_type(self) -> SymbolType:
+        """Get type."""
+        if isinstance(self.owner, ast.Architype):
+            return SymbolType.OBJECT_ARCH
+        if isinstance(self.owner, ast.Ability):
+            return SymbolType.ABILITY
+        return SymbolType.VAR
+
     def get_parent(self) -> Optional[SymbolTable]:
         """Get parent."""
         return self.parent
