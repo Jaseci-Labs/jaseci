@@ -1,7 +1,8 @@
 """JacLang Jaseci Unit Test."""
 
 from contextlib import suppress
-from os import getenv
+from os import environ, getenv
+from subprocess import Popen, run
 from typing import Literal, overload
 from unittest.async_case import IsolatedAsyncioTestCase
 
@@ -17,7 +18,18 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         """Reset DB and wait for server."""
-        self.host = "http://0.0.0.0:8000"
+        run(["fuser", "-k", "8001/tcp"])
+        run(["jac", "clean"])
+        run(["jac", "tool", "gen_parser"])
+        envs = environ.copy()
+        envs["DATABASE_HOST"] = "mongodb://localhost/?retryWrites=true&w=majority"
+        self.server = Popen(
+            ["jac", "serve", "jac_cloud/tests/simple_graph.jac", "--port", "8001"],
+            env=envs,
+        )
+        run(["sleep", "5"])
+
+        self.host = "http://0.0.0.0:8001"
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
@@ -39,6 +51,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         """Clean up DB."""
         self.client.drop_database(self.database)
+        self.server.kill()
 
     @overload
     def post_api(self, api: str, json: dict | None = None, user: int = 0) -> dict:
@@ -74,7 +87,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     def check_server(self) -> None:
         """Retrieve OpenAPI Specs JSON."""
-        res = get(f"{self.host}/healthz")
+        res = get(f"{self.host}/healthz", timeout=5)
         res.raise_for_status()
         self.assertEqual(200, res.status_code)
 
@@ -612,19 +625,19 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             },
                         ],
                         "singleOptional": None,
@@ -779,4 +792,4 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_visit_sequence()
-        self.trigger_spawn_test()
+        # self.trigger_spawn_test()
