@@ -2,7 +2,6 @@
 
 from dataclasses import (
     MISSING,
-    asdict as _asdict,
     dataclass,
     field,
     fields,
@@ -15,7 +14,6 @@ from re import IGNORECASE, compile
 from typing import (
     Any,
     ClassVar,
-    Iterable,
     Mapping,
     TypeVar,
     cast,
@@ -41,6 +39,7 @@ from jaclang.runtimelib.architype import (
     TANCH,
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
+    asdict,
 )
 
 from orjson import dumps
@@ -59,24 +58,6 @@ EDGE_ID_REGEX = compile(r"^e:([^:]*):([a-f\d]{24})$", IGNORECASE)
 WALKER_ID_REGEX = compile(r"^w:([^:]*):([a-f\d]{24})$", IGNORECASE)
 T = TypeVar("T")
 TBA = TypeVar("TBA", bound="BaseArchitype")
-
-
-def asdict_factory(data: Iterable[tuple]) -> dict[str, Any]:
-    """Parse dataclass to dict."""
-    _data = {}
-    for key, value in data:
-        if isinstance(value, Enum):
-            _data[key] = value.name
-        else:
-            _data[key] = value
-    return _data
-
-
-def asdict(obj: object) -> dict[str, Any]:
-    """Override dataclass asdict."""
-    if is_dataclass(obj) and not isinstance(obj, type):
-        return _asdict(obj, dict_factory=asdict_factory)
-    raise ValueError("Object is not a dataclass!")
 
 
 def architype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object) -> T:
@@ -432,9 +413,10 @@ class BaseAnchor:
         """Return unsynced copy of anchor."""
         if self.is_populated():
             unloaded = object.__new__(self.__class__)
-            unloaded.name = self.name
-            unloaded.id = self.id
-            return unloaded
+            # this will be refactored on abstraction
+            unloaded.name = self.name  # type: ignore[attr-defined]
+            unloaded.id = self.id  # type: ignore[attr-defined]
+            return unloaded  # type: ignore[return-value]
         return self
 
     def populate(self) -> None:
@@ -535,7 +517,7 @@ class BaseAnchor:
                 _added_edges = []
                 for anchor in added_edges:
                     if propagate:
-                        anchor.build_query(bulk_write)
+                        anchor.build_query(bulk_write)  # type: ignore[operator]
                     _added_edges.append(anchor.ref_id)
                 changes["$addToSet"]["edges"]["$each"] = _added_edges
             else:
@@ -546,7 +528,7 @@ class BaseAnchor:
             ############################################################
             #                  POPULATE REMOVED EDGES                  #
             ############################################################
-            pulled_edges: set[BaseAnchor | Anchor] = (
+            pulled_edges: set[BaseAnchor] = (
                 changes.get("$pull", {}).get("edges", {}).get("$in", [])
             )
             if pulled_edges:
@@ -643,7 +625,7 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
     """Node Anchor."""
 
     architype: "NodeArchitype"
-    edges: list["EdgeAnchor"]
+    edges: list["EdgeAnchor"]  # type: ignore[assignment]
 
     class Collection(BaseCollection["NodeAnchor"]):
         """NodeAnchor collection interface."""
@@ -800,7 +782,6 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     architype: "WalkerArchitype"
     path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
-    returns: list[Any] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     disengaged: bool = False
 

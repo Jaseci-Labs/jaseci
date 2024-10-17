@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from enum import IntEnum
 from logging import getLogger
 from pickle import dumps
 from types import UnionType
 from typing import Any, Callable, ClassVar, Optional, TypeVar
 from uuid import UUID, uuid4
+
+from .utils import asdict
 
 logger = getLogger(__name__)
 
@@ -222,6 +224,7 @@ class WalkerAnchor(Anchor):
     path: list[NodeAnchor] = field(default_factory=list)
     next: list[NodeAnchor] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)
+    returns: list[DSFunctResult] = field(default_factory=list)
     disengaged: bool = False
 
 
@@ -292,8 +295,30 @@ class DSFunc:
 
     name: str
     trigger: type | UnionType | tuple[type | UnionType, ...] | None
-    func: Callable[[Any, Any], Any] | None = None
+    func: Callable[[Architype, Architype], Any] | None = None
+
+    def execute(
+        self, arch1: Architype, arch2: Architype, holder: list | None = None
+    ) -> DSFunctResult:
+        """Execute DSFunc."""
+        if self.func:
+            result = DSFunctResult(self, self.func(arch1, arch2))
+
+            if isinstance(holder, list):
+                holder.append(result)
+
+            return result
+        else:
+            raise ValueError(f"No function {self.name} to call.")
 
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
         self.func = getattr(cls, self.name)
+
+
+@dataclass(eq=False)
+class DSFunctResult:
+    """DSFunc Result Handler."""
+
+    dsfunc: DSFunc
+    result: Any | None

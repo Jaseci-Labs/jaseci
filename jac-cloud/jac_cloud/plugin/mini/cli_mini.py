@@ -1,16 +1,19 @@
 """Module for registering CLI plugins for jaseci."""
 
-from dataclasses import Field, MISSING, asdict, fields, is_dataclass
+from dataclasses import Field, MISSING, fields, is_dataclass
 from inspect import isclass
 from os import getenv, path
 from pickle import load
-from typing import Any, Type, cast, get_type_hints
+from types import NoneType
+from typing import Any, Type, TypeAlias, Union, cast, get_type_hints
 
 from asyncer import syncify
 
 from fastapi import APIRouter, Depends, FastAPI, File, Response, UploadFile, status
 from fastapi.responses import ORJSONResponse
 
+from jac_cloud.core.architype import asdict
+from jac_cloud.core.context import ContextResponse
 from jac_cloud.jaseci.utils import populate_yaml_specs
 
 from jaclang import jac_import
@@ -18,6 +21,7 @@ from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import (
     Anchor,
     Architype,
+    DSFunctResult,
     WalkerArchitype,
 )
 from jaclang.runtimelib.context import ExecutionContext
@@ -37,17 +41,29 @@ FILE_TYPES = {
     UploadFile | None,
     list[UploadFile] | None,
 }
+SHOW_ENDPOINT_RETURNS = getenv("SHOW_ENDPOINT_RETURNS") == "true"
 
 
-def response(reports: list[Any], status: int = 200) -> ORJSONResponse:
+def response(
+    reports: list[Any], returns: list[DSFunctResult], status: int = 200
+) -> ORJSONResponse:
     """Return serialized version of reports."""
-    resp: dict[str, Any] = {"status": status}
+    resp = ContextResponse[Any](status=status)
 
-    for key, val in enumerate(reports):
-        clean_response(key, val, reports)
-    resp["reports"] = reports
+    if reports:
+        for key, val in enumerate(reports):
+            clean_response(key, val, reports)
+        resp.reports = reports
 
-    return ORJSONResponse(resp, status_code=status)
+    if SHOW_ENDPOINT_RETURNS:
+        returns = [ret.result for ret in returns if ret.result is not None]
+        for key, val in enumerate(returns):
+            clean_response(key, val, returns)
+
+        if returns:
+            resp.returns = returns
+
+    return ORJSONResponse(resp.__serialize__(), status)
 
 
 def clean_response(key: str | int, val: Any, obj: list | dict) -> None:  # noqa: ANN401
@@ -87,14 +103,15 @@ def populate_apis(router: APIRouter, cls: Type[WalkerArchitype]) -> None:
     files: dict[str, Any] = {}
 
     hintings = get_type_hints(cls)
-    for f in fields(cls):
-        f_name = f.name
-        f_type = hintings[f_name]
-        if f_type in FILE_TYPES:
-            files[f_name] = gen_model_field(f_type, f, True)
-        else:
-            consts = gen_model_field(f_type, f)
-            body[f_name] = consts
+    if is_dataclass(cls):
+        for f in fields(cls):
+            f_name = f.name
+            f_type = hintings[f_name]
+            if f_type in FILE_TYPES:
+                files[f_name] = gen_model_field(f_type, f, True)
+            else:
+                consts = gen_model_field(f_type, f)
+                body[f_name] = consts
 
     payload: dict[str, Any] = {
         "files": (
@@ -128,21 +145,43 @@ def populate_apis(router: APIRouter, cls: Type[WalkerArchitype]) -> None:
             except ValidationError as e:
                 return ORJSONResponse({"detail": e.errors()})
 
-        jctx = ExecutionContext.create(session=getenv("DATABASE", "database"))
+        jctx = ExecutionContext.create(session=getenv("DATABASE_NAME", "jaseci"))
         jctx.set_entry_node(node)
 
-        Jac.spawn_call(cls(**body, **pl["files"]), jctx.entry_node.architype)
+        wlk = cls(**body, **pl["files"]).__jac__
+        Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
         jctx.close()
 
-        return response(jctx.reports, getattr(jctx, "status", 200))
+        if jctx.custom is not MISSING:
+            return jctx.custom
+
+        return response(jctx.reports, wlk.returns, getattr(jctx, "status", 200))
 
     def api_root(
         payload: payload_model = Depends(),  # type: ignore # noqa: B008
     ) -> Response:
         return api_entry(None, payload)
 
-    router.post(url := f"/{cls.__name__}", summary=url)(api_root)
-    router.post(url := f"/{cls.__name__}/{{node}}", summary=url)(api_entry)
+    raw_types: list[Type] = [
+        get_type_hints(jef.func).get("return", NoneType)
+        for jef in (*cls._jac_entry_funcs_, *cls._jac_exit_funcs_)
+    ]
+
+    if raw_types:
+        if len(raw_types) > 1:
+            ret_types: TypeAlias = Union[*raw_types]  # type: ignore[valid-type]
+        else:
+            ret_types = raw_types[0]  # type: ignore[misc]
+    else:
+        ret_types = NoneType  # type: ignore[misc]
+
+    settings: dict[str, Any] = {
+        "tags": ["walker"],
+        "response_model": ContextResponse[ret_types] | Any,
+    }
+
+    router.post(url := f"/{cls.__name__}", summary=url, **settings)(api_root)
+    router.post(url := f"/{cls.__name__}/{{node}}", summary=url, **settings)(api_entry)
 
 
 def serve_mini(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
