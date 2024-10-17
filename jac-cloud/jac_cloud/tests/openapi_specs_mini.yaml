@@ -90,6 +90,104 @@ components:
       - multiple
       title: Body_api_root_walker_post_with_file_post
       type: object
+    Child:
+      properties:
+        arr:
+          items:
+            type: integer
+          title: Arr
+          type: array
+        enum_field:
+          description: "Create a collection of name/value pairs.\n\nExample enumeration:\n\
+            \n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN\
+            \ = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n \
+            \ <Color.RED: 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\
+            \n- name lookup:\n\n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations\
+            \ can be iterated over, and know how many members they have:\n\n>>> len(Color)\n\
+            3\n\n>>> list(Color)\n[<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN:\
+            \ 3>]\n\nMethods can be added to enumerations, and members can have their\
+            \ own\nattributes -- see the documentation for details."
+          enum: []
+          title: Enum
+        json:
+          additionalProperties:
+            type: integer
+          title: Json
+          type: object
+        val:
+          title: Val
+          type: integer
+      required:
+      - val
+      - arr
+      - json
+      - enum_field
+      title: Child
+      type: object
+    ContextResponse_NoneType_:
+      properties:
+        reports:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Reports
+        returns:
+          anyOf:
+          - items:
+              type: 'null'
+            type: array
+          - type: 'null'
+          title: Returns
+        status:
+          title: Status
+          type: integer
+      required:
+      - status
+      title: ContextResponse
+      type: object
+    ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__:
+      properties:
+        reports:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Reports
+        returns:
+          anyOf:
+          - items:
+              anyOf:
+              - type: integer
+              - type: string
+              - type: boolean
+              - $ref: '#/components/schemas/Parent'
+              - items: {}
+                type: array
+              - type: object
+              - type: 'null'
+            type: array
+          - type: 'null'
+          title: Returns
+        status:
+          title: Status
+          type: integer
+      required:
+      - status
+      title: ContextResponse
+      type: object
+    Enum:
+      description: "Create a collection of name/value pairs.\n\nExample enumeration:\n\
+        \n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN\
+        \ = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n  <Color.RED:\
+        \ 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\n- name lookup:\n\
+        \n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations can be iterated over,\
+        \ and know how many members they have:\n\n>>> len(Color)\n3\n\n>>> list(Color)\n\
+        [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]\n\nMethods can be added\
+        \ to enumerations, and members can have their own\nattributes -- see the documentation\
+        \ for details."
+      enum: []
+      title: Enum
     HTTPValidationError:
       properties:
         detail:
@@ -98,6 +196,43 @@ components:
           title: Detail
           type: array
       title: HTTPValidationError
+      type: object
+    Parent:
+      properties:
+        arr:
+          items:
+            type: integer
+          title: Arr
+          type: array
+        child:
+          $ref: '#/components/schemas/Child'
+        enum_field:
+          description: "Create a collection of name/value pairs.\n\nExample enumeration:\n\
+            \n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN\
+            \ = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n \
+            \ <Color.RED: 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\
+            \n- name lookup:\n\n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations\
+            \ can be iterated over, and know how many members they have:\n\n>>> len(Color)\n\
+            3\n\n>>> list(Color)\n[<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN:\
+            \ 3>]\n\nMethods can be added to enumerations, and members can have their\
+            \ own\nattributes -- see the documentation for details."
+          enum: []
+          title: Enum
+        json:
+          additionalProperties:
+            type: integer
+          title: Json
+          type: object
+        val:
+          title: Val
+          type: integer
+      required:
+      - val
+      - arr
+      - json
+      - enum_field
+      - child
+      title: Parent
       type: object
     ValidationError:
       properties:
@@ -281,6 +416,55 @@ paths:
       summary: Healthz
       tags:
       - monitoring
+  /walker/Walker:
+    post:
+      operationId: api_root_walker_Walker_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Walker Post
+          description: Successful Response
+      summary: /Walker
+      tags:
+      - walker
+      - walker
+  /walker/Walker/{node}:
+    post:
+      operationId: api_entry_walker_Walker__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Walker  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /Walker/{node}
+      tags:
+      - walker
+      - walker
   /walker/allow_other_root_access:
     post:
       operationId: api_root_walker_allow_other_root_access_post
@@ -294,7 +478,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Allow Other Root Access Post
           description: Successful Response
         '422':
           content:
@@ -304,6 +492,7 @@ paths:
           description: Validation Error
       summary: /allow_other_root_access
       tags:
+      - walker
       - walker
   /walker/allow_other_root_access/{node}:
     post:
@@ -327,7 +516,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Allow Other Root Access  Node  Post
           description: Successful Response
         '422':
           content:
@@ -337,6 +530,7 @@ paths:
           description: Validation Error
       summary: /allow_other_root_access/{node}
       tags:
+      - walker
       - walker
   /walker/combination1:
     post:
@@ -351,7 +545,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Combination1 Post
           description: Successful Response
         '422':
           content:
@@ -361,6 +559,7 @@ paths:
           description: Validation Error
       summary: /combination1
       tags:
+      - walker
       - walker
   /walker/combination1/{node}:
     post:
@@ -384,7 +583,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Combination1  Node  Post
           description: Successful Response
         '422':
           content:
@@ -394,6 +597,7 @@ paths:
           description: Validation Error
       summary: /combination1/{node}
       tags:
+      - walker
       - walker
   /walker/combination2:
     post:
@@ -408,7 +612,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Combination2 Post
           description: Successful Response
         '422':
           content:
@@ -418,6 +626,7 @@ paths:
           description: Validation Error
       summary: /combination2
       tags:
+      - walker
       - walker
   /walker/combination2/{node}:
     post:
@@ -441,7 +650,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Combination2  Node  Post
           description: Successful Response
         '422':
           content:
@@ -452,6 +665,7 @@ paths:
       summary: /combination2/{node}
       tags:
       - walker
+      - walker
   /walker/create_graph:
     post:
       operationId: api_root_walker_create_graph_post
@@ -459,10 +673,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Create Graph Post
           description: Successful Response
       summary: /create_graph
       tags:
+      - walker
       - walker
   /walker/create_graph/{node}:
     post:
@@ -480,7 +699,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Create Graph  Node  Post
           description: Successful Response
         '422':
           content:
@@ -491,6 +714,7 @@ paths:
       summary: /create_graph/{node}
       tags:
       - walker
+      - walker
   /walker/create_nested_node:
     post:
       operationId: api_root_walker_create_nested_node_post
@@ -498,10 +722,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Create Nested Node Post
           description: Successful Response
       summary: /create_nested_node
       tags:
+      - walker
       - walker
   /walker/create_nested_node/{node}:
     post:
@@ -519,7 +748,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Create Nested Node  Node  Post
           description: Successful Response
         '422':
           content:
@@ -529,6 +762,56 @@ paths:
           description: Validation Error
       summary: /create_nested_node/{node}
       tags:
+      - walker
+      - walker
+  /walker/custom_report:
+    post:
+      operationId: api_root_walker_custom_report_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Custom Report Post
+          description: Successful Response
+      summary: /custom_report
+      tags:
+      - walker
+      - walker
+  /walker/custom_report/{node}:
+    post:
+      operationId: api_entry_walker_custom_report__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Custom Report  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /custom_report/{node}
+      tags:
+      - walker
       - walker
   /walker/custom_status_code:
     post:
@@ -543,7 +826,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Custom Status Code Post
           description: Successful Response
         '422':
           content:
@@ -553,6 +840,7 @@ paths:
           description: Validation Error
       summary: /custom_status_code
       tags:
+      - walker
       - walker
   /walker/custom_status_code/{node}:
     post:
@@ -576,7 +864,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Custom Status Code  Node  Post
           description: Successful Response
         '422':
           content:
@@ -587,6 +879,7 @@ paths:
       summary: /custom_status_code/{node}
       tags:
       - walker
+      - walker
   /walker/delete_nested_edge:
     post:
       operationId: api_root_walker_delete_nested_edge_post
@@ -594,10 +887,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Delete Nested Edge Post
           description: Successful Response
       summary: /delete_nested_edge
       tags:
+      - walker
       - walker
   /walker/delete_nested_edge/{node}:
     post:
@@ -615,7 +913,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Delete Nested Edge  Node  Post
           description: Successful Response
         '422':
           content:
@@ -626,6 +928,7 @@ paths:
       summary: /delete_nested_edge/{node}
       tags:
       - walker
+      - walker
   /walker/delete_nested_node:
     post:
       operationId: api_root_walker_delete_nested_node_post
@@ -633,10 +936,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Delete Nested Node Post
           description: Successful Response
       summary: /delete_nested_node
       tags:
+      - walker
       - walker
   /walker/delete_nested_node/{node}:
     post:
@@ -654,7 +962,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Delete Nested Node  Node  Post
           description: Successful Response
         '422':
           content:
@@ -665,6 +977,7 @@ paths:
       summary: /delete_nested_node/{node}
       tags:
       - walker
+      - walker
   /walker/detach_nested_node:
     post:
       operationId: api_root_walker_detach_nested_node_post
@@ -672,10 +985,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Detach Nested Node Post
           description: Successful Response
       summary: /detach_nested_node
       tags:
+      - walker
       - walker
   /walker/detach_nested_node/{node}:
     post:
@@ -693,7 +1011,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Detach Nested Node  Node  Post
           description: Successful Response
         '422':
           content:
@@ -704,6 +1026,7 @@ paths:
       summary: /detach_nested_node/{node}
       tags:
       - walker
+      - walker
   /walker/detach_node:
     post:
       operationId: api_root_walker_detach_node_post
@@ -711,10 +1034,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Detach Node Post
           description: Successful Response
       summary: /detach_node
       tags:
+      - walker
       - walker
   /walker/detach_node/{node}:
     post:
@@ -732,7 +1060,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Detach Node  Node  Post
           description: Successful Response
         '422':
           content:
@@ -743,6 +1075,7 @@ paths:
       summary: /detach_node/{node}
       tags:
       - walker
+      - walker
   /walker/different_return:
     post:
       operationId: api_root_walker_different_return_post
@@ -750,10 +1083,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
+                - {}
+                title: Response Api Root Walker Different Return Post
           description: Successful Response
       summary: /different_return
       tags:
+      - walker
       - walker
   /walker/different_return/{node}:
     post:
@@ -771,7 +1109,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
+                - {}
+                title: Response Api Entry Walker Different Return  Node  Post
           description: Successful Response
         '422':
           content:
@@ -781,6 +1123,7 @@ paths:
           description: Validation Error
       summary: /different_return/{node}
       tags:
+      - walker
       - walker
   /walker/disallow_other_root_access:
     post:
@@ -795,7 +1138,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Disallow Other Root Access Post
           description: Successful Response
         '422':
           content:
@@ -805,6 +1152,7 @@ paths:
           description: Validation Error
       summary: /disallow_other_root_access
       tags:
+      - walker
       - walker
   /walker/disallow_other_root_access/{node}:
     post:
@@ -828,7 +1176,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Disallow Other Root Access  Node  Post
           description: Successful Response
         '422':
           content:
@@ -838,6 +1190,7 @@ paths:
           description: Validation Error
       summary: /disallow_other_root_access/{node}
       tags:
+      - walker
       - walker
   /walker/get_all_query:
     post:
@@ -852,7 +1205,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Get All Query Post
           description: Successful Response
         '422':
           content:
@@ -862,6 +1219,7 @@ paths:
           description: Validation Error
       summary: /get_all_query
       tags:
+      - walker
       - walker
   /walker/get_all_query/{node}:
     post:
@@ -885,7 +1243,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Get All Query  Node  Post
           description: Successful Response
         '422':
           content:
@@ -896,6 +1258,7 @@ paths:
       summary: /get_all_query/{node}
       tags:
       - walker
+      - walker
   /walker/get_no_body:
     post:
       operationId: api_root_walker_get_no_body_post
@@ -903,10 +1266,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Get No Body Post
           description: Successful Response
       summary: /get_no_body
       tags:
+      - walker
       - walker
   /walker/get_no_body/{node}:
     post:
@@ -924,7 +1292,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Get No Body  Node  Post
           description: Successful Response
         '422':
           content:
@@ -934,6 +1306,7 @@ paths:
           description: Validation Error
       summary: /get_no_body/{node}
       tags:
+      - walker
       - walker
   /walker/get_with_query:
     post:
@@ -948,7 +1321,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Get With Query Post
           description: Successful Response
         '422':
           content:
@@ -958,6 +1335,7 @@ paths:
           description: Validation Error
       summary: /get_with_query
       tags:
+      - walker
       - walker
   /walker/get_with_query/{node}:
     post:
@@ -981,7 +1359,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Get With Query  Node  Post
           description: Successful Response
         '422':
           content:
@@ -991,6 +1373,7 @@ paths:
           description: Validation Error
       summary: /get_with_query/{node}
       tags:
+      - walker
       - walker
   /walker/post_all_excluded:
     post:
@@ -1005,7 +1388,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Post All Excluded Post
           description: Successful Response
         '422':
           content:
@@ -1015,6 +1402,7 @@ paths:
           description: Validation Error
       summary: /post_all_excluded
       tags:
+      - walker
       - walker
   /walker/post_all_excluded/{node}:
     post:
@@ -1038,7 +1426,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Post All Excluded  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1049,6 +1441,7 @@ paths:
       summary: /post_all_excluded/{node}
       tags:
       - walker
+      - walker
   /walker/post_no_body:
     post:
       operationId: api_root_walker_post_no_body_post
@@ -1056,10 +1449,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Post No Body Post
           description: Successful Response
       summary: /post_no_body
       tags:
+      - walker
       - walker
   /walker/post_no_body/{node}:
     post:
@@ -1077,7 +1475,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Post No Body  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1087,6 +1489,7 @@ paths:
           description: Validation Error
       summary: /post_no_body/{node}
       tags:
+      - walker
       - walker
   /walker/post_partial_excluded:
     post:
@@ -1101,7 +1504,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Post Partial Excluded Post
           description: Successful Response
         '422':
           content:
@@ -1111,6 +1518,7 @@ paths:
           description: Validation Error
       summary: /post_partial_excluded
       tags:
+      - walker
       - walker
   /walker/post_partial_excluded/{node}:
     post:
@@ -1134,7 +1542,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Post Partial Excluded  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1144,6 +1556,7 @@ paths:
           description: Validation Error
       summary: /post_partial_excluded/{node}
       tags:
+      - walker
       - walker
   /walker/post_path_var:
     post:
@@ -1158,7 +1571,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Post Path Var Post
           description: Successful Response
         '422':
           content:
@@ -1168,6 +1585,7 @@ paths:
           description: Validation Error
       summary: /post_path_var
       tags:
+      - walker
       - walker
   /walker/post_path_var/{node}:
     post:
@@ -1191,7 +1609,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Post Path Var  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1201,6 +1623,7 @@ paths:
           description: Validation Error
       summary: /post_path_var/{node}
       tags:
+      - walker
       - walker
   /walker/post_with_body:
     post:
@@ -1215,7 +1638,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Post With Body Post
           description: Successful Response
         '422':
           content:
@@ -1225,6 +1652,7 @@ paths:
           description: Validation Error
       summary: /post_with_body
       tags:
+      - walker
       - walker
   /walker/post_with_body/{node}:
     post:
@@ -1248,7 +1676,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Post With Body  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1258,6 +1690,7 @@ paths:
           description: Validation Error
       summary: /post_with_body/{node}
       tags:
+      - walker
       - walker
   /walker/post_with_body_and_file:
     post:
@@ -1272,7 +1705,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Post With Body And File Post
           description: Successful Response
         '422':
           content:
@@ -1282,6 +1719,7 @@ paths:
           description: Validation Error
       summary: /post_with_body_and_file
       tags:
+      - walker
       - walker
   /walker/post_with_body_and_file/{node}:
     post:
@@ -1305,7 +1743,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Post With Body And File  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1315,6 +1757,7 @@ paths:
           description: Validation Error
       summary: /post_with_body_and_file/{node}
       tags:
+      - walker
       - walker
   /walker/post_with_file:
     post:
@@ -1329,7 +1772,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Post With File Post
           description: Successful Response
         '422':
           content:
@@ -1339,6 +1786,7 @@ paths:
           description: Validation Error
       summary: /post_with_file
       tags:
+      - walker
       - walker
   /walker/post_with_file/{node}:
     post:
@@ -1362,7 +1810,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Post With File  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1373,6 +1825,7 @@ paths:
       summary: /post_with_file/{node}
       tags:
       - walker
+      - walker
   /walker/traverse_graph:
     post:
       operationId: api_root_walker_traverse_graph_post
@@ -1380,10 +1833,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Traverse Graph Post
           description: Successful Response
       summary: /traverse_graph
       tags:
+      - walker
       - walker
   /walker/traverse_graph/{node}:
     post:
@@ -1401,7 +1859,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Traverse Graph  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1412,6 +1874,7 @@ paths:
       summary: /traverse_graph/{node}
       tags:
       - walker
+      - walker
   /walker/update_graph:
     post:
       operationId: api_root_walker_update_graph_post
@@ -1419,10 +1882,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Update Graph Post
           description: Successful Response
       summary: /update_graph
       tags:
+      - walker
       - walker
   /walker/update_graph/{node}:
     post:
@@ -1440,7 +1908,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Update Graph  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1451,6 +1923,7 @@ paths:
       summary: /update_graph/{node}
       tags:
       - walker
+      - walker
   /walker/update_nested_node:
     post:
       operationId: api_root_walker_update_nested_node_post
@@ -1458,10 +1931,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Update Nested Node Post
           description: Successful Response
       summary: /update_nested_node
       tags:
+      - walker
       - walker
   /walker/update_nested_node/{node}:
     post:
@@ -1479,7 +1957,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Update Nested Node  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1490,6 +1972,7 @@ paths:
       summary: /update_nested_node/{node}
       tags:
       - walker
+      - walker
   /walker/visit_nested_node:
     post:
       operationId: api_root_walker_visit_nested_node_post
@@ -1497,10 +1980,15 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Visit Nested Node Post
           description: Successful Response
       summary: /visit_nested_node
       tags:
+      - walker
       - walker
   /walker/visit_nested_node/{node}:
     post:
@@ -1518,7 +2006,11 @@ paths:
         '200':
           content:
             application/json:
-              schema: {}
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Visit Nested Node  Node  Post
           description: Successful Response
         '422':
           content:
@@ -1528,4 +2020,54 @@ paths:
           description: Validation Error
       summary: /visit_nested_node/{node}
       tags:
+      - walker
+      - walker
+  /walker/visit_sequence:
+    post:
+      operationId: api_root_walker_visit_sequence_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Visit Sequence Post
+          description: Successful Response
+      summary: /visit_sequence
+      tags:
+      - walker
+      - walker
+  /walker/visit_sequence/{node}:
+    post:
+      operationId: api_entry_walker_visit_sequence__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Visit Sequence  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /visit_sequence/{node}
+      tags:
+      - walker
       - walker

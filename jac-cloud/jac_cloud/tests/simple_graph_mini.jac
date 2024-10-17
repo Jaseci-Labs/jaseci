@@ -79,7 +79,7 @@ walker detach_node {
     }
 
     can enter_B with B entry {
-        report here del --> [-->];
+        return here del --> [-->];
     }
 }
 
@@ -123,7 +123,7 @@ walker create_nested_node {
             enum_field = Enum.A
         );
         here ++> n;
-        report n;
+        return n;
     }
 }
 
@@ -142,7 +142,7 @@ walker update_nested_node {
         nested.arr.append(1);
         nested.val = 1;
         nested.enum_field = Enum.B;
-        report nested;
+        return nested;
     }
 
     can enter_nested with Nested entry {
@@ -158,13 +158,13 @@ walker update_nested_node {
         here.arr.append(1);
         here.val = 1;
         here.enum_field = Enum.B;
-        report here;
+        return here;
     }
 }
 
 walker detach_nested_node {
     can enter_root with `root entry {
-        report here del--> [-->(`?Nested)];
+        return here del--> [-->(`?Nested)];
     }
 }
 
@@ -172,14 +172,14 @@ walker visit_nested_node {
     can enter_root with `root entry {
         nesteds = [-->(`?Nested)];
         if nesteds {
-            report [-->(`?Nested)][0];
+            return [-->(`?Nested)][0];
         } else {
-            report nesteds;
+            return nesteds;
         }
     }
 
     can enter_nested with Nested entry {
-        report here;
+        return here;
     }
 }
 
@@ -392,6 +392,22 @@ walker custom_status_code {
     }
 }
 
+walker custom_report {
+    can enter1 with `root entry {
+        report 1;
+        report 2;
+        report 3;
+
+        Jac.report({
+            "testing": 1
+        }, True);
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
+
 walker different_return {
 
     can enter1 with `root entry {
@@ -410,6 +426,64 @@ walker different_return {
     }
 
     can enter6 with `root entry -> list | dict {
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
+
+walker Walker {
+    class __specs__ {
+        has private: bool = True;
+    }
+}
+
+node Node {
+    has val: str;
+
+    can entry1 with entry {
+        return f"{self.val}-2";
+    }
+
+    # with 'visit_sequence' (string class reference) is not yet supported
+    can entry3 with Walker entry {
+        return f"{self.val}-3";
+    }
+
+    # with 'visit_sequence' (string class reference) is not yet supported
+    can exit1 with Walker exit {
+        return f"{self.val}-4";
+    }
+
+    can exit2 with exit {
+        return f"{self.val}-5";
+    }
+}
+
+walker visit_sequence:Walker: {
+    can entry1 with entry {
+        return "walker entry";
+    }
+
+    can entry2 with `root entry {
+        here ++> Node(val = "a");
+        here ++> Node(val = "b");
+        here ++> Node(val = "c");
+        visit [-->];
+        return "walker enter to root";
+    }
+
+    can entry3 with Node entry {
+        return f"{here.val}-1";
+    }
+
+    can exit1 with Node exit {
+        return f"{here.val}-6";
+    }
+
+    can exit2 with exit {
+        return "walker exit";
     }
 
     class __specs__ {

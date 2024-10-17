@@ -9,6 +9,7 @@ from bson import ObjectId
 
 from fastapi import Request
 
+from jaclang.runtimelib.architype import DSFunctResult
 from jaclang.runtimelib.context import ExecutionContext
 
 from .architype import (
@@ -139,7 +140,7 @@ class JaseciContext(ExecutionContext):
         """Get current root."""
         return cast(Root, JaseciContext.get().root.architype)
 
-    def response(self, returns: list[Any]) -> dict[str, Any]:
+    def response(self, returns: list[DSFunctResult]) -> dict[str, Any]:
         """Return serialized version of reports."""
         resp = ContextResponse[Any](status=self.status)
 
@@ -148,11 +149,13 @@ class JaseciContext(ExecutionContext):
                 self.clean_response(key, val, self.reports)
             resp.reports = self.reports
 
-        for key, val in enumerate(returns):
-            self.clean_response(key, val, returns)
-
         if SHOW_ENDPOINT_RETURNS:
-            resp.returns = returns
+            returns = [ret.result for ret in returns if ret.result is not None]
+            for key, val in enumerate(returns):
+                self.clean_response(key, val, returns)
+
+            if returns:
+                resp.returns = returns
 
         return resp.__serialize__()
 
