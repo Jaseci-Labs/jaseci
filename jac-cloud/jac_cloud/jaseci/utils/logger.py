@@ -4,7 +4,7 @@ from datetime import time as dtime
 from enum import IntEnum
 from io import text_encoding
 from itertools import chain
-from json import dumps
+from json import JSONEncoder, dumps
 from logging import FileHandler, LogRecord, getLogger
 from logging.handlers import (
     BaseRotatingHandler,
@@ -21,8 +21,24 @@ from typing import Any
 
 from ecs_logging import StdlibFormatter
 
+from starlette.datastructures import UploadFile
+
 DEFAULT_PART = [0]
 DEFAULT_SEPARATORS = (",", ":")
+
+
+class LogEncoder(JSONEncoder):
+    """Custom Log Encoder."""
+
+    def default(self, data: object) -> object:
+        """Override default handler."""
+        if isinstance(data, UploadFile):
+            return {
+                "name": data.filename,
+                "content_type": data.content_type,
+                "size": data.size,
+            }
+        return super().default(data)
 
 
 class MixedTimedRotatingFileHandler(TimedRotatingFileHandler, RotatingFileHandler):
@@ -263,7 +279,7 @@ logger.addHandler(handler)
 
 def log_dumps(payload: dict[str, Any] | list[Any]) -> str:
     """Dump dictionary log."""
-    return dumps(payload, separators=DEFAULT_SEPARATORS)
+    return dumps(payload, separators=DEFAULT_SEPARATORS, cls=LogEncoder)
 
 
 def log_entry(

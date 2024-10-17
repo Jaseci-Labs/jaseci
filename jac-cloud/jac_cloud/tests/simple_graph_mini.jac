@@ -338,6 +338,29 @@ walker post_with_file {
         print(self.single);
         print(self.multiple);
         print(self.singleOptional);
+
+        multiple = [];
+        for file in self.multiple {
+            multiple.append({
+                "name": file.filename,
+                "content_type": file.content_type,
+                "size": file.size,
+            });
+        }
+
+        single = {
+            "single": {
+                "name": self.single.filename,
+                "content_type": self.single.content_type,
+                "size": self.single.size,
+            }
+        };
+
+        report {
+            "single": single,
+            "multiple": multiple,
+            "singleOptional": self.singleOptional
+        };
     }
 
     class __specs__ {}

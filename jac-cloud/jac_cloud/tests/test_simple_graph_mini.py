@@ -370,6 +370,47 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 Exception, self.post_api, "custom_status_code", {"status": invalid_code}
             )
 
+    def trigger_upload_file(self) -> None:
+        """Test upload file."""
+        with open("jac_cloud/tests/simple_graph.jac", mode="br") as s:
+            files = [
+                ("single", ("simple_graph.jac", s)),
+                ("multiple", ("simple_graph.jac", s)),
+                ("multiple", ("simple_graph.jac", s)),
+            ]
+            res = post(f"{self.host}/walker/post_with_file", files=files)
+            res.raise_for_status()
+            data: dict = res.json()
+
+            self.assertEqual(200, data["status"])
+            self.assertEqual(
+                [
+                    {
+                        "single": {
+                            "single": {
+                                "name": "simple_graph.jac",
+                                "content_type": "application/octet-stream",
+                                "size": 6852,
+                            }
+                        },
+                        "multiple": [
+                            {
+                                "name": "simple_graph.jac",
+                                "content_type": "application/octet-stream",
+                                "size": 6852,
+                            },
+                            {
+                                "name": "simple_graph.jac",
+                                "content_type": "application/octet-stream",
+                                "size": 6852,
+                            },
+                        ],
+                        "singleOptional": None,
+                    }
+                ],
+                data["reports"],
+            )
+
     async def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -415,3 +456,9 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_custom_status_code()
+
+        ###################################################
+        #                   FILE UPLOAD                   #
+        ###################################################
+
+        self.trigger_upload_file()
