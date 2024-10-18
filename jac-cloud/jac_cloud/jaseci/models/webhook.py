@@ -1,6 +1,6 @@
 """Jaseci Models."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Generator, Mapping, cast
 
@@ -13,7 +13,7 @@ from ..datasources.collection import Collection as BaseCollection
 class Webhook:
     """User Base Model."""
 
-    id: ObjectId
+    id: ObjectId = field(default_factory=ObjectId)
     root_id: ObjectId
     walkers: list[str]
     nodes: list[str]

@@ -12,7 +12,7 @@ from fastapi.security import HTTPBearer
 from jwt import decode, encode
 
 from ..datasources.redis import CodeRedis, TokenRedis
-from ..models.user import User as BaseUser
+from ..models import User as BaseUser, Webhook
 from ..utils import logger, random_string, utc_timestamp
 from ...core.architype import NodeAnchor
 
@@ -102,6 +102,24 @@ def authenticate(request: Request) -> None:
             return
 
     raise HTTPException(status_code=401)
+
+
+def create_key(root_id: ObjectId, expiration: dict[str, int]) -> str:
+    """Generate token for current user."""
+    exp = utc_timestamp(**expiration)
+    Webhook(
+        root_id=root_id
+    )
+    key = {
+        "expiration"
+    }
+    key[] = 
+
+    user["state"] = random_string(8)
+    token = encrypt(user)
+    if TokenRedis.hset(f"{user['id']}:{token}", True):
+        return token
+    raise HTTPException(500, "Token Creation Failed!")
 
 
 authenticator = [Depends(HTTPBearer()), Depends(authenticate)]
