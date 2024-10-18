@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 from contextvars import ContextVar
+from dataclasses import MISSING
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
@@ -26,6 +27,7 @@ class ExecutionContext:
 
     mem: Memory
     reports: list[Any]
+    custom: Any = MISSING
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor

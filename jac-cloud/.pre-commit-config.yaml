@@ -20,7 +20,7 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-redis, motor-types]
+        additional_dependencies: [types-redis, motor-types, types-PyYAML]
         exclude: 'venv|__jac_gen__|tests|setup.py'
         args:
           - --follow-imports=silent

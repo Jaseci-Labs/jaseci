@@ -279,9 +279,11 @@ class PyImportPass(JacImportPass):
                     return self.import_table[file_to_raise]
 
                 with open(file_to_raise, "r", encoding="utf-8") as f:
+                    file_source = f.read()
                     mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
-                            py_ast.parse(f.read()), mod_path=file_to_raise
+                            py_ast.parse(file_source),
+                            orig_src=ast.JacSource(file_source, file_to_raise),
                         ),
                     ).ir
                     SubNodeTabPass(input_ir=mod, prior=self)
@@ -313,9 +315,11 @@ class PyImportPass(JacImportPass):
             / "builtins.pyi"
         )
         with open(file_to_raise, "r", encoding="utf-8") as f:
+            file_source = f.read()
             mod = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(
-                    py_ast.parse(f.read()), mod_path=file_to_raise
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, file_to_raise),
                 ),
             ).ir
             mod.parent = self.ir
