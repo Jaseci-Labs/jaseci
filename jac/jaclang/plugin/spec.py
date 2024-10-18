@@ -356,7 +356,7 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def report(expr: Any) -> Any:  # noqa: ANN401
+    def report(expr: Any, custom: bool) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
         raise NotImplementedError
 

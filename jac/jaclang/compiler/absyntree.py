@@ -139,7 +139,7 @@ class AstNode:
         return Token(
             name=name,
             value=value,
-            file_path=self.loc.mod_path,
+            orig_src=self.loc.orig_src,
             col_start=self.loc.col_start,
             col_end=0,
             line=self.loc.first_line,
@@ -398,7 +398,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
     def create_impl_name_node(self) -> Name:
         """Create impl name."""
         ret = Name(
-            file_path=self.target.archs[-1].loc.mod_path,
+            orig_src=self.target.archs[-1].loc.orig_src,
             name=Tok.NAME.value,
             value=self.target.py_resolve_name(),
             col_start=self.target.archs[0].loc.col_start,
@@ -745,7 +745,7 @@ class Test(AstSymbolNode, ElementStmt):
             name
             if isinstance(name, Name)
             else Name(
-                file_path=name.file_path,
+                orig_src=name.orig_src,
                 name=Tok.NAME.value,
                 value=f"_jac_gen_{Test.TEST_COUNT}",
                 col_start=name.loc.col_start,
@@ -1261,6 +1261,9 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             res = res and self.semstr.normalize(deep) if self.semstr else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
         new_kid: list[AstNode] = []
+        if self.decorators:
+            new_kid.append(self.gen_token(Tok.DECOR_OP))
+            new_kid.append(self.decorators)
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_ENUM))
@@ -3813,7 +3816,7 @@ class MatchWild(MatchPattern):
             self,
             nodes=[
                 Name(
-                    file_path=self.loc.mod_path,
+                    orig_src=self.loc.orig_src,
                     name=Tok.NAME,
                     value="_",
                     col_start=self.loc.col_start,
@@ -4023,7 +4026,7 @@ class Token(AstNode):
 
     def __init__(
         self,
-        file_path: str,
+        orig_src: JacSource,
         name: str,
         value: str,
         line: int,
@@ -4034,7 +4037,7 @@ class Token(AstNode):
         pos_end: int,
     ) -> None:
         """Initialize token."""
-        self.file_path = file_path
+        self.orig_src = orig_src
         self.name = name
         self.value = value
         self.line_no = line
@@ -4059,7 +4062,7 @@ class Name(Token, NameAtom):
 
     def __init__(
         self,
-        file_path: str,
+        orig_src: JacSource,
         name: str,
         value: str,
         line: int,
@@ -4076,7 +4079,7 @@ class Name(Token, NameAtom):
         self.is_kwesc = is_kwesc
         Token.__init__(
             self,
-            file_path=file_path,
+            orig_src=orig_src,
             name=name,
             value=value,
             line=line,
@@ -4107,7 +4110,7 @@ class Name(Token, NameAtom):
     ) -> Name:
         """Generate name from node."""
         ret = Name(
-            file_path=node.loc.mod_path,
+            orig_src=node.loc.orig_src,
             name=Tok.NAME.value,
             value=name_str,
             col_start=node.loc.col_start,
@@ -4134,7 +4137,7 @@ class SpecialVarRef(Name):
         self.orig = var
         Name.__init__(
             self,
-            file_path=var.file_path,
+            orig_src=var.orig_src,
             name=var.name,
             value=self.py_resolve_name(),  # TODO: This shouldnt be necessary
             line=var.line_no,
@@ -4190,7 +4193,7 @@ class Literal(Token, AtomExpr):
 
     def __init__(
         self,
-        file_path: str,
+        orig_src: JacSource,
         name: str,
         value: str,
         line: int,
@@ -4203,7 +4206,7 @@ class Literal(Token, AtomExpr):
         """Initialize token."""
         Token.__init__(
             self,
-            file_path=file_path,
+            orig_src=orig_src,
             name=name,
             value=value,
             line=line,
@@ -4342,11 +4345,11 @@ class Ellipsis(Literal):
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
-    def __init__(self, file_path: str = "") -> None:
+    def __init__(self, orig_src: JacSource | None = None) -> None:
         """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
-            file_path=file_path,
+            orig_src=orig_src or JacSource("", ""),
             value="",
             line=0,
             end_line=0,
@@ -4366,7 +4369,7 @@ class CommentToken(Token):
 
     def __init__(
         self,
-        file_path: str,
+        orig_src: JacSource,
         name: str,
         value: str,
         line: int,
@@ -4383,7 +4386,7 @@ class CommentToken(Token):
 
         Token.__init__(
             self,
-            file_path=file_path,
+            orig_src=orig_src,
             name=name,
             value=value,
             line=line,
@@ -4403,7 +4406,7 @@ class JacSource(EmptyToken):
 
     def __init__(self, source: str, mod_path: str) -> None:
         """Initialize source string."""
-        super().__init__()
+        super().__init__(self)
         self.value = source
         self.hash = md5(source.encode()).hexdigest()
         self.file_path = mod_path
@@ -4418,8 +4421,14 @@ class JacSource(EmptyToken):
 class PythonModuleAst(EmptyToken):
     """SourceString node type for Jac Ast."""
 
-    def __init__(self, ast: ast3.Module, mod_path: str) -> None:
+    def __init__(self, ast: ast3.Module, orig_src: JacSource) -> None:
         """Initialize source string."""
         super().__init__()
         self.ast = ast
-        self.file_path = mod_path
+        self.orig_src = orig_src
+
+        # This bellow attribute is un-necessary since it already exists in the orig_src
+        # however I'm keeping it here not to break existing code trying to access file_path.
+        # We can remove this in the future once we safley remove all references to it and
+        # use orig_src.
+        self.file_path = orig_src.file_path

@@ -12,6 +12,9 @@ nav:
           - "learn/guide.md"
           - "learn/jac_ref.md"
           - "learn/impl_docs.md"
+          - Data Spatial:
+              - "learn/data_spatial/examples.md"
+              - "learn/data_spatial/FAQ.md"
           - Jac Cloud:
               - "learn/coders/jac-cloud/docs/jac_cloud.md"
               - "learn/coders/jac-cloud/docs/jac_cloud_logging.md"
@@ -73,7 +76,7 @@ theme:
       note: octicons/tag-16
       abstract: octicons/checklist-16
       info: octicons/info-16
-      tip: octicons/squirrel-16
+      tip: material/fire
       success: octicons/check-16
       question: octicons/question-16
       warning: octicons/alert-16

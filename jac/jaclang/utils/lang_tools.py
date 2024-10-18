@@ -215,12 +215,16 @@ class AstTool:
 
             if file_name.endswith(".py"):
                 with open(file_name, "r") as f:
-                    parsed_ast = py_ast.parse(f.read())
+                    file_source = f.read()
+                    parsed_ast = py_ast.parse(file_source)
                 if output == "pyast":
                     return f"\n{py_ast.dump(parsed_ast, indent=2)}"
                 try:
                     rep = PyastBuildPass(
-                        input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                        input_ir=ast.PythonModuleAst(
+                            parsed_ast,
+                            orig_src=ast.JacSource(file_source, file_name),
+                        ),
                     ).ir
 
                     schedule = py_code_gen_typed

@@ -1,5 +1,5 @@
 obj Point {
-    has x: flaot,
+    has x: float,
         y: float;
 }
 
