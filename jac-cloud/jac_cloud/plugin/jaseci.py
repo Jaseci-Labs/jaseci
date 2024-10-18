@@ -263,6 +263,7 @@ def specs(
     excluded: str | list[str] = [],  # noqa: B006
     auth: bool = True,
     private: bool = False,
+    is_webhook: bool = False,
 ) -> Callable:
     """Walker Decorator."""
 
@@ -274,6 +275,7 @@ def specs(
             ex = excluded
             a = auth
             pv = private
+            iw = is_webhook
 
             class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = p
@@ -282,6 +284,7 @@ def specs(
                 excluded: str | list[str] = ex
                 auth: bool = a
                 private: bool = pv
+                is_webhook: bool = iw
 
             cls.__specs__ = __specs__  # type: ignore[attr-defined]
 
@@ -303,6 +306,7 @@ class DefaultSpecs:
     excluded: str | list[str] = []
     auth: bool = True
     private: bool = False
+    is_webhook: bool = False
 
 
 class JacAccessValidationPlugin:
