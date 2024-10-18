@@ -1,8 +1,9 @@
 """This module provides a FastAPI-based API for managing Kubernetes pods."""
 
 import os
-import time
 import subprocess
+import time
+
 from typing import Any, List
 
 from fastapi import Body, FastAPI, HTTPException, Query
@@ -32,7 +33,6 @@ class PodManager:
             except config.ConfigException:
                 config.load_kube_config()
         self.v1 = client.CoreV1Api()
-
 
     def get_loadbalancer_url(service_name, namespace):
         try:
@@ -74,7 +74,6 @@ class PodManager:
         except subprocess.CalledProcessError as e:
         # If there's an error, return the error message
           return f"Error creating namespace: {e.stderr}"
-
 
     def create_pod(self, module_name: str, module_config: dict) -> Any:
         """Create a pod and service for the given module."""
