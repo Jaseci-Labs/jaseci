@@ -21,6 +21,7 @@ nav:
               - "learn/coders/jac-cloud/docs/permission.md"
               - "learn/coders/jac-cloud/docs/jac_cloud_logging.md"
               - "learn/coders/jac-cloud/docs/jac_cloud_env_vars.md"
+              - "learn/coders/jac-cloud/docs/jac_cloud_webhook.md"
           - MTLLM:
               - "learn/with_llm.md"
               - Quick Start:

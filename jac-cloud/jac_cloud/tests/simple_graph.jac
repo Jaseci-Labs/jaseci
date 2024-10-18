@@ -858,3 +858,13 @@ walker visit_sequence {
         has auth: bool = False;
     }
 }
+
+walker webhook {
+    can enter1 with `root entry {
+        report here;
+    }
+
+    class __specs__ {
+        has webhook: dict = {};
+    }
+}

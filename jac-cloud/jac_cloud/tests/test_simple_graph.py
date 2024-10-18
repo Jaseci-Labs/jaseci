@@ -537,11 +537,11 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_upload_file(self) -> None:
         """Test upload file."""
-        with open("jac_cloud/tests/simple_graph.jac", mode="br") as s:
+        with open("jac_cloud/tests/simple.json", mode="br") as s:
             files = [
-                ("single", ("simple_graph.jac", s)),
-                ("multiple", ("simple_graph.jac", s)),
-                ("multiple", ("simple_graph.jac", s)),
+                ("single", ("simple.json", s)),
+                ("multiple", ("simple.json", s)),
+                ("multiple", ("simple.json", s)),
             ]
             res = post(
                 f"{self.host}/walker/post_with_file",
@@ -558,21 +558,21 @@ class SimpleGraphTest(JacCloudTest):
                     {
                         "single": {
                             "single": {
-                                "name": "simple_graph.jac",
-                                "content_type": "application/octet-stream",
-                                "size": 18748,
+                                "name": "simple.json",
+                                "content_type": "application/json",
+                                "size": 25,
                             }
                         },
                         "multiple": [
                             {
-                                "name": "simple_graph.jac",
-                                "content_type": "application/octet-stream",
-                                "size": 18748,
+                                "name": "simple.json",
+                                "content_type": "application/json",
+                                "size": 25,
                             },
                             {
-                                "name": "simple_graph.jac",
-                                "content_type": "application/octet-stream",
-                                "size": 18748,
+                                "name": "simple.json",
+                                "content_type": "application/json",
+                                "size": 25,
                             },
                         ],
                         "singleOptional": None,
