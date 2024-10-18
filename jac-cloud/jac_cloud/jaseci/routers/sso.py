@@ -245,15 +245,15 @@ def register(platform: str, open_id: OpenID) -> Response:
                 if ex.has_error_label("TransientTransactionError"):
                     retry += 1
                     logger.error(
-                        "Error executing bulk write! "
+                        "Error executing transaction! "
                         f"Retrying [{retry}/{max_retry}] ..."
                     )
                     continue
-                logger.exception("Error executing bulk write!")
+                logger.exception("Error executing transaction!")
                 session.abort_transaction()
                 break
             except Exception:
-                logger.exception("Error executing bulk write!")
+                logger.exception("Error executing transaction!")
                 session.abort_transaction()
                 break
     return ORJSONResponse({"message": "Registration Failed!"}, 409)
