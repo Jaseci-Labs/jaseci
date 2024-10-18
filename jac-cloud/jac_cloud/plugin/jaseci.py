@@ -53,7 +53,8 @@ from ..core.architype import (
 from ..core.context import ContextResponse, ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
 from ..jaseci.security import authenticator
-from ..jaseci.utils import log_entry, log_exit
+
+# from ..jaseci.utils import log_entry, log_exit
 
 
 T = TypeVar("T")
@@ -178,12 +179,12 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             pl = cast(BaseModel, payload).model_dump()
             body = pl.get("body", {})
 
-            log = log_entry(
-                cls.__name__,
-                user.email if (user := getattr(request, "_user", None)) else None,
-                pl,
-                node,
-            )
+            # log = log_entry(
+            #     cls.__name__,
+            #     user.email if (user := getattr(request, "_user", None)) else None,
+            #     pl,
+            #     node,
+            # )
 
             if isinstance(body, BaseUploadFile) and body_model:
                 body = loads(syncify(body.read)())
@@ -203,7 +204,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                     return jctx.custom
 
                 resp = jctx.response(wlk.returns)
-                log_exit(resp, log)
+                # log_exit(resp, log)
 
                 return ORJSONResponse(resp, jctx.status)
             else:
@@ -212,7 +213,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 }
                 jctx.close()
 
-                log_exit(error, log)
+                # log_exit(error, log)
                 raise HTTPException(403, error)
 
         def api_root(
