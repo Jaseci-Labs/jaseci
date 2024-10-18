@@ -109,7 +109,7 @@ class FuseTypeInfoPass(Pass):
                 )
 
             try:
-                jac_node_str = f'jac node "{node.loc}::{node.__class__.__name__}'
+                jac_node_str = f'jac node "{node.loc.mod_path} {node.loc}::{node.__class__.__name__}'
                 if hasattr(node, "value"):
                     jac_node_str += f'::{node.value}"'
                 else:
@@ -188,7 +188,7 @@ class FuseTypeInfoPass(Pass):
                 node.name_spec.sym_type = mypy_node.fullname
 
             elif isinstance(mypy_node, MypyNodes.OverloadedFuncDef):
-                self.__call_type_handler(node, mypy_node.items[0].func.type)
+                self.__call_type_handler(node, mypy_node.items[-1].func.type)
 
             elif mypy_node is None:
                 node.name_spec.sym_type = "None"
@@ -230,16 +230,6 @@ class FuseTypeInfoPass(Pass):
         self.__collect_type_from_symbol(node)
         if node.sym is None:
             self.__check_builltin_symbol(node)
-
-    @__handle_node
-    def enter_module_path(self, node: ast.ModulePath) -> None:
-        """Pass handler for ModulePath nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
-
-    @__handle_node
-    def enter_module_item(self, node: ast.ModuleItem) -> None:
-        """Pass handler for ModuleItem nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_architype(self, node: ast.Architype) -> None:
@@ -460,7 +450,7 @@ class FuseTypeInfoPass(Pass):
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.Overloaded
     ) -> None:
         """Get type info from mypy type Overloaded."""
-        self.__call_type_handler(node, mypy_type.items[0])
+        self.__call_type_handler(node, mypy_type.items[-1])
 
     def get_type_from_none_type(
         self, node: ast.AstSymbolNode, mypy_type: MypyTypes.NoneType
@@ -485,6 +475,12 @@ class FuseTypeInfoPass(Pass):
     ) -> None:
         """Get type info from mypy type TypeType."""
         node.name_spec.sym_type = str(mypy_type.item)
+
+    def get_type_from_type_var_type(
+        self, node: ast.AstSymbolNode, mypy_type: MypyTypes.TypeVarType
+    ) -> None:
+        """Get type info from mypy type TypeType."""
+        node.name_spec.sym_type = str(mypy_type.name)
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Add new symbols in the symbol table in case of self."""
