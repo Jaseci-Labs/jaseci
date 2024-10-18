@@ -4,7 +4,6 @@ from datetime import time as dtime
 from enum import IntEnum
 from io import text_encoding
 from itertools import chain
-from json import JSONEncoder, dumps
 from logging import FileHandler, LogRecord, getLogger
 from logging.handlers import (
     BaseRotatingHandler,
@@ -17,28 +16,16 @@ from pathlib import Path
 from re import ASCII, compile, escape
 from stat import ST_MTIME
 from time import gmtime, localtime, strftime, time as ttime
+from traceback import format_exc
 from typing import Any
 
 from ecs_logging import StdlibFormatter
 
+from orjson import JSONEncodeError, dumps
+
 from starlette.datastructures import UploadFile
 
 DEFAULT_PART = [0]
-DEFAULT_SEPARATORS = (",", ":")
-
-
-class LogEncoder(JSONEncoder):
-    """Custom Log Encoder."""
-
-    def default(self, data: object) -> object:
-        """Override default handler."""
-        if isinstance(data, UploadFile):
-            return {
-                "name": data.filename,
-                "content_type": data.content_type,
-                "size": data.size,
-            }
-        return super().default(data)
 
 
 class MixedTimedRotatingFileHandler(TimedRotatingFileHandler, RotatingFileHandler):
@@ -277,9 +264,36 @@ handler.setFormatter(StdlibFormatter())
 logger.addHandler(handler)
 
 
+def cls_fullname(obj: object) -> str:
+    """Get class full name."""
+    cls = obj.__class__
+    module = cls.__module__
+    if module == "__builtin__":
+        return cls.__name__
+    return module + "." + cls.__name__
+
+
+def serializer(data: object) -> object:
+    """Override default handler."""
+    match data:
+        case UploadFile():
+            return {
+                "name": data.filename,
+                "content_type": data.content_type,
+                "size": data.size,
+            }
+        case _:
+            raise JSONEncodeError(
+                f"Type is not JSON serializable: {cls_fullname(data)}"
+            )
+
+
 def log_dumps(payload: dict[str, Any] | list[Any]) -> str:
     """Dump dictionary log."""
-    return dumps(payload, separators=DEFAULT_SEPARATORS, cls=LogEncoder)
+    try:
+        return dumps(payload, default=serializer).decode()
+    except Exception:
+        return format_exc()
 
 
 def log_entry(
