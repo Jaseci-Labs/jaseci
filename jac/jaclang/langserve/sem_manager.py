@@ -69,6 +69,54 @@ class SemTokManager:
         document_lines: List[str],
     ) -> list[int]:
         """Update semantic tokens on change."""
+        import logging
+
+        def find_token_based_on_line(line: int, sem_tokens: list[int]) -> int:
+            for i, j in enumerate(
+                [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
+            ):
+                if j[0] == line:
+                    return i + 1
+            return -1
+
+        if len(content_changes.content_changes) == 2:
+
+            x1 = content_changes.content_changes[0]
+            x2 = content_changes.content_changes[1]
+            change1_start_line = x2.range.start.line
+            change2_start_line = x2.range.end.line
+            last_line = x1.range.end.line
+            last_last_line_token_index = (
+                find_token_based_on_line(last_line + 1, sem_tokens) - 1
+            )
+            line_delta = change2_start_line - change1_start_line
+            if change2_start_line > change1_start_line:
+                first_token_index = find_token_based_on_line(
+                    change1_start_line, sem_tokens
+                )
+                last_token_index = (
+                    find_token_based_on_line(change1_start_line + 1, sem_tokens) - 1
+                )
+                f1 = ((first_token_index - 1) * 5) - 1
+                l2 = (last_token_index * 5) - 1
+                tokens_in_line = sem_tokens[f1 + 1 : l2 + 1]
+                last_token_index = (
+                    find_token_based_on_line(last_line + 1, sem_tokens) - 1
+                )
+                final_tok_index = (last_last_line_token_index) * 5
+                b11 = sem_tokens[:final_tok_index]
+                a11 = sem_tokens[final_tok_index:]
+                sem_tokens = b11 + tokens_in_line + a11
+                f11 = sem_tokens[: f1 + 1]
+                l11 = sem_tokens[l2 + 1 :]
+                sem_tokens = f11 + l11
+                logging.info(f"semmm tok1111\n\n {sem_tokens}")
+                return sem_tokens
+            else:
+                logging.info("Moving down")
+            logging.info(f"semmm tok {sem_tokens}")
+            return sem_tokens
+
         for change in [
             x
             for x in content_changes.content_changes
