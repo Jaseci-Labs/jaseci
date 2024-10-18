@@ -8,6 +8,7 @@ from .user import (
     UserResetPassword,
     UserVerification,
 )
+from .webhook import GenerateKey
 
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "UserRequest",
     "UserResetPassword",
     "UserVerification",
+    "GenerateKey",
 ]
