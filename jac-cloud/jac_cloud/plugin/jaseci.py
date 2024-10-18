@@ -55,7 +55,7 @@ from ..core.architype import (
 )
 from ..core.context import ContextResponse, ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
-from ..jaseci.security import authenticator
+from ..jaseci.security import authenticator, generate_webhook_auth, validate_request
 from ..jaseci.utils import log_entry, log_exit
 
 
@@ -70,6 +70,7 @@ FILE_TYPES = {
 }
 
 walker_router = APIRouter(prefix="/walker", tags=["walker"])
+webhook_walker_router = APIRouter(prefix="/webhook/walker", tags=["webhook-walker"])
 
 
 def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
@@ -106,6 +107,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         as_query: str | list[str] = specs.as_query or []
         excluded: str | list[str] = specs.excluded or []
         auth: bool = specs.auth or False
+        webhook: dict | None = specs.webhook
 
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
@@ -197,8 +199,10 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
             jctx = JaseciContext.create(request, NodeAnchor.ref(node) if node else None)
 
-            wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
+            validate_request(request, cls.__name__, jctx.entry_node.name or "root")
+
             if Jac.check_read_access(jctx.entry_node):
+                wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
                 Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
                 jctx.close()
 
@@ -211,7 +215,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 return ORJSONResponse(resp, jctx.status)
             else:
                 error = {
-                    "error": f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!"
+                    "error": f"You don't have access on target entry {cast(Anchor, jctx.entry_node).ref_id}!"
                 }
                 jctx.close()
 
@@ -224,10 +228,17 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         ) -> Response:
             return api_entry(request, None, payload)
 
+        if webhook is None:
+            target_authenticator = authenticator
+            target_router = walker_router
+        else:
+            target_authenticator = generate_webhook_auth(webhook)
+            target_router = webhook_walker_router
+
         for method in methods:
             method = method.lower()
 
-            walker_method = getattr(walker_router, method)
+            walker_method = getattr(target_router, method)
 
             raw_types: list[Type] = [
                 get_type_hints(jef.func).get("return", NoneType)
@@ -243,11 +254,10 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 ret_types = NoneType  # type: ignore[misc]
 
             settings: dict[str, Any] = {
-                "tags": ["walker"],
                 "response_model": ContextResponse[ret_types] | Any,
             }
             if auth:
-                settings["dependencies"] = cast(list, authenticator)
+                settings["dependencies"] = cast(list, target_authenticator)
 
             walker_method(url := f"/{cls.__name__}{path}", summary=url, **settings)(
                 api_root
@@ -266,6 +276,7 @@ def specs(
     excluded: str | list[str] = [],  # noqa: B006
     auth: bool = True,
     private: bool = False,
+    webhook: dict | None = None,
 ) -> Callable:
     """Walker Decorator."""
 
@@ -277,6 +288,7 @@ def specs(
             ex = excluded
             a = auth
             pv = private
+            w = webhook
 
             class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = p
@@ -285,6 +297,7 @@ def specs(
                 excluded: str | list[str] = ex
                 auth: bool = a
                 private: bool = pv
+                webhook: dict | None = w
 
             cls.__specs__ = __specs__  # type: ignore[attr-defined]
 
@@ -306,6 +319,7 @@ class DefaultSpecs:
     excluded: str | list[str] = []
     auth: bool = True
     private: bool = False
+    webhook: dict | None = None
 
 
 class JacCallableImplementation:

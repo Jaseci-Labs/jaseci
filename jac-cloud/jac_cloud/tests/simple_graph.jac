@@ -804,3 +804,13 @@ walker delete_custom_object {
         # load the actual object and just use it as reference
     }
 }
+
+walker webhook {
+    can enter1 with `root entry {
+        report here;
+    }
+
+    class __specs__ {
+        has webhook: dict = {};
+    }
+}
