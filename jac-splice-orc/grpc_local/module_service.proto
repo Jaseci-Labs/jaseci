@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+service ModuleService {
+  rpc ExecuteMethod (MethodRequest) returns (MethodResponse);
+}
+
+message MethodRequest {
+  string method_name = 1;
+  repeated string args = 2;
+}
+
+message MethodResponse {
+  string result = 1;
+}
