@@ -17,7 +17,7 @@ enum ChatType {
 - `RAG` state is used when we need to use retrievable information in specific documents to respond to the user query.
 - `QA` state is used when the given context is enough for an answer.
 
-Next, we'll a new node to our graph called `router`. The `router` node is responsible for determining which type of model (RAG or QA) should be used to handle the query.
+Next, we'll add a new node to our graph called `router`. The `router` node is responsible for determining which type of model (RAG or QA) should be used to handle the query.
 
 ```jac
 node Router {
@@ -132,7 +132,7 @@ To summarize, here are the changes we made to our RAG chatbot to add dialogue ro
 - We have two new nodes `RagChat` and `QAChat`, which are the chat models for the RAG and QA models respectively. These nodes extend the `Chat` node and have the ability `respond`. The ability responds to the user query using the respective model.
 - In the `RagChat` node, we have a new ability `respond_with_llm`, which responds to the user query using the RAG model. The ability retrieves the relevant information from the documents and responds to the user query.
 - In the `QAChat` node, we have a new ability `respond_with_llm`, which responds to the user query using a simple question-answering model.
-- We update our `interact` walker to include the new `init_router` ability, which initializes the router node and routes the user query to the appropriate model.
+- We update our `infer` walker to include the new `init_router` ability, which initializes the router node and routes the user query to the appropriate model.
 - Lastly, we update the `Session` node to have the ability `chat`, which is triggered by the when the `interact` walker is on the node. This ability spawns the `infer` walker and reports the response back to the frontend.
 
 Now that we have added dialogue routing capabilities to our RAG chatbot, we can test it out by running the following command:
