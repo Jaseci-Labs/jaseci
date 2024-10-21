@@ -70,7 +70,7 @@ if __name__ == "__main__":
     book_title: str = standalone_function("Python Programming")
 
     # Creating a Book instance using a class method
-    book_info: Dict[str, str] = {"title": "Python Programming", "author": "John Doe"}
+    book_info: Dict[str, str] = {"title": book_title, "author": "John Doe"}
     book: Book = Book.create_from_dict(book_info)
 
     # Using static method

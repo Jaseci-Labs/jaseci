@@ -22,15 +22,7 @@ can standalone_function(book_title: str) ->str {
 }
 
 class LibraryItem{
-   can init(self:LibraryItem, title: str) -> None {
-
-        self.title = title;
-    }
-
-    @ classmethod
-    can create_from_dict(cls: Any, info: dict[(str, str)]) -> 'LibraryItem' {
-        return cls(info['title']) ;
-    }
+    can item_info() -> str abs;
 }
 
 class Book:LibraryItem:{
@@ -74,8 +66,10 @@ class Library{
 
 with entry {
 
+    book_title: str = standalone_function("Python Programming");
+
     # Creating a Book instance using a class method
-    book_info: Dict[(str, str)] = {'title': 'Python Programming', 'author': 'John Doe'};
+    book_info: Dict[(str, str)] = {'title': book_title, 'author': 'John Doe'};
     book: Book = Book.create_from_dict(book_info);
 
     # Using static method
