@@ -41,7 +41,7 @@ class JacImportPass(Pass):
             for i in all_imports:
                 self.process_import(i)
                 self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
+        SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -169,7 +169,7 @@ class JacImportPass(Pass):
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        from jaclang.compiler.compile import jac_file_to_pass
+        from jaclang.compiler.compile import jac_file_to_ir
         from jaclang.compiler.passes.main import SubNodeTabPass
 
         if not os.path.exists(target):
@@ -178,7 +178,7 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
+            mod_pass = jac_file_to_ir(file_path=target)
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir

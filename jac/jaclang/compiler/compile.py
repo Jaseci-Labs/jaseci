@@ -95,6 +95,16 @@ def jac_pass_to_pass(
     return ast_ret
 
 
+def jac_file_to_ir(
+    file_path: str,
+) -> Pass:
+    """Convert a Jac file to an AST."""
+    with open(file_path) as file:
+        source = ast.JacSource(file.read(), mod_path=file_path)
+        prse: Pass = JacParser(input_ir=source)
+        return prse
+
+
 def jac_file_formatter(
     file_path: str,
     schedule: list[Type[Pass]] = format_pass,
