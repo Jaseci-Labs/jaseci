@@ -302,6 +302,17 @@ def collect_all_symbols_in_scope(
     return symbols
 
 
+def collect_child_tabs(sym_tab: SymbolTable) -> list[lspt.CompletionItem]:
+    """Return all child tab's as completion items."""
+    symbols: list[lspt.CompletionItem] = []
+    for tab in sym_tab.kid:
+        if tab.name not in [i.label for i in symbols]:
+            symbols.append(
+                lspt.CompletionItem(label=tab.name, kind=label_map(tab.get_type()))
+            )
+    return symbols
+
+
 def parse_symbol_path(text: str, dot_position: int) -> list[str]:
     """Parse text and return a list of symbols."""
     text = text[:dot_position][:-1].strip()
