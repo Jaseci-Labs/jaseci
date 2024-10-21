@@ -278,11 +278,11 @@ class PyImportPass(JacImportPass):
                 f"Attaching {imported_mod.name} into {self.__get_current_module(imp_node)}"
             )
 
-            if imported_mod.py_needed_items is not None:
-                self.__debug_print(
-                    "Module was imported again with a different set of needed items, Ignoring this import for now !!!"
-                )
-                return
+            # if imported_mod.py_needed_items is not None:
+            #     self.__debug_print(
+            #         "Module was imported again with a different set of needed items, Ignoring this import for now !!!"
+            #     )
+            #     return
 
             imported_mod.py_needed_items = {}
             for i in imp_node.items.items:
@@ -291,7 +291,6 @@ class PyImportPass(JacImportPass):
                     i.alias.sym_name if i.alias else None
                 )
             self.__debug_print(f"Needed items are {imported_mod.py_needed_items}")
-
             self.attach_mod_to_node(imp_node.from_loc, imported_mod)
             SymTabBuildPass(input_ir=imported_mod, prior=self)
 
@@ -308,8 +307,7 @@ class PyImportPass(JacImportPass):
             parent_node_path=self.__get_current_module(imported_item),
             mod_path=imported_item.dot_path_str,
             imported_mod_name=(
-                # TODO: Check this replace
-                imported_item.dot_path_str.replace(".", "")
+                imported_item.path[-1].sym_name
                 if not imported_item.alias
                 else imported_item.alias.sym_name
             ),
@@ -326,10 +324,17 @@ class PyImportPass(JacImportPass):
                 )
                 return
             self.__debug_print(
-                f"Attaching {imported_mod.name} into {self.__get_current_module(imp_node)}"
+                f"Attaching {imported_item.dot_path_str} into {self.__get_current_module(imp_node)}"
             )
             self.attach_mod_to_node(imported_item, imported_mod)
-            SymTabBuildPass(input_ir=imported_mod, prior=self)
+
+            # Get the correct module to call SymTabBuildPass on
+            # correct module won't be the raised module in case of
+            # import a.b.c
+            mod_head: ast.Module = imported_mod
+            while isinstance(mod_head.parent, ast.Module):
+                mod_head = mod_head.parent
+            SymTabBuildPass(input_ir=mod_head, prior=self)
 
     def __import_py_module(
         self,
@@ -379,8 +384,15 @@ class PyImportPass(JacImportPass):
                 ).ir
                 SubNodeTabPass(input_ir=mod, prior=self)
 
+            # print([k.name.sym_name for k in mod.kid_of_type(ast.Architype)])
+            # exit()
+
             if mod:
-                mod.name = imported_mod_name if imported_mod_name else mod.name
+                if imported_mod_name:
+                    self.__debug_print(
+                        f"Rename imported module from {mod.name} to {imported_mod_name}"
+                    )
+                    mod.name = imported_mod_name
                 if mod.name == "__init__":
                     mod_name = mod.loc.mod_path.split("/")[-2]
                     self.__debug_print(
@@ -428,3 +440,72 @@ class PyImportPass(JacImportPass):
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
         return None
+
+    def attach_mod_to_node(
+        self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
+    ) -> None:
+        """Attach module to the parent node."""
+        # This function is intended to fix the issue when the import is in form of
+        #   import a.b.c
+        # before, the imported module was renamed to a.b.c instead of c
+        # the fix will be creatig module a if not created then b then c
+
+        # fix module names that starts with .
+        while mod.name.startswith("."):
+            mod.name = mod.name[1:]
+
+        # This import is in form of import from and no need to check for the
+        # parent module
+        if mod.py_needed_items is not None:
+            return super().attach_mod_to_node(node, mod)
+
+        # Get all created module under node (ast.ModulePath | ast.ModuleItem)
+        # and also add mod as part of the created modules
+        created_module: dict[str, ast.Module] = {
+            m: m.name for m in node.get_all_sub_nodes(ast.Module)
+        }
+        created_module[mod.name] = mod
+
+        # Split the imported mod dot_path to check if the parents are created
+        # or not
+        modules = node.dot_path_str.split(".")
+
+        # prepare two pointers to check for the created modules and fix the
+        # parent pointer for each module
+        mod_tail: Optional[ast.Module] = None  # tail of the list
+        current_parent = node  # current parent
+
+        # Goal will be check for all the module names we have
+        #   check if there is a module created for this name
+        #   fix the parent pointer of the module to point to the current parent
+        #   move the current parent pointer to the module
+        for m in modules:
+
+            if m not in created_module:
+                self.__debug_print(f"Creating new module {m}")
+                new_mod = ast.Module(
+                    name=m,
+                    source=ast.JacSource("", ""),
+                    doc=None,
+                    body=[],
+                    is_imported=True,
+                    kid=[ast.EmptyToken()],
+                    terminals=[],
+                )
+                new_mod.is_raised_from_py = True
+                new_mod.parent = current_parent
+                created_module[m] = new_mod
+
+                if mod_tail is not None:
+                    mod_tail.kid.append(new_mod)
+                mod_tail = new_mod
+
+            else:
+                created_module[m].parent = current_parent
+                if mod_tail is not None:
+                    mod_tail.kid.append(created_module[m])
+                mod_tail = created_module[m]
+
+            current_parent = mod_tail
+
+        return super().attach_mod_to_node(node, created_module[modules[0]])

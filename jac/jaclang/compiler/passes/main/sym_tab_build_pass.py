@@ -9,10 +9,15 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
+from jaclang.settings import settings
 
 
 class SymTabBuildPass(Pass):
     """Jac Symbol table build pass."""
+
+    def __debug_print(self, msg: str, is_py_related: bool = False) -> None:
+        if is_py_related and settings.py_import_pass_debug:
+            self.log_info("[SymTabBuildPass-PyMod] " + msg)
 
     def before_pass(self) -> None:
         """Before pass."""
@@ -267,6 +272,7 @@ class SymTabBuildPass(Pass):
                 node.ignore_uses = True  # No need to get uses of this node
                 return
             elif self.cur_py_needed_items[node.name.sym_name] is not None:
+                self.__debug_print(f"Visiting {node.name.sym_name}", True)
                 alias_val = self.cur_py_needed_items[node.name.sym_name]
                 assert isinstance(alias_val, str)
                 # node.name._sym_name = alias_val
@@ -335,10 +341,14 @@ class SymTabBuildPass(Pass):
         if self.cur_py_needed_items:
             if node.name_ref.sym_name not in self.cur_py_needed_items:
                 return
-            elif self.cur_py_needed_items[node.name_ref.sym_name]:
+            self.__debug_print(f"Visiting {node.name_ref.sym_name}", True)
+            if self.cur_py_needed_items[node.name_ref.sym_name]:
                 alias_val = self.cur_py_needed_items[node.name_ref.sym_name]
                 assert isinstance(alias_val, str)
                 node.name_ref._sym_name = alias_val
+                self.__debug_print(
+                    f"Renaming {node.name_ref.sym_name} to {alias_val}", True
+                )
 
         self.sync_node_to_scope(node)
         node.sym_tab.def_insert(node, access_spec=node, single_decl="ability")
