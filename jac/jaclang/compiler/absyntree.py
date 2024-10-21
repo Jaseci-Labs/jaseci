@@ -635,6 +635,7 @@ class Module(AstDocNode):
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
+        self.dirty: bool = True
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
