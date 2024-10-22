@@ -1,14 +1,21 @@
 # Building a RAG Chatbot with Jac Cloud and Streamlit (Part 2/3)
 
-Now that we have a jac application served up, let's build a simple chatbot using Retrieval Augmented Generation (RAG) with Jac Cloud and Streamlit as our frontend interface.
+Now that we have a jac application served up, In this section, we'll build a simple chatbot using **Retrieval Augmented Generation (RAG)** with **Jac Cloud** for the backend and **Streamlit** for the frontend interface.
 
 ### Preparation / Installation
 
-There are a couple of additional dependenices we need here
+Before we start, let's install a few additional dependencies. Run the following command in your terminal:
 
 ```bash
 pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0
 ```
+
+- `mtllm`: A toolkit facilitates the of generative AI models, specifically Large Language Models (LLMs) into programming in jaclang.
+- `jac-streamlit`: A plugin that integrates jaclang with Streamlit.
+- `langchain`, `langchain_community`: Essential tools for handling the language generation logic in your chatbot.
+- `chromadb`: A vector database to store and retrieve embeddings.
+- `pypdf`: A Python library to handle PDF documents.
+
 
 ## Building a Streamlit Interface
 
@@ -16,22 +23,20 @@ Before we begin building out our chatbot, let's first build a simple GUI to inte
 
 Luckily for us, jaclang has a plugin for streamlit that allows us to build web applications with streamlit using jaclang. In this part of the tutorial, we will build a frontend for our conversational agent using streamlit. You can find more information about the `jac-streamlit` plugin [here](https://github.com/Jaseci-Labs/jaclang/blob/main/support/plugins/streamlit/README.md).
 
-First, let's create a new file called `client.jac`. This file will contain the code for the frontend chat interface.
+Begin by creating a file named `client.jac`. This file will define the frontend logic for users to interact with the chatbot.
 
-We start by importing the necessary modules in Jac:
+First, import the necessary Python libraries that will handle the user interface (UI) and API communication:
 
-- `streamlit` (for frontend UI components)
-- `requests` (for making API calls)
 
 ```jac
 import:py streamlit as st;
 import:py requests;
 ```
 
-- `streamlit` will handle the user interface (UI) of the chatbot.
-- `requests` will handle API calls to our backend.
+- `streamlit`: Handle the user interface (UI) of the chatbot.
+- `requests`: Handle API calls to our backend.
 
-Now let's define a function bootstrap_frontend, which accepts a token for authentication and builds the chat interface.
+Now let's define a function `bootstrap_frontend`, which is the core of the user interface. It is responsible for rendering the welcome message, initializing the chat history, and interacting with the backend.
 
 ```jac
 can bootstrap_frontend (token: str) {
@@ -44,25 +49,35 @@ can bootstrap_frontend (token: str) {
 }
 ```
 
-- `st.write()` adds a welcome message to the app.
-- `st.session_state` is used to persist data across user interactions. Here, we're using it to store the chat history (`messages`).
+- `st.write("Welcome to your Demo Agent!")`: This displays a welcome message on the page.
+- `st.session_state`: Streamlit's `session_state` is used to persist the data (in this case, the chat history) across multiple interactions. Here, we initialize `st.session_state.messages` to store the messages between the user and the assistant.
 
-Now, let's update the function such that when the page reloads or updates, the previous chat messages are reloaded from `st.session_state.messages`. Add the following to `bootstrap_frontend`
+Next, we need to ensure that the chat history is reloaded when the page is refreshed or updated. The following code snippet does that by iterating through the stored messages and rendering them on the interface:
 
 ```jac
+can bootstrap_frontend(token:str){
+    //
+    //
+
     for message in st.session_state.messages {
         with st.chat_message(message["role"]) {
             st.markdown(message["content"]);
         }
     }
+}
 ```
 
-- This block loops through the stored messages in the session state.
-- For each message, we use `st.chat_message()` to display the message by its role (either `"user"` or `"assistant"`).
+- `for message in st.session_state.messages`: This loop goes through each message stored in `st.session_state.messages`.
+- `st.chat_message(message["role"])`: Displays each message by its role (either `"user"` or `"assistant"`)
+
 
 Next, let's capture user input using `st.chat_input()`. This is where users can type their message to the chatbot.
 
 ```jac
+can bootstrap_frontend(token:str){
+    //
+    //
+
     if prompt := st.chat_input("What is up?") {
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt});
@@ -72,16 +87,23 @@ Next, let's capture user input using `st.chat_input()`. This is where users can 
             st.markdown(prompt);
         }
     }
+}
 ```
 
-- `st.chat_input()` waits for the user to type a message and submit it.
-- Once the user submits a message, it's appended to the session state's message history and immediately displayed on the screen.
+- `st.chat_input("What is up?")`: This waits for the user to type a message. The text typed by the user is stored in the variable `prompt`.
+- `st.session_state.messages.append(...)`: The user’s message is added to the session's chat history. Each message is stored as a dictionary with two keys: "role" (indicating whether the message is from the user or the assistant) and "content" (the actual text).
+- `with st.chat_message("user")`: The message is displayed in the chat box under the "user" role.
 
-Now we handle the interaction with the backend server. After the user submits a message, the assistant responds. This involves sending the user's message to the backend, receiving a response from the backend and displaying it.
+Now we handle the interaction with the backend server. After capturing the user's input, It will forward this message to the backend, retrieve the assistant's response, and display it,
 
-Add the following to `bootstrap_frontend`.
+Modify the `bootstrap_frontend` as follows;
 
 ```jac
+
+can bootstrap_frontend(token:str){
+    //
+    //
+
     if prompt := st.chat_input("What is up?") {
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt});
@@ -109,14 +131,14 @@ Add the following to `bootstrap_frontend`.
             }
         }
     }
+}
 ```
 
-- The user's input (`prompt`) is sent to the backend using a POST request to the `/walker/interact` endpoint.
-- The `interact` walker, as we created in the last chapter, just returns `Hello World!` for now. This will change as we build out our chatbot.
-  - `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
+- `requests.post(...)`: This sends the user’s message (stored in `prompt`) to the backend using an HTTP POST request. The message is sent as JSON with a "message" key, and a "session_id" is also included, but `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
+- The backend is the `interact` walker, which we created in the last chapter, it just returns `Hello World!` for now. This will change as we build out our chatbot.
 - The response from the backend is then displayed using `st.write()`, and the assistant's message is stored in the session state.
 
-Lastly, we'll define the entry point of `client.jac`. Think `main` function of a python program. We authenticates the user and retrieves the token needed for the `bootstrap_frontend` function.
+Lastly, we'll define the entry point of our program. Think about the `main` function of a python program. Here we authenticate the user and retrieves the token needed for the `bootstrap_frontend` function. Add the following code block to the `client.jac`
 
 ```jac
 with entry {
@@ -163,13 +185,13 @@ In the entry block:
 - Once logged in, the token is extracted and printed.
 - Finally, `bootstrap_frontend(token)` is called with the obtained token.
 
-Now you can run the frontend using the following command:
+Now you can run the application using the following command:
 
 ```bash
 jac streamlit client.jac
 ```
 
-If your server is still running, you can chat with your assistant using the streamlit interface. The response will only be "Hello, world!" for now, but we will update it to be a fully working chatbot next.
+If your server is still running, you can chat with your assistant using the streamlit interface which is opening in your browser. The response will only be "Hello, world!" for now, but we will update it to be a fully working chatbot next.
 
 Now let's move on to building the RAG module.
 
@@ -189,7 +211,7 @@ In this part we'll be building a simple Retrieval Augmented Generation module us
 
 First, let's add a file called `rag.jac` to our project. This file will contain the code for the Retrieval Augmented Generation module.
 
-Jac allows you to import Python libraries, making it easy to integrate existing libraries such as langchain, langchain_community, and more. In this RAG engine, we need document loaders, text splitters, embedding functions, and vector stores.
+Jac allows you to import Python libraries, making it easy to integrate existing libraries such as [Langchain](https://www.langchain.com), [Langchain Community](https://pypi.org/project/langchain-community/), and more. In this RAG engine, we need document loaders, text splitters, embedding functions, and vector stores.
 
 ```jac
 import:py os;
@@ -200,10 +222,10 @@ import:py from langchain_community.embeddings.ollama {OllamaEmbeddings}
 import:py from langchain_community.vectorstores.chroma {Chroma}
 ```
 
-- `PyPDFDirectoryLoader` is used to load documents from a directory.
-- `RecursiveCharacterTextSplitter` is used to split the documents into chunks.
-- `OllamaEmbeddings` is used to generate embeddings from document chunks.
-- `Chroma` is our vector store for storing the embeddings.
+- `PyPDFDirectoryLoader`: Used to load documents from a directory.
+- `RecursiveCharacterTextSplitter`: Used to split the documents into chunks.
+- `OllamaEmbeddings`: Used to generate embeddings from document chunks.
+- `Chroma`: Our vector store for storing the embeddings.
 
 Now let's define the `rag_engine` object that will handle the retrieval and generation of responses. The object will have two properties: `file_path` for the location of documents and `chroma_path` for the location of the vector store.
 
@@ -214,11 +236,14 @@ obj RagEngine {
 }
 ```
 
-Note: `obj` works similarly as dataclasses in Python.
 
 We will now build out this `RagEngine` object by adding relevant abilities. Abilities, as annotated by the `can` keyword, are analogus to member methods of a Python class. The `can` abilities in the following code snippets shoudld be added inside the `RagEngine` object scope.
 
-The object will have a `postinit` method that runs automatically upon initialization, loading documents, splitting them into chunks, and adding them to the vector database (Chroma). `postinit` works similarly to the `__post_init__` in Python dataclasses.
+>
+> Note:
+> `obj` in `jaclang` works similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) in Python. `postinit` works similarly to the `__post_init__` in Python dataclasses.
+
+The `obj` will have a `postinit` ability that runs automatically upon initialization, loading documents, splitting them into chunks, and adding them to the vector database (Chroma).
 
 ```jac
     can postinit {
@@ -226,20 +251,14 @@ The object will have a `postinit` method that runs automatically upon initializa
         chunks: list = self.split_documents(documents);
         self.add_to_chroma(chunks);
     }
-```
 
-- The `load_documents` method loads the documents from the specified directory.
-- The `split_documents` method splits the documents into chunks.
-- The `add_to_chroma` method adds the chunks to the Chroma vector store.
-
-Let's define the `load_documents` method and the `split_documents` method.
-
-```jac
+    // Load documents from a directory
     can load_documents {
         document_loader = PyPDFDirectoryLoader(self.file_path);
         return document_loader.load();
     }
 
+    // Split documents into manageable chunks
     can split_documents(documents: list[Document]) {
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=800,
         chunk_overlap=80,
@@ -249,19 +268,28 @@ Let's define the `load_documents` method and the `split_documents` method.
     }
 ```
 
-- The `load_documents` method loads the documents from the specified directory using the `PyPDFDirectoryLoader` class.
-- The `split_documents` method splits the documents into chunks using the `RecursiveCharacterTextSplitter` class. This ensures that documents are broken down into manageable chunks for better embedding and retrieval performance.
+- The `load_documents` ability loads the documents from the specified directory using the `PyPDFDirectoryLoader` class and returns a list of documents that will later be split and processed.
+- The `split_documents` ability splits the documents into chunks using the `RecursiveCharacterTextSplitter` class. This ensures that documents are broken down into manageable chunks for better embedding and retrieval performance.
+- The `add_to_chroma` This part of the code hasn't been fully defined yet, but the purpose of the `add_to_chroma` method will be to take the document chunks and store them in the Chroma vector database for future retrieval. We'll later enhance this code to complete that functionality.
 
-Next, let's define the `get_embedding_function` method. The `get_embedding_function` ability uses the `OllamaEmbeddings `model to create embeddings for the document chunks. These embeddings are crucial for semantic search in the vector database.
+Next, let's define the `get_embedding_function` ability. This ability uses the `OllamaEmbeddings` model to create embeddings for the document chunks. TThese embeddings are used to represent the semantic meaning of each chunk and will be crucial for performing similarity searches.
 
 ```jac
+obj RagEngine {
+    \\
+    \\
+
     can get_embedding_function {
         embeddings = OllamaEmbeddings(model='nomic-embed-text');
         return embeddings;
     }
+}
 ```
 
-Now, each chunk of text needs a unique identifier to ensure that it can be referenced in the vector store. The `add_chunk_id` ability assigns IDs to each chunk, using the format `Page Source:Page Number:Chunk Index`.
+- The `OllamaEmbeddings` model is used to generate text embeddings with the nomic-embed-text model, which is designed for efficient text-based embedding.
+- This method returns an embedding function that converts text into vector representations that can be stored in Chroma.
+
+Now, each chunk of text needs a unique identifier to ensure that it can be referenced in the vector store. The `add_chunk_id` ability assigns IDs to each chunk, using the format `Page Source:Page Number:Chunk Index`. These IDs are necessary to ensure each chunk is correctly referenced in the Chroma vector database.
 
 ```jac
     can add_chunk_id(chunks: str) {
@@ -289,7 +317,7 @@ Now, each chunk of text needs a unique identifier to ensure that it can be refer
     }
 ```
 
-Once the documents are split and chunk IDs are assigned, we add them to the Chroma vector database. The `add_to_chroma` ability checks for existing documents in the database and only adds new chunks to avoid duplication.
+Once the documents are split and chunk IDs are assigned, we add them to the Chroma vector database. The `add_to_chroma` ability stores the chunks in the Chroma database, checking for duplicates and only adding new chunks.
 
 ```jac
     can add_to_chroma(chunks: list[Document]) {
@@ -316,7 +344,7 @@ Once the documents are split and chunk IDs are assigned, we add them to the Chro
     }
 ```
 
-Next, the `get_from_chroma` ability takes a query and returns the most relevant chunks based on similarity search. This is the core of retrieval-augmented generation, as the engine fetches chunks that are semantically similar to the query.
+Finally, the `get_from_chroma` ability takes a query and returns the most relevant chunks based on similarity search. This is the core of retrieval-augmented generation, as the engine fetches chunks that are semantically similar to the query.
 
 ```jac
     can get_from_chroma(query: str,chunck_nos: int=5) {
@@ -329,16 +357,18 @@ Next, the `get_from_chroma` ability takes a query and returns the most relevant 
     }
 ```
 
+The complete implementation of the RagEngine should look like [this](code/rag.jac).
+
 To summarize, we define an object called `RagEngine` with two properties: `file_path` and `chroma_path`. The `file_path` property specifies the path to the directory containing the documents we want to retrieve responses from. The `chroma_path` property specifies the path to the directory containing the pre-trained embeddings. We will use these embeddings to retrieve candidate responses.
 
-We define a few methods to load the documents, split them into chunks, and add them to the Chroma vector store. We also define a method to retrieve candidate responses based on a query. Let's break down the code:
+We defined abilities to load the documents, split them into chunks, and add them to the Chroma vector store. We also define a ability to retrieve candidate responses based on a query. Let's break down the code:
 
-- The `load_documents` method loads the documents from the specified directory using the `PyPDFDirectoryLoader` class.
-- The `split_documents` method splits the documents into chunks using the `RecursiveCharacterTextSplitter` class from the `langchain_text_splitters` module.
-- The `get_embedding_function` method initializes the Ollama embeddings model.
-- The `add_chunk_id` method generates unique IDs for the chunks based on the source and page number.
-- The `add_to_chroma` method adds the chunks to the Chroma vector store.
-- The `get_from_chroma` method retrieves candidate responses based on a query from the Chroma vector store.
+- The `load_documents` ability loads the documents from the specified directory using the `PyPDFDirectoryLoader` class and returns a list of documents that will later be split and processed.
+- The `split_documents` ability splits the documents into chunks using the `RecursiveCharacterTextSplitter` class from the `langchain_text_splitters` module.
+- The `get_embedding_function` ability initializes the Ollama embeddings model.
+- The `add_chunk_id` ability generates unique IDs for the chunks based on the source and page number.
+- The `add_to_chroma` ability adds the chunks to the Chroma vector store.
+- The `get_from_chroma` ability retrieves candidate responses based on a query from the Chroma vector store.
 
 ### Setting up Ollama Embeddings
 
@@ -358,39 +388,39 @@ ollama serve
 
 ### Adding your documents
 
-You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document [here](docs/clinical_medicine.pdf) for you to test with. Create a new directory called `docs` in the root of your project and add your documents to this directory.
+You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document [here](code/docs/clinical_medicine.pdf) for you to test with. Create a new directory called `docs` in the root of your project and add your documents to this directory.
 
 ### Setting up your LLM
 
 Here we are going to use one of the key features of jaclang called [MTLLM](https://jaseci-labs.github.io/mtllm/), or Meaning-typed LLM. MTTLM facilitates the integration of generative AI models, specifically Large Language Models (LLMs) into programming at the language level.
 
-We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start from scratch and add the following.
-
-```jac
-import:py from mtllm.llms {OpenAI}
-
-glob llm = OpenAI(model_name='gpt-4o');
-```
-
-Here we use the OpenAI model gpt-4o as our Large Language Model (LLM). To use OpenAI you will need an API key. You can get an API key by signing up on the OpenAI website [here](https://platform.openai.com/). Once you have your API key, you can set it as an environment variable:
-
-```bash
-export OPENAI_API_KEY=""
-```
-
-Using OpenAI is not required. You can replace this with any other LLM you want to use. For example, you can also you any Ollama generative model as your LLM. When using Ollama make sure you have the model downloaded and serving on your local machine by running the following command:
-
-```bash
-ollama pull llama3.1
-```
-
-This will download the `llama3.1` model to your local machine and make it available for inference when you run the `ollama serve` command. If you want use Ollama replace your import statement with the following:
+We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start fresh and add the following lines to use Olama as your LLM:
 
 ```jac
 import:py from mtllm.llms {Ollama}
 
 glob llm = Ollama(model_name='llama3.1');
 ```
+
+Ollama provides various powerful generative models, such as llama3.1. Before using Ollama in your project, make sure you have downloaded and are serving the model on your local machine. You can do this by running the following commands:
+
+```bash
+ollama pull llama3.1
+```
+This will download the `llama3.1` model to your local machine and make it available for inference when you run the `ollama serve` command.
+
+> **Note:**
+> You can also use OpenAI model gpt-4o as your Large Language Model (LLM), To use OpenAI you will need an API key. You can get an API key by signing up on the OpenAI website [here](https://platform.openai.com/). Once you have your API key, you can set it as an environment variable:
+> ```bash
+> export OPENAI_API_KEY=""
+> ```
+>
+> Also replace your import statement with the following:
+> ```jac
+> import:py from mtllm.llms {OpenAI}
+> glob llm = OpenAI(model_name='gpt-4o');
+> ```
+
 
 Now that you have your LLM ready let's create a simple walker that uses the RAG module and MTLLM to generate responses to user queries. First, let's declare the global variables for MTLLM and the RAG engine.
 
@@ -449,7 +479,7 @@ walker interact {
 
 - `message`: The user's message.
 - `session_id`: The unique session identifier.
-- `init_session` ability: Initializes a session based on the session ID. If the session does not exist, it creates a new session node. Note that this ability is triggered on `root entry`. In every graph, there is a special node called `root` that serves as the starting point for the graph. A walker can be spawned on and traverse to any node in the graph. It does **NOT** have to start at the root node, but it can be spawned on the root node to start the traversal.
+- `init_session` ability: Creates a session node based on the session ID". If the session does not exist, it creates a new session node. Note that this ability is triggered on `root entry`. In every graph, there is a special node called `root` that serves as the starting point for the graph. A walker can be spawned on and traverse to any node in the graph. It does **NOT** have to start at the root node, but it can be spawned on the root node to start the traversal.
 
 Now, let's define the `chat` ability which once the session is initialized, will handle interactions with the user and the document retrieval system.
 
@@ -485,18 +515,20 @@ To summarize:
 - We define a `Session` node that stores the chat history and status of the session. The session node also has an ability called `llm_chat` that uses the MTLLM model to generate responses based on the chat history, agent role, and context.
 - We define a `interact` walker that initializes a session and generates responses to user queries. The walker uses the `rag_engine` object to retrieve candidate responses and the `llm_chat` ability to generate the final response.
 
+The implementation of the `server.jac` at this point should look like [this](code/server_old.jac).
+
 You can now serve this code using Jac Cloud by running the following command:
 
 ```bash
 DATABASE_HOST=mongodb://localhost:27017/?replicaSet=my-rs jac serve server.jac
 ```
 
-Now you can test out your chatbot using the client we created earlier. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
+Now you can test out your chatbot using the client (`jac streamlit client.jac`) we created earlier. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
 
 You can also try testing out the updated endpoint using the swagger UI at `http://localhost:8000/docs` or using the following curl command:
 
 ```bash
-curl -X POST http://localhost:8000/walkers/interact -d '{"message": "I am having major back pain, what can i do", "session_id": "123"} -H "Authorization: Bearer <TOKEN>"
+curl -X POST http://localhost:8000/walkers/interact -d '{"message": "I am having major back pain, what can i do", "session_id": "123"}' -H "Authorization: Bearer <TOKEN>"
 ```
 
 Remember to replace `<TOKEN>` with the access token you saved. Note you might need to re-login to get an updated token if the token has expired or the server has been restarted since.
