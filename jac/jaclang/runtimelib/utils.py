@@ -5,14 +5,34 @@ from __future__ import annotations
 import ast as ast3
 import sys
 from contextlib import contextmanager
+from dataclasses import asdict as _asdict, is_dataclass
+from enum import Enum
 from types import UnionType
-from typing import Callable, Iterator, TYPE_CHECKING
+from typing import Any, Callable, Iterable, Iterator, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.semtable import SemScope
 
 if TYPE_CHECKING:
     from jaclang.runtimelib.constructs import NodeAnchor, NodeArchitype
+
+
+def asdict_factory(data: Iterable[tuple]) -> dict[str, Any]:
+    """Parse dataclass to dict."""
+    _data = {}
+    for key, value in data:
+        if isinstance(value, Enum):
+            _data[key] = value.name
+        else:
+            _data[key] = value
+    return _data
+
+
+def asdict(obj: object) -> dict[str, Any]:
+    """Override dataclass asdict."""
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return _asdict(obj, dict_factory=asdict_factory)
+    raise ValueError("Object is not a dataclass!")
 
 
 @contextmanager
