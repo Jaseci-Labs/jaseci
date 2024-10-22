@@ -368,3 +368,38 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("can my_print(x: object) -> None", stdout_value)
+
+    def test_caching_issue(self) -> None:
+        """Test for Caching Issue""" 
+        test_file = self.fixture_abs_path("test_caching_issue.jac")
+        with open(test_file, "w") as f:
+            f.write("""
+            test mytest{
+                check 10 == 10;
+            }
+            """)
+        process = subprocess.Popen(
+            ["jac", "test", test_file],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("Passed successfully.", stdout)
+        self.assertIn(".", stderr)
+
+        with open(test_file, "w") as f:
+            f.write("""
+            test mytest{
+                check 10 == 11;
+            }
+            """)
+        process = subprocess.Popen(
+            ["jac", "test", test_file],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        stdout, stderr = process.communicate()
+        self.assertNotIn("Passed successfully.", stdout)
+        self.assertIn("F", stderr)
