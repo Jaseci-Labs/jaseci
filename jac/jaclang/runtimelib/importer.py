@@ -344,14 +344,22 @@ class JacImporter(Importer):
                     cachable=spec.cachable,
                     reload=reload if reload else False,
                 )
+
+                # Since this is a compile time error, we can safely raise an exception here.
+                if not codeobj:
+                    raise ImportError(f"No bytecode found for {spec.full_target}")
+
                 try:
-                    if not codeobj:
-                        raise ImportError(f"No bytecode found for {spec.full_target}")
                     with sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
-                    logger.error(dump_traceback(e))
+                    logger.error(e)
+                    # Directly printing to stderr since this is a run time error, the error message an
+                    # output of the execution to the user, not the developer. Maybe we should have a
+                    # standard method to send error message to the end user.
+                    print(dump_traceback(e), file=sys.stderr)
                     raise e
+
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(

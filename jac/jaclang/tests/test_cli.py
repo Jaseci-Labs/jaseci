@@ -62,6 +62,7 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
+        stdout_value = captured_output.getvalue()
 
         expected_stdout_values = (
             "Error: list index out of range",
@@ -71,10 +72,9 @@ class JacCliTests(TestCase):
             "  at foo() ",
             "  at <module> ",
         )
-
-        logger_capture = "\n".join([rec.message for rec in self.caplog.records])
+        # logger_capture = "\n".join([rec.message for rec in self.caplog.records])
         for exp in expected_stdout_values:
-            self.assertIn(exp, logger_capture)
+            self.assertIn(exp, stdout_value)
 
     def test_jac_impl_err(self) -> None:
         """Basic test for pass."""
