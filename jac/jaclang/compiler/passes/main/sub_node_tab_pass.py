@@ -17,6 +17,8 @@ class SubNodeTabPass(Pass):
     def enter_node(self, node: ast.AstNode) -> None:
         """Table builder."""
         super().enter_node(node)
+        if isinstance(node, ast.Module) and not node.dirty:
+            self.prune()
         node._sub_node_tab = {}  # clears on entry
 
     def exit_node(self, node: ast.AstNode) -> None:
@@ -34,3 +36,6 @@ class SubNodeTabPass(Pass):
                 node._sub_node_tab[type(i)].append(i)
             else:
                 node._sub_node_tab[type(i)] = [i]
+
+        if isinstance(node, ast.Module):
+            node.dirty = False

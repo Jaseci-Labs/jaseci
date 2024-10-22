@@ -61,6 +61,15 @@ class JacImportPass(Pass):
             self.annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
+            mod.dirty = True
+
+            current_mod = mod
+            while current_mod:
+                m = current_mod.find_parent_of_type(ast.Module)
+                if m is None:
+                    break
+                m.dirty = True
+                current_mod = m
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
