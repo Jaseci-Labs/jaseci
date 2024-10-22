@@ -26,6 +26,7 @@ from jaclang.compiler.constant import EdgeDir
 from jaclang.plugin.default import JacFeatureImpl, hookimpl
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import DSFunc
+from jaclang.runtimelib.utils import all_issubclass
 
 from orjson import loads
 
@@ -752,59 +753,85 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         walker.path = []
         walker.next = [node]
         walker.returns = []
+        current_node = node.architype
 
-        if walker.next:
-            current_node = walker.next[-1].architype
-            for i in warch._jac_entry_funcs_:
-                if not i.trigger:
-                    if i.func:
-                        walker.returns.append(i.func(warch, current_node))
-                    else:
-                        raise ValueError(f"No function {i.name} to call.")
+        # walker entry
+        for i in warch._jac_entry_funcs_:
+            if i.func and not i.trigger:
+                walker.returns.append(i.func(warch, current_node))
+            if walker.disengaged:
+                return warch
+
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
-                for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(current_node, warch))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
-                    if walker.disengaged:
-                        return warch
+                # walker entry with
                 for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
-                            walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
-                            continue
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, NodeArchitype)
+                        and isinstance(current_node, i.trigger)
+                    ):
+                        walker.returns.append(i.func(warch, current_node))
                     if walker.disengaged:
                         return warch
-                for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
-                            walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
-                            continue
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+
+                # node entry
+                for i in current_node._jac_entry_funcs_:
+                    if i.func and not i.trigger:
+                        walker.returns.append(i.func(current_node, warch))
                     if walker.disengaged:
                         return warch
+
+                # node entry with
+                for i in current_node._jac_entry_funcs_:
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        walker.returns.append(i.func(current_node, warch))
+                    if walker.disengaged:
+                        return warch
+
+                # node exit with
                 for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(current_node, warch))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        walker.returns.append(i.func(current_node, warch))
                     if walker.disengaged:
                         return warch
+
+                # node exit
+                for i in current_node._jac_exit_funcs_:
+                    if i.func and not i.trigger:
+                        walker.returns.append(i.func(current_node, warch))
+                    if walker.disengaged:
+                        return warch
+
+                # walker exit with
+                for i in warch._jac_exit_funcs_:
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, NodeArchitype)
+                        and isinstance(current_node, i.trigger)
+                    ):
+                        walker.returns.append(i.func(warch, current_node))
+                    if walker.disengaged:
+                        return warch
+        # walker exit
         for i in warch._jac_exit_funcs_:
-            if not i.trigger:
-                if i.func:
-                    walker.returns.append(i.func(warch, current_node))
-                else:
-                    raise ValueError(f"No function {i.name} to call.")
+            if i.func and not i.trigger:
+                walker.returns.append(i.func(warch, current_node))
+            if walker.disengaged:
+                return warch
+
         walker.ignores = []
         return warch
 

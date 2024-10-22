@@ -3,6 +3,7 @@
 from contextlib import suppress
 from os import getenv, path
 from shelve import open as shelf
+from subprocess import Popen, run
 from typing import Literal, overload
 from unittest.async_case import IsolatedAsyncioTestCase
 
@@ -33,7 +34,13 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         """Reset DB and wait for server."""
-        self.host = "http://0.0.0.0:8001"
+        run(["fuser", "-k", "8000/tcp"])
+        run(["jac", "clean"])
+        run(["jac", "tool", "gen_parser"])
+        self.server = Popen(["jac", "serve", "jac_cloud/tests/simple_graph_mini.jac"])
+        run(["sleep", "5"])
+
+        self.host = "http://0.0.0.0:8000"
         self.database = getenv("DATABASE", "database")
         count = 0
         while True:
@@ -49,6 +56,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         """Clean up DB."""
         self.clear_db()
+        self.server.kill()
 
     def clear_db(self) -> None:
         """Clean DB."""
@@ -86,7 +94,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     def check_server(self) -> None:
         """Retrieve OpenAPI Specs JSON."""
-        res = get(f"{self.host}/healthz")
+        res = get(f"{self.host}/healthz", timeout=5)
         res.raise_for_status()
         self.assertEqual(200, res.status_code)
 
@@ -390,19 +398,19 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             },
                         ],
                         "singleOptional": None,

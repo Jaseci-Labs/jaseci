@@ -1,7 +1,8 @@
 """JacLang Jaseci Unit Test."""
 
 from contextlib import suppress
-from os import getenv
+from os import environ, getenv
+from subprocess import Popen, run
 from typing import Literal, overload
 from unittest.async_case import IsolatedAsyncioTestCase
 
@@ -17,7 +18,18 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         """Reset DB and wait for server."""
-        self.host = "http://0.0.0.0:8000"
+        run(["fuser", "-k", "8001/tcp"])
+        run(["jac", "clean"])
+        run(["jac", "tool", "gen_parser"])
+        envs = environ.copy()
+        envs["DATABASE_HOST"] = "mongodb://localhost/?retryWrites=true&w=majority"
+        self.server = Popen(
+            ["jac", "serve", "jac_cloud/tests/simple_graph.jac", "--port", "8001"],
+            env=envs,
+        )
+        run(["sleep", "5"])
+
+        self.host = "http://0.0.0.0:8001"
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
@@ -39,6 +51,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         """Clean up DB."""
         self.client.drop_database(self.database)
+        self.server.kill()
 
     @overload
     def post_api(self, api: str, json: dict | None = None, user: int = 0) -> dict:
@@ -74,7 +87,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     def check_server(self) -> None:
         """Retrieve OpenAPI Specs JSON."""
-        res = get(f"{self.host}/healthz")
+        res = get(f"{self.host}/healthz", timeout=5)
         res.raise_for_status()
         self.assertEqual(200, res.status_code)
 
@@ -612,19 +625,19 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6852,
+                                "size": 7961,
                             },
                         ],
                         "singleOptional": None,
@@ -632,6 +645,57 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 ],
                 data["reports"],
             )
+
+    def trigger_visit_sequence(self) -> None:
+        """Test visit sequence."""
+        res = post(f"{self.host}/walker/visit_sequence").json()
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            [
+                "walker entry",
+                "walker enter to root",
+                "a-1",
+                "a-2",
+                "a-3",
+                "a-4",
+                "a-5",
+                "a-6",
+                "b-1",
+                "b-2",
+                "b-3",
+                "b-4",
+                "b-5",
+                "b-6",
+                "c-1",
+                "c-2",
+                "c-3",
+                "c-4",
+                "c-5",
+                "c-6",
+                "walker exit",
+            ],
+            res["returns"],
+        )
+
+    def trigger_spawn_test(self) -> None:
+        """Test spawn call behavior of walker."""
+        res = self.post_api("WalkerTestSpawn")
+        self.assertEqual(200, res["status"])
+        reports = res["reports"]
+        self.assertIn("Walker entry: Root()", reports[0]["message"])
+        self.assertIn("Node entry: Root()", reports[1]["message"])
+        for i in range(5):
+            self.assertIn(f"Node exit: NodeTest(value={i})", reports[i + 2]["message"])
+        self.assertIn("Walker exit: NodeTest(value=4)", reports[7]["message"])
+        visitor_report = res["reports"][-1]
+        visited_nodes = visitor_report["context"]["visited_nodes"]
+        entry_count = visitor_report["context"]["entry_count"]
+        exit_count = visitor_report["context"]["exit_count"]
+
+        self.assertEqual(visited_nodes, [f"NodeTest(value={i})" for i in range(5)])
+        self.assertEqual(entry_count, 1)
+        self.assertEqual(exit_count, 1)
 
     async def test_all_features(self) -> None:
         """Test Full Features."""
@@ -722,3 +786,10 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_upload_file()
+
+        ###################################################
+        #                  VISIT SEQUENCE                 #
+        ###################################################
+
+        self.trigger_visit_sequence()
+        # self.trigger_spawn_test()

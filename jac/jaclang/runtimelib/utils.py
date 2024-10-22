@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import sys
 from contextlib import contextmanager
+from types import UnionType
 from typing import Callable, Iterator, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
@@ -154,6 +155,21 @@ def extract_type(node: ast.AstNode) -> list[str]:
     for child in node.kid:
         extracted_type.extend(extract_type(child))
     return extracted_type
+
+
+def all_issubclass(
+    classes: type | UnionType | tuple[type | UnionType, ...], target: type
+) -> bool:
+    """Check if all classes is subclass of target type."""
+    match classes:
+        case type():
+            return issubclass(classes, target)
+        case UnionType():
+            return all((all_issubclass(cls, target) for cls in classes.__args__))
+        case tuple():
+            return all((all_issubclass(cls, target) for cls in classes))
+        case _:
+            return False
 
 
 def extract_params(
