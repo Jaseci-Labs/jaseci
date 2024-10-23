@@ -7,7 +7,7 @@ from typing import Callable, Any, Dict, List
 def log_decorator(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        print(f"Calling {func.__name__} with args:{args} and kwargs:{kwargs}")
+        print(f"Calling {func.__name__} with {args} and kwargs:{kwargs}")
         result = func(*args, **kwargs)
         print(f"{func.__name__} returned {result}")
         return result

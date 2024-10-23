@@ -6,7 +6,7 @@ import:py from typing {Callable, List, Dict, Any}
 can log_decorator(func: Callable) -> Callable {
     @wraps(func)
     can wrapper(*args: List, **kwargs: Dict) -> Any {
-        print(f"Calling {func.__name__} with args: {args} and kwargs: {kwargs}");
+        print(f"Calling {func.__name__} and kwargs:{kwargs}");
         result = func(*args, **kwargs);
         print(f"{func.__name__} returned {result}");
         return result;
