@@ -801,7 +801,7 @@ class JacFeatureImpl(
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                Jac.jac_import(target=mod_name, base_path=base)
+                Jac.jac_import(target=mod_name, base_path=base, cachable=False)
                 JacTestCheck.run_test(xit, maxfail, verbose)
                 ret_count = JacTestCheck.failcount
             else:
