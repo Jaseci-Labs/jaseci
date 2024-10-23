@@ -209,8 +209,10 @@ class JacLanguageTests(TestCase):
         """Test semstring."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         jac_import("semstr", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
@@ -466,8 +468,10 @@ class JacLanguageTests(TestCase):
         """Test Jac registry feature."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         jac_import("registry", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
@@ -806,11 +810,13 @@ class JacLanguageTests(TestCase):
         """Test for access tags working."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         cli.check(
             self.fixture_abs_path("../../tests/fixtures/access_modifier.jac"),
             print_errs=True,
         )
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("Invalid access"), 18)
 

@@ -16,11 +16,13 @@ def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
         file_path=file_path,
         schedule=pass_schedule,
     )
-    if cache_result and isinstance(code.ir, ast.Module):
+    # If there is syntax error, the code will be an instance of JacParser as there is
+    # no more passes were processed, in that case we can ignore it.
+    had_syntax_error = isinstance(code, JacParser) and len(code.errors_had) != 0
+    if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
         print_pass = PyOutPass(input_ir=code.ir, prior=code)
         return print_pass
-    else:
-        return code
+    return code
 
 
 def jac_file_to_pass(
@@ -49,6 +51,11 @@ def jac_str_to_pass(
         target = schedule[-1] if schedule else None
     source = ast.JacSource(jac_str, mod_path=file_path)
     ast_ret: Pass = JacParser(input_ir=source)
+
+    # If there is syntax error, no point in processing in further passes.
+    if len(ast_ret.errors_had) != 0:
+        return ast_ret
+
     for i in schedule:
         if i == target:
             break
