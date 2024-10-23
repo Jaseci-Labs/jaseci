@@ -42,6 +42,11 @@ class JacAccessValidation:
     """Jac Access Validation Specs."""
 
     @staticmethod
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        plugin_manager.hook.elevate_root()
+
+    @staticmethod
     def allow_root(
         architype: Architype,
         root_id: UUID,
