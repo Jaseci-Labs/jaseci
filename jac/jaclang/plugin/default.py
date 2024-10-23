@@ -55,6 +55,13 @@ class JacAccessValidationImpl:
 
     @staticmethod
     @hookimpl
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        jctx = Jac.get_context()
+        jctx.root = jctx.system_root
+
+    @staticmethod
+    @hookimpl
     def allow_root(
         architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:

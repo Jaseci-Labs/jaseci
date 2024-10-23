@@ -48,6 +48,12 @@ class JacAccessValidationSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def allow_root(
         architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:
