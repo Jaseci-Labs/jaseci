@@ -382,16 +382,16 @@ class JacCliTests(TestCase):
                 }}
                 """
                 )
-        process = subprocess.Popen(
-            ["jac", "test", test_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout, stderr = process.communicate()
-        if is_passed:
-            self.assertIn("Passed successfully.", stdout)
-            self.assertIn(".", stderr)
-        else:
-            self.assertNotIn("Passed successfully.", stdout)
-            self.assertIn("F", stderr)
+            process = subprocess.Popen(
+                ["jac", "test", test_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            stdout, stderr = process.communicate()
+            if is_passed:
+                self.assertIn("Passed successfully.", stdout)
+                self.assertIn(".", stderr)
+            else:
+                self.assertNotIn("Passed successfully.", stdout)
+                self.assertIn("F", stderr)
