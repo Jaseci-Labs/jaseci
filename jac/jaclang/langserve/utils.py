@@ -133,9 +133,12 @@ def find_index(
 ) -> Optional[int]:
     """Find index."""
     index = None
-    for i, j in enumerate(
-        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
-    ):
+
+    # A list contains all the token start positions.
+    token_start_list = [
+        get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)
+    ]
+    for i, j in enumerate(token_start_list):
         if j[0] == line and j[1] <= char <= j[2]:
             return i
 
