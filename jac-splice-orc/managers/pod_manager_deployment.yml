@@ -26,12 +26,19 @@ spec:
       serviceAccountName: smartimportsa  # Use the service account
       containers:
       - name: pod-manager
-        image: ashishmahendra/jac-splice-orc:0.4.0
+        image: ashishmahendra/jac-splice-orc:0.1.0
         ports:
         - containerPort: 8000
         env:
         - name: SERVICE_TYPE
           value: "pod_manager"
+        resources:
+          requests:
+            memory: "1500Mi"  # Minimum memory requested (1.5 GB)
+            cpu: "500m"       # Minimum CPU requested (optional)
+          limits:
+            memory: "2000Mi"  # Memory limit (2 GB)
+            cpu: "1"   
 
 ---
 

@@ -37,7 +37,7 @@ class SpliceOrcPlugin:
             and settings.module_config[target]["load_type"] == "remote"
         ):
             proxy = ModuleProxy(settings.pod_manager_url)
-
+            print(f"Loading Kubernetes Pod Integration")
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=settings.module_config[target]
             )

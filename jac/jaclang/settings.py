@@ -34,22 +34,35 @@ class Settings:
         None  # Dictionary specifying module configurations
     )
     pod_manager_url: str = (
-        "http://smartimport.apps.bcstechnology.com.au"  # "localhost:8080"  # URL for pod manager
+        "http://smartimport.apps.bcstechnology.com.au"
+        # "localhost:8080"  # URL for pod manager ""
     )
 
     # Example module specification:
     module_config: dict = field(
         default_factory=lambda: {
             "numpy": {
-                "lib_mem_size_req": "100MB",
+                "lib_mem_size_req": "100Mi",
                 "dependency": ["math", "mkl"],
                 "lib_cpu_req": "500m",
                 "load_type": "remote",
             },
             "pandas": {
-                "lib_mem_size_req": "200MB",
+                "lib_mem_size_req": "200Mi",
                 "dependency": ["numpy", "pytz", "dateutil"],
                 "lib_cpu_req": "700m",
+                "load_type": "remote",
+            },
+            "transformers": {
+                "lib_mem_size_req": "2000Mi",
+                "dependency": ["torch", "transformers"],
+                "lib_cpu_req": "1.0",
+                "load_type": "remote",
+            },
+            "ollama": {
+                "lib_mem_size_req": "300Mi",
+                "dependency": ["ollama"],
+                "lib_cpu_req": "500m",
                 "load_type": "remote",
             },
         }
@@ -103,6 +116,7 @@ class Settings:
             )
             if env_value is not None:
                 setattr(self, key, self.convert_type(env_value))
+        self.pod_manager_url = os.getenv("POD_MANAGER_URL", self.pod_manager_url)
 
         # def load_command_line_arguments(self):
         #     """Override settings from command-line arguments if provided."""
