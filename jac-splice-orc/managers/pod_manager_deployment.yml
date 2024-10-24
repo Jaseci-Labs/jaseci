@@ -1,0 +1,57 @@
+# Service Account for Pod Manager
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: smartimportsa  # Name of the service account
+  namespace: default  # Default namespace
+
+
+# Deployment for Pod Manager
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-manager-deployment
+  labels:
+    app: pod-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-manager
+  template:
+    metadata:
+      labels:
+        app: pod-manager
+    spec:
+      serviceAccountName: smartimportsa  # Use the service account
+      containers:
+      - name: pod-manager
+        image: ashishmahendra/jac-splice-orc:0.1.0
+        ports:
+        - containerPort: 8000
+        env:
+        - name: SERVICE_TYPE
+          value: "pod_manager"
+        resources:
+          requests:
+            memory: "1500Mi"  # Minimum memory requested (1.5 GB)
+            cpu: "500m"       # Minimum CPU requested (optional)
+          limits:
+            memory: "2000Mi"  # Memory limit (2 GB)
+            cpu: "1"   
+
+---
+
+# Service to expose the Pod Manager FastAPI
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-manager-service
+spec:
+  selector:
+    app: pod-manager
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: LoadBalancer
