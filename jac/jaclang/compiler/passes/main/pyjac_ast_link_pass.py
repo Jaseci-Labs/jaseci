@@ -134,34 +134,6 @@ class PyJacAstLinkPass(Pass):
                     py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast,
                 )
 
-        if isinstance(node.parent, ast.Ability) and node.parent.signature:
-            if isinstance(node.signature, ast.FuncSignature) and node.signature.params:
-                for src_prm in node.signature.params.items:
-                    if (
-                        isinstance(node.parent.signature, ast.FuncSignature)
-                        and node.parent.signature.params
-                    ):
-                        for trg_prm in node.parent.signature.params.items:
-                            if src_prm.name.sym_name == trg_prm.name.sym_name:
-                                self.link_jac_py_nodes(
-                                    jac_node=src_prm, py_nodes=trg_prm.gen.py_ast
-                                )
-                                self.link_jac_py_nodes(
-                                    jac_node=src_prm.name,
-                                    py_nodes=trg_prm.name.gen.py_ast,
-                                )
-            if (
-                isinstance(node.signature, ast.FuncSignature)
-                and node.signature.return_type
-            ) and (
-                isinstance(node.parent.signature, ast.FuncSignature)
-                and node.parent.signature.return_type
-            ):
-                self.link_jac_py_nodes(
-                    jac_node=node.signature.return_type,
-                    py_nodes=node.parent.signature.return_type.gen.py_ast,
-                )
-
         if isinstance(node.decl_link, ast.Ability) and isinstance(
             node.target, ast.ArchRefChain
         ):
