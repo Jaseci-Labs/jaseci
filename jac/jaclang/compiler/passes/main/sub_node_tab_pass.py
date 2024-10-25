@@ -16,6 +16,7 @@ class SubNodeTabPass(Pass):
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Table builder."""
+        self.terminate()
         super().enter_node(node)
         node._sub_node_tab = {}  # clears on entry
 

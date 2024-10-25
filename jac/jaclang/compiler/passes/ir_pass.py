@@ -50,7 +50,7 @@ class Pass(Transform[T]):
 
     @staticmethod
     def get_all_sub_nodes(
-        node: ast.AstNode, typ: Type[T], brute_force: bool = False
+        node: ast.AstNode, typ: Type[T], brute_force: bool = True
     ) -> list[T]:
         """Get all sub nodes of type."""
         result: list[T] = []
@@ -60,8 +60,7 @@ class Pass(Transform[T]):
         elif len(node._sub_node_tab):
             if typ in node._sub_node_tab:
                 for i in node._sub_node_tab[typ]:
-                    if isinstance(i, typ):
-                        result.append(i)
+                    return node._sub_node_tab[typ]
         elif len(node.kid):
             if not brute_force:
                 raise ValueError(f"Node has no sub_node_tab. {node}")
