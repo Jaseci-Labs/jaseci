@@ -508,6 +508,33 @@ class JacParser(Pass):
             inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
             body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
             if isinstance(arch_type, ast.Token) and isinstance(name, ast.Name):
+
+                # Check if any non-default attribute follows default attributes.
+                # Example:
+                #    obj Foo {
+                #      has no_default_before: int;  <--- This is fine.
+                #      has with_default: int = 1;
+                #      has no_default_after:int;    <--- This is a syntax error.
+                #    }
+                #
+                if arch_type.name == Tok.KW_OBJECT and isinstance(
+                    body, ast.SubNodeList
+                ):
+                    found_default_init = False  # Weather a has variable with default initialization found.
+                    for stmnt in body.items:
+                        if not isinstance(stmnt, ast.ArchHas):
+                            continue
+                        for var in stmnt.vars.items:
+                            if (var.value is not None) or (var.defer):
+                                found_default_init = True
+                            else:
+                                if found_default_init:
+                                    self.parse_ref.error(
+                                        f"Non default attribute '{var.name.value}' follows default attribute",
+                                        node_override=var.name,
+                                    )
+                                    break
+
                 return self.nu(
                     ast.Architype(
                         arch_type=arch_type,

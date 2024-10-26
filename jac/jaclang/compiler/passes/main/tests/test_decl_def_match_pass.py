@@ -26,18 +26,61 @@ class DeclImplMatchPassTests(TestCase):
             state.ir.sym_tab.tab["(o)Test.(c)__init__"].decl.name_of.body
         )
 
-    def test_ability_connected_to_decl_post(self) -> None:
+    def test_obj_hasvar_initialization(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(self.fixture_abs_path("base2.jac"), DeclImplMatchPass)
-        self.assertFalse(state.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.ir.sym_tab.tab)
-        self.assertIsNotNone(
-            state.ir.sym_tab.tab["(o)Test.(c)say_hi"].decl.name_of.body
+        state = jac_file_to_pass(
+            self.fixture_abs_path("uninitialized_hasvars.jac"), DeclImplMatchPass
         )
-        self.assertIn("(o)Test.(c)__init__", state.ir.sym_tab.tab)
-        self.assertIsNotNone(
-            state.ir.sym_tab.tab["(o)Test.(c)__init__"].decl.name_of.body
+        self.assertTrue(state.errors_had)
+
+        expected_stdout_values = (
+            "Non default attribute 'var3' follows default attribute",
+            "    4 |     has var1: int;",
+            "    5 |     has var2: int = 42;",
+            "    6 |     has var3: int; # <-- This should be syntax error.",
+            "      |         ~~~~",
+            "    7 | }",
+            'Non default attribute(s) "var2", "var3" are not initialized in the init method.',
+            "   14 |     has var4: int = 42;",
+            "   15 |",
+            '   16 |     can init() {  # <-- Should be error because "var2", "var3" are not initialized.',
+            "      |         ~~~~",
+            "   17 |         self.var1 = 1;",
+            "   18 |     }",
+            'Non default attribute(s) "var2", "var3" are not initialized in the init method.',
+            "   26 |     has var4: int = 42;",
+            "   27 |",
+            "   28 |     can init();",
+            "      |         ~~~~",
+            "   29 | }",
+            'Missing "postinit" method required by un initialized attribute(s).',
+            "   36 | obj Test4 {",
+            "   37 |     has var1: str;",
+            "   38 |     has var2: int by postinit;",
+            "      |         ~~~~",
+            "   39 | }",
+            'Non default attribute(s) "var2" are not initialized in the postinit method.',
+            "   44 |     has var2: int by postinit;",
+            "   45 |",
+            "   46 |     can postinit() {",
+            "      |         ~~~~~~~~",
+            "   47 |     }",
+            "   48 | }",
+            "Non default attribute 'var4' follows default attribute",
+            "   53 |     has var2: int = 42;",
+            "   54 |     has var3: int by postinit;  # <-- This is fine.",
+            "   55 |     has var4: int;  # <-- This should be syntax error.",
+            "      |         ~~~~",
+            "   56 |",
+            "   57 |     can postinit() {",
         )
+
+        errors_output = ""
+        for error in state.errors_had:
+            errors_output += error.pretty_print() + "\n"
+
+        for exp in expected_stdout_values:
+            self.assertIn(exp, errors_output)
 
     def test_arch_ref_has_sym(self) -> None:
         """Basic test for pass."""
