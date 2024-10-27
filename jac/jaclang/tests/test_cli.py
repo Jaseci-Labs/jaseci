@@ -370,7 +370,7 @@ class JacCliTests(TestCase):
         self.assertIn("can my_print(x: object) -> None", stdout_value)
 
     def test_caching_issue(self) -> None:
-        """Test for Caching Issue"""
+        """Test for Caching Issue."""
         test_file = self.fixture_abs_path("test_caching_issue.jac")
         test_cases = [(10, True), (11, False)]
         for x, is_passed in test_cases:
