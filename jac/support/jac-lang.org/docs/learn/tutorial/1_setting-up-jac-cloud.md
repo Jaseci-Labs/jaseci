@@ -33,6 +33,12 @@ To set up a mongodb replica set, follow these steps:
         This command will initiate the replica set with the default configuration. You can customize the configuration as needed.
         - Run `Exit` to exit the mongo shell.
 
+(Added) Note: If you encounter a port conflict with port 27017 (as some users did, including the author), switch to a different port like 27018. For example:
+
+```bash
+mongosh --port 27018
+```
+
 ### Running a Mongodb Replica Set using Docker
 To set up a mongodb replica set using Docker, follow these steps:
 
@@ -45,8 +51,12 @@ docker pull mongodb/mongodb-community-server:latest
 ```bash
 docker run --name mongodb -p 27017:27017 -d mongodb/mongodb-community-server:latest --replSet my-rs
 ```
-This command will start a mongoDB container with the name `mongodb` and expose port `27017` to the host machine.
+This command will start a mongoDB container with the name `mongodb` and expose port `27017` to the host machine. 
 
+(Added) If port 27018 is in use, change it as needed:
+```bash
+docker run --name mongodb -p 27018:27018 -d mongodb/mongodb-community-server:latest --replSet my-rs
+```
 To check that the docker is up and running, run `docker ps` to get the lists of running container and you should see the following:
 ```
 CONTAINER ID   IMAGE                                     COMMAND                  CREATED          STATUS              PORTS                       NAMES
@@ -57,12 +67,22 @@ d289c01c3f1c   mongodb/mongodb-community-server:latest   "python3 /usr/local/…
 ```bash
 mongosh --port 27017
 ```
+(Added) Or if using a different port (e.g., 27018):
+```bash
+mongosh --port 27018
+```
+
 - **First time only**: The first time you start the mongodb, do the following two quick steps
     - Run the command `mongosh` in another terminal to open the mongo shell.
     - In the mongo shell, run the following command to initiate the replica set. This command will initiate the replica set with the default configuration. Feel free to learn more about mongodb replica set [here](https://docs.mongodb.com/manual/tutorial/deploy-replica-set/).
     ```bash
     rs.initiate({_id: "my-rs", members: [{_id: 0, host: "localhost"}]})
     ```
+    (Added) If using port 27018:
+    ```bash
+    rs.initiate({_id: "my-rs", members: [{_id: 0, host: "localhost:27018"}]})
+    ```
+    
     We should see the following output:
     ```
     { ok: 1 }
@@ -106,6 +126,10 @@ Now, let's serve this code using Jac Cloud by running the following command:
 ```bash
 DATABASE_HOST=mongodb://localhost:27017/?replicaSet=my-rs jac serve server.jac
 ```
+(Added) If you are using a different port like 27018:
+```bash
+DATABASE_HOST=mongodb://localhost:27018/?replicaSet=my-rs jac serve server.jac
+````
 
 This command starts the Jac Cloud server with the database host set to `mongodb://localhost:27017/?replicaSet=my-rs`. The server will serve the code in `server.jac` as an API. You can now access the API at `http://localhost:8000`. Go to `http://localhost:8000/docs` to see the Swagger documentation for the API. It should look something like this:
 
