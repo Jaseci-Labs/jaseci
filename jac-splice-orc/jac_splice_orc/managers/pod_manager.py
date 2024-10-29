@@ -33,7 +33,7 @@ class PodManager:
             except config.ConfigException:
                 config.load_kube_config()
         self.v1 = client.CoreV1Api()
-        self.namespace = namespace
+        self.namespace = os.getenv("NAMESPACE", namespace)
 
     def get_loadbalancer_url(service_name, namespace):
         try:
@@ -69,7 +69,6 @@ class PodManager:
                 text=True,
                 check=True,
             )
-
             # If the result contains an IP, return it
             if result_ip.stdout:
                 return result_ip.stdout.strip()
@@ -117,13 +116,15 @@ class PodManager:
 
     def create_pod(self, module_name: str, module_config: dict) -> Any:
         """Create a pod and service for the given module."""
-        print("Creating pod %s, with config: %s" % (module_name, module_config))
         image_name = os.getenv(
-            "IMAGE_NAME", "ashishmahendra/jac-splice-orc:0.1.0"
+            "IMAGE_NAME", "ashishmahendra/jac-splice-orc:0.5.1"
         )  # Default image name
 
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
+        print(
+            f"Creating pod {pod_name}...\n Image: {image_name}\n Service: {service_name}\n namespace: {self.namespace}"
+        )
         try:
             pod_info = self.v1.read_namespaced_pod(
                 name=pod_name, namespace=self.namespace

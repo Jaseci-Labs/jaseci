@@ -63,6 +63,7 @@ class SpliceOrcPlugin:
         """Constructor for SpliceOrcPlugin."""
         namespace = "jac-splice-orc"
         self.create_namespace(namespace)
+        self.create_service_account(namespace)
         self.apply_pod_manager_yaml(namespace)
         self.configure_pod_manager_url(namespace)
 
@@ -82,6 +83,116 @@ class SpliceOrcPlugin:
             v1.create_namespace(ns)
             print(f"Namespace '{namespace_name}' created.")
 
+    def create_service_account(self, namespace):
+        v1 = client.CoreV1Api()
+        service_account_name = "smartimportsa"
+
+        # Check if the ServiceAccount already exists
+        try:
+            v1.read_namespaced_service_account(
+                name=service_account_name, namespace=namespace
+            )
+            print(
+                f"ServiceAccount '{service_account_name}' already exists in namespace '{namespace}'."
+            )
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                # Create the ServiceAccount
+                sa = client.V1ServiceAccount(
+                    metadata=client.V1ObjectMeta(name=service_account_name)
+                )
+                v1.create_namespaced_service_account(namespace=namespace, body=sa)
+                print(
+                    f"ServiceAccount '{service_account_name}' created in namespace '{namespace}'."
+                )
+            else:
+                print(f"Error creating ServiceAccount: {e}")
+                raise
+
+        # Create the Role and RoleBinding
+        self.create_role_and_binding(namespace, service_account_name)
+
+    def create_role_and_binding(self, namespace, service_account_name):
+        rbac_api = client.RbacAuthorizationV1Api()
+
+        role_name = "smartimport-role"
+        role_binding_name = "smartimport-rolebinding"
+
+        # Define the Role with updated permissions
+        role = client.V1Role(
+            metadata=client.V1ObjectMeta(name=role_name, namespace=namespace),
+            rules=[
+                # Permissions for pods and services
+                client.V1PolicyRule(
+                    api_groups=[""],
+                    resources=[
+                        "pods",
+                        "services",
+                        "configmaps",
+                    ],  # Added 'configmaps' here
+                    verbs=["get", "watch", "list", "create", "update", "delete"],
+                ),
+                # Permissions for deployments
+                client.V1PolicyRule(
+                    api_groups=["apps"],
+                    resources=["deployments"],
+                    verbs=["get", "watch", "list", "create", "update", "delete"],
+                ),
+            ],
+        )
+
+        # Rest of the method remains the same...
+        # Check if the Role exists and create it if it doesn't
+        try:
+            rbac_api.read_namespaced_role(name=role_name, namespace=namespace)
+            print(f"Role '{role_name}' already exists in namespace '{namespace}'.")
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                # Create the Role
+                rbac_api.create_namespaced_role(namespace=namespace, body=role)
+                print(f"Role '{role_name}' created in namespace '{namespace}'.")
+            else:
+                print(f"Error creating Role: {e}")
+                raise
+
+        # Define the RoleBinding
+        role_binding = client.V1RoleBinding(
+            metadata=client.V1ObjectMeta(name=role_binding_name, namespace=namespace),
+            subjects=[
+                client.RbacV1Subject(
+                    kind="ServiceAccount",
+                    name=service_account_name,
+                    namespace=namespace,
+                )
+            ],
+            role_ref=client.V1RoleRef(
+                kind="Role",
+                name=role_name,
+                api_group="rbac.authorization.k8s.io",
+            ),
+        )
+
+        # Check if the RoleBinding exists
+        try:
+            rbac_api.read_namespaced_role_binding(
+                name=role_binding_name, namespace=namespace
+            )
+            print(
+                f"RoleBinding '{role_binding_name}' already exists in namespace '{namespace}'."
+            )
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                # Create the RoleBinding
+                rbac_api.create_namespaced_role_binding(
+                    namespace=namespace, body=role_binding
+                )
+                print(
+                    f"RoleBinding '{role_binding_name}' created in namespace '{namespace}'."
+                )
+            else:
+                print(f"Error creating RoleBinding: {e}")
+                raise
+
     def apply_pod_manager_yaml(self, namespace):
         try:
             config.load_kube_config()
@@ -89,7 +200,6 @@ class SpliceOrcPlugin:
             config.load_incluster_config()
 
         k8s_client = client.ApiClient()
-
         yaml_file = os.path.join(
             os.path.dirname(__file__), "..", "managers", "pod_manager_deployment.yml"
         )
@@ -113,24 +223,16 @@ class SpliceOrcPlugin:
 
     def configure_pod_manager_url(self, namespace):
         service_name = "pod-manager-service"
-        max_wait_time = 60  # seconds
-        wait_interval = 5  # seconds
-        total_wait_time = 0
+        url = self.get_loadbalancer_url(service_name, namespace)
+        if url:
+            pod_manager_url = f"http://{url}"
+            # Directly set the pod_manager_url in settings
+            from jaclang import settings
 
-        while total_wait_time < max_wait_time:
-            url = self.get_loadbalancer_url(service_name, namespace)
-            if url:
-                port = 8000
-                pod_manager_url = f"http://{url}:{port}"
-                os.environ["POD_MANAGER_URL"] = pod_manager_url
-                print(f"Set POD_MANAGER_URL to {pod_manager_url}")
-                return
-            else:
-                print("Waiting for pod_manager_url to be available...")
-                time.sleep(wait_interval)
-                total_wait_time += wait_interval
-
-        print("Failed to retrieve the pod_manager_url after waiting.")
+            settings.pod_manager_url = pod_manager_url
+            print(f"Set settings.pod_manager_url to {pod_manager_url}")
+        else:
+            print("Failed to retrieve the pod_manager_url.")
 
     def get_loadbalancer_url(self, service_name, namespace):
         try:
@@ -145,6 +247,7 @@ class SpliceOrcPlugin:
             if ingress:
                 ip = ingress[0].ip
                 hostname = ingress[0].hostname
+                print(f"ip: {ip}, host: {hostname}")
                 if ip:
                     return ip
                 elif hostname:
@@ -185,7 +288,7 @@ class SpliceOrcPlugin:
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=settings.module_config[target]
             )
-
+            print(f"Loading remote module {remote_module_proxy}")
             return (remote_module_proxy,)
 
         spec = ImportPathSpec(

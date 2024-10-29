@@ -1,6 +1,5 @@
-import:py numpy;
-import:py pandas;
-
 with entry{
-    print(numpy.array([1,2,3,4]));
-}
+    import:py transformers;
+    pipe = transformers.pipeline("text-classification");
+    print(pipe("This is a sample Text classification"));
+}   
