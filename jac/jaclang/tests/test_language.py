@@ -24,7 +24,7 @@ class JacLanguageTests(TestCase):
         """Set up test."""
         SUPER_ROOT_ANCHOR.edges.clear()
         JacMachine(self.fixture_abs_path("./")).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None)
+            JacProgram(mod_bundle=None, bytecode=None, SemIR=None)
         )
         return super().setUp()
 

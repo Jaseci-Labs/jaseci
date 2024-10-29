@@ -161,7 +161,7 @@ def serve_mini(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             JacMachine(base).attach_program(
-                JacProgram(mod_bundle=load(f), bytecode=None)
+                JacProgram(mod_bundle=load(f), bytecode=None, SemIR=None)
             )
             (module,) = jac_import(
                 target=mod,
