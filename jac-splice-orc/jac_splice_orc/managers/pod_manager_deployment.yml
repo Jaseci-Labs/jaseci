@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: smartimportsa  # Name of the service account
-  namespace: default  # Default namespace
+  name: smartimport-sa  # Name of the service account
+  namespace: jac-splice-orc  # Default namespace
 
 
 # Deployment for Pod Manager

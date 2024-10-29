@@ -33,10 +33,7 @@ class Settings:
     modules_to_remote: Optional[dict[Any, Any]] = (
         None  # Dictionary specifying module configurations
     )
-    pod_manager_url: str = (
-        "http://smartimport.apps.bcstechnology.com.au"
-        # "localhost:8080"  # URL for pod manager ""
-    )
+    pod_manager_url: str = os.getenv("POD_MANAGER_URL", "http://localhost:8000")
 
     # Example module specification:
     module_config: dict = field(
