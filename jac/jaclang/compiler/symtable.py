@@ -90,10 +90,8 @@ class SymbolTable:
 
     def get_type(self) -> SymbolType:
         """Get type."""
-        if isinstance(self.owner, ast.Architype):
-            return SymbolType.OBJECT_ARCH
-        if isinstance(self.owner, ast.Ability):
-            return SymbolType.ABILITY
+        if isinstance(self.owner, ast.AstSymbolNode):
+            return self.owner.sym_category
         return SymbolType.VAR
 
     def get_parent(self) -> Optional[SymbolTable]:
