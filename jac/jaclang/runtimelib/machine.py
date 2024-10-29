@@ -1,6 +1,6 @@
 """Jac Machine module."""
 
-import __future__ import annotations
+from __future__ import annotations
 import inspect
 import marshal
 import os
@@ -72,10 +72,13 @@ class JacMachine:
             )
         return None
 
-    def get_SemIR(self, SemIR: SemRegistry | None) -> None:
+    def get_SemIR(self, mod_SemIR: SemRegistry | None) -> None:
         """Update semtable on the attached JacProgram."""
-        if self.jac_program and SemIR:
-            self.jac_program.SemIR = SemIR
+        if self.jac_program and mod_SemIR:
+            if self.jac_program.SemIR:
+                self.jac_program.SemIR.registry.update(mod_SemIR.registry)
+            else:
+                self.jac_program.SemIR = mod_SemIR
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""
