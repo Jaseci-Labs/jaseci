@@ -33,15 +33,10 @@ class RegistryPass(Pass):
     def exit_module(self, node: ast.Module) -> None:
         """Save registry for each module."""
         module_name = node.name
-        module_dir = os.path.join(
-            os.path.abspath(os.path.dirname(node.source.file_path)), Con.JAC_GEN_DIR
-        )
         try:
-            os.makedirs(module_dir, exist_ok=True)
-            with open(
-                os.path.join(module_dir, f"{module_name}.registry.pkl"), "wb"
-            ) as f:
-                pickle.dump(node.registry, f)
+            from jaclang.runtimelib.machine import JacMachine
+
+            JacMachine.get().get_SemIR(node.registry)
         except Exception as e:
             self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
