@@ -306,17 +306,17 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(base_module_file)
         test_cases = [
-            (lspt.Position(38, 16), ["get_color1", "color1", "point1"], 155),
-            (lspt.Position(42, 22), ["RED", "GREEN", "BLUE"], 155),
-            (lspt.Position(42, 33), ["RED", "GREEN", "BLUE"], 155),
-            (lspt.Position(42, 45), ["RED", "GREEN", "BLUE"], 155),
-            (lspt.Position(46, 20), ["RED22", "GREEN22", "BLUE22"], 155),
-            (lspt.Position(46, 30), ["RED22", "GREEN22", "BLUE22"], 155),
-            (lspt.Position(46, 41), ["RED22", "GREEN22", "BLUE22"], 155),
+            (lspt.Position(38, 16), ["get_color1", "color1", "point1"], 3),
+            (lspt.Position(42, 22), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 33), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(42, 45), ["RED", "GREEN", "BLUE"], 3),
+            (lspt.Position(46, 20), ["RED22", "GREEN22", "BLUE22"], 3),
+            (lspt.Position(46, 30), ["RED22", "GREEN22", "BLUE22"], 3),
+            (lspt.Position(46, 41), ["RED22", "GREEN22", "BLUE22"], 3),
             (
                 lspt.Position(51, 32),
                 ["RED22", "GREEN22", "BLUE22"],
-                155,
+                3,
             ),
             (
                 lspt.Position(65, 13),
@@ -330,22 +330,22 @@ class TestJacLangServer(TestCase):
                     "doubleinner",
                     "apply_red",
                 ],
-                160,
+                8,
             ),
             (
                 lspt.Position(65, 23),
                 ["color22", "doublepoint22", "point22", "apply_inner_red", "enum_red"],
-                157,
+                5,
             ),
             (
                 lspt.Position(65, 31),
                 ["RED22", "GREEN22", "BLUE22"],
-                155,
+                3,
             ),
             (
                 lspt.Position(35, 28),
                 [],
-                152,
+                0,
             ),
             (
                 lspt.Position(72, 12),
@@ -359,12 +359,12 @@ class TestJacLangServer(TestCase):
                     "doubleinner",
                     "apply_red",
                 ],
-                160,
+                8,
             ),
             (
                 lspt.Position(73, 22),
                 ["color22", "doublepoint22", "apply_inner_red", "point22", "enum_red"],
-                157,
+                5,
             ),
             (
                 lspt.Position(37, 12),
