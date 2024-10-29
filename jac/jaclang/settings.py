@@ -33,10 +33,6 @@ class Settings:
     modules_to_remote: Optional[dict[Any, Any]] = (
         None  # Dictionary specifying module configurations
     )
-    # pod_manager_url: str = os.getenv("POD_MANAGER_URL", "http://localhost:8000")
-    pod_manager_url: str = (
-        "http://a9e132519bb5e4abbb6894207cdda701-1414250007.us-west-2.elb.amazonaws.com:8000"  # Example pod manager URL
-    )
 
     # Example module specification:
     module_config: dict = field(
@@ -116,7 +112,6 @@ class Settings:
             )
             if env_value is not None:
                 setattr(self, key, self.convert_type(env_value))
-        self.pod_manager_url = os.getenv("POD_MANAGER_URL", self.pod_manager_url)
 
         # def load_command_line_arguments(self):
         #     """Override settings from command-line arguments if provided."""

@@ -20,13 +20,11 @@ setup(
         "kubernetes",
         "pydantic",
         "requests",
+        "python-dotenv",
     ],
     entry_points={
         "jac": [
             "splice_orc = jac_splice_orc.plugin.splice_plugin:SpliceOrcPlugin",
-        ],
-        "console_scripts": [
-            "deploy_pod_manager = jac_splice_orc.managers.deploy:main",
         ],
     },
     python_requires=">=3.11",

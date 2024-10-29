@@ -1,7 +1,6 @@
 """JAC Splice-Orchestrator Plugin."""
 
 import os
-import time
 import types
 from typing import Optional, Union
 
@@ -10,50 +9,13 @@ from kubernetes import client, config, utils
 from jac_splice_orc.managers.proxy_manager import ModuleProxy
 
 import pluggy
+import logging
+from dotenv import load_dotenv
 
+load_dotenv()
+logging.basicConfig(level=logging.INFO)
 
 hookimpl = pluggy.HookimplMarker("jac")
-
-
-# def create_namespace(namespace_name):
-#     try:
-#         # Load Kubernetes configuration
-#         config.load_kube_config()
-#         v1 = client.CoreV1Api()
-
-#         # Check if the namespace already exists
-#         namespaces = v1.list_namespace()
-#         existing_namespaces = [ns.metadata.name for ns in namespaces.items]
-#         if namespace_name in existing_namespaces:
-#             print(f"Namespace '{namespace_name}' already exists.")
-#         else:
-#             # Create the namespace
-#             namespace_body = client.V1Namespace(
-#                 metadata=client.V1ObjectMeta(name=namespace_name)
-#             )
-#             v1.create_namespace(namespace_body)
-#             print(f"Namespace '{namespace_name}' created successfully.")
-#     except client.exceptions.ApiException as e:
-#         print(f"Error creating namespace: {e}")
-
-
-# def get_loadbalancer_url(service_name, namespace):
-#     try:
-#         config.load_kube_config()
-#         v1 = client.CoreV1Api()
-#         service = v1.read_namespaced_service(name=service_name, namespace=namespace)
-#         ingress = service.status.load_balancer.ingress
-#         if ingress:
-#             ip = ingress[0].ip
-#             hostname = ingress[0].hostname
-#             if ip:
-#                 return ip
-#             elif hostname:
-#                 return hostname
-#         return None
-#     except client.exceptions.ApiException as e:
-#         print(f"Error retrieving LoadBalancer URL: {e}")
-#         return None
 
 
 class SpliceOrcPlugin:
@@ -61,6 +23,7 @@ class SpliceOrcPlugin:
 
     def __init__(self):
         """Constructor for SpliceOrcPlugin."""
+        logging.info("Initializing SpliceOrcPlugin")
         namespace = "jac-splice-orc"
         self.create_namespace(namespace)
         self.create_service_account(namespace)
@@ -68,6 +31,8 @@ class SpliceOrcPlugin:
         self.configure_pod_manager_url(namespace)
 
     def create_namespace(self, namespace_name):
+        """Create a new namespace if it does not exist."""
+        logging.info(f"Creating namespace '{namespace_name}'")
         try:
             config.load_kube_config()
         except config.ConfigException:
@@ -225,12 +190,27 @@ class SpliceOrcPlugin:
         service_name = "pod-manager-service"
         url = self.get_loadbalancer_url(service_name, namespace)
         if url:
-            pod_manager_url = f"http://{url}"
-            # Directly set the pod_manager_url in settings
-            from jaclang import settings
+            pod_manager_url_local = f"http://{url}:8000"
+            env_file_path = os.path.join(os.getcwd(), ".env")
 
-            settings.pod_manager_url = pod_manager_url
-            print(f"Set settings.pod_manager_url to {pod_manager_url}")
+            # Read existing .env file variables
+            env_vars = {}
+            if os.path.exists(env_file_path):
+                with open(env_file_path, "r") as env_file:
+                    for line in env_file:
+                        if line.strip():
+                            key, value = line.strip().split("=", 1)
+                            env_vars[key] = value.strip('"')
+
+            # Update or add POD_MANAGER_URL
+            env_vars["POD_MANAGER_URL"] = pod_manager_url_local
+
+            # Write back to .env file
+            with open(env_file_path, "w") as env_file:
+                for key, value in env_vars.items():
+                    env_file.write(f'{key}="{value}"\n')
+
+            print(f"Pod manager URL updated in .env file: {pod_manager_url_local}")
         else:
             print("Failed to retrieve the pod_manager_url.")
 
@@ -283,8 +263,8 @@ class SpliceOrcPlugin:
             target in settings.module_config
             and settings.module_config[target]["load_type"] == "remote"
         ):
-            proxy = ModuleProxy(settings.pod_manager_url)
-            print(f"Loading Kubernetes Pod Integration")
+            pod_manager_url = os.getenv("POD_MANAGER_URL")
+            proxy = ModuleProxy(pod_manager_url)
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=settings.module_config[target]
             )
