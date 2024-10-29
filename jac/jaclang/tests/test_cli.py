@@ -283,6 +283,8 @@ class JacCliTests(TestCase):
         self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 5)
         self.assertEqual(stdout_value.count("builtins.int"), 3)
         self.assertEqual(stdout_value.count("builtins.str"), 8)
+        self.assertIn("Literal['test_server']", stdout_value)
+        self.assertIn("Literal['1']", stdout_value)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
