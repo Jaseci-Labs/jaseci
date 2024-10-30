@@ -1065,16 +1065,10 @@ class JacFeatureImpl(
         file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
+        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.compiler.semtable import SemInfo, SemScope
         _scope = SemScope.get_scope_from_str(scope)
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        mod_registry: SemRegistry = JacMachine.get().jac_program.SemIR
         _, attr_seminfo = mod_registry.lookup(_scope, attr)
         if attr_seminfo and isinstance(attr_seminfo, SemInfo):
             return attr_seminfo.semstr if return_semstr else attr_seminfo.type
@@ -1084,15 +1078,8 @@ class JacFeatureImpl(
     @hookimpl
     def obj_scope(file_loc: str, attr: str) -> str:
         """Jac's gather_scope feature."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        from jaclang.runtimelib.machine import JacMachine
+        mod_registry: SemRegistry = JacMachine.get().jac_program.SemIR
 
         attr_scope = None
         for x in attr.split("."):
@@ -1125,15 +1112,9 @@ class JacFeatureImpl(
     @hookimpl
     def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
         """Jac's get_semstr_type implementation."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.compiler.semtable import SemInfo, SemScope
+        mod_registry: SemRegistry = JacMachine.get().jac_program.SemIR
 
         attr_scope = None
         for x in attr.split("."):
