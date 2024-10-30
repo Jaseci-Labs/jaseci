@@ -6,7 +6,6 @@ import ast as ast3
 import fnmatch
 import html
 import os
-import pickle
 import types
 from collections import OrderedDict
 from dataclasses import field
@@ -752,7 +751,9 @@ class JacFeatureImpl(
 
         jac_machine = JacMachine.get(base_path)
         if not jac_machine.jac_program:
-            jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None, SemIR=None))
+            jac_machine.attach_program(
+                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            )
 
         if lng == "py":
             import_result = PythonImporter(JacMachine.get()).run_import(spec)
@@ -1067,8 +1068,9 @@ class JacFeatureImpl(
         """Jac's get_semstr_type feature."""
         from jaclang.runtimelib.machine import JacMachine
         from jaclang.compiler.semtable import SemInfo, SemScope
+
         _scope = SemScope.get_scope_from_str(scope)
-        mod_registry: SemRegistry = JacMachine.get().jac_program.SemIR
+        mod_registry: SemRegistry = JacMachine.get().jac_program.sem_ir
         _, attr_seminfo = mod_registry.lookup(_scope, attr)
         if attr_seminfo and isinstance(attr_seminfo, SemInfo):
             return attr_seminfo.semstr if return_semstr else attr_seminfo.type
@@ -1079,7 +1081,8 @@ class JacFeatureImpl(
     def obj_scope(file_loc: str, attr: str) -> str:
         """Jac's gather_scope feature."""
         from jaclang.runtimelib.machine import JacMachine
-        mod_registry: SemRegistry = JacMachine.get().jac_program.SemIR
+
+        mod_registry: SemRegistry = JacMachine.get().jac_program.sem_ir
 
         attr_scope = None
         for x in attr.split("."):
@@ -1114,7 +1117,8 @@ class JacFeatureImpl(
         """Jac's get_semstr_type implementation."""
         from jaclang.runtimelib.machine import JacMachine
         from jaclang.compiler.semtable import SemInfo, SemScope
-        mod_registry: SemRegistry = JacMachine.get().jac_program.SemIR
+
+        mod_registry: SemRegistry = JacMachine.get().jac_program.sem_ir
 
         attr_scope = None
         for x in attr.split("."):

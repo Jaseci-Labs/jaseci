@@ -64,7 +64,7 @@ class JacFeature:
         #     mod_registry = pickle.load(f)
         from jaclang.runtimelib.machine import JacMachine
 
-        mod_registry = JacMachine.get().jac_program.SemIR
+        mod_registry = JacMachine.get().jac_program.sem_ir
 
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None, f"Invalid scope: {scope}"

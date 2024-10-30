@@ -2,10 +2,8 @@
 
 import io
 import os
-import pickle
 import sys
 import sysconfig
-import ast
 
 
 import jaclang.compiler.passes.main as passes
@@ -15,7 +13,6 @@ from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.runtimelib.context import SUPER_ROOT_ANCHOR
 from jaclang.runtimelib.machine import JacMachine, JacProgram
-from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.utils.test import TestCase
 
 
@@ -26,7 +23,7 @@ class JacLanguageTests(TestCase):
         """Set up test."""
         SUPER_ROOT_ANCHOR.edges.clear()
         JacMachine(self.fixture_abs_path("./")).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, SemIR=None)
+            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
         return super().setUp()
 
@@ -473,10 +470,10 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
-
-        output_lines = stdout_value.strip().split('\n')
-        outputs = [int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)]
-
+        output_lines = stdout_value.strip().split("\n")
+        outputs = [
+            int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)
+        ]
 
         self.assertEqual(outputs[0], 9)
         self.assertEqual(outputs[1], 2)

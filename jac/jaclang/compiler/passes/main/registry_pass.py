@@ -6,11 +6,7 @@ semstrings after PyASTGen pass. So we create those as a pickled file for
 each module
 """
 
-import os
-import pickle
-
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.runtimelib.utils import get_sem_scope
@@ -36,7 +32,7 @@ class RegistryPass(Pass):
         try:
             from jaclang.runtimelib.machine import JacMachine
 
-            JacMachine.get().get_SemIR(node.registry)
+            JacMachine.get().get_sem_ir(node.registry)
         except Exception as e:
             self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()

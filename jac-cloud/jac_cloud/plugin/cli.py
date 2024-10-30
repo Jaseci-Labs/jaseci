@@ -47,7 +47,7 @@ class JacCmd:
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
                     JacMachine(base).attach_program(
-                        JacProgram(mod_bundle=load(f), bytecode=None, SemIR=None)
+                        JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
                     )
                     jac_import(
                         target=mod,

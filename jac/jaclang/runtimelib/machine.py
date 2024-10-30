@@ -72,13 +72,13 @@ class JacMachine:
             )
         return None
 
-    def get_SemIR(self, mod_SemIR: SemRegistry | None) -> None:
+    def get_sem_ir(self, mod_sem_ir: SemRegistry | None) -> None:
         """Update semtable on the attached JacProgram."""
-        if self.jac_program and mod_SemIR:
-            if self.jac_program.SemIR:
-                self.jac_program.SemIR.registry.update(mod_SemIR.registry)
+        if self.jac_program and mod_sem_ir:
+            if self.jac_program.sem_ir:
+                self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
             else:
-                self.jac_program.SemIR = mod_SemIR
+                self.jac_program.sem_ir = mod_sem_ir
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""
@@ -273,18 +273,18 @@ class JacMachine:
 
 
 class JacProgram:
-    """Class to hold the mod_bundle bytecode and SemIR for Jac modules."""
+    """Class to hold the mod_bundle bytecode and sem_ir for Jac modules."""
 
     def __init__(
         self,
         mod_bundle: Optional[Module],
         bytecode: Optional[dict[str, bytes]],
-        SemIR: Optional[SemRegistry]
+        sem_ir: Optional[SemRegistry],
     ) -> None:
         """Initialize the JacProgram object."""
         self.mod_bundle = mod_bundle
         self.bytecode = bytecode or {}
-        self.SemIR = SemIR
+        self.sem_ir = sem_ir if sem_ir else SemRegistry()
 
     def get_bytecode(
         self,

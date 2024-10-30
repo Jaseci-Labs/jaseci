@@ -48,7 +48,7 @@ with entry {
 import from jaclang.runtimelib.machine { JacMachine }
 
 with entry {
-    registry = JacMachine.get().jac_program.SemIR;
+    registry = JacMachine.get().jac_program.sem_ir;
 
     print(len(registry.registry));
     print(len(list(registry.registry.items())[0][1]));
