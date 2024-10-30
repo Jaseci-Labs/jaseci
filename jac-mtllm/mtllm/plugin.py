@@ -1,8 +1,6 @@
 """Plugin for Jac's with_llm feature."""
 
 import ast as ast3
-import os
-# import pickle
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
@@ -53,15 +51,6 @@ class JacFeature:
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        # with open(
-        #     os.path.join(
-        #         os.path.dirname(file_loc),
-        #         "__jac_gen__",
-        #         os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-        #     ),
-        #     "rb",
-        # ) as f:
-        #     mod_registry = pickle.load(f)
         from jaclang.runtimelib.machine import JacMachine
 
         mod_registry = JacMachine.get().jac_program.sem_ir
