@@ -17,12 +17,12 @@ Personality {
     EXTROVERT: 'Person who is outgoing and socially confident'
 }
 
-glob personality_examples: 'Personality Information of Famous People': dict[str, Personality|None] = {
+glob personality_examples: 'Personality Information of Famous People': dict[str, Personality | None] = {
     'Albert Einstein': Personality.INTROVERT,
     'Barack Obama': Personality.EXTROVERT
 };
 
-glob person_value : list[tuple[dict[str, Personality], int]] =(-90);
+glob person_value: list[tuple[dict[str, Personality], int]] = (-90);
 
 can 'GenAI ability'
 genai_ability(x: 'Something': str) -> 'Something Else': str by llm();
@@ -34,9 +34,9 @@ normal_ability(x: 'Something': str) -> 'Something Else': str {
 }
 
 can foo() {
-    person_value=22;
+    person_value = 22;
     can bar() {
-        person_value=33;
+        person_value = 33;
     }
 }
 with entry {
@@ -45,12 +45,11 @@ with entry {
     einstein = Person('Albert Einstein', einstein_age);
 }
 
-import from jaclang.runtimelib.machine {JacMachine}
-import from jaclang.compiler.semtable {SemRegistry, SemScope, SemInfo}
+import from jaclang.runtimelib.machine { JacMachine }
 
 with entry {
     registry = JacMachine.get().jac_program.SemIR;
-    # print (registry);
+
     print(len(registry.registry));
     print(len(list(registry.registry.items())[0][1]));
     print(list(registry.registry.items())[3][0].scope);
