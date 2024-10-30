@@ -13,8 +13,8 @@ Person {
 
 enum 'Personality of the Person'
 Personality {
-   INTROVERT: 'Person who is shy and reticent' = 9,
-   EXTROVERT: 'Person who is outgoing and socially confident'
+    INTROVERT: 'Person who is shy and reticent' = 9,
+    EXTROVERT: 'Person who is outgoing and socially confident'
 }
 
 glob personality_examples: 'Personality Information of Famous People': dict[str, Personality|None] = {
@@ -34,13 +34,26 @@ normal_ability(x: 'Something': str) -> 'Something Else': str {
 }
 
 can foo() {
-   person_value=22;
-   can bar() {
-       person_value=33;
-   }
+    person_value=22;
+    can bar() {
+        person_value=33;
+    }
 }
 with entry {
     einstein_age: int = 75;
     einstein_age += 1;
     einstein = Person('Albert Einstein', einstein_age);
+}
+
+import from jaclang.runtimelib.machine {JacMachine}
+import from jaclang.compiler.semtable {SemRegistry, SemScope, SemInfo}
+
+with entry {
+    registry = JacMachine.get().jac_program.SemIR;
+    # print (registry);
+    print(len(registry.registry));
+    print(len(list(registry.registry.items())[0][1]));
+    print(list(registry.registry.items())[3][0].scope);
+    (_, sem_info) = registry.lookup(name="normal_ability");
+    print(len(sem_info.get_children(registry)));
 }

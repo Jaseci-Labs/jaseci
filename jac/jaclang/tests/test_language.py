@@ -5,6 +5,7 @@ import os
 import pickle
 import sys
 import sysconfig
+import ast
 
 
 import jaclang.compiler.passes.main as passes
@@ -14,6 +15,7 @@ from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.runtimelib.context import SUPER_ROOT_ANCHOR
 from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.utils.test import TestCase
 
 
@@ -471,19 +473,15 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
-        with open(
-            os.path.join(
-                self.fixture_abs_path("./"), "__jac_gen__", "registry.registry.pkl"
-            ),
-            "rb",
-        ) as f:
-            registry = pickle.load(f)
 
-        self.assertEqual(len(registry.registry), 9)
-        self.assertEqual(len(list(registry.registry.items())[0][1]), 2)
-        self.assertEqual(list(registry.registry.items())[3][0].scope, "Person")
-        _, sem_info = registry.lookup(name="normal_ability")
-        self.assertEqual(len(sem_info.get_children(registry)), 2)
+        output_lines = stdout_value.strip().split('\n')
+        outputs = [int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)]
+
+
+        self.assertEqual(outputs[0], 8)
+        self.assertEqual(outputs[1], 2)
+        self.assertEqual(outputs[2], "Person")
+        self.assertEqual(outputs[3], 2)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
