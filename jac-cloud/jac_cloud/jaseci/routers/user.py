@@ -25,7 +25,7 @@ from ..security import (
     invalidate_token,
     verify_code,
 )
-from ..utils import Emailer, logger
+from ..utils import Emailer, log_entry, log_exit, logger
 from ...core.architype import BulkWrite, NodeAnchor, Root
 
 
@@ -38,7 +38,7 @@ User = BaseUser.model()  # type: ignore[misc]
 @router.post("/register", status_code=status.HTTP_200_OK)
 def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
     """Register user API."""
-    # log = log_entry("register", req.email, req.printable())
+    log = log_entry("register", req.email, req.printable())
 
     with User.Collection.get_session() as session, session.start_transaction():
         root = Root().__jac__
@@ -59,7 +59,7 @@ def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
                     if not is_activated:
                         User.send_verification_code(create_code(id), req.email)
                     resp = {"message": "Successfully Registered!"}
-                    # log_exit(resp, log)
+                    log_exit(resp, log)
                     return ORJSONResponse(resp, 201)
             except (ConnectionFailure, OperationFailure) as ex:
                 if ex.has_error_label("TransientTransactionError"):
@@ -78,7 +78,7 @@ def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
                 break
 
     resp = {"message": "Registration Failed!"}
-    # log_exit(resp, log)
+    log_exit(resp, log)
     return ORJSONResponse(resp, 409)
 
 
