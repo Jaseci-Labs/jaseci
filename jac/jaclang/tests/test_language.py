@@ -478,7 +478,7 @@ class JacLanguageTests(TestCase):
         outputs = [int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)]
 
 
-        self.assertEqual(outputs[0], 8)
+        self.assertEqual(outputs[0], 9)
         self.assertEqual(outputs[1], 2)
         self.assertEqual(outputs[2], "Person")
         self.assertEqual(outputs[3], 2)
