@@ -80,6 +80,18 @@ class JacLanguageTests(TestCase):
             "\nValue: 5\nValue: 6\nValue: 7\nFinal Value: 8\nDone walking.\n",
         )
 
+    def test_simple_walk_by_edge(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("micro.simple_walk_by_edge", base_path=self.examples_abs_path(""))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "Visited 1\nVisited 2\n",
+        )
+
     def test_guess_game(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
@@ -225,6 +237,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual(stdout_value.split("\n")[0], "11 13 12 12 11 12 12")
         self.assertEqual(stdout_value.split("\n")[1], '12 12 """hello"""  18 18')
         self.assertEqual(stdout_value.split("\n")[2], "11 12 11 12 11 18 23")
+        self.assertEqual(stdout_value.split("\n")[3], 'hello klkl"""')
 
     def test_deep_imports(self) -> None:
         """Parse micro jac file."""
@@ -479,7 +492,7 @@ class JacLanguageTests(TestCase):
         jac_import("enum_inside_archtype", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual("2\n", stdout_value)
+        self.assertIn("2 Accessing privileged Data", stdout_value)
 
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
@@ -491,10 +504,13 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
 
         with open(file_name, "r") as f:
-            parsed_ast = py_ast.parse(f.read())
+            file_source = f.read()
+            parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast, orig_src=ast.JacSource(file_source, file_name)
+                    ),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
@@ -516,9 +532,11 @@ class JacLanguageTests(TestCase):
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.py")
         with open(py_out_path) as f:
+            file_source = f.read()
             output = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(
-                    py_ast.parse(f.read()), mod_path=py_out_path
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
         # print(output)
@@ -547,10 +565,14 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
 
         with open(file_name, "r") as f:
-            parsed_ast = py_ast.parse(f.read())
+            file_source = f.read()
+            parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast,
+                        orig_src=ast.JacSource(file_source, file_name),
+                    ),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
@@ -575,9 +597,11 @@ class JacLanguageTests(TestCase):
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.py")
         with open(py_out_path) as f:
+            file_source = f.read()
             output = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(
-                    py_ast.parse(f.read()), mod_path=py_out_path
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
         self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
@@ -595,10 +619,14 @@ class JacLanguageTests(TestCase):
         import jaclang.compiler.absyntree as ast
 
         with open(file_name, "r") as f:
-            parsed_ast = py_ast.parse(f.read())
+            file_source = f.read()
+            parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast,
+                        orig_src=ast.JacSource(file_source, file_name),
+                    ),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
@@ -622,9 +650,11 @@ class JacLanguageTests(TestCase):
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.py")
         with open(py_out_path) as f:
+            file_source = f.read()
             output = PyastBuildPass(
                 input_ir=ast.PythonModuleAst(
-                    py_ast.parse(f.read()), mod_path=py_out_path
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
         self.assertIn("if 0 <= x<= 5 {", output)
@@ -749,9 +779,11 @@ class JacLanguageTests(TestCase):
                 module_path + ".py",
             )
             with open(file_path) as f:
+                file_source = f.read()
                 jac_ast = PyastBuildPass(
                     input_ir=ast.PythonModuleAst(
-                        py_ast.parse(f.read()), mod_path=file_path
+                        py_ast.parse(file_source),
+                        orig_src=ast.JacSource(file_source, file_path),
                     )
                 )
             settings.print_py_raised_ast = True
@@ -1070,6 +1102,38 @@ class JacLanguageTests(TestCase):
                 f"Expected '{val}' to appear 2 times, but found {len(occurrences)}.",
             )
 
+    def test_dynamic_architype_creation(self) -> None:
+        """Test that the walker and node can be created dynamically."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("create_dynamic_architype.jac"))
+
+        output = captured_output.getvalue().strip()
+        # Expected outputs for spawned entities
+        expected_spawned_walker = "Dynamic Node Value: 99"
+
+        # Check for the spawned messages
+        self.assertTrue(
+            expected_spawned_walker in output,
+            f"Expected '{expected_spawned_walker}' in output.",
+        )
+
+    def test_dynamic_architype_creation_rel_import(self) -> None:
+        """Test that the walker and node can be created dynamically, with relative import."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("arch_rel_import_creation.jac"))
+
+        output = captured_output.getvalue().strip().splitlines()
+        # Expected outputs for spawned entities
+        expected_values = ["DynamicWalker Started", "UtilityNode Data: 42"]
+        for val in expected_values:
+            # Check for the spawned messages
+            self.assertTrue(
+                val in output,
+                f"Expected '{val}' in output.",
+            )
+
     def test_object_ref_interface(self) -> None:
         """Test class method output."""
         captured_output = io.StringIO()
@@ -1103,3 +1167,12 @@ class JacLanguageTests(TestCase):
         self.assertIn(
             "Exiting at the end of walker:  test_node(value=", stdout_value[11]
         )
+
+    def test_visit_order(self) -> None:
+        """Test entry and exit behavior of walker."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("visit_order", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)

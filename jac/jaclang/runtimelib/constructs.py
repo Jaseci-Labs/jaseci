@@ -4,6 +4,7 @@ from __future__ import annotations
 
 
 from .architype import (
+    AccessLevel,
     Anchor,
     Architype,
     DSFunc,
@@ -21,6 +22,7 @@ from .memory import Memory, ShelfStorage
 from .test import JacTestCheck, JacTestResult, JacTextTestRunner
 
 __all__ = [
+    "AccessLevel",
     "Anchor",
     "NodeAnchor",
     "EdgeAnchor",

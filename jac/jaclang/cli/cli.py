@@ -28,6 +28,7 @@ from jaclang.utils.lang_tools import AstTool
 
 
 Cmd.create_cmd()
+Jac.setup()
 
 
 @cmd_registry.register
@@ -283,7 +284,9 @@ def enter(
 
             jctx.set_entry_node(node)
 
-            if isinstance(architype, WalkerArchitype) and jctx.validate_access():
+            if isinstance(architype, WalkerArchitype) and Jac.check_read_access(
+                jctx.entry_node
+            ):
                 Jac.spawn_call(jctx.entry_node.architype, architype)
 
     jctx.close()
@@ -468,8 +471,12 @@ def py2jac(filename: str) -> None:
     """
     if filename.endswith(".py"):
         with open(filename, "r") as f:
+            file_source = f.read()
             code = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(ast3.parse(f.read()), mod_path=filename),
+                input_ir=ast.PythonModuleAst(
+                    ast3.parse(file_source),
+                    orig_src=ast.JacSource(file_source, filename),
+                ),
             ).ir.unparse()
         print(code)
     else:
