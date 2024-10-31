@@ -71,7 +71,11 @@ class FastAPI:
             populate_yaml_specs(cls.__app__)
 
             from .routers import healthz_router, sso_router, user_router, webhook_router
-            from ..plugin.jaseci import walker_router, webhook_walker_router
+            from ..plugin.jaseci import (
+                walker_router,
+                webhook_walker_router,
+                websocket_router,
+            )
 
             for router in [
                 healthz_router,
@@ -80,6 +84,7 @@ class FastAPI:
                 webhook_router,
                 walker_router,
                 webhook_walker_router,
+                websocket_router,
             ]:
                 cls.__app__.include_router(router)
 

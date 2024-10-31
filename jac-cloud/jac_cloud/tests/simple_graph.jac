@@ -914,3 +914,14 @@ walker webhook_by_body {
         };
     }
 }
+
+walker websocket {
+    has val: int;
+    can enter1 with `root entry {
+        Jac.get_context().connection.notify({"testing": 1});
+    }
+
+    class __specs__ {
+        has methods: list = ["websocket"];
+    }
+}

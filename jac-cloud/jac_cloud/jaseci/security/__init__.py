@@ -7,7 +7,7 @@ from asyncer import syncify
 
 from bson import ObjectId
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, WebSocket
 from fastapi.exceptions import HTTPException
 from fastapi.security import APIKeyHeader, APIKeyQuery, HTTPBearer
 
@@ -176,6 +176,26 @@ def generate_webhook_auth(webhook: dict) -> list:
     authenticators.append(Depends(authenticate_webhook))
 
     return authenticators
+
+
+def authenticate_websocket(websocket: WebSocket) -> bool:
+    """Authenticate websocket connection."""
+    if (
+        authorization := websocket.headers.get("Authorization")
+    ) and authorization.lower().startswith("bearer"):
+        token = authorization[7:]
+        decrypted = decrypt(token)
+        if (
+            decrypted
+            and decrypted["expiration"] > utc_timestamp()
+            and TokenRedis.hget(f"{decrypted['id']}:{token}")
+            and (user := User.Collection.find_by_id(decrypted["id"]))
+            and (root := NodeAnchor.Collection.find_by_id(user.root_id))
+        ):
+            websocket._user = user  # type: ignore[attr-defined]
+            websocket._root = root  # type: ignore[attr-defined]
+            return True
+    return False
 
 
 authenticator = [Depends(HTTPBearer()), Depends(authenticate)]
