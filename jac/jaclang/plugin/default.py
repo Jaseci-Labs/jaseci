@@ -1066,11 +1066,11 @@ class JacFeatureImpl(
         file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
+        from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
         from jaclang.runtimelib.machine import JacMachine
-        from jaclang.compiler.semtable import SemInfo, SemScope
-
+        
         _scope = SemScope.get_scope_from_str(scope)
-        mod_registry: SemRegistry = JacMachine.get().jac_program.sem_ir
+        mod_registry: SemRegistry = JacMachine.get().jac_program.sem_ir if JacMachine.get().jac_program else SemRegistry()
         _, attr_seminfo = mod_registry.lookup(_scope, attr)
         if attr_seminfo and isinstance(attr_seminfo, SemInfo):
             return attr_seminfo.semstr if return_semstr else attr_seminfo.type
