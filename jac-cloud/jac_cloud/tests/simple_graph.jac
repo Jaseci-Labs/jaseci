@@ -804,3 +804,14 @@ walker delete_custom_object {
         # load the actual object and just use it as reference
     }
 }
+
+walker websocket {
+    has val: int;
+    can enter1 with `root entry {
+        Jac.get_context().connection.notify({"testing": 1});
+    }
+
+    class __specs__ {
+        has methods: list = ["websocket"];
+    }
+}
