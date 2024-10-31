@@ -1068,10 +1068,12 @@ class JacFeatureImpl(
         """Jac's get_semstr_type feature."""
         from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
         from jaclang.runtimelib.machine import JacMachine
-        
+
         _scope = SemScope.get_scope_from_str(scope)
         jac_program = JacMachine.get().jac_program
-        mod_registry: SemRegistry = jac_program.sem_ir if jac_program is not None else SemRegistry()
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
         _, attr_seminfo = mod_registry.lookup(_scope, attr)
         if attr_seminfo and isinstance(attr_seminfo, SemInfo):
             return attr_seminfo.semstr if return_semstr else attr_seminfo.type
@@ -1083,7 +1085,10 @@ class JacFeatureImpl(
         """Jac's gather_scope feature."""
         from jaclang.runtimelib.machine import JacMachine
 
-        mod_registry: SemRegistry = JacMachine.get().jac_program.sem_ir if JacMachine.get().jac_program else SemRegistry()
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
 
         attr_scope = None
         for x in attr.split("."):
@@ -1119,7 +1124,10 @@ class JacFeatureImpl(
         from jaclang.runtimelib.machine import JacMachine
         from jaclang.compiler.semtable import SemInfo, SemScope
 
-        mod_registry: SemRegistry = JacMachine.get().jac_program.sem_ir if JacMachine.get().jac_program else SemRegistry()
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
 
         attr_scope = None
         for x in attr.split("."):
