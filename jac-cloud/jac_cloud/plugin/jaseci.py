@@ -6,8 +6,11 @@ from dataclasses import Field, MISSING, fields, is_dataclass
 from functools import wraps
 from os import getenv
 from re import compile
+from traceback import format_exception
 from types import NoneType
 from typing import Any, Callable, Type, TypeAlias, TypeVar, Union, cast, get_type_hints
+
+from anyio import to_thread
 
 from asyncer import syncify
 
@@ -19,6 +22,7 @@ from fastapi import (
     Request,
     Response,
     UploadFile,
+    WebSocket,
 )
 from fastapi.responses import ORJSONResponse
 
@@ -50,9 +54,9 @@ from ..core.architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import ContextResponse, ExecutionContext, JaseciContext
+from ..core.context import ContextResponse, ExecutionContext, JaseciContext, PUBLIC_ROOT
 from ..jaseci import FastAPI
-from ..jaseci.security import authenticator
+from ..jaseci.security import authenticate_websocket, authenticator
 
 # from ..jaseci.utils import log_entry, log_exit
 
@@ -68,6 +72,72 @@ FILE_TYPES = {
 }
 
 walker_router = APIRouter(prefix="/walker", tags=["walker"])
+websocket_router = APIRouter(prefix="/websocket", tags=["walker"])
+websocket_events: dict[str, dict[str, Any]] = {}
+
+
+def notify(self: WebSocket, data: Any) -> None:  # noqa: ANN401
+    """Notify synchrounously."""
+    syncify(self.send_json)(data)
+
+
+WebSocket.notify = notify  # type: ignore[attr-defined]
+
+
+def websocket_synchronizer(websocket: WebSocket, data: dict[str, Any]) -> dict:
+    """Websocket event sychronizer."""
+    if event := websocket_events.get(even_walker := data["walker"]):
+        if event["auth"] and websocket._root is PUBLIC_ROOT:  # type: ignore[attr-defined]
+            return {"error": f"Event {even_walker} requires to be authenticated!"}
+        elif not event["auth"] and websocket._root is not PUBLIC_ROOT:  # type: ignore[attr-defined]
+            return {"error": f"Event {even_walker} requires to be unauthenticated!"}
+
+        walker: type = event["type"]
+        node: str | None = data.get("node")
+        try:
+            payload = event["model"](**data["context"]).__dict__
+        except ValidationError:
+            raise
+
+        jctx = JaseciContext.create(websocket, NodeAnchor.ref(node) if node else None)
+
+        wlk: WalkerAnchor = walker(**payload).__jac__
+        if Jac.check_read_access(jctx.entry_node):
+            Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
+            jctx.close()
+
+            if jctx.custom is not MISSING:
+                return jctx.custom
+
+            return jctx.response(wlk.returns)
+        else:
+            jctx.close()
+            return {
+                "error": f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!"
+            }
+    else:
+        return {"error": "Invalid request! Please use valid walker event!"}
+
+
+@websocket_router.websocket("")
+async def websocket_endpoint(websocket: WebSocket) -> None:
+    """Websocket Endpoint."""
+    if not websocket_events:
+        await websocket.close()
+        return
+
+    if not authenticate_websocket(websocket):
+        websocket._root = PUBLIC_ROOT  # type: ignore[attr-defined]
+
+    await websocket.accept()
+    while True:
+        data: dict[str, Any] = await websocket.receive_json()
+        try:
+            await to_thread.run_sync(websocket_synchronizer, websocket, data)
+        except ValidationError as e:
+            await websocket.send_json({"error": e.errors()})
+        except Exception as e:
+            await websocket.send_json({"error": format_exception(e)})
 
 
 def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
@@ -108,6 +178,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
         files: dict[str, Any] = {}
+        message: dict[str, Any] = {}
 
         if path:
             if not path.startswith("/"):
@@ -133,9 +204,12 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                     f_name = f.name
                     f_type = hintings[f_name]
                     if f_type in FILE_TYPES:
-                        files[f_name] = gen_model_field(f_type, f, True)
+                        message[f_name] = files[f_name] = gen_model_field(
+                            f_type, f, True
+                        )
                     else:
                         consts = gen_model_field(f_type, f)
+                        message[f_name] = consts
 
                         if as_query == "*" or f_name in as_query:
                             query[f_name] = consts
@@ -189,7 +263,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             if isinstance(body, BaseUploadFile) and body_model:
                 body = loads(syncify(body.read)())
                 try:
-                    body = body_model(**body).model_dump()
+                    body = body_model(**body).__dict__
                 except ValidationError as e:
                     return ORJSONResponse({"detail": e.errors()})
 
@@ -224,35 +298,46 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
         for method in methods:
             method = method.lower()
-
             walker_method = getattr(walker_router, method)
 
-            raw_types: list[Type] = [
-                get_type_hints(jef.func).get("return", NoneType)
-                for jef in (*cls._jac_entry_funcs_, *cls._jac_exit_funcs_)
-            ]
+            match method:
+                case "websocket":
+                    websocket_events[cls.__name__] = {
+                        "type": cls,
+                        "model": create_model(
+                            f"{cls.__name__.lower()}_message_model", **message
+                        ),
+                        "auth": auth,
+                    }
+                case _:
+                    raw_types: list[Type] = [
+                        get_type_hints(jef.func).get("return", NoneType)
+                        for jef in (*cls._jac_entry_funcs_, *cls._jac_exit_funcs_)
+                    ]
 
-            if raw_types:
-                if len(raw_types) > 1:
-                    ret_types: TypeAlias = Union[*raw_types]  # type: ignore[valid-type]
-                else:
-                    ret_types = raw_types[0]  # type: ignore[misc]
-            else:
-                ret_types = NoneType  # type: ignore[misc]
+                    if raw_types:
+                        if len(raw_types) > 1:
+                            ret_types: TypeAlias = Union[*raw_types]  # type: ignore[valid-type]
+                        else:
+                            ret_types = raw_types[0]  # type: ignore[misc]
+                    else:
+                        ret_types = NoneType  # type: ignore[misc]
 
-            settings: dict[str, Any] = {
-                "tags": ["walker"],
-                "response_model": ContextResponse[ret_types] | Any,
-            }
-            if auth:
-                settings["dependencies"] = cast(list, authenticator)
+                    settings: dict[str, Any] = {
+                        "tags": ["walker"],
+                        "response_model": ContextResponse[ret_types] | Any,
+                    }
+                    if auth:
+                        settings["dependencies"] = cast(list, authenticator)
 
-            walker_method(url := f"/{cls.__name__}{path}", summary=url, **settings)(
-                api_root
-            )
-            walker_method(
-                url := f"/{cls.__name__}/{{node}}{path}", summary=url, **settings
-            )(api_entry)
+                    walker_method(
+                        url := f"/{cls.__name__}{path}", summary=url, **settings
+                    )(api_root)
+                    walker_method(
+                        url := f"/{cls.__name__}/{{node}}{path}",
+                        summary=url,
+                        **settings,
+                    )(api_entry)
 
 
 def specs(
