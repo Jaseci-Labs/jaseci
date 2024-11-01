@@ -346,30 +346,31 @@ class WalkerStmtOnlyNode(AstNode):
 class Expr(AstNode):
     """Expr node type for Jac Ast."""
 
-    def __init__(self) -> None:
+    def __init__(self, type_src: Optional[Expr] = None) -> None:
         """Initialize expression node."""
+        self.type_src = type_src or self  # Only used for ArchRef
         self._sym_type: str = "NoType"
         self._type_sym_tab: Optional[SymbolTable] = None
 
     @property
     def expr_type(self) -> str:
         """Get symbol type."""
-        return self._sym_type
+        return self.type_src._sym_type
 
     @expr_type.setter
     def expr_type(self, sym_type: str) -> None:
         """Set symbol type."""
-        self._sym_type = sym_type
+        self.type_src._sym_type = sym_type
 
     @property
     def type_sym_tab(self) -> Optional[SymbolTable]:
         """Get type symbol table."""
-        return self._type_sym_tab
+        return self.type_src._type_sym_tab
 
     @type_sym_tab.setter
     def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
         """Set type symbol table."""
-        self._type_sym_tab = type_sym_tab
+        self.type_src._type_sym_tab = type_sym_tab
 
 
 class AtomExpr(Expr, AstSymbolStubNode):
@@ -3457,7 +3458,7 @@ class ArchRef(AtomExpr):
         self.arch_name = arch_name
         self.arch_type = arch_type
         AstNode.__init__(self, kid=kid)
-        Expr.__init__(self)
+        Expr.__init__(self, type_src=arch_name)
         AstSymbolNode.__init__(
             self,
             sym_name=arch_name.sym_name,

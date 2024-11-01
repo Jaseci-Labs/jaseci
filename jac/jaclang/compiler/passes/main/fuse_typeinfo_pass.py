@@ -33,8 +33,7 @@ class FuseTypeInfoPass(Pass):
     # Override this to support enter expression.
     def enter_node(self, node: ast.AstNode) -> None:
         """Run on entering node."""
-        if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
-            getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
+        super().enter_node(node)
 
         if isinstance(node, ast.Expr):
             self.enter_expr(node)
