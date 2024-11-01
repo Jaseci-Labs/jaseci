@@ -20,13 +20,12 @@ class UserRegistration(BaseModel):
     """User Common Functionalities."""
 
     email: EmailStr
-    password: bytes
+    password: str
 
     def obfuscate(self) -> dict:
         """Return BaseModel.model_dump where the password is hashed."""
         data = self.model_dump(exclude={"password"})
-        if isinstance(self.password, str):
-            data["password"] = pbkdf2_sha512.hash(self.password).encode()
+        data["password"] = pbkdf2_sha512.hash(self.password).encode()
         return data
 
     def printable(self) -> dict:
@@ -45,6 +44,7 @@ class User:
     password: bytes
     root_id: ObjectId
     is_activated: bool = False
+    is_admin: bool = False
     sso: dict[str, dict[str, str]] = field(default_factory=dict)
 
     class Collection(BaseCollection["User"]):
@@ -119,6 +119,7 @@ class User:
         user_model.pop("id", None)
         user_model.pop("root_id", None)
         user_model.pop("is_activated", None)
+        user_model.pop("is_admin", None)
         user_model.pop("sso", None)
 
         return create_model("UserRegister", __base__=UserRegistration, **user_model)
@@ -136,4 +137,9 @@ class User:
     @staticmethod
     def sso_mapper(open_id: OpenID) -> dict[str, object]:
         """Send verification code."""
+        return {}
+
+    @staticmethod
+    def system_admin_default() -> dict[str, object]:
+        """System Admin default data."""
         return {}
