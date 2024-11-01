@@ -687,6 +687,19 @@ class Module(AstDocNode):
         super().unparse()
         return self.format()
 
+    @staticmethod
+    def get_href_path(node: AstNode) -> str:
+        """Return the full path of the module that contains this node."""
+        parent = node.find_parent_of_type(Module)
+        mod_list = []
+        if isinstance(node, Module):
+            mod_list.append(node)
+        while parent is not None:
+            mod_list.append(parent)
+            parent = parent.find_parent_of_type(Module)
+        mod_list.reverse()
+        return ".".join(p.name for p in mod_list)
+
 
 class GlobalVars(ElementStmt, AstAccessNode):
     """GlobalVars node type for Jac Ast."""
