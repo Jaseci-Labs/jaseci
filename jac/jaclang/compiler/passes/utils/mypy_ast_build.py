@@ -16,6 +16,7 @@ import mypy.build as myb
 import mypy.checkexpr as mycke
 import mypy.errors as mye
 import mypy.fastparse as myfp
+import mypy.nodes as mypy_nodes
 from mypy.build import BuildSource
 from mypy.build import BuildSourceSet
 from mypy.build import FileSystemCache
@@ -34,6 +35,55 @@ from mypy.semanal_main import semantic_analysis_for_scc
 
 if TYPE_CHECKING:
     from mypy.report import Reports  # Avoid unconditional slow import
+
+
+# All the expression nodes of mypy.
+EXPRESSION_NODES = (
+    mypy_nodes.AssertTypeExpr,
+    mypy_nodes.AssignmentExpr,
+    mypy_nodes.AwaitExpr,
+    mypy_nodes.BytesExpr,
+    mypy_nodes.CallExpr,
+    mypy_nodes.CastExpr,
+    mypy_nodes.ComparisonExpr,
+    mypy_nodes.ComplexExpr,
+    mypy_nodes.ConditionalExpr,
+    mypy_nodes.DictionaryComprehension,
+    mypy_nodes.DictExpr,
+    mypy_nodes.EllipsisExpr,
+    mypy_nodes.EnumCallExpr,
+    mypy_nodes.Expression,
+    mypy_nodes.FloatExpr,
+    mypy_nodes.GeneratorExpr,
+    mypy_nodes.IndexExpr,
+    mypy_nodes.IntExpr,
+    mypy_nodes.LambdaExpr,
+    mypy_nodes.ListComprehension,
+    mypy_nodes.ListExpr,
+    mypy_nodes.MemberExpr,
+    mypy_nodes.NamedTupleExpr,
+    mypy_nodes.NameExpr,
+    mypy_nodes.NewTypeExpr,
+    mypy_nodes.OpExpr,
+    mypy_nodes.ParamSpecExpr,
+    mypy_nodes.PromoteExpr,
+    mypy_nodes.RefExpr,
+    mypy_nodes.RevealExpr,
+    mypy_nodes.SetComprehension,
+    mypy_nodes.SetExpr,
+    mypy_nodes.SliceExpr,
+    mypy_nodes.StarExpr,
+    mypy_nodes.StrExpr,
+    mypy_nodes.SuperExpr,
+    mypy_nodes.TupleExpr,
+    mypy_nodes.TypeAliasExpr,
+    mypy_nodes.TypedDictExpr,
+    mypy_nodes.TypeVarExpr,
+    mypy_nodes.TypeVarTupleExpr,
+    mypy_nodes.UnaryExpr,
+    mypy_nodes.YieldExpr,
+    mypy_nodes.YieldFromExpr,
+)
 
 
 mypy_to_jac_node_map: dict[
@@ -131,61 +181,231 @@ class ExpressionChecker(mycke.ExpressionChecker):
         """Override to mypy expression checker for direct AST pass through."""
         super().__init__(tc, msg, plugin, per_line_checking_time_ns)
 
-    def visit_list_expr(self, e: mycke.ListExpr) -> mycke.Type:
-        """Type check a list expression [...]."""
-        out = super().visit_list_expr(e)
+    def visit_assert_type_expr(self, e: mycke.AssertTypeExpr) -> mycke.Type:
+        """Type check AssertTypeExpr expression."""
+        out = super().visit_assert_type_expr(e)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
-    def visit_set_expr(self, e: mycke.SetExpr) -> mycke.Type:
-        """Type check a set expression {...}."""
-        out = super().visit_set_expr(e)
+    def visit_assignment_expr(self, e: mycke.AssignmentExpr) -> mycke.Type:
+        """Type check AssignmentExpr expression."""
+        out = super().visit_assignment_expr(e)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
-    def visit_tuple_expr(self, e: myfp.TupleExpr) -> myb.Type:
-        """Type check a tuple expression (...)."""
-        out = super().visit_tuple_expr(e)
+    def visit_await_expr(
+        self, e: mycke.AwaitExpr, allow_none_return: bool = False
+    ) -> mycke.Type:
+        """Type check AwaitExpr expression."""
+        out = super().visit_await_expr(e, allow_none_return)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
-    def visit_dict_expr(self, e: myfp.DictExpr) -> myb.Type:
-        """Type check a dictionary expression {...}."""
-        out = super().visit_dict_expr(e)
+    def visit_bytes_expr(self, e: mycke.BytesExpr) -> mycke.Type:
+        """Type check BytesExpr expression."""
+        out = super().visit_bytes_expr(e)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
-    def visit_list_comprehension(self, e: myfp.ListComprehension) -> myb.Type:
-        """Type check a list comprehension."""
-        out = super().visit_list_comprehension(e)
+    def visit_call_expr(
+        self, e: mycke.CallExpr, allow_none_return: bool = False
+    ) -> mycke.Type:
+        """Type check CallExpr expression."""
+        out = super().visit_call_expr(e, allow_none_return)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
-    def visit_set_comprehension(self, e: myfp.SetComprehension) -> myb.Type:
-        """Type check a set comprehension."""
-        out = super().visit_set_comprehension(e)
+    def visit_cast_expr(self, e: mycke.CastExpr) -> mycke.Type:
+        """Type check CastExpr expression."""
+        out = super().visit_cast_expr(e)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
-    def visit_generator_expr(self, e: myfp.GeneratorExpr) -> myb.Type:
-        """Type check a generator expression."""
-        out = super().visit_generator_expr(e)
+    def visit_comparison_expr(self, e: mycke.ComparisonExpr) -> mycke.Type:
+        """Type check ComparisonExpr expression."""
+        out = super().visit_comparison_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_complex_expr(self, e: mycke.ComplexExpr) -> mycke.Type:
+        """Type check ComplexExpr expression."""
+        out = super().visit_complex_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_conditional_expr(
+        self, e: mycke.ConditionalExpr, allow_none_return: bool = False
+    ) -> mycke.Type:
+        """Type check ConditionalExpr expression."""
+        out = super().visit_conditional_expr(e, allow_none_return)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
     def visit_dictionary_comprehension(
-        self, e: myfp.DictionaryComprehension
-    ) -> myb.Type:
-        """Type check a dict comprehension."""
+        self, e: mycke.DictionaryComprehension
+    ) -> mycke.Type:
+        """Type check DictionaryComprehension expression."""
         out = super().visit_dictionary_comprehension(e)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 
+    def visit_dict_expr(self, e: mycke.DictExpr) -> mycke.Type:
+        """Type check DictExpr expression."""
+        out = super().visit_dict_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_enum_call_expr(self, e: mycke.EnumCallExpr) -> mycke.Type:
+        """Type check EnumCallExpr expression."""
+        out = super().visit_enum_call_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_float_expr(self, e: mycke.FloatExpr) -> mycke.Type:
+        """Type check FloatExpr expression."""
+        out = super().visit_float_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_generator_expr(self, e: mycke.GeneratorExpr) -> mycke.Type:
+        """Type check GeneratorExpr expression."""
+        out = super().visit_generator_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_index_expr(self, e: mycke.IndexExpr) -> mycke.Type:
+        """Type check IndexExpr expression."""
+        out = super().visit_index_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_int_expr(self, e: mycke.IntExpr) -> mycke.Type:
+        """Type check IntExpr expression."""
+        out = super().visit_int_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_lambda_expr(self, e: mycke.LambdaExpr) -> mycke.Type:
+        """Type check LambdaExpr expression."""
+        out = super().visit_lambda_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_list_comprehension(self, e: mycke.ListComprehension) -> mycke.Type:
+        """Type check ListComprehension expression."""
+        out = super().visit_list_comprehension(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_list_expr(self, e: mycke.ListExpr) -> mycke.Type:
+        """Type check ListExpr expression."""
+        out = super().visit_list_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
     def visit_member_expr(
-        self, e: myfp.MemberExpr, is_lvalue: bool = False
-    ) -> myb.Type:
-        """Type check a member expr."""
+        self, e: mycke.MemberExpr, is_lvalue: bool = False
+    ) -> mycke.Type:
+        """Type check MemberExpr expression."""
         out = super().visit_member_expr(e, is_lvalue)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_name_expr(self, e: mycke.NameExpr) -> mycke.Type:
+        """Type check NameExpr expression."""
+        out = super().visit_name_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_op_expr(self, e: mycke.OpExpr) -> mycke.Type:
+        """Type check OpExpr expression."""
+        out = super().visit_op_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_reveal_expr(self, e: mycke.RevealExpr) -> mycke.Type:
+        """Type check RevealExpr expression."""
+        out = super().visit_reveal_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_set_comprehension(self, e: mycke.SetComprehension) -> mycke.Type:
+        """Type check SetComprehension expression."""
+        out = super().visit_set_comprehension(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_set_expr(self, e: mycke.SetExpr) -> mycke.Type:
+        """Type check SetExpr expression."""
+        out = super().visit_set_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_slice_expr(self, e: mycke.SliceExpr) -> mycke.Type:
+        """Type check SliceExpr expression."""
+        out = super().visit_slice_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_star_expr(self, e: mycke.StarExpr) -> mycke.Type:
+        """Type check StarExpr expression."""
+        out = super().visit_star_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_str_expr(self, e: mycke.StrExpr) -> mycke.Type:
+        """Type check StrExpr expression."""
+        out = super().visit_str_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_super_expr(self, e: mycke.SuperExpr) -> mycke.Type:
+        """Type check SuperExpr expression."""
+        out = super().visit_super_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_tuple_expr(self, e: mycke.TupleExpr) -> mycke.Type:
+        """Type check TupleExpr expression."""
+        out = super().visit_tuple_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_type_alias_expr(self, e: mycke.TypeAliasExpr) -> mycke.Type:
+        """Type check TypeAliasExpr expression."""
+        out = super().visit_type_alias_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_type_var_expr(self, e: mycke.TypeVarExpr) -> mycke.Type:
+        """Type check TypeVarExpr expression."""
+        out = super().visit_type_var_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_type_var_tuple_expr(self, e: mycke.TypeVarTupleExpr) -> mycke.Type:
+        """Type check TypeVarTupleExpr expression."""
+        out = super().visit_type_var_tuple_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_unary_expr(self, e: mycke.UnaryExpr) -> mycke.Type:
+        """Type check UnaryExpr expression."""
+        out = super().visit_unary_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_yield_expr(self, e: mycke.YieldExpr) -> mycke.Type:
+        """Type check YieldExpr expression."""
+        out = super().visit_yield_expr(e)
+        FuseTypeInfoPass.node_type_hash[e] = out
+        return out
+
+    def visit_yield_from_expr(
+        self, e: mycke.YieldFromExpr, allow_none_return: bool = False
+    ) -> mycke.Type:
+        """Type check YieldFromExpr expression."""
+        out = super().visit_yield_from_expr(e, allow_none_return)
         FuseTypeInfoPass.node_type_hash[e] = out
         return out
 

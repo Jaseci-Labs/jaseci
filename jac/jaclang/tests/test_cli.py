@@ -1,5 +1,6 @@
 """Test Jac cli module."""
 
+import contextlib
 import inspect
 import io
 import os
@@ -55,10 +56,8 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
         sys.stderr = captured_output
 
-        try:
+        with contextlib.suppress(Exception):
             cli.run(self.fixture_abs_path("err_runtime.jac"))
-        except Exception as e:
-            print(f"Error: {e}")
 
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -71,7 +70,6 @@ class JacCliTests(TestCase):
             "  at foo() ",
             "  at <module> ",
         )
-
         logger_capture = "\n".join([rec.message for rec in self.caplog.records])
         for exp in expected_stdout_values:
             self.assertIn(exp, logger_capture)
@@ -217,6 +215,42 @@ class JacCliTests(TestCase):
             r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
         )
 
+    def test_expr_types(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('expr_type.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        self.assertRegex(
+            stdout_value, r"4\:9 \- 4\:14.*BinaryExpr \- Type\: builtins.int"
+        )
+        self.assertRegex(
+            stdout_value, r"7\:9 \- 7\:17.*FuncCall \- Type\: builtins.float"
+        )
+        self.assertRegex(
+            stdout_value, r"9\:6 \- 9\:11.*CompareExpr \- Type\: builtins.bool"
+        )
+        self.assertRegex(
+            stdout_value, r"10\:6 - 10\:15.*BinaryExpr \- Type\: builtins.str"
+        )
+        self.assertRegex(
+            stdout_value, r"11\:5 \- 11\:13.*AtomTrailer \- Type\: builtins.int"
+        )
+        self.assertRegex(
+            stdout_value, r"12\:5 \- 12\:14.*UnaryExpr \- Type\: builtins.bool"
+        )
+        self.assertRegex(
+            stdout_value, r"13\:5 \- 13\:25.*IfElseExpr \- Type\: Literal\['a']\?"
+        )
+        self.assertRegex(
+            stdout_value,
+            r"14\:5 \- 14\:27.*ListCompr - \[ListCompr] \- Type\: builtins.list\[builtins.int]",
+        )
+
     def test_ast_dotgen(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()
@@ -247,6 +281,8 @@ class JacCliTests(TestCase):
         self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 7)
         self.assertEqual(stdout_value.count("builtins.int"), 3)
         self.assertEqual(stdout_value.count("builtins.str"), 10)
+        self.assertIn("Literal['test_server']", stdout_value)
+        self.assertIn("Literal['1']", stdout_value)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
