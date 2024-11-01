@@ -163,11 +163,25 @@ In the entry block:
 - Once logged in, the token is extracted and printed.
 - Finally, `bootstrap_frontend(token)` is called with the obtained token.
 
+### (Added) Working with Multiple LLMs
+If you plan to integrate multiple LLMs such as GPT-2 and GPT-4 into the same Jac backend, you might face conflicts or challenges in managing different model configurations. In such cases, it's better to separate the models into different backend scripts.
+
+Solution: In this tutorial, we’ll demonstrate a simple workaround by creating two separate files:
+1. server_1.jac - for one LLM (e.g., GPT-4 or Ollama)
+2. server_2.jac - for the second LLM (e.g., GPT-2)
+
+### (Added) Avoiding Unicode Path Conflicts
+While working with your project files, be aware that special characters in directory names, like backslashes (\), can cause issues. 
+- For example, directory names such as \UM might be interpreted as Unicode due to the \U sequence. 
+- To avoid this issue, consider renaming directories to avoid backslashes or use forward slashes (/).
+
+### Final Steps
 Now you can run the frontend using the following command:
 
 ```bash
 jac streamlit client.jac
 ```
+Make sure your backend server (either server.jac or gpt_server.jac) is running correctly. You can switch between them as needed. This solution should help you avoid integration issues and special character conflicts, ensuring a smooth experience when building your chatbot.
 
 If your server is still running, you can chat with your assistant using the streamlit interface. The response will only be "Hello, world!" for now, but we will update it to be a fully working chatbot next.
 
