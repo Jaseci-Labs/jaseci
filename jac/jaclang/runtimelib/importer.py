@@ -354,10 +354,7 @@ class JacImporter(Importer):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
                     logger.error(e)
-                    # Directly printing to stderr since this is a run time error, the error message an
-                    # output of the execution to the user, not the developer. Maybe we should have a
-                    # standard method to send error message to the end user.
-                    print(dump_traceback(e), file=sys.stderr)
+                    logger.error(dump_traceback(e))
                     raise e
 
         import_return = ImportReturn(module, unique_loaded_items, self)

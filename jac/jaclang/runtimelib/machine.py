@@ -295,7 +295,7 @@ class JacProgram:
             for alrt in result.errors_had:
                 # We're not logging here, it already gets logged as the errors were added to the errors_had list.
                 # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
-                print(alrt.pretty_print(), file=sys.stderr)
+                logger.error(alrt.pretty_print())
             return None
         if result.ir.gen.py_bytecode is not None:
             return marshal.loads(result.ir.gen.py_bytecode)
