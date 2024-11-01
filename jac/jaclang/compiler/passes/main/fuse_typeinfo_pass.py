@@ -69,37 +69,6 @@ class FuseTypeInfoPass(Pass):
         if typ_sym_table != self.ir.sym_tab:
             node.name_spec.type_sym_tab = typ_sym_table
 
-    # TODO: Do we really need this as it's already implemented again in
-    # PyCollectDepsPass
-    def __collect_python_dependencies(self, node: ast.AstNode) -> None:
-        assert isinstance(node, ast.AstSymbolNode)
-        assert isinstance(self.ir, ast.Module)
-
-        mypy_node = node.gen.mypy_ast[0]
-
-        if isinstance(mypy_node, MypyNodes.RefExpr) and mypy_node.node:
-            node_full_name = mypy_node.node.fullname
-            if "." in node_full_name:
-                mod_name = node_full_name[: node_full_name.rindex(".")]
-            else:
-                mod_name = node_full_name
-
-            if mod_name not in self.ir.py_info.py_mod_dep_map:
-                self.__debug_print(
-                    f"Can't find a python file associated with {type(node)}::{node.loc}"
-                )
-                return
-
-            mode_path = self.ir.py_info.py_mod_dep_map[mod_name]
-            if mode_path.endswith(".jac"):
-                return
-
-            self.ir.py_info.py_raise_map[mod_name] = mode_path
-        else:
-            self.__debug_print(
-                f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
-            )
-
     @staticmethod
     def __handle_node(
         func: Callable[[FuseTypeInfoPass, T], None]
@@ -121,7 +90,6 @@ class FuseTypeInfoPass(Pass):
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                     self.__set_sym_table_link(node)
-                    self.__collect_python_dependencies(node)
 
                 # Jac node has multiple mypy nodes linked to it
                 elif len(node.gen.mypy_ast) > 1:
@@ -145,7 +113,6 @@ class FuseTypeInfoPass(Pass):
                         )
                         func(self, node)
                         self.__set_sym_table_link(node)
-                        self.__collect_python_dependencies(node)
 
                 # Special handing for BuiltinType
                 elif isinstance(node, ast.BuiltinType):
