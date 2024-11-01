@@ -44,3 +44,28 @@ In jaclang, variables within a node are defined with the `has` keyword. We can a
 
 ## Edges
 
+Edges are an essential component of the graph structure, and they allow for more complex relationships between nodes. As stated above, just like nodes, you can define custom edge types with variables, and abilities.
+
+Here is a example of creating a edge.
+
+```jac
+edge attend{
+    has hours = 2;
+}
+```
+
+## Connect Nodes and Edges
+
+
+```jac
+
+```
+
+## Display graph
+
+## Traversing in graph
+
+### Walkers
+### Visit
+### Delete nodes
+### Delete edges
