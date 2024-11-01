@@ -45,6 +45,7 @@ class ModuleInfo:
         self.ir = ir
         self.impl_parent: Optional[ModuleInfo] = impl_parent
         self.sem_manager = SemTokManager(ir=ir)
+        self.is_modified: bool = False
 
     @property
     def uri(self) -> str:
