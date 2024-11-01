@@ -129,7 +129,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_imported=False,
             kid=valid,
         )
-        ret.is_raised_from_py = True
+        ret.py_info.is_raised_from_py = True
         return self.nu(ret)
 
     def proc_function_def(

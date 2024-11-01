@@ -81,8 +81,10 @@ class ImportPassPassTests(TestCase):
             "genericpath": r"jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi$",
         }
         for i in p:
-            self.assertIn(i, build.ir.py_raise_map)
-            self.assertRegex(re.sub(r".*fixtures/", "", build.ir.py_raise_map[i]), p[i])
+            self.assertIn(i, build.ir.py_info.py_raise_map)
+            self.assertRegex(
+                re.sub(r".*fixtures/", "", build.ir.py_info.py_raise_map[i]), p[i]
+            )
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
@@ -93,7 +95,7 @@ class ImportPassPassTests(TestCase):
             len(
                 list(
                     filter(
-                        lambda x: x.is_raised_from_py,
+                        lambda x: x.py_info.is_raised_from_py,
                         state.ir.get_all_sub_nodes(ast.Module),
                     )
                 )

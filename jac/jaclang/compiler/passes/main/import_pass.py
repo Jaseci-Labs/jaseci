@@ -257,7 +257,7 @@ class PyImportPass(JacImportPass):
 
         assert isinstance(self.ir, ast.Module)
 
-        python_raise_map = self.ir.py_raise_map
+        python_raise_map = self.ir.py_info.py_raise_map
         file_to_raise = None
 
         if mod_path in python_raise_map:
