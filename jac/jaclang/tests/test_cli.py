@@ -1,5 +1,6 @@
 """Test Jac cli module."""
 
+import contextlib
 import inspect
 import io
 import os
@@ -55,10 +56,8 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
         sys.stderr = captured_output
 
-        try:
+        with contextlib.suppress(Exception):
             cli.run(self.fixture_abs_path("err_runtime.jac"))
-        except Exception as e:
-            print(f"Error: {e}")
 
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -71,7 +70,6 @@ class JacCliTests(TestCase):
             "  at foo() ",
             "  at <module> ",
         )
-
         logger_capture = "\n".join([rec.message for rec in self.caplog.records])
         for exp in expected_stdout_values:
             self.assertIn(exp, logger_capture)

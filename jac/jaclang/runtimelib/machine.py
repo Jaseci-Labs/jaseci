@@ -293,6 +293,8 @@ class JacProgram:
         result = compile_jac(full_target, cache_result=cachable)
         if result.errors_had or not result.ir.gen.py_bytecode:
             for alrt in result.errors_had:
+                # We're not logging here, it already gets logged as the errors were added to the errors_had list.
+                # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
                 logger.error(alrt.pretty_print())
             return None
         if result.ir.gen.py_bytecode is not None:
