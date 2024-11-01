@@ -8,8 +8,9 @@ body field.
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
+
+# from jaclang.compiler.passes.main import SubNodeTabPass
 
 
 class DeclImplMatchPass(Pass):
@@ -26,7 +27,7 @@ class DeclImplMatchPass(Pass):
 
     def after_pass(self) -> None:
         """Rebuild sub node table."""
-        self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
+        # self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
 
     def defn_lookup(self, lookup: Symbol) -> ast.NameAtom | None:
         """Lookup a definition in a symbol table."""
@@ -43,6 +44,9 @@ class DeclImplMatchPass(Pass):
         """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
             if isinstance(sym.decl.name_of, ast.AstImplOnlyNode):
+
+                # update the subnodetab of aht node and its its preceding nodes.
+                print("sym.decl.name_of:", sym.decl.name_of)
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
                 name_of_links: list[ast.NameAtom] = []  # to link archref names to decls
@@ -92,10 +96,12 @@ class DeclImplMatchPass(Pass):
                     )
                 valid_decl.body = sym.decl.name_of
                 sym.decl.name_of.decl_link = valid_decl
+                print("sym.decl.name_of.target:", sym.decl.name_of.target)
                 for idx, a in enumerate(sym.decl.name_of.target.archs):
                     a.name_spec.name_of = name_of_links[idx].name_of
                     a.name_spec.sym = name_of_links[idx].sym
                 sym.decl.name_of.sym_tab.tab.update(valid_decl.sym_tab.tab)
                 valid_decl.sym_tab.tab = sym.decl.name_of.sym_tab.tab
         for i in sym_tab.kid:
+            # print('i:', i.name)
             self.connect_def_impl(i)

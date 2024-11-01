@@ -13,9 +13,11 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main import SubNodeTabPass, SymTabBuildPass
+from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.settings import settings
 from jaclang.utils.log import logging
+
+# from jaclang.compiler.passes.main import SubNodeTabPass, SymTabBuildPass
 
 
 logger = logging.getLogger(__name__)
@@ -38,10 +40,11 @@ class JacImportPass(Pass):
         while self.run_again:
             self.run_again = False
             all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
+            # print([i.dot_path_str for i in all_imports])
             for i in all_imports:
                 self.process_import(i)
                 self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
+            # SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -169,8 +172,8 @@ class JacImportPass(Pass):
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        from jaclang.compiler.compile import jac_file_to_pass
-        from jaclang.compiler.passes.main import SubNodeTabPass
+        from jaclang.compiler.parser import JacParser
+        from jaclang.compiler.passes import Pass
 
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
@@ -178,7 +181,9 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
+            with open(target) as file:
+                source = ast.JacSource(file.read(), mod_path=target)
+                mod_pass: Pass = JacParser(input_ir=source)
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
@@ -286,7 +291,7 @@ class PyImportPass(JacImportPass):
                             orig_src=ast.JacSource(file_source, file_to_raise),
                         ),
                     ).ir
-                    SubNodeTabPass(input_ir=mod, prior=self)
+                    # SubNodeTabPass(input_ir=mod, prior=self)
                 if mod:
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
@@ -323,7 +328,7 @@ class PyImportPass(JacImportPass):
                 ),
             ).ir
             mod.parent = self.ir
-            SubNodeTabPass(input_ir=mod, prior=self)
+            # SubNodeTabPass(input_ir=mod, prior=self)
             SymTabBuildPass(input_ir=mod, prior=self)
             mod.parent = None
 

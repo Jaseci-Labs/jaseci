@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
+from copy import copy
 from hashlib import md5
 from types import EllipsisType
 from typing import (
@@ -44,11 +45,29 @@ class AstNode:
         self.parent: Optional[AstNode] = None
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self._sym_tab: Optional[SymbolTable] = None
-        self._sub_node_tab: dict[type, list[AstNode]] = {}
+        self._sub_node_tab: dict[type, list[AstNode]] = self.build_sub_node_tab()
         self._in_mod_nodes: list[AstNode] = []
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+
+    def build_sub_node_tab(self) -> dict[type, list[AstNode]]:
+        """Build sub node table by aggregating subnodes from direct children on node creation."""
+        sub_node_tab: dict[type, list[AstNode]] = {}
+
+        for child in self.kid:
+            if not child:
+                continue
+            if type(child) in sub_node_tab:
+                sub_node_tab[type(child)].append(child)
+            else:
+                sub_node_tab[type(child)] = [child]
+            for subnode_type, subnodes in child._sub_node_tab.items():
+                if subnode_type in sub_node_tab:
+                    sub_node_tab[subnode_type].extend(subnodes)
+                else:
+                    sub_node_tab[subnode_type] = copy(subnodes)
+        return dict(sub_node_tab)
 
     @property
     def sym_tab(self) -> SymbolTable:
