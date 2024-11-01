@@ -834,7 +834,9 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(f.read())
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast, orig_src=ast.JacSource(f.read(), file_name)
+                    )
                 )
             except Exception as e:
                 raise Exception(f"Error While Jac to Py AST conversion: {e}")
