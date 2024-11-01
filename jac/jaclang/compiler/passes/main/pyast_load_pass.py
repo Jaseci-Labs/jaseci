@@ -22,6 +22,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def __init__(self, input_ir: ast.PythonModuleAst) -> None:
         """Initialize parser."""
         self.mod_path = input_ir.loc.mod_path
+        self.orig_src = input_ir.loc.orig_src
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
     def nu(self, node: T) -> T:
@@ -151,7 +152,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         value = node.name if node.name not in reserved_keywords else f"<>{node.name}"
         name = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=value,
             line=node.lineno,
@@ -264,7 +265,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             type_params: list[type_param]
         """
         name = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name,
             line=node.lineno,
@@ -275,7 +276,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         arch_type = ast.Token(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.KW_CLASS,
             value="class",
             line=node.lineno,
@@ -293,7 +294,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 and body_stmt.name_ref.value == "__init__"
             ):
                 tok = ast.Name(
-                    file_path=self.mod_path,
+                    orig_src=self.orig_src,
                     name=Tok.KW_INIT,
                     value="init",
                     line=node.lineno,
@@ -383,7 +384,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     ):
                         continue
                     pintok = ast.Token(
-                        file_path=self.mod_path,
+                        orig_src=self.orig_src,
                         name=Tok.PYNLINE,
                         value=py_ast.unparse(class_body_stmt),
                         line=node.lineno,
@@ -914,7 +915,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and value.target.value == "super"
         ):
             tok = ast.Name(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.KW_SUPER,
                 value="super",
                 line=node.lineno,
@@ -927,7 +928,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value = ast.SpecialVarRef(var=tok)
             # exit()
         attribute = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=(
                 ("<>" + node.attr)
@@ -1038,7 +1039,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_break(self, node: py_ast.Break) -> ast.CtrlStmt:
         """Process python node."""
         break_tok = ast.Token(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.KW_BREAK,
             value="break",
             line=0,
@@ -1148,14 +1149,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else:
                 token_type = f"{value_type.__name__.upper()}"
 
+            if value_type == str:
+                raw_repr = repr(node.value)
+                quote = "'" if raw_repr.startswith("'") else '"'
+                value = f"{quote}{raw_repr[1:-1]}{quote}"
+            else:
+                value = str(node.value)
             return type_mapping[value_type](
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=token_type,
-                value=(
-                    f'"{repr(node.value)[1:-1]}"'
-                    if value_type == str
-                    else str(node.value)
-                ),
+                value=value,
                 line=node.lineno,
                 end_line=node.end_lineno if node.end_lineno else node.lineno,
                 col_start=node.col_offset,
@@ -1165,7 +1168,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
         elif node.value == Ellipsis:
             return ast.Ellipsis(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.ELLIPSIS,
                 value="...",
                 line=node.lineno,
@@ -1181,7 +1184,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_continue(self, node: py_ast.Continue) -> ast.CtrlStmt:
         """Process python node."""
         continue_tok = ast.Token(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.KW_CONTINUE,
             value="continue",
             line=0,
@@ -1258,7 +1261,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         name: ast.Name | None = None
         if not type and not node.name:
             type = ast.Name(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.NAME,
                 value="Exception",
                 line=node.lineno,
@@ -1269,7 +1272,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_end=0,
             )
             name = ast.Name(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.NAME,
                 value="e",
                 line=node.lineno,
@@ -1281,7 +1284,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
         else:
             # type = ast.Name(
-            #     file_path=self.mod_path,
+            #     orig_src=self.orig_src,
             #     name=Tok.NAME,
             #     value=no,
             #     line=node.lineno,
@@ -1293,7 +1296,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             # )
             name = (
                 ast.Name(
-                    file_path=self.mod_path,
+                    orig_src=self.orig_src,
                     name=Tok.NAME,
                     value=node.name,
                     line=node.lineno,
@@ -1393,7 +1396,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         for id in node.names:
             names.append(
                 ast.Name(
-                    file_path=self.mod_path,
+                    orig_src=self.orig_src,
                     name=Tok.NAME,
                     value=id,
                     line=node.lineno,
@@ -1456,7 +1459,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else:
                 raise self.ice()
         lang = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value="py",
             line=node.lineno,
@@ -1486,7 +1489,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             level: int
         """
         lang = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value="py",
             line=node.lineno,
@@ -1501,7 +1504,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             for i in node.module.split("."):
                 modpaths.append(
                     ast.Name(
-                        file_path=self.mod_path,
+                        orig_src=self.orig_src,
                         name=Tok.NAME,
                         value=i,
                         line=node.lineno,
@@ -1665,7 +1668,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         pattern = self.convert(node.pattern) if node.pattern else None
         name = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name if node.name else "_",
             line=node.lineno,
@@ -1719,7 +1722,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             for kwd_attrs in node.kwd_attrs:
                 names.append(
                     ast.Name(
-                        file_path=self.mod_path,
+                        orig_src=self.orig_src,
                         name=Tok.NAME,
                         value=kwd_attrs,
                         line=node.lineno,
@@ -1779,7 +1782,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             values.append(kv_pair)
         if node.rest:
             name = ast.Name(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.NAME,
                 value=node.rest,
                 line=node.lineno,
@@ -1824,7 +1827,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         type = Tok.NULL if node.value is None else Tok.BOOL
         ret_type = ast.Null if node.value is None else ast.Bool
         value = ret_type(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=type,
             value=str(node.value),
             line=node.lineno,
@@ -1846,7 +1849,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             name: _Identifier | None
         """
         name = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name if node.name else "_",
             line=node.lineno,
@@ -1889,7 +1892,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         value = node.id if node.id not in reserved_keywords else f"<>{node.id}"
         ret = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=value,
             line=node.lineno,
@@ -1935,7 +1938,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             value = name if name not in reserved_keywords else f"<>{name}"
             names.append(
                 ast.Name(
-                    file_path=self.mod_path,
+                    orig_src=self.orig_src,
                     name=Tok.NAME,
                     value=value,
                     line=node.lineno,
@@ -1952,7 +1955,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def proc_pass(self, node: py_ast.Pass) -> ast.Semi:
         """Process python node."""
         return ast.Semi(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.SEMI,
             value=";",
             line=0,
@@ -2220,7 +2223,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             asname: _Identifier | None
         """
         name = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name,
             line=node.lineno,
@@ -2232,7 +2235,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         asname = (
             ast.Name(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.NAME,
                 value=node.asname,
                 line=node.lineno,
@@ -2266,7 +2269,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
         value = node.arg if node.arg not in reserved_keywords else f"<>{node.arg}"
         name = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=value,
             line=node.lineno,
@@ -2280,7 +2283,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             self.convert(node.annotation)
             if node.annotation
             else ast.Name(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.NAME,
                 value="Any",
                 line=node.lineno,
@@ -2314,7 +2317,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         vararg = self.convert(node.vararg) if node.vararg else None
         if vararg and isinstance(vararg, ast.ParamVar):
             vararg.unpack = ast.Token(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.STAR_MUL,
                 value="*",
                 line=vararg.loc.first_line,
@@ -2340,7 +2343,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         kwarg = self.convert(node.kwarg) if node.kwarg else None
         if kwarg and isinstance(kwarg, ast.ParamVar):
             kwarg.unpack = ast.Token(
-                file_path=self.mod_path,
+                orig_src=self.orig_src,
                 name=Tok.STAR_POW,
                 value="**",
                 line=kwarg.loc.first_line,
@@ -2386,7 +2389,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
     def operator(self, tok: Tok, value: str) -> ast.Token:
         """Create an operator token."""
         return ast.Token(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=tok,
             value=value,
             line=0,
@@ -2551,7 +2554,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         value: expr
         """
         arg = ast.Name(
-            file_path=self.mod_path,
+            orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.arg if node.arg else "_",
             line=node.lineno,
@@ -2625,7 +2628,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
     def convert_to_doc(self, string: ast.String) -> None:
         """Convert a string to a docstring."""
-        string.value = f'""{string.value}""'
+        string.value = f'"""{string.value[1:-1]}"""'
 
     def aug_op_map(self, tok_dict: dict, op: ast.Token) -> str:
         """aug_mapper."""

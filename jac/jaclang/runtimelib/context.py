@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 from contextvars import ContextVar
+from dataclasses import MISSING
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
@@ -26,6 +27,7 @@ class ExecutionContext:
 
     mem: Memory
     reports: list[Any]
+    custom: Any = MISSING
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor
@@ -41,10 +43,6 @@ class ExecutionContext:
                 return anchor
             raise ValueError(f"Invalid anchor id {anchor_id} !")
         return default
-
-    def validate_access(self) -> bool:
-        """Validate access."""
-        return self.root.has_read_access(self.entry_node)
 
     def set_entry_node(self, entry_node: str | None) -> None:
         """Override entry."""

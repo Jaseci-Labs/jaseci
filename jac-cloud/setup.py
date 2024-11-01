@@ -2,14 +2,14 @@
 
 from setuptools import find_packages, setup
 
-VERSION = "0.1.1"
+VERSION = "0.1.7"
 
 setup(
     name="jac-cloud",
     version=VERSION,
     packages=find_packages(include=["jac_cloud", "jac_cloud.*"]),
     install_requires=[
-        "jaclang~=0.7.17",
+        "jaclang~=0.7.24",
         "fastapi~=0.111.0",
         "pydantic~=2.8.2",
         "pymongo~=4.8.0",
@@ -31,6 +31,8 @@ setup(
         "google-auth~=2.32.0",
         "asyncer~=0.0.8",
         "fakeredis~=2.24.1",
+        "ecs-logging~=2.2.0",
+        "types-PyYAML~=6.0.12.20240917",
     ],
     package_data={},
     entry_points={

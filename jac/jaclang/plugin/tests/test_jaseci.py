@@ -337,8 +337,8 @@ class TestJaseciPlugin(TestCase):
 
         # --------- NO UPDATE SHOULD HAPPEN -------- #
 
-        self.assertTrue(archs[0], "A(val=2)")
-        self.assertTrue(archs[1], "A(val=1)")
+        self.assertEqual(archs[0], "A(val=2)")
+        self.assertEqual(archs[1], "A(val=1)")
 
         self._output2buffer()
         cli.enter(
@@ -435,8 +435,8 @@ class TestJaseciPlugin(TestCase):
 
         # --------- UPDATE SHOULD HAPPEN -------- #
 
-        self.assertTrue(archs[0], "A(val=20)")
-        self.assertTrue(archs[1], "A(val=10)")
+        self.assertEqual(archs[0], "A(val=20)")
+        self.assertEqual(archs[1], "A(val=10)")
 
         self._output2buffer()
         cli.enter(
@@ -473,6 +473,25 @@ class TestJaseciPlugin(TestCase):
             node=self.nodes[0],
         )
         self.assertFalse(self.capturedOutput.getvalue().strip())
+
+        # --------- ROOTS RESET OWN NODE -------- #
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node",
+            args=[1],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[0],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node",
+            args=[2],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[1],
+        )
 
     def test_other_root_access(self) -> None:
         """Test filtering on node, then visit."""

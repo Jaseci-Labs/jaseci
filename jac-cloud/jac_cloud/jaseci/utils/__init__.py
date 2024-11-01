@@ -1,10 +1,16 @@
 """Jaseci Utilities."""
 
-import logging
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
+from io import StringIO
 from random import choice
 from string import ascii_letters, digits
 
+from fastapi import FastAPI, Response
+
+from yaml import dump as ydump
+
+from .logger import log_dumps, log_entry, log_exit, logger
 from .mail import Emailer, SendGridEmailer
 
 
@@ -23,8 +29,17 @@ def utc_timestamp(**addons: int) -> int:
     return int(utc_datetime(**addons).timestamp())
 
 
-logger = logging.getLogger(__name__)
-# logger.addHandler(logging.StreamHandler(sys.stdout))
+def populate_yaml_specs(app: FastAPI) -> None:
+    """Populate yaml specs."""
+
+    @app.get("/openapi.yaml", include_in_schema=False)
+    @lru_cache
+    def read_openapi_yaml() -> Response:
+        openapi_json = app.openapi()
+        yaml_s = StringIO()
+        ydump(openapi_json, yaml_s)
+        return Response(yaml_s.getvalue(), media_type="text/yaml")
+
 
 __all__ = [
     "Emailer",
@@ -32,5 +47,9 @@ __all__ = [
     "random_string",
     "utc_datetime",
     "utc_timestamp",
+    "log_dumps",
+    "log_entry",
+    "log_exit",
     "logger",
+    "populate_yaml_specs",
 ]

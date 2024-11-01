@@ -195,6 +195,8 @@ class PythonImporter(Importer):
             loaded_items: list = []
             if spec.target.startswith("."):
                 spec.target = spec.target.lstrip(".")
+                if len(spec.target.split(".")) > 1:
+                    spec.target = spec.target.split(".")[-1]
                 full_target = path.normpath(path.join(spec.caller_dir, spec.target))
                 imp_spec = importlib.util.spec_from_file_location(
                     spec.target, full_target + ".py"
@@ -342,14 +344,19 @@ class JacImporter(Importer):
                     cachable=spec.cachable,
                     reload=reload if reload else False,
                 )
+
+                # Since this is a compile time error, we can safely raise an exception here.
+                if not codeobj:
+                    raise ImportError(f"No bytecode found for {spec.full_target}")
+
                 try:
-                    if not codeobj:
-                        raise ImportError(f"No bytecode found for {spec.full_target}")
                     with sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
                 except Exception as e:
+                    logger.error(e)
                     logger.error(dump_traceback(e))
                     raise e
+
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(
