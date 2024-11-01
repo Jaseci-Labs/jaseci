@@ -837,7 +837,7 @@ class JacLanguageTests(TestCase):
                     input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
                 )
             except Exception as e:
-                return f"Error While Jac to Py AST conversion: {e}"
+                raise Exception(f"Error While Jac to Py AST conversion: {e}")
 
         settings.print_py_raised_ast = True
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
