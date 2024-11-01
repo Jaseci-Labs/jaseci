@@ -18,6 +18,7 @@ from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
     collect_all_symbols_in_scope,
+    collect_child_tabs,
     create_range,
     find_deepest_symbol_node_at_pos,
     find_index,
@@ -171,22 +172,20 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position, completion_trigger: Optional[str]
     ) -> lspt.CompletionList:
         """Return completion for a file."""
-        completion_items = []
         document = self.workspace.get_text_document(file_path)
+        mod_ir = self.modules[file_path].ir
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
+        builtin_tab = mod_ir.sym_tab.kid[-1]
+        completion_items = []
 
         node_selected = find_deepest_symbol_node_at_pos(
-            self.modules[file_path].ir,
+            mod_ir,
             position.line,
             position.character - 2,
         )
-        mod_tab = (
-            self.modules[file_path].ir.sym_tab
-            if not node_selected
-            else node_selected.sym_tab
-        )
+        mod_tab = mod_ir.sym_tab if not node_selected else node_selected.sym_tab
         current_symbol_table = mod_tab
 
         if completion_trigger == ".":
@@ -238,7 +237,9 @@ class JacLangServer(LanguageServer):
                             )
                     else:
                         break
-                completion_items = collect_all_symbols_in_scope(temp_tab, up_tree=False)
+                completion_items += collect_all_symbols_in_scope(
+                    temp_tab, up_tree=False
+                )
                 if (
                     isinstance(temp_tab.owner, ast.Architype)
                     and temp_tab.owner.base_classes
@@ -254,8 +255,6 @@ class JacLangServer(LanguageServer):
                                 up_tree=False,
                             )
 
-            else:
-                completion_items = []
         else:
             if node_selected and (
                 node_selected.find_parent_of_type(ast.Architype)
@@ -269,8 +268,10 @@ class JacLangServer(LanguageServer):
             else:
                 self_symbol = []
 
-            completion_items = (
-                collect_all_symbols_in_scope(current_symbol_table) + self_symbol
+            completion_items += (
+                collect_all_symbols_in_scope(current_symbol_table)
+                + self_symbol
+                + collect_child_tabs(builtin_tab)
             )
         return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
