@@ -91,6 +91,13 @@ class ImportPassPassTests(TestCase):
         state = jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
         )
+        for i in list(
+            filter(
+                lambda x: x.py_info.is_raised_from_py,
+                state.ir.get_all_sub_nodes(ast.Module),
+            )
+        ):
+            print(ast.Module.get_href_path(i))
         self.assertEqual(
             len(
                 list(

@@ -198,6 +198,10 @@ class JacImportPass(Pass):
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
 
+    def __debug_print(self, msg: str) -> None:
+        if settings.py_import_pass_debug:
+            self.log_info("[PyImportPass] " + msg)
+
     def before_pass(self) -> None:
         """Only run pass if settings are set to raise python."""
         super().before_pass()
@@ -218,87 +222,188 @@ class PyImportPass(JacImportPass):
         # This won't work with py imports as this will fail to import stuff in form of
         #      from a import b
         #      from a import (c, d, e)
-        # Solution to that is to get the import node and check the from loc then
+        # Solution to that is to get the import node and check the from loc `then`
         # handle it based on if there a from loc or not
         imp_node = i.parent_of_type(ast.Import)
+
         if imp_node.is_py and not i.sub_module:
             if imp_node.from_loc:
-                for j in imp_node.items.items:
-                    assert isinstance(j, ast.ModuleItem)
-                    mod_path = f"{imp_node.from_loc.dot_path_str}.{j.name.sym_name}"
-                    self.import_py_module(
-                        parent_node=j,
-                        mod_path=mod_path,
-                        imported_mod_name=(
-                            j.name.sym_name if not j.alias else j.alias.sym_name
-                        ),
-                    )
+                msg = "Processing import from node at href="
+                msg += ast.Module.get_href_path(imp_node)
+                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                self.__debug_print(msg)
+                self.__process_import_from(imp_node)
             else:
-                for j in imp_node.items.items:
-                    assert isinstance(j, ast.ModulePath)
-                    self.import_py_module(
-                        parent_node=j,
-                        mod_path=j.dot_path_str,
-                        imported_mod_name=(
-                            j.dot_path_str.replace(".", "")
-                            if not j.alias
-                            else j.alias.sym_name
-                        ),
-                    )
+                msg = "Processing import node at href="
+                msg += ast.Module.get_href_path(imp_node)
+                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                self.__debug_print(msg)
+                self.__process_import(imp_node)
 
-    def import_py_module(
+    def __process_import_from(self, imp_node: ast.Import) -> None:
+        """Process imports in the form of `from X import I`."""
+        assert isinstance(self.ir, ast.Module)
+        assert isinstance(imp_node.from_loc, ast.ModulePath)
+
+        self.__debug_print(f"Trying to import {imp_node.from_loc.dot_path_str}")
+
+        # Attempt to import the Python module X and process it
+        imported_mod = self.__import_py_module(
+            parent_node_path=ast.Module.get_href_path(imp_node),
+            mod_path=imp_node.from_loc.dot_path_str,
+        )
+
+        if imported_mod:
+            # Cyclic imports will happen in case of import sys
+            # sys stub file imports sys module which means that we need
+            # to import sys stub file again in the sys stub file and so on
+            # This can be detected by iterating over all the parents and make sure
+            # that the parent is in another file than the imported module
+            parent: Optional[ast.AstNode] = imported_mod.parent
+            while parent is not None:
+                if parent.loc.mod_path == imported_mod.loc.mod_path:
+                    self.__debug_print(
+                        f"Cycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
+                    )
+                    return
+                else:
+                    if imported_mod.parent:
+                        parent = parent.parent
+                    else:
+                        parent = None
+
+            if imported_mod.name == "builtins":
+                self.__debug_print(
+                    f"Ignoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
+
+            self.__debug_print(
+                f"Attaching {imported_mod.name} into {ast.Module.get_href_path(imp_node)}"
+            )
+
+            # if imported_mod.py_needed_items is not None:
+            #     self.__debug_print(
+            #         "Module was imported again with a different set of needed items, Ignoring this import for now !!!"
+            #     )
+            #     return
+
+            # imported_mod.py_needed_items = {}
+            # for i in imp_node.items.items:
+            #     assert isinstance(i, ast.ModuleItem)
+            #     imported_mod.py_needed_items[i.name.sym_name] = (
+            #         i.alias.sym_name if i.alias else None
+            #     )
+            # self.__debug_print(f"Needed items are {imported_mod.py_needed_items}")
+
+            self.attach_mod_to_node(imp_node.from_loc, imported_mod)
+            # SymTabBuildPass(input_ir=imported_mod, prior=self)
+
+    def __process_import(self, imp_node: ast.Import) -> None:
+        """Process the imports in form of `import X`."""
+        # Expected that each ImportStatement will import one item
+        # In case of this assertion fired then we need to revisit this item
+        assert len(imp_node.items.items) == 1
+        imported_item = imp_node.items.items[0]
+        assert isinstance(imported_item, ast.ModulePath)
+
+        self.__debug_print(f"Trying to import {imported_item.dot_path_str}")
+        imported_mod = self.__import_py_module(
+            parent_node_path=ast.Module.get_href_path(imported_item),
+            mod_path=imported_item.dot_path_str,
+            imported_mod_name=(
+                # TODO: Check this replace
+                imported_item.dot_path_str.replace(".", "")
+                if not imported_item.alias
+                else imported_item.alias.sym_name
+            ),
+        )
+        if imported_mod:
+            if imp_node.loc.mod_path == imported_mod.loc.mod_path:
+                self.__debug_print(
+                    f"Cycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
+            elif imported_mod.name == "builtins":
+                self.__debug_print(
+                    f"Ignoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
+            self.__debug_print(
+                f"Attaching {imported_mod.name} into {ast.Module.get_href_path(imp_node)}"
+            )
+            self.attach_mod_to_node(imported_item, imported_mod)
+            self.__debug_print(
+                f"Building symbol table for module: {ast.Module.get_href_path(imported_mod)}"
+            )
+            SymTabBuildPass(input_ir=imported_mod, prior=self)
+
+    def __import_py_module(
         self,
-        parent_node: ast.ModulePath | ast.ModuleItem,
-        imported_mod_name: str,
+        parent_node_path: str,
         mod_path: str,
+        imported_mod_name: Optional[str] = None,
     ) -> Optional[ast.Module]:
-        """Import a module."""
+        """Import a python module."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
 
         python_raise_map = self.ir.py_info.py_raise_map
-        file_to_raise = None
+        file_to_raise: Optional[str] = None
 
         if mod_path in python_raise_map:
             file_to_raise = python_raise_map[mod_path]
         else:
-            resolved_mod_path = (
-                f"{self.__get_current_module(parent_node)}.{imported_mod_name}"
-            )
-            assert isinstance(self.ir, ast.Module)
+            # TODO: Is it fine to use imported_mod_name or get it from mod_path?
+            resolved_mod_path = f"{parent_node_path}.{imported_mod_name}"
             resolved_mod_path = resolved_mod_path.replace(f"{self.ir.name}.", "")
             file_to_raise = python_raise_map.get(resolved_mod_path)
 
         if file_to_raise is None:
+            self.__debug_print("No file is found to do the import")
             return None
 
-        try:
-            if file_to_raise not in {None, "built-in", "frozen"}:
-                if file_to_raise in self.import_table:
-                    return self.import_table[file_to_raise]
+        self.__debug_print(f"File used to do the import is {file_to_raise}")
 
-                with open(file_to_raise, "r", encoding="utf-8") as f:
-                    file_source = f.read()
-                    mod = PyastBuildPass(
-                        input_ir=ast.PythonModuleAst(
-                            py_ast.parse(file_source),
-                            orig_src=ast.JacSource(file_source, file_to_raise),
-                        ),
-                    ).ir
-                    SubNodeTabPass(input_ir=mod, prior=self)
-                if mod:
-                    mod.name = imported_mod_name
-                    self.import_table[file_to_raise] = mod
-                    self.attach_mod_to_node(parent_node, mod)
-                    SymTabBuildPass(input_ir=mod, prior=self)
-                    return mod
-                else:
-                    raise self.ice(f"Failed to import python module {mod_path}")
+        try:
+            if file_to_raise in {None, "built-in", "frozen"}:
+                return None
+
+            if file_to_raise in self.import_table:
+                self.__debug_print(
+                    f"{file_to_raise} was raised before, getting it from cache"
+                )
+                return self.import_table[file_to_raise]
+
+            with open(file_to_raise, "r", encoding="utf-8") as f:
+                file_source = f.read()
+                mod = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(
+                        py_ast.parse(file_source),
+                        orig_src=ast.JacSource(file_source, file_to_raise),
+                    ),
+                ).ir
+                SubNodeTabPass(input_ir=mod, prior=self)
+
+            if mod:
+                mod.name = imported_mod_name if imported_mod_name else mod.name
+                if mod.name == "__init__":
+                    mod_name = mod.loc.mod_path.split("/")[-2]
+                    self.__debug_print(
+                        f"Raised the __init__ file and rename the mod to be {mod_name}"
+                    )
+                    mod.name = mod_name
+                self.import_table[file_to_raise] = mod
+                mod.py_info.is_raised_from_py = True
+                self.__debug_print(f"{file_to_raise} is raised, adding it to the cache")
+                return mod
+            else:
+                raise self.ice(f"Failed to import python module {mod_path}")
+
         except Exception as e:
             self.error(f"Failed to import python module {mod_path}")
             raise e
-        return None
 
     def __load_builtins(self) -> None:
         """Pyraise builtins to help with builtins auto complete."""
