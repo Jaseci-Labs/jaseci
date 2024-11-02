@@ -10,6 +10,7 @@ import re
 from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
@@ -266,6 +267,12 @@ class FuseTypeInfoPass(Pass):
         if len(node.gen.mypy_ast) == 0:
             return
 
+        # SpecialVarRef has special handling to use the last item in the mypy
+        # node list
+        # TODO: Fix the expression types in case of aclang.plugin.feature.JacFeature type
+        if isinstance(node, ast.SpecialVarRef):
+            return
+
         # If the corrosponding mypy ast node type has stored here, get the values.
         mypy_node = node.gen.mypy_ast[0]
         if mypy_node in self.node_type_hash:
@@ -427,7 +434,14 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Pass handler for SpecialVarRef nodes."""
-        return self.enter_name(node)
+        if node.py_resolve_name() == Constants.ROOT:
+            if node.gen.mypy_ast[-1] in self.node_type_hash:
+                node.name_spec.expr_type = (
+                    self.__call_type_handler(self.node_type_hash[node.gen.mypy_ast[-1]])
+                    or node.name_spec.expr_type
+                )
+        else:
+            self.enter_name(node)
 
     @__handle_node
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
