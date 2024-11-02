@@ -94,6 +94,24 @@ class JacCliTests(TestCase):
         path_to_file = self.fixture_abs_path("err.impl.jac")
         self.assertIn(f'"{path_to_file}", line 2', stdout_value)
 
+    def test_param_name_diff(self) -> None:
+        """Test when parameter name from definitinon and declaration are mismatched."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+        with contextlib.suppress(Exception):
+            cli.run(self.fixture_abs_path("decl_defn_param_name.jac"))
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+        expected_stdout_values = (
+            "short_name = 42",
+            "p1 = 64 , p2 = foobar",
+        )
+        output = captured_output.getvalue()
+        for exp in expected_stdout_values:
+            self.assertIn(exp, output)
+
     def test_jac_test_err(self) -> None:
         """Basic test for pass."""
         captured_output = io.StringIO()
