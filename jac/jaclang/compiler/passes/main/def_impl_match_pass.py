@@ -176,10 +176,21 @@ class DeclImplMatchPass(Pass):
         if node.arch_type.name == Tok.KW_OBJECT and isinstance(
             node.body, ast.SubNodeList
         ):
-            # Key is the non-default attribute name,
-            # value will set to true if it's initialized in the init body.
-            non_default_attributes: dict[str, bool] = {}
-            init_method: ast.Ability | None = None
+
+            found_default_init = False
+            for stmnt in node.body.items:
+                if not isinstance(stmnt, ast.ArchHas):
+                    continue
+                for var in stmnt.vars.items:
+                    if (var.value is not None) or (var.defer):
+                        found_default_init = True
+                    else:
+                        if found_default_init:
+                            self.error(
+                                f"Non default attribute '{var.name.value}' follows default attribute",
+                                node_override=var.name,
+                            )
+                            break
 
             post_init_vars: list[ast.HasVar] = []
             postinit_method: ast.Ability | None = None
@@ -190,37 +201,15 @@ class DeclImplMatchPass(Pass):
                     for var in item.vars.items:
                         if var.defer:
                             post_init_vars.append(var)
-                        if var.value is None:
-                            non_default_attributes[var.name.value] = False
 
                 elif isinstance(item, ast.Ability):
                     if item.is_abstract:
                         continue
-                    # Not sure if this is the correct way to check for init method.
-                    if isinstance(item.name_ref, ast.SpecialVarRef):
-                        if item.name_ref.name == "KW_INIT":
-                            init_method = item
-                        elif item.name_ref.name == "KW_POST_INIT":
-                            postinit_method = item
-
-            post_init_vars_names = [var.name.value for var in post_init_vars]
-
-            if init_method is not None:
-                self.set_hasvar_initialized(init_method, non_default_attributes)
-
-                non_initialized_var_names = ", ".join(
-                    [
-                        f'"{name}"'
-                        for name, is_init in non_default_attributes.items()
-                        if (not is_init) and (name not in post_init_vars_names)
-                    ]
-                )
-                if len(non_initialized_var_names) > 0:
-                    self.error(
-                        f"Non default attribute(s) {non_initialized_var_names} are not "
-                        + "initialized in the init method.",
-                        node_override=init_method.name_spec,
-                    )
+                    if (
+                        isinstance(item.name_ref, ast.SpecialVarRef)
+                        and item.name_ref.name == "KW_POST_INIT"
+                    ):
+                        postinit_method = item
 
             # Check if postinit needed and not provided.
             if len(post_init_vars) != 0 and (postinit_method is None):
@@ -229,19 +218,43 @@ class DeclImplMatchPass(Pass):
                     node_override=post_init_vars[0].name_spec,
                 )  # We show the error on the first uninitialized var.
 
-            # If postinit method is needed, ensure all the uninitialized vars are initialized in the postinit method.
-            if len(post_init_vars_names) != 0 and (postinit_method is not None):
-                self.set_hasvar_initialized(postinit_method, non_default_attributes)
-                non_initialized_var_names = ", ".join(
-                    [
-                        f'"{name}"'
-                        for name, is_init in non_default_attributes.items()
-                        if not is_init and (name in post_init_vars_names)
-                    ]
-                )
-                if len(non_initialized_var_names) > 0:
+    def validate_params_match(self, sym: Symbol, valid_decl: ast.AstSymbolNode) -> None:
+        """Validate if the parameters match."""
+        if (
+            isinstance(valid_decl, ast.Ability)
+            and isinstance(sym.decl.name_of, ast.AbilityDef)
+            and isinstance(valid_decl.signature, ast.FuncSignature)
+            and isinstance(sym.decl.name_of.signature, ast.FuncSignature)
+        ):
+
+            params_decl = valid_decl.signature.params
+            params_defn = sym.decl.name_of.signature.params
+
+            if params_decl and params_defn:
+                # Check if the parameter count is matched.
+                if len(params_defn.items) != len(params_decl.items):
                     self.error(
-                        f"Non default attribute(s) {non_initialized_var_names} are not "
-                        + "initialized in the postinit method.",
-                        node_override=postinit_method.name_spec,
+                        f"Parameter count mismatch for ability {sym.sym_name}.",
+                        sym.decl.name_of.name_spec,
                     )
+                    self.error(
+                        f"From the declaration of {valid_decl.name_spec.sym_name}.",
+                        valid_decl.name_spec,
+                    )
+                else:
+                    for idx in range(len(params_defn.items)):
+                        # Check if all the parameter names are matched.
+                        # TODO: This shouldn't be an issue however if the names are not matched, it doesn't
+                        # work as expected like in C++, for now I'm adding this validation, however this
+                        # needs to be fixed to have a C++ style.
+                        param_name_decl = params_decl.items[idx].name.value
+                        param_name_defn = params_defn.items[idx].name.value
+                        if param_name_defn != param_name_decl:
+                            self.error(
+                                f"Parameter name mismatch for ability {sym.sym_name}.",
+                                params_defn.items[idx].name,
+                            )
+                            self.error(
+                                f"From the declaration of {valid_decl.name_spec.sym_name}.",
+                                params_decl.items[idx].name,
+                            )

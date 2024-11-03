@@ -520,20 +520,7 @@ class JacParser(Pass):
                 if arch_type.name == Tok.KW_OBJECT and isinstance(
                     body, ast.SubNodeList
                 ):
-                    found_default_init = False  # Weather a has variable with default initialization found.
-                    for stmnt in body.items:
-                        if not isinstance(stmnt, ast.ArchHas):
-                            continue
-                        for var in stmnt.vars.items:
-                            if (var.value is not None) or (var.defer):
-                                found_default_init = True
-                            else:
-                                if found_default_init:
-                                    self.parse_ref.error(
-                                        f"Non default attribute '{var.name.value}' follows default attribute",
-                                        node_override=var.name,
-                                    )
-                                    break
+                    pass
 
                 return self.nu(
                     ast.Architype(
