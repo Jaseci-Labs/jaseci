@@ -106,50 +106,26 @@ class DeclImplMatchPass(Pass):
         for i in sym_tab.kid:
             self.connect_def_impl(i)
 
-    def set_hasvar_initialized(
-        self, method: ast.Ability, initialized: dict[str, bool]
-    ) -> None:
-        """Set True if a has var is initialized in the given method."""
-        body: ast.SubNodeList[ast.CodeBlockStmt] | None = None
-        if isinstance(method.body, ast.SubNodeList):
-            body = method.body
-        elif isinstance(method.body, ast.AbilityDef):
-            body = method.body.body
-
-        # TODO: maybe raise an internal compiler error as after decl and impl are connected
-        # body should always exists.
-        if body is None:
-            return
-
-        for stmnt in body.items:
-            if not isinstance(stmnt, ast.Assignment):
-                continue
-            targets: ast.SubNodeList[ast.Expr] = stmnt.target
-            for atom in targets.items:
-                if not isinstance(atom, ast.AtomTrailer):
-                    continue
-                if (
-                    not isinstance(atom.target, ast.SpecialVarRef)
-                    or atom.target.name != "KW_SELF"
-                ):
-                    continue
-                if not isinstance(atom.right, ast.Name):
-                    continue
-
-                # TODO: Here we can also check if an attribute is added dynamically to the instance which
-                # is not present in the has var list however it should be in somewhere general to check
-                # everywhere regarless of the init method.
-                initialized[atom.right.value] = True
-
     def exit_architype(self, node: ast.Architype) -> None:
         """Exit Architype."""
         if node.arch_type.name == Tok.KW_OBJECT and isinstance(
             node.body, ast.SubNodeList
         ):
-            # Key is the non-default attribute name,
-            # value will set to true if it's initialized in the init body.
-            non_default_attributes: dict[str, bool] = {}
-            init_method: ast.Ability | None = None
+
+            found_default_init = False
+            for stmnt in node.body.items:
+                if not isinstance(stmnt, ast.ArchHas):
+                    continue
+                for var in stmnt.vars.items:
+                    if (var.value is not None) or (var.defer):
+                        found_default_init = True
+                    else:
+                        if found_default_init:
+                            self.error(
+                                f"Non default attribute '{var.name.value}' follows default attribute",
+                                node_override=var.name,
+                            )
+                            break
 
             post_init_vars: list[ast.HasVar] = []
             postinit_method: ast.Ability | None = None
@@ -160,37 +136,15 @@ class DeclImplMatchPass(Pass):
                     for var in item.vars.items:
                         if var.defer:
                             post_init_vars.append(var)
-                        if var.value is None:
-                            non_default_attributes[var.name.value] = False
 
                 elif isinstance(item, ast.Ability):
                     if item.is_abstract:
                         continue
-                    # Not sure if this is the correct way to check for init method.
-                    if isinstance(item.name_ref, ast.SpecialVarRef):
-                        if item.name_ref.name == "KW_INIT":
-                            init_method = item
-                        elif item.name_ref.name == "KW_POST_INIT":
-                            postinit_method = item
-
-            post_init_vars_names = [var.name.value for var in post_init_vars]
-
-            if init_method is not None:
-                self.set_hasvar_initialized(init_method, non_default_attributes)
-
-                non_initialized_var_names = ", ".join(
-                    [
-                        f'"{name}"'
-                        for name, is_init in non_default_attributes.items()
-                        if (not is_init) and (name not in post_init_vars_names)
-                    ]
-                )
-                if len(non_initialized_var_names) > 0:
-                    self.error(
-                        f"Non default attribute(s) {non_initialized_var_names} are not "
-                        + "initialized in the init method.",
-                        node_override=init_method.name_spec,
-                    )
+                    if (
+                        isinstance(item.name_ref, ast.SpecialVarRef)
+                        and item.name_ref.name == "KW_POST_INIT"
+                    ):
+                        postinit_method = item
 
             # Check if postinit needed and not provided.
             if len(post_init_vars) != 0 and (postinit_method is None):
@@ -198,23 +152,6 @@ class DeclImplMatchPass(Pass):
                     'Missing "postinit" method required by un initialized attribute(s).',
                     node_override=post_init_vars[0].name_spec,
                 )  # We show the error on the first uninitialized var.
-
-            # If postinit method is needed, ensure all the uninitialized vars are initialized in the postinit method.
-            if len(post_init_vars_names) != 0 and (postinit_method is not None):
-                self.set_hasvar_initialized(postinit_method, non_default_attributes)
-                non_initialized_var_names = ", ".join(
-                    [
-                        f'"{name}"'
-                        for name, is_init in non_default_attributes.items()
-                        if not is_init and (name in post_init_vars_names)
-                    ]
-                )
-                if len(non_initialized_var_names) > 0:
-                    self.error(
-                        f"Non default attribute(s) {non_initialized_var_names} are not "
-                        + "initialized in the postinit method.",
-                        node_override=postinit_method.name_spec,
-                    )
 
     def validate_params_match(self, sym: Symbol, valid_decl: ast.AstSymbolNode) -> None:
         """Validate if the parameters match."""
