@@ -71,49 +71,105 @@ class SemTokManager:
         """Update semantic tokens on change."""
         import logging
 
-        def find_token_based_on_line(line: int, sem_tokens: list[int]) -> int:
+        def find_token_based_on_line(line: int, sem_tokens: list[int]) -> int|int:
             for i, j in enumerate(
                 [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
             ):
                 if j[0] == line:
-                    return i + 1
-            return -1
+                    return i + 1,1
+                if j[0] > line:
+                    return i, 0
 
         if len(content_changes.content_changes) == 2:
-
             x1 = content_changes.content_changes[0]
             x2 = content_changes.content_changes[1]
             change1_start_line = x2.range.start.line
             change2_start_line = x2.range.end.line
-            last_line = x1.range.end.line
-            last_last_line_token_index = (
-                find_token_based_on_line(last_line + 1, sem_tokens) - 1
-            )
-            line_delta = change2_start_line - change1_start_line
             if change2_start_line > change1_start_line:
-                first_token_index = find_token_based_on_line(
-                    change1_start_line, sem_tokens
-                )
-                last_token_index = (
-                    find_token_based_on_line(change1_start_line + 1, sem_tokens) - 1
-                )
-                f1 = ((first_token_index - 1) * 5) - 1
-                l2 = (last_token_index * 5) - 1
-                tokens_in_line = sem_tokens[f1 + 1 : l2 + 1]
-                last_token_index = (
-                    find_token_based_on_line(last_line + 1, sem_tokens) - 1
-                )
-                final_tok_index = (last_last_line_token_index) * 5
-                b11 = sem_tokens[:final_tok_index]
-                a11 = sem_tokens[final_tok_index:]
-                sem_tokens = b11 + tokens_in_line + a11
-                f11 = sem_tokens[: f1 + 1]
-                l11 = sem_tokens[l2 + 1 :]
-                sem_tokens = f11 + l11
-                logging.info(f"semmm tok1111\n\n {sem_tokens}")
-                return sem_tokens
-            else:
+                x0 = content_changes.content_changes[1]
+                x1 = content_changes.content_changes[0]
+                logging.info(f"one \n{x0} two \n{x1}")
+                one = x0.range.start.line
+                two = x0.range.end.line
+                three = x1.range.start.line
+                logging.info(f"one {one} two {two} three  {three} ")
+                tok_index_of_ff,p = find_token_based_on_line(one, sem_tokens)
+                logging.info(f"ff {tok_index_of_ff}")
+                tok_index_of_pp,p = find_token_based_on_line(two, sem_tokens) 
+                tok_index_of_pp -= 1
+                logging.info(f"pp {tok_index_of_pp}")
+                tok_index_of_oo,p = find_token_based_on_line(three+1, sem_tokens)
+                tok_index_of_oo -= 1
+                logging.info(f"oo {tok_index_of_oo}")
+
+                # add in order after move down
+                first_1 = sem_tokens[:(tok_index_of_ff-1)*5]
+                second_2 = sem_tokens[(tok_index_of_ff-1)*5:tok_index_of_pp*5]
+                third_3 = sem_tokens[tok_index_of_pp*5:tok_index_of_oo*5]
+                remaining = sem_tokens[tok_index_of_oo*5:]
+                sem_tokens = first_1 + third_3 + second_2 + remaining
                 logging.info("Moving down")
+                self.sem_tokens = sem_tokens
+            else:
+                x0 = content_changes.content_changes[0]
+                x1 = content_changes.content_changes[1]
+                logging.info(f"one \n{x0} two \n{x1}")
+                two = x0.range.start.line
+                three = x0.range.end.line
+                one = x1.range.start.line
+                logging.info(f"one {one} two {two} three  {three} ")
+                tok_index_of_cc_11 ,a= find_token_based_on_line(one, sem_tokens)
+                logging.info(f"cc_11 {tok_index_of_cc_11}")
+                tok_index_of_pp_17,p = find_token_based_on_line(three, sem_tokens)
+                tok_index_of_pp_17 -= 1
+                tok_index_of_d_1 = tok_index_of_pp_17 + 1
+                logging.info(f"pp_17 {tok_index_of_pp_17}")
+                logging.info(f"d_1 {tok_index_of_d_1}")
+                tok_index_of_oo_40,p = find_token_based_on_line(three+1, sem_tokens)
+                tok_index_of_oo_40 -= 1
+                logging.info(f"oo_40 {tok_index_of_oo_40}")
+                if a == 0 and p == 0:
+                    if tok_index_of_cc_11 == tok_index_of_pp_17:
+                        up_line_delta = two - one + 1
+                        logging.info(f'up line delta  {up_line_delta}')
+                        sem_tokens[tok_index_of_cc_11*5] -= up_line_delta
+                        nxt,ppp = find_token_based_on_line(three, sem_tokens)
+                        logging.info(f"nxt ==>   {nxt}")
+                        sem_tokens[(nxt)*5] += up_line_delta
+                        logging.info(f"sem tokk {sem_tokens}")
+                        return sem_tokens
+                    sem_tokens[tok_index_of_cc_11*5] += 1
+                    logging.info(f"if a ==0 cc_11 =>  {tok_index_of_cc_11}")
+                    tok_index_of_pp_17+=1
+                    logging.info(f"if p ==0 pp_17 ==> {tok_index_of_pp_17}")
+                    sem_tokens[tok_index_of_pp_17*5] -= 1
+                    return sem_tokens
+                if a == 0:
+                    tok_index_of_cc_11 += 1
+                    up_line_delta = get_token_start(tok_index_of_cc_11*5, sem_tokens)[0] - one
+                    logging.info(f'up line delta  {up_line_delta}')
+                    jj = sem_tokens[(tok_index_of_d_1-1)*5]
+                    logging.info(f'before swapped {sem_tokens[(tok_index_of_cc_11-1)*5],sem_tokens[(tok_index_of_d_1-1)*5]}')
+                    sem_tokens[(tok_index_of_cc_11-1)*5],sem_tokens[(tok_index_of_d_1-1)*5] = sem_tokens[(tok_index_of_d_1-1)*5],sem_tokens[(tok_index_of_cc_11-1)*5]
+                    sem_tokens[(tok_index_of_cc_11-1)*5] = up_line_delta +1
+                    sem_tokens[(tok_index_of_d_1-1)*5] -= up_line_delta
+                    sem_tokens[tok_index_of_oo_40*5] = jj
+                    logging.info(f'swapped {sem_tokens[(tok_index_of_cc_11-1)*5],sem_tokens[(tok_index_of_d_1-1)*5]}')
+                    logging.info(f"if a ==0 cc_11 =>  {tok_index_of_cc_11}")
+                    # sem_tokens[tok_index_of_cc_11*5] += 1
+                if p == 0:
+                    logging.info(f"if p ==0 pp_17 ==> {tok_index_of_pp_17}")
+                    # sem_tokens[tok_index_of_pp_17*5] -= 1
+
+                first_1 = sem_tokens[:(tok_index_of_cc_11-1)*5]
+                second_2 = sem_tokens[(tok_index_of_cc_11-1)*5:tok_index_of_pp_17*5]
+                third_3 = sem_tokens[tok_index_of_pp_17*5:tok_index_of_oo_40*5]
+                remaining = sem_tokens[tok_index_of_oo_40*5:]
+
+                # add in order after move down
+                sem_tokens = first_1 + third_3 + second_2 + remaining
+                logging.info("Moving down")
+                self.sem_tokens = sem_tokens
             logging.info(f"semmm tok {sem_tokens}")
             return sem_tokens
 

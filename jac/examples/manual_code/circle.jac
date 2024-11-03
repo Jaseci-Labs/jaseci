@@ -1,9 +1,33 @@
 with entry{
     aaaaaaaaaaa = 1;
-    bbb = 1;
-    cccccc = 3;
-    d = 2;
+    jkjkj=898; ioio=89;
+    bbb = 1;  iiii = 1; opopo=9;
+    oioi=8; uiui=90;
+    oioi=8; uiui=90;
+    oioi=8; uiui=90;
+
+
+        # ljklllk
+    #   /lklklklklk  
+        # ljklllk
+# klklklkl
+# klklklkl
+
+
+
+        # ljjlkjkjkjkj
+    ccccccaaaaa = 3;    opop=8; uuuuuuuuuuuuuuuu= 1;
+    fffoooooooooooo = 1;   kkkkkk=8; oo=9; ppppppppppppppppp= 1;
+        # ljklllk
+        # ljklllk
+        # ljklllk
+
+    # kl
+        # jjlljljll
+    d = 2;    oopopo=9;  oooooooooooooooooooooooooooooooooooooooo= 1; 
+# jjkjkjkjk        # 
     ee = 4;
+    hj = 1;    
 }
 
 # """
