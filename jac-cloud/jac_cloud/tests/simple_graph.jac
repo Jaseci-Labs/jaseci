@@ -37,6 +37,12 @@ class User:BaseUser: {
             "name": f"{open_id.first_name} {open_id.last_name}"
         };
     }
+
+    static can system_admin_default() -> dict[str, object] {
+        return {
+            "name": f"System Administrator"
+        };
+    }
 }
 
 

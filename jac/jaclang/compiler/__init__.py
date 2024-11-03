@@ -59,7 +59,7 @@ TOKEN_MAP.update(
         "KW_OR": "|", "ARROW_BI": "<-->", "ARROW_L": "<--",
         "ARROW_R": "-->", "ARROW_L_P1": "<-:", "ARROW_R_P2": ":->",
         "ARROW_L_P2": ":-", "ARROW_R_P1": "-:", "CARROW_BI": "<++>",
-        "CARROW_L": "<++", "CARROW_R": "++>", "CARROW_L_P1": "<+:",
+        "CARROW_L_P1": "<+:", "RSHIFT_EQ": ">>=", "ELLIPSIS": "...",
         "CARROW_R_P2": ":+>", "CARROW_L_P2": ":+", "CARROW_R_P1": "+:",
         "PIPE_FWD": "|>", "PIPE_BKWD": "<|", "A_PIPE_FWD": ":>",
         "A_PIPE_BKWD": "<:", "DOT_FWD": ".>", "STAR_POW": "**",
@@ -68,7 +68,7 @@ TOKEN_MAP.update(
         "STAR_POW_EQ": "**=", "MUL_EQ": "*=", "FLOOR_DIV_EQ": "//=",
         "DIV_EQ": "/=", "MOD_EQ": "%=", "BW_AND_EQ": "&=",
         "BW_OR_EQ": "|=", "BW_XOR_EQ": "^=", "BW_NOT_EQ": "~=",
-        "LSHIFT_EQ": "<<=", "RSHIFT_EQ": ">>=", "ELLIPSIS": "...",
+        "LSHIFT_EQ": "<<=",
     }
 )
 # fmt: on

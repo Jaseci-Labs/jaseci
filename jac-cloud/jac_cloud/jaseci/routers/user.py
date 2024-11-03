@@ -45,6 +45,7 @@ def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
 
         req_obf: dict = req.obfuscate()
         req_obf["root_id"] = root.id
+        req_obf["is_admin"] = False
         is_activated = req_obf["is_activated"] = not Emailer.has_client()
 
         retry = 0
