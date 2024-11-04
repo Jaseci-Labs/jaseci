@@ -38,7 +38,6 @@ class JacImportPass(Pass):
         while self.run_again:
             self.run_again = False
             all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            # print([i.dot_path_str for i in all_imports])
             for i in all_imports:
                 self.process_import(i)
                 self.enter_module_path(i)
@@ -58,10 +57,10 @@ class JacImportPass(Pass):
         if mod:
             self.run_again = True
             node.sub_module = mod
+            self.add_to_sub_node_tab(mod)
             self.annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
-            self.add_to_sub_node_tab(mod)
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
@@ -103,7 +102,13 @@ class JacImportPass(Pass):
                     node.impl_mod.append(mod)
                     node.add_kids_left([mod], pos_update=False)
                     mod.parent = node
-                    self.add_to_sub_node_tab(mod)
+                    if (
+                        ast.Module in node._sub_node_tab
+                        and mod not in node._sub_node_tab[ast.Module]
+                    ):
+                        node._sub_node_tab[ast.Module].append(mod)
+                    else:
+                        node._sub_node_tab[ast.Module] = [mod]
             if (
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
@@ -113,7 +118,13 @@ class JacImportPass(Pass):
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
-                    self.add_to_sub_node_tab(mod)
+                    if (
+                        ast.Module in node._sub_node_tab
+                        and mod not in node._sub_node_tab[ast.Module]
+                    ):
+                        node._sub_node_tab[ast.Module].append(mod)
+                    else:
+                        node._sub_node_tab[ast.Module] = [mod]
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
