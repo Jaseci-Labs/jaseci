@@ -23,10 +23,6 @@ class DeclImplMatchPass(Pass):
         else:
             self.connect_def_impl(node.sym_tab)
 
-    def after_pass(self) -> None:
-        """Rebuild sub node table."""
-        # self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
-
     def defn_lookup(self, lookup: Symbol) -> ast.NameAtom | None:
         """Lookup a definition in a symbol table."""
         for defn in range(len(lookup.defn)):
@@ -42,9 +38,6 @@ class DeclImplMatchPass(Pass):
         """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
             if isinstance(sym.decl.name_of, ast.AstImplOnlyNode):
-
-                # update the subnodetab of aht node and its its preceding nodes.
-                # print("sym.decl.name_of:", sym.decl.name_of)
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
                 name_of_links: list[ast.NameAtom] = []  # to link archref names to decls
@@ -98,7 +91,6 @@ class DeclImplMatchPass(Pass):
 
                 valid_decl.body = sym.decl.name_of
                 sym.decl.name_of.decl_link = valid_decl
-                # print("sym.decl.name_of.target:", sym.decl.name_of.target)
                 for idx, a in enumerate(sym.decl.name_of.target.archs):
                     a.name_spec.name_of = name_of_links[idx].name_of
                     a.name_spec.sym = name_of_links[idx].sym
@@ -106,7 +98,6 @@ class DeclImplMatchPass(Pass):
                 valid_decl.sym_tab.tab = sym.decl.name_of.sym_tab.tab
 
         for i in sym_tab.kid:
-            # print('i:', i.name)
             self.connect_def_impl(i)
 
     def validate_params_match(self, sym: Symbol, valid_decl: ast.AstSymbolNode) -> None:
