@@ -17,6 +17,7 @@ nav:
               - "learn/data_spatial/FAQ.md"
           - Jac Cloud:
               - "learn/coders/jac-cloud/docs/jac_cloud.md"
+              - "learn/coders/jac-cloud/docs/permission.md"
               - "learn/coders/jac-cloud/docs/jac_cloud_logging.md"
               - "learn/coders/jac-cloud/docs/jac_cloud_env_vars.md"
           - MTLLM:
