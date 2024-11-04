@@ -57,7 +57,7 @@ class JacImportPass(Pass):
         if mod:
             self.run_again = True
             node.sub_module = mod
-            JacImportPass.add_to_sub_node_tab(self.ir,mod)
+            JacImportPass.add_to_sub_node_tab(self.ir, mod)
             self.annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
@@ -101,7 +101,7 @@ class JacImportPass(Pass):
                 if mod:
                     node.impl_mod.append(mod)
                     node.add_kids_left([mod], pos_update=False)
-                    JacImportPass.add_to_sub_node_tab(node,mod)
+                    JacImportPass.add_to_sub_node_tab(self.ir, mod)
                     mod.parent = node
             if (
                 cur_file.startswith(f"{base_path}.")
@@ -111,7 +111,7 @@ class JacImportPass(Pass):
                 if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
-                    JacImportPass.add_to_sub_node_tab(node,mod)
+                    JacImportPass.add_to_sub_node_tab(node, mod)
                     mod.parent = node
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -199,7 +199,7 @@ class JacImportPass(Pass):
             return None
 
     @staticmethod
-    def add_to_sub_node_tab(node:ast.Module, mod: ast.Module) -> None:
+    def add_to_sub_node_tab(node: ast.AstNode, mod: ast.Module) -> None:
         """Add a module to the sub node table."""
         if (
             ast.Module in node._sub_node_tab
@@ -306,7 +306,7 @@ class PyImportPass(JacImportPass):
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)
                     SymTabBuildPass(input_ir=mod, prior=self)
-                    PyImportPass.add_to_sub_node_tab(self.ir,mod)
+                    PyImportPass.add_to_sub_node_tab(self.ir, mod)
                     return mod
                 else:
                     raise self.ice(f"Failed to import python module {mod_path}")
