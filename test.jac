@@ -1,1 +1,1 @@
-with entry { print('hello world'); }
+with entry { print('hello world fuck'); }
