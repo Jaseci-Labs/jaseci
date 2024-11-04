@@ -14,7 +14,7 @@ from jaclang.runtimelib.machine import JacMachine, JacProgram
 from pymongo.errors import ConnectionFailure, OperationFailure
 
 from .mini.cli_mini import serve_mini
-from ..core.architype import BulkWrite
+from ..core.architype import BulkWrite, NodeAnchor
 from ..core.context import SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
 from ..jaseci.models import User as BaseUser
@@ -143,11 +143,29 @@ class JacCmd:
                 max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
                 while retry <= max_retry:
                     try:
+                        if not NodeAnchor.Collection.find_by_id(
+                            SUPER_ROOT_ID, session=session
+                        ):
+                            NodeAnchor.Collection.insert_one(
+                                {
+                                    "_id": SUPER_ROOT_ID,
+                                    "name": None,
+                                    "root": None,
+                                    "access": {
+                                        "all": "NO_ACCESS",
+                                        "roots": {"anchors": {}},
+                                    },
+                                    "architype": {},
+                                    "edges": [],
+                                },
+                                session=session,
+                            )
                         if id := (
                             user_model.Collection.insert_one(req_obf, session=session)
                         ).inserted_id:
                             BulkWrite.commit(session)
                             return f"System Admin created with id: {id}"
+                        session.abort_transaction()
                     except (ConnectionFailure, OperationFailure) as ex:
                         if ex.has_error_label("TransientTransactionError"):
                             retry += 1
