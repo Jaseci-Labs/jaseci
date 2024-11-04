@@ -10,8 +10,6 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import Symbol, SymbolTable
 
-# from jaclang.compiler.passes.main import SubNodeTabPass
-
 
 class DeclImplMatchPass(Pass):
     """Decls and Def matching pass."""
@@ -46,7 +44,7 @@ class DeclImplMatchPass(Pass):
             if isinstance(sym.decl.name_of, ast.AstImplOnlyNode):
 
                 # update the subnodetab of aht node and its its preceding nodes.
-                print("sym.decl.name_of:", sym.decl.name_of)
+                # print("sym.decl.name_of:", sym.decl.name_of)
                 # currently strips the type info from impls
                 arch_refs = [x[3:] for x in sym.sym_name.split(".")]
                 name_of_links: list[ast.NameAtom] = []  # to link archref names to decls
@@ -96,7 +94,7 @@ class DeclImplMatchPass(Pass):
                     )
                 valid_decl.body = sym.decl.name_of
                 sym.decl.name_of.decl_link = valid_decl
-                print("sym.decl.name_of.target:", sym.decl.name_of.target)
+                # print("sym.decl.name_of.target:", sym.decl.name_of.target)
                 for idx, a in enumerate(sym.decl.name_of.target.archs):
                     a.name_spec.name_of = name_of_links[idx].name_of
                     a.name_spec.sym = name_of_links[idx].sym

@@ -17,8 +17,6 @@ from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 
-# from jaclang.compiler.passes.main import SubNodeTabPass, SymTabBuildPass
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +42,6 @@ class JacImportPass(Pass):
             for i in all_imports:
                 self.process_import(i)
                 self.enter_module_path(i)
-            # SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -64,6 +61,7 @@ class JacImportPass(Pass):
             self.annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
+            self.add_to_sub_node_tab(mod)
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
@@ -105,6 +103,7 @@ class JacImportPass(Pass):
                     node.impl_mod.append(mod)
                     node.add_kids_left([mod], pos_update=False)
                     mod.parent = node
+                    self.add_to_sub_node_tab(mod)
             if (
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
@@ -114,6 +113,7 @@ class JacImportPass(Pass):
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
+                    self.add_to_sub_node_tab(mod)
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -194,10 +194,21 @@ class JacImportPass(Pass):
             self.import_table[target] = mod
             mod.is_imported = True
             mod.body = [x for x in mod.body if not isinstance(x, ast.AstImplOnlyNode)]
+            self.add_to_sub_node_tab(mod)
             return mod
         else:
             self.error(f"Module {target} is not a valid Jac module.")
             return None
+
+    def add_to_sub_node_tab(self, mod: ast.Module) -> None:
+        """Add a module to the sub node table."""
+        if (
+            ast.Module in self.ir._sub_node_tab
+            and mod not in self.ir._sub_node_tab[ast.Module]
+        ):
+            self.ir._sub_node_tab[ast.Module].append(mod)
+        else:
+            self.ir._sub_node_tab[ast.Module] = [mod]
 
 
 class PyImportPass(JacImportPass):
@@ -291,12 +302,12 @@ class PyImportPass(JacImportPass):
                             orig_src=ast.JacSource(file_source, file_to_raise),
                         ),
                     ).ir
-                    # SubNodeTabPass(input_ir=mod, prior=self)
                 if mod:
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)
                     SymTabBuildPass(input_ir=mod, prior=self)
+                    self.add_to_sub_node_tab(mod)
                     return mod
                 else:
                     raise self.ice(f"Failed to import python module {mod_path}")
@@ -328,7 +339,6 @@ class PyImportPass(JacImportPass):
                 ),
             ).ir
             mod.parent = self.ir
-            # SubNodeTabPass(input_ir=mod, prior=self)
             SymTabBuildPass(input_ir=mod, prior=self)
             mod.parent = None
 

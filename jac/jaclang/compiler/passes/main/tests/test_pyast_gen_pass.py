@@ -10,8 +10,6 @@ from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
-# from jaclang.compiler.passes.main import PyastGenPass,SubNodeTabPass
-
 
 def ast_to_list(node: ast3.AST) -> list[ast3.AST]:
     """Convert ast to list."""

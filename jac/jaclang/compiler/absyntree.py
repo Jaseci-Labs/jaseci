@@ -56,8 +56,6 @@ class AstNode:
         sub_node_tab: dict[type, list[AstNode]] = {}
 
         for child in self.kid:
-            if not child:
-                continue
             if type(child) in sub_node_tab:
                 sub_node_tab[type(child)].append(child)
             else:
@@ -171,7 +169,13 @@ class AstNode:
         """Get all sub nodes of type."""
         from jaclang.compiler.passes import Pass
 
-        return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
+        all_nodes: list[T] = []
+        if Module in Pass.get_all_sub_nodes(self, Module):
+            for node in Pass.get_all_sub_nodes(self, Module):
+                all_nodes += Pass.get_all_sub_nodes(node, typ, brute_force)
+        else:
+            all_nodes = Pass.get_all_sub_nodes(self, typ, brute_force)
+        return all_nodes
 
     def find_parent_of_type(self, typ: Type[T]) -> Optional[T]:
         """Get parent of type."""

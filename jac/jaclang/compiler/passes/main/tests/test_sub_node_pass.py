@@ -3,8 +3,6 @@
 from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
-# from jaclang.compiler.passes.main import SubNodeTabPass
-
 
 class SubNodePassTests(TestCase):
     """Test pass module."""
