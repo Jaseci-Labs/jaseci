@@ -37,10 +37,8 @@ class JacImportPass(Pass):
         self.run_again = True
         while self.run_again:
             self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            print('all_imports:', [x.dot_path_str for x in all_imports])
+            all_imports = node.get_all_sub_nodes(ast.ModulePath)
             for i in all_imports:
-                print('Processing import:', i.dot_path_str)
                 self.process_import(i)
                 self.enter_module_path(i)
 
@@ -293,6 +291,7 @@ class PyImportPass(JacImportPass):
         try:
             if file_to_raise not in {None, "built-in", "frozen"}:
                 if file_to_raise in self.import_table:
+                    PyImportPass.add_to_sub_node_tab(self.ir, self.import_table[file_to_raise])
                     return self.import_table[file_to_raise]
 
                 with open(file_to_raise, "r", encoding="utf-8") as f:
@@ -304,11 +303,11 @@ class PyImportPass(JacImportPass):
                         ),
                     ).ir
                 if mod:
+                    PyImportPass.add_to_sub_node_tab(self.ir, mod)
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)
                     SymTabBuildPass(input_ir=mod, prior=self)
-                    PyImportPass.add_to_sub_node_tab(self.ir, mod)
                     return mod
                 else:
                     raise self.ice(f"Failed to import python module {mod_path}")
