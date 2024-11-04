@@ -92,6 +92,10 @@ class DeclImplMatchPass(Pass):
                     raise self.ice(
                         f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
                     )
+
+                # Ensure if it's an ability def impl, the parameters are matched.
+                self.validate_params_match(sym, decl_node.name_of)
+
                 valid_decl.body = sym.decl.name_of
                 sym.decl.name_of.decl_link = valid_decl
                 # print("sym.decl.name_of.target:", sym.decl.name_of.target)
@@ -100,6 +104,48 @@ class DeclImplMatchPass(Pass):
                     a.name_spec.sym = name_of_links[idx].sym
                 sym.decl.name_of.sym_tab.tab.update(valid_decl.sym_tab.tab)
                 valid_decl.sym_tab.tab = sym.decl.name_of.sym_tab.tab
+
         for i in sym_tab.kid:
             # print('i:', i.name)
             self.connect_def_impl(i)
+
+    def validate_params_match(self, sym: Symbol, valid_decl: ast.AstSymbolNode) -> None:
+        """Validate if the parameters match."""
+        if (
+            isinstance(valid_decl, ast.Ability)
+            and isinstance(sym.decl.name_of, ast.AbilityDef)
+            and isinstance(valid_decl.signature, ast.FuncSignature)
+            and isinstance(sym.decl.name_of.signature, ast.FuncSignature)
+        ):
+
+            params_decl = valid_decl.signature.params
+            params_defn = sym.decl.name_of.signature.params
+
+            if params_decl and params_defn:
+                # Check if the parameter count is matched.
+                if len(params_defn.items) != len(params_decl.items):
+                    self.error(
+                        f"Parameter count mismatch for ability {sym.sym_name}.",
+                        sym.decl.name_of.name_spec,
+                    )
+                    self.error(
+                        f"From the declaration of {valid_decl.name_spec.sym_name}.",
+                        valid_decl.name_spec,
+                    )
+                else:
+                    for idx in range(len(params_defn.items)):
+                        # Check if all the parameter names are matched.
+                        # TODO: This shouldn't be an issue however if the names are not matched, it doesn't
+                        # work as expected like in C++, for now I'm adding this validation, however this
+                        # needs to be fixed to have a C++ style.
+                        param_name_decl = params_decl.items[idx].name.value
+                        param_name_defn = params_defn.items[idx].name.value
+                        if param_name_defn != param_name_decl:
+                            self.error(
+                                f"Parameter name mismatch for ability {sym.sym_name}.",
+                                params_defn.items[idx].name,
+                            )
+                            self.error(
+                                f"From the declaration of {valid_decl.name_spec.sym_name}.",
+                                params_decl.items[idx].name,
+                            )
