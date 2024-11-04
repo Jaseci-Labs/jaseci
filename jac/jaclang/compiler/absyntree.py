@@ -170,8 +170,15 @@ class AstNode:
         from jaclang.compiler.passes import Pass
 
         all_nodes: list[T] = []
-        if Module in Pass.get_all_sub_nodes(self, Module):
-            for node in Pass.get_all_sub_nodes(self, Module):
+        mod_nodes : list[Module] = []
+        for key,value in self._sub_node_tab.items():
+            if key is Module:
+                mod_nodes += value
+        else:
+            if isinstance(self, Module):
+                mod_nodes.append(self)
+        if mod_nodes:
+            for node in mod_nodes:
                 all_nodes += Pass.get_all_sub_nodes(node, typ, brute_force)
         else:
             all_nodes = Pass.get_all_sub_nodes(self, typ, brute_force)

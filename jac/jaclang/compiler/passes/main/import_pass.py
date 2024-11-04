@@ -38,7 +38,9 @@ class JacImportPass(Pass):
         while self.run_again:
             self.run_again = False
             all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
+            print('all_imports:', [x.dot_path_str for x in all_imports])
             for i in all_imports:
+                print('Processing import:', i.dot_path_str)
                 self.process_import(i)
                 self.enter_module_path(i)
 
