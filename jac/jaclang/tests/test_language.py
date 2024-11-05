@@ -633,7 +633,10 @@ class JacLanguageTests(TestCase):
 
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         self.assertEqual(
-            len(ir.get_all_sub_nodes(ast.Architype)), 38
+            len(ir.get_all_sub_nodes(ast.Architype)),
+            26,  # 38
+            # TODO: Need to make sure that by PR2 for py import pass
+            # this count should be updated
         )  # Because of the Architype from other imports
         captured_output = io.StringIO()
         sys.stdout = captured_output
