@@ -165,4 +165,14 @@ Replace `<TOKEN>` with the access token you received. This command will return t
 
 You can also do this in the browser by visiting the Swagger docs `http://localhost:8000/docs` and adding the `Authorization` header with the value `Bearer ACCESS TOKEN`.
 
+To test `interact_with_body` using curl, you pass parameters in the following format similar to register/login.
+```bash
+curl --location 'http://localhost:8000/walker/interact_with_body' \
+--header 'Content-Type: application/json' \
+-H "Authorization: Bearer <Token>" \
+--data '{
+  "name": "Bob"
+}'
+```
+
 That's it! You have successfully set up your Jac application and served your first API. In the [next](2_building-a-rag-chatbot.md) part we will learn how to build a simple conversational agent using Jac.
