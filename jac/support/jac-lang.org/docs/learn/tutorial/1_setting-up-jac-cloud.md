@@ -43,11 +43,6 @@ jac serve server.jac
 
 This command starts the Jac Cloud server. The server will serve the code in `server.jac` as an API. You can now access the API at `http://localhost:8000`. Go to `http://localhost:8000/docs` to see the Swagger documentation for the API. It should look something like this:
 
-> Note:
-> Like most API servers, Jac-Cloud typically requires a database to store data persistently. Jac-Cloud uses MongoDB as its primary database engine. To operate in this mode, you’ll need a running mongodb database service. However, we’ve recently introduced a new mode for Jac-Cloud that allows it to run without a dedicated database. In this mode Jac-Cloud will use a file as a temporary database. This file-based approach enables Jac-Cloud to operate independently of an external database, making it ideal for lightweight, local, or temporary deployments. When you want to use mongodb as the cloude server use `DATABASE_HOST=mongodb://localhost:27017/?replicaSet=my-rs jac serve server.jac` command instead.
-
-
-
 ![Swagger Docs](images/1_swagger.png)
 
 Now, before we can fully test the API, it is important to know that by default, Jac Cloud requires authentication to access the API. So we need to create a user and get an access token to access the API. You can do this using the Swagger UI or by making HTTP requests. We will show you how to do this using HTTP requests.
