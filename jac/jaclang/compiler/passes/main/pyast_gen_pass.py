@@ -935,9 +935,10 @@ class PyastGenPass(Pass):
             else []
         )
 
+        self.needs_jac_feature()
+
         ds_on_entry, ds_on_exit = self.collect_events(node)
         if node.arch_type.name != Tok.KW_CLASS:
-            self.needs_jac_feature()
             self.needs_dataclass()
             decorators.append(
                 self.sync(
@@ -994,18 +995,17 @@ class PyastGenPass(Pass):
                 )
             )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
-        if node.arch_type.name != Tok.KW_CLASS:
-            base_classes.append(
-                self.sync(
-                    ast3.Attribute(
-                        value=self.sync(
-                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                        ),
-                        attr=node.arch_type.value.capitalize(),
-                        ctx=ast3.Load(),
-                    )
+        base_classes.append(
+            self.sync(
+                ast3.Attribute(
+                    value=self.sync(
+                        ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                    ),
+                    attr=node.arch_type.value.capitalize(),
+                    ctx=ast3.Load(),
                 )
             )
+        )
         if node.is_abstract:
             self.needs_abc()
             base_classes.append(

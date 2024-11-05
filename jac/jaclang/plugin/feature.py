@@ -185,6 +185,68 @@ class JacWalker:
         return plugin_manager.hook.disengage(walker=walker)
 
 
+class BaseClass:
+    """Jac base class for all classes."""
+
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002,ANN003
+        """Initilalize the base class."""
+        cls_dict = self.__class__.__dict__
+        hasvars = []
+        if "__annotations__" in cls_dict:
+            hasvars = list(self.__class__.__dict__["__annotations__"].keys())
+        default_values: dict[str, Any] = {}
+
+        for var in hasvars:
+            if var in cls_dict:
+                default_values[var] = cls_dict[var]
+
+        count_need_initializaion = len(hasvars) - len(default_values)
+
+        # Check for errors.
+        # 1. If any kwargs contains keys which is not present in hasvars it's error.
+        for key in kwargs.keys():
+            if key not in hasvars:
+                raise ValueError(f"Got an unexpected keyword argument '{key}'.")
+
+        # 2. If more than needed args are passed, it's an error.
+        if len(args) > len(hasvars):
+            raise TypeError(
+                f"Neeed {count_need_initializaion} positional arguments but {len(args)} were given."
+            )
+
+        # Create a dictionary of values of the vars.
+        values: dict[str, Any] = {}
+
+        # 1. Initilalize with default value.
+        for var, val in default_values.items():
+            values[var] = val
+
+        # 2. Initialize with positional arguments.
+        for i in range(len(args)):
+            values[hasvars[i]] = args[i]
+
+        # 3. Initialize with keyword arguments, if the key already exists in values, it's an error.
+        for key, val in kwargs.items():
+            if key in values:
+                raise TypeError(f"Got multiple values for argument '{key}'")
+            values[key] = val
+
+        # 4. Get the list of un initialized variables, and if it's not empty error.
+        uninit_vars = [var for var in hasvars if var not in values]
+        if uninit_vars:
+            raise TypeError(f"Need to initialize {uninit_vars}")
+
+        # 5. Set the values to the object.
+        for var, val in values.items():
+            setattr(self, var, val)
+
+    def __str__(self) -> str:
+        """Return the string version of the class."""
+        cls_name = self.__class__.__name__
+        values = ", ".join([f"{var}={val}" for var, val in self.__dict__.items()])
+        return f"{cls_name}({values})"
+
+
 class JacClassReferences:
     """Default Classes References."""
 
@@ -195,6 +257,8 @@ class JacClassReferences:
     Node: ClassVar[TypeAlias] = NodeArchitype
     Edge: ClassVar[TypeAlias] = EdgeArchitype
     Walker: ClassVar[TypeAlias] = WalkerArchitype
+
+    Class: ClassVar[TypeAlias] = BaseClass
 
 
 class JacBuiltin:
