@@ -6,6 +6,7 @@ import marshal
 import os
 import pickle
 import shutil
+import sys
 import types
 from typing import Optional
 
@@ -38,7 +39,10 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
     def format_file(filename: str) -> None:
         code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
         if code_gen_format.errors_had:
-            print(f"Errors occurred while formatting the file {filename}.")
+            print(
+                f"Errors occurred while formatting the file {filename}.",
+                file=sys.stderr,
+            )
         elif debug:
             print(code_gen_format.ir.gen.jac)
         elif outfile:
@@ -52,7 +56,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
         if os.path.exists(path):
             format_file(path)
         else:
-            print("File does not exist.")
+            print("File does not exist.", file=sys.stderr)
     elif os.path.isdir(path):
         count = 0
         for root, _, files in os.walk(path):
@@ -61,9 +65,9 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
                     file_path = os.path.join(root, file)
                     format_file(file_path)
                     count += 1
-        print(f"Formatted {count} '.jac' files.")
+        print(f"Formatted {count} '.jac' files.", file=sys.stderr)
     else:
-        print("Not a .jac file or directory.")
+        print("Not a .jac file or directory.", file=sys.stderr)
 
 
 @cmd_registry.register
@@ -89,23 +93,30 @@ def run(
     jctx = ExecutionContext.create(session=session)
 
     if filename.endswith(".jac"):
-        jac_import(
-            target=mod,
-            base_path=base,
-            cachable=cache,
-            override_name="__main__" if main else None,
-        )
-    elif filename.endswith(".jir"):
-        with open(filename, "rb") as f:
-            JacMachine(base).attach_program(
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
-            )
+        try:
             jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
+        except Exception as e:
+            print(e, file=sys.stderr)
+    elif filename.endswith(".jir"):
+        try:
+            with open(filename, "rb") as f:
+                JacMachine(base).attach_program(
+                    JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+                )
+                jac_import(
+                    target=mod,
+                    base_path=base,
+                    cachable=cache,
+                    override_name="__main__" if main else None,
+                )
+        except Exception as e:
+            print(e, file=sys.stderr)
+
     else:
         jctx.close()
         JacMachine.detach()
@@ -163,7 +174,7 @@ def get_object(
     if obj:
         data = obj.__jac__.__getstate__()
     else:
-        print(f"Object with id {id} not found.")
+        print(f"Object with id {id} not found.", file=sys.stderr)
 
     jctx.close()
     JacMachine.detach()
@@ -183,7 +194,7 @@ def build(filename: str) -> None:
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out.ir, f)
     else:
-        print("Not a .jac file.")
+        print("Not a .jac file.", file=sys.stderr)
 
 
 @cmd_registry.register
@@ -202,10 +213,10 @@ def check(filename: str, print_errs: bool = True) -> None:
         warnings = len(out.warnings_had)
         if print_errs:
             for e in out.errors_had:
-                print("Error:", e)
+                print("Error:", e, file=sys.stderr)
         print(f"Errors: {errs}, Warnings: {warnings}")
     else:
-        print("Not a .jac file.")
+        print("Not a .jac file.", file=sys.stderr)
 
 
 @cmd_registry.register
@@ -278,7 +289,7 @@ def enter(
     if ret_module:
         (loaded_mod,) = ret_module
         if not loaded_mod:
-            print("Errors occurred while importing the module.")
+            print("Errors occurred while importing the module.", file=sys.stderr)
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
 
@@ -344,10 +355,12 @@ def tool(tool: str, args: Optional[list] = None) -> None:
             else:
                 print(getattr(AstTool(), tool)())
         except Exception as e:
-            print(f"Error while running ast tool {tool}, check args: {e}")
+            print(
+                f"Error while running ast tool {tool}, check args: {e}", file=sys.stderr
+            )
             raise e
     else:
-        print(f"Ast tool {tool} not found.")
+        print(f"Ast tool {tool} not found.", file=sys.stderr)
 
 
 @cmd_registry.register
@@ -385,9 +398,9 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
                 db.runcall(func)
                 print("Done debugging.")
         else:
-            print(f"Error while generating bytecode in {filename}.")
+            print(f"Error while generating bytecode in {filename}.", file=sys.stderr)
     else:
-        print("Not a .jac file.")
+        print("Not a .jac file.", file=sys.stderr)
 
 
 @cmd_registry.register
@@ -458,7 +471,7 @@ def dot(
             file.write(graph)
         print(f">>> Graph content saved to {os.path.join(os.getcwd(), file_name)}")
     else:
-        print("Not a .jac file.")
+        print("Not a .jac file.", file=sys.stderr)
 
     jctx.close()
 
@@ -494,7 +507,7 @@ def jac2py(filename: str) -> None:
             code = jac_file_to_pass(file_path=filename).ir.gen.py
         print(code)
     else:
-        print("Not a .jac file.")
+        print("Not a .jac file.", file=sys.stderr)
 
 
 def start_cli() -> None:
