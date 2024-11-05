@@ -11,7 +11,7 @@ with mock.patch.dict(
         "grpc_local.module_service_pb2_grpc": mock.MagicMock(),
     },
 ):
-    from managers.pod_manager import app, PodManager  # Import your FastAPI app
+    from ..managers.pod_manager import app, PodManager  # Import your FastAPI app
 
 client = TestClient(app)
 
@@ -77,7 +77,7 @@ def test_run_module(mock_kubernetes_and_grpc):
         "/run_module?module_name=numpy&method_name=array", json={"args": [1, 2, 3, 4]}
     )
     assert response.status_code == 200
-    assert response.json()["result"] == "[1, 2, 3, 4]"  # Expected output from gRPC mock
+    assert response.json() == "[1, 2, 3, 4]"  # Expected output from gRPC mock
 
 
 def test_delete_pod(mock_kubernetes_and_grpc):
