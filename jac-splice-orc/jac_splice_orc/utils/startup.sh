@@ -10,9 +10,9 @@ elif [ "$SERVICE_TYPE" = "module_service" ]; then
   echo "Starting gRPC Module Service..."
 
   # Check if a custom requirements.txt exists for the module
-  if [ -f "/app/$MODULE_NAME/requirements.txt" ]; then
+  if [ -f "/app/requirements/$MODULE_NAME/requirements.txt" ]; then
     echo "Found requirements.txt for $MODULE_NAME, installing dependencies..."
-    pip install -r "/app/$MODULE_NAME/requirements.txt"
+    pip install -r "/app/requirements/$MODULE_NAME/requirements.txt"
   else
     # If no requirements.txt, attempt to install by module name
     echo "No requirements.txt found, attempting to install module directly: $MODULE_NAME"

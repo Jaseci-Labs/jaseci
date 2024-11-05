@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 # Install common dependencies
-RUN pip install --no-cache-dir grpcio grpcio-tools fastapi uvicorn kubernetes python-multipart
+RUN pip install --no-cache-dir grpcio grpcio-tools fastapi uvicorn kubernetes python-multipart numpy
 
 # Create a working directory
 WORKDIR /app

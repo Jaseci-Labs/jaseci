@@ -69,11 +69,9 @@ class PodManager:
                 text=True,
                 check=True,
             )
-            # If the result contains an IP, return it
             if result_ip.stdout:
                 return result_ip.stdout.strip()
 
-            # If the result contains a hostname, return it
             if result_hostname.stdout:
                 return result_hostname.stdout.strip()
 
@@ -84,7 +82,6 @@ class PodManager:
 
     def create_namespace(namespace_name):
         try:
-            # Run the kubectl command to create a namespace
             result = subprocess.run(
                 ["kubectl", "create", "namespace", namespace_name],
                 capture_output=True,
@@ -92,16 +89,14 @@ class PodManager:
                 check=True,
             )
 
-            # Return success message if the namespace is created successfully
             return f"Namespace '{namespace_name}' created successfully."
 
         except subprocess.CalledProcessError as e:
-            # If there's an error, return the error message
             return f"Error creating namespace: {e.stderr}"
 
     def create_requirements_file(self, module_name: str, module_config: dict) -> str:
         """Generate a requirements.txt file based on the module configuration."""
-        requirements_path = f"/app/{module_name}/requirements.txt"
+        requirements_path = f"/app/requirements/{module_name}/requirements.txt"
 
         # Ensure the module directory exists
         os.makedirs(os.path.dirname(requirements_path), exist_ok=True)
@@ -116,9 +111,7 @@ class PodManager:
 
     def create_pod(self, module_name: str, module_config: dict) -> Any:
         """Create a pod and service for the given module."""
-        image_name = os.getenv(
-            "IMAGE_NAME", "ashishmahendra/jac-splice-orc:0.5.1"
-        )  # Default image name
+        image_name = os.getenv("IMAGE_NAME", "ashishmahendra/jac-splice-orc:0.1.8")
 
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
@@ -168,7 +161,7 @@ class PodManager:
                                 "volumeMounts": [
                                     {
                                         "name": "requirements-volume",
-                                        "mountPath": f"/app/{module_name}",
+                                        "mountPath": f"/app/requirements/{module_name}",
                                     }
                                 ],
                             }
@@ -182,16 +175,14 @@ class PodManager:
                         "restartPolicy": "Never",
                     },
                 }
-                import json
 
-                print(json.dumps(pod_manifest, indent=4))
                 _ = self.v1.create_namespaced_config_map(
                     self.namespace,
-                    body={  # Create a ConfigMap for requirements
+                    body={
                         "metadata": {"name": f"{module_name}-requirements"},
                         "data": {
                             "requirements.txt": open(requirements_file_path, "r").read()
-                        },  # Read requirements.txt into ConfigMap
+                        },
                     },
                 )
                 self.v1.create_namespaced_pod(self.namespace, body=pod_manifest)
@@ -279,9 +270,17 @@ class PodManager:
             )
 
     def forward_to_pod(
-        self, service_ip: str, method_name: str, obj_id: str, args: list, kwargs: dict
+        self, module_name: str, method_name: str, obj_id: str, args: list, kwargs: dict
     ) -> Any:
+        import time
         import json
+        import base64
+        import numpy as np
+
+        pod_name = f"{module_name}-pod"
+        service_ip = self.get_pod_service_ip(module_name)
+
+        self.wait_for_pod_ready(pod_name)
 
         serialized_args = [json.dumps(arg) for arg in args]
         serialized_kwargs = {key: json.dumps(value) for key, value in kwargs.items()}
@@ -293,14 +292,28 @@ class PodManager:
             args=serialized_args,
             kwargs=serialized_kwargs,
         )
-        try:
-            response = stub.ExecuteMethod(request)
-            if response.obj_id:
-                return {"obj_id": response.obj_id, "is_callable": response.is_callable}
-            else:
-                return {"result": response.result}
-        except grpc.RpcError as e:
-            raise HTTPException(status_code=500, detail=f"gRPC error: {e.details()}")
+        max_retries = 5
+        for _ in range(max_retries):
+            try:
+                response = stub.ExecuteMethod(request)
+                if response.obj_id:
+                    return {
+                        "obj_id": response.obj_id,
+                        "is_callable": response.is_callable,
+                    }
+                else:
+                    return {"result": response.result}
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.UNAVAILABLE:
+                    time.sleep(2)
+                    continue
+                else:
+                    raise HTTPException(
+                        status_code=500, detail=f"gRPC error: {e.details()}"
+                    )
+        raise HTTPException(
+            status_code=500, detail=f"gRPC server unavailable after retries"
+        )
 
 
 pod_manager = PodManager()
@@ -322,11 +335,10 @@ async def run_module(
         ..., description="Arguments and keyword arguments"
     ),
 ):
-    service_ip = pod_manager.get_pod_service_ip(module_name)
-    result = pod_manager.forward_to_pod(
-        service_ip, method_name, obj_id, request.args, request.kwargs
+
+    return pod_manager.forward_to_pod(
+        module_name, method_name, obj_id, request.args, request.kwargs
     )
-    return result
 
 
 @app.post("/create_pod/{module_name}")
