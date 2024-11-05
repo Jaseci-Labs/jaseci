@@ -395,3 +395,4 @@ class JacCliTests(TestCase):
             else:
                 self.assertNotIn("Passed successfully.", stdout)
                 self.assertIn("F", stderr)
+        os.remove(test_file)
