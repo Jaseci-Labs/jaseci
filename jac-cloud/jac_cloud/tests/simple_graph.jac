@@ -2,6 +2,7 @@
 import:py from jac_cloud.core.context {JaseciContext}
 import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
 import:py from jac_cloud.jaseci.utils {SendGridEmailer}
+import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 import:py from dataclasses {dataclass}
 import:py from fastapi {UploadFile}
 
@@ -277,7 +278,7 @@ walker custom_report {
 walker websocket {
     has val: int;
     can enter1 with `root entry {
-        Jac.get_context().connection.notify({"testing": 1});
+        socket.notify_self({"testing": self.val});
     }
 
     class __specs__ {

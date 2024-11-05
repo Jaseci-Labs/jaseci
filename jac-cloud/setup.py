@@ -33,6 +33,7 @@ setup(
         "fakeredis~=2.24.1",
         "ecs-logging~=2.2.0",
         "types-PyYAML~=6.0.12.20240917",
+        "broadcaster[redis]~=0.3.1",
     ],
     package_data={},
     entry_points={
