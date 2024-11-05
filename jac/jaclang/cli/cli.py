@@ -22,9 +22,10 @@ from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.machine import JacMachine, JacProgram, ShellGhost
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
+
 
 
 Cmd.create_cmd()
@@ -68,7 +69,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 @cmd_registry.register
 def run(
-    filename: str, session: str = "", main: bool = True, cache: bool = True
+    filename: str, session: str = "", main: bool = True, cache: bool = True, gins: bool = False
 ) -> None:
     """Run the specified .jac file."""
     # if no session specified, check if it was defined when starting the command shell
@@ -82,10 +83,10 @@ def run(
             else ""
         )
 
+    gins_instance = ShellGhost(is_running=gins)
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-
     jctx = ExecutionContext.create(session=session)
 
     if filename.endswith(".jac"):
@@ -495,7 +496,6 @@ def jac2py(filename: str) -> None:
         print(code)
     else:
         print("Not a .jac file.")
-
 
 def start_cli() -> None:
     """

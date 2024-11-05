@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import types
+from threading import Thread
 from contextvars import ContextVar
 from typing import Optional, Union
 
@@ -299,3 +300,15 @@ class JacProgram:
             return marshal.loads(result.ir.gen.py_bytecode)
         else:
             return None
+
+
+class ShellGhost:
+    def __init__(self, is_running:bool = False):
+        self.__daemon_thread = Thread(
+            target = self.worker(), 
+            daemon = True
+            )
+
+    def worker(self):
+        print("doesn't do anything")
+        os.sleep(2)
