@@ -83,7 +83,7 @@ def run(
             else ""
         )
 
-    gins_instance = ShellGhost(is_running=gins)
+    gins_instance = ShellGhost(filename, is_running=gins)
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]

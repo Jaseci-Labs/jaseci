@@ -12,7 +12,8 @@ from contextvars import ContextVar
 from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.compile import compile_jac
+from jaclang.compiler.compile import compile_jac, jac_file_to_pass
+
 from jaclang.compiler.constant import Constants as Con
 from jaclang.runtimelib.architype import (
     Architype,
@@ -21,7 +22,7 @@ from jaclang.runtimelib.architype import (
     WalkerArchitype,
 )
 from jaclang.utils.log import logging
-
+from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 
 logger = logging.getLogger(__name__)
 
@@ -304,12 +305,14 @@ class JacProgram:
 
 
 class ShellGhost:
-    def __init__(self, is_running:bool = False):
+    def __init__(self, file_name:str, is_running:bool = False):
         self.__daemon_thread = Thread(
-            target = self.worker, 
-            daemon = True
-            )
+            target = self.worker, args=(file_name,))
         self.__daemon_thread.start()
-    def worker(self):
+    def worker(self, file_name):
         print("doesn't do anything")
+        ir = jac_file_to_pass(
+            file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
+        ).ir
+        print(ir.pp())
         time.sleep(2)
