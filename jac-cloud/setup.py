@@ -34,6 +34,7 @@ setup(
         "ecs-logging~=2.2.0",
         "types-PyYAML~=6.0.12.20240917",
         "montydb~=2.5.3",
+        "broadcaster[redis]~=0.3.1",
     ],
     package_data={},
     entry_points={
