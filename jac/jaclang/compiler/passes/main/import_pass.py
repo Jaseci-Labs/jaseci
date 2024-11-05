@@ -232,7 +232,8 @@ class PyImportPass(JacImportPass):
                 msg += ast.Module.get_href_path(imp_node)
                 msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
                 self.__debug_print(msg)
-                self.__process_import_from(imp_node)
+                if settings.allow_import_from:
+                    self.__process_import_from(imp_node)
             else:
                 msg = "Processing import node at href="
                 msg += ast.Module.get_href_path(imp_node)

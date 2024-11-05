@@ -21,6 +21,7 @@ class Settings:
     # Compiler configuration
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
+    allow_import_from: bool = False
 
     # Formatter configuration
     max_line_length: int = 88
