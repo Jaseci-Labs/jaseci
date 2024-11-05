@@ -209,8 +209,10 @@ class JacLanguageTests(TestCase):
         """Test semstring."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         jac_import("semstr", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
@@ -466,8 +468,10 @@ class JacLanguageTests(TestCase):
         """Test Jac registry feature."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         jac_import("registry", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
@@ -809,11 +813,13 @@ class JacLanguageTests(TestCase):
         """Test for access tags working."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         cli.check(
             self.fixture_abs_path("../../tests/fixtures/access_modifier.jac"),
             print_errs=True,
         )
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("Invalid access"), 18)
 
@@ -831,10 +837,12 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(f.read())
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast, orig_src=ast.JacSource(f.read(), file_name)
+                    )
                 )
             except Exception as e:
-                return f"Error While Jac to Py AST conversion: {e}"
+                raise Exception(f"Error While Jac to Py AST conversion: {e}")
 
         settings.print_py_raised_ast = True
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
