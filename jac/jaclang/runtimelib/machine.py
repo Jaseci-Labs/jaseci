@@ -3,6 +3,7 @@
 import inspect
 import marshal
 import os
+import time
 import sys
 import tempfile
 import types
@@ -305,10 +306,10 @@ class JacProgram:
 class ShellGhost:
     def __init__(self, is_running:bool = False):
         self.__daemon_thread = Thread(
-            target = self.worker(), 
+            target = self.worker, 
             daemon = True
             )
-
+        self.__daemon_thread.start()
     def worker(self):
         print("doesn't do anything")
-        os.sleep(2)
+        time.sleep(2)
