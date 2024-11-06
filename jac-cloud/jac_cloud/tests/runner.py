@@ -9,7 +9,7 @@ from jaclang import jac_import
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 
-filename = "./jac_cloud/tests/simple_graph.jac"
+filename = "./jac_cloud/tests/websocket.jac"
 base, mod = split(filename)
 base = base if base else "./"
 mod = mod[:-4]

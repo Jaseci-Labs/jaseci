@@ -10,10 +10,10 @@ from .user import (
 )
 from .websocket import (
     ChannelEvent,
+    ClientEvent,
     ConnectionEvent,
     UserEvent,
     WalkerEvent,
-    WalkerEventData,
     WebSocketEvent,
 )
 
@@ -27,9 +27,9 @@ __all__ = [
     "UserResetPassword",
     "UserVerification",
     "ChannelEvent",
+    "ClientEvent",
     "ConnectionEvent",
     "UserEvent",
     "WalkerEvent",
-    "WalkerEventData",
     "WebSocketEvent",
 ]
