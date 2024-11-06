@@ -1184,3 +1184,14 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)
+
+    def test_global_multivar_statement(self) -> None:
+        """Test supporting multiple global variable in a statement."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("glob_multivar_statement", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello World !", stdout_value[0])
+        self.assertIn("Welcome to Jaseci!", stdout_value[1])
+
