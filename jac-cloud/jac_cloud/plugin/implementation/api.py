@@ -28,12 +28,7 @@ from pydantic import BaseModel, Field as pyField, ValidationError, create_model
 from starlette.datastructures import UploadFile as BaseUploadFile
 
 from .websocket import websocket_events
-from ...core.architype import (
-    Anchor,
-    NodeAnchor,
-    WalkerAnchor,
-    WalkerArchitype,
-)
+from ...core.architype import NodeAnchor, WalkerAnchor, WalkerArchitype
 from ...core.context import ContextResponse, JaseciContext
 from ...jaseci.security import authenticator, generate_webhook_auth, validate_request
 from ...jaseci.utils import log_entry, log_exit
@@ -209,7 +204,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 return ORJSONResponse(resp, jctx.status)
             else:
                 error = {
-                    "error": f"You don't have access on target entry {cast(Anchor, jctx.entry_node).ref_id}!"
+                    "error": f"You don't have access on target entry {jctx.entry_node.ref_id}!"
                 }
                 jctx.close()
 
