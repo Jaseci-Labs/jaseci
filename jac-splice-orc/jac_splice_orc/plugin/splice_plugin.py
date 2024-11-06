@@ -5,12 +5,13 @@ import types
 from typing import Optional, Union
 
 from kubernetes import client, config, utils
-
+from jaclang.cli.cmdreg import cmd_registry
 from jac_splice_orc.managers.proxy_manager import ModuleProxy
 
 import pluggy
 import logging
 from dotenv import load_dotenv
+
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -21,16 +22,8 @@ hookimpl = pluggy.HookimplMarker("jac")
 class SpliceOrcPlugin:
     """JAC Splice-Orchestrator Plugin."""
 
-    def __init__(self):
-        """Constructor for SpliceOrcPlugin."""
-        logging.info("Initializing SpliceOrcPlugin")
-        namespace = "jac-splice-orc"
-        self.create_namespace(namespace)
-        self.create_service_account(namespace)
-        self.apply_pod_manager_yaml(namespace)
-        self.configure_pod_manager_url(namespace)
-
-    def create_namespace(self, namespace_name):
+    @classmethod
+    def create_namespace(cls, namespace_name):
         """Create a new namespace if it does not exist."""
         logging.info(f"Creating namespace '{namespace_name}'")
         try:
@@ -48,7 +41,8 @@ class SpliceOrcPlugin:
             v1.create_namespace(ns)
             logging.info(f"Namespace '{namespace_name}' created.")
 
-    def create_service_account(self, namespace):
+    @classmethod
+    def create_service_account(cls, namespace):
         v1 = client.CoreV1Api()
         service_account_name = "smartimportsa"
 
@@ -75,9 +69,10 @@ class SpliceOrcPlugin:
                 raise
 
         # Create the Role and RoleBinding
-        self.create_role_and_binding(namespace, service_account_name)
+        cls.create_role_and_binding(namespace, service_account_name)
 
-    def create_role_and_binding(self, namespace, service_account_name):
+    @classmethod
+    def create_role_and_binding(cls, namespace, service_account_name):
         rbac_api = client.RbacAuthorizationV1Api()
 
         role_name = "smartimport-role"
@@ -157,7 +152,8 @@ class SpliceOrcPlugin:
                 logging.error(f"Error creating RoleBinding: {e}")
                 raise
 
-    def apply_pod_manager_yaml(self, namespace):
+    @classmethod
+    def apply_pod_manager_yaml(cls, namespace):
         try:
             config.load_kube_config()
         except config.ConfigException:
@@ -185,9 +181,10 @@ class SpliceOrcPlugin:
             logging.error(f"An unexpected error occurred: {e}")
             raise
 
-    def configure_pod_manager_url(self, namespace):
+    @classmethod
+    def configure_pod_manager_url(cls, namespace):
         service_name = "pod-manager-service"
-        url = self.get_loadbalancer_url(service_name, namespace)
+        url = cls.get_loadbalancer_url(service_name, namespace)
         if url:
             pod_manager_url_local = f"http://{url}:8000"
             env_file_path = os.path.join(os.getcwd(), ".env")
@@ -215,7 +212,8 @@ class SpliceOrcPlugin:
         else:
             logging.error("Failed to retrieve the pod_manager_url.")
 
-    def get_loadbalancer_url(self, service_name, namespace):
+    @classmethod
+    def get_loadbalancer_url(cls, service_name, namespace):
         try:
             config.load_kube_config()
         except config.ConfigException:
@@ -237,6 +235,24 @@ class SpliceOrcPlugin:
         except client.exceptions.ApiException as e:
             logging.error(f"Error retrieving LoadBalancer URL: {e}")
             return None
+
+    @staticmethod
+    @hookimpl
+    def create_cmd() -> None:
+        """Creating Jac CLI commands."""
+
+        @cmd_registry.register
+        def orc_initialize(namespace: str = "jac-splice-orc") -> None:
+            """Initialize the Pod Manager and Kubernetes system."""
+            logging.info(f"Initializing Pod Manager in namespace '{namespace}'")
+
+            # Call the class methods to perform initialization
+            SpliceOrcPlugin.create_namespace(namespace)
+            SpliceOrcPlugin.create_service_account(namespace)
+            SpliceOrcPlugin.apply_pod_manager_yaml(namespace)
+            SpliceOrcPlugin.configure_pod_manager_url(namespace)
+
+            logging.info("Initialization complete.")
 
     @staticmethod
     @hookimpl
