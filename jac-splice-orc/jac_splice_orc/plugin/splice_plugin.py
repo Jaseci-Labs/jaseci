@@ -242,7 +242,7 @@ class SpliceOrcPlugin:
         """Creating Jac CLI commands."""
 
         @cmd_registry.register
-        def orc_initialize(namespace: str = "jac-splice-orc") -> None:
+        def orc_initialize(namespace: str) -> None:
             """Initialize the Pod Manager and Kubernetes system."""
             logging.info(f"Initializing Pod Manager in namespace '{namespace}'")
 
