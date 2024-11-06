@@ -1185,7 +1185,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)
 
-    def test_global_multivar_statement(self) -> None:
+    def test_global_multivar(self) -> None:
         """Test supporting multiple global variable in a statement."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
