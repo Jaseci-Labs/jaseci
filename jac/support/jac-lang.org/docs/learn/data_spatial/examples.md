@@ -181,5 +181,3 @@ We can retrieve all visitable nodes from a node in specific directions.
 
     - Delete node
         1. `del node_3;`  node_3 is deleted.
-
-
