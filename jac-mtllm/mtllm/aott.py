@@ -33,6 +33,7 @@ def aott_raise(
     action: str,
     context: str,
     method: str,
+    is_custom: bool,
     tools: list[Tool],
     model_params: dict,
     _globals: dict,
@@ -40,15 +41,17 @@ def aott_raise(
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
     _globals["finish_tool"] = finish_tool
-    contains_media: bool = any(
-        isinstance(x.value, (Image, Video)) for x in inputs_information
+    contains_media = any(
+        isinstance(x.value, (Image, Video)) or 'PIL' in str(x.value) for x in inputs_information
     )
     informations_str = "\n".join([str(x) for x in informations])
-    inputs_information_repr: list[dict] | str
-    if contains_media:
-        inputs_information_repr = []
+    inputs_information_repr: list[dict] | str = ''
+    media= []
+    if contains_media and not is_custom:
         for x in inputs_information:
             inputs_information_repr.extend(x.to_list_dict())
+    elif is_custom:
+        media = [x for x in inputs_information if 'PIL' in str(x.value)]
     else:
         inputs_information_repr = "\n".join([str(x) for x in inputs_information])
 
@@ -121,7 +124,7 @@ def aott_raise(
         if not contains_media
         else meaning_typed_input_list
     )
-    return model(meaning_typed_input, **model_params)  # type: ignore
+    return model(meaning_typed_input,media=media, **model_params) # type: ignore
 
 
 def execute_react(

@@ -161,7 +161,7 @@ class BaseLLM:
         """Infer a response from the input meaning."""
         raise NotImplementedError
 
-    def __call__(self, input_text: str | list[dict], **kwargs: dict) -> str:
+    def __call__(self, input_text: str | list[dict], media = None,**kwargs: dict) -> str:
         """Infer a response from the input text."""
         if self.verbose:
             logger.info(f"Meaning In\n{input_text}")
