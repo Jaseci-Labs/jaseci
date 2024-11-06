@@ -4,15 +4,11 @@ glob c: str;
 can do() {
     :g: a, b, c ;
 
-    a = "Welcome";
-    b = "to";
-    c = "Jaseci!";
+    (a, b, c) = ("Welcome", "to", "Jaseci!");
 }
 
 with entry {
-    a = "Hello";
-    b = "World";
-    c = "!";
+    (a, b, c) = ("Hello", "World", "!");
     print(a, b, c);
     do();
     print(a, b, c);
