@@ -8,6 +8,8 @@ Nodes can be connected in various ways, including from a single node to a list o
 ??? example "Graph Image"
     ![Image](Images/create_node.png)
 
+
+
 ##  <span style="color: orange">Custom Edge Creation and Operations
 We can establish connections between nodes or lists of nodes using custom edges instead of the default generic edges, allowing for more control and customization in the relationships between nodes.
 
@@ -18,7 +20,14 @@ We can establish connections between nodes or lists of nodes using custom edges 
 Lines 17-21 demonstrate how to retrieve visitable or reachable nodes from a given node by applying specific edge conditions, such as filtering based on edge types or chaining multiple edge traversals.
 ??? example "Graph Image"
     ![Image](Images/custom_edge.png)
-
+??? tip "Output"
+    ```txt
+    [MyNode(val=5)]
+    []
+    [MyNode(val=5)]
+    [MyNode(val=20), MyNode(val=10)]
+    [MyNode(val=15)]
+    ```
 ## <span style="color: orange">Filtering
 
 #### <span style="color: White">Filtering Based on Edge Types and Attributes
@@ -31,7 +40,13 @@ We can filter nodes based on specific edge attributes, such as filtering by edge
 
 ??? example "Graph Image"
     ![Image](Images/edge_filtering.png)
-
+??? tip "Output"
+    ```txt
+    [A(val=10), A(val=30), A(val=20)]
+    [A(val=10), A(val=20)]
+    [A(val=10)]
+    [A(val=20)]
+    ```
 #### <span style="color: White">Filtering Based on Node Types and Attributes
 
 We can filter specific types of nodes from a list of visitable nodes based on their type, and further apply conditions on node attributes to refine the results.
@@ -41,7 +56,14 @@ We can filter specific types of nodes from a list of visitable nodes based on th
     ```
 ??? example "Graph Image"
     ![Image](Images/filtering.png)
-
+??? tip "Output"
+    ```txt
+    [A(val=20)]
+    [C(val=25)]
+    [C(val=25), C(val=15)]
+    [C(val=25)]
+    [C(val=15)]
+    ```
 ##  <span style="color: orange">Visiting
 We can retrieve all visitable nodes from a node in specific directions.
 === "Jac"
@@ -50,7 +72,13 @@ We can retrieve all visitable nodes from a node in specific directions.
     ```
 ??? example "Graph Image"
     ![Image](Images/visiting.png)
-
+??? tip "Output"
+    ```txt
+    [MyNode(Name='End')]
+    [MyNode(Name='Start')]       
+    [Root()]
+    [Root()]   
+    ```
 
 
 ##  <span style="color: orange">DS Entry-Exit
@@ -62,10 +90,38 @@ We can retrieve all visitable nodes from a node in specific directions.
 ??? tip "Output"
     ```txt
     Entering at the beginning of walker:  Root()
-    Visiting node :  test_node(value=1)
+    Exiting at the end of walker:  Root()
+    Entering at the beginning of walker:  test_node(value=5)
+    Visiting node :  test_node(value=5)
+    Exiting at the end of walker:  test_node(value=5)
+    Entering at the beginning of walker:  test_node(value=6)
+    Visiting node :  test_node(value=6)
+    Exiting at the end of walker:  test_node(value=6)
+    Entering at the beginning of walker:  test_node(value=0)
     Visiting node :  test_node(value=0)
     Exiting at the end of walker:  test_node(value=0)
-    test_walker(visited_nodes=[test_node(value=1), test_node(value=0)], entry_count=1, exit_count=1)
+    Entering at the beginning of walker:  test_node(value=8)
+    Visiting node :  test_node(value=8)
+    Exiting at the end of walker:  test_node(value=8)
+    Entering at the beginning of walker:  test_node(value=9)
+    Visiting node :  test_node(value=9)
+    Exiting at the end of walker:  test_node(value=9)
+    Entering at the beginning of walker:  test_node(value=4)
+    Visiting node :  test_node(value=4)
+    Exiting at the end of walker:  test_node(value=4)
+    Entering at the beginning of walker:  test_node(value=2)
+    Visiting node :  test_node(value=2)
+    Exiting at the end of walker:  test_node(value=2)
+    Entering at the beginning of walker:  test_node(value=1)
+    Visiting node :  test_node(value=1)
+    Exiting at the end of walker:  test_node(value=1)
+    Entering at the beginning of walker:  test_node(value=3)
+    Visiting node :  test_node(value=3)
+    Exiting at the end of walker:  test_node(value=3)
+    Entering at the beginning of walker:  test_node(value=7)
+    Visiting node :  test_node(value=7)
+    Exiting at the end of walker:  test_node(value=7)
+    test_walker(visited_nodes=[test_node(value=5), test_node(value=6), test_node(value=0), test_node(value=8), test_node(value=9), test_node(value=4), test_node(value=2), test_node(value=1), test_node(value=3), test_node(value=7)], entry_count=11, exit_count=11)
     ```
 
 !!! Abstract  "can log_entry with entry"
@@ -93,7 +149,12 @@ We can retrieve all visitable nodes from a node in specific directions.
     ```
 ??? example "Graph Image"
     ![Image](Images/define_walker.png)
-
+??? tip "Output"
+    ```txt
+    [A(val=20), A(val=10)]
+    [A(val=25), A(val=15)]    
+    ```
+    
 ## <span style="color: orange">Node Connections
 === "Jac"
     ```jac linenums="1"
