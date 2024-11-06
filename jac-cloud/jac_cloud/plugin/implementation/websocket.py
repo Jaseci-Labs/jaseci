@@ -1,13 +1,12 @@
 """Websocket Handler."""
 
-from contextlib import suppress
-from dataclasses import MISSING, dataclass
+from dataclasses import MISSING
 from os import getenv
 from traceback import format_exception
-from typing import Any, Iterable, cast
+from typing import Any, Iterable
 from uuid import uuid4
 
-from anyio import create_task_group, to_thread
+from anyio import to_thread
 from anyio.abc import TaskGroup
 
 from asyncer import syncify
@@ -18,18 +17,20 @@ from fastapi import APIRouter, WebSocket
 
 from jaclang.plugin.feature import JacFeature as Jac
 
+from orjson import loads
+
 from pydantic import ValidationError
 
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
-from ...core.architype import Anchor, NodeAnchor, WalkerAnchor
+from ...core.architype import NodeAnchor, NodeArchitype, WalkerAnchor
 from ...core.context import JaseciContext, PUBLIC_ROOT
 from ...jaseci.dtos import (
     ChannelEvent,
+    ClientEvent,
     ConnectionEvent,
     UserEvent,
     WalkerEvent,
-    WalkerEventData,
     WebSocketEvent,
 )
 from ...jaseci.security import authenticate_websocket
@@ -39,41 +40,77 @@ websocket_router = APIRouter(prefix="/websocket", tags=["walker"])
 websocket_events: dict[str, dict[str, Any]] = {}
 
 
-@dataclass(frozen=True)
-class Socket:
-    """Client Handler."""
-
-    root: NodeAnchor
-    websocket: WebSocket
-    channel_id: str
+class WalkerExecutionError(Exception):
+    """Walker Execution Error."""
 
 
 class WebSocketManager:
     """WebSocket Manager."""
 
+    channel = "replicas"
+
     def __init__(self) -> None:
         """Initialize."""
-        self.broadcaster: Broadcast | None = (
-            Broadcast(socket_redis_host)
-            if (socket_redis_host := getenv("SOCKET_REDIS_HOST"))
-            else None
-        )
-        self.user_websockets: dict[NodeAnchor, set[Socket]] = {}
-        self.channel_websockets: dict[str, set[Socket]] = {}
-        self.websocket_clients: dict[int, Socket] = {}
+        self.instance_id = f"{utc_timestamp()}:{uuid4().hex}"
+        self.broadcaster: Broadcast | None = None
+        self.user_websockets: dict[NodeAnchor, set[WebSocket]] = {}
+        self.channel_websockets: dict[str, set[WebSocket]] = {}
+        self.websocket_clients: dict[str, WebSocket] = {}
 
-    async def connect(
-        self, task_group: TaskGroup, websocket: WebSocket, channel_id: str | None
-    ) -> None:
+    async def open_broadcaster(self, task_group: TaskGroup) -> None:
+        """Open Broadcaster."""
+        if socket_redis_host := getenv("SOCKET_REDIS_HOST"):
+            broadcaster = self.broadcaster = Broadcast(socket_redis_host)
+            await broadcaster.connect()
+
+            async def run_broadcast_reciever() -> None:
+                async with broadcaster.subscribe(channel=self.channel) as sub:
+                    while True:
+                        try:
+                            bc_event = await sub.get()
+                            wse = WebSocketEvent(**loads(bc_event.message))
+
+                            if wse.instance_id != self.instance_id:
+                                event = wse.event
+                                match event:
+                                    case UserEvent():
+                                        await user_execution(event)
+                                    case ChannelEvent():
+                                        await channel_execution(event)
+                                    case ClientEvent():
+                                        await client_execution(event)
+                                    case _:
+                                        pass
+                        except Exception as e:
+                            print(format_exception(e))
+
+                await broadcaster.disconnect()
+                task_group.cancel_scope.cancel()
+
+            task_group.start_soon(run_broadcast_reciever)
+
+    async def close_broadcaster(self, task_group: TaskGroup) -> None:
+        """Close Broadcaster."""
+        if self.broadcaster:
+            await self.broadcaster.disconnect()
+
+        task_group.cancel_scope.cancel()
+
+    async def broadcast(self, event: WebSocketEvent) -> None:
+        """Broadcast to all replicas."""
+        if self.broadcaster:
+            event.instance_id = self.instance_id
+            await self.broadcaster.publish(self.channel, event.model_dump_json())
+
+    async def connect(self, websocket: WebSocket, channel_id: str | None) -> None:
         """Connect Websocket."""
         await websocket.accept()
 
         root: NodeAnchor = websocket._root  # type: ignore[attr-defined]
+        client_id = websocket._client_id = f"{utc_timestamp()}:{uuid4().hex}"  # type: ignore[attr-defined]
         channel_id = websocket._channel_id = (  # type: ignore[attr-defined]
-            channel_id or f"{utc_timestamp()}:{uuid4()}"
+            channel_id or f"{utc_timestamp()}:{uuid4().hex}"
         )
-
-        socket = Socket(root, websocket, channel_id)
 
         if root not in self.user_websockets:
             self.user_websockets[root] = set()
@@ -81,70 +118,92 @@ class WebSocketManager:
         if channel_id not in self.channel_websockets:
             self.channel_websockets[channel_id] = set()
 
-        self.user_websockets[root].add(socket)
-        self.channel_websockets[channel_id].add(socket)
-        self.websocket_clients[id(websocket)] = socket
+        self.user_websockets[root].add(websocket)
+        self.channel_websockets[channel_id].add(websocket)
+        self.websocket_clients[client_id] = websocket
 
         await connection_execution(websocket)
 
-        if broadcaster := self.broadcaster:
-
-            async def run_broadcast_reciever() -> None:
-                async with broadcaster.subscribe(channel=socket.channel_id) as sub:
-                    with suppress(Exception):
-                        while True:
-                            await socket.websocket.send_json(await sub.get())
-                task_group.cancel_scope.cancel()
-
-            task_group.start_soon(run_broadcast_reciever)
-
-    async def disconnect(self, task_group: TaskGroup, websocket: WebSocket) -> None:
+    async def disconnect(self, websocket: WebSocket) -> None:
         """Disconnect Websocket."""
         if websocket.client_state is WebSocketState.CONNECTED:
             await websocket.close()
 
         root: NodeAnchor = websocket._root  # type: ignore[attr-defined]
+        client_id: str = websocket._client_id  # type: ignore[attr-defined]
         channel_id: str = websocket._channel_id  # type: ignore[attr-defined]
 
-        if socket := self.websocket_clients.pop(id(websocket), None):
-            self.user_websockets[root].remove(socket)
-            self.channel_websockets[channel_id].remove(socket)
-
-        task_group.cancel_scope.cancel()
+        self.websocket_clients.pop(client_id, None)
+        self.user_websockets[root].remove(websocket)
+        self.channel_websockets[channel_id].remove(websocket)
 
     def notify_self(self, data: dict) -> None:
         """Notify self client."""
         if isinstance(socket := JaseciContext.get().connection, WebSocket):
             syncify(socket.send_json)(data)
 
-    def notify_clients(self, socket_ids: Iterable[int], data: dict) -> None:
+    def notify_clients(self, client_ids: Iterable[str], data: dict) -> None:
         """Notify clients associated with target root."""
-        for socket_id in socket_ids:
-            if socket := self.websocket_clients.get(socket_id):
-                syncify(socket.websocket.send_json)(data)
+        if client_ids:
+            for client_id in client_ids:
+                if websocket := self.websocket_clients.get(client_id):
+                    syncify(websocket.send_json)(data)
 
-    def notify_users(self, roots: Iterable[NodeAnchor], data: dict) -> None:
+            if self.broadcaster:
+                syncify(self.broadcaster.publish)(
+                    self.channel,
+                    WebSocketEvent(
+                        instance_id=self.instance_id,
+                        event=ClientEvent(client_ids=list(client_ids), data=data),
+                    ).model_dump_json(),
+                )
+
+    def notify_users(self, roots: Iterable[NodeArchitype], data: dict) -> None:
         """Notify clients associated with target root."""
-        for root in roots:
-            if sockets := self.user_websockets.get(root):
-                for socket in sockets:
-                    syncify(socket.websocket.send_json)(data)
+        if roots:
+            root_ids: list[str] = []
+            for root in roots:
+                root_ids.append((anch := root.__jac__).ref_id)
+                if websockets := self.user_websockets.get(anch):
+                    for websocket in websockets:
+                        syncify(websocket.send_json)(data)
+            if self.broadcaster:
+                syncify(self.broadcaster.publish)(
+                    self.channel,
+                    WebSocketEvent(
+                        instance_id=self.instance_id,
+                        event=UserEvent(root_ids=root_ids, data=data),
+                    ).model_dump_json(),
+                )
 
     def notify_channels(self, channel_ids: Iterable[str], data: dict) -> None:
         """Notify clients associated with target root."""
-        for channel_id in channel_ids:
-            if sockets := self.channel_websockets.get(channel_id):
-                for socket in sockets:
-                    syncify(socket.websocket.send_json)(data)
+        if channel_ids:
+            for channel_id in channel_ids:
+                if websockets := self.channel_websockets.get(channel_id):
+                    for websocket in websockets:
+                        syncify(websocket.send_json)(data)
+            if self.broadcaster:
+                syncify(self.broadcaster.publish)(
+                    self.channel,
+                    WebSocketEvent(
+                        instance_id=self.instance_id,
+                        event=ChannelEvent(channel_ids=list(channel_ids), data=data),
+                    ).model_dump_json(),
+                )
 
 
-def walker_execution(websocket: WebSocket, event: WalkerEventData) -> dict:
+def walker_execution(websocket: WebSocket, event: WalkerEvent) -> dict:
     """Websocket event sychronizer."""
     if walker_event := websocket_events.get(even_walker := event.walker):
         if walker_event["auth"] and websocket._root is PUBLIC_ROOT:  # type: ignore[attr-defined]
-            return {"error": f"Event {even_walker} requires to be authenticated!"}
+            raise WalkerExecutionError(
+                f"Event {even_walker} requires to be authenticated!"
+            )
         elif not walker_event["auth"] and websocket._root is not PUBLIC_ROOT:  # type: ignore[attr-defined]
-            return {"error": f"Event {even_walker} requires to be unauthenticated!"}
+            raise WalkerExecutionError(
+                f"Event {even_walker} requires to be unauthenticated!"
+            )
 
         walker: type = walker_event["type"]
         try:
@@ -167,27 +226,34 @@ def walker_execution(websocket: WebSocket, event: WalkerEventData) -> dict:
             return jctx.response(wlk.returns)
         else:
             jctx.close()
-            return {
-                "error": f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!"
-            }
+            raise WalkerExecutionError(
+                f"You don't have access on target entry {jctx.entry_node.ref_id}!"
+            )
     else:
-        return {"error": "Invalid request! Please use valid walker event!"}
+        raise WalkerExecutionError("Invalid request! Please use valid walker event!")
 
 
-async def user_execution(websocket: WebSocket, event: UserEvent) -> None:
+async def user_execution(event: UserEvent) -> None:
     """User event execution."""
     for root_id in event.root_ids:
-        if sockets := WEBSOCKET_MANAGER.user_websockets.get(NodeAnchor.ref(root_id)):
-            for socket in sockets:
-                await socket.websocket.send_json(event.data)
+        if websockets := WEBSOCKET_MANAGER.user_websockets.get(NodeAnchor.ref(root_id)):
+            for websocket in websockets:
+                await websocket.send_json(event.data)
 
 
-async def channel_execution(websocket: WebSocket, event: ChannelEvent) -> None:
+async def channel_execution(event: ChannelEvent) -> None:
     """Channel event execution."""
     for channel_id in event.channel_ids:
-        if sockets := WEBSOCKET_MANAGER.channel_websockets.get(channel_id):
-            for socket in sockets:
-                await socket.websocket.send_json(event.data)
+        if websockets := WEBSOCKET_MANAGER.channel_websockets.get(channel_id):
+            for websocket in websockets:
+                await websocket.send_json(event.data)
+
+
+async def client_execution(event: ClientEvent) -> None:
+    """Channel event execution."""
+    for client_id in event.client_ids:
+        if weboscket := WEBSOCKET_MANAGER.websocket_clients.get(client_id):
+            await weboscket.send_json(event.data)
 
 
 async def connection_execution(websocket: WebSocket) -> None:
@@ -196,7 +262,7 @@ async def connection_execution(websocket: WebSocket) -> None:
         {
             "type": "connection",
             "data": {
-                "client_id": id(websocket),
+                "client_id": websocket._client_id,  # type: ignore[attr-defined]
                 "root_id": websocket._root.ref_id,  # type: ignore[attr-defined]
                 "channel_id": websocket._channel_id,  # type: ignore[attr-defined]
             },
@@ -216,40 +282,46 @@ async def websocket_endpoint(
     if not authenticate_websocket(websocket):
         websocket._root = PUBLIC_ROOT  # type: ignore[attr-defined]
 
-    async with create_task_group() as task_group:
-        await WEBSOCKET_MANAGER.connect(task_group, websocket, channel_id)
-        while True:
-            try:
-                event = WebSocketEvent(event=await websocket.receive_json()).event
-                match event:
-                    case WalkerEvent():
-                        resp = await to_thread.run_sync(
-                            walker_execution, websocket, event.data
-                        )
-                        if event.response:
-                            await websocket.send_json(resp)
-                    case UserEvent():
-                        await user_execution(websocket, event)
-                    case ChannelEvent():
-                        await channel_execution(websocket, event)
-                    case ConnectionEvent():
-                        await connection_execution(websocket)
-                    case _:
-                        await websocket.send_json({"error": "Not a valid event!"})
-            except ValidationError as e:
-                await websocket.send_json({"error": e.errors()})
-            except WebSocketDisconnect:
-                await WEBSOCKET_MANAGER.disconnect(task_group, websocket)
-                break
-            except Exception as e:
-                match websocket.client_state:
-                    case WebSocketState.CONNECTED:
-                        await websocket.send_json({"error": format_exception(e)})
-                    case WebSocketState.DISCONNECTED:
-                        await WEBSOCKET_MANAGER.disconnect(task_group, websocket)
-                        break
-                    case _:
-                        pass
+    await WEBSOCKET_MANAGER.connect(websocket, channel_id)
+    while True:
+        try:
+            wse = WebSocketEvent(event=await websocket.receive_json())
+            event = wse.event
+
+            match event:
+                case WalkerEvent():
+                    resp = await to_thread.run_sync(walker_execution, websocket, event)
+                    if event.response:
+                        await websocket.send_json(resp)
+                case UserEvent():
+                    await user_execution(event)
+                    await WEBSOCKET_MANAGER.broadcast(wse)
+                case ChannelEvent():
+                    await channel_execution(event)
+                    await WEBSOCKET_MANAGER.broadcast(wse)
+                case ClientEvent():
+                    await client_execution(event)
+                    await WEBSOCKET_MANAGER.broadcast(wse)
+                case ConnectionEvent():
+                    await connection_execution(websocket)
+                case _:
+                    await websocket.send_json({"error": "Not a valid event!"})
+        except ValidationError as e:
+            await websocket.send_json({"error": e.errors()})
+        except WalkerExecutionError as e:
+            await websocket.send_json({"type": "walker", "error": str(e)})
+        except WebSocketDisconnect:
+            await WEBSOCKET_MANAGER.disconnect(websocket)
+            break
+        except Exception as e:
+            match websocket.client_state:
+                case WebSocketState.CONNECTED:
+                    await websocket.send_json({"error": format_exception(e)})
+                case WebSocketState.DISCONNECTED:
+                    await WEBSOCKET_MANAGER.disconnect(websocket)
+                    break
+                case _:
+                    pass
 
 
 WEBSOCKET_MANAGER = WebSocketManager()

@@ -10,29 +10,23 @@ from pydantic import BaseModel, Field
 class ConnectionEvent(BaseModel):
     """Connection Event Model."""
 
-    type: Literal["connection"]
-
-
-class WalkerEventData(BaseModel):
-    """Walker Event Data Model."""
-
-    walker: str
-    node: str | None = None
-    context: dict[str, Any]
+    type: Literal["connection"] = "connection"
 
 
 class WalkerEvent(BaseModel):
     """Walker Event Model."""
 
-    type: Literal["walker"]
-    data: WalkerEventData
+    type: Literal["walker"] = "walker"
+    walker: str
+    node: str | None = None
     response: bool = False
+    context: dict[str, Any] = Field(default_factory=dict)
 
 
 class UserEvent(BaseModel):
     """Walker Event Model."""
 
-    type: Literal["user"]
+    type: Literal["user"] = "user"
     root_ids: Annotated[list[str], Len(min_length=1)]
     data: dict
 
@@ -40,15 +34,24 @@ class UserEvent(BaseModel):
 class ChannelEvent(BaseModel):
     """Walker Event Model."""
 
-    type: Literal["channel"]
+    type: Literal["channel"] = "channel"
     channel_ids: Annotated[list[str], Len(min_length=1)]
+    data: dict
+
+
+class ClientEvent(BaseModel):
+    """Walker Event Model."""
+
+    type: Literal["client"] = "client"
+    client_ids: Annotated[list[str], Len(min_length=1)]
     data: dict
 
 
 class WebSocketEvent(BaseModel):
     """WebSocket Event."""
 
+    instance_id: str | None = None
     event: Annotated[
-        Union[ConnectionEvent, WalkerEvent, UserEvent, ChannelEvent],
+        Union[ConnectionEvent, WalkerEvent, UserEvent, ChannelEvent, ClientEvent],
         Field(discriminator="type"),
     ]
