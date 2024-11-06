@@ -6,14 +6,10 @@ import base64
 
 class PodManagerProxy:
     def __init__(self, pod_manager_url: str):
-        print(f"Initializing PodManagerProxy with URL: {pod_manager_url}")
         self.pod_manager_url = pod_manager_url
 
     def create_pod(self, module_name: str, module_config: dict):
         """Send a request to the pod manager to create the pod and service."""
-        print(
-            f"Creating Pod: {module_name} with module_config: {json.dumps(module_config, indent=4)}"
-        )
         response = requests.post(
             f"{self.pod_manager_url}/create_pod/{module_name}", json=module_config
         )
@@ -89,7 +85,6 @@ class ModuleProxy:
     def get_module_proxy(self, module_name, module_config):
         """Creates a proxy object for the module running in the pod."""
         self.pod_manager.create_pod(module_name, module_config)
-        print(f"Created proxy for module: {module_name}")
         return RemoteObjectProxy(module_name, self.pod_manager)
 
 

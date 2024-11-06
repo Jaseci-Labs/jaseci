@@ -1,7 +1,7 @@
 """This module provides a FastAPI-based API for managing Kubernetes pods."""
 
+import logging
 import os
-import subprocess
 import time
 
 from typing import Any, List
@@ -16,6 +16,8 @@ from kubernetes import client, config
 
 from pydantic import BaseModel
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 app = FastAPI()
 
@@ -26,7 +28,7 @@ class PodManager:
     def __init__(self, namespace: str = "default") -> None:
         """Initialize Kubernetes client."""
         if os.getenv("TEST_ENV") == "true":
-            print("Running in test environment, skipping Kubernetes config.")
+            logging.info("Running in test environment, skipping Kubernetes config.")
         else:
             try:
                 config.load_incluster_config()
@@ -34,65 +36,6 @@ class PodManager:
                 config.load_kube_config()
         self.v1 = client.CoreV1Api()
         self.namespace = os.getenv("NAMESPACE", namespace)
-
-    def get_loadbalancer_url(service_name, namespace):
-        try:
-
-            # Fetch the external IP or hostname using kubectl
-            result_ip = subprocess.run(
-                [
-                    "kubectl",
-                    "get",
-                    "svc",
-                    service_name,
-                    "-n",
-                    namespace,
-                    "-o",
-                    "jsonpath={.status.loadBalancer.ingress[0].ip}",
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            result_hostname = subprocess.run(
-                [
-                    "kubectl",
-                    "get",
-                    "svc",
-                    service_name,
-                    "-n",
-                    namespace,
-                    "-o",
-                    "jsonpath={.status.loadBalancer.ingress[0].hostname}",
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            if result_ip.stdout:
-                return result_ip.stdout.strip()
-
-            if result_hostname.stdout:
-                return result_hostname.stdout.strip()
-
-            return "No LoadBalancer URL found (external IP or hostname missing)."
-
-        except subprocess.CalledProcessError as e:
-            return f"Error executing kubectl command: {e}"
-
-    def create_namespace(namespace_name):
-        try:
-            result = subprocess.run(
-                ["kubectl", "create", "namespace", namespace_name],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            return f"Namespace '{namespace_name}' created successfully."
-
-        except subprocess.CalledProcessError as e:
-            return f"Error creating namespace: {e.stderr}"
 
     def create_requirements_file(self, module_name: str, module_config: dict) -> str:
         """Generate a requirements.txt file based on the module configuration."""
@@ -106,7 +49,9 @@ class PodManager:
             for dep in dependencies:
                 f.write(f"{dep}\n")
 
-        print(f"Created requirements.txt for {module_name} at {requirements_path}")
+        logging.info(
+            f"Created requirements.txt for {module_name} at {requirements_path}"
+        )
         return requirements_path
 
     def create_pod(self, module_name: str, module_config: dict) -> Any:
@@ -115,8 +60,8 @@ class PodManager:
 
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
-        print(
-            f"Creating pod {pod_name}...\n Image: {image_name}\n Service: {service_name}\n namespace: {self.namespace}"
+        logging.info(
+            f"Creating pod {pod_name}...\n Image: {image_name}\n Service: {service_name}\n Namespace: {self.namespace}"
         )
         try:
             pod_info = self.v1.read_namespaced_pod(
@@ -126,7 +71,8 @@ class PodManager:
                 return {"message": f"Pod {pod_name} is already running."}
             else:
                 raise HTTPException(
-                    status_code=409, detail=f"Pod {pod_name} exists but is not running."
+                    status_code=409,
+                    detail=f"Pod {pod_name} exists but is not running.",
                 )
         except client.exceptions.ApiException as e:
             requirements_file_path = self.create_requirements_file(
@@ -145,7 +91,7 @@ class PodManager:
                         "containers": [
                             {
                                 "name": "module-container",
-                                "image": f"{image_name}",
+                                "image": image_name,
                                 "env": [{"name": "MODULE_NAME", "value": module_name}],
                                 "ports": [{"containerPort": 50051}],
                                 "resources": {
@@ -186,17 +132,15 @@ class PodManager:
                     },
                 )
                 self.v1.create_namespaced_pod(self.namespace, body=pod_manifest)
-                print(f"Pod {pod_name} created.")
+                logging.info(f"Pod {pod_name} created.")
                 self.wait_for_pod_ready(pod_name)
 
         # Create Service
         try:
-
             _ = self.v1.read_namespaced_service(
                 name=service_name, namespace=self.namespace
             )
-            print(f"Service {service_name} already exists.")
-
+            logging.info(f"Service {service_name} already exists.")
         except client.exceptions.ApiException as e:
             if e.status == 404:
                 service_manifest = {
@@ -212,7 +156,7 @@ class PodManager:
                     },
                 }
                 self.v1.create_namespaced_service(self.namespace, body=service_manifest)
-                print(f"Service {service_name} created.")
+                logging.info(f"Service {service_name} created.")
 
         return {"message": f"Pod {pod_name} and service {service_name} created."}
 
@@ -224,7 +168,7 @@ class PodManager:
         # Delete Pod
         try:
             self.v1.delete_namespaced_pod(name=pod_name, namespace=self.namespace)
-            print(f"Pod {pod_name} deleted.")
+            logging.info(f"Pod {pod_name} deleted.")
         except client.exceptions.ApiException:
             raise HTTPException(status_code=404, detail=f"Pod {pod_name} not found.")
 
@@ -233,7 +177,7 @@ class PodManager:
             self.v1.delete_namespaced_service(
                 name=service_name, namespace=self.namespace
             )
-            print(f"Service {service_name} deleted.")
+            logging.info(f"Service {service_name} deleted.")
         except client.exceptions.ApiException:
             raise HTTPException(
                 status_code=404, detail=f"Service {service_name} not found."
@@ -250,7 +194,9 @@ class PodManager:
                 name=pod_name, namespace=self.namespace
             )
             if pod_info.status.phase == "Running":
-                print(f"Pod {pod_name} is running with IP {pod_info.status.pod_ip}")
+                logging.info(
+                    f"Pod {pod_name} is running with IP {pod_info.status.pod_ip}"
+                )
                 return
             retries += 1
             time.sleep(2)
@@ -270,12 +216,14 @@ class PodManager:
             )
 
     def forward_to_pod(
-        self, module_name: str, method_name: str, obj_id: str, args: list, kwargs: dict
+        self,
+        module_name: str,
+        method_name: str,
+        obj_id: str,
+        args: list,
+        kwargs: dict,
     ) -> Any:
-        import time
         import json
-        import base64
-        import numpy as np
 
         pod_name = f"{module_name}-pod"
         service_ip = self.get_pod_service_ip(module_name)
@@ -308,11 +256,13 @@ class PodManager:
                     time.sleep(2)
                     continue
                 else:
+                    logging.error(f"gRPC error: {e.details()}")
                     raise HTTPException(
                         status_code=500, detail=f"gRPC error: {e.details()}"
                     )
+        logging.error("gRPC server unavailable after retries")
         raise HTTPException(
-            status_code=500, detail=f"gRPC server unavailable after retries"
+            status_code=500, detail="gRPC server unavailable after retries"
         )
 
 
@@ -335,7 +285,7 @@ async def run_module(
         ..., description="Arguments and keyword arguments"
     ),
 ):
-
+    """Run a module and return the result."""
     return pod_manager.forward_to_pod(
         module_name, method_name, obj_id, request.args, request.kwargs
     )
@@ -351,15 +301,3 @@ def create_pod(module_name: str, module_config: dict = Body(...)) -> Any:
 def delete_pod(module_name: str) -> Any:
     """Delete the pod and service for the given module and return the result."""
     return pod_manager.delete_pod(module_name)
-
-
-@app.get("/get_loadbalancer_url")
-def fetch_loadbalancer_url(service_name: str, namespace: str):
-    return {
-        "loadbalancer_url": pod_manager.get_loadbalancer_url(service_name, namespace)
-    }
-
-
-@app.post("/create_namespace")
-def create_new_namespace(namespace_name: str):
-    return {"message": pod_manager.create_namespace(namespace_name)}

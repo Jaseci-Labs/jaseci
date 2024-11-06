@@ -42,11 +42,11 @@ class SpliceOrcPlugin:
         # Check if the namespace exists
         namespaces = v1.list_namespace()
         if any(ns.metadata.name == namespace_name for ns in namespaces.items):
-            print(f"Namespace '{namespace_name}' already exists.")
+            logging.info(f"Namespace '{namespace_name}' already exists.")
         else:
             ns = client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace_name))
             v1.create_namespace(ns)
-            print(f"Namespace '{namespace_name}' created.")
+            logging.info(f"Namespace '{namespace_name}' created.")
 
     def create_service_account(self, namespace):
         v1 = client.CoreV1Api()
@@ -57,7 +57,7 @@ class SpliceOrcPlugin:
             v1.read_namespaced_service_account(
                 name=service_account_name, namespace=namespace
             )
-            print(
+            logging.info(
                 f"ServiceAccount '{service_account_name}' already exists in namespace '{namespace}'."
             )
         except client.exceptions.ApiException as e:
@@ -67,11 +67,11 @@ class SpliceOrcPlugin:
                     metadata=client.V1ObjectMeta(name=service_account_name)
                 )
                 v1.create_namespaced_service_account(namespace=namespace, body=sa)
-                print(
+                logging.info(
                     f"ServiceAccount '{service_account_name}' created in namespace '{namespace}'."
                 )
             else:
-                print(f"Error creating ServiceAccount: {e}")
+                logging.error(f"Error creating ServiceAccount: {e}")
                 raise
 
         # Create the Role and RoleBinding
@@ -94,7 +94,7 @@ class SpliceOrcPlugin:
                         "pods",
                         "services",
                         "configmaps",
-                    ],  # Added 'configmaps' here
+                    ],
                     verbs=["get", "watch", "list", "create", "update", "delete"],
                 ),
                 # Permissions for deployments
@@ -105,19 +105,18 @@ class SpliceOrcPlugin:
                 ),
             ],
         )
-
-        # Rest of the method remains the same...
-        # Check if the Role exists and create it if it doesn't
         try:
             rbac_api.read_namespaced_role(name=role_name, namespace=namespace)
-            print(f"Role '{role_name}' already exists in namespace '{namespace}'.")
+            logging.info(
+                f"Role '{role_name}' already exists in namespace '{namespace}'."
+            )
         except client.exceptions.ApiException as e:
             if e.status == 404:
                 # Create the Role
                 rbac_api.create_namespaced_role(namespace=namespace, body=role)
-                print(f"Role '{role_name}' created in namespace '{namespace}'.")
+                logging.info(f"Role '{role_name}' created in namespace '{namespace}'.")
             else:
-                print(f"Error creating Role: {e}")
+                logging.error(f"Error creating Role: {e}")
                 raise
 
         # Define the RoleBinding
@@ -142,7 +141,7 @@ class SpliceOrcPlugin:
             rbac_api.read_namespaced_role_binding(
                 name=role_binding_name, namespace=namespace
             )
-            print(
+            logging.info(
                 f"RoleBinding '{role_binding_name}' already exists in namespace '{namespace}'."
             )
         except client.exceptions.ApiException as e:
@@ -151,11 +150,11 @@ class SpliceOrcPlugin:
                 rbac_api.create_namespaced_role_binding(
                     namespace=namespace, body=role_binding
                 )
-                print(
+                logging.info(
                     f"RoleBinding '{role_binding_name}' created in namespace '{namespace}'."
                 )
             else:
-                print(f"Error creating RoleBinding: {e}")
+                logging.error(f"Error creating RoleBinding: {e}")
                 raise
 
     def apply_pod_manager_yaml(self, namespace):
@@ -170,20 +169,20 @@ class SpliceOrcPlugin:
         )
         yaml_file = os.path.abspath(yaml_file)
 
-        print(f"Applying {yaml_file} in namespace {namespace}")
+        logging.info(f"Applying {yaml_file} in namespace {namespace}")
 
         try:
             utils.create_from_yaml(k8s_client, yaml_file, namespace=namespace)
-            print(f"Successfully applied {yaml_file}")
+            logging.info(f"Successfully applied {yaml_file}")
         except utils.FailToCreateError as failure:
             for err in failure.api_exceptions:
                 if err.status == 409:
-                    print(f"Resource already exists: {err.reason}")
+                    logging.info(f"Resource already exists: {err.reason}")
                 else:
-                    print(f"Error creating resource: {err}")
+                    logging.error(f"Error creating resource: {err}")
                     raise
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logging.error(f"An unexpected error occurred: {e}")
             raise
 
     def configure_pod_manager_url(self, namespace):
@@ -210,9 +209,11 @@ class SpliceOrcPlugin:
                 for key, value in env_vars.items():
                     env_file.write(f'{key}="{value}"\n')
 
-            print(f"Pod manager URL updated in .env file: {pod_manager_url_local}")
+            logging.info(
+                f"Pod manager URL updated in .env file: {pod_manager_url_local}"
+            )
         else:
-            print("Failed to retrieve the pod_manager_url.")
+            logging.error("Failed to retrieve the pod_manager_url.")
 
     def get_loadbalancer_url(self, service_name, namespace):
         try:
@@ -227,14 +228,14 @@ class SpliceOrcPlugin:
             if ingress:
                 ip = ingress[0].ip
                 hostname = ingress[0].hostname
-                print(f"ip: {ip}, host: {hostname}")
+                logging.info(f"ip: {ip}, host: {hostname}")
                 if ip:
                     return ip
                 elif hostname:
                     return hostname
             return None
         except client.exceptions.ApiException as e:
-            print(f"Error retrieving LoadBalancer URL: {e}")
+            logging.error(f"Error retrieving LoadBalancer URL: {e}")
             return None
 
     @staticmethod
@@ -268,7 +269,7 @@ class SpliceOrcPlugin:
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=settings.module_config[target]
             )
-            print(f"Loading remote module {remote_module_proxy}")
+            logging.info(f"Loading remote module {remote_module_proxy}")
             return (remote_module_proxy,)
 
         spec = ImportPathSpec(
