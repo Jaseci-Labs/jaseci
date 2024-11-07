@@ -170,7 +170,7 @@ class SpliceOrcPlugin:
             "kubernetes",
             "pod_manager",
             "deployment_yaml",
-            default="jac_splice_orc/k8s/pod_manager_deployment.yml",
+            default="k8s/pod_manager_deployment.yml",
         )
 
         logging.info(f"Applying {deployment_yaml} in namespace {namespace}")

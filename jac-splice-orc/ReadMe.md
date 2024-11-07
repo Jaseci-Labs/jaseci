@@ -1,4 +1,8 @@
-# JAC Cloud Orchestrator
+Certainly! I'll update the README to make it more accurate based on the recent changes we've made, such as moving configurations to a `config.json` file and updating the code structure. Here's the revised README:
+
+---
+
+# JAC Cloud Orchestrator (`jac-splice-orc`)
 
 ![Docker Pulls](https://img.shields.io/docker/pulls/ashishmahendra/jac-splice-orc)
 
@@ -9,16 +13,20 @@ JAC Cloud Orchestrator (`jac-splice-orc`) is a system designed to dynamically im
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
+  - [System Components](#system-components)
+  - [Data Flow](#data-flow)
 - [Project Structure](#project-structure)
 - [Setup](#setup)
   - [Prerequisites](#prerequisites)
-  - [1. Deploy the Pod Manager](#1-deploy-the-pod-manager)
-  - [2. Access the Pod Manager](#2-access-the-pod-manager)
-  - [3. Dynamic Pod Creation](#3-dynamic-pod-creation)
+  - [1. Install Dependencies](#1-install-dependencies)
+  - [2. Configure the System](#2-configure-the-system)
+  - [3. Initialize the System](#3-initialize-the-system)
 - [Usage](#usage)
   - [Client Application](#client-application)
   - [Example Usage](#example-usage)
 - [Configuration](#configuration)
+  - [Environment Variables](#environment-variables)
+  - [Module Configuration](#module-configuration)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -47,8 +55,7 @@ This system abstracts away the complexities of remote execution, pod management,
 
 ![Architecture Diagram](jac_splice_orc/assets/Splice-Orc-2.png)
 
-
-### **System Components**
+### System Components
 
 1. **Client Application**
    - The interface through which users interact with remote modules.
@@ -65,7 +72,7 @@ This system abstracts away the complexities of remote execution, pod management,
    - Exposes the module's functionalities via a gRPC server.
    - Executes methods and returns results to the Pod Manager.
 
-### **Data Flow**
+### Data Flow
 
 1. **Client Requests**: The client makes a request to use a module's method.
 2. **Pod Manager Processing**: The Pod Manager checks if the module's pod is running; if not, it creates it.
@@ -81,31 +88,33 @@ This system abstracts away the complexities of remote execution, pod management,
 jac-splice-orc/
 │
 ├── jac_splice_orc/
-│   ├── Dockerfile                         # Dockerfile for building the containerized service
-│   ├── __init__.py                        # Package initializer
+│   ├── __init__.py
+│   ├── config/
+│   │   └── config.json                  # Main configuration file
+│   ├── config_loader.py                 # Configuration loader utility
 │   ├── grpc_local/
 │   │   ├── __init__.py
-│   │   └── module_service.proto           # Protocol Buffers definition
+│   │   └── module_service.proto         # Protocol Buffers definition
 │   ├── managers/
 │   │   ├── __init__.py
-│   │   ├── deploy.py                      # Deployment script for the Pod Manager
-│   │   ├── pod_manager.py                 # Pod manager to handle pod operations
-│   │   ├── pod_manager_deployment.yml     # Kubernetes deployment file for the pod manager
-│   │   └── proxy_manager.py               # Proxy manager for handling client-side proxying
+│   │   ├── pod_manager.py               # Pod Manager to handle pod operations
+│   │   ├── proxy_manager.py             # Proxy Manager for handling client-side proxying
 │   ├── plugin/
 │   │   ├── __init__.py
-│   │   └── splice_plugin.py               # Plugin for integration with jaclang
+│   │   └── splice_plugin.py             # Plugin for integration with jaclang
 │   ├── server/
 │   │   ├── __init__.py
-│   │   └── server.py                      # gRPC server to serve the imported module as a service
-│   ├── test/
-│   │   ├── __init__.py
-│   │   └── test_pod_manager.py            # Tests
+│   │   └── server.py                    # gRPC server to serve the imported module as a service
 │   └── utils/
 │       ├── __init__.py
-│       └── startup.sh                     # Startup script for initializing the server
-├── requirements.txt                       # Python dependencies
-└── README.md                              # Project documentation
+│       └── startup.sh                   # Startup script for initializing the server
+├── k8s/
+│   ├── pod_manager_deployment.yml       # Kubernetes deployment manifest
+├── docker/
+│   ├── Dockerfile                       # Dockerfile
+├── requirements.txt                     # Python dependencies
+├── setup.py                             # Installation script
+└── README.md                            # Project documentation
 ```
 
 ---
@@ -114,44 +123,91 @@ jac-splice-orc/
 
 ### Prerequisites
 
-- **Docker** (version 20.10 or later): [Install Docker](https://docs.docker.com/get-docker/)
 - **Kubernetes** (version 1.21 or later): [Install Kubernetes](https://kubernetes.io/docs/setup/)
-- **Helm** (version 3.0 or later): [Install Helm](https://helm.sh/docs/intro/install/)
-- **Nginx Ingress Controller**: [Set up Nginx Ingress](https://kubernetes.github.io/ingress-nginx/deploy/)
 - **Python** (version 3.9 or later): [Install Python](https://www.python.org/downloads/)
 - **kubectl** command-line tool: [Install kubectl](https://kubernetes.io/docs/tasks/tools/)
 
 Ensure all prerequisites are correctly installed and configured before proceeding.
 
-### 1. Deploy the Pod Manager
+### 1. Install Dependencies
 
-The Pod Manager is responsible for handling pod operations such as creation, scaling, and deletion.
-
-You can deploy the Pod Manager using the `deploy.py` script provided in the `managers` directory.
-
-**Usage:**
+Install the required Python packages:
 
 ```bash
-python managers/deploy.py
+pip install -r requirements.txt
 ```
 
-This script will handle the deployment of the Pod Manager to your Kubernetes cluster.
+### 2. Configure the System
 
-Ensure the Pod Manager service is up and running:
+#### **Configuration File**
+
+The application uses a `config.json` file located in the `config/` directory for all configurations.
+
+**Example `config/config.json`:**
+
+```json
+{
+  "kubernetes": {
+    "namespace": "jac-splice-orc",
+    "service_account_name": "smartimportsa",
+    "pod_manager": {
+      "image_name": "ashishmahendra/jac-splice-orc:0.1.8",
+      "deployment_yaml": "k8s/pod_manager_deployment.yml",
+      "service_name": "pod-manager-service"
+    }
+  },
+  "module_config": {
+    "numpy": {
+      "lib_mem_size_req": "100Mi",
+      "dependency": [],
+      "lib_cpu_req": "500m",
+      "load_type": "remote"
+    },
+    "pandas": {
+      "lib_mem_size_req": "200Mi",
+      "dependency": ["numpy", "pytz", "dateutil"],
+      "lib_cpu_req": "700m",
+      "load_type": "remote"
+    },
+    "transformers": {
+      "lib_mem_size_req": "2000Mi",
+      "dependency": ["torch", "transformers"],
+      "lib_cpu_req": "1.0",
+      "load_type": "remote"
+    },
+    "ollama": {
+      "lib_mem_size_req": "300Mi",
+      "dependency": ["ollama"],
+      "lib_cpu_req": "500m",
+      "load_type": "remote"
+    }
+  },
+  "environment": {
+    "POD_MANAGER_URL": "http://localhost:8000"
+  }
+}
+```
+
+#### **Adjust Configurations**
+
+- Update the `namespace` if you want to deploy to a different Kubernetes namespace.
+- Modify `module_config` to specify which modules should be handled remotely and their resource requirements.
+- Ensure the `POD_MANAGER_URL` is set correctly; it will be updated automatically during initialization.
+
+### 3. Initialize the System
+
+Use the provided CLI command to initialize the Pod Manager and Kubernetes resources:
 
 ```bash
-kubectl get pods
+jac orc_initialize your-namespace
 ```
 
-### 2. Access the Pod Manager
-
-Once the Pod Manager is deployed, you can access it via the exposed Nginx Ingress. Ensure your Ingress Controller is running correctly.
-
-Update your DNS or `/etc/hosts` file to point to the ingress IP if necessary.
-
-### 3. Dynamic Pod Creation
-
-You can dynamically create and manage pods by sending requests to the Pod Manager. The Pod Manager will deploy the specified module as an independent service.
+- Replace `your-namespace` with the desired namespace or omit to use the default from the configuration.
+- This command will:
+  - Create the Kubernetes namespace (if it doesn't exist).
+  - Create the service account and necessary RBAC permissions.
+  - Deploy the Pod Manager using the specified deployment file.
+  - Update the `POD_MANAGER_URL` in the `config.json` file with the actual service URL.
 
 ---
 
@@ -163,17 +219,16 @@ The client application provides a seamless way to interact with remote modules a
 
 #### **Client Components**
 
-- **PodManagerProxy**: Communicates with the Pod Manager to create pods and run modules.
-- **ModuleProxy**: Provides proxy objects for modules.
-- **RemoteObjectProxy**: Acts as a dynamic proxy for method calls on remote modules or objects.
+- **`ModuleProxy`**: Provides proxy objects for modules, handling remote method calls.
+- **`RemoteObjectProxy`**: Acts as a dynamic proxy for method calls on remote modules or objects.
 
 ### Example Usage
 
 Below is an example of how to use the system to perform remote method calls on a module, specifically using `numpy`:
 
 ```jac
-with entry{
-    import:py numpy;
+with entry {
+    import: py numpy;
     arr = numpy.array([1, 2, 3, 4]);
     print(arr);
     result = numpy.sum(arr);  # Remote method call
@@ -183,10 +238,9 @@ with entry{
 
 **Explanation:**
 
-- **Initialization**: The `ModuleProxy` initializes communication with the Pod Manager.
-- **Module Configuration**: Specify any dependencies or resource requirements.
-- **Getting Module Proxy**: `get_module_proxy` creates the pod for the module and returns a proxy object.
-- **Using Remote Module**: Use the proxy object (`numpy` in this case) to call methods as if they were local.
+- **Importing the Module**: The `import: py numpy;` statement triggers the remote loading of the `numpy` module.
+- **Using the Module**: You can use the `numpy` module as if it were local. The underlying system handles the remote execution transparently.
+- **Method Calls**: Method calls like `numpy.array()` and `numpy.sum()` are executed on the remote module.
 
 ---
 
@@ -194,32 +248,42 @@ with entry{
 
 ### Environment Variables
 
-- `POD_MANAGER_URL`: URL of the Pod Manager service.
-- `MODULE_NAME`: Name of the Python module to deploy.
-- `PORT`: Port on which the gRPC server will run (default is `50051`).
-- `NAMESPACE`: Kubernetes namespace to deploy pods (default is `default`).
+While most configurations are now stored in `config.json`, you can still use environment variables if needed.
+
+- **`POD_MANAGER_URL`**: URL of the Pod Manager service (updated automatically during initialization).
+- **`NAMESPACE`**: Kubernetes namespace to deploy pods (default is `jac-splice-orc`).
 
 ### Module Configuration
 
-When creating a module proxy, you can specify configuration options:
+In the `config.json` file, under `module_config`, you can specify configurations for each module:
 
-- `dependency`: List of additional Python packages required by the module.
-- `lib_cpu_req`: CPU resource request for the pod (e.g., `"500m"`).
-- `lib_mem_size_req`: Memory resource request for the pod (e.g., `"512Mi"`).
+- **`dependency`**: List of additional Python packages required by the module.
+- **`lib_cpu_req`**: CPU resource request for the pod (e.g., `"500m"`).
+- **`lib_mem_size_req`**: Memory resource request for the pod (e.g., `"512Mi"`).
+- **`load_type`**: Set to `"remote"` to handle the module remotely.
 
-```python
-module_config = {
-    "dependency": ["scipy==1.7.1"],  # Example dependency
-    "lib_cpu_req": "500m",
-    "lib_mem_size_req": "512Mi",
+**Example:**
+
+```json
+"numpy": {
+  "lib_mem_size_req": "100Mi",
+  "dependency": [],
+  "lib_cpu_req": "500m",
+  "load_type": "remote"
 }
 ```
+
 ---
 
-## **Flow Diagram**
+## Flow Diagram
 
 ![Flow Diagram](jac_splice_orc/assets/Splice-Orc.png)
 
 ---
 
+## Notes
 
+- **Configuration Management**: The system now uses a `config.json` file for configuration, enhancing flexibility and maintainability.
+- **Namespace Handling**: You can specify the Kubernetes namespace during initialization or let it default to the one specified in the configuration.
+- **Pod Manager URL**: The `POD_MANAGER_URL` is automatically updated in the configuration file after initialization, ensuring that the client knows how to communicate with the Pod Manager.
+- **Error Handling**: If the `POD_MANAGER_URL` is not set, the system will prompt you to run the initialization command.
