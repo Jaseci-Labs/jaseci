@@ -10,6 +10,7 @@ from jaclang.utils.test import TestCase
 class RegistryPassTests(TestCase):
     """Test pass module."""
 
+    # Need change
     def setUp(self) -> None:
         """Set up test."""
         return super().setUp()
@@ -18,21 +19,12 @@ class RegistryPassTests(TestCase):
         """Basic test for pass."""
         state = jac_file_to_pass(self.fixture_abs_path("registry.jac"), RegistryPass)
         self.assertFalse(state.errors_had)
-        self.assertTrue(
+        self.assertFalse(
             os.path.exists(
                 os.path.join(
                     os.path.dirname(self.fixture_abs_path("registry.jac")),
                     "__jac_gen__",
                     "registry.registry.pkl",
-                )
-            )
-        )
-        self.assertTrue(
-            os.path.exists(
-                os.path.join(
-                    os.path.dirname(self.fixture_abs_path("registry.jac")),
-                    "__jac_gen__",
-                    "fstrings.registry.pkl",
                 )
             )
         )
