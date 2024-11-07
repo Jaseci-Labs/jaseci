@@ -7,16 +7,20 @@ from typing import Optional, Union
 from kubernetes import client, config, utils
 from jaclang.cli.cmdreg import cmd_registry
 from jac_splice_orc.managers.proxy_manager import ModuleProxy
+from jac_splice_orc.config.config_loader import ConfigLoader
 
 import pluggy
 import logging
-from dotenv import load_dotenv
+
+# from dotenv import load_dotenv
 
 
-load_dotenv()
+# load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 hookimpl = pluggy.HookimplMarker("jac")
+
+config_loader = ConfigLoader()
 
 
 class SpliceOrcPlugin:
@@ -44,7 +48,9 @@ class SpliceOrcPlugin:
     @classmethod
     def create_service_account(cls, namespace):
         v1 = client.CoreV1Api()
-        service_account_name = "smartimportsa"
+        service_account_name = config_loader.get(
+            "kubernetes", "service_account_name", default="jac-orc-sa"
+        )
 
         # Check if the ServiceAccount already exists
         try:
@@ -160,16 +166,18 @@ class SpliceOrcPlugin:
             config.load_incluster_config()
 
         k8s_client = client.ApiClient()
-        yaml_file = os.path.join(
-            os.path.dirname(__file__), "..", "managers", "pod_manager_deployment.yml"
+        deployment_yaml = config_loader.get(
+            "kubernetes",
+            "pod_manager",
+            "deployment_yaml",
+            default="jac_splice_orc/k8s/pod_manager_deployment.yml",
         )
-        yaml_file = os.path.abspath(yaml_file)
 
-        logging.info(f"Applying {yaml_file} in namespace {namespace}")
+        logging.info(f"Applying {deployment_yaml} in namespace {namespace}")
 
         try:
-            utils.create_from_yaml(k8s_client, yaml_file, namespace=namespace)
-            logging.info(f"Successfully applied {yaml_file}")
+            utils.create_from_yaml(k8s_client, deployment_yaml, namespace=namespace)
+            logging.info(f"Successfully applied {deployment_yaml}")
         except utils.FailToCreateError as failure:
             for err in failure.api_exceptions:
                 if err.status == 409:
@@ -183,31 +191,24 @@ class SpliceOrcPlugin:
 
     @classmethod
     def configure_pod_manager_url(cls, namespace):
-        service_name = "pod-manager-service"
+        service_name = config_loader.get(
+            "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
+        )
+        if not namespace:
+            namespace = config_loader.get(
+                "kubernetes", "namespace", default="jac-splice-orc"
+            )
+
         url = cls.get_loadbalancer_url(service_name, namespace)
         if url:
             pod_manager_url_local = f"http://{url}:8000"
-            env_file_path = os.path.join(os.getcwd(), ".env")
 
-            # Read existing .env file variables
-            env_vars = {}
-            if os.path.exists(env_file_path):
-                with open(env_file_path, "r") as env_file:
-                    for line in env_file:
-                        if line.strip():
-                            key, value = line.strip().split("=", 1)
-                            env_vars[key] = value.strip('"')
-
-            # Update or add POD_MANAGER_URL
-            env_vars["POD_MANAGER_URL"] = pod_manager_url_local
-
-            # Write back to .env file
-            with open(env_file_path, "w") as env_file:
-                for key, value in env_vars.items():
-                    env_file.write(f'{key}="{value}"\n')
+            # Update the config file with the new pod_manager_url
+            config_loader.set(["environment", "POD_MANAGER_URL"], pod_manager_url_local)
+            config_loader.save_config()
 
             logging.info(
-                f"Pod manager URL updated in .env file: {pod_manager_url_local}"
+                f"Pod manager URL updated in config file: {pod_manager_url_local}"
             )
         else:
             logging.error("Failed to retrieve the pod_manager_url.")
@@ -245,6 +246,13 @@ class SpliceOrcPlugin:
         def orc_initialize(namespace: str) -> None:
             """Initialize the Pod Manager and Kubernetes system."""
             logging.info(f"Initializing Pod Manager in namespace '{namespace}'")
+            if not namespace:
+                namespace = config_loader.get(
+                    "kubernetes", "namespace", default="jac-splice-orc"
+                )
+            else:
+                config_loader.set(["kubernetes", "namespace"], namespace)
+                config_loader.save_config()
 
             # Call the class methods to perform initialization
             SpliceOrcPlugin.create_namespace(namespace)
@@ -274,20 +282,16 @@ class SpliceOrcPlugin:
             PythonImporter,
         )
         from jaclang.runtimelib.machine import JacMachine, JacProgram
-        from jaclang.settings import settings
 
-        if (
-            target in settings.module_config
-            and settings.module_config[target]["load_type"] == "remote"
-        ):
-            pod_manager_url = os.getenv("POD_MANAGER_URL")
+        module_config = config_loader.get("module_config", default={})
+        if target in module_config and module_config[target]["load_type"] == "remote":
+            pod_manager_url = config_loader.get("environment", "POD_MANAGER_URL")
             proxy = ModuleProxy(pod_manager_url)
             remote_module_proxy = proxy.get_module_proxy(
-                module_name=target, module_config=settings.module_config[target]
+                module_name=target, module_config=module_config[target]
             )
             logging.info(f"Loading remote module {remote_module_proxy}")
             return (remote_module_proxy,)
-
         spec = ImportPathSpec(
             target,
             base_path,
@@ -301,7 +305,9 @@ class SpliceOrcPlugin:
 
         jac_machine = JacMachine.get(base_path)
         if not jac_machine.jac_program:
-            jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None))
+            jac_machine.attach_program(
+                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            )
 
         if lng == "py":
             import_result = PythonImporter(JacMachine.get()).run_import(spec)
