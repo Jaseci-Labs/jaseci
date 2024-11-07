@@ -75,9 +75,9 @@ We can retrieve all visitable nodes from a node in specific directions.
 ??? tip "Output"
     ```txt
     [MyNode(Name='End')]
-    [MyNode(Name='Start')]       
+    [MyNode(Name='Start')]
     [Root()]
-    [Root()]   
+    [Root()]
     ```
 
 
@@ -152,9 +152,9 @@ We can retrieve all visitable nodes from a node in specific directions.
 ??? tip "Output"
     ```txt
     [A(val=20), A(val=10)]
-    [A(val=25), A(val=15)]    
+    [A(val=25), A(val=15)]
     ```
-    
+
 ## <span style="color: orange">Node Connections
 === "Jac"
     ```jac linenums="1"
@@ -181,5 +181,3 @@ We can retrieve all visitable nodes from a node in specific directions.
 
     - Delete node
         1. `del node_3;`  node_3 is deleted.
-
-
