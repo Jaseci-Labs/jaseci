@@ -11,7 +11,7 @@ with mock.patch.dict(
         "grpc_local.module_service_pb2_grpc": mock.MagicMock(),
     },
 ):
-    from ..managers.pod_manager import app, PodManager  # Import your FastAPI app
+    from ..managers.pod_manager import app, PodManager
 
 client = TestClient(app)
 
