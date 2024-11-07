@@ -2,7 +2,6 @@
 
 import io
 import os
-import pickle
 import sys
 import sysconfig
 
@@ -24,7 +23,7 @@ class JacLanguageTests(TestCase):
         """Set up test."""
         SUPER_ROOT_ANCHOR.edges.clear()
         JacMachine(self.fixture_abs_path("./")).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None)
+            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
         return super().setUp()
 
@@ -209,8 +208,10 @@ class JacLanguageTests(TestCase):
         """Test semstring."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         jac_import("semstr", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
@@ -466,24 +467,22 @@ class JacLanguageTests(TestCase):
         """Test Jac registry feature."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         jac_import("registry", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
-        with open(
-            os.path.join(
-                self.fixture_abs_path("./"), "__jac_gen__", "registry.registry.pkl"
-            ),
-            "rb",
-        ) as f:
-            registry = pickle.load(f)
+        output_lines = stdout_value.strip().split("\n")
+        outputs = [
+            int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)
+        ]
 
-        self.assertEqual(len(registry.registry), 9)
-        self.assertEqual(len(list(registry.registry.items())[0][1]), 2)
-        self.assertEqual(list(registry.registry.items())[3][0].scope, "Person")
-        _, sem_info = registry.lookup(name="normal_ability")
-        self.assertEqual(len(sem_info.get_children(registry)), 2)
+        self.assertEqual(outputs[0], 9)
+        self.assertEqual(outputs[1], 2)
+        self.assertEqual(outputs[2], "Person")
+        self.assertEqual(outputs[3], 2)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
@@ -806,11 +805,13 @@ class JacLanguageTests(TestCase):
         """Test for access tags working."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        sys.stderr = captured_output
         cli.check(
             self.fixture_abs_path("../../tests/fixtures/access_modifier.jac"),
             print_errs=True,
         )
         sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("Invalid access"), 18)
 
@@ -828,10 +829,12 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(f.read())
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(parsed_ast, mod_path=file_name),
+                    input_ir=ast.PythonModuleAst(
+                        parsed_ast, orig_src=ast.JacSource(f.read(), file_name)
+                    )
                 )
             except Exception as e:
-                return f"Error While Jac to Py AST conversion: {e}"
+                raise Exception(f"Error While Jac to Py AST conversion: {e}")
 
         settings.print_py_raised_ast = True
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
@@ -1176,3 +1179,13 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)
+
+    def test_global_multivar(self) -> None:
+        """Test supporting multiple global variable in a statement."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("glob_multivar_statement", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello World !", stdout_value[0])
+        self.assertIn("Welcome to Jaseci!", stdout_value[1])

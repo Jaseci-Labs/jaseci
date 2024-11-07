@@ -147,7 +147,7 @@ def dump_traceback(e: Exception) -> str:
         return len(string.encode("utf-8")[:offset].decode("utf-8", errors="replace"))
 
     tb = TracebackException(type(e), e, e.__traceback__, limit=None, compact=True)
-    trace_dump += f"Error: {str(e)}"
+    trace_dump += f"Error: {str(e)}\n"
 
     # The first frame is the call the to the above `exec` function, not usefull to the enduser,
     # and Make the most recent call first.
@@ -155,27 +155,35 @@ def dump_traceback(e: Exception) -> str:
     tb.stack.reverse()
 
     # FIXME: should be some settings, we should replace to ensure the anchors length match.
-    dump_tab_width = 4
+    dump_tab_width = 2
 
     for idx, frame in enumerate(tb.stack):
         func_signature = frame.name + ("()" if frame.name.isidentifier() else "")
 
         # Pretty print the most recent call's location.
-        if idx == 0 and (frame.line and frame.line.strip() != ""):
+        if idx == 0 and (
+            (frame.lineno is not None) and frame.line and frame.line.strip() != ""
+        ):
+
             line_o = frame._original_line.rstrip()  # type: ignore [attr-defined]
-            line_s = frame.line.rstrip() if frame.line else ""
-            stripped_chars = len(line_o) - len(line_s)
-            trace_dump += f'\n{" " * (dump_tab_width * 2)}{line_s}'
             if frame.colno is not None and frame.end_colno is not None:
-                off_start = byte_offset_to_char_offset(line_o, frame.colno)
-                off_end = byte_offset_to_char_offset(line_o, frame.end_colno)
+                off_start = byte_offset_to_char_offset(line_o, frame.colno) - 1
+                off_end = byte_offset_to_char_offset(line_o, frame.end_colno) - 1
 
-                # A bunch of caret '^' characters under the error location.
-                anchors = (" " * (off_start - stripped_chars - 1)) + "^" * len(
-                    line_o[off_start:off_end].replace("\t", " " * dump_tab_width)
+                # Get the source.
+                file_source = None
+                with open(frame.filename, "r") as file:
+                    file_source = file.read()
+
+                # Get the source offset.
+                lines = file_source.split("\n")
+                for i in range(frame.lineno - 1):
+                    off_start += len(lines[i]) + 1
+                    off_end += len(lines[i]) + 1
+
+                trace_dump += pretty_print_source_location(
+                    frame.filename, file_source, frame.lineno, off_start, off_end
                 )
-
-                trace_dump += f'\n{" " * (dump_tab_width * 2)}{anchors}'
 
         trace_dump += f'\n{" " * dump_tab_width}at {func_signature} {frame.filename}:{frame.lineno}'
 
@@ -242,14 +250,14 @@ def pretty_print_source_location(
                 spaces += "\t" if file_source[idx_pre] == "\t" else " "
 
             err_token_len = pos_end - pos_start
-            pretty_dump += spaces + ("~" * err_token_len) + "\n"
+            pretty_dump += spaces + ("^" * err_token_len) + "\n"
 
         if idx == len(file_source):
             break
         curr_line += 1
         idx += 1
 
-    return pretty_dump
+    return pretty_dump[:-1]  # Get rid of the last newline (of the last line).
 
 
 class Jdb(pdb.Pdb):
