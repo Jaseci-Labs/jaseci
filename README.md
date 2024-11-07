@@ -18,15 +18,15 @@
 
 </div>
 
-Welcome to the Jaseci project. 
+Welcome to the Jaseci project.
 
 This is a collection of libraries and frameworks in the Jaseci Ecosystem.
 
-* [`jaclang`](jac/): The Jac programming language, a drop-in replacement for and supersets Python.
-* [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
-* [`jac-cloud`](jac-cloud/): The cloud-native library for Jac programs. `jac-cloud` automatically converts your local application to a production-ready server stack.
-* [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
-* [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
+- [`jaclang`](jac/): The Jac programming language, a drop-in replacement for and supersets Python.
+- [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
+- [`jac-cloud`](jac-cloud/): The cloud-native library for Jac programs. `jac-cloud` automatically converts your local application to a production-ready server stack.
+- [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
+- [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
 
 ## Contributing
 
@@ -42,12 +42,7 @@ See [LICENSE-MIT](.guthub/LICENSE), and
 
 ## Trademark
 
-[Jaseci][jaseci] owns and protects the Jaclang trademarks and logos (the "Jaclang Trademarks").
-
-If you want to use these names or brands, please read the [media guide][media-guide].
-
-Third-party logos may be subject to third-party copyrights and trademarks. See [Licenses][policies-licenses] for details.
+[Jaseci Labs, LLC][jaseci] owns and protects the Jaseci and Jac trademarks and logos.
+If you would like to use these names or brands, please reach out for approval.
 
 [jaseci]: https://jaseci.org/
-[media-guide]: https://jaseci.org/policies/logo-policy-and-media-guide/
-[policies-licenses]: https://www.jaseci.org/policies/licenses
