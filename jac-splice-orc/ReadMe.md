@@ -21,6 +21,7 @@ JAC Cloud Orchestrator (`jac-splice-orc`) is a system designed to dynamically im
   - [1. Install Dependencies](#1-install-dependencies)
   - [2. Configure the System](#2-configure-the-system)
   - [3. Initialize the System](#3-initialize-the-system)
+- [Docker Usage](#docker-usage) 
 - [Usage](#usage)
   - [Client Application](#client-application)
   - [Example Usage](#example-usage)
@@ -211,6 +212,48 @@ jac orc_initialize your-namespace
 
 ---
 
+## Docker Usage
+
+### Building the Docker Image
+
+Build the Docker image using the provided Dockerfile:
+
+```bash
+docker build -t your_dockerhub_username/jac-splice-orc:latest .
+```
+
+Replace `your_dockerhub_username` with your Docker Hub username or preferred image name.
+
+### Running the Docker Container
+
+You can run the container as either the Pod Manager or a Module Service by setting the `SERVICE_TYPE` environment variable.
+
+#### Running the Pod Manager
+
+```bash
+docker run -d -p 8000:8000 -e SERVICE_TYPE=pod_manager your_dockerhub_username/jac-splice-orc:latest
+```
+
+This starts the Pod Manager service on port 8000.
+
+#### Running a Module Service
+
+```bash
+docker run -d -p 50051:50051 -e SERVICE_TYPE=module_service -e MODULE_NAME=your_module_name your_dockerhub_username/jac-splice-orc:latest
+```
+
+Replace `your_module_name` with the name of the Python module you want to serve. This starts the Module Service on port 50051.
+
+### Dockerfile Overview
+
+The Dockerfile sets up an image that can run either the Pod Manager or a Module Service:
+
+- **Base Image**: Uses `python:3.12-slim` for a lightweight environment.
+- **Dependencies**: Installs necessary Python packages like `grpcio`, `fastapi`, `kubernetes`, and `numpy`.
+- **Application Code**: Copies the gRPC service definitions and application code into the image.
+- **Entrypoint**: Uses an environment variable `SERVICE_TYPE` to decide which service to start (`pod_manager` or `module_service`).
+
+---
 ## Usage
 
 ### Client Application
@@ -287,3 +330,5 @@ In the `config.json` file, under `module_config`, you can specify configurations
 - **Namespace Handling**: You can specify the Kubernetes namespace during initialization or let it default to the one specified in the configuration.
 - **Pod Manager URL**: The `POD_MANAGER_URL` is automatically updated in the configuration file after initialization, ensuring that the client knows how to communicate with the Pod Manager.
 - **Error Handling**: If the `POD_MANAGER_URL` is not set, the system will prompt you to run the initialization command.
+
+---
