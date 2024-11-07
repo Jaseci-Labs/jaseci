@@ -34,7 +34,7 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## License
 
-Jaclang is distributed under the terms of both the MIT license with a few other open source projects vendored
+All Jaseci open source software is distributed under the terms of both the MIT license with a few other open source projects vendored
 within with various other licenses that are very permissive.
 
 See [LICENSE-MIT](.guthub/LICENSE), and
@@ -44,5 +44,11 @@ See [LICENSE-MIT](.guthub/LICENSE), and
 
 [Jaseci Labs, LLC][jaseci] owns and protects the Jaseci and Jac trademarks and logos.
 If you would like to use these names or brands, please reach out for approval.
+
+[jaseci]: https://jaseci.org/
+
+## University of Michigan Disclosure
+
+The Jaseci open-source software (OSS) is maintained by [Jaseci Labs, LLC][jaseci]. Prof. Jason Mars and Dr. Yiping Kang are part owners of Jaseci Labs, LLC and Prof. Lingjia Tang is an unpaid advisor for Jaseci Labs, LLC.
 
 [jaseci]: https://jaseci.org/
