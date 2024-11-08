@@ -10,7 +10,7 @@ import re
 from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import Constants
+from jaclang.compiler.constant import Constants, Tokens
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
@@ -266,6 +266,32 @@ class FuseTypeInfoPass(Pass):
         """Enter an expression node."""
         if len(node.gen.mypy_ast) == 0:
             return
+
+        # Check if the expression is a data spatial expression
+        # Support disconnectOp
+        if isinstance(node, ast.BinaryExpr):
+            if isinstance(node.op, ast.DisconnectOp):
+                node.expr_type = "builtins.bool"
+                return
+
+            # Support spwan and connectOp
+            elif (
+                isinstance(node.op, ast.ConnectOp)
+                or node.op.name == Tokens.KW_SPAWN.value
+            ):
+                if node.gen.mypy_ast[-1] in self.node_type_hash:
+                    print(
+                        self.__call_type_handler(
+                            self.node_type_hash[node.gen.mypy_ast[-1]]
+                        )
+                    )
+                    node.expr_type = (
+                        self.__call_type_handler(
+                            self.node_type_hash[node.gen.mypy_ast[-1]]
+                        )
+                        or node.expr_type
+                    )
+                return
 
         # SpecialVarRef has special handling to use the last item in the mypy
         # node list
