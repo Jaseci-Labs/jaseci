@@ -592,7 +592,7 @@ class BaseAnchor:
             architype, type
         ):
             self.state.context_hashes = {
-                key: hash(dumps(val))
+                key: hash(val if isinstance(val, bytes) else dumps(val))
                 for key, val in architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
             }
             self.state.full_hash = hash(pdumps(self.serialize()))
