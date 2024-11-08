@@ -83,11 +83,12 @@ def run(
             else ""
         )
 
-    gins_instance = ShellGhost(filename, is_running=gins)
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
     jctx = ExecutionContext.create(session=session)
+    if gins:
+        JacMachine(base).attach_gin(ShellGhost(filename))
 
     if filename.endswith(".jac"):
         jac_import(

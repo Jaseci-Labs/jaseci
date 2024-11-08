@@ -45,12 +45,17 @@ class JacMachine:
             else os.path.abspath(base_path)
         )
         self.jac_program: Optional[JacProgram] = None
+        self.gin: Optional[ShellGhost] = None
 
         JACMACHINE_CONTEXT.set(self)
 
     def attach_program(self, jac_program: "JacProgram") -> None:
         """Attach a JacProgram to the machine."""
         self.jac_program = jac_program
+    
+    def attach_gin(self, jac_gin: "ShellGhost") -> None:
+        """Attach a JacProgram to the machine."""
+        self.gin = jac_gin
 
     def get_mod_bundle(self) -> Optional[Module]:
         """Retrieve the mod_bundle from the attached JacProgram."""
@@ -305,10 +310,11 @@ class JacProgram:
 
 
 class ShellGhost:
-    def __init__(self, file_name:str, is_running:bool = False):
-        self.__daemon_thread = Thread(
-            target = self.worker, args=(file_name,))
+    def __init__(self, file_name: str):
+        self.__daemon_thread:Thread = Thread(target=self.worker, args=(file_name,))
+        self.cfg = None
         self.__daemon_thread.start()
+
     def worker(self, file_name):
         print("doesn't do anything")
         ir = jac_file_to_pass(
@@ -316,3 +322,24 @@ class ShellGhost:
         ).ir
         print(ir.pp())
         time.sleep(2)
+        
+
+# import time
+#         import gc
+#         import inspect
+#         with open("log.txt", "a") as log_file:
+#             while True:
+#                 # Pause to avoid excessive checks
+#                 time.sleep(10)
+                
+#                 # Gather all objects in the main application
+#                 objects = gc.get_objects()
+#                 log_file.write("\n[Monitor] Checking objects in main application:\n")
+
+#                 for obj in objects:
+#                     # Only monitor dictionaries (e.g., modules, function locals, etc.)
+#                     if isinstance(obj, dict):
+#                         for name, value in obj.items():
+#                             log_file.write(f"Variable '{name}' = {value}\n")
+#                 log_file.write("\n=====================================================================\n")
+#                 log_file.flush()  # Ensure data is written immediately
