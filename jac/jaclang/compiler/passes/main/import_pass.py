@@ -13,7 +13,7 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main import SubNodeTabPass, SymTabBuildPass
+from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 
@@ -37,11 +37,10 @@ class JacImportPass(Pass):
         self.run_again = True
         while self.run_again:
             self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
+            all_imports = node.get_all_sub_nodes(ast.ModulePath)
             for i in all_imports:
                 self.process_import(i)
                 self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -58,6 +57,7 @@ class JacImportPass(Pass):
         if mod:
             self.run_again = True
             node.sub_module = mod
+            JacImportPass.add_to_sub_node_tab(self.ir, mod)
             self.annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
@@ -101,6 +101,7 @@ class JacImportPass(Pass):
                 if mod:
                     node.impl_mod.append(mod)
                     node.add_kids_left([mod], pos_update=False)
+                    JacImportPass.add_to_sub_node_tab(self.ir, mod)
                     mod.parent = node
             if (
                 cur_file.startswith(f"{base_path}.")
@@ -110,6 +111,7 @@ class JacImportPass(Pass):
                 if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
+                    JacImportPass.add_to_sub_node_tab(node, mod)
                     mod.parent = node
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -169,8 +171,8 @@ class JacImportPass(Pass):
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        from jaclang.compiler.compile import jac_file_to_pass
-        from jaclang.compiler.passes.main import SubNodeTabPass
+        from jaclang.compiler.parser import JacParser
+        from jaclang.compiler.passes import Pass
 
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
@@ -178,7 +180,9 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
+            with open(target) as file:
+                source = ast.JacSource(file.read(), mod_path=target)
+                mod_pass: Pass = JacParser(input_ir=source)
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
@@ -193,6 +197,17 @@ class JacImportPass(Pass):
         else:
             self.error(f"Module {target} is not a valid Jac module.")
             return None
+
+    @staticmethod
+    def add_to_sub_node_tab(node: ast.AstNode, mod: ast.Module) -> None:
+        """Add a module to the sub node table."""
+        if (
+            ast.Module in node._sub_node_tab
+            and mod not in node._sub_node_tab[ast.Module]
+        ):
+            node._sub_node_tab[ast.Module].append(mod)
+        else:
+            node._sub_node_tab[ast.Module] = [mod]
 
 
 class PyImportPass(JacImportPass):
@@ -276,6 +291,7 @@ class PyImportPass(JacImportPass):
         try:
             if file_to_raise not in {None, "built-in", "frozen"}:
                 if file_to_raise in self.import_table:
+                    PyImportPass.add_to_sub_node_tab(self.ir, self.import_table[file_to_raise])
                     return self.import_table[file_to_raise]
 
                 with open(file_to_raise, "r", encoding="utf-8") as f:
@@ -286,8 +302,8 @@ class PyImportPass(JacImportPass):
                             orig_src=ast.JacSource(file_source, file_to_raise),
                         ),
                     ).ir
-                    SubNodeTabPass(input_ir=mod, prior=self)
                 if mod:
+                    PyImportPass.add_to_sub_node_tab(self.ir, mod)
                     mod.name = imported_mod_name
                     self.import_table[file_to_raise] = mod
                     self.attach_mod_to_node(parent_node, mod)
@@ -323,7 +339,6 @@ class PyImportPass(JacImportPass):
                 ),
             ).ir
             mod.parent = self.ir
-            SubNodeTabPass(input_ir=mod, prior=self)
             SymTabBuildPass(input_ir=mod, prior=self)
             mod.parent = None
 
