@@ -129,19 +129,8 @@ class DeclImplMatchPass(Pass):
                         valid_decl.name_spec,
                     )
                 else:
+                    # Copy the parameter names from the declaration to the definition.
                     for idx in range(len(params_defn.items)):
-                        # Check if all the parameter names are matched.
-                        # TODO: This shouldn't be an issue however if the names are not matched, it doesn't
-                        # work as expected like in C++, for now I'm adding this validation, however this
-                        # needs to be fixed to have a C++ style.
-                        param_name_decl = params_decl.items[idx].name.value
-                        param_name_defn = params_defn.items[idx].name.value
-                        if param_name_defn != param_name_decl:
-                            self.error(
-                                f"Parameter name mismatch for ability {sym.sym_name}.",
-                                params_defn.items[idx].name,
-                            )
-                            self.error(
-                                f"From the declaration of {valid_decl.name_spec.sym_name}.",
-                                params_decl.items[idx].name,
-                            )
+                        params_decl.items[idx] = params_defn.items[idx]
+                    for idx in range(len(params_defn.kid)):
+                        params_decl.kid[idx] = params_defn.kid[idx]
