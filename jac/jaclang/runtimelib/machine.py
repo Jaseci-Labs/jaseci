@@ -317,11 +317,11 @@ class ShellGhost:
 
     def worker(self, file_name):
         print("doesn't do anything")
-        ir = jac_file_to_pass(
-            file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
-        ).ir
-        print(ir.pp())
-        time.sleep(2)
+        # ir = jac_file_to_pass(
+        #     file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
+        # ).ir
+        # print(ir.pp())
+        # time.sleep(2)
         
 
 # import time

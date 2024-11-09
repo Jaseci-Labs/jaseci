@@ -11,6 +11,7 @@ from .pyast_gen_pass import PyastGenPass  # noqa: I100
 from .schedules import py_code_gen  # noqa: I100
 from .type_check_pass import JacTypeCheckPass  # noqa: I100
 from .registry_pass import RegistryPass  # noqa: I100
+from .cfg_gen_pass import CfgGenPass  # noqa: I100
 
 
 pass_schedule = py_code_gen  # type: ignore[has-type]
@@ -27,4 +28,5 @@ __all__ = [
     "PyastGenPass",
     "JacTypeCheckPass",
     "RegistryPass",
+    "CfgGenPass",
 ]
