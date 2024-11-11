@@ -43,6 +43,19 @@ class DeclImplMatchPassTests(TestCase):
         for exp in expected_stdout_values:
             self.assertIn(exp, errors_output)
 
+    def test_ability_connected_to_decl_post(self) -> None:
+        """Basic test for pass."""
+        state = jac_file_to_pass(self.fixture_abs_path("base2.jac"), DeclImplMatchPass)
+        self.assertFalse(state.errors_had)
+        self.assertIn("(o)Test.(c)say_hi", state.ir.sym_tab.tab)
+        self.assertIsNotNone(
+            state.ir.sym_tab.tab["(o)Test.(c)say_hi"].decl.name_of.body
+        )
+        self.assertIn("(o)Test.(c)__init__", state.ir.sym_tab.tab)
+        self.assertIsNotNone(
+            state.ir.sym_tab.tab["(o)Test.(c)__init__"].decl.name_of.body
+        )
+
     def test_parameter_name_mismatch(self) -> None:
         """Basic test for pass."""
         state = jac_file_to_pass(
