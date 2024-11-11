@@ -1,10 +1,10 @@
 """JAC Splice-Orchestrator Plugin."""
 
-import os
+import time
 import types
 from typing import Optional, Union
 
-from kubernetes import client, config, utils
+from kubernetes import client, config
 from jaclang.cli.cmdreg import cmd_registry
 from jac_splice_orc.managers.proxy_manager import ModuleProxy
 from jac_splice_orc.config.config_loader import ConfigLoader
@@ -12,14 +12,11 @@ from jac_splice_orc.config.config_loader import ConfigLoader
 import pluggy
 import logging
 
-# from dotenv import load_dotenv
-
-
-# load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 hookimpl = pluggy.HookimplMarker("jac")
 
+# Initialize ConfigLoader
 config_loader = ConfigLoader()
 
 
@@ -160,34 +157,136 @@ class SpliceOrcPlugin:
 
     @classmethod
     def apply_pod_manager_yaml(cls, namespace):
+        """Generate and apply the Pod Manager Deployment and Service."""
         try:
             config.load_kube_config()
         except config.ConfigException:
             config.load_incluster_config()
 
-        k8s_client = client.ApiClient()
-        deployment_yaml = config_loader.get(
-            "kubernetes",
-            "pod_manager",
-            "deployment_yaml",
-            default="k8s/pod_manager_deployment.yml",
+        # Read configuration
+        kubernetes_config = config_loader.get("kubernetes")
+        pod_manager_config = kubernetes_config["pod_manager"]
+        service_account_name = kubernetes_config.get(
+            "service_account_name", "jac-orc-sa"
+        )
+        deployment_name = pod_manager_config.get(
+            "deployment_name", "pod-manager-deployment"
+        )
+        container_name = pod_manager_config.get("container_name", "pod-manager")
+        image_name = pod_manager_config.get("image_name")
+        container_port = pod_manager_config.get("container_port", 8000)
+        env_vars = pod_manager_config.get("env_vars", {})
+        resources = pod_manager_config.get("resources", {})
+        service_name = pod_manager_config.get("service_name", "pod-manager-service")
+        service_type = pod_manager_config.get("service_type", "LoadBalancer")
+
+        # Create the Deployment object
+        apps_v1 = client.AppsV1Api()
+
+        # Define container environment variables
+        env_list = [
+            client.V1EnvVar(name=key, value=str(value))
+            for key, value in env_vars.items()
+        ]
+
+        # Define container resources
+        resource_requirements = client.V1ResourceRequirements(
+            limits=resources.get("limits"), requests=resources.get("requests")
         )
 
-        logging.info(f"Applying {deployment_yaml} in namespace {namespace}")
+        # Define the container
+        container = client.V1Container(
+            name=container_name,
+            image=image_name,
+            ports=[client.V1ContainerPort(container_port=container_port)],
+            env=env_list,
+            resources=resource_requirements,
+        )
 
+        # Define the Pod template spec
+        template = client.V1PodTemplateSpec(
+            metadata=client.V1ObjectMeta(labels={"app": container_name}),
+            spec=client.V1PodSpec(
+                containers=[container], service_account_name=service_account_name
+            ),
+        )
+
+        # Define the Deployment spec
+        spec = client.V1DeploymentSpec(
+            replicas=1,
+            selector=client.V1LabelSelector(match_labels={"app": container_name}),
+            template=template,
+        )
+
+        # Define the Deployment
+        deployment = client.V1Deployment(
+            api_version="apps/v1",
+            kind="Deployment",
+            metadata=client.V1ObjectMeta(name=deployment_name, namespace=namespace),
+            spec=spec,
+        )
+
+        # Create or update the Deployment
         try:
-            utils.create_from_yaml(k8s_client, deployment_yaml, namespace=namespace)
-            logging.info(f"Successfully applied {deployment_yaml}")
-        except utils.FailToCreateError as failure:
-            for err in failure.api_exceptions:
-                if err.status == 409:
-                    logging.info(f"Resource already exists: {err.reason}")
-                else:
-                    logging.error(f"Error creating resource: {err}")
-                    raise
-        except Exception as e:
-            logging.error(f"An unexpected error occurred: {e}")
-            raise
+            existing_deployment = apps_v1.read_namespaced_deployment(
+                name=deployment_name, namespace=namespace
+            )
+            # Update the deployment if it exists
+            apps_v1.patch_namespaced_deployment(
+                name=deployment_name, namespace=namespace, body=deployment
+            )
+            logging.info(
+                f"Updated Deployment '{deployment_name}' in namespace '{namespace}'"
+            )
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                # Create the Deployment
+                apps_v1.create_namespaced_deployment(
+                    namespace=namespace, body=deployment
+                )
+                logging.info(
+                    f"Created Deployment '{deployment_name}' in namespace '{namespace}'"
+                )
+            else:
+                logging.error(f"Error creating/updating Deployment: {e}")
+                raise
+
+        # Create the Service object
+        v1 = client.CoreV1Api()
+
+        service = client.V1Service(
+            api_version="v1",
+            kind="Service",
+            metadata=client.V1ObjectMeta(name=service_name, namespace=namespace),
+            spec=client.V1ServiceSpec(
+                selector={"app": container_name},
+                ports=[
+                    client.V1ServicePort(
+                        protocol="TCP", port=container_port, target_port=container_port
+                    )
+                ],
+                type=service_type,
+            ),
+        )
+
+        # Create or update the Service
+        try:
+            _ = v1.read_namespaced_service(name=service_name, namespace=namespace)
+            # Update the service if it exists
+            v1.patch_namespaced_service(
+                name=service_name, namespace=namespace, body=service
+            )
+            logging.info(f"Updated Service '{service_name}' in namespace '{namespace}'")
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                # Create the Service
+                v1.create_namespaced_service(namespace=namespace, body=service)
+                logging.info(
+                    f"Created Service '{service_name}' in namespace '{namespace}'"
+                )
+            else:
+                logging.error(f"Error creating/updating Service: {e}")
+                raise
 
     @classmethod
     def configure_pod_manager_url(cls, namespace):
@@ -214,28 +313,40 @@ class SpliceOrcPlugin:
             logging.error("Failed to retrieve the pod_manager_url.")
 
     @classmethod
-    def get_loadbalancer_url(cls, service_name, namespace):
+    def get_loadbalancer_url(cls, service_name, namespace, timeout=60, interval=5):
         try:
             config.load_kube_config()
         except config.ConfigException:
             config.load_incluster_config()
 
         v1 = client.CoreV1Api()
-        try:
-            service = v1.read_namespaced_service(name=service_name, namespace=namespace)
-            ingress = service.status.load_balancer.ingress
-            if ingress:
-                ip = ingress[0].ip
-                hostname = ingress[0].hostname
-                logging.info(f"ip: {ip}, host: {hostname}")
-                if ip:
-                    return ip
-                elif hostname:
-                    return hostname
-            return None
-        except client.exceptions.ApiException as e:
-            logging.error(f"Error retrieving LoadBalancer URL: {e}")
-            return None
+        start_time = time.time()
+        while True:
+            try:
+                service = v1.read_namespaced_service(
+                    name=service_name, namespace=namespace
+                )
+                ingress = service.status.load_balancer.ingress
+                if ingress:
+                    ip = ingress[0].ip
+                    hostname = ingress[0].hostname
+                    logging.info(f"ip: {ip}, host: {hostname}")
+                    if ip:
+                        return ip
+                    elif hostname:
+                        return hostname
+                    else:
+                        logging.info("Waiting for external IP to be assigned...")
+            except client.exceptions.ApiException as e:
+                logging.error(f"Error retrieving LoadBalancer URL: {e}")
+                return None
+            if (time.time() - start_time) > timeout:
+                logging.error(
+                    f"Timed out after {timeout} seconds waiting for external IP."
+                )
+                return None
+
+            time.sleep(interval)
 
     @staticmethod
     @hookimpl
@@ -244,15 +355,24 @@ class SpliceOrcPlugin:
 
         @cmd_registry.register
         def orc_initialize(namespace: str) -> None:
-            """Initialize the Pod Manager and Kubernetes system."""
-            logging.info(f"Initializing Pod Manager in namespace '{namespace}'")
+            """Initialize the Pod Manager and Kubernetes system.
+
+            :param namespace: Kubernetes namespace to use.
+            """
+            # Use the provided namespace if given, else read from config
             if not namespace:
                 namespace = config_loader.get(
                     "kubernetes", "namespace", default="jac-splice-orc"
                 )
             else:
+                # Update the namespace in the config
+                config_loader.set(
+                    ["kubernetes", "pod_manager", "env_vars", "NAMESPACE"], namespace
+                )
                 config_loader.set(["kubernetes", "namespace"], namespace)
                 config_loader.save_config()
+
+            logging.info(f"Initializing Pod Manager in namespace '{namespace}'")
 
             # Call the class methods to perform initialization
             SpliceOrcPlugin.create_namespace(namespace)
@@ -286,11 +406,15 @@ class SpliceOrcPlugin:
         module_config = config_loader.get("module_config", default={})
         if target in module_config and module_config[target]["load_type"] == "remote":
             pod_manager_url = config_loader.get("environment", "POD_MANAGER_URL")
+            if not pod_manager_url:
+                logging.error(
+                    "POD_MANAGER_URL is not set in the config file. Please run 'jac orc_initialize' to initialize the system."
+                )
+                raise Exception("POD_MANAGER_URL is not set.")
             proxy = ModuleProxy(pod_manager_url)
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=module_config[target]
             )
-            logging.info(f"Loading remote module {remote_module_proxy}")
             return (remote_module_proxy,)
         spec = ImportPathSpec(
             target,
