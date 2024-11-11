@@ -5,11 +5,17 @@ from os import getenv
 from typing import Literal, overload
 from unittest.async_case import IsolatedAsyncioTestCase
 
+from fakeredis import FakeRedis
+
 from httpx import get, post
+
+from pymongo import MongoClient
+
+from redis import Redis as RedisClient
 
 from yaml import safe_load
 
-from ..jaseci.datasources import Collection
+from ..jaseci.datasources import Collection, MontyClient, Redis
 
 
 class SimpleGraphTest(IsolatedAsyncioTestCase):
@@ -17,7 +23,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         """Reset DB and wait for server."""
-        self.host = "http://0.0.0.0:8000"
+        self.host = f"http://0.0.0.0:{getenv('PORT', '8000')}"
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
@@ -35,6 +41,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                     self.check_server()
                     break
             count += 1
+        self.check_datasources()
 
     async def asyncTearDown(self) -> None:
         """Clean up DB."""
@@ -77,6 +84,18 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         res = get(f"{self.host}/healthz")
         res.raise_for_status()
         self.assertEqual(200, res.status_code)
+
+    def check_datasources(self) -> None:
+        """Retrieve Datasources type."""
+        if getenv("DATABASE_HOST"):
+            self.assertIsInstance(Collection.get_client(), MongoClient)
+        else:
+            self.assertIsInstance(Collection.get_client(), MontyClient)
+
+        if getenv("REDIS_HOST"):
+            self.assertIsInstance(Redis.get_rd(), RedisClient)
+        else:
+            self.assertIsInstance(Redis.get_rd(), FakeRedis)
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
