@@ -1,12 +1,9 @@
-Certainly! I'll update the README to make it more accurate based on the recent changes we've made, such as moving configurations to a `config.json` file and updating the code structure. Here's the revised README:
-
----
-
 # JAC Cloud Orchestrator (`jac-splice-orc`)
 
-![Docker Pulls](https://img.shields.io/docker/pulls/ashishmahendra/jac-splice-orc)
 
 JAC Cloud Orchestrator (`jac-splice-orc`) is a system designed to dynamically import any Python module, deploy it as a Kubernetes Pod, and expose it as an independent gRPC service. This enables any Python module to be used as a microservice, providing flexibility and scalability in a cloud environment.
+
+---
 
 ## Table of Contents
 
@@ -18,16 +15,22 @@ JAC Cloud Orchestrator (`jac-splice-orc`) is a system designed to dynamically im
 - [Project Structure](#project-structure)
 - [Setup](#setup)
   - [Prerequisites](#prerequisites)
-  - [1. Install Dependencies](#1-install-dependencies)
-  - [2. Configure the System](#2-configure-the-system)
-  - [3. Initialize the System](#3-initialize-the-system)
-- [Docker Usage](#docker-usage) 
+  - [1. Clone the Repository](#1-clone-the-repository)
+  - [2. Install Dependencies](#2-install-dependencies)
+  - [3. Configure the System](#3-configure-the-system)
+  - [4. Initialize the System](#4-initialize-the-system)
+- [Docker Usage](#docker-usage)
 - [Usage](#usage)
   - [Client Application](#client-application)
   - [Example Usage](#example-usage)
+    - [Importing Remote Modules](#importing-remote-modules)
+    - [Example: Using NumPy as a Remote Module](#example-using-numpy-as-a-remote-module)
 - [Configuration](#configuration)
   - [Environment Variables](#environment-variables)
   - [Module Configuration](#module-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Flow Diagram](#flow-diagram)
+- [Notes](#notes)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -124,37 +127,74 @@ jac-splice-orc/
 
 ### Prerequisites
 
-- **Kubernetes** (version 1.21 or later): [Install Kubernetes](https://kubernetes.io/docs/setup/)
+Before you begin, ensure that you have the following installed and configured:
+
 - **Python** (version 3.9 or later): [Install Python](https://www.python.org/downloads/)
+- **Docker** (version 20.10 or later): [Install Docker](https://docs.docker.com/get-docker/)
+- **Kubernetes** (version 1.21 or later): [Install Kubernetes](https://kubernetes.io/docs/setup/)
 - **kubectl** command-line tool: [Install kubectl](https://kubernetes.io/docs/tasks/tools/)
+- **Jac**: [Install Jaclang](https://github.com/Jaseci-Labs/jasecii)
+- **Kubernetes Cluster**: Ensure you have access to a Kubernetes cluster (local or remote).
 
-Ensure all prerequisites are correctly installed and configured before proceeding.
+Ensure that your Kubernetes cluster is up and running, and that you can connect to it using `kubectl`.
 
-### 1. Install Dependencies
+### 1. Clone the Repository
 
-Install the required Python packages:
+Clone the `jac-splice-orc` repository to your local machine:
 
 ```bash
+git clone https://github.com/Jaseci-Labs/jac-splice-orc.git
+cd jac-splice-orc
+```
+
+### 2. Install Dependencies
+
+Create a virtual environment and install the required Python packages:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure the System
+**Note**: The `requirements.txt` file includes all necessary dependencies, such as `kubernetes`, `grpcio`, `PyYAML`, and others.
 
-#### **Configuration File**
+### 3. Configure the System
 
-The application uses a `config.json` file located in the `config/` directory for all configurations.
+The application uses a `config.json` file located in the `jac_splice_orc/config/` directory for all configurations.
 
-**Example `config/config.json`:**
+**Update the Configuration File**
+
+Edit `jac_splice_orc/config/config.json` to match your environment. Here's an example configuration:
 
 ```json
 {
   "kubernetes": {
     "namespace": "jac-splice-orc",
-    "service_account_name": "smartimportsa",
+    "service_account_name": "jac-orc-sa",
     "pod_manager": {
-      "image_name": "ashishmahendra/jac-splice-orc:0.1.8",
-      "deployment_yaml": "k8s/pod_manager_deployment.yml",
-      "service_name": "pod-manager-service"
+      "deployment_name": "pod-manager-deployment",
+      "service_account_name": "jac-orc-sa",
+      "container_name": "pod-manager",
+      "image_name": "jaseci/jac-splice-orc:latest",
+      "container_port": 8000,
+      "service_name": "pod-manager-service",
+      "service_type": "LoadBalancer",
+      "env_vars": {
+        "SERVICE_TYPE": "pod_manager",
+        "NAMESPACE": "jac-splice-orc",
+        "IMAGE_NAME": "jaseci/jac-splice-orc:latest"
+      },
+      "resources": {
+        "requests": {
+          "memory": "1500Mi",
+          "cpu": "500m"
+        },
+        "limits": {
+          "memory": "2000Mi",
+          "cpu": "1"
+        }
+      }
     }
   },
   "module_config": {
@@ -163,52 +203,50 @@ The application uses a `config.json` file located in the `config/` directory for
       "dependency": [],
       "lib_cpu_req": "500m",
       "load_type": "remote"
-    },
-    "pandas": {
-      "lib_mem_size_req": "200Mi",
-      "dependency": ["numpy", "pytz", "dateutil"],
-      "lib_cpu_req": "700m",
-      "load_type": "remote"
-    },
-    "transformers": {
-      "lib_mem_size_req": "2000Mi",
-      "dependency": ["torch", "transformers"],
-      "lib_cpu_req": "1.0",
-      "load_type": "remote"
-    },
-    "ollama": {
-      "lib_mem_size_req": "300Mi",
-      "dependency": ["ollama"],
-      "lib_cpu_req": "500m",
-      "load_type": "remote"
     }
+    // Add other module configurations as needed
   },
   "environment": {
-    "POD_MANAGER_URL": "http://localhost:8000"
+    "POD_MANAGER_URL": ""
   }
 }
 ```
 
-#### **Adjust Configurations**
+**Note**:
 
-- Update the `namespace` if you want to deploy to a different Kubernetes namespace.
-- Modify `module_config` to specify which modules should be handled remotely and their resource requirements.
-- Ensure the `POD_MANAGER_URL` is set correctly; it will be updated automatically during initialization.
+- Replace `jaseci/jac-splice-orc:latest` with your own image if you have customized it.
+- Adjust resource requests and limits according to your environment.
 
-### 3. Initialize the System
+### 4. Initialize the System
 
 Use the provided CLI command to initialize the Pod Manager and Kubernetes resources:
 
 ```bash
-jac orc_initialize your-namespace
+jac orc_initialize jac-splice-orc
 ```
 
-- Replace `your-namespace` with the desired namespace or omit to use the default from the configuration.
-- This command will:
-  - Create the Kubernetes namespace (if it doesn't exist).
-  - Create the service account and necessary RBAC permissions.
-  - Deploy the Pod Manager using the specified deployment file.
-  - Update the `POD_MANAGER_URL` in the `config.json` file with the actual service URL.
+**Explanation**:
+
+- `jac orc_initialize`: Invokes the initialization command provided by the plugin.
+- `jac-splice-orc`: Specifies the Kubernetes namespace to use. If not provided, it defaults to the namespace specified in `config.json`.
+
+**What This Command Does**:
+
+- Creates the specified Kubernetes namespace if it doesn't exist.
+- Creates the ServiceAccount, Role, and RoleBinding required for the Pod Manager.
+- Deploys the Pod Manager Deployment and Service to the Kubernetes cluster.
+- Updates the `POD_MANAGER_URL` in the `config.json` file with the actual service URL.
+
+**Verify the Deployment**:
+
+Check that the resources have been created in Kubernetes:
+
+```bash
+kubectl get namespaces
+kubectl get deployments -n jac-splice-orc
+kubectl get services -n jac-splice-orc
+kubectl get pods -n jac-splice-orc
+```
 
 ---
 
@@ -254,6 +292,7 @@ The Dockerfile sets up an image that can run either the Pod Manager or a Module 
 - **Entrypoint**: Uses an environment variable `SERVICE_TYPE` to decide which service to start (`pod_manager` or `module_service`).
 
 ---
+
 ## Usage
 
 ### Client Application
@@ -267,23 +306,58 @@ The client application provides a seamless way to interact with remote modules a
 
 ### Example Usage
 
-Below is an example of how to use the system to perform remote method calls on a module, specifically using `numpy`:
+#### Importing Remote Modules
+
+With the system initialized, you can now import and use remote Python modules in your JAC programs.
+
+**Example JAC Code**:
 
 ```jac
 with entry {
     import: py numpy;
     arr = numpy.array([1, 2, 3, 4]);
     print(arr);
-    result = numpy.sum(arr);  # Remote method call
+    result = numpy.sum(arr);
     print(result);
 }
 ```
 
-**Explanation:**
+#### Example: Using NumPy as a Remote Module
 
-- **Importing the Module**: The `import: py numpy;` statement triggers the remote loading of the `numpy` module.
-- **Using the Module**: You can use the `numpy` module as if it were local. The underlying system handles the remote execution transparently.
-- **Method Calls**: Method calls like `numpy.array()` and `numpy.sum()` are executed on the remote module.
+**Step 1: Write the JAC Program**
+
+Create a file named `example.jac` with the following content:
+
+```jac
+with entry {
+    import: py numpy;
+    arr = numpy.array([1, 2, 3, 4]);
+    print("Array:", arr);
+    result = numpy.sum(arr);
+    print("Sum:", result);
+}
+```
+
+**Step 2: Run the JAC Program**
+
+Run the JAC program using the `jac` command:
+
+```bash
+jac run example.jac
+```
+
+**Expected Output**:
+
+```
+Array: [1 2 3 4]
+Sum: 10
+```
+
+**Explanation**:
+
+- The `import: py numpy;` statement tells the JAC runtime to import the `numpy` module.
+- Since `numpy` is configured with `"load_type": "remote"` in `config.json`, the system uses the `ModuleProxy` to interact with `numpy` running in a remote Kubernetes pod.
+- The array creation and sum calculation are performed remotely, and the results are returned to your local program.
 
 ---
 
@@ -291,7 +365,7 @@ with entry {
 
 ### Environment Variables
 
-While most configurations are now stored in `config.json`, you can still use environment variables if needed.
+While most configurations are stored in `config.json`, you can still use environment variables if needed.
 
 - **`POD_MANAGER_URL`**: URL of the Pod Manager service (updated automatically during initialization).
 - **`NAMESPACE`**: Kubernetes namespace to deploy pods (default is `jac-splice-orc`).
@@ -318,6 +392,48 @@ In the `config.json` file, under `module_config`, you can specify configurations
 
 ---
 
+## Troubleshooting
+
+### 1. Pod Manager Not Accessible
+
+If the `POD_MANAGER_URL` is not set or the Pod Manager service is not accessible:
+
+- Ensure that the `jac orc_initialize` command has been run successfully.
+- Check that the Pod Manager service is running:
+
+  ```bash
+  kubectl get services -n jac-splice-orc
+  ```
+
+- Verify that the `POD_MANAGER_URL` in `config.json` has been updated. It should be set to the external IP or hostname of the Pod Manager service.
+
+### 2. Errors Importing Modules
+
+If you encounter errors when importing modules:
+
+- Ensure that the module is correctly configured in the `module_config` section of `config.json`.
+- Check that the module's `load_type` is set to `"remote"` if you intend to use it as a remote module.
+- Verify that the module's dependencies are correctly specified in the `dependency` list.
+
+### 3. Kubernetes Resource Issues
+
+If Kubernetes resources are not being created or updated:
+
+- Ensure that you have the correct permissions to create resources in the specified namespace.
+- Check the Kubernetes cluster status and logs for any errors.
+
+### 4. Logs and Debugging
+
+- Check the logs of the Pod Manager pod:
+
+  ```bash
+  kubectl logs deployment/pod-manager-deployment -n jac-splice-orc
+  ```
+
+- Check the logs of the module pods if they have been created.
+
+---
+
 ## Flow Diagram
 
 ![Flow Diagram](jac_splice_orc/assets/Splice-Orc.png)
@@ -326,9 +442,17 @@ In the `config.json` file, under `module_config`, you can specify configurations
 
 ## Notes
 
-- **Configuration Management**: The system now uses a `config.json` file for configuration, enhancing flexibility and maintainability.
+- **Configuration Management**: The system uses a `config.json` file for configuration, enhancing flexibility and maintainability.
 - **Namespace Handling**: You can specify the Kubernetes namespace during initialization or let it default to the one specified in the configuration.
 - **Pod Manager URL**: The `POD_MANAGER_URL` is automatically updated in the configuration file after initialization, ensuring that the client knows how to communicate with the Pod Manager.
 - **Error Handling**: If the `POD_MANAGER_URL` is not set, the system will prompt you to run the initialization command.
+
+---
+
+## Additional Notes
+
+- **Custom Modules**: You can configure additional Python modules in the `module_config` section of `config.json` and use them in your JAC programs.
+- **Resource Configuration**: Adjust the resource requests and limits in the configurations to suit your environment and module requirements.
+- **Extensibility**: The system can be extended to support more complex modules and configurations.
 
 ---
