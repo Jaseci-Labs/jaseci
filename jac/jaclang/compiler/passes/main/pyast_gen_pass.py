@@ -3081,23 +3081,56 @@ class PyastGenPass(Pass):
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
 
-        start: Optional[ExprType],
-        stop: Optional[ExprType],
-        step: Optional[ExprType],
+        slices: list[IndexSlice.Slice],
         is_range: bool,
         """
         if node.is_range:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Slice(
-                        lower=node.start.gen.py_ast[0] if node.start else None,
-                        upper=node.stop.gen.py_ast[0] if node.stop else None,
-                        step=node.step.gen.py_ast[0] if node.step else None,
+            if len(node.slices) > 1:  # Multiple slices. Example arr[a:b, c:d]
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Tuple(
+                            elts=[
+                                self.sync(
+                                    ast3.Slice(
+                                        lower=(
+                                            slice.start.gen.py_ast[0]
+                                            if slice.start
+                                            else None
+                                        ),
+                                        upper=(
+                                            slice.stop.gen.py_ast[0]
+                                            if slice.stop
+                                            else None
+                                        ),
+                                        step=(
+                                            slice.step.gen.py_ast[0]
+                                            if slice.step
+                                            else None
+                                        ),
+                                    )
+                                )
+                                for slice in node.slices
+                            ],
+                            ctx=ast3.Load(),
+                        )
                     )
-                )
-            ]
+                ]
+            elif len(node.slices) == 1:  # Single slice. Example arr[a]
+                slice = node.slices[0]
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Slice(
+                            lower=slice.start.gen.py_ast[0] if slice.start else None,
+                            upper=slice.stop.gen.py_ast[0] if slice.stop else None,
+                            step=slice.step.gen.py_ast[0] if slice.step else None,
+                        )
+                    )
+                ]
         else:
-            node.gen.py_ast = node.start.gen.py_ast if node.start else []
+            if len(node.slices) > 0 and node.slices[0].start is not None:
+                node.gen.py_ast = node.slices[0].start.gen.py_ast
+            else:
+                node.gen.py_ast = []
 
     def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
