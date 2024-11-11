@@ -1,82 +1,30 @@
 """JacLang Jaseci Unit Test."""
 
-from contextlib import suppress
-from os import getenv
-from typing import Literal, overload
-from unittest.async_case import IsolatedAsyncioTestCase
-
 from httpx import get, post
 
 from yaml import safe_load
 
+from .test_utils import JacCloudTest
 from ..jaseci.datasources import Collection
 
 
-class SimpleGraphTest(IsolatedAsyncioTestCase):
+class SimpleGraphTest(JacCloudTest):
     """JacLang Jaseci Feature Tests."""
 
-    async def asyncSetUp(self) -> None:
-        """Reset DB and wait for server."""
-        self.host = "http://0.0.0.0:8000"
+    def setUp(self) -> None:
+        """Override setUp."""
+        self.run_server("jac_cloud/tests/simple_graph.jac")
+
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
         self.q_node = Collection.get_collection("node")
         self.q_edge = Collection.get_collection("edge")
-        self.users: list[dict] = []
-        self.database = getenv("DATABASE_NAME", "jaseci")
-        count = 0
-        while True:
-            if count > 5:
-                self.check_server()
-                break
-            else:
-                with suppress(Exception):
-                    self.check_server()
-                    break
-            count += 1
 
-    async def asyncTearDown(self) -> None:
-        """Clean up DB."""
+    def tearDown(self) -> None:
+        """Override tearDown."""
         self.client.drop_database(self.database)
-
-    @overload
-    def post_api(self, api: str, json: dict | None = None, user: int = 0) -> dict:
-        pass
-
-    @overload
-    def post_api(
-        self,
-        api: str,
-        json: dict | None = None,
-        user: int = 0,
-        expect_error: Literal[True] = True,
-    ) -> int:
-        pass
-
-    def post_api(
-        self,
-        api: str,
-        json: dict | None = None,
-        user: int = 0,
-        expect_error: bool = False,
-    ) -> dict | int:
-        """Call walker post API."""
-        res = post(
-            f"{self.host}/walker/{api}", json=json, headers=self.users[user]["headers"]
-        )
-
-        if not expect_error:
-            res.raise_for_status()
-            return res.json()
-        else:
-            return res.status_code
-
-    def check_server(self) -> None:
-        """Retrieve OpenAPI Specs JSON."""
-        res = get(f"{self.host}/healthz")
-        res.raise_for_status()
-        self.assertEqual(200, res.status_code)
+        self.stop_server()
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
@@ -612,19 +560,19 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 7113,
+                                "size": 15146,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 7113,
+                                "size": 15146,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 7113,
+                                "size": 15146,
                             },
                         ],
                         "singleOptional": None,
@@ -672,7 +620,7 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         self.assertEqual([None], res["returns"])
         self.assertEqual([1], res["reports"])
 
-    async def test_all_features(self) -> None:
+    def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
 
