@@ -291,7 +291,6 @@ class DSFunc:
     """Data Spatial Function."""
 
     name: str
-    trigger: type | UnionType | tuple[type | UnionType, ...] | None
     func: Callable[[Any, Any], Any] | None = None
 
     def resolve(self, cls: type) -> None:
