@@ -13,7 +13,6 @@ from jaclang.runtimelib.machine import JacMachine, JacProgram
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from .mini.cli_mini import serve_mini
 from ..core.architype import BulkWrite, NodeAnchor
 from ..core.context import SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
@@ -31,10 +30,6 @@ class JacCmd:
 
         @cmd_registry.register
         def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
-            if not getenv("DATABASE_HOST"):
-                serve_mini(filename=filename, host=host, port=port)
-                return
-
             from jac_cloud import FastAPI
 
             """Serve the jac application."""
