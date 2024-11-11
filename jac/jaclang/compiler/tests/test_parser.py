@@ -1,6 +1,7 @@
 """Tests for Jac parser."""
 
 import inspect
+import os
 
 from jaclang.compiler import jac_lark as jl
 from jaclang.compiler.absyntree import JacSource
@@ -27,7 +28,12 @@ class TestLarkParser(TestCaseMicroSuite):
         prse = JacParser(
             input_ir=JacSource(self.file_to_str(filename), mod_path=filename),
         )
-        self.assertFalse(prse.errors_had)
+        # A list of files where the errors are expected.
+        files_expected_errors = [
+            "uninitialized_hasvars.jac",
+        ]
+        if os.path.basename(filename) not in files_expected_errors:
+            self.assertFalse(prse.errors_had)
 
     def test_parser_fam(self) -> None:
         """Parse micro jac file."""

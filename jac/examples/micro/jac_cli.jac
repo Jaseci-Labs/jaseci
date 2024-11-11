@@ -19,8 +19,8 @@ obj Interface {
 }
 
 obj ShellCmd :cmd.Cmd: {
-    has prompt: str = "> ",
-        reg: Interface;
+    has reg: Interface,
+        prompt: str = "> ";
 
     can init(registry: Interface, *args: list, **kwargs: dict);
     can default(line: str);

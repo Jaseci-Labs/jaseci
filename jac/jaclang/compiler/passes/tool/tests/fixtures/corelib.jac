@@ -34,6 +34,8 @@ glob exec_ctx = ExecutionContext();
 
 obj Anchor :ArchitypeProtocol: {
     has ob: object,
+        ds_entry_funcs: list[DSFunc],
+        ds_exit_funcs: list[DSFunc],
         jid: UUID = :> uuid4,
         timestamp: datetime = :> datetime.now,
         persist: bool = False,
@@ -41,9 +43,7 @@ obj Anchor :ArchitypeProtocol: {
         rw_access: set = :> set,
         ro_access: set = :> set,
         owner_id: UUID = exec_ctx.master,
-        mem: Memory = exec_ctx.memory,
-        ds_entry_funcs: list[DSFunc],
-        ds_exit_funcs: list[DSFunc];
+        mem: Memory = exec_ctx.memory;
 
     static can on_entry(cls: type, triggers: list[type]);
     static can on_exit(cls: type, triggers: list[type]);
