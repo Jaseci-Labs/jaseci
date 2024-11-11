@@ -267,6 +267,12 @@ class FuseTypeInfoPass(Pass):
         if len(node.gen.mypy_ast) == 0:
             return
 
+        # No need to run this handling in case of a previous type
+        # was set during the pass, if not then we hope that the
+        # mypy node has a type associated to it
+        if node.expr_type != "NoType":
+            return
+
         # Check if the expression is a data spatial expression
         # Support disconnectOp
         if isinstance(node, ast.BinaryExpr):
@@ -292,12 +298,6 @@ class FuseTypeInfoPass(Pass):
                         or node.expr_type
                     )
                 return
-
-        # SpecialVarRef has special handling to use the last item in the mypy
-        # node list
-        # TODO: Fix the expression types in case of aclang.plugin.feature.JacFeature type
-        if isinstance(node, ast.SpecialVarRef):
-            return
 
         # If the corrosponding mypy ast node type has stored here, get the values.
         mypy_node = node.gen.mypy_ast[0]
@@ -630,6 +630,7 @@ class FuseTypeInfoPass(Pass):
                     # right index slice is a range then it's type is the same as left
                     if right.is_range:
                         right.expr_type = left.expr_type
+                        right.parent_of_type(ast.AtomTrailer).expr_type = node_type
                         continue
 
                 # left type is a dictionary
@@ -643,6 +644,7 @@ class FuseTypeInfoPass(Pass):
                     continue
 
                 right.expr_type = node_type
+                right.parent_of_type(ast.AtomTrailer).expr_type = node_type
 
                 # Getting the correct symbol table and link it
                 type_symtab: Optional[SymbolTable] = self.ir.sym_tab
