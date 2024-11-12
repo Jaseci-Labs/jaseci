@@ -63,9 +63,7 @@ class JacFeature:
             model_params.pop("is_custom") if "is_custom" in model_params else False
         )
         raw_output = (
-            model_params.pop("raw_output")
-            if "raw_output" in model_params
-            else False
+            model_params.pop("raw_output") if "raw_output" in model_params else False
         )
         available_methods = model.MTLLM_METHOD_PROMPTS.keys()
         assert (
