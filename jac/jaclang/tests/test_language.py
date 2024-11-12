@@ -1190,7 +1190,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello World !", stdout_value[0])
         self.assertIn("Welcome to Jaseci!", stdout_value[1])
 
-    def test_architype_defr(self) -> None:
+    def test_architype_def(self) -> None:
         """Test architype definition bug."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
