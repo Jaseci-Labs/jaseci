@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from enum import IntEnum
 from logging import getLogger
@@ -296,3 +297,9 @@ class DSFunc:
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
         self.func = getattr(cls, self.name)
+
+    def get_funcparam_annotations(
+        self, cls: Callable
+    ) -> type | UnionType | tuple[type | UnionType, ...] | None:
+        """Get function parameter annotations."""
+        return inspect.signature(cls, eval_str=True).parameters["_jac_here_"].annotation
