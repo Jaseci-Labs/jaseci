@@ -59,7 +59,9 @@ class JacFeature:
         assert _scope is not None, f"Invalid scope: {scope}"
 
         method = model_params.pop("method") if "method" in model_params else "Normal"
-        is_custom = model_params.pop("is_custom") if "is_custom" in model_params else False
+        is_custom = (
+            model_params.pop("is_custom") if "is_custom" in model_params else False
+        )
         available_methods = model.MTLLM_METHOD_PROMPTS.keys()
         assert (
             method in available_methods

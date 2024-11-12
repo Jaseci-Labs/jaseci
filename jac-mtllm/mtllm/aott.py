@@ -41,17 +41,25 @@ def aott_raise(
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
     _globals["finish_tool"] = finish_tool
-    contains_media = any(
-        isinstance(x.value, (Image, Video)) or 'PIL' in str(x.value) for x in inputs_information
-    )
+    from PIL import Image as PILImage
+
+    contains_media = False
+    for input_info in inputs_information:
+        if isinstance(input_info.value, PILImage.Image) or isinstance(
+            input_info.value, (Image, Video)
+        ):
+            contains_media = True
+            break
     informations_str = "\n".join([str(x) for x in informations])
-    inputs_information_repr: list[dict] | str = ''
-    media= []
+    inputs_information_repr: list[dict] | str
+    media = []
     if contains_media and not is_custom:
-        for x in inputs_information:
-            inputs_information_repr.extend(x.to_list_dict())
+        inputs_information_repr = []
+        for input_info in inputs_information:
+            inputs_information_repr.extend(input_info.to_list_dict())
     elif is_custom:
-        media = [x for x in inputs_information if 'PIL' in str(x.value)]
+        media = [x for x in inputs_information if isinstance(x.value, PILImage.Image)]
+        inputs_information_repr = ""
     else:
         inputs_information_repr = "\n".join([str(x) for x in inputs_information])
 
@@ -124,7 +132,7 @@ def aott_raise(
         if not contains_media
         else meaning_typed_input_list
     )
-    return model(meaning_typed_input,media=media, **model_params) # type: ignore
+    return model(meaning_typed_input, media=media, **model_params)  # type: ignore
 
 
 def execute_react(
