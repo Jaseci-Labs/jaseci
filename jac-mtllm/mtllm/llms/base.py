@@ -6,7 +6,8 @@ from typing import Any, Mapping, Optional
 
 from loguru import logger
 
-from mtllm.types import OutputHint, ReActOutput, TypeExplanation
+from mtllm.types import InputInformation, OutputHint, ReActOutput, TypeExplanation
+from mtllm.utils import format_template_section
 
 
 httpx_logger = logging.getLogger("httpx")
@@ -161,7 +162,12 @@ class BaseLLM:
         """Infer a response from the input meaning."""
         raise NotImplementedError
 
-    def __call__(self, input_text: str | list[dict], **kwargs: dict) -> str:
+    def __call__(
+        self,
+        input_text: str | list[dict],
+        media: list[Optional[InputInformation]],
+        **kwargs: dict,
+    ) -> str:
         """Infer a response from the input text."""
         if self.verbose:
             logger.info(f"Meaning In\n{input_text}")
@@ -251,11 +257,14 @@ class BaseLLM:
         """Fix the output string."""
         if self.verbose:
             logger.info(f"Error: {error}, Fixing the output.")
-        react_output_fix_prompt = self.REACT_OUTPUT_FIX_PROMPT.format(
-            model_output=meaning_out,
-            error=str(error),
-            tool_explanations=tool_explanations,
-            type_explanations=type_explanations,
+        react_output_fix_values = {
+            "model_output": meaning_out,
+            "error": str(error),
+            "tool_explanations": tool_explanations,
+            "type_explanations": type_explanations,
+        }
+        react_output_fix_prompt = format_template_section(
+            self.REACT_OUTPUT_FIX_PROMPT, react_output_fix_values
         )
         return self.__infer__(react_output_fix_prompt)
 
@@ -266,12 +275,15 @@ class BaseLLM:
         output_type_explanations: list[TypeExplanation],
     ) -> bool:
         """Check if the output is in the desired format."""
-        output_check_prompt = self.OUTPUT_CHECK_PROMPT.format(
-            model_output=output,
-            output_type=output_type,
-            output_type_info="\n".join(
+        react_values = {
+            "model_output": output,
+            "output_type": output_type,
+            "output_type_info": "\n".join(
                 [str(info) for info in output_type_explanations]
             ),
+        }
+        output_check_prompt = format_template_section(
+            self.OUTPUT_CHECK_PROMPT, react_values
         )
         llm_output = self.__infer__(output_check_prompt)
         return "yes" in llm_output.lower()
@@ -298,14 +310,16 @@ class BaseLLM:
                 )
             else:
                 logger.info("Extracting output from the meaning out string.")
-
-        output_extract_prompt = self.OUTPUT_EXTRACT_PROMPT.format(
-            model_output=meaning_out,
-            previous_output=previous_output,
-            output_info=str(output_hint),
-            output_type_info="\n".join(
+        output_check_values = {
+            "model_output": meaning_out,
+            "previous_output": previous_output,
+            "output_info": str(output_hint),
+            "output_type_info": "\n".join(
                 [str(info) for info in output_type_explanations]
             ),
+        }
+        output_extract_prompt = format_template_section(
+            self.OUTPUT_EXTRACT_PROMPT, output_check_values
         )
         llm_output = self.__infer__(output_extract_prompt)
         is_in_desired_format = self._check_output(
@@ -376,12 +390,15 @@ class BaseLLM:
         """Fix the output string."""
         if self.verbose:
             logger.info(f"Error: {error}, Fixing the output.")
-        output_fix_prompt = self.OUTPUT_FIX_PROMPT.format(
-            model_output=output,
-            output_type=output_hint.type,
-            output_type_info="\n".join(
+        output_fix_values = {
+            "model_output": output,
+            "output_type": output_hint.type,
+            "output_type_info": "\n".join(
                 [str(info) for info in output_type_explanations]
             ),
-            error=error,
+            "error": str(error),
+        }
+        output_fix_prompt = format_template_section(
+            self.OUTPUT_FIX_PROMPT, output_fix_values
         )
         return self.__infer__(output_fix_prompt)
