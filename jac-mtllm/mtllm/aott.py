@@ -6,6 +6,8 @@ This has all the necessary functions to perform the AOTT operations.
 
 from typing import Mapping
 
+from PIL import Image as PILImage
+
 from jaclang.compiler.semtable import SemRegistry
 
 from loguru import logger
@@ -42,13 +44,9 @@ def aott_raise(
 ) -> str:
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
     _globals["finish_tool"] = finish_tool
-    from PIL import Image as PILImage
-
-    contains_media = False
-    for input_info in inputs_information:
-        if isinstance(input_info.value, (Image, Video, PILImage.Image)):
-            contains_media = True
-            break
+    contains_media: bool = any(
+        isinstance(x.value, (Image, Video, PILImage.Image)) for x in inputs_information
+    )
     informations_str = "\n".join([str(x) for x in informations])
     inputs_information_repr: list[dict] | str
     media = []

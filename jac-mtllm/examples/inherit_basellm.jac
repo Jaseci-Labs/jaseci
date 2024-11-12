@@ -3,7 +3,7 @@ import:py from PIL { Image }
 import torch;
 import from transformers { AutoModelForCausalLM, AutoProcessor }
 
-glob PROMPT_TEMPLATE:str= """
+glob PROMPT_TEMPLATE: str = """
 [Information]
 {information}
 
@@ -18,7 +18,7 @@ glob PROMPT_TEMPLATE:str= """
 """;
 
 obj Florence :BaseLLM: {
-    with entry{
+    with entry {
         MTLLM_PROMPT = PROMPT_TEMPLATE;
     }
     can init(model_id: str) {
@@ -72,9 +72,9 @@ obj Florence :BaseLLM: {
     }
 
     can __call__(meaning: str, media: list, **kwargs: tuple) {
-        if self.verbose{
+        if self.verbose {
             print(f'MEANING_IN:\n{meaning}');
-            print('MEDIA:\n',media);
+            print('MEDIA:\n', media);
         }
         image = media[0].value;
         return self.__infer__(meaning, image, **kwargs);
