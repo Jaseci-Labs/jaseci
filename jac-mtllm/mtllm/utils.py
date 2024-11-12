@@ -107,7 +107,9 @@ def extract_template_placeholders(template: str) -> list:
 def format_template_section(template_section: str, values_dict: dict) -> str:
     """Format a template section with given values."""
     placeholders = extract_template_placeholders(template_section)
-    filtered_values = {
-        key: values_dict[key] for key in placeholders if key in values_dict
-    }
-    return template_section.format(**filtered_values).strip()
+    formatted_sections = []
+    for placeholder in placeholders:
+        if placeholder in values_dict and values_dict[placeholder]:
+            section_template = f"[{placeholder.title()}]\n{values_dict[placeholder]}"
+            formatted_sections.append(section_template)
+    return "\n\n".join(formatted_sections).strip()
