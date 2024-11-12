@@ -1,39 +1,62 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as Jac
-from dataclasses import dataclass as dataclass
+from jaclang.plugin.feature import JacFeature as _Jac
+from jaclang.plugin.builtin import *
+from dataclasses import dataclass as __jac_dataclass__
 
 
-@Jac.make_walker(on_entry=[Jac.DSFunc("produce", Jac.get_root_type())], on_exit=[])
-@dataclass(eq=False)
-class Producer:
+@_Jac.make_walker(on_entry=[_Jac.DSFunc("produce")], on_exit=[])
+@__jac_dataclass__(eq=False)
+class Producer(_Jac.Walker):
 
-    def produce(self, here: Jac.get_root_type()) -> None:
-        end = here
+    @_Jac.impl_patch_filename(
+        file_loc="c:\\Users\\thami\\OneDrive\\Desktop\\VirtualEnv\\JacEnv\\doing.jac"
+    )
+    def produce(self, _jac_here_: _Jac.RootType) -> None:
+        end = _jac_here_
         i = 0
         while i <= 2:
-            Jac.connect(
-                end, (end := Product(number=i + 1)), Jac.build_edge(False, None, None)
+            _Jac.connect(
+                left=end,
+                right=(end := Product(number=i + 1)),
+                edge_spec=_Jac.build_edge(
+                    is_undirected=False, conn_type=None, conn_assign=None
+                ),
             )
             i += 1
-        if Jac.visit_node(
+        if _Jac.visit_node(
             self,
-            Jac.edge_ref(here, None, Jac.EdgeDir.OUT, filter_func=None),
+            _Jac.edge_ref(
+                _jac_here_,
+                target_obj=None,
+                dir=_Jac.EdgeDir.OUT,
+                filter_func=None,
+                edges_only=False,
+            ),
         ):
             pass
 
 
-@Jac.make_node(on_entry=[Jac.DSFunc("make", Producer)], on_exit=[])
-@dataclass(eq=False)
-class Product:
+@_Jac.make_node(on_entry=[_Jac.DSFunc("make")], on_exit=[])
+@__jac_dataclass__(eq=False)
+class Product(_Jac.Node):
     number: int
 
-    def make(self, here: Producer) -> None:
+    @_Jac.impl_patch_filename(
+        file_loc="c:\\Users\\thami\\OneDrive\\Desktop\\VirtualEnv\\JacEnv\\doing.jac"
+    )
+    def make(self, _jac_here_: Producer) -> None:
         print(f"Hi, I am {self} returning a String")
-        if Jac.visit_node(
-            here,
-            Jac.edge_ref(self, None, Jac.EdgeDir.OUT, filter_func=None),
+        if _Jac.visit_node(
+            _jac_here_,
+            _Jac.edge_ref(
+                self,
+                target_obj=None,
+                dir=_Jac.EdgeDir.OUT,
+                filter_func=None,
+                edges_only=False,
+            ),
         ):
             pass
 
 
-Jac.spawn_call(Jac.get_root(), Producer())
+_Jac.spawn_call(_Jac.get_root(), Producer())

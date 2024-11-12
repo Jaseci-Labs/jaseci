@@ -1,59 +1,76 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as Jac
-from dataclasses import dataclass
+from jaclang.plugin.feature import JacFeature as _Jac
+from jaclang.plugin.builtin import *
+from dataclasses import dataclass as __jac_dataclass__
 
 
-@Jac.make_node(on_entry=[], on_exit=[])
-@dataclass(eq=False)
-class node_a:
+@_Jac.make_node(on_entry=[], on_exit=[])
+@__jac_dataclass__(eq=False)
+class node_a(_Jac.Node):
     value: int
 
 
-@Jac.make_walker(
-    on_entry=[
-        Jac.DSFunc("create", Jac.get_root_type()),
-        Jac.DSFunc("travel", Jac.get_root_type() | node_a),
-    ],
-    on_exit=[],
-)
-@dataclass(eq=False)
-class Creator:
+@_Jac.make_walker(on_entry=[_Jac.DSFunc("create"), _Jac.DSFunc("travel")], on_exit=[])
+@__jac_dataclass__(eq=False)
+class Creator(_Jac.Walker):
 
-    def create(self, here: Jac.get_root_type()) -> None:
-        end = here
+    @_Jac.impl_patch_filename(
+        file_loc="c:\\Users\\thami\\OneDrive\\Desktop\\VirtualEnv\\JacEnv\\doing.jac"
+    )
+    def create(self, _jac_here_: _Jac.RootType) -> None:
+        end = _jac_here_
         i = 0
         while i < 7:
             if i % 2 == 0:
-                Jac.connect(
-                    end, (end := node_a(value=i)), Jac.build_edge(False, None, None)
+                _Jac.connect(
+                    left=end,
+                    right=(end := node_a(value=i)),
+                    edge_spec=_Jac.build_edge(
+                        is_undirected=False, conn_type=None, conn_assign=None
+                    ),
                 )
             else:
-                Jac.connect(
-                    end,
-                    (end := node_a(value=i + 10)),
-                    Jac.build_edge(False, MyEdge, (("val",), (i,))),
+                _Jac.connect(
+                    left=end,
+                    right=(end := node_a(value=i + 10)),
+                    edge_spec=_Jac.build_edge(
+                        is_undirected=False,
+                        conn_type=MyEdge,
+                        conn_assign=(("val",), (i,)),
+                    ),
                 )
             i += 1
 
-    def travel(self, here: Jac.get_root_type() | node_a) -> None:
-        for i in Jac.edge_ref(
-            here,
-            None,
-            Jac.EdgeDir.OUT,
+    @_Jac.impl_patch_filename(
+        file_loc="c:\\Users\\thami\\OneDrive\\Desktop\\VirtualEnv\\JacEnv\\doing.jac"
+    )
+    def travel(self, _jac_here_: _Jac.RootType | node_a) -> None:
+        for i in _Jac.edge_ref(
+            _jac_here_,
+            target_obj=None,
+            dir=_Jac.EdgeDir.OUT,
             filter_func=lambda x: [i for i in x if isinstance(i, MyEdge) if i.val <= 6],
+            edges_only=False,
         ):
             print(i.value)
-        if Jac.visit_node(
+        if _Jac.visit_node(
             self,
-            Jac.edge_ref(here, None, Jac.EdgeDir.OUT, filter_func=None),
+            _Jac.edge_ref(
+                _jac_here_,
+                target_obj=None,
+                dir=_Jac.EdgeDir.OUT,
+                filter_func=None,
+                edges_only=False,
+            ),
         ):
             pass
 
 
-@Jac.make_edge(on_entry=[], on_exit=[])
-@dataclass(eq=False)
-class MyEdge:
-    val: int = Jac.has_instance_default(gen_func=lambda: 5)
+@_Jac.make_edge(on_entry=[], on_exit=[])
+@__jac_dataclass__(eq=False)
+class MyEdge(_Jac.Edge):
+    val: int = _Jac.has_instance_default(gen_func=lambda: 5)
 
 
-Jac.spawn_call(Jac.get_root(), Creator())
+if __name__ == "__main__":
+    _Jac.spawn_call(_Jac.get_root(), Creator())

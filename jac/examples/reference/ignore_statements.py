@@ -1,27 +1,55 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as jac
+from jaclang.plugin.feature import JacFeature as _Jac
+from jaclang.plugin.builtin import *
+from dataclasses import dataclass as __jac_dataclass__
 
 
-@jac.make_walker(on_entry=[jac.DSFunc("travel", jac.get_root_type())], on_exit=[])
-class Visitor:
-    def travel(self, jac_here_: jac.get_root_type()) -> None:
-        jac.ignore(self, jac.edge_ref(jac_here_, None, jac.EdgeDir.OUT, None, None)[0])
-        if jac.visit_node(
-            self, jac.edge_ref(jac_here_, None, jac.EdgeDir.OUT, None, None)
+@_Jac.make_walker(on_entry=[_Jac.DSFunc("travel")], on_exit=[])
+@__jac_dataclass__(eq=False)
+class Visitor(_Jac.Walker):
+
+    def travel(self, _jac_here_: _Jac.RootType) -> None:
+        _Jac.ignore(
+            self,
+            _Jac.edge_ref(
+                _jac_here_,
+                target_obj=None,
+                dir=_Jac.EdgeDir.OUT,
+                filter_func=None,
+                edges_only=False,
+            )[0],
+        )
+        if _Jac.visit_node(
+            self,
+            _Jac.edge_ref(
+                _jac_here_,
+                target_obj=None,
+                dir=_Jac.EdgeDir.OUT,
+                filter_func=None,
+                edges_only=False,
+            ),
         ):
             pass
-        elif jac.visit_node(self, jac.get_root()):
-            pass
+        else:
+            visitroot
 
 
-@jac.make_node(on_entry=[jac.DSFunc("speak", Visitor)], on_exit=[])
-class item:
-    def speak(self, jac_here_: Visitor) -> None:
+@_Jac.make_node(on_entry=[_Jac.DSFunc("speak")], on_exit=[])
+@__jac_dataclass__(eq=False)
+class item(_Jac.Node):
+
+    def speak(self, _jac_here_: Visitor) -> None:
         print("Hey There!!!")
 
 
 i = 0
 while i < 5:
-    jac.connect(jac.get_root(), item(), jac.build_edge(jac.EdgeDir.OUT, None, None))
+    _Jac.connect(
+        left=_Jac.get_root(),
+        right=item(),
+        edge_spec=_Jac.build_edge(
+            is_undirected=False, conn_type=None, conn_assign=None
+        ),
+    )
     i += 1
-jac.spawn_call(jac.get_root(), Visitor())
+_Jac.spawn_call(_Jac.get_root(), Visitor())
