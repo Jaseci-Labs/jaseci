@@ -3,9 +3,26 @@ import:py from PIL { Image }
 import torch;
 import from transformers { AutoModelForCausalLM, AutoProcessor }
 
+glob PROMPT_TEMPLATE:str= """
+[Information]
+{information}
+
+[Output Information]
+{output_information}
+
+[Type Explanations]
+{type_explanations}
+
+[Action]
+{action}
+""";
+
 obj Florence :BaseLLM: {
+    with entry{
+        MTLLM_PROMPT = PROMPT_TEMPLATE;
+    }
     can init(model_id: str) {
-        self.verbose = False;
+        self.verbose = True;
         self.max_tries = 0;
         self.type_check = False;
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -55,6 +72,10 @@ obj Florence :BaseLLM: {
     }
 
     can __call__(meaning: str, media: list, **kwargs: tuple) {
+        if self.verbose{
+            print(f'MEANING_IN:\n{meaning}');
+            print('MEDIA:\n',media);
+        }
         image = media[0].value;
         return self.__infer__(meaning, image, **kwargs);
     }

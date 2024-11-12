@@ -22,6 +22,7 @@ from mtllm.types import (
     TypeExplanation,
     Video,
 )
+from mtllm.utils import format_template_section
 
 
 def aott_raise(
@@ -45,9 +46,7 @@ def aott_raise(
 
     contains_media = False
     for input_info in inputs_information:
-        if isinstance(input_info.value, PILImage.Image) or isinstance(
-            input_info.value, (Image, Video)
-        ):
+        if isinstance(input_info.value, (Image, Video, PILImage.Image)):
             contains_media = True
             break
     informations_str = "\n".join([str(x) for x in informations])
@@ -71,14 +70,15 @@ def aott_raise(
     tools.append(finish_tool)
     method_prompt = model.MTLLM_METHOD_PROMPTS[method]
     if isinstance(inputs_information_repr, str):
-        mtllm_prompt = model.MTLLM_PROMPT.format(
-            information=informations_str,
-            inputs_information=inputs_information_repr,
-            output_information=str(output_hint),
-            type_explanations=type_explanations_str,
-            action=action,
-            context=context,
-        ).strip()
+        all_values = {
+            "information": informations_str,
+            "inputs_information": inputs_information_repr,
+            "output_information": str(output_hint),
+            "type_explanations": type_explanations_str,
+            "action": action,
+            "context": context,
+        }
+        mtllm_prompt = format_template_section(model.MTLLM_PROMPT, all_values)
         if not is_react:
             meaning_typed_input_list = [system_prompt, mtllm_prompt, method_prompt]
         else:
@@ -90,17 +90,18 @@ def aott_raise(
                 method_prompt,
             ]
     else:
-        upper_half = model.MTLLM_PROMPT.split("{inputs_information}")[0]
-        lower_half = model.MTLLM_PROMPT.split("{inputs_information}")[1]
-        upper_half = upper_half.format(
-            information=informations_str,
-            context=context,
-        )
-        lower_half = lower_half.format(
-            output_information=str(output_hint),
-            type_explanations=type_explanations_str,
-            action=action,
-        )
+        upper_half, lower_half = model.MTLLM_PROMPT.split("{inputs_information}")
+        upper_values = {
+            "information": informations_str,
+            "context": context,
+        }
+        lower_values = {
+            "output_information": str(output_hint),
+            "type_explanations": type_explanations_str,
+            "action": action,
+        }
+        upper_half = format_template_section(upper_half, upper_values)
+        lower_half = format_template_section(lower_half, lower_values)
         meaning_typed_input_list = [
             {"type": "text", "text": system_prompt},
             {"type": "text", "text": upper_half},
