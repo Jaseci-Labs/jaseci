@@ -178,3 +178,60 @@ Equivalent structure:
     }
 }
 ```
+
+## Manual Access Management
+
+In some cases, you may need to manually verify, filter, or update access permissions on nodes. The following Python examples demonstrate how to handle these tasks.
+
+### Checking Access Manually
+
+To manually check access levels on a collection of nodes, you can use the following code. This script filters nodes by type and checks for `READ`, `WRITE`, and `CONNECT` access permissions.
+
+```python
+for nodeanchor in NodeArchitype.Collection.find(
+    {
+        "type": "<type of the node>",
+        "context.public": true
+    }
+):
+    # Check read access
+    if not Jac.check_read_access(nodeanchor):
+        continue
+
+    # Check write access
+    if not Jac.check_write_access(nodeanchor):
+        continue
+
+    # Check connect access
+    if not Jac.check_connect_access(nodeanchor):
+        continue
+```
+
+### Filtering Nodes by Type
+To retrieve a specific node based on its type, use the following code snippet. This will find a node of the specified type that is also public in context.
+
+```python
+node = NodeArchitype.Collection.find_one(
+    {
+        "type": "<type of the node>",
+        "context.public": true
+    }
+)
+```
+
+### Updating Access Permissions Manually
+To manually update access permissions for multiple nodes, use the following code. This example sets the `access.all` permission to `CONNECT` for all nodes of a specific type that are publicly accessible.
+```python
+NodeArchitype.Collection.update_many(
+    {
+        "type": "<type of the node>",
+        "context.public": true
+    },
+    {
+        "$set": {
+            "access.all": "CONNECT"
+        }
+    }
+)
+```
+
