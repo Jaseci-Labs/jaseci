@@ -94,7 +94,7 @@ enum DamageType {
 }
 
 can ""
-predict_vehicle_damage(img: Image) -> DamageType by llm(is_custom=True,skip_resolve=True);
+predict_vehicle_damage(img: Image) -> DamageType by llm(is_custom=True,raw_output=True);
 
 with entry {
     img = 'car_scratch.jpg';
