@@ -1,33 +1,33 @@
 with entry{
-    aaaaaaaaaaa = 1;
-    jkjkj=898; ioio=89;
-    bbb = 1;  iiii = 1; opopo=9;
-    oioi=8; uiui=90;
-    oioi=8; uiui=90;
-    oioi=8; uiui=90;
+    aaaaaaaaaaa = 1; #1    0-4
+    jkjkj=898; ioio=89; # 2 3  5-9 10-14
+    oioi=8; uiui=90; # 4 5  15-19 20-24
+    oioi=8; uiuiwewweweweweweew=90; # 6 7  25-29 30-34
+    bbb = 1;  iiii = 1; opopo=9; # 8 9 10  35-39 40-44 45-49
+    oioi=8; uiui=90; # 11 12  50-54 55-59
 
 
         # ljklllk
     #   /lklklklklk  
+# klklklkl
+# klklklkl
+
         # ljklllk
-# klklklkl
-# klklklkl
+        # ljklllk
 
+# jjkjkjkjk        # 
 
-
+        # ljklllk
         # ljjlkjkjkjkj
-    ccccccaaaaa = 3;    opop=8; uuuuuuuuuuuuuuuu= 1;
-    fffoooooooooooo = 1;   kkkkkk=8; oo=9; ppppppppppppppppp= 1;
+    ccccccaaaaa = 3;    opop=8; uuuuuuuuuuuuuuuu= 1; # 13 14 15  60-64 65-69 70-74
+    fffoooooooooooo = 1;   kkkkkk=8; oo=9; ppppppppppppppppp= 1; # 16 17 18 19  75-79 80-84 85-89 90-94
         # ljklllk
-        # ljklllk
-        # ljklllk
-
+#  w 
+    d = 2;    oopopo=9;  oooooooooooooooooooooooooooooooooooooooo= 1;  # 20 21 22  95-99 100-104 105-109
     # kl
         # jjlljljll
-    d = 2;    oopopo=9;  oooooooooooooooooooooooooooooooooooooooo= 1; 
-# jjkjkjkjk        # 
-    ee = 4;
-    hj = 1;    
+    ee = 4; # 23 24  110-114
+    hj = 1;  # 25 26  115-119
 }
 
 # """

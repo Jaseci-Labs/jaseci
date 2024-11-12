@@ -62,6 +62,14 @@ class SemTokManager:
                 tokens += [(pos, col_end, length, node)]
         return tokens
 
+    def get_sem_tokens_in_line(self,line: int) -> list[int]:
+        """Return a list of semantic tokens in line and index as  tuple."""
+        return [
+            (i, get_token_start(i, self.sem_tokens))
+            for i in range(0, len(self.sem_tokens), 5)
+            if get_token_start(i, self.sem_tokens)[0] == line
+        ]
+        
     def update_sem_tokens(
         self,
         content_changes: lspt.DidChangeTextDocumentParams,
@@ -89,6 +97,8 @@ class SemTokManager:
                 x0 = content_changes.content_changes[1]
                 x1 = content_changes.content_changes[0]
                 logging.info(f"one \n{x0} two \n{x1}")
+                logging.info(f'\n\t x1 list \n\t{self.get_sem_tokens_in_line(x1.range.start.line)}')
+                logging.info(f'\n\t x2 list \n\t{self.get_sem_tokens_in_line(x1.range.end.line)}')
                 one = x0.range.start.line
                 two = x0.range.end.line
                 three = x1.range.start.line
@@ -114,9 +124,16 @@ class SemTokManager:
                 x0 = content_changes.content_changes[0]
                 x1 = content_changes.content_changes[1]
                 logging.info(f"one \n{x0} two \n{x1}")
+                logging.info(f'\n\t x1 list \n\t{self.get_sem_tokens_in_line(x1.range.start.line)}')
+                logging.info(f'\n\t x2 list \n\t{self.get_sem_tokens_in_line(x1.range.end.line)}')
+                logging.info(f'\n\t x0 list \n\t{self.get_sem_tokens_in_line(x0.range.start.line)}')
+                logging.info(f'\n\t x0 list \n\t{self.get_sem_tokens_in_line(x0.range.end.line)}')
                 two = x0.range.start.line
                 three = x0.range.end.line
                 one = x1.range.start.line
+                on1 = self.get_sem_tokens_in_line(one)
+                tw2 = self.get_sem_tokens_in_line(two)
+                th3 = self.get_sem_tokens_in_line(three)
                 logging.info(f"one {one} two {two} three  {three} ")
                 tok_index_of_cc_11 ,a= find_token_based_on_line(one, sem_tokens)
                 logging.info(f"cc_11 {tok_index_of_cc_11}")
