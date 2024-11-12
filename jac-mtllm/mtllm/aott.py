@@ -128,7 +128,7 @@ def aott_raise(
         return f"[Output] {result}"
     meaning_typed_input = (
         "\n".join(meaning_typed_input_list)  # type: ignore
-        if not contains_media
+        if not (contains_media and not is_custom)
         else meaning_typed_input_list
     )
     return model(meaning_typed_input, media=media, **model_params)  # type: ignore

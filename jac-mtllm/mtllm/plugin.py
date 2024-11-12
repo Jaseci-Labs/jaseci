@@ -62,6 +62,11 @@ class JacFeature:
         is_custom = (
             model_params.pop("is_custom") if "is_custom" in model_params else False
         )
+        skip_resolve = (
+            model_params.pop("skip_resolve")
+            if "skip_resolve" in model_params
+            else False
+        )
         available_methods = model.MTLLM_METHOD_PROMPTS.keys()
         assert (
             method in available_methods
@@ -118,8 +123,12 @@ class JacFeature:
             _globals,
             _locals,
         )
-        _output = model.resolve_output(
-            meaning_out, output_hint, output_type_explanations, _globals, _locals
+        _output = (
+            model.resolve_output(
+                meaning_out, output_hint, output_type_explanations, _globals, _locals
+            )
+            if not skip_resolve
+            else meaning_out
         )
         return _output
 

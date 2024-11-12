@@ -7,6 +7,9 @@ glob PROMPT_TEMPLATE: str = """
 [Information]
 {information}
 
+[Context]
+{context}
+
 [Output Information]
 {output_information}
 
@@ -15,7 +18,7 @@ glob PROMPT_TEMPLATE: str = """
 
 [Action]
 {action}
-""";
+""";  # [Context] will not be appear in the prompt
 
 obj Florence :BaseLLM: {
     with entry {
@@ -91,7 +94,7 @@ enum DamageType {
 }
 
 can ""
-predict_vehicle_damage(img: Image) -> DamageType by llm(is_custom=True);
+predict_vehicle_damage(img: Image) -> DamageType by llm(is_custom=True,skip_resolve=True);
 
 with entry {
     img = 'car_scratch.jpg';
