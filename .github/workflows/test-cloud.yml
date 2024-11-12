@@ -18,7 +18,6 @@ jobs:
         working-directory: jac-cloud
     env:
         SHOW_ENDPOINT_RETURNS: true
-        REDIS_HOST: redis://localhost
     services:
       redis:
         image: redis
@@ -52,15 +51,11 @@ jobs:
         pip install -e .
         pip install pytest
 
-    - name: Run tests
-      run: |
-        jac clean && jac tool gen_parser
-        jac serve jac_cloud/tests/simple_graph.jac --port 8000 &
-        sleep 3 && pytest -s jac_cloud/tests/test_simple_graph.py
-
-        export DATABASE_HOST="mongodb://localhost/?retryWrites=true&w=majority"
-        export REDIS_HOST="redis://localhost"
-        export PORT=8001
-        jac clean && jac tool gen_parser
-        jac serve jac_cloud/tests/simple_graph.jac --port 8001 &
-        sleep 3 && pytest -s jac_cloud/tests/test_simple_graph.py
+    - name: Run tests without mongodb and redis
+      run: pytest -sx
+    - name: Run tests with mongodb and redis
+      run: pytest -sx
+      env:
+        SHOW_ENDPOINT_RETURNS: true
+        DATABASE_HOST: mongodb://localhost/?retryWrites=true&w=majority
+        REDIS_HOST: redis://localhost
