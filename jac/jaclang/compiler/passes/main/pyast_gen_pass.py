@@ -1055,14 +1055,7 @@ class PyastGenPass(Pass):
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[
-                            self.sync(ast3.Constant(value=i.sym_name)),
-                            (
-                                i.signature.arch_tag_info.gen.py_ast[0]
-                                if i.signature.arch_tag_info
-                                else self.sync(ast3.Constant(value=None))
-                            ),
-                        ],
+                        args=[self.sync(ast3.Constant(value=i.sym_name))],
                         keywords=[],
                     )
                 )
