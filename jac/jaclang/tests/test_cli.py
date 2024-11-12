@@ -1,5 +1,6 @@
 """Test Jac cli module."""
 
+import contextlib
 import inspect
 import io
 import os
@@ -55,10 +56,8 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
         sys.stderr = captured_output
 
-        try:
+        with contextlib.suppress(Exception):
             cli.run(self.fixture_abs_path("err_runtime.jac"))
-        except Exception as e:
-            print(f"Error: {e}")
 
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -71,7 +70,6 @@ class JacCliTests(TestCase):
             "  at foo() ",
             "  at <module> ",
         )
-
         logger_capture = "\n".join([rec.message for rec in self.caplog.records])
         for exp in expected_stdout_values:
             self.assertIn(exp, logger_capture)
@@ -95,6 +93,24 @@ class JacCliTests(TestCase):
         # print(stdout_value)
         path_to_file = self.fixture_abs_path("err.impl.jac")
         self.assertIn(f'"{path_to_file}", line 2', stdout_value)
+
+    def test_param_name_diff(self) -> None:
+        """Test when parameter name from definitinon and declaration are mismatched."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+        with contextlib.suppress(Exception):
+            cli.run(self.fixture_abs_path("decl_defn_param_name.jac"))
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+        expected_stdout_values = (
+            "short_name = 42",
+            "p1 = 64 , p2 = foobar",
+        )
+        output = captured_output.getvalue()
+        for exp in expected_stdout_values:
+            self.assertIn(exp, output)
 
     def test_jac_test_err(self) -> None:
         """Basic test for pass."""
@@ -217,6 +233,42 @@ class JacCliTests(TestCase):
             r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
         )
 
+    def test_expr_types(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('expr_type.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        self.assertRegex(
+            stdout_value, r"4\:9 \- 4\:14.*BinaryExpr \- Type\: builtins.int"
+        )
+        self.assertRegex(
+            stdout_value, r"7\:9 \- 7\:17.*FuncCall \- Type\: builtins.float"
+        )
+        self.assertRegex(
+            stdout_value, r"9\:6 \- 9\:11.*CompareExpr \- Type\: builtins.bool"
+        )
+        self.assertRegex(
+            stdout_value, r"10\:6 - 10\:15.*BinaryExpr \- Type\: builtins.str"
+        )
+        self.assertRegex(
+            stdout_value, r"11\:5 \- 11\:13.*AtomTrailer \- Type\: builtins.int"
+        )
+        self.assertRegex(
+            stdout_value, r"12\:5 \- 12\:14.*UnaryExpr \- Type\: builtins.bool"
+        )
+        self.assertRegex(
+            stdout_value, r"13\:5 \- 13\:25.*IfElseExpr \- Type\: Literal\['a']\?"
+        )
+        self.assertRegex(
+            stdout_value,
+            r"14\:5 \- 14\:27.*ListCompr - \[ListCompr] \- Type\: builtins.list\[builtins.int]",
+        )
+
     def test_ast_dotgen(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()
@@ -247,6 +299,8 @@ class JacCliTests(TestCase):
         self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 7)
         self.assertEqual(stdout_value.count("builtins.int"), 3)
         self.assertEqual(stdout_value.count("builtins.str"), 10)
+        self.assertIn("Literal['test_server']", stdout_value)
+        self.assertIn("Literal['1']", stdout_value)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
@@ -368,3 +422,31 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("can my_print(x: object) -> None", stdout_value)
+
+    def test_caching_issue(self) -> None:
+        """Test for Caching Issue."""
+        test_file = self.fixture_abs_path("test_caching_issue.jac")
+        test_cases = [(10, True), (11, False)]
+        for x, is_passed in test_cases:
+            with open(test_file, "w") as f:
+                f.write(
+                    f"""
+                test mytest{{
+                    check 10 == {x};
+                }}
+                """
+                )
+            process = subprocess.Popen(
+                ["jac", "test", test_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            stdout, stderr = process.communicate()
+            if is_passed:
+                self.assertIn("Passed successfully.", stdout)
+                self.assertIn(".", stderr)
+            else:
+                self.assertNotIn("Passed successfully.", stdout)
+                self.assertIn("F", stderr)
+        os.remove(test_file)

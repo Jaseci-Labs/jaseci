@@ -133,9 +133,12 @@ def find_index(
 ) -> Optional[int]:
     """Find index."""
     index = None
-    for i, j in enumerate(
-        [get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)]
-    ):
+
+    # A list contains all the token start positions.
+    token_start_list = [
+        get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5)
+    ]
+    for i, j in enumerate(token_start_list):
         if j[0] == line and j[1] <= char <= j[2]:
             return i
 
@@ -299,6 +302,17 @@ def collect_all_symbols_in_scope(
         if not up_tree:
             return symbols
         current_tab = current_tab.parent if current_tab.parent != current_tab else None
+    return symbols
+
+
+def collect_child_tabs(sym_tab: SymbolTable) -> list[lspt.CompletionItem]:
+    """Return all child tab's as completion items."""
+    symbols: list[lspt.CompletionItem] = []
+    for tab in sym_tab.kid:
+        if tab.name not in [i.label for i in symbols]:
+            symbols.append(
+                lspt.CompletionItem(label=tab.name, kind=label_map(tab.get_type()))
+            )
     return symbols
 
 

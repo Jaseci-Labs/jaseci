@@ -1,8 +1,6 @@
 """Plugin for Jac's with_llm feature."""
 
 import ast as ast3
-import os
-import pickle
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
@@ -53,20 +51,20 @@ class JacFeature:
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry = pickle.load(f)
+        from jaclang.runtimelib.machine import JacMachine
+
+        mod_registry = JacMachine.get().jac_program.sem_ir
 
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None, f"Invalid scope: {scope}"
 
         method = model_params.pop("method") if "method" in model_params else "Normal"
+        is_custom = (
+            model_params.pop("is_custom") if "is_custom" in model_params else False
+        )
+        raw_output = (
+            model_params.pop("raw_output") if "raw_output" in model_params else False
+        )
         available_methods = model.MTLLM_METHOD_PROMPTS.keys()
         assert (
             method in available_methods
@@ -117,13 +115,18 @@ class JacFeature:
             action,
             context,
             method,
+            is_custom,
             _tools,
             model_params,
             _globals,
             _locals,
         )
-        _output = model.resolve_output(
-            meaning_out, output_hint, output_type_explanations, _globals, _locals
+        _output = (
+            model.resolve_output(
+                meaning_out, output_hint, output_type_explanations, _globals, _locals
+            )
+            if not raw_output
+            else meaning_out
         )
         return _output
 

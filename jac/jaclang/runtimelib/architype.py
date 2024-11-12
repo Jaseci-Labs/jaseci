@@ -299,7 +299,12 @@ class DSFunc:
         self.func = getattr(cls, self.name)
 
     def get_funcparam_annotations(
-        self, cls: Callable
+        self, func: Callable[[Any, Any], Any] | None
     ) -> type | UnionType | tuple[type | UnionType, ...] | None:
         """Get function parameter annotations."""
-        return inspect.signature(cls, eval_str=True).parameters["_jac_here_"].annotation
+        if not func:
+            return None
+        annotation = (
+            inspect.signature(func, eval_str=True).parameters["_jac_here_"].annotation
+        )
+        return annotation if annotation != inspect._empty else None

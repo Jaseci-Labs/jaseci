@@ -7,6 +7,7 @@ body field.
 """
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
@@ -90,6 +91,10 @@ class DeclImplMatchPass(Pass):
                     raise self.ice(
                         f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
                     )
+
+                # Ensure if it's an ability def impl, the parameters are matched.
+                self.validate_params_match(sym, decl_node.name_of)
+
                 valid_decl.body = sym.decl.name_of
                 sym.decl.name_of.decl_link = valid_decl
                 for idx, a in enumerate(sym.decl.name_of.target.archs):
@@ -97,5 +102,83 @@ class DeclImplMatchPass(Pass):
                     a.name_spec.sym = name_of_links[idx].sym
                 sym.decl.name_of.sym_tab.tab.update(valid_decl.sym_tab.tab)
                 valid_decl.sym_tab.tab = sym.decl.name_of.sym_tab.tab
+
         for i in sym_tab.kid:
             self.connect_def_impl(i)
+
+    def validate_params_match(self, sym: Symbol, valid_decl: ast.AstSymbolNode) -> None:
+        """Validate if the parameters match."""
+        if (
+            isinstance(valid_decl, ast.Ability)
+            and isinstance(sym.decl.name_of, ast.AbilityDef)
+            and isinstance(valid_decl.signature, ast.FuncSignature)
+            and isinstance(sym.decl.name_of.signature, ast.FuncSignature)
+        ):
+
+            params_decl = valid_decl.signature.params
+            params_defn = sym.decl.name_of.signature.params
+
+            if params_decl and params_defn:
+                # Check if the parameter count is matched.
+                if len(params_defn.items) != len(params_decl.items):
+                    self.error(
+                        f"Parameter count mismatch for ability {sym.sym_name}.",
+                        sym.decl.name_of.name_spec,
+                    )
+                    self.error(
+                        f"From the declaration of {valid_decl.name_spec.sym_name}.",
+                        valid_decl.name_spec,
+                    )
+                else:
+                    # Copy the parameter names from the declaration to the definition.
+                    for idx in range(len(params_defn.items)):
+                        params_decl.items[idx] = params_defn.items[idx]
+                    for idx in range(len(params_defn.kid)):
+                        params_decl.kid[idx] = params_defn.kid[idx]
+
+    def exit_architype(self, node: ast.Architype) -> None:
+        """Exit Architype."""
+        if node.arch_type.name == Tok.KW_OBJECT and isinstance(
+            node.body, ast.SubNodeList
+        ):
+
+            found_default_init = False
+            for stmnt in node.body.items:
+                if not isinstance(stmnt, ast.ArchHas):
+                    continue
+                for var in stmnt.vars.items:
+                    if (var.value is not None) or (var.defer):
+                        found_default_init = True
+                    else:
+                        if found_default_init:
+                            self.error(
+                                f"Non default attribute '{var.name.value}' follows default attribute",
+                                node_override=var.name,
+                            )
+                            break
+
+            post_init_vars: list[ast.HasVar] = []
+            postinit_method: ast.Ability | None = None
+
+            for item in node.body.items:
+
+                if isinstance(item, ast.ArchHas):
+                    for var in item.vars.items:
+                        if var.defer:
+                            post_init_vars.append(var)
+
+                elif isinstance(item, ast.Ability):
+                    if item.is_abstract:
+                        continue
+                    if (
+                        isinstance(item.name_ref, ast.SpecialVarRef)
+                        and item.name_ref.name == "KW_POST_INIT"
+                    ):
+                        postinit_method = item
+
+            # Check if postinit needed and not provided.
+            if len(post_init_vars) != 0 and (postinit_method is None):
+                self.error(
+                    'Missing "postinit" method required by un initialized attribute(s).',
+                    node_override=post_init_vars[0].name_spec,
+                )  # We show the error on the first uninitialized var.

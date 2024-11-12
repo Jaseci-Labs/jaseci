@@ -6,7 +6,6 @@ import ast as ast3
 import fnmatch
 import html
 import os
-import pickle
 import types
 from collections import OrderedDict
 from dataclasses import field
@@ -758,7 +757,9 @@ class JacFeatureImpl(
 
         jac_machine = JacMachine.get(base_path)
         if not jac_machine.jac_program:
-            jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None))
+            jac_machine.attach_program(
+                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            )
 
         if lng == "py":
             import_result = PythonImporter(JacMachine.get()).run_import(spec)
@@ -807,7 +808,7 @@ class JacFeatureImpl(
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                Jac.jac_import(target=mod_name, base_path=base)
+                Jac.jac_import(target=mod_name, base_path=base, cachable=False)
                 JacTestCheck.run_test(xit, maxfail, verbose)
                 ret_count = JacTestCheck.failcount
             else:
@@ -1071,16 +1072,14 @@ class JacFeatureImpl(
         file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
+        from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
+        from jaclang.runtimelib.machine import JacMachine
+
         _scope = SemScope.get_scope_from_str(scope)
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
         _, attr_seminfo = mod_registry.lookup(_scope, attr)
         if attr_seminfo and isinstance(attr_seminfo, SemInfo):
             return attr_seminfo.semstr if return_semstr else attr_seminfo.type
@@ -1090,15 +1089,12 @@ class JacFeatureImpl(
     @hookimpl
     def obj_scope(file_loc: str, attr: str) -> str:
         """Jac's gather_scope feature."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        from jaclang.runtimelib.machine import JacMachine
+
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
 
         attr_scope = None
         for x in attr.split("."):
@@ -1131,15 +1127,13 @@ class JacFeatureImpl(
     @hookimpl
     def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
         """Jac's get_semstr_type implementation."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.compiler.semtable import SemInfo, SemScope
+
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
 
         attr_scope = None
         for x in attr.split("."):

@@ -2800,25 +2800,14 @@ class JacParser(Pass):
         def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
             """Grammar rule.
 
-            name_list: (name_list COMMA)? NAME
+            name_list: (named_ref COMMA)* named_ref
             """
-            consume = None
-            name = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                name = kid[2]
-                new_kid = [*consume.kid, comma, name]
-            else:
-                name = kid[0]
-                new_kid = [name]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
+            valid_kid = [i for i in kid if isinstance(i, ast.Name)]
             return self.nu(
                 ast.SubNodeList[ast.Name](
                     items=valid_kid,
                     delim=Tok.COMMA,
-                    kid=new_kid,
+                    kid=kid,
                 )
             )
 
