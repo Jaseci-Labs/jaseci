@@ -7,6 +7,7 @@ body field.
 """
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
@@ -134,3 +135,50 @@ class DeclImplMatchPass(Pass):
                         params_decl.items[idx] = params_defn.items[idx]
                     for idx in range(len(params_defn.kid)):
                         params_decl.kid[idx] = params_defn.kid[idx]
+
+    def exit_architype(self, node: ast.Architype) -> None:
+        """Exit Architype."""
+        if node.arch_type.name == Tok.KW_OBJECT and isinstance(
+            node.body, ast.SubNodeList
+        ):
+
+            found_default_init = False
+            for stmnt in node.body.items:
+                if not isinstance(stmnt, ast.ArchHas):
+                    continue
+                for var in stmnt.vars.items:
+                    if (var.value is not None) or (var.defer):
+                        found_default_init = True
+                    else:
+                        if found_default_init:
+                            self.error(
+                                f"Non default attribute '{var.name.value}' follows default attribute",
+                                node_override=var.name,
+                            )
+                            break
+
+            post_init_vars: list[ast.HasVar] = []
+            postinit_method: ast.Ability | None = None
+
+            for item in node.body.items:
+
+                if isinstance(item, ast.ArchHas):
+                    for var in item.vars.items:
+                        if var.defer:
+                            post_init_vars.append(var)
+
+                elif isinstance(item, ast.Ability):
+                    if item.is_abstract:
+                        continue
+                    if (
+                        isinstance(item.name_ref, ast.SpecialVarRef)
+                        and item.name_ref.name == "KW_POST_INIT"
+                    ):
+                        postinit_method = item
+
+            # Check if postinit needed and not provided.
+            if len(post_init_vars) != 0 and (postinit_method is None):
+                self.error(
+                    'Missing "postinit" method required by un initialized attribute(s).',
+                    node_override=post_init_vars[0].name_spec,
+                )  # We show the error on the first uninitialized var.
