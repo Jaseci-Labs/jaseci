@@ -19,7 +19,7 @@ class DefUsePassTests(TestCase):
             target=DefUsePass,
         )
         uses = [i.uses for i in state.ir.sym_tab.kid[0].tab.values()]
+        self.assertEqual(len(uses[0]), 1)
         self.assertEqual(len(uses[1]), 1)
-        self.assertEqual(len(uses[2]), 1)
-        self.assertIn("output", [uses[1][0].sym_name, uses[2][0].sym_name])
-        self.assertIn("message", [uses[1][0].sym_name, uses[2][0].sym_name])
+        self.assertIn("output", [uses[0][0].sym_name, uses[1][0].sym_name])
+        self.assertIn("message", [uses[0][0].sym_name, uses[1][0].sym_name])
