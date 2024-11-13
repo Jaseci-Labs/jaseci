@@ -1189,3 +1189,13 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Hello World !", stdout_value[0])
         self.assertIn("Welcome to Jaseci!", stdout_value[1])
+
+    def test_architype_def(self) -> None:
+        """Test architype definition bug."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("architype_def_bug", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyNode", stdout_value[0])
+        self.assertIn("MyWalker", stdout_value[1])
