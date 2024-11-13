@@ -19,6 +19,7 @@ from .architype import (
     BulkWrite,
     EdgeAnchor,
     NodeAnchor,
+    ObjectAnchor,
     Root,
     WalkerAnchor,
 )
@@ -154,6 +155,8 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
                     bulk_write.del_edge(anchor.id)
                 case WalkerAnchor():
                     bulk_write.del_walker(anchor.id)
+                case ObjectAnchor():
+                    bulk_write.del_object(anchor.id)
                 case _:
                     pass
 
