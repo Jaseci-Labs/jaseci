@@ -45,7 +45,11 @@ jac_lark.logger.setLevel(logging.DEBUG)
 contextlib.suppress(ModuleNotFoundError)
 
 TOKEN_MAP = {
-    x.name: x.pattern.value
+    x.name: (
+        x.pattern.value[2:-2]
+        if x.pattern.value.startswith("\\b") and x.pattern.value.endswith("\\b")
+        else x.pattern.value
+    )
     for x in jac_lark.Lark_StandAlone().parser.lexer_conf.terminals
 }
 
