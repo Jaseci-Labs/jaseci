@@ -70,7 +70,7 @@ user1 -> Root1 -> node:boy:boy1
 user2 -> Root2 -> node:boy:boy2
 user3 -> Root3 -> node:boy:boy3
 ```
-### Granting Access 
+### Granting Access
 
 To grant `boy1` in `user1`’s graph access to `user2`, we can use a walker.
 #### Granting Access in jac-lang
@@ -82,7 +82,7 @@ walker set_access {
 
     can give_access with boy entry {
         # here = boy1
-        Jac.allow_root(here, UUID(self.root_ref_jid), self.access);       
+        Jac.allow_root(here, UUID(self.root_ref_jid), self.access);
     }
 }
 ```
@@ -96,7 +96,7 @@ walker set_access {
 
     can give_access with boy entry {
         # here = boy1
-        Jac.allow_root(here, NodeAnchor.ref(self.root_ref_jid), self.access);      
+        Jac.allow_root(here, NodeAnchor.ref(self.root_ref_jid), self.access);
     }
 }
 ```
@@ -124,7 +124,7 @@ walker remove_access {
 
     can remove_access with boy entry {
         # here = boy1
-        Jac.disallow_root(here, UUID(self.root_ref_jid));     
+        Jac.disallow_root(here, UUID(self.root_ref_jid));
     }
 }
 ```
@@ -136,7 +136,7 @@ walker remove_access {
 
     can remove_access with boy entry {
         # here = boy1
-        Jac.disallow_root(here, NodeAnchor.ref(self.root_ref_jid));     
+        Jac.disallow_root(here, NodeAnchor.ref(self.root_ref_jid));
     }
 }
 ```
