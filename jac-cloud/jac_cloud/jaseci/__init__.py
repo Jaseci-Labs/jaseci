@@ -6,6 +6,7 @@ from traceback import format_exception
 from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI as _FaststAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
 from uvicorn import run as _run
@@ -58,6 +59,14 @@ class FastAPI:
                 yield
 
             cls.__app__ = _FaststAPI(lifespan=lifespan)
+
+            cls.__app__.add_middleware(
+                CORSMiddleware,
+                allow_origins=getenv("ALLOW_ORIGINS", "*").split(","),
+                allow_credentials=True,
+                allow_methods=getenv("ALLOW_METHODS", "*").split(","),
+                allow_headers=getenv("ALLOW_HEADERS", "*").split(","),
+            )
 
             populate_yaml_specs(cls.__app__)
 
