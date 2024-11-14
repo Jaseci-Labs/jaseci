@@ -25,6 +25,10 @@ class Memory(Generic[ID, TANCH]):
         self.__mem__.clear()
         self.__gc__.clear()
 
+    def is_cached(self, id: ID) -> bool:
+        """Check if id if already cached."""
+        return id in self.__mem__
+
     def find(
         self,
         ids: ID | Iterable[ID],
