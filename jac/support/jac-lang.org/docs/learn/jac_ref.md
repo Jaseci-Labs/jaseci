@@ -1040,7 +1040,7 @@
     ```
 ??? example "Jac Grammar Snippet"
     ```yaml linenums="357"
-    --8<-- "jaclang/compiler/jac.lark:357:362"
+    --8<-- "jaclang/compiler/jac.lark:357:367"
     ```
 **Description**
 
@@ -1057,8 +1057,8 @@
     --8<-- "examples/reference/function_calls.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="365"
-    --8<-- "jaclang/compiler/jac.lark:365:369"
+    ```yaml linenums="370"
+    --8<-- "jaclang/compiler/jac.lark:370:374"
     ```
 **Description**
 
@@ -1075,8 +1075,8 @@
     --8<-- "examples/reference/atom.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="372"
-    --8<-- "jaclang/compiler/jac.lark:372:397"
+    ```yaml linenums="377"
+    --8<-- "jaclang/compiler/jac.lark:377:402"
     ```
 **Description**
 
@@ -1093,8 +1093,8 @@
     --8<-- "examples/reference/collection_values.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="400"
-    --8<-- "jaclang/compiler/jac.lark:400:421"
+    ```yaml linenums="405"
+    --8<-- "jaclang/compiler/jac.lark:405:426"
     ```
 **Description**
 
@@ -1111,8 +1111,8 @@
     --8<-- "examples/reference/tuples_and_jac_tuples.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="424"
-    --8<-- "jaclang/compiler/jac.lark:424:431"
+    ```yaml linenums="429"
+    --8<-- "jaclang/compiler/jac.lark:429:436"
     ```
 **Description**
 
@@ -1129,8 +1129,8 @@
     --8<-- "examples/reference/data_spatial_references.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="434"
-    --8<-- "jaclang/compiler/jac.lark:434:443"
+    ```yaml linenums="439"
+    --8<-- "jaclang/compiler/jac.lark:439:448"
     ```
 **Description**
 
@@ -1147,8 +1147,8 @@
     --8<-- "examples/reference/special_comprehensions.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="446"
-    --8<-- "jaclang/compiler/jac.lark:446:451"
+    ```yaml linenums="451"
+    --8<-- "jaclang/compiler/jac.lark:451:456"
     ```
 **Description**
 
@@ -1165,8 +1165,8 @@
     --8<-- "examples/reference/names_and_references.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="454"
-    --8<-- "jaclang/compiler/jac.lark:454:463"
+    ```yaml linenums="459"
+    --8<-- "jaclang/compiler/jac.lark:459:468"
     ```
 **Description**
 
@@ -1183,8 +1183,8 @@
     --8<-- "examples/reference/builtin_types.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="466"
-    --8<-- "jaclang/compiler/jac.lark:466:476"
+    ```yaml linenums="471"
+    --8<-- "jaclang/compiler/jac.lark:471:481"
     ```
 **Description**
 
@@ -1201,8 +1201,8 @@
     --8<-- "examples/reference/lexer_tokens.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="479"
-    --8<-- "jaclang/compiler/jac.lark:479:651"
+    ```yaml linenums="484"
+    --8<-- "jaclang/compiler/jac.lark:484:656"
     ```
 **Description**
 
@@ -1219,8 +1219,8 @@
     --8<-- "examples/reference/f_string_tokens.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="654"
-    --8<-- "jaclang/compiler/jac.lark:654:665"
+    ```yaml linenums="659"
+    --8<-- "jaclang/compiler/jac.lark:659:670"
     ```
 **Description**
 

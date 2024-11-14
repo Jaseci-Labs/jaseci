@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
+from dataclasses import dataclass
 from hashlib import md5
 from types import EllipsisType
 from typing import (
@@ -3401,18 +3402,22 @@ class FuncCall(Expr):
 class IndexSlice(AtomExpr):
     """IndexSlice node type for Jac Ast."""
 
+    @dataclass
+    class Slice:
+        """Slice node for index slice."""
+
+        start: Optional[Expr]
+        stop: Optional[Expr]
+        step: Optional[Expr]
+
     def __init__(
         self,
-        start: Optional[Expr],
-        stop: Optional[Expr],
-        step: Optional[Expr],
+        slices: list[Slice],
         is_range: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize index slice expression node."""
-        self.start = start
-        self.stop = stop
-        self.step = step
+        self.slices = slices
         self.is_range = is_range
         AstNode.__init__(self, kid=kid)
         Expr.__init__(self)
@@ -3422,22 +3427,26 @@ class IndexSlice(AtomExpr):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.start.normalize(deep) if self.start else res
-            res = res and self.stop.normalize(deep) if self.stop else res
-            res = res and self.step.normalize(deep) if self.step else res
+            for slice in self.slices:
+                res = slice.start.normalize(deep) if slice.start else res
+                res = res and slice.stop.normalize(deep) if slice.stop else res
+                res = res and slice.step.normalize(deep) if slice.step else res
         new_kid: list[AstNode] = []
         new_kid.append(self.gen_token(Tok.LSQUARE))
         if self.is_range:
-            if self.start:
-                new_kid.append(self.start)
-            if self.stop:
+            for i, slice in enumerate(self.slices):
+                if i > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                if slice.start:
+                    new_kid.append(slice.start)
                 new_kid.append(self.gen_token(Tok.COLON))
-                new_kid.append(self.stop)
-            if self.step:
-                new_kid.append(self.gen_token(Tok.COLON))
-                new_kid.append(self.step)
-        elif self.start:
-            new_kid.append(self.start)
+                if slice.stop:
+                    new_kid.append(slice.stop)
+                if slice.step:
+                    new_kid.append(self.gen_token(Tok.COLON))
+                    new_kid.append(slice.step)
+        elif len(self.slices) == 1 and self.slices[0].start:
+            new_kid.append(self.slices[0].start)
         else:
             res = False
         new_kid.append(self.gen_token(Tok.RSQUARE))
