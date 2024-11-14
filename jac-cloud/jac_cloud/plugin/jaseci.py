@@ -755,7 +755,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         if walker.next:
             current_node = walker.next[-1].architype
             for i in warch._jac_entry_funcs_:
-                if not i.trigger:
+                trigger = i.get_funcparam_annotations(i.func)
+                if not trigger:
                     if i.func:
                         walker.returns.append(i.func(warch, current_node))
                     else:
@@ -763,7 +764,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
                 for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             walker.returns.append(i.func(current_node, warch))
                         else:
@@ -771,27 +773,30 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             walker.returns.append(i.func(current_node, warch))
                         else:
@@ -799,7 +804,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                     if walker.disengaged:
                         return warch
         for i in warch._jac_exit_funcs_:
-            if not i.trigger:
+            trigger = i.get_funcparam_annotations(i.func)
+            if not trigger:
                 if i.func:
                     walker.returns.append(i.func(warch, current_node))
                 else:
