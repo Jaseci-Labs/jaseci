@@ -591,11 +591,12 @@ class JacFeatureImpl(
         if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
             cls, "_jac_exit_funcs_"
         ):
-            # Saving the module path and reassign it after creating cls
-            # So the jac modules are part of the correct module
-            cur_module = cls.__module__
-            cls = type(cls.__name__, (cls, arch_base), {})
-            cls.__module__ = cur_module
+            bases = (
+                (cls.__bases__ + (arch_base,))
+                if arch_base not in cls.__bases__
+                else cls.__bases__
+            )
+            cls.__bases__ = bases
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:
