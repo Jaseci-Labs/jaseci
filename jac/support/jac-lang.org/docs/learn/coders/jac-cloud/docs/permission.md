@@ -1,9 +1,68 @@
 # Permission Management
 
-This document provides a guide on managing graph-based access permissions on the cloud using a structure of nodes and anchors. Each user has their own root graph, and access between users' graphs is restricted by default.
+This document provides a guide on managing graph-based access permissions on the cloud using a structure of architypes. Each user has their own root graph, and access between users' architypes is restricted by default.
+
+# Anchors vs Architypes
+- Architypes are Jaclang class representation
+- Anchors are database class representation
+
+| type | Anchors | Architypes |
+| ---- | ---- | ---- |
+| Node | NodeAnchor | NodeArchitype |
+| Edge | EdgeAnchor | EdgeArchitype |
+| Walker | WalkerAnchor | WalkerArchitype |
+| Object | ObjectAnchor | ObjectArchitype |
+| Root | NodeAnchor | Root(NodeArchitype) |
+| GenericEdge | EdgeAnchor | GenericEdge(EdgeArchitype) |
+
+```python
+node Human {
+    has gender: str;
+}
+
+# DB NodeAnchor Representation
+{
+    _id: ObjectId('6735b60656e82d6799dc9772'),
+    name: 'Human',
+    root: ObjectId('6735b5e456e82d6799dc976e'),
+    access: { all: 'NO_ACCESS', roots: { anchors: {} } },
+    edges: [ 'e::6735b60656e82d6799dc9775', 'e:Friend:6735b60656e82d6799dc9776' ],
+
+    # the actual NodeArchitype and it's context or `has attributes`
+    architype: {
+        gender: "boy"
+    },
+}
+
+edge Friend {
+    has best: bool;
+}
+
+# DB EdgeAnchor Representation
+{
+    _id: ObjectId('6735b60656e82d6799dc9776'),
+    name: 'Friend',
+    root: ObjectId('6735b5e456e82d6799dc976e'),
+    access: { all: 'NO_ACCESS', roots: { anchors: {} } },
+    source: 'n:B:6735b60656e82d6799dc9771',
+    target: 'n:C:6735b60656e82d6799dc9772',
+    is_undirected: false
+
+    # the actual EdgeArchitype and it's context or `has attributes`
+    architype: {
+        best: true
+    },
+  }
+```
+
+## Access Levels
+* `NO_ACCESS`: No other user can access current architype.
+* `READ`: Other user have Read-Only access to current architype.
+* `CONNECT`: Other user's node can connect to current node.
+* `WRITE`: Other user can do anything to current architype.
 
 ## Default User Graph Structure
-In this setup, each user's graph is isolated with default permissions as follows:
+In this setup, each user's architype (node, edge, walker) is isolated with default permissions as follows:
 ```python
 {
     "all": "NO_ACCESS",
@@ -13,51 +72,49 @@ In this setup, each user's graph is isolated with default permissions as follows
 }
 ```
 
-* `all`: Controls access to all archetypes (`nodes`, `edges`, and `walkers`).
-    * If set to `NO_ACCESS`, other users cannot access any part of this user's graph.
+* `all`: Non specific access (Given to all users)
+* `roots`: Root specific access (specific to user)
+    ```python
+    "roots": {
+        "anchors": {
+            "{{root_jid}}": "NO_ACCESS"
+        }
+    }
+    ```
 
-## Example Structure
+## Example Structure in DB perspective
 Consider the following structure:
 
-
 ```
-user1 -> Root1 (NodeAnchor equivalent to NodeArchitype in jac laguage level) -> node1
-
-user2 -> Root2 -> node2
+User1 -> Root1 -> Node1
+User2 -> Root2 -> Node2
 ```
 
-By default, `user2` cannot access `node1` in `Root1`. To allow `user2` access to `node1`, we need to explicitly add a permission mapping in `Root2`.
-
-## Access Levels
-* `NO_ACCESS`: No access to nodes, edges or walkers.
-
-* `READ`: Read-only access to nodes, edges and walkers.
-
-* `CONNECT`: Can connect nodes using edges.
-
-* `WRITE`: Can modify nodes, edges and walkers.
-
-* `DELETE`: Can delete nodes and edges.
+By default, `User2` cannot access `Node1` owns by `Root1`. To allow `User2` access to `node1`, we need to explicitly add a permission mapping in `Root2`.
 
 ## Example of Granting Access
-To grant `READ` access to `user2` for `node1` in `Root1`, we modify node1’s access permissions:
+To grant `READ` access to `User2` for `Node1` owns by `Root1`, we modify Node1’s access permissions:
 ```python
-node1.access = {
+# Node1 is the architype
+# Node1.__jac__ is the anchor
+
+Node1.__jac__.access = {
     "all": "READ",
     "roots": {
         "anchors": {}
     }
 }
 ```
-If `user1` wants to give only `READ` access to `user2`, we set permissions as follows:
+If `User1` wants to give only `READ` access to `User2`, we set permissions as follows:
 ```python
-node1.access = {
+# Node1 is the architype
+# Node1.__jac__ is the anchor
+
+Node1.__jac__.access = {
     "all": "NO_ACCESS",
     "roots": {
         "anchors": {
-            "roots": {
-                "n::123445673 user2": "READ"
-            }
+            "n::123445673 User2's Root JID": "READ"
         }
     }
 }
@@ -66,19 +123,19 @@ node1.access = {
 ## Permission Management Walkers
 Consider this scenario:
 ```python
-user1 -> Root1 -> node:boy:boy1
-user2 -> Root2 -> node:boy:boy2
-user3 -> Root3 -> node:boy:boy3
+User1 -> Root1 -> Node:boy1
+User2 -> Root2 -> Node:boy2
+User3 -> Root3 -> Node:boy3
 ```
 ### Granting Access
 
-To grant `boy1` in `user1`’s graph access to `user2`, we can use a walker.
+To grant `boy1` in `User1`’s graph access to `User2`, we can use a walker.
 #### Granting Access in jac-lang
 ```python
 # Run the walker in user1
 walker set_access {
-    has access: str;            # "READ", "WRITE", "CONNECT", "DELETE"
-    has root_ref_jid: str;
+    has access: str;            # "READ", "WRITE", "CONNECT"
+    has root_uuid: str;
 
     can give_access with boy entry {
         # here = boy1
@@ -91,7 +148,7 @@ walker set_access {
 ```python
 # Run the walker in user1
 walker set_access {
-    has access: str;            # "READ", "WRITE", "CONNECT", "DELETE"
+    has access: str;            # "READ", "WRITE", "CONNECT"
     has root_ref_jid: str;
 
     can give_access with boy entry {
@@ -106,9 +163,7 @@ boy1.access = {
     "all": "NO_ACCESS",
     "roots": {
         "anchors": {
-            "roots": {
-                "n::123445673 user2": "READ"
-            }
+            "n::123445673 User2's Root JID": "READ"
         }
     }
 }
@@ -120,11 +175,11 @@ To remove access, use the walker below.
 ```python
 # Run the walker in user1
 walker remove_access {
-    has root_ref_jid: str;
+    has root_uuid: str;
 
     can remove_access with boy entry {
         # here = boy1
-        Jac.disallow_root(here, UUID(self.root_ref_jid));
+        Jac.disallow_root(here, UUID(self.root_uuid));
     }
 }
 ```
