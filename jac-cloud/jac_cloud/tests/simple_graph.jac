@@ -263,18 +263,13 @@ walker manual_delete_nested_edge {
     }
 }
 
-walker custom_report {
-    can enter1 with `root entry {
-        report 1;
-        report 2;
-        report 3;
+:walker:check_populated_graph:can:enter {
+    import:py from jac_cloud.core.architype {NodeAnchor, EdgeAnchor, WalkerAnchor}
 
-        Jac.report({
-            "testing": 1
-        }, True);
-    }
+    id = here.__jac__.id;
+    count = NodeAnchor.Collection.count({"$or": [{"_id": id}, {"root": id}]});
+    count += EdgeAnchor.Collection.count({"root": id});
+    count += WalkerAnchor.Collection.count({"root": id});
 
-    class __specs__ {
-        has auth: bool = False;
-    }
+    report count;
 }

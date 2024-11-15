@@ -269,6 +269,75 @@ class TestJaseciPlugin(TestCase):
         )
         self._del_session(session)
 
+    def test_walker_purger(self) -> None:
+        """Test simple persistent object."""
+        session = self.fixture_abs_path("test_walker_purger.session")
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="populate",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="traverse",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="check",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="purge",
+            args=[],
+        )
+        output = self.capturedOutput.getvalue().strip()
+        self.assertEqual(
+            output,
+            (
+                "Root()\n"
+                "A(id=0)\nA(id=1)\n"
+                "B(id=0)\nB(id=1)\nB(id=0)\nB(id=1)\n"
+                "C(id=0)\nC(id=1)\nC(id=0)\nC(id=1)\nC(id=0)\nC(id=1)\nC(id=0)\nC(id=1)\n"
+                "D(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\n"
+                "D(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "125\n124"
+            ),
+        )
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="traverse",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="check",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="purge",
+            args=[],
+        )
+        output = self.capturedOutput.getvalue().strip()
+        self.assertEqual(output, "Root()\n1\n0")
+
+        self._del_session(session)
+
     def trigger_access_validation_test(
         self, give_access_to_full_graph: bool, via_all: bool = False
     ) -> None:
