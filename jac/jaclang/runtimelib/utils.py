@@ -231,3 +231,18 @@ def is_instance(
             return isinstance(obj, target)
         case _:
             return False
+
+
+def all_issubclass(
+    classes: type | UnionType | tuple[type | UnionType, ...], target: type
+) -> bool:
+    """Check if all classes is subclass of target type."""
+    match classes:
+        case type():
+            return issubclass(classes, target)
+        case UnionType():
+            return all((all_issubclass(cls, target) for cls in classes.__args__))
+        case tuple():
+            return all((all_issubclass(cls, target) for cls in classes))
+        case _:
+            return False

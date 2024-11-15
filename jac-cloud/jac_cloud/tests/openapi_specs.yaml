@@ -4110,3 +4110,52 @@ paths:
       tags:
       - walker
       - walker
+  /walker/visit_sequence:
+    post:
+      operationId: api_root_walker_visit_sequence_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Visit Sequence Post
+          description: Successful Response
+      summary: /visit_sequence
+      tags:
+      - walker
+      - walker
+  /walker/visit_sequence/{node}:
+    post:
+      operationId: api_entry_walker_visit_sequence__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Visit Sequence  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /visit_sequence/{node}
+      tags:
+      - walker
+      - walker
