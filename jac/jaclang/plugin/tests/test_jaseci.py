@@ -409,6 +409,55 @@ class TestJaseciPlugin(TestCase):
         self.assertEqual(archs[0], "A(val=2)")
         self.assertEqual(archs[1], "A(val=1)")
 
+        ##############################################
+        #        WITH READ ACCESS BUT ELEVATED       #
+        ##############################################
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node_forced",
+            args=[20],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node_forced",
+            args=[10],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+        archs = self.capturedOutput.getvalue().strip().split("\n")
+        self.assertTrue(len(archs) == 2)
+
+        # ---------- UPDATE SHOULD HAPPEN ---------- #
+
+        self.assertEqual(archs[0], "A(val=20)")
+        self.assertEqual(archs[1], "A(val=10)")
+
+        # ---------- DISALLOW READ ACCESS ---------- #
+
         self._output2buffer()
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
@@ -469,7 +518,7 @@ class TestJaseciPlugin(TestCase):
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="update_node",
-            args=[20],
+            args=[200],
             root=self.roots[0],
             node=self.nodes[1],
             session=session,
@@ -477,7 +526,7 @@ class TestJaseciPlugin(TestCase):
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="update_node",
-            args=[10],
+            args=[100],
             session=session,
             root=self.roots[1],
             node=self.nodes[0],
@@ -502,10 +551,12 @@ class TestJaseciPlugin(TestCase):
         archs = self.capturedOutput.getvalue().strip().split("\n")
         self.assertTrue(len(archs) == 2)
 
-        # --------- UPDATE SHOULD HAPPEN -------- #
+        # ---------- UPDATE SHOULD HAPPEN ---------- #
 
-        self.assertEqual(archs[0], "A(val=20)")
-        self.assertEqual(archs[1], "A(val=10)")
+        self.assertEqual(archs[0], "A(val=200)")
+        self.assertEqual(archs[1], "A(val=100)")
+
+        # ---------- DISALLOW WRITE ACCESS --------- #
 
         self._output2buffer()
         cli.enter(
@@ -543,7 +594,7 @@ class TestJaseciPlugin(TestCase):
         )
         self.assertFalse(self.capturedOutput.getvalue().strip())
 
-        # --------- ROOTS RESET OWN NODE -------- #
+        # ---------- ROOTS RESET OWN NODE ---------- #
 
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
