@@ -9,6 +9,7 @@ import dis
 from collections import defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
+import sys
 
 
 import jaclang.compiler.absyntree as ast
@@ -126,6 +127,8 @@ def generate_module_cfg(modules):
     module_cfgs = {}
     for mod in modules:
         bytecode = mod.gen.py_bytecode
+        print(bytecode)
+        print(sys.version)
         instructions = disassemble_bytecode(bytecode)
         cfg, block_map, edges = extract_cfg_from_instructions(instructions)
         module_cfgs[mod.name] = build_cfg_graph(cfg, block_map, edges)
