@@ -312,7 +312,7 @@ class JacProgram:
 class ShellGhost:
     def __init__(self, file_name: str):
         self.__daemon_thread:Thread = Thread(target=self.worker, args=(file_name,))
-        self.cfg = None
+        self.cfgs = None
         self.__daemon_thread.start()
 
     def worker(self, file_name):
