@@ -286,11 +286,6 @@ class FuseTypeInfoPass(Pass):
                 or node.op.name == Tokens.KW_SPAWN.value
             ):
                 if node.gen.mypy_ast[-1] in self.node_type_hash:
-                    print(
-                        self.__call_type_handler(
-                            self.node_type_hash[node.gen.mypy_ast[-1]]
-                        )
-                    )
                     node.expr_type = (
                         self.__call_type_handler(
                             self.node_type_hash[node.gen.mypy_ast[-1]]
@@ -298,6 +293,16 @@ class FuseTypeInfoPass(Pass):
                         or node.expr_type
                     )
                 return
+
+        if isinstance(node, ast.EdgeRefTrailer) and any(
+            isinstance(k, ast.FilterCompr) for k in node.kid
+        ):
+            if node.gen.mypy_ast[-1] in self.node_type_hash:
+                node.expr_type = (
+                    self.__call_type_handler(self.node_type_hash[node.gen.mypy_ast[-1]])
+                    or node.expr_type
+                )
+            return
 
         # If the corrosponding mypy ast node type has stored here, get the values.
         mypy_node = node.gen.mypy_ast[0]
