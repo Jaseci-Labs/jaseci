@@ -46,6 +46,9 @@ from pymongo.results import (
 )
 from pymongo.server_api import ServerApi
 
+from .localdb import MontyClient, set_storage
+from ..utils import logger
+
 T = TypeVar("T")
 
 
@@ -137,16 +140,23 @@ class Collection(Generic[T]):
     @staticmethod
     def get_client() -> MongoClient:
         """Return pymongo.database.Database for mongodb connection."""
-        if not isinstance(Collection.__client__, MongoClient):
-            Collection.__client__ = MongoClient(
-                getenv(
-                    "DATABASE_HOST",
-                    "mongodb://localhost/?retryWrites=true&w=majority",
-                ),
-                server_api=ServerApi("1"),
-            )
+        if (client := Collection.__client__) is None:
+            if host := getenv("DATABASE_HOST"):
+                client = Collection.__client__ = MongoClient(
+                    host,
+                    server_api=ServerApi("1"),
+                )
+            else:
+                logger.info("DATABASE_HOST is not available! Using LocalDB...")
+                set_storage(
+                    repository="mydatabase",
+                    storage="sqlite",
+                    mongo_version="4.4",
+                    use_bson=True,
+                )
+                client = Collection.__client__ = MontyClient("mydatabase")
 
-        return Collection.__client__
+        return client
 
     @staticmethod
     def get_session() -> ClientSession:

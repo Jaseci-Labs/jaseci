@@ -1640,8 +1640,8 @@ class JacFormatPass(Pass):
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
 
-        start: ExprType,
-        stop: Optional[ExprType],
+        slices: list[Slice],
+        is_range: bool,
         """
         for i in node.kid:
             self.emit(node, i.gen.jac)

@@ -6,6 +6,8 @@ This has all the necessary functions to perform the AOTT operations.
 
 from typing import Mapping
 
+from PIL import Image as PILImage
+
 from jaclang.compiler.semtable import SemRegistry
 
 from loguru import logger
@@ -22,6 +24,7 @@ from mtllm.types import (
     TypeExplanation,
     Video,
 )
+from mtllm.utils import format_template_section
 
 
 def aott_raise(
@@ -33,6 +36,7 @@ def aott_raise(
     action: str,
     context: str,
     method: str,
+    is_custom: bool,
     tools: list[Tool],
     model_params: dict,
     _globals: dict,
@@ -41,14 +45,18 @@ def aott_raise(
     """AOTT Raise uses the information (Meanings types values) provided to generate a prompt(meaning in)."""
     _globals["finish_tool"] = finish_tool
     contains_media: bool = any(
-        isinstance(x.value, (Image, Video)) for x in inputs_information
+        isinstance(x.value, (Image, Video, PILImage.Image)) for x in inputs_information
     )
     informations_str = "\n".join([str(x) for x in informations])
     inputs_information_repr: list[dict] | str
-    if contains_media:
+    media = []
+    if contains_media and not is_custom:
         inputs_information_repr = []
-        for x in inputs_information:
-            inputs_information_repr.extend(x.to_list_dict())
+        for input_info in inputs_information:
+            inputs_information_repr.extend(input_info.to_list_dict())
+    elif is_custom:
+        media = [x for x in inputs_information if isinstance(x.value, PILImage.Image)]
+        inputs_information_repr = ""
     else:
         inputs_information_repr = "\n".join([str(x) for x in inputs_information])
 
@@ -60,14 +68,15 @@ def aott_raise(
     tools.append(finish_tool)
     method_prompt = model.MTLLM_METHOD_PROMPTS[method]
     if isinstance(inputs_information_repr, str):
-        mtllm_prompt = model.MTLLM_PROMPT.format(
-            information=informations_str,
-            inputs_information=inputs_information_repr,
-            output_information=str(output_hint),
-            type_explanations=type_explanations_str,
-            action=action,
-            context=context,
-        ).strip()
+        all_values = {
+            "information": informations_str,
+            "inputs_information": inputs_information_repr,
+            "output_information": str(output_hint),
+            "type_explanations": type_explanations_str,
+            "action": action,
+            "context": context,
+        }
+        mtllm_prompt = format_template_section(model.MTLLM_PROMPT, all_values)
         if not is_react:
             meaning_typed_input_list = [system_prompt, mtllm_prompt, method_prompt]
         else:
@@ -79,17 +88,18 @@ def aott_raise(
                 method_prompt,
             ]
     else:
-        upper_half = model.MTLLM_PROMPT.split("{inputs_information}")[0]
-        lower_half = model.MTLLM_PROMPT.split("{inputs_information}")[1]
-        upper_half = upper_half.format(
-            information=informations_str,
-            context=context,
-        )
-        lower_half = lower_half.format(
-            output_information=str(output_hint),
-            type_explanations=type_explanations_str,
-            action=action,
-        )
+        upper_half, lower_half = model.MTLLM_PROMPT.split("{inputs_information}")
+        upper_values = {
+            "information": informations_str,
+            "context": context,
+        }
+        lower_values = {
+            "output_information": str(output_hint),
+            "type_explanations": type_explanations_str,
+            "action": action,
+        }
+        upper_half = format_template_section(upper_half, upper_values)
+        lower_half = format_template_section(lower_half, lower_values)
         meaning_typed_input_list = [
             {"type": "text", "text": system_prompt},
             {"type": "text", "text": upper_half},
@@ -118,10 +128,10 @@ def aott_raise(
         return f"[Output] {result}"
     meaning_typed_input = (
         "\n".join(meaning_typed_input_list)  # type: ignore
-        if not contains_media
+        if not (contains_media and not is_custom)
         else meaning_typed_input_list
     )
-    return model(meaning_typed_input, **model_params)  # type: ignore
+    return model(meaning_typed_input, media=media, **model_params)  # type: ignore
 
 
 def execute_react(

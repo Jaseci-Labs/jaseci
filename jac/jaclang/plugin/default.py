@@ -6,13 +6,12 @@ import ast as ast3
 import fnmatch
 import html
 import os
-import pickle
 import types
 from collections import OrderedDict
 from dataclasses import field
 from functools import wraps
 from logging import getLogger
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 from uuid import UUID
 
 from jaclang.compiler.constant import colors
@@ -42,6 +41,7 @@ from jaclang.runtimelib.constructs import (
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import collect_node_connections, traverse_graph
 
 
@@ -53,6 +53,13 @@ logger = getLogger(__name__)
 
 class JacAccessValidationImpl:
     """Jac Access Validation Implementations."""
+
+    @staticmethod
+    @hookimpl
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        jctx = Jac.get_context()
+        jctx.root = jctx.system_root
 
     @staticmethod
     @hookimpl
@@ -380,7 +387,8 @@ class JacWalkerImpl:
         if walker.next:
             current_node = walker.next[-1].architype
             for i in warch._jac_entry_funcs_:
-                if not i.trigger:
+                trigger = i.get_funcparam_annotations(i.func)
+                if not trigger:
                     if i.func:
                         i.func(warch, current_node)
                     else:
@@ -388,7 +396,8 @@ class JacWalkerImpl:
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
                 for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(warch, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             i.func(current_node, warch)
                         else:
@@ -396,27 +405,30 @@ class JacWalkerImpl:
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             i.func(warch, current_node)
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             i.func(warch, current_node)
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(warch, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             i.func(current_node, warch)
                         else:
@@ -424,7 +436,8 @@ class JacWalkerImpl:
                     if walker.disengaged:
                         return warch
         for i in warch._jac_exit_funcs_:
-            if not i.trigger:
+            trigger = i.get_funcparam_annotations(i.func)
+            if not trigger:
                 if i.func:
                     i.func(warch, current_node)
                 else:
@@ -560,6 +573,29 @@ class JacFeatureImpl(
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         return ExecutionContext.get()
+
+    @staticmethod
+    @hookimpl
+    def reset_graph(root: Optional[Root] = None) -> int:
+        """Purge current or target graph."""
+        ctx = Jac.get_context()
+        mem = cast(ShelfStorage, ctx.mem)
+        ranchor = root.__jac__ if root else ctx.root
+
+        deleted_count = 0
+        for anchor in (
+            anchors.values()
+            if isinstance(anchors := mem.__shelf__, Shelf)
+            else mem.__mem__.values()
+        ):
+            if anchor == ranchor or anchor.root != ranchor.id:
+                continue
+
+            if loaded_anchor := mem.find_by_id(anchor.id):
+                deleted_count += 1
+                Jac.destroy(loaded_anchor)
+
+        return deleted_count
 
     @staticmethod
     @hookimpl
@@ -752,7 +788,9 @@ class JacFeatureImpl(
 
         jac_machine = JacMachine.get(base_path)
         if not jac_machine.jac_program:
-            jac_machine.attach_program(JacProgram(mod_bundle=None, bytecode=None))
+            jac_machine.attach_program(
+                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            )
 
         if lng == "py":
             import_result = PythonImporter(JacMachine.get()).run_import(spec)
@@ -801,7 +839,7 @@ class JacFeatureImpl(
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                Jac.jac_import(target=mod_name, base_path=base)
+                Jac.jac_import(target=mod_name, base_path=base, cachable=False)
                 JacTestCheck.run_test(xit, maxfail, verbose)
                 ret_count = JacTestCheck.failcount
             else:
@@ -1065,16 +1103,14 @@ class JacFeatureImpl(
         file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
+        from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
+        from jaclang.runtimelib.machine import JacMachine
+
         _scope = SemScope.get_scope_from_str(scope)
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
         _, attr_seminfo = mod_registry.lookup(_scope, attr)
         if attr_seminfo and isinstance(attr_seminfo, SemInfo):
             return attr_seminfo.semstr if return_semstr else attr_seminfo.type
@@ -1084,15 +1120,12 @@ class JacFeatureImpl(
     @hookimpl
     def obj_scope(file_loc: str, attr: str) -> str:
         """Jac's gather_scope feature."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        from jaclang.runtimelib.machine import JacMachine
+
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
 
         attr_scope = None
         for x in attr.split("."):
@@ -1125,15 +1158,13 @@ class JacFeatureImpl(
     @hookimpl
     def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
         """Jac's get_semstr_type implementation."""
-        with open(
-            os.path.join(
-                os.path.dirname(file_loc),
-                "__jac_gen__",
-                os.path.basename(file_loc).replace(".jac", ".registry.pkl"),
-            ),
-            "rb",
-        ) as f:
-            mod_registry: SemRegistry = pickle.load(f)
+        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.compiler.semtable import SemInfo, SemScope
+
+        jac_program = JacMachine.get().jac_program
+        mod_registry: SemRegistry = (
+            jac_program.sem_ir if jac_program is not None else SemRegistry()
+        )
 
         attr_scope = None
         for x in attr.split("."):
