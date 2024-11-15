@@ -9,7 +9,7 @@ setup(
     version=VERSION,
     packages=find_packages(include=["jac_cloud", "jac_cloud.*"]),
     install_requires=[
-        "jaclang~=0.7.25",
+        "jaclang~=0.7.26",
         "fastapi~=0.111.0",
         "pydantic~=2.8.2",
         "pymongo~=4.8.0",
