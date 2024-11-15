@@ -92,7 +92,7 @@ def run(
     mod = mod[:-4]
     jctx = ExecutionContext.create(session=session)
     if gins:
-        JacMachine(base).attach_gin(ShellGhost(filename))
+        JacMachine(base).attach_gin(ShellGhost())
 
     if filename.endswith(".jac"):
         try:

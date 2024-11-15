@@ -76,9 +76,12 @@ class JacMachine:
     ) -> Optional[types.CodeType]:
         """Retrieve bytecode from the attached JacProgram."""
         if self.jac_program:
-            return self.jac_program.get_bytecode(
+            bytecode = self.jac_program.get_bytecode(
                 module_name, full_target, caller_dir, cachable, reload=reload
             )
+            if self.gin:
+                self.gin.start_ghost()
+            return bytecode
         return None
 
     def get_sem_ir(self, mod_sem_ir: SemRegistry | None) -> None:
@@ -316,8 +319,6 @@ class JacProgram:
         result = compile_jac(full_target, cache_result=cachable)
         if result.errors_had or not result.ir.gen.py_bytecode:
             for alrt in result.errors_had:
-                # We're not logging here, it already gets logged as the errors were added to the errors_had list.
-                # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
                 logger.error(alrt.pretty_print())
             return None
         if result.ir.gen.py_bytecode is not None:
@@ -327,36 +328,16 @@ class JacProgram:
 
 
 class ShellGhost:
-    def __init__(self, file_name: str):
-        self.__daemon_thread:Thread = Thread(target=self.worker, args=(file_name,))
+    def __init__(self):
         self.cfgs = None
+
+    def get_cfgs(self,cfgs: any):
+        self.cfgs = cfgs
+
+    def start_ghost(self):
+        self.__daemon_thread:Thread = Thread(target=self.worker)
         self.__daemon_thread.start()
 
-    def worker(self, file_name):
-        print("doesn't do anything")
-        # ir = jac_file_to_pass(
-        #     file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
-        # ).ir
-        # print(ir.pp())
-        # time.sleep(2)
+    def worker(self):
         
-
-# import time
-#         import gc
-#         import inspect
-#         with open("log.txt", "a") as log_file:
-#             while True:
-#                 # Pause to avoid excessive checks
-#                 time.sleep(10)
-                
-#                 # Gather all objects in the main application
-#                 objects = gc.get_objects()
-#                 log_file.write("\n[Monitor] Checking objects in main application:\n")
-
-#                 for obj in objects:
-#                     # Only monitor dictionaries (e.g., modules, function locals, etc.)
-#                     if isinstance(obj, dict):
-#                         for name, value in obj.items():
-#                             log_file.write(f"Variable '{name}' = {value}\n")
-#                 log_file.write("\n=====================================================================\n")
-#                 log_file.flush()  # Ensure data is written immediately
+        print(self.cfgs)

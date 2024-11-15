@@ -14,7 +14,6 @@ import ast
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.runtimelib.cfg import visualize_cfg, disassemble_bytecode, create_BBs, create_cfg
-from jaclang.runtimelib.machine import JacMachine
 
 
 class CfgGenPass(Pass):
@@ -42,11 +41,15 @@ class CfgGenPass(Pass):
             BBs = create_BBs(instructions)
             cfg = create_cfg(BBs)
             module_cfgs[mod.name] = cfg
-        for cfg in module_cfgs.values():
-            dot = visualize_cfg(cfg)
-            print(dot)
-            dot.render('cfg.gv', view=True)
-            
+        # for cfg in module_cfgs.values():
+        #     dot = visualize_cfg(cfg)
+        #     print(dot)
+        #     dot.render('cfg.gv', view=True)
+        try:
+            from jaclang.runtimelib.machine import JacMachine
+            JacMachine.get().gin.get_cfgs(cfgs=module_cfgs)
+        except Exception as e:
+            print(f"Can't save cfgs: {e}")
             
             
             
