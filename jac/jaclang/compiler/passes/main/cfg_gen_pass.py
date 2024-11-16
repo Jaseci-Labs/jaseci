@@ -26,24 +26,26 @@ class CfgGenPass(Pass):
         is_imported: bool,
         sym_tab: Optional[SymbolTable],
         """
-        mods = [node] + self.get_all_sub_nodes(node, ast.Module)
-        module_cfgs = {}
-        for mod in mods:
-            bytecode = mod.gen.py_bytecode
-            instructions = disassemble_bytecode(bytecode)
-            BBs = create_BBs(instructions)
-            cfg = create_cfg(BBs)
-            module_cfgs[mod.name] = cfg
-        # for cfg in module_cfgs.values():
-        #     dot = visualize_cfg(cfg)
-        #     print(dot)
-        #     dot.render('cfg.gv', view=True)
+
         from jaclang.runtimelib.machine import JacMachine
         if JacMachine.get().gin:
-            try:
-                JacMachine.get().gin.get_cfgs(cfgs=module_cfgs)
-            except Exception as e:
-                print(f"Can't save cfgs: {e}")
+            mods = [node] + self.get_all_sub_nodes(node, ast.Module)
+            module_cfgs = {}
+            for mod in mods:
+                bytecode = mod.gen.py_bytecode
+                instructions = disassemble_bytecode(bytecode)
+                BBs = create_BBs(instructions)          
+                cfg = create_cfg(BBs)
+                module_cfgs[mod.name] = cfg
+            # for cfg in module_cfgs.values():
+            #     dot = visualize_cfg(cfg)
+            #     print(dot)
+            #     dot.render('cfg.gv', view=True)
+            if JacMachine.get().gin:
+                try:
+                    JacMachine.get().gin.get_cfgs(cfgs=module_cfgs)
+                except Exception as e:
+                    print(f"Can't save cfgs: {e}")
             
             # cfg, block_map, edges = extract_cfg_from_instructions(instructions)
         #     module_cfgs[mod.name] = build_cfg_graph(cfg, block_map, edges)

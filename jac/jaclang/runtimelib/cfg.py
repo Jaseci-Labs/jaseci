@@ -88,11 +88,16 @@ def create_BBs(instructions: List[BytecodeOp]) -> BlockMap:
     # print(f"Offset to Index Mapping: {offset_to_index}")
 
     def valid_offset(offset):
-        return offset >= 0 and offset <= max_offset
+        return offset in offset_to_index.keys()
+    def find_next_offset(offset):
+        offset_index = offset_to_index[offset]
+        return list(offset_to_index.keys())[offset_index + 1]
+        # return offset >= 0 and offset <= max_offset
     # Identify all block starts
     for instr in instructions:
         if instr.is_branch():
-            next_instr_offset = instr.offset + CODEUNIT_SIZE
+            next_instr_offset = find_next_offset(instr.offset)
+            # next_instr_offset = instr.offset + CODEUNIT_SIZE
             if valid_offset(next_instr_offset):
                 block_starts.add(next_instr_offset)
             
@@ -118,13 +123,15 @@ def create_BBs(instructions: List[BytecodeOp]) -> BlockMap:
         # Find the corresponding end_index
         for offset in block_starts_ordered:
             if offset > start_offset:
-                end_index = offset_to_index[offset]
+                try:
+                    end_index = offset_to_index[offset]
+                except Exception as e:
+                    print(f'Error: {e}')               
                 break
         
         # Collect instructions for this block
         block_instrs = instructions[start_index:end_index]
         block_map.add_block(block_id, Block(block_id, block_instrs))
-    
     return block_map
 
 

@@ -73,7 +73,7 @@ class CFGTracker:
         """Stop tracking branch coverage"""
         sys.settrace(None)
 
-    def trace_callback(self, frame: types.FrameType, event: str, arg: Any) -> Optional[types.TraceFunction]:
+    def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
         """Trace function to track executed branches"""
         if event != 'line':
             return self.trace_callback
@@ -397,18 +397,21 @@ class JacImporter(Importer):
                 if not codeobj:
                     raise ImportError(f"No bytecode found for {spec.full_target}")
 
-                try:
-                    with sys_path_context(spec.caller_dir):
-                        tracker = CFGTracker()
-                        tracker.start_tracking()
-                        print("here")
-                        exec(codeobj, module.__dict__)
-                        tracker.stop_tracking()
-                        print(f"count={tracker.count}")
-                except Exception as e:
-                    logger.error(e)
-                    logger.error(dump_traceback(e))
-                    raise e
+                from jaclang.runtimelib.machine import JacMachine
+                if JacMachine.get().gin:
+                    try:
+                        with sys_path_context(spec.caller_dir):
+                            tracker = CFGTracker()
+                            tracker.start_tracking()
+                            exec(codeobj, module.__dict__)
+                            tracker.stop_tracking()
+                            print(f"count={tracker.count}")
+                    except Exception as e:
+                        logger.error(e)
+                        logger.error(dump_traceback(e))
+                        raise e
+                else:
+                    exec(codeobj, module.__dict__)
 
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
