@@ -69,7 +69,16 @@ class SemTokManager:
             for i in range(0, len(self.sem_tokens), 5)
             if get_token_start(i, self.sem_tokens)[0] == line
         ]
-        
+
+    def last_up_token(self, line: int) -> list[int]:
+        """Return the last token before that line and line and index as  tuple."""
+        tok = None
+        for i in range(0, len(self.sem_tokens), 5):
+            if get_token_start(i, self.sem_tokens)[0] >= line:
+                break
+            tok = i
+        return tok, get_token_start(tok, self.sem_tokens)
+
     def update_sem_tokens(
         self,
         content_changes: lspt.DidChangeTextDocumentParams,
@@ -124,10 +133,10 @@ class SemTokManager:
                 x0 = content_changes.content_changes[0]
                 x1 = content_changes.content_changes[1]
                 logging.info(f"one \n{x0} two \n{x1}")
-                logging.info(f'\n\t x1 list \n\t{self.get_sem_tokens_in_line(x1.range.start.line)}')
-                logging.info(f'\n\t x2 list \n\t{self.get_sem_tokens_in_line(x1.range.end.line)}')
-                logging.info(f'\n\t x0 list \n\t{self.get_sem_tokens_in_line(x0.range.start.line)}')
-                logging.info(f'\n\t x0 list \n\t{self.get_sem_tokens_in_line(x0.range.end.line)}')
+                logging.info(f'\n\t one list \n\t{self.get_sem_tokens_in_line(x1.range.start.line)}')
+                logging.info(f'\n\t dummy list \n\t{self.get_sem_tokens_in_line(x1.range.end.line)}')
+                logging.info(f'\n\t two list \n\t{self.get_sem_tokens_in_line(x0.range.start.line)}')
+                logging.info(f'\n\t three list \n\t{self.get_sem_tokens_in_line(x0.range.end.line)}')
                 two = x0.range.start.line
                 three = x0.range.end.line
                 one = x1.range.start.line
@@ -135,58 +144,95 @@ class SemTokManager:
                 tw2 = self.get_sem_tokens_in_line(two)
                 th3 = self.get_sem_tokens_in_line(three)
                 logging.info(f"one {one} two {two} three  {three} ")
-                tok_index_of_cc_11 ,a= find_token_based_on_line(one, sem_tokens)
-                logging.info(f"cc_11 {tok_index_of_cc_11}")
-                tok_index_of_pp_17,p = find_token_based_on_line(three, sem_tokens)
-                tok_index_of_pp_17 -= 1
-                tok_index_of_d_1 = tok_index_of_pp_17 + 1
-                logging.info(f"pp_17 {tok_index_of_pp_17}")
-                logging.info(f"d_1 {tok_index_of_d_1}")
-                tok_index_of_oo_40,p = find_token_based_on_line(three+1, sem_tokens)
-                tok_index_of_oo_40 -= 1
-                logging.info(f"oo_40 {tok_index_of_oo_40}")
-                if a == 0 and p == 0:
-                    if tok_index_of_cc_11 == tok_index_of_pp_17:
-                        up_line_delta = two - one + 1
-                        logging.info(f'up line delta  {up_line_delta}')
-                        sem_tokens[tok_index_of_cc_11*5] -= up_line_delta
-                        nxt,ppp = find_token_based_on_line(three, sem_tokens)
-                        logging.info(f"nxt ==>   {nxt}")
-                        sem_tokens[(nxt)*5] += up_line_delta
-                        logging.info(f"sem tokk {sem_tokens}")
-                        return sem_tokens
-                    sem_tokens[tok_index_of_cc_11*5] += 1
-                    logging.info(f"if a ==0 cc_11 =>  {tok_index_of_cc_11}")
-                    tok_index_of_pp_17+=1
-                    logging.info(f"if p ==0 pp_17 ==> {tok_index_of_pp_17}")
-                    sem_tokens[tok_index_of_pp_17*5] -= 1
+                on_b = self.last_up_token(one)
+                tw_b = self.last_up_token(two)
+                th_b = self.last_up_token(three)
+                logging.info(f"on_b {on_b} tw_b {tw_b} th_b  {th_b} ")
+
+                if on1 and tw2 and th3: # DONE 
+                    first = sem_tokens[:on1[0][0]]
+                    second = sem_tokens[on1[0][0]:th3[0][0]]
+                    third_3 = sem_tokens[th3[0][0]:th3[-1][0]+5]
+                    bottom = sem_tokens[th3[-1][0]+5:]
+
+                    second[0],third_3[0] = third_3[0] ,second[0] 
+
+                    logging.info(f"first \n{first} \nsecond \n{second} \nthird \n{third_3} \nbottom \n{bottom}")
+                    self.sem_tokens = first + third_3 + second + bottom
                     return sem_tokens
-                if a == 0:
-                    tok_index_of_cc_11 += 1
-                    up_line_delta = get_token_start(tok_index_of_cc_11*5, sem_tokens)[0] - one
-                    logging.info(f'up line delta  {up_line_delta}')
-                    jj = sem_tokens[(tok_index_of_d_1-1)*5]
-                    logging.info(f'before swapped {sem_tokens[(tok_index_of_cc_11-1)*5],sem_tokens[(tok_index_of_d_1-1)*5]}')
-                    sem_tokens[(tok_index_of_cc_11-1)*5],sem_tokens[(tok_index_of_d_1-1)*5] = sem_tokens[(tok_index_of_d_1-1)*5],sem_tokens[(tok_index_of_cc_11-1)*5]
-                    sem_tokens[(tok_index_of_cc_11-1)*5] = up_line_delta +1
-                    sem_tokens[(tok_index_of_d_1-1)*5] -= up_line_delta
-                    sem_tokens[tok_index_of_oo_40*5] = jj
-                    logging.info(f'swapped {sem_tokens[(tok_index_of_cc_11-1)*5],sem_tokens[(tok_index_of_d_1-1)*5]}')
-                    logging.info(f"if a ==0 cc_11 =>  {tok_index_of_cc_11}")
-                    # sem_tokens[tok_index_of_cc_11*5] += 1
-                if p == 0:
-                    logging.info(f"if p ==0 pp_17 ==> {tok_index_of_pp_17}")
-                    # sem_tokens[tok_index_of_pp_17*5] -= 1
+                elif on1 and tw2: # DONE
 
-                first_1 = sem_tokens[:(tok_index_of_cc_11-1)*5]
-                second_2 = sem_tokens[(tok_index_of_cc_11-1)*5:tok_index_of_pp_17*5]
-                third_3 = sem_tokens[tok_index_of_pp_17*5:tok_index_of_oo_40*5]
-                remaining = sem_tokens[tok_index_of_oo_40*5:]
+                    sem_tokens[on1[0][0]] += 1
+                    sem_tokens[tw2[-1][0]+5] -= 1
 
-                # add in order after move down
-                sem_tokens = first_1 + third_3 + second_2 + remaining
-                logging.info("Moving down")
-                self.sem_tokens = sem_tokens
+                    logging.info(f'second ')                    
+                    return sem_tokens
+                elif on1 and th3: # swapping
+                    logging.info(f'fourth ')
+                    first = sem_tokens[:on_b[0]+5]
+                    logging.info(f'first {first}')
+                    second = sem_tokens[on_b[0]+5:th3[0][0]]
+                    third_3 = sem_tokens[th3[0][0]:th3[-1][0]+5]
+                    bottom = sem_tokens[th3[-1][0]+5:]
+                    third_3[0],second[0] = second[0],third_3[0]
+                    second[0]= 1
+                    bottom[0] += three- tw_b[1][0]- 1
+                    logging.info(f"first \n{first} \nsecond \n{second} \nthird \n{third_3} \nbottom \n{bottom}")
+                    self.sem_tokens = first + third_3 + second + bottom
+                    logging.info(f"sem tokk {sem_tokens}")
+                    return sem_tokens
+                elif on1:  # DONE
+                    sem_tokens[on1[0][0]] += 1
+                    sem_tokens[th_b[0]+5] -= 1
+                    logging.info(f'Third == ')                    
+                    return sem_tokens
+                elif tw2 and th3: # swapping
+                    logging.info(f'fifth ')
+                    first = sem_tokens[:on_b[0]+5]
+                    second = sem_tokens[on_b[0]+5:th3[0][0]]
+                    third_3 = sem_tokens[th3[0][0]:th3[-1][0]+5]
+                    bottom = sem_tokens[th3[-1][0]+5:]
+                    logging.info(f"first \n{first} \nsecond \n{second} \nthird \n{third_3} \nbottom \n{bottom}")
+                    third_3[0]= one - on_b[1][0] 
+                    second[0] = tw_b[1][0] - one+1
+                    self.sem_tokens = first + third_3 + second + bottom
+                    return sem_tokens
+                elif th3: # swapping
+                    logging.info(f'sixth ')
+                    l = [on_b[1][0],tw_b[1][0],th_b[1][0]]
+                    # if any in list l is in between one and two
+                    first = sem_tokens[:on_b[0]+5]
+                    second = sem_tokens[on_b[0]+5:th3[0][0]]
+                    third_3 = sem_tokens[th3[0][0]:th3[-1][0]+5]
+                    bottom = sem_tokens[th3[-1][0]+5:]
+                    # swapping
+                    third_3[0]= one - on_b[1][0]
+                    if one < l[0] < two or one < l[1] < two or one < l[2] < two:
+                        logging.info(f'sixth  ::--- Exception ')
+                        bottom[0] += three - th_b[1][0] - 1
+                        # add one to iinside token
+                        second[0] -= third_3[0] -1
+                    else:
+                        logging.info(f'first \n{first} \nsecond \n{second} \nthird \n{third_3} \nbottom \n{bottom}')
+                        bottom[0] += three - one
+                    # merging
+                    self.sem_tokens = first + third_3 + second + bottom
+                    return sem_tokens
+                elif tw2:
+                    logging.info(f'seventh ')
+                    sem_tokens[on_b[0]+5] += 1
+                    sem_tokens[th_b[0]+5] -= 1
+                    return sem_tokens
+                else:
+                    l = [on_b[1][0],tw_b[1][0],th_b[1][0]]
+                    # if any in list l is in between one and two
+                    if one < l[0] < two or one < l[1] < two or one < l[2] < two:
+                        logging.info(f'eighth ')
+                        sem_tokens[on_b[0]+5] += 1
+                        sem_tokens[th_b[0]+5] -= 1
+                        return sem_tokens
+                    logging.info(f"else //==? ")
+                    
             logging.info(f"semmm tok {sem_tokens}")
             return sem_tokens
 
