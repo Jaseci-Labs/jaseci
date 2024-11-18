@@ -6,8 +6,8 @@ import marshal
 import dis
 from collections import defaultdict
 from typing import List, Optional, Iterator
-# import graphviz
-# from graphviz import Digraph
+import graphviz
+from graphviz import Digraph
 
 class BytecodeOp:
     def __init__(self, op: int, arg: int, offset: int, argval:int, is_jump_target: bool) -> None:
@@ -201,7 +201,7 @@ def create_cfg(block_map: BlockMap) -> CFG:
         else:
             fall_through_offset = block.instructions[-1].get_next_instruction_offset()
             fall_through_block = find_block_by_offset(block_map, fall_through_offset)
-            if fall_through_block is not None:
+            if fall_through_block is not None and fall_through_offset != last_instr.offset:
                 cfg.add_edge(block_id, fall_through_block)
 
     return cfg
