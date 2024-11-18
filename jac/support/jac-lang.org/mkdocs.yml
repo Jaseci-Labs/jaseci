@@ -2,59 +2,51 @@ site_name: The Jac Programming Language
 site_url: https://jac-lang.org
 nav:
   - Home: "index.md"
-  - Start:
-      - "start/about.md"
-      - "start.md"
-      - "start/installation.md"
-      - "start/jac_in_a_flash.md"
-  - Learn:
-      - For coders:
-          - "learn/guide.md"
-          - "learn/jac_ref.md"
-          - "learn/impl_docs.md"
-          - Data Spatial:
-              - "learn/data_spatial/examples.md"
-              - "learn/data_spatial/FAQ.md"
-          - Jac Cloud:
-              - "learn/coders/jac-cloud/docs/jac_cloud.md"
-              - "learn/coders/jac-cloud/docs/permission.md"
-              - "learn/coders/jac-cloud/docs/jac_cloud_logging.md"
-              - "learn/coders/jac-cloud/docs/jac_cloud_env_vars.md"
-          - MTLLM:
-              - "learn/with_llm.md"
-              - Quick Start:
-                  - "learn/coders/mtllm/docs/quickstart/installation.md"
-                  - "learn/coders/mtllm//docs/quickstart/minimal-working-example.md"
-              - Design and Implementation:
-                  - "learn/coders/mtllm/docs/design_impl/inference_engine.md"
-                  - "learn/coders/mtllm/docs/design_impl/sem_registry.md"
-              - Building Blocks:
-                  - "learn/coders/mtllm/docs/building_blocks/language_models.md"
-                  - "learn/coders/mtllm/docs/building_blocks/semstrings.md"
-                  - "learn/coders/mtllm/docs/building_blocks/functions_methods.md"
-                  - "learn/coders/mtllm/docs/building_blocks/object_init.md"
-                  - "learn/coders/mtllm/docs/building_blocks/Multimodality.md"
-              - Tutorials:
-                  - "learn/coders/mtllm/docs/tutorials/rpg_game.md"
-          - "learn/tips_tricks.md"
-          - "learn/jac_plugins.md"
-      - For contributors:
-          - "learn/contrib.md"
-          - "learn/internals.md"
-      - W.I.P:
-          - "learn/ast_doc.md"
-          - projects:
-              - "projects/auto_ref.md"
+  - For coders:
+      - "for_coders/coders_guide.md"
+      - "for_coders/language_basics.md"
+      - "for_coders/data_spatial/dataspatial.md"
+      - "for_coders/python_integration.md"
+      - MTLLM:
+        - "learn/with_llm.md"
+        - Quick Start:
+            - "learn/coders/mtllm/docs/quickstart/installation.md"
+            - "learn/coders/mtllm//docs/quickstart/minimal-working-example.md"
+        - Design and Implementation:
+            - "learn/coders/mtllm/docs/design_impl/inference_engine.md"
+            - "learn/coders/mtllm/docs/design_impl/sem_registry.md"
+        - Building Blocks:
+            - "learn/coders/mtllm/docs/building_blocks/language_models.md"
+            - "learn/coders/mtllm/docs/building_blocks/semstrings.md"
+            - "learn/coders/mtllm/docs/building_blocks/functions_methods.md"
+            - "learn/coders/mtllm/docs/building_blocks/object_init.md"
+            - "learn/coders/mtllm/docs/building_blocks/Multimodality.md"
+        - Tutorials:
+            - "learn/coders/mtllm/docs/tutorials/rpg_game.md"
+      - Jac Cloud:
+        - "learn/coders/jac-cloud/docs/jac_cloud.md"
+        - "learn/coders/jac-cloud/docs/permission.md"
+        - "learn/coders/jac-cloud/docs/jac_cloud_logging.md"
+        - "learn/coders/jac-cloud/docs/jac_cloud_env_vars.md"
+      - Jac Tools:
+        - "for_coders/tools/testing.md"
+        - "for_coders/tools/jac_streamlit.md"
+      
+  - For contributors:
+      - "learn/contrib.md"
+      - "learn/internals.md"
+      - "learn/jac_plugins.md"
 
-  - Why: "why.md"
-  # - ~/roadmap$: 'roadmap.md'
-  - Github: https://github.com/Jaseci-Labs/jaseci
+  - Examples:
+    - EECS449:
+        - "learn/tutorial/readme.md"
+        - "learn/tutorial/1_setting-up-jac-cloud.md"
+        - "learn/tutorial/2_building-a-rag-chatbot.md"
+        - "learn/tutorial/3_rag-dialogue-routing-chatbot.md"
 
-  - EECS449:
-      - "learn/tutorial/readme.md"
-      - "learn/tutorial/1_setting-up-jac-cloud.md"
-      - "learn/tutorial/2_building-a-rag-chatbot.md"
-      - "learn/tutorial/3_rag-dialogue-routing-chatbot.md"
+  - Complete Language Syntax Reference :
+    - "learn/jac_ref.md"
+
 theme:
   logo: "assets/logo.png"
   name: "material"
@@ -111,10 +103,12 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - toc:
+        permalink: "#"
   # - pymdownx.emoji:
   #     emoji_index: !!python/name:material.extensions.emoji.twemoji
   #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
-
+    
 extra_css:
   - extra.css
 
