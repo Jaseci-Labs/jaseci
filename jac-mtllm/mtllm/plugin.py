@@ -121,12 +121,12 @@ class JacFeature:
             _globals,
             _locals,
         )
+        resolver_model = model_params.pop("resolve_with") if "resolve_with" in model_params else model
         _output = (
-            model.resolve_output(
+            meaning_out if raw_output else
+            resolver_model.resolve_output(
                 meaning_out, output_hint, output_type_explanations, _globals, _locals
             )
-            if not raw_output
-            else meaning_out
         )
         return _output
 

@@ -1,4 +1,5 @@
 import from mtllm.llms.base { BaseLLM }
+import:py from mtllm.llms { OpenAI }
 import:py from PIL { Image }
 import torch;
 import from transformers { AutoModelForCausalLM, AutoProcessor }
@@ -85,6 +86,7 @@ obj Florence :BaseLLM: {
 }
 
 glob llm = Florence('microsoft/Florence-2-base');
+glob llm2 = OpenAI(verbose=True, model_name="gpt-4o-mini");
 
 enum DamageType {
     NoDamage,
@@ -94,7 +96,8 @@ enum DamageType {
 }
 
 can ""
-predict_vehicle_damage(img: Image) -> DamageType by llm(is_custom=True,raw_output=True);
+# predict_vehicle_damage(img: Image) -> DamageType by llm(is_custom=True,raw_output=True);
+predict_vehicle_damage(img: Image) -> DamageType by llm(is_custom=True,resolve_with =llm2);
 
 with entry {
     img = 'car_scratch.jpg';
