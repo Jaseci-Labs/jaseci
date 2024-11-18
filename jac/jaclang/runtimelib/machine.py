@@ -9,6 +9,7 @@ import time
 import sys
 import tempfile
 import types
+import google.generativeai as genai
 from threading import Thread
 from contextvars import ContextVar
 from typing import Optional, Union
@@ -335,9 +336,20 @@ class ShellGhost:
         self.cfgs = cfgs
 
     def start_ghost(self):
-        self.__daemon_thread:Thread = Thread(target=self.worker)
-        self.__daemon_thread.start()
+        self.__ghost_thread:Thread = Thread(target=self.worker)
+        self.__ghost_thread.start()
 
     def worker(self):
-        
-        print(self.cfgs)
+        genai.configure(api_key=os.getenv("GEN_AI_KEY"))
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response_dict = {'cfg': self.cfgs}
+        prompt = []
+        for k,v in response_dict.items():
+            prompt.append(f"here is my {k}:\n{v}")
+        prompt.append("\nCan you identify where the code could have an error?")
+        response = model.generate_content("".join(prompt))
+
+        print("PROMPT:\n")
+        print("".join(prompt))
+        print("RESPONSE:\n")
+        print(response.text)

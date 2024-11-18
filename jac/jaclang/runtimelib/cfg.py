@@ -6,8 +6,8 @@ import marshal
 import dis
 from collections import defaultdict
 from typing import List, Optional, Iterator
-# import graphviz
-# from graphviz import Digraph
+import graphviz
+from graphviz import Digraph
 
 class BytecodeOp:
     def __init__(self, op: int, arg: int, offset: int, argval:int, is_jump_target: bool) -> None:
