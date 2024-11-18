@@ -148,9 +148,10 @@ def create_BBs(instructions: List[BytecodeOp]) -> BlockMap:
 
 
 class CFG:
-    def __init__(self):
+    def __init__(self, block_map:BlockMap):
         self.nodes = set()
         self.edges = {}
+        self.block_map = block_map
 
     def add_node(self, node_id):
         self.nodes.add(node_id)
@@ -163,6 +164,9 @@ class CFG:
         else:
             self.edges[from_node] = [to_node]
 
+    def display_instructions(self):
+        return repr(self.block_map)
+        
     def __repr__(self):
         result = []
         for node in self.nodes:
@@ -172,7 +176,7 @@ class CFG:
                     result.append(f'  -> bb{succ}')
         return "\n".join(result)
 def create_cfg(block_map: BlockMap) -> CFG:
-    cfg = CFG()
+    cfg = CFG(block_map)
 
     for block_id, block in block_map.idx_to_block.items():
         cfg.add_node(block_id)

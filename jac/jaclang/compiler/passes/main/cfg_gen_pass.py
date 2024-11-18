@@ -34,8 +34,7 @@ class CfgGenPass(Pass):
             for mod in mods:
                 bytecode = mod.gen.py_bytecode
                 instructions = disassemble_bytecode(bytecode)
-                BBs = create_BBs(instructions)  
-                print(BBs)        
+                BBs = create_BBs(instructions)         
                 cfg = create_cfg(BBs)
                 module_cfgs[mod.name] = cfg
             for cfg in module_cfgs.values():
@@ -43,7 +42,7 @@ class CfgGenPass(Pass):
                 dot.render('cfg.gv', view=True)
             if JacMachine.get().gin:
                 try:
-                    JacMachine.get().gin.get_cfgs(cfgs=module_cfgs)
+                    JacMachine.get().gin.set_cfgs(cfgs=module_cfgs)
                 except Exception as e:
                     print(f"Can't save cfgs: {e}")
             
