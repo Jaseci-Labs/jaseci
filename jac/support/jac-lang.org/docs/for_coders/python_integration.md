@@ -1,4 +1,4 @@
-# Python Integration with Jaclang
+# Python Integration
 
 ## <span style="color: orange">How to use Python Libraries?</span>
 

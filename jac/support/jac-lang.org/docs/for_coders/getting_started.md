@@ -1,4 +1,4 @@
-# <span style="color: orange; font-weight: bold">Getting Started with Jac-Lang</span>
+# <span style="color: orange; font-weight: bold">Getting Started</span>
 
 If you know python, there's near zero learning curve to get started.
 
@@ -12,7 +12,7 @@ If you know python, there's near zero learning curve to get started.
 
     <!-- [:octicons-arrow-right-24: Getting started](#) -->
 
-    [Setup Now](start/installation.md){ .md-button }
+    [Setup Now](getting_started/installation.md){ .md-button }
 
 -   __Jac in a FLASH__
 
@@ -20,7 +20,7 @@ If you know python, there's near zero learning curve to get started.
 
     *If you are already a fluent pythonista jump into learning by going through a step-by-step transformation from python to jac-lang and BEYOND!*
 
-    [Get Started](start/jac_in_a_flash.md){ .md-button .md-button--primary }
+    [Get Started](getting_started/jac_in_a_flash.md){ .md-button .md-button--primary }
 
 </div>
 
