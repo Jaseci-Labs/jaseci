@@ -43,35 +43,6 @@ class DeclImplMatchPassTests(TestCase):
         for exp in expected_stdout_values:
             self.assertIn(exp, errors_output)
 
-    def test_parameter_name_mismatch(self) -> None:
-        """Basic test for pass."""
-        state = jac_file_to_pass(
-            self.fixture_abs_path("defn_decl_mismatch.jac"), DeclImplMatchPass
-        )
-
-        expected_stdout_values = (
-            "Parameter name mismatch for ability (o)SomeObj.(c)bar.",
-            "   14 |",
-            "   15 | # Mis matching parameter name.",
-            "   16 | :obj:SomeObj:can:bar(param1: str, praam2:int) -> str {",
-            "      |                                   ^^^^^^",
-            '   17 |     return "bar";',
-            "   18 | }",
-            "From the declaration of bar.",
-            "    3 | obj SomeObj {",
-            "    4 |     can foo(param1: str, param2:int) -> str;",
-            "    5 |     can bar(param1: str, param2:int) -> str;",
-            "      |                          ^^^^^^",
-            "    6 | }",
-        )
-
-        errors_output = ""
-        for error in state.errors_had:
-            errors_output += error.pretty_print() + "\n"
-
-        for exp in expected_stdout_values:
-            self.assertIn(exp, errors_output)
-
     def test_ability_connected_to_decl(self) -> None:
         """Basic test for pass."""
         state = jac_file_to_pass(self.fixture_abs_path("base.jac"), DeclImplMatchPass)

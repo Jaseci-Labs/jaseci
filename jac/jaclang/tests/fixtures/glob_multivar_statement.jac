@@ -1,0 +1,15 @@
+glob a: str, b: str;
+glob c: str;
+
+can do() {
+    :g: a, b, c ;
+
+    (a, b, c) = ("Welcome", "to", "Jaseci!");
+}
+
+with entry {
+    (a, b, c) = ("Hello", "World", "!");
+    print(a, b, c);
+    do();
+    print(a, b, c);
+}
