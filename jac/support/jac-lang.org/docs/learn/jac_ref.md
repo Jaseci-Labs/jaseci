@@ -1,6 +1,9 @@
 # Jac Language Reference
 
---8<-- "examples/reference/introduction.md"
+Welcome to the official reference guide for the Jac programming language. This document is designed to serve as a comprehensive reference manual as well as a formal specification of the language. The mission of this guide is to be a resource for developers seeking to answer the question, "How do I code X in Jac?"
+
+This document is organized around the formal grammar for the language code examples and corresponding grammar snippets being directly generated from the actual grammar and test cases maintained in the official repository. We expect the descriptions may occasionally lag behind the rapid evolution of Jac in the early days. If you notice something, make a pull request and join our contributor community.
+
 
 ## Base Module structure
 **Code Example**
