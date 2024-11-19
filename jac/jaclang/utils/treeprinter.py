@@ -301,6 +301,8 @@ def _build_symbol_tree_common(
             ]
 
     for k in node.kid:
+        if k.name == "builtins":
+            continue
         _build_symbol_tree_common(k, children)
     return root
 

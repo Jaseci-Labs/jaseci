@@ -18,7 +18,11 @@ class SymTabBuildPass(Pass):
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> None:
         """Push scope."""
-        inherit = key_node.parent
+        if self._options.get("stop_inherit") == True:
+            inherit = None
+        else:
+            inherit = key_node.parent
+            
         if not len(self.cur_sym_tab) and not inherit:
             self.cur_sym_tab.append(SymbolTable(name, key_node))
         elif not len(self.cur_sym_tab) and inherit:

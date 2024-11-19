@@ -14,12 +14,13 @@ T = TypeVar("T", bound=ast.AstNode)
 class Pass(Transform[T]):
     """Abstract class for IR passes."""
 
-    def __init__(self, input_ir: T, prior: Optional[Transform]) -> None:
+    def __init__(self, input_ir: T, prior: Optional[Transform], **kwargs) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
         self.ir: ast.AstNode = input_ir
         self.time_taken = 0.0
+        self._options: dict = kwargs
         Transform.__init__(self, input_ir, prior)
 
     def before_pass(self) -> None:
