@@ -23,9 +23,13 @@ from fastapi import (
 from fastapi.responses import ORJSONResponse
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.default import JacFeatureImpl, hookimpl
+from jaclang.plugin.default import (
+    JacCallableImplementation as _JacCallableImplementation,
+    JacFeatureImpl,
+    hookimpl,
+)
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.architype import DSFunc
+from jaclang.runtimelib.architype import Architype, DSFunc
 
 from orjson import loads
 
@@ -37,7 +41,6 @@ from ..core.architype import (
     AccessLevel,
     Anchor,
     AnchorState,
-    Architype,
     BaseAnchor,
     EdgeAnchor,
     EdgeArchitype,
@@ -303,6 +306,22 @@ class DefaultSpecs:
     excluded: str | list[str] = []
     auth: bool = True
     private: bool = False
+
+
+class JacCallableImplementation:
+    """Callable Implementations."""
+
+    @staticmethod
+    def get_object(id: str) -> Architype | None:
+        """Get object by id."""
+        if not FastAPI.is_enabled():
+            return _JacCallableImplementation.get_object(id=id)
+
+        with suppress(ValueError):
+            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
+                return architype
+
+        return None
 
 
 class JacAccessValidationPlugin:
@@ -729,16 +748,9 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
-        """Get object via reference id."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_object(id=id)
-
-        with suppress(ValueError):
-            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
-                return architype
-
-        return None
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object by id func."""
+        return JacCallableImplementation.get_object
 
     @staticmethod
     @hookimpl

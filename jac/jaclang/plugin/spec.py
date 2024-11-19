@@ -258,8 +258,8 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def get_object(id: str) -> Architype | None:
-        """Get object by id."""
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object by id func."""
         raise NotImplementedError
 
     @staticmethod
