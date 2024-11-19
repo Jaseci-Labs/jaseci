@@ -11,7 +11,7 @@ from collections import OrderedDict
 from dataclasses import field
 from functools import wraps
 from logging import getLogger
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 from uuid import UUID
 
 from jaclang.compiler.constant import colors
@@ -41,6 +41,7 @@ from jaclang.runtimelib.constructs import (
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import collect_node_connections, traverse_graph
 
 
@@ -52,6 +53,13 @@ logger = getLogger(__name__)
 
 class JacAccessValidationImpl:
     """Jac Access Validation Implementations."""
+
+    @staticmethod
+    @hookimpl
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        jctx = Jac.get_context()
+        jctx.root = jctx.system_root
 
     @staticmethod
     @hookimpl
@@ -379,7 +387,8 @@ class JacWalkerImpl:
         if walker.next:
             current_node = walker.next[-1].architype
             for i in warch._jac_entry_funcs_:
-                if not i.trigger:
+                trigger = i.get_funcparam_annotations(i.func)
+                if not trigger:
                     if i.func:
                         i.func(warch, current_node)
                     else:
@@ -387,7 +396,8 @@ class JacWalkerImpl:
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
                 for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(warch, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             i.func(current_node, warch)
                         else:
@@ -395,27 +405,30 @@ class JacWalkerImpl:
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             i.func(warch, current_node)
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             i.func(warch, current_node)
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(warch, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             i.func(current_node, warch)
                         else:
@@ -423,7 +436,8 @@ class JacWalkerImpl:
                     if walker.disengaged:
                         return warch
         for i in warch._jac_exit_funcs_:
-            if not i.trigger:
+            trigger = i.get_funcparam_annotations(i.func)
+            if not trigger:
                 if i.func:
                     i.func(warch, current_node)
                 else:
@@ -559,6 +573,29 @@ class JacFeatureImpl(
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         return ExecutionContext.get()
+
+    @staticmethod
+    @hookimpl
+    def reset_graph(root: Optional[Root] = None) -> int:
+        """Purge current or target graph."""
+        ctx = Jac.get_context()
+        mem = cast(ShelfStorage, ctx.mem)
+        ranchor = root.__jac__ if root else ctx.root
+
+        deleted_count = 0
+        for anchor in (
+            anchors.values()
+            if isinstance(anchors := mem.__shelf__, Shelf)
+            else mem.__mem__.values()
+        ):
+            if anchor == ranchor or anchor.root != ranchor.id:
+                continue
+
+            if loaded_anchor := mem.find_by_id(anchor.id):
+                deleted_count += 1
+                Jac.destroy(loaded_anchor)
+
+        return deleted_count
 
     @staticmethod
     @hookimpl

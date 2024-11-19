@@ -53,8 +53,7 @@ from ..core.architype import (
 from ..core.context import ContextResponse, ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
 from ..jaseci.security import authenticator
-
-# from ..jaseci.utils import log_entry, log_exit
+from ..jaseci.utils import log_entry, log_exit
 
 
 T = TypeVar("T")
@@ -179,12 +178,12 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             pl = cast(BaseModel, payload).model_dump()
             body = pl.get("body", {})
 
-            # log = log_entry(
-            #     cls.__name__,
-            #     user.email if (user := getattr(request, "_user", None)) else None,
-            #     pl,
-            #     node,
-            # )
+            log = log_entry(
+                cls.__name__,
+                user.email if (user := getattr(request, "_user", None)) else None,
+                pl,
+                node,
+            )
 
             if isinstance(body, BaseUploadFile) and body_model:
                 body = loads(syncify(body.read)())
@@ -204,7 +203,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                     return jctx.custom
 
                 resp = jctx.response(wlk.returns)
-                # log_exit(resp, log)
+                log_exit(resp, log)
 
                 return ORJSONResponse(resp, jctx.status)
             else:
@@ -504,6 +503,37 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
+    def reset_graph(root: Root | None = None) -> int:
+        """Purge current or target graph."""
+        if not FastAPI.is_enabled():
+            return JacFeatureImpl.reset_graph(root=root)  # type: ignore[arg-type]
+
+        ctx = JaseciContext.get()
+        ranchor = root.__jac__ if root else ctx.root
+
+        deleted_count = 0  # noqa: SIM113
+
+        for node in NodeAnchor.Collection.find(
+            {"_id": {"$ne": ranchor.id}, "root": ranchor.id}
+        ):
+            ctx.mem.__mem__[node.id] = node
+            Jac.destroy(node)
+            deleted_count += 1
+
+        for edge in EdgeAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[edge.id] = edge
+            Jac.destroy(edge)
+            deleted_count += 1
+
+        for walker in WalkerAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[walker.id] = walker
+            Jac.destroy(walker)
+            deleted_count += 1
+
+        return deleted_count
+
+    @staticmethod
+    @hookimpl
     def make_architype(
         cls: type,
         arch_base: Type[Architype],
@@ -756,7 +786,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         if walker.next:
             current_node = walker.next[-1].architype
             for i in warch._jac_entry_funcs_:
-                if not i.trigger:
+                trigger = i.get_funcparam_annotations(i.func)
+                if not trigger:
                     if i.func:
                         walker.returns.append(i.func(warch, current_node))
                     else:
@@ -764,7 +795,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
                 for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             walker.returns.append(i.func(current_node, warch))
                         else:
@@ -772,27 +804,30 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             walker.returns.append(i.func(current_node, warch))
                         else:
@@ -800,7 +835,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                     if walker.disengaged:
                         return warch
         for i in warch._jac_exit_funcs_:
-            if not i.trigger:
+            trigger = i.get_funcparam_annotations(i.func)
+            if not trigger:
                 if i.func:
                     walker.returns.append(i.func(warch, current_node))
                 else:

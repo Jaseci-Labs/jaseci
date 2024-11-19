@@ -76,3 +76,39 @@ class DeclImplMatchPassTests(TestCase):
         )
         for i in state.ir.get_all_sub_nodes(ast.ArchRef):
             self.assertIsNotNone(i.sym)
+
+    def test_obj_hasvar_initialization(self) -> None:
+        """Basic test for pass."""
+        state = jac_file_to_pass(
+            self.fixture_abs_path("uninitialized_hasvars.jac"), DeclImplMatchPass
+        )
+        self.assertTrue(state.errors_had)
+
+        expected_stdout_values = (
+            "Non default attribute 'var3' follows default attribute",
+            "    4 |     has var1: int;",
+            "    5 |     has var2: int = 42;",
+            "    6 |     has var3: int; # <-- This should be syntax error.",
+            "      |         ^^^^",
+            "    7 | }",
+            'Missing "postinit" method required by un initialized attribute(s).',
+            "   11 | obj Test2 {",
+            "   12 |     has var1: str;",
+            "   13 |     has var2: int by postinit;",
+            "      |         ^^^^",
+            "   14 | }",
+            "Non default attribute 'var4' follows default attribute",
+            "   19 |     has var2: int = 42;",
+            "   20 |     has var3: int by postinit;  # <-- This is fine.",
+            "   21 |     has var4: int;  # <-- This should be syntax error.",
+            "      |         ^^^^",
+            "   22 |",
+            "   23 |     can postinit() {",
+        )
+
+        errors_output = ""
+        for error in state.errors_had:
+            errors_output += error.pretty_print() + "\n"
+
+        for exp in expected_stdout_values:
+            self.assertIn(exp, errors_output)

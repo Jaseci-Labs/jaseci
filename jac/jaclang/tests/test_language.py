@@ -103,6 +103,40 @@ class JacLanguageTests(TestCase):
             "Too high!\nToo low!\nToo high!\nCongratulations! You guessed correctly.\n",
         )
 
+    def test_multi_dim_arr_slice(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.tool(
+            "ir",
+            [
+                "ast",
+                self.fixture_abs_path("multi_dim_array_split.jac"),
+            ],
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        # print(arr[1:3, 1::2]);
+        expected_outputs = [
+            "+-- AtomTrailer - Type: Any",
+            "    +-- Name - arr - Type: Any,  SymbolTable: None",
+            "    +-- IndexSlice - [IndexSlice] - Type: builtins.slice,  SymbolTable: None",
+            "        +-- Token - [,",
+            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "        +-- Token - :,",
+            "        +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
+            "        +-- Token - ,,",
+            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "        +-- Token - :,",
+            "        +-- Token - :,",
+            "        +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
+            "        +-- Token - ],",
+        ]
+
+        for expected in expected_outputs:
+            self.assertIn(expected, stdout_value)
+
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
@@ -1189,3 +1223,13 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Hello World !", stdout_value[0])
         self.assertIn("Welcome to Jaseci!", stdout_value[1])
+
+    def test_architype_def(self) -> None:
+        """Test architype definition bug."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("architype_def_bug", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyNode", stdout_value[0])
+        self.assertIn("MyWalker", stdout_value[1])

@@ -49,6 +49,6 @@ If you would like to use these names or brands, please reach out for approval.
 
 ## University of Michigan Disclosure
 
-The Jaseci open-source software (OSS) is maintained by [Jaseci Labs, LLC][jaseci]. Prof. Jason Mars and Dr. Yiping Kang are part owners of Jaseci Labs, LLC and Prof. Lingjia Tang is an unpaid advisor for Jaseci Labs, LLC.
+The Jaseci open-source software (OSS) is maintained by [Jaseci Labs, LLC][jaseci] for which the following University of Michigan employees have either an ownership or advisory interest in Jaseci Labs, LLC: Prof. Jason Mars, Prof. Lingjia Tang, and Dr. Yiping Kang.
 
 [jaseci]: https://jaseci.org/

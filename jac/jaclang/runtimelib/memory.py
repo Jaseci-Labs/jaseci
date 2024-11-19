@@ -25,6 +25,10 @@ class Memory(Generic[ID, TANCH]):
         self.__mem__.clear()
         self.__gc__.clear()
 
+    def is_cached(self, id: ID) -> bool:
+        """Check if id if already cached."""
+        return id in self.__mem__
+
     def find(
         self,
         ids: ID | Iterable[ID],
@@ -96,7 +100,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
                             and p_d.edges != d.edges
                             and Jac.check_connect_access(d)
                         ):
-                            if not d.edges:
+                            if not d.edges and not isinstance(d.architype, Root):
                                 self.__shelf__.pop(_id, None)
                                 continue
                             p_d.edges = d.edges
