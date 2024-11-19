@@ -51,6 +51,20 @@ hookimpl = pluggy.HookimplMarker("jac")
 logger = getLogger(__name__)
 
 
+class JacCallableImplementation:
+    """Callable Implementations."""
+
+    @staticmethod
+    def get_object(id: str) -> Architype | None:
+        """Get object by id."""
+        if id == "root":
+            return Jac.get_context().root.architype
+        elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
+            return obj.architype
+
+        return None
+
+
 class JacAccessValidationImpl:
     """Jac Access Validation Implementations."""
 
@@ -599,14 +613,9 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
-        """Get object by id."""
-        if id == "root":
-            return Jac.get_context().root.architype
-        elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
-            return obj.architype
-
-        return None
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object by id func."""
+        return JacCallableImplementation.get_object
 
     @staticmethod
     @hookimpl
