@@ -340,9 +340,11 @@ class ShellGhost:
         self.__ghost_thread.start()
 
     def worker(self):
-        genai.configure(api_key=os.getenv("GEN_AI_KEY"))
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response_dict = {'cfg': self.cfgs}
+        #this is temporary while developing 
+        print(self.cfgs)
+        # genai.configure(api_key=os.getenv("GEN_AI_KEY"))
+        # model = genai.GenerativeModel("gemini-1.5-flash")
+        # response_dict = {'cfg': self.cfgs}
         # prompt = []
         # for k,v in response_dict.items():
         #     prompt.append(f"here is my {k}:\n{v}")
@@ -354,4 +356,4 @@ class ShellGhost:
         # print("RESPONSE:\n")
         # print(response.text)
 
-        print(self.cfgs['hot_path'].display_instructions())
+        # print(self.cfgs['hot_path'].display_instructions())
