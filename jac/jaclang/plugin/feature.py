@@ -238,15 +238,6 @@ class JacCmd:
         return plugin_manager.hook.create_cmd()
 
 
-class JacCallable:
-    """Jac Callable Executions."""
-
-    @staticmethod
-    def get_object(id: str) -> Architype | None:
-        """Get object given id."""
-        return plugin_manager.hook.get_object_func()(id=id)
-
-
 class JacFeature(
     JacClassReferences,
     JacAccessValidation,
@@ -255,7 +246,6 @@ class JacFeature(
     JacWalker,
     JacBuiltin,
     JacCmd,
-    JacCallable,
 ):
     """Jac Feature."""
 
@@ -273,6 +263,11 @@ class JacFeature(
     def reset_graph(root: Optional[Root] = None) -> int:
         """Purge current or target graph."""
         return plugin_manager.hook.reset_graph(root=root)
+
+    @staticmethod
+    def get_object(id: str) -> Architype | None:
+        """Get object given id."""
+        return plugin_manager.hook.get_object_func()(id=id)
 
     @staticmethod
     def get_object_func() -> Callable[[str], Architype | None]:
