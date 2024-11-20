@@ -344,16 +344,16 @@ class ShellGhost:
         print(self.cfgs)
         # genai.configure(api_key=os.getenv("GEN_AI_KEY"))
         # model = genai.GenerativeModel("gemini-1.5-flash")
-        # response_dict = {'cfg': self.cfgs}
-        # prompt = []
-        # for k,v in response_dict.items():
-        #     prompt.append(f"here is my {k}:\n{v}")
-        # prompt.append("\nCan you identify where the code could have an error?")
+        response_dict = {'cfg': self.cfgs}
+        prompt = []
+        for k,v in response_dict.items():
+            prompt.append(f"here is my {k}:\n{v}")
+        prompt.append("\nCan you identify where the code could have an error?")
         # response = model.generate_content("".join(prompt))
 
-        # print("PROMPT:\n")
-        # print("".join(prompt))
-        # print("RESPONSE:\n")
+        print("PROMPT:\n")
+        print("".join(prompt))
+        print("RESPONSE:\n")
         # print(response.text)
 
-        # print(self.cfgs['hot_path'].display_instructions())
+        print(self.cfgs['hot_path'].display_instructions())

@@ -2,7 +2,6 @@ import dis
 import sys
 import types
 from collections import defaultdict
-import graphviz
 from typing import Dict, Set, List, Tuple, Optional
 
 
@@ -23,6 +22,17 @@ class CFGTracker:
         self.coverage_data: Dict[types.CodeType,
                                  Set[Tuple[int, int]]] = defaultdict(set)
 
+    def instruction_sizes(self, instructions: List[dis.Instruction]) -> Dict[int, int]:
+        """Calculate the size of each instruction"""
+        sizes = {}
+        for i, inst in enumerate(instructions):
+            if i + 1 < len(instructions):
+                sizes[inst.offset] = instructions[i + 1].offset - inst.offset
+            else:
+                # Last instruction, assume size 1 for simplicity
+                sizes[inst.offset] = 1
+        return sizes
+
     def build_cfg(self, code: types.CodeType) -> Dict[int, CFGNode]:
         """Build CFG from bytecode"""
         if code in self.cfg_cache:
@@ -30,6 +40,7 @@ class CFGTracker:
 
         # Get bytecode instructions
         instructions = list(dis.get_instructions(code))
+        instruction_sizes = self.instruction_sizes(instructions)
 
         # Find basic block boundaries
         leaders = {0}  # First instruction is always a leader
@@ -66,15 +77,15 @@ class CFGTracker:
             elif last_inst.opname in {'POP_JUMP_IF_TRUE', 'POP_JUMP_IF_FALSE',
                                       'JUMP_IF_TRUE_OR_POP', 'JUMP_IF_FALSE_OR_POP'}:
                 block.next.append(blocks[last_inst.argval])  # Branch target
-                if offset + last_inst.size < instructions[-1].offset:
+                if offset + instruction_sizes[offset] < instructions[-1].offset:
                     # Find next instruction's block
-                    next_offset = offset + last_inst.size
+                    next_offset = offset + instruction_sizes[offset]
                     while next_offset not in blocks:
                         next_offset += 1
                     block.next.append(blocks[next_offset])  # Fall-through
-            elif offset + last_inst.size < instructions[-1].offset:
+            elif offset + instruction_sizes[offset] < instructions[-1].offset:
                 # Sequential flow
-                next_offset = offset + last_inst.size
+                next_offset = offset + instruction_sizes[offset]
                 while next_offset not in blocks:
                     next_offset += 1
                 block.next.append(blocks[next_offset])
@@ -82,7 +93,7 @@ class CFGTracker:
         self.cfg_cache[code] = blocks
         return blocks
 
-    def trace_callback(self, frame: types.FrameType, event: str, arg: Any) -> Optional[types.TraceFunction]:
+    def trace_callback(self, frame: types.FrameType, event: str, arg: any):
         """Trace function to track executed branches"""
         if event != 'line':
             return self.trace_callback
@@ -98,7 +109,7 @@ class CFGTracker:
         # Find the block containing this offset
         current_block = None
         for block in blocks.values():
-            if block.offset <= current_offset <= block.offset + sum(inst.size for inst in block.instructions):
+            if block.offset <= current_offset < block.offset + sum(self.instruction_sizes(block.instructions).values()):
                 current_block = block
                 break
 
