@@ -304,7 +304,17 @@ class DSFunc:
         """Get function parameter annotations."""
         if not func:
             return None
+
+        sig = inspect.signature(func, eval_str=True)
+        param_count = len(sig.parameters)
+
+        if param_count < 2:
+            return None
+
+        second_param_name = list(sig.parameters.keys())[1]  # "_jac_here_"
         annotation = (
-            inspect.signature(func, eval_str=True).parameters["_jac_here_"].annotation
+            inspect.signature(func, eval_str=True)
+            .parameters[second_param_name]
+            .annotation
         )
         return annotation if annotation != inspect._empty else None
