@@ -2,8 +2,17 @@ from __future__ import annotations
 from jaclang.plugin.feature import JacFeature as _Jac
 
 
+# Since the Jac class cannot be inherit from object, (cause the base class will be changed at run time)
+# we need a base class.
+#
+# reference: https://stackoverflow.com/a/9639512/10846399
+#
+class Base:
+    pass
+
+
 @_Jac.make_walker(on_entry=[_Jac.DSFunc("travel", _Jac.get_root_type())], on_exit=[])
-class Visitor:
+class Visitor(Base):
     def travel(self, _jac_here_: _Jac.get_root_type()) -> None:
         if _Jac.visit_node(
             self, _Jac.edge_ref(_jac_here_, None, _Jac.EdgeDir.OUT, None, None)
@@ -14,7 +23,7 @@ class Visitor:
 
 
 @_Jac.make_node(on_entry=[_Jac.DSFunc("speak", Visitor)], on_exit=[])
-class item:
+class item(Base):
     def speak(self, _jac_here_: Visitor) -> None:
         print("Hey There!!!")
         _Jac.disengage(_jac_here_)

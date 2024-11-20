@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from enum import IntEnum
 from logging import getLogger
 from pickle import dumps
-from types import UnionType
+from types import MethodType, UnionType
 from typing import Any, Callable, ClassVar, Optional, TypeVar
 from uuid import UUID, uuid4
 
@@ -279,12 +279,19 @@ class GenericEdge(EdgeArchitype):
 class Root(NodeArchitype):
     """Generic Root Node."""
 
+    # We define the 'spawn' and 'connect' here which will be added to the root instance
+    # as method bound. This slots definition here will allow the type checker to
+    # assign dynamic attributes.
+    __slots__ = ("__jac__", "spawn", "connect")
+
     _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
     _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
     def __init__(self) -> None:
         """Create root node."""
         self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
+        self.spawn: MethodType | None = None
+        self.connect: MethodType | None = None
 
 
 @dataclass(eq=False)
@@ -304,7 +311,17 @@ class DSFunc:
         """Get function parameter annotations."""
         if not func:
             return None
+
+        sig = inspect.signature(func, eval_str=True)
+        param_count = len(sig.parameters)
+
+        if param_count < 2:
+            return None
+
+        second_param_name = list(sig.parameters.keys())[1]  # "_jac_here_"
         annotation = (
-            inspect.signature(func, eval_str=True).parameters["_jac_here_"].annotation
+            inspect.signature(func, eval_str=True)
+            .parameters[second_param_name]
+            .annotation
         )
         return annotation if annotation != inspect._empty else None
