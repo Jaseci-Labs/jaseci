@@ -137,3 +137,11 @@ walker client_progress_notif {
         has methods: list = ["websocket", "post"];
     }
 }
+
+walker something {
+    can enter with `root entry {}
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
