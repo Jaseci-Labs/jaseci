@@ -10,18 +10,19 @@ import graphviz
 from graphviz import Digraph
 
 class BytecodeOp:
-    def __init__(self, op: int, arg: int, offset: int, argval:int, argrepr:str, is_jump_target: bool) -> None:
+    def __init__(self, op: int, arg: int, offset: int, argval:int, argrepr:str, is_jump_target: bool, starts_line: int = None) -> None:
         self.op = op
         self.arg = arg
         self.offset = offset
         self.argval = argval
         self.argrepr = argrepr
         self.is_jump_target= is_jump_target
+        self.starts_line = starts_line
         #default the offset
         self.__offset_size = 0
 
     def __repr__(self):
-        return f"Instr: offset={self.offset}, Opname={self.op}, arg={self.arg}, argval={self.argval}, argrepr={self.argrepr}"
+        return f"Instr: offset={self.offset}, Opname={self.op}, arg={self.arg}, argval={self.argval}, argrepr={self.argrepr}, starts_line={self.starts_line}"
     def is_branch(self) -> bool:
         return self.op in {
             "JUMP_ABSOLUTE",
@@ -55,6 +56,12 @@ class Block:
     def __init__(self, id: int, instructions: List):
         self.id: int = id
         self.instructions = instructions
+        self.exec_count = 0
+        self.line_nos = set([instr.starts_line for instr in self.instructions if instr.starts_line != None])
+        
+        print(id, self.line_nos)
+        
+        
     def __repr__(self):
       instructions = "\n".join([str(instr) for instr in self.instructions])
       return f"bb{self.id}:\n{instructions}"
@@ -85,6 +92,7 @@ def disassemble_bytecode(bytecode):
         argval=instr.argval,
         argrepr=instr.argrepr,
         is_jump_target=instr.is_jump_target,
+        starts_line=instr.starts_line,
         ))
         #set offest size for calculating next instruction
         #last instruction is default of 2, but shouldn't be needed
@@ -152,6 +160,7 @@ class CFG:
     def __init__(self, block_map:BlockMap):
         self.nodes = set()
         self.edges = {}
+        self.edge_counts = {}
         self.block_map = block_map
 
     def add_node(self, node_id):
@@ -163,7 +172,9 @@ class CFG:
         if from_node in self.edges:
             self.edges[from_node].append(to_node)
         else:
-            self.edges[from_node] = [to_node]
+            self.edges[from_node] = to_node
+        
+        self.edge_counts[(from_node, to_node)] = 0
 
     def display_instructions(self):
         return repr(self.block_map)
@@ -171,10 +182,10 @@ class CFG:
     def __repr__(self):
         result = []
         for node in self.nodes:
-            result.append(f'Node bb{node}:')
+            result.append(f'Node bb{node} (exec count={self.block_map.idx_to_block[node].exec_count}):')
             if node in self.edges and self.edges[node]:
                 for succ in self.edges[node]:
-                    result.append(f'  -> bb{succ}')
+                    result.append(f'  -> bb{succ} (edge edec count={self.edge_counts[(node, succ)]})')
         return "\n".join(result)
 def create_cfg(block_map: BlockMap) -> CFG:
     cfg = CFG(block_map)

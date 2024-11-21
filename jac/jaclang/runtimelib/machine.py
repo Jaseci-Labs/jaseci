@@ -10,8 +10,10 @@ import time
 import sys
 import tempfile
 import types
+import dis
 import google.generativeai as genai
 import threading
+from collections import deque
 from contextvars import ContextVar
 from typing import Optional, Union
 
@@ -332,21 +334,25 @@ class JacProgram:
 
 class CFGTracker:
     def __init__(self):
-        self.variable_values = {}
-        self.variable_values_lock = threading.Lock()
+        self.executed_inst_list = deque()
+        self.inst_lock = threading.Lock()
+
     def start_tracking(self):
         """Start tracking branch coverage"""
         sys.settrace(self.trace_callback)
     def stop_tracking(self):
         """Stop tracking branch coverage"""
         sys.settrace(None)
-
-    def get_variable_values(self):
-        self.variable_values_lock.acquire()
-        cpy = copy.deepcopy(self.variable_values)
-        self.variable_values_lock.release()
+    
+    def get_exec_inst(self):
+        ret = []
         
-        return cpy
+        self.inst_lock.acquire()
+        while len(self.executed_inst_list) > 0:
+            ret.append(self.executed_inst_list.popleft())
+        self.inst_lock.release()
+        
+        return ret
     
     def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
         """Trace function to track executed branches"""
@@ -357,15 +363,28 @@ class CFGTracker:
         
         if ".jac" not in code.co_filename:
             return self.trace_callback
-                
-        self.variable_values_lock.acquire()
-        if code.co_name not in self.variable_values:
-            self.variable_values[code.co_name] = {}
-        # self.variable_values[code.co_name][frame.f_lineno] = {}
+
+        #edge case to handle executing code not within a function
+        filename = os.path.basename(code.co_filename)
+        module = code.co_name if code.co_name != "<module>" else os.path.splitext(filename)[0]
+        
+        # bytecode = dis.Bytecode(code)
+        # for instr in bytecode:
+        #     if instr.starts_line:
+        #         print(f"  Offset: {instr.offset}, Op: {instr.opname}, Line: {instr.starts_line}")
+        #         pass
+        variable_dict = {}
         if '__annotations__' in frame.f_locals:
             for var_name in frame.f_locals['__annotations__']:
-                self.variable_values[code.co_name][var_name] = frame.f_locals[var_name]
-        self.variable_values_lock.release()
+                variable_dict[var_name] = frame.f_locals[var_name]
+    
+        self.inst_lock.acquire()
+        self.executed_inst_list.append((module, frame.f_lineno, variable_dict))
+        self.inst_lock.release()
+
+        # self.variable_values[code.co_name][frame.f_lineno] = {}
+
+                
         # print(f"{frame.f_lineno}")
         # print(f"Function Name: {code.co_name}") 
         # print(f"Filename: {code.co_filename}") 
@@ -411,7 +430,7 @@ class ShellGhost:
         self.exception = None
         self.finished = False
 
-    def set_cfgs(self,cfgs: any):
+    def set_cfgs(self, cfgs):
         self.cfg_cv.acquire()
         self.cfgs = cfgs
         self.cfg_cv.notify()
@@ -436,40 +455,75 @@ class ShellGhost:
             self.cfg_cv.wait()
         print(self.cfgs)
         for module_name, cfg in self.cfgs.items():
-            print(f"Name: {module_name}", cfg.display_instructions())
+            print(f"Name: {module_name}\n{cfg.display_instructions()}")
         self.cfg_cv.release()
         
+        # Once cv has been notifie, self.cfgs is no longer accessed across threads
+
+        current_executing_bb = [0]
+        
+        def update_cfg():
+            exec_inst_list = self.tracker.get_exec_inst()
+            
+            for module, inst, variables in exec_inst_list:
+                cfg = self.cfgs[module]                    
+                
+                if inst not in cfg.block_map.idx_to_block[current_executing_bb[0]].line_nos:
+                    for next in cfg.edges[current_executing_bb[0]]:
+                        if inst in cfg.block_map.idx_to_block[next].line_nos:
+                            cfg.edge_counts[(current_executing_bb[0], next)] += 1
+                            cfg.block_map.idx_to_block[next].exec_count += 1
+
+                            current_executing_bb[0] = next
+                            break
+                
+                print("current local variable values:" f"Inst #{inst}", variables)
+                    
+                # assert(inst in cfg.block_map.idx_to_block[current_executing_bb[0]].line_nos)
+                # cfg.block_map.idx_to_block[current_executing_bb[0]].start_inst_variables_map[inst] = variables
+
         self.finished_exception_lock.acquire()
         while (not self.finished):
-            print("Getting Current Variable Values")
-            curr_variables = self.tracker.get_variable_values()
-            if len(curr_variables.keys()) == 0:
-                print("no variables yet")
-            for func_name, dic in curr_variables.items():
-                print(func_name)
-                
-                for lin_no ,v in dic.items():
-                    print("line: ", lin_no)
-                    print(v)
-
-            # check the variable values ever 3 seconds
             self.finished_exception_lock.release()
-            time.sleep(0.5)
-            self.finished_exception_lock.acquire()
 
-        self.finished_exception_lock.release()
-        print("Getting Current Variable Values")
-        for func_name, dic in self.tracker.get_variable_values().items():
-            print("name:", func_name)
+            update_cfg()
             
-            for lin_no ,v in dic.items():
-                print("line: ", lin_no)
-                print(v)    
-        # there should be no other thread trying to access finished/exception
+            time.sleep(1)
+            self.finished_exception_lock.acquire()
+        
+        update_cfg()
+        print(self.cfgs)
+        # for module_name, cfg in self.cfgs.items():
+        #     print(f"Name: {module_name}\n{cfg.display_instructions()}")
+
+
+        
+        #     for func_name, dic in curr_variables.items():
+        #         print(func_name)module
+                
+        #         for lin_no ,v in dic.items():
+        #             print("line: ", lin_no)
+        #             print(v)
+
+        #     # check the variable values ever 3 seconds
+        #     self.finished_exception_lock.release()
+        #     time.sleep(0.5)
+        #     self.finished_exception_lock.acquire()
+
+        # self.finished_exception_lock.release()
+        # print("Getting Current Variable Values")
+        # for func_name, dic in self.tracker.get_variable_values().items():
+        #     print("name:", func_name)
+            
+        #     for lin_no ,v in dic.items():
+        #         print("line: ", lin_no)
+        #         print(v)    
+        # # there should be no other thread trying to access finished/exception
         
         if self.exception:
             print("Exception occured:", self.exception)    
-        
+        self.finished_exception_lock.release()
+
         
         # genai.configure(api_key=os.getenv("GEN_AI_KEY"))
         # model = genai.GenerativeModel("gemini-1.5-flash")

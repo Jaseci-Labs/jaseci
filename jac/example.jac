@@ -3,9 +3,11 @@ with entry {
     y:int = 3;
     z:int = x + y;
     
-    for i in range(z) {
+    i:int = 0;
+    while (i < 3) {
         x = 4;
         y = y + x;
+        i += 1;
     }
     print(y);
     print("hello");
@@ -14,8 +16,7 @@ with entry {
 #     x:int = 0;
 #     y:int = 3;
 #     z:int = x + y;
-#     i = 0;
-#     while (i < 1000000) {
+#     for i in range(100000) {
 #         x = 4 * i + y * (z);
 #         if x % 2 {
 #             y = y + x;
