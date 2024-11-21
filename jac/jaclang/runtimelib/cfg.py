@@ -107,8 +107,9 @@ def create_BBs(instructions: List[BytecodeOp]) -> BlockMap:
         return offset >= 0 and offset <= max_offset
     # Identify all block starts
     for instr in instructions:
-        if instr.is_branch():
+        if instr.is_branch() or  instr.op == "FOR_ITER":
             next_instr_offset = instr.get_next_instruction_offset()
+
             if 0 <= next_instr_offset <= max_offset:
                 block_starts.add(next_instr_offset)
             
@@ -200,10 +201,25 @@ def create_cfg(block_map: BlockMap) -> CFG:
 
         # Handle unconditional jumps (e.g., JUMP_FORWARD, JUMP_ABSOLUTE)
         elif last_instr.op.startswith("JUMP"):
-            target_offset = last_instr.argval if not last_instr.is_relative_branch() else (last_instr.offset + last_instr.argval)
+            if last_instr.op == "JUMP_BACKWARD":
+                target_offset = last_instr.argval if not last_instr.is_relative_branch() else (last_instr.offset - last_instr.argval)
+            else:
+                target_offset = last_instr.argval if not last_instr.is_relative_branch() else (last_instr.offset + last_instr.argval)
             target_block = find_block_by_offset(block_map, target_offset)
             if target_block is not None:
                 cfg.add_edge(block_id, target_block)
+
+        elif last_instr.op == "FOR_ITER":
+            # Edge to loop body
+            loop_body_offset = last_instr.get_next_instruction_offset()
+            loop_body_block = find_block_by_offset(block_map, loop_body_offset)
+            if loop_body_block is not None:
+                cfg.add_edge(block_id, loop_body_block)
+            # Edge to END_FOR or loop exit
+            end_for_offset = last_instr.argval
+            end_for_block = find_block_by_offset(block_map, end_for_offset)
+            if end_for_block is not None:
+                cfg.add_edge(block_id, end_for_block)
 
         # Handle fall-through to the next block for non-control flow instructions
         else:
