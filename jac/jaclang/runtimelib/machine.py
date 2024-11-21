@@ -5,12 +5,13 @@ from __future__ import annotations
 import inspect
 import marshal
 import os
+import copy
 import time
 import sys
 import tempfile
 import types
 import google.generativeai as genai
-from threading import Thread
+import threading
 from contextvars import ContextVar
 from typing import Optional, Union
 
@@ -60,6 +61,7 @@ class JacMachine:
     def attach_gin(self, jac_gin: "ShellGhost") -> None:
         """Attach a JacProgram to the machine."""
         self.gin = jac_gin
+            
 
     def get_mod_bundle(self) -> Optional[Module]:
         """Retrieve the mod_bundle from the attached JacProgram."""
@@ -328,20 +330,147 @@ class JacProgram:
             return None
 
 
+class CFGTracker:
+    def __init__(self):
+        self.variable_values = {}
+        self.variable_values_lock = threading.Lock()
+    def start_tracking(self):
+        """Start tracking branch coverage"""
+        sys.settrace(self.trace_callback)
+    def stop_tracking(self):
+        """Stop tracking branch coverage"""
+        sys.settrace(None)
+
+    def get_variable_values(self):
+        self.variable_values_lock.acquire()
+        cpy = copy.deepcopy(self.variable_values)
+        self.variable_values_lock.release()
+        
+        return cpy
+    
+    def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
+        """Trace function to track executed branches"""
+        if event != 'line':
+            return self.trace_callback
+        
+        code = frame.f_code
+        
+        if ".jac" not in code.co_filename:
+            return self.trace_callback
+                
+        self.variable_values_lock.acquire()
+        if code.co_name not in self.variable_values:
+            self.variable_values[code.co_name] = {}
+        # self.variable_values[code.co_name][frame.f_lineno] = {}
+        if '__annotations__' in frame.f_locals:
+            for var_name in frame.f_locals['__annotations__']:
+                self.variable_values[code.co_name][var_name] = frame.f_locals[var_name]
+        self.variable_values_lock.release()
+        # print(f"{frame.f_lineno}")
+        # print(f"Function Name: {code.co_name}") 
+        # print(f"Filename: {code.co_filename}") 
+        # print(f"First Line Number: {code.co_firstlineno}") 
+        # print(f"Argument Count: {code.co_argcount}") 
+        # print(f"Constants: {code.co_consts}") 
+        # print(f"Local Variables: {code.co_varnames}")
+
+        # if event != 'line':
+        #     return self.trace_callback
+
+        # code = frame.f_code
+        # if code not in self.cfg_cache:
+        #     self.build_cfg(code)
+
+        # # Find current basic block
+        # blocks = self.cfg_cache[code]
+        # current_offset = frame.f_lasti
+
+        # # Find the block containing this offset
+        # current_block = None
+        # for block in blocks.values():
+        #     if block.offset <= current_offset <= block.offset + sum(inst.size for inst in block.instructions):
+        #         current_block = block
+        #         break
+
+        # if current_block:
+        #     current_block.hits += 1
+        #     # Record taken branches
+        #     for next_block in current_block.next:
+        #         self.coverage_data[code].add(
+        #             (current_block.offset, next_block.offset))
+
+        return self.trace_callback
+
 class ShellGhost:
     def __init__(self):
         self.cfgs = None
+        self.cfg_cv = threading.Condition()
+        self.tracker = CFGTracker()
+        
+        self.finished_exception_lock = threading.Lock()
+        self.exception = None
+        self.finished = False
 
     def set_cfgs(self,cfgs: any):
+        self.cfg_cv.acquire()
         self.cfgs = cfgs
+        self.cfg_cv.notify()
+        self.cfg_cv.release()
 
     def start_ghost(self):
-        self.__ghost_thread:Thread = Thread(target=self.worker)
+        self.__ghost_thread = threading.Thread(target=self.worker)
         self.__ghost_thread.start()
 
+    def set_finished(self, exception: Exception = None):
+        self.finished_exception_lock.acquire()
+        self.exception = exception
+        self.finished = True
+        self.finished_exception_lock.release()
+    
     def worker(self):
         #this is temporary while developing 
+        
+        # get static cfgs
+        self.cfg_cv.acquire()
+        while (self.cfgs == None):
+            self.cfg_cv.wait()
         print(self.cfgs)
+        for module_name, cfg in self.cfgs.items():
+            print(f"Name: {module_name}", cfg.display_instructions())
+        self.cfg_cv.release()
+        
+        self.finished_exception_lock.acquire()
+        while (not self.finished):
+            print("Getting Current Variable Values")
+            curr_variables = self.tracker.get_variable_values()
+            if len(curr_variables.keys()) == 0:
+                print("no variables yet")
+            for func_name, dic in curr_variables.items():
+                print(func_name)
+                
+                for lin_no ,v in dic.items():
+                    print("line: ", lin_no)
+                    print(v)
+
+            # check the variable values ever 3 seconds
+            self.finished_exception_lock.release()
+            time.sleep(0.5)
+            self.finished_exception_lock.acquire()
+
+        self.finished_exception_lock.release()
+        print("Getting Current Variable Values")
+        for func_name, dic in self.tracker.get_variable_values().items():
+            print("name:", func_name)
+            
+            for lin_no ,v in dic.items():
+                print("line: ", lin_no)
+                print(v)    
+        # there should be no other thread trying to access finished/exception
+        
+        if self.exception:
+            print("Exception occured:", self.exception)    
+        
+        
         # genai.configure(api_key=os.getenv("GEN_AI_KEY"))
         # model = genai.GenerativeModel("gemini-1.5-flash")
         # response_dict = {'cfg': self.cfgs}

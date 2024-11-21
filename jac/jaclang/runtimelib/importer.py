@@ -63,56 +63,6 @@ class ImportPathSpec:
                 chomp_target = chomp_target[1:]
         return path.join(caller_dir, self.dir_path)
 
-class CFGTracker:
-    def __init__(self):
-        self.count = 0
-    def start_tracking(self):
-        """Start tracking branch coverage"""
-        sys.settrace(self.trace_callback)
-    def stop_tracking(self):
-        """Stop tracking branch coverage"""
-        sys.settrace(None)
-
-    def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
-        """Trace function to track executed branches"""
-        if event != 'line':
-            return self.trace_callback
-        code = frame.f_code
-        print(f"{frame.f_lineno}")
-        # print(f"Function Name: {code.co_name}") 
-        # print(f"Filename: {code.co_filename}") 
-        # print(f"First Line Number: {code.co_firstlineno}") 
-        # print(f"Argument Count: {code.co_argcount}") 
-        # print(f"Constants: {code.co_consts}") 
-        # print(f"Local Variables: {code.co_varnames}")
-        self.count += 1
-
-        # if event != 'line':
-        #     return self.trace_callback
-
-        # code = frame.f_code
-        # if code not in self.cfg_cache:
-        #     self.build_cfg(code)
-
-        # # Find current basic block
-        # blocks = self.cfg_cache[code]
-        # current_offset = frame.f_lasti
-
-        # # Find the block containing this offset
-        # current_block = None
-        # for block in blocks.values():
-        #     if block.offset <= current_offset <= block.offset + sum(inst.size for inst in block.instructions):
-        #         current_block = block
-        #         break
-
-        # if current_block:
-        #     current_block.hits += 1
-        #     # Record taken branches
-        #     for next_block in current_block.next:
-        #         self.coverage_data[code].add(
-        #             (current_block.offset, next_block.offset))
-
-        # return self.trace_callback
 class ImportReturn:
     """Import Return Object."""
 
@@ -401,14 +351,14 @@ class JacImporter(Importer):
                 if JacMachine.get().gin:
                     try:
                         with sys_path_context(spec.caller_dir):
-                            tracker = CFGTracker()
-                            tracker.start_tracking()
+                            JacMachine.get().gin.tracker.start_tracking()
                             exec(codeobj, module.__dict__)
-                            tracker.stop_tracking()
-                            print(f"count={tracker.count}")
+                            JacMachine.get().gin.tracker.stop_tracking()
+                            JacMachine.get().gin.set_finished(None)
                     except Exception as e:
                         logger.error(e)
                         logger.error(dump_traceback(e))
+                        JacMachine.get().gin.set_finished(e)
                         raise e
                 else:
                     exec(codeobj, module.__dict__)
