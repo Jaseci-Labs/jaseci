@@ -1,13 +1,13 @@
-# No More Forced Indents with Jac
+# Basic Syntax
+
+##  No More Forced Indents with Jac
 
 Jac loves Python's syntax but isn't a fan of the forced indentation for defining scopes. Jac introduces curly braces `{}` and semicolons `;` for statement terminators (similar to most other languages in existance).
 
 In Python, indentation determines the beginning and end of blocks, which we observe being problematic in many places.
 Jac retains Python's readability while eliminating issues associated with whitespace.
 
-## Syntax Overview
-
-### 1. Basic Statement
+## Basic Statement
 
 Every statement in Jac ends with a semicolon `;`.
 
@@ -15,7 +15,7 @@ Every statement in Jac ends with a semicolon `;`.
 print("Hello, Jac!");
 ```
 
-### 2. Variables
+## Variables
 
 Variable declaration and assignment remain identical to Python though its not the line break that signifies the end of a statement, it's the semicolon.
 
@@ -25,11 +25,11 @@ y = 20;
 print(x + y);
 ```
 
-### 3. Control Structures
+## Control Structures
 
 Control structures in Jac are defined using curly braces `{}` and not indentation.
 
-#### 3.1 If-else
+### If-else
 
 ```jac
 if (x > y) {
@@ -61,7 +61,7 @@ else
     {print("y is greater");}
 ```
 
-#### 3.2 Loops
+### Loops
 
 For loops and while loops:
 
@@ -77,7 +77,7 @@ while (count < 5) {
 }
 ```
 
-### 4. Functions
+## Functions
 
 Function definitions utilize curly braces `{}` to enclose the function body.
 
@@ -89,7 +89,7 @@ can greet(name: str) {
 with entry { greet("Jac"); }
 ```
 
-### 5. Classes
+## Classes
 
 Class definitions and methods also follow the curly brace convention.
 
@@ -108,7 +108,7 @@ can start {
 }
 ```
 
-### 6. Exception Handling
+## Exception Handling
 
 Similar to Python, you can handle exceptions using `try`, `except`, `else`, and `finally`. However, in Jac, you'd surround these blocks with curly braces.
 
