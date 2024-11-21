@@ -3,12 +3,11 @@ with entry {
     y:int = 3;
     z:int = x + y;
     
-    i:int = 0;
-    while (i < 3) {
+    for i in range(z) {
         x = 4;
         y = y + x;
-        i += 1;
     }
+    print(y/0);
     print(y);
     print("hello");
 }

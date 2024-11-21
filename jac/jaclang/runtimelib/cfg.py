@@ -185,7 +185,7 @@ class CFG:
             result.append(f'Node bb{node} (exec count={self.block_map.idx_to_block[node].exec_count}):')
             if node in self.edges and self.edges[node]:
                 for succ in self.edges[node]:
-                    result.append(f'  -> bb{succ} (edge edec count={self.edge_counts[(node, succ)]})')
+                    result.append(f'  -> bb{succ} (edge exec count={self.edge_counts[(node, succ)]})')
         return "\n".join(result)
 def create_cfg(block_map: BlockMap) -> CFG:
     cfg = CFG(block_map)
