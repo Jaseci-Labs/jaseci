@@ -339,6 +339,8 @@ class CFGTracker:
 
     def start_tracking(self):
         """Start tracking branch coverage"""
+        frame = sys._getframe()
+        frame.f_trace_opcodes = True
         sys.settrace(self.trace_callback)
     def stop_tracking(self):
         """Stop tracking branch coverage"""
@@ -355,15 +357,33 @@ class CFGTracker:
         return ret
     
     def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
-        """Trace function to track executed branches"""
-        if event != 'line':
-            return self.trace_callback
-        
-        code = frame.f_code
+        # if event == "call":
+        frame.f_trace_opcodes = True
+        # frame.f_trace_lines = False
+    #     def tracefunc(frame, event, arg):
+    #         if event == 'call':
+    #             frame.f_trace_opcodes = True
+    #         elif event == 'opcode':
+    #             if frame.f_code.co_code[frame.f_lasti] == dis.opmap['MAKE_FUNCTION']:
+    #                 makefunctiontracefunc(frame)
+    # return tracefunc
+                
+        """Trace function to track executed branches"""        
         
         if ".jac" not in code.co_filename:
             return self.trace_callback
+        
+        if event == 'opcode':
+            print(frame.f_lasti)
 
+        if event != 'line':
+            return self.trace_callback
+        code = frame.f_code
+        
+
+        
+        # print(frame.f_lineno, frame.f_lasti)
+        
         #edge case to handle executing code not within a function
         filename = os.path.basename(code.co_filename)
         module = code.co_name if code.co_name != "<module>" else os.path.splitext(filename)[0]
@@ -453,7 +473,7 @@ class ShellGhost:
         self.cfg_cv.acquire()
         while (self.cfgs == None):
             self.cfg_cv.wait()
-        print(self.cfgs)
+        # print(self.cfgs)
         for module_name, cfg in self.cfgs.items():
             print(f"Name: {module_name}\n{cfg.display_instructions()}")
             pass
@@ -484,7 +504,7 @@ class ShellGhost:
                             current_executing_bb[0] = next
                             break
                 
-                print("current local variable values:" f"Inst #{inst}", variables)
+                # print("current local variable values:" f"Inst #{inst}", variables)
                 variables_by_line.append((inst, variables))
                 
                     
@@ -501,7 +521,7 @@ class ShellGhost:
             self.finished_exception_lock.acquire()
         
         update_cfg()
-        print(self.cfgs)
+        # print(self.cfgs)
         # for module_name, cfg in self.cfgs.items():
         #     print(f"Name: {module_name}\n{cfg.display_instructions()}")
 

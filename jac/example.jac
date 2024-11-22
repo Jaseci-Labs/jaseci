@@ -2,10 +2,15 @@ with entry {
     x:int = 0;
     y:int = 3;
     z:int = x + y;
-    
-    for i in range(z) {
+    # i:int = 0;
+
+    for i in range(0) {
+        # if i % 2 {
+        #     print("d");
+        # }
         x = 4;
         y = y + x;
+        # i += 1;
     }
     print(y/0);
     print(y);

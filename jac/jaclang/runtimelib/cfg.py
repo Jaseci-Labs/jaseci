@@ -10,20 +10,20 @@ import graphviz
 from graphviz import Digraph
 
 class BytecodeOp:
-    def __init__(self, op: int, arg: int, offset: int, argval:int, argrepr:str, is_jump_target: bool, line_number: int = None) -> None:
+    def __init__(self, op: int, arg: int, offset: int, argval:int, argrepr:str, is_jump_target: bool, starts_line: int = None) -> None:
         self.op = op
         self.arg = arg
         self.offset = offset
         self.argval = argval
         self.argrepr = argrepr
         self.is_jump_target= is_jump_target
-        #self.starts_line = starts_line
-        self.line_number = line_number
+        self.starts_line = starts_line
+        # self.line_number = line_number
         #default the offset
         self.__offset_size = 0
 
     def __repr__(self):
-        return f"Instr: offset={self.offset}, Opname={self.op}, arg={self.arg}, argval={self.argval}, argrepr={self.argrepr}, line_number={self.line_number}"
+        return f"Instr: offset={self.offset}, Opname={self.op}, arg={self.arg}, argval={self.argval}, argrepr={self.argrepr}, starts_line={self.starts_line}"
     def is_branch(self) -> bool:
         return self.op in {
             "JUMP_ABSOLUTE",
@@ -34,9 +34,7 @@ class BytecodeOp:
             "JUMP_IF_FALSE_OR_POP",
         }
     def is_relative_branch(self) -> bool:
-        return self.op in {
-            "FOR_ITER"
-        }    
+        return False
     def is_return(self) -> bool:
         return self.op == "RETURN_VALUE"
 
@@ -58,7 +56,7 @@ class Block:
         self.instructions = instructions
         self.exec_count = 0
         # Potentially use offset instead
-        self.line_nos = set([instr.line_number for instr in self.instructions if instr.line_number != None])
+        self.line_nos = set([instr.starts_line for instr in self.instructions if instr.starts_line != None])
         
         print(id, self.line_nos)
         
@@ -93,7 +91,7 @@ def disassemble_bytecode(bytecode):
         argval=instr.argval,
         argrepr=instr.argrepr,
         is_jump_target=instr.is_jump_target,
-        line_number=instr.line_number,
+        starts_line=instr.starts_line,
         ))
         #set offest size for calculating next instruction
         #last instruction is default of 2, but shouldn't be needed

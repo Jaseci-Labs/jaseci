@@ -1,0 +1,10 @@
+ERROR - division by zero
+ERROR - Error: division by zero
+   13 |         # i += 1;
+   14 |     }
+   15 |     print(y/0);
+      |           ^^^
+   16 |     print(y);
+   17 |     print("hello");
+  at <module> /Users/christopherlin/Desktop/Classes/jaseci-ginS/jac/example.jac:15
+division by zero
