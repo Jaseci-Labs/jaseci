@@ -93,7 +93,6 @@ def disassemble_bytecode(bytecode):
         argval=instr.argval,
         argrepr=instr.argrepr,
         is_jump_target=instr.is_jump_target,
-        #starts_line=instr.starts_line,
         line_number=instr.line_number,
         ))
         #set offest size for calculating next instruction
@@ -248,17 +247,6 @@ def find_block_by_offset(block_map: BlockMap, offset: int) -> int:
         if any(instr.offset == offset for instr in block.instructions):
             return block_id
     return None
-
-# def disassemble_bytecode(bytecode):
-#     code_object = marshal.loads(bytecode)
-#     instructions = list(dis.get_instructions(code_object))
-#     print(f"Disassembled bytecode for {code_object.co_name}:")
-#     print(
-#         "\n".join(
-#             [f"{instr.offset}: {instr.opname} {instr.argval}" for instr in instructions]
-#         )
-#     )
-#     return instructions
 
 # Function to visualize CFG using Graphviz
 def visualize_cfg(cfg: CFG):
