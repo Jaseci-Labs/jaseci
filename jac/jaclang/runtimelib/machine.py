@@ -357,8 +357,8 @@ class CFGTracker:
         return ret
     
     def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
-        # if event == "call":
-        frame.f_trace_opcodes = True
+        if event == "call":
+            frame.f_trace_opcodes = True
         # frame.f_trace_lines = False
     #     def tracefunc(frame, event, arg):
     #         if event == 'call':
@@ -369,7 +369,7 @@ class CFGTracker:
     # return tracefunc
                 
         """Trace function to track executed branches"""        
-        
+        code = frame.f_code
         if ".jac" not in code.co_filename:
             return self.trace_callback
         
@@ -378,7 +378,6 @@ class CFGTracker:
 
         if event != 'line':
             return self.trace_callback
-        code = frame.f_code
         
 
         
