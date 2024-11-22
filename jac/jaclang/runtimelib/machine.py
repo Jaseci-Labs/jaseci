@@ -456,7 +456,10 @@ class ShellGhost:
         print(self.cfgs)
         for module_name, cfg in self.cfgs.items():
             print(f"Name: {module_name}\n{cfg.display_instructions()}")
+            pass
         self.cfg_cv.release()
+
+        variables_by_line = []
         
         # Once cv has been notifie, self.cfgs is no longer accessed across threads
 
@@ -468,6 +471,10 @@ class ShellGhost:
             for module, inst, variables in exec_inst_list:
                 cfg = self.cfgs[module]                    
                 
+
+                inst_line_no_list = []
+                for instruction in cfg.block_map.idx_to_block[current_executing_bb[0]].instructions:
+                    pass
                 if inst not in cfg.block_map.idx_to_block[current_executing_bb[0]].line_nos:
                     for next in cfg.edges[current_executing_bb[0]]:
                         if inst in cfg.block_map.idx_to_block[next].line_nos:
@@ -478,6 +485,8 @@ class ShellGhost:
                             break
                 
                 print("current local variable values:" f"Inst #{inst}", variables)
+                variables_by_line.append((inst, variables))
+                
                     
                 # assert(inst in cfg.block_map.idx_to_block[current_executing_bb[0]].line_nos)
                 # cfg.block_map.idx_to_block[current_executing_bb[0]].start_inst_variables_map[inst] = variables
@@ -519,19 +528,19 @@ class ShellGhost:
         #         print("line: ", lin_no)
         #         print(v)    
         # # there should be no other thread trying to access finished/exception
-        
+
         if self.exception:
             print("Exception occured:", self.exception)    
         self.finished_exception_lock.release()
-
+        
         
         # genai.configure(api_key=os.getenv("GEN_AI_KEY"))
         # model = genai.GenerativeModel("gemini-1.5-flash")
-        # response_dict = {'cfg': self.cfgs}
-        # prompt = []
-        # for k,v in response_dict.items():
-        #     prompt.append(f"here is my {k}:\n{v}")
-        # prompt.append("\nCan you identify where the code could have an error?")
+        response_dict = {'cfg': self.cfgs, 'instructions': self.cfgs[module_name].display_instructions(), 'list of local variables at sequential line numbers': variables_by_line}
+        prompt = []
+        for k,v in response_dict.items():
+            prompt.append(f"here is my {k}:\n{v}")
+        prompt.append("\nCan you identify where the code could have an error?")
         # response = model.generate_content("".join(prompt))
 
         # print("PROMPT:\n")
