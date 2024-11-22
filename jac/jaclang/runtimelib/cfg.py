@@ -10,20 +10,19 @@ import graphviz
 from graphviz import Digraph
 
 class BytecodeOp:
-    def __init__(self, op: int, arg: int, offset: int, argval:int, argrepr:str, is_jump_target: bool, starts_line: int = None) -> None:
+    def __init__(self, op: int, arg: int, offset: int, argval:int, argrepr:str, is_jump_target: bool) -> None:
         self.op = op
         self.arg = arg
         self.offset = offset
         self.argval = argval
         self.argrepr = argrepr
         self.is_jump_target= is_jump_target
-        self.starts_line = starts_line
         # self.line_number = line_number
         #default the offset
         self.__offset_size = 0
 
     def __repr__(self):
-        return f"Instr: offset={self.offset}, Opname={self.op}, arg={self.arg}, argval={self.argval}, argrepr={self.argrepr}, starts_line={self.starts_line}"
+        return f"Instr: offset={self.offset}, Opname={self.op}, arg={self.arg}, argval={self.argval}, argrepr={self.argrepr}"
     def is_branch(self) -> bool:
         return self.op in {
             "JUMP_ABSOLUTE",
@@ -56,9 +55,9 @@ class Block:
         self.instructions = instructions
         self.exec_count = 0
         # Potentially use offset instead
-        self.line_nos = set([instr.starts_line for instr in self.instructions if instr.starts_line != None])
+        self.bytecode_offsets = set([instr.offset for instr in self.instructions if instr.offset != None])
         
-        print(id, self.line_nos)
+        print(id, self.bytecode_offsets)
         
         
     def __repr__(self):
@@ -91,7 +90,6 @@ def disassemble_bytecode(bytecode):
         argval=instr.argval,
         argrepr=instr.argrepr,
         is_jump_target=instr.is_jump_target,
-        starts_line=instr.starts_line,
         ))
         #set offest size for calculating next instruction
         #last instruction is default of 2, but shouldn't be needed
