@@ -1,14 +1,14 @@
 with entry {
-  a = 0;
-  b = 0;
-  c = 0;
+  a:int = 0;
+  b:int = 0;
+  c:int = 0;
   while a < 15 {
     if a % 2 == 0{
       c = a+b+7;
       
     }
     else {
-      b = 2;
+      b = 2 + c;
     }
     a += 1;
   }

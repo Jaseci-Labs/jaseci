@@ -58,7 +58,8 @@ class Block:
         self.id: int = id
         self.instructions = instructions
         self.exec_count = 0
-        self.line_nos = set([instr.offset for instr in self.instructions if instr.offset != None])
+        # Potentially use offset instead
+        self.line_nos = set([instr.line_number for instr in self.instructions if instr.line_number != None])
         
         print(id, self.line_nos)
         
