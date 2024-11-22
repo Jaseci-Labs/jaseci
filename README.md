@@ -28,6 +28,10 @@ This is a collection of libraries and frameworks in the Jaseci Ecosystem.
 - [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
 - [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
 
+## Showcase Projects
+ - [`Visit_Zoo`](https://github.com/Thamirawaran/Visit_Zoo): An interactive zoo simulation where players explore various zoo sections through clickable buttons, images, and videos.
+ - [`littleX`](https://github.com/Thamirawaran/littleX): A minimalistic social media platform prototype developed using the Jac programming language.
+
 ## Contributing
 
 See [CONTRIBUTING.md](.github/CONTRIBUTING.md).

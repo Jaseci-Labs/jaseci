@@ -56,7 +56,7 @@ def aott_raise(
             inputs_information_repr.extend(input_info.to_list_dict())
     elif is_custom:
         media = [x for x in inputs_information if isinstance(x.value, PILImage.Image)]
-        inputs_information_repr = ""
+        inputs_information_repr = "\n".join([str(x) for x in inputs_information])
     else:
         inputs_information_repr = "\n".join([str(x) for x in inputs_information])
 
