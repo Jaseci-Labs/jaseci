@@ -35,8 +35,7 @@ class BytecodeOp:
         }
     def is_relative_branch(self) -> bool:
         return self.op in {
-            "FOR_ITER",
-            "JUMP_FORWARD",
+            "FOR_ITER"
         }    
     def is_return(self) -> bool:
         return self.op == "RETURN_VALUE"
