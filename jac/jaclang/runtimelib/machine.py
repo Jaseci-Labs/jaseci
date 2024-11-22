@@ -519,36 +519,12 @@ class ShellGhost:
             
             time.sleep(1)
             self.finished_exception_lock.acquire()
-        
+
+        self.finished_exception_lock.release()
         update_cfg()
         print(self.cfgs)
-        # for module_name, cfg in self.cfgs.items():
-        #     print(f"Name: {module_name}\n{cfg.display_instructions()}")
-
-
-        
-        #     for func_name, dic in curr_variables.items():
-        #         print(func_name)module
-                
-        #         for lin_no ,v in dic.items():
-        #             print("line: ", lin_no)
-        #             print(v)
-
-        #     # check the variable values ever 3 seconds
-        #     self.finished_exception_lock.release()
-        #     time.sleep(0.5)
-        #     self.finished_exception_lock.acquire()
-
-        # self.finished_exception_lock.release()
-        # print("Getting Current Variable Values")
-        # for func_name, dic in self.tracker.get_variable_values().items():
-        #     print("name:", func_name)
-            
-        #     for lin_no ,v in dic.items():
-        #         print("line: ", lin_no)
-        #         print(v)    
         # # there should be no other thread trying to access finished/exception
-
+        self.finished_exception_lock.acquire()
         if self.exception:
             print("Exception occured:", self.exception)    
         self.finished_exception_lock.release()
