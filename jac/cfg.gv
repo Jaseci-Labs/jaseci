@@ -4,8 +4,9 @@ digraph {
 	bb1 [label=BB1]
 	bb2 [label=BB2]
 	bb3 [label=BB3]
+	bb0 -> bb3
 	bb0 -> bb1
-	bb1 -> bb2
 	bb1 -> bb3
+	bb1 -> bb2
 	bb2 -> bb1
 }

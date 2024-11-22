@@ -373,33 +373,33 @@ class CFGTracker:
         if ".jac" not in code.co_filename:
             return self.trace_callback
         
+
+
+        # if event != 'line':
+        #     return self.trace_callback
+        
         if event == 'opcode':
             print(frame.f_lasti)
-
-        if event != 'line':
-            return self.trace_callback
-        
-
         
         # print(frame.f_lineno, frame.f_lasti)
         
         #edge case to handle executing code not within a function
-        filename = os.path.basename(code.co_filename)
-        module = code.co_name if code.co_name != "<module>" else os.path.splitext(filename)[0]
+            filename = os.path.basename(code.co_filename)
+            module = code.co_name if code.co_name != "<module>" else os.path.splitext(filename)[0]
         
-        # bytecode = dis.Bytecode(code)
-        # for instr in bytecode:
-        #     if instr.starts_line:
-        #         print(f"  Offset: {instr.offset}, Op: {instr.opname}, Line: {instr.starts_line}")
-        #         pass
-        variable_dict = {}
-        if '__annotations__' in frame.f_locals:
-            for var_name in frame.f_locals['__annotations__']:
-                variable_dict[var_name] = frame.f_locals[var_name]
+            # bytecode = dis.Bytecode(code)
+            # for instr in bytecode:
+            #     if instr.starts_line:
+            #         print(f"  Offset: {instr.offset}, Op: {instr.opname}, Line: {instr.starts_line}")
+            #         pass
+            # variable_dict = {}
+            # if '__annotations__' in frame.f_locals:
+            #     for var_name in frame.f_locals['__annotations__']:
+            #         variable_dict[var_name] = frame.f_locals[var_name]
     
-        self.inst_lock.acquire()
-        self.executed_inst_list.append((module, frame.f_lineno, variable_dict))
-        self.inst_lock.release()
+            self.inst_lock.acquire()
+            self.executed_inst_list.append((module, frame.f_lasti))
+            self.inst_lock.release()
 
         # self.variable_values[code.co_name][frame.f_lineno] = {}
 
@@ -466,8 +466,8 @@ class ShellGhost:
         self.finished_exception_lock.release()
     
     def worker(self):
-        #this is temporary while developing 
-        
+
+             
         # get static cfgs
         self.cfg_cv.acquire()
         while (self.cfgs == None):
@@ -475,39 +475,40 @@ class ShellGhost:
         # print(self.cfgs)
         for module_name, cfg in self.cfgs.items():
             print(f"Name: {module_name}\n{cfg.display_instructions()}")
-            pass
         self.cfg_cv.release()
 
         variables_by_line = []
         
         # Once cv has been notifie, self.cfgs is no longer accessed across threads
 
-        current_executing_bb = [0]
         
+        current_executing_bbs = {}   
+
         def update_cfg():
             exec_inst_list = self.tracker.get_exec_inst()
             
-            for module, inst, variables in exec_inst_list:
-                cfg = self.cfgs[module]                    
+            for module, offset in exec_inst_list:
                 
+                cfg = self.cfgs[module]                    
 
-                inst_line_no_list = []
-                for instruction in cfg.block_map.idx_to_block[current_executing_bb[0]].instructions:
-                    pass
-                if inst not in cfg.block_map.idx_to_block[current_executing_bb[0]].line_nos:
-                    for next in cfg.edges[current_executing_bb[0]]:
-                        if inst in cfg.block_map.idx_to_block[next].line_nos:
-                            cfg.edge_counts[(current_executing_bb[0], next)] += 1
+                if module not in current_executing_bbs: # this means start at bb0, set exec count for bb0 to 1
+                    current_executing_bbs[module] = 0
+                    cfg.block_map.idx_to_block[0].exec_count = 1
+                
+                if offset not in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets:
+                    for next in cfg.edges[current_executing_bbs[module]]:
+                        if offset in cfg.block_map.idx_to_block[next].bytecode_offsets:
+                            cfg.edge_counts[(current_executing_bbs[module], next)] += 1
                             cfg.block_map.idx_to_block[next].exec_count += 1
 
-                            current_executing_bb[0] = next
+                            current_executing_bbs[module] = next
                             break
                 
                 # print("current local variable values:" f"Inst #{inst}", variables)
-                variables_by_line.append((inst, variables))
+                # variables_by_line.append((inst, variables))
                 
                     
-                # assert(inst in cfg.block_map.idx_to_block[current_executing_bb[0]].line_nos)
+                assert(offset in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets)
                 # cfg.block_map.idx_to_block[current_executing_bb[0]].start_inst_variables_map[inst] = variables
 
         self.finished_exception_lock.acquire()
@@ -520,7 +521,7 @@ class ShellGhost:
             self.finished_exception_lock.acquire()
         
         update_cfg()
-        # print(self.cfgs)
+        print(self.cfgs)
         # for module_name, cfg in self.cfgs.items():
         #     print(f"Name: {module_name}\n{cfg.display_instructions()}")
 
