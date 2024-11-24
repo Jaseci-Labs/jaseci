@@ -117,10 +117,9 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
 
-        # print(arr[1:3, 1::2]);
         expected_outputs = [
-            "+-- AtomTrailer - Type: Any",
-            "    +-- Name - arr - Type: Any,  SymbolTable: None",
+            "+-- AtomTrailer - Type: numpy.ndarray[Any, numpy.dtype[Any]]",
+            "    +-- Name - arr - Type: numpy.ndarray[Any, numpy.dtype[Any]],  SymbolTable: None",
             "    +-- IndexSlice - [IndexSlice] - Type: builtins.slice,  SymbolTable: None",
             "        +-- Token - [,",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
