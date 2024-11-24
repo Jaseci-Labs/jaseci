@@ -6,11 +6,13 @@ import ast
 import os
 from typing import Callable, TYPE_CHECKING, TextIO
 
+
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import (
     FuseTypeInfoPass,
 )
+from jaclang.settings import settings
 
 import mypy.build as myb
 import mypy.checkexpr as mycke
@@ -741,7 +743,10 @@ class Errors(mye.Errors):
             end_line=end_line,
             end_column=end_column,
         )
-        if (line, column, end_line, end_column) in mypy_to_jac_node_map:
+        if (
+            settings.silent_type_errors
+            and (line, column, end_line, end_column) in mypy_to_jac_node_map
+        ):
             self.cur_pass.warning(
                 msg=message,
                 node_override=mypy_to_jac_node_map[

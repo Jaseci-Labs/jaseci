@@ -16,10 +16,13 @@ class Settings:
     pass_timer: bool = False
     collect_py_dep_debug: bool = False
     print_py_raised_ast: bool = False
+    silent_type_errors: bool = False
 
     # Compiler configuration
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
+    silent_warnings: bool = False
+    silent_errors: bool = False
 
     # Formatter configuration
     max_line_length: int = 88
