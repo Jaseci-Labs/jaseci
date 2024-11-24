@@ -140,11 +140,13 @@ class Pass(Transform[T]):
 
     def error(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
-        self.log_error(msg, node_override=node_override)
+        if not settings.silent_errors:
+            self.log_error(msg, node_override=node_override)
 
     def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
-        self.log_warning(msg, node_override=node_override)
+        if not (settings.silent_warnings or settings.silent_errors):
+            self.log_warning(msg, node_override=node_override)
 
     def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:
         """Pass Error."""
