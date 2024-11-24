@@ -10,10 +10,12 @@ repos:
     rev: 24.1.1
     hooks:
       - id: black
+        exclude: '__jac_gen__'
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
       - id: flake8
+        exclude: '__jac_gen__'
         args: ["--config=jac-mtllm/.flake8"]
         additional_dependencies: [pep8-naming, flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, flake8_simplify]
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -21,6 +23,7 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-PyYAML, types-requests]
+        exclude: '__jac_gen__'
         args:
           - --follow-imports=silent
           - --ignore-missing-imports

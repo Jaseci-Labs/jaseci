@@ -2,14 +2,14 @@
 
 from setuptools import find_packages, setup
 
-VERSION = "0.1.8"
+VERSION = "0.1.10"
 
 setup(
     name="jac-cloud",
     version=VERSION,
     packages=find_packages(include=["jac_cloud", "jac_cloud.*"]),
     install_requires=[
-        "jaclang~=0.7.25",
+        "jaclang~=0.7.26",
         "fastapi~=0.111.0",
         "pydantic~=2.8.2",
         "pymongo~=4.8.0",
@@ -33,6 +33,7 @@ setup(
         "fakeredis~=2.24.1",
         "ecs-logging~=2.2.0",
         "types-PyYAML~=6.0.12.20240917",
+        "montydb~=2.5.3",
     ],
     package_data={},
     entry_points={

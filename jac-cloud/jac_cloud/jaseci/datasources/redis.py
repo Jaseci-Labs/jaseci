@@ -46,6 +46,7 @@ class Redis:
                     password=getenv("REDIS_PASS"),
                 )
             else:
+                logger.info("REDIS_HOST is not available! Using FakeRedis...")
                 Redis.__redis__ = FakeRedis()
 
         return Redis.__redis__
