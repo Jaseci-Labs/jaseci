@@ -460,7 +460,7 @@ class FuseTypeInfoPass(Pass):
         self, mypy_type: MypyTypes.Overloaded
     ) -> Optional[str]:
         """Get type info from mypy type Overloaded."""
-        return self.__call_type_handler(mypy_type.items[0])
+        return self.__call_type_handler(mypy_type.items[-1])
 
     def get_type_from_none_type(self, mypy_type: MypyTypes.NoneType) -> Optional[str]:
         """Get type info from mypy type NoneType."""
@@ -477,6 +477,12 @@ class FuseTypeInfoPass(Pass):
     def get_type_from_type_type(self, mypy_type: MypyTypes.TypeType) -> Optional[str]:
         """Get type info from mypy type TypeType."""
         return str(mypy_type.item)
+
+    def get_type_from_type_var_type(
+        self, mypy_type: MypyTypes.TypeVarType
+    ) -> Optional[str]:
+        """Get type info from mypy type TypeType."""
+        return str(mypy_type.name)
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Add new symbols in the symbol table in case of self."""
@@ -590,6 +596,13 @@ class FuseTypeInfoPass(Pass):
                 right.type_sym_tab = type_symtab
 
             else:
+                # Fix the symbolTable linking in case of type annotations
+                if left.type_sym_tab is None and isinstance(node.parent, ast.SubTag):
+                    assert isinstance(left, ast.AstSymbolNode)
+                    left.name_spec.type_sym_tab = self.ir.sym_tab.find_scope(
+                        left.sym_name
+                    )
+
                 if left.type_sym_tab:
                     right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
                     if right.name_spec.sym:
