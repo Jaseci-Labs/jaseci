@@ -115,7 +115,7 @@ class SymbolTable:
         node: ast.AstSymbolNode,
         access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
         single: bool = False,
-        overwrite: bool = False,
+        force_overwrite: bool = False,
     ) -> Optional[ast.AstNode]:
         """Set a variable in the symbol table.
 
@@ -127,7 +127,7 @@ class SymbolTable:
             if single and node.sym_name in self.tab
             else None
         )
-        if overwrite or node.sym_name not in self.tab:
+        if force_overwrite or node.sym_name not in self.tab:
             self.tab[node.sym_name] = Symbol(
                 defn=node.name_spec,
                 access=(
@@ -164,7 +164,7 @@ class SymbolTable:
         node: ast.AstSymbolNode,
         access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
         single_decl: Optional[str] = None,
-        overwrite: bool = False,
+        force_overwrite: bool = False,
     ) -> Optional[Symbol]:
         """Insert into symbol table."""
         if node.sym and self == node.sym.parent_tab:
@@ -173,7 +173,7 @@ class SymbolTable:
             node=node,
             single=single_decl is not None,
             access_spec=access_spec,
-            overwrite=overwrite,
+            force_overwrite=force_overwrite,
         )
         self.update_py_ctx_for_def(node)
         return node.sym

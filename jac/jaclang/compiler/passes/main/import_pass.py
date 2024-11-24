@@ -337,7 +337,7 @@ class PyImportPass(JacImportPass):
                     parent_sym_tab.def_insert(
                         node=needed_sym.defn[0],
                         access_spec=needed_sym.access,
-                        overwrite=True,
+                        force_overwrite=True,
                     )
 
                     if needed_sym.fetch_sym_tab:
