@@ -10,10 +10,11 @@ import time
 import sys
 import tempfile
 import types
+import asyncio
 import dis
 import google.generativeai as genai
 import threading
-from collections import deque
+from collections import defaultdict
 from contextvars import ContextVar
 from typing import Optional, Union
 
@@ -334,8 +335,11 @@ class JacProgram:
 
 class CFGTracker:
     def __init__(self):
-        self.executed_inst_list = deque()
+        self.executed_insts = {}
         self.inst_lock = threading.Lock()
+        
+        self.curr_variables_lock = threading.Lock()
+        self.curr_variables = {}
 
     def start_tracking(self):
         """Start tracking branch coverage"""
@@ -347,14 +351,21 @@ class CFGTracker:
         sys.settrace(None)
     
     def get_exec_inst(self):
-        ret = []
         
         self.inst_lock.acquire()
-        while len(self.executed_inst_list) > 0:
-            ret.append(self.executed_inst_list.popleft())
+        cpy = copy.deepcopy(self.executed_insts)
+        self.executed_insts = {}
         self.inst_lock.release()
         
-        return ret
+        return cpy
+
+    def get_variable_values(self):
+        self.curr_variables_lock.acquire()
+        cpy = copy.deepcopy(self.curr_variables)
+        self.curr_variables_lock.release()
+        
+        return cpy
+    
     
     def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
         if event == "call":
@@ -379,27 +390,26 @@ class CFGTracker:
         #     return self.trace_callback
         
         if event == 'opcode':
-            print(frame.f_lasti)
+            # print(frame.f_lasti)
         
         # print(frame.f_lineno, frame.f_lasti)
         
         #edge case to handle executing code not within a function
             filename = os.path.basename(code.co_filename)
             module = code.co_name if code.co_name != "<module>" else os.path.splitext(filename)[0]
-        
-            # bytecode = dis.Bytecode(code)
-            # for instr in bytecode:
-            #     if instr.starts_line:
-            #         print(f"  Offset: {instr.offset}, Op: {instr.opname}, Line: {instr.starts_line}")
-            #         pass
-            # variable_dict = {}
-            # if '__annotations__' in frame.f_locals:
-            #     for var_name in frame.f_locals['__annotations__']:
-            #         variable_dict[var_name] = frame.f_locals[var_name]
     
             self.inst_lock.acquire()
-            self.executed_inst_list.append((module, frame.f_lasti))
+            if module not in self.executed_insts:
+                self.executed_insts[module] = []
+            self.executed_insts[module].append(frame.f_lasti)
             self.inst_lock.release()
+            variable_dict = {}
+            if '__annotations__' in frame.f_locals:
+                self.curr_variables_lock.acquire()
+                for var_name in frame.f_locals['__annotations__']:
+                    variable_dict[var_name] = frame.f_locals[var_name]
+                self.curr_variables[module] = (frame.f_lasti, variable_dict)
+                self.curr_variables_lock.release()
 
         # self.variable_values[code.co_name][frame.f_lineno] = {}
 
@@ -448,6 +458,11 @@ class ShellGhost:
         self.finished_exception_lock = threading.Lock()
         self.exception = None
         self.finished = False
+        self.variable_values = None
+
+        genai.configure(api_key=os.getenv("GEN_AI_KEY"))
+        self.model = genai.GenerativeModel("gemini-1.5-flash")
+
 
     def set_cfgs(self, cfgs):
         self.cfg_cv.acquire()
@@ -465,19 +480,53 @@ class ShellGhost:
         self.finished = True
         self.finished_exception_lock.release()
     
+    def prompt_llm(self):
+        prompt = """I have a program.
+CFGS:
+{cfgs},
+Instructions per basic block:
+{instructions}"""
+        
+        cfg_string = ""
+        ins_string = "" 
+
+        for module, cfg in self.cfgs.items():
+            cfg_string += f"Module: {module}\n{cfg}" 
+            ins_string += f"Module: {module}\n{cfg.display_instructions()}"
+        
+        prompt = prompt.format(cfgs=cfg_string, instructions=ins_string)
+
+        if self.variable_values != None:
+            prompt += "\nCurrent variable values at the specified bytecode offset:"
+            
+            for module, var_map in self.variable_values.items():
+                prompt += f"\nModule {module}: Offset: {var_map[0]}, Variables: {str(var_map[1])}"
+        
+        self.finished_exception_lock.acquire()
+        
+        if self.exception:
+            prompt += f"\nException: {self.exception}"
+
+        self.finished_exception_lock.release()
+        
+        prompt += "\nCan you identity optimizations or where the code has an error?"
+        
+        print(prompt)
+        
+        response = self.model.generate_content(prompt)
+        
+        print(response.text)
+    
     def worker(self):
 
-             
         # get static cfgs
         self.cfg_cv.acquire()
         while (self.cfgs == None):
             self.cfg_cv.wait()
         # print(self.cfgs)
-        for module_name, cfg in self.cfgs.items():
-            print(f"Name: {module_name}\n{cfg.display_instructions()}")
+        # for module_name, cfg in self.cfgs.items():
+        #     print(f"Name: {module_name}\n{cfg.display_instructions()}")
         self.cfg_cv.release()
-
-        variables_by_line = []
         
         # Once cv has been notifie, self.cfgs is no longer accessed across threads
 
@@ -485,9 +534,11 @@ class ShellGhost:
         current_executing_bbs = {}   
 
         def update_cfg():
-            exec_inst_list = self.tracker.get_exec_inst()
+            exec_insts = self.tracker.get_exec_inst()
             
-            for module, offset in exec_inst_list:
+            # don't prompt if there's nothing new
+            if exec_insts == {}: return
+            for module, offset_list in exec_insts.items():
                 
                 cfg = self.cfgs[module]                    
 
@@ -495,48 +546,42 @@ class ShellGhost:
                     current_executing_bbs[module] = 0
                     cfg.block_map.idx_to_block[0].exec_count = 1
                 
-                if offset not in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets:
-                    for next in cfg.edges[current_executing_bbs[module]]:
-                        if offset in cfg.block_map.idx_to_block[next].bytecode_offsets:
-                            cfg.edge_counts[(current_executing_bbs[module], next)] += 1
-                            cfg.block_map.idx_to_block[next].exec_count += 1
+                for offset in offset_list:                
+                    if offset not in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets:
+                        for next in cfg.edges[current_executing_bbs[module]]:
+                            if offset in cfg.block_map.idx_to_block[next].bytecode_offsets:
+                                cfg.edge_counts[(current_executing_bbs[module], next)] += 1
+                                cfg.block_map.idx_to_block[next].exec_count += 1
 
-                            current_executing_bbs[module] = next
-                            break
-                
-                # print("current local variable values:" f"Inst #{inst}", variables)
-                # variables_by_line.append((inst, variables))
-                
-                    
-                assert(offset in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets)
-                # cfg.block_map.idx_to_block[current_executing_bb[0]].start_inst_variables_map[inst] = variables
+                                current_executing_bbs[module] = next
+                                break                                    
+                    assert(offset in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets)
+
+            self.variable_values = self.tracker.get_variable_values()
+            self.prompt_llm()
 
         self.finished_exception_lock.acquire()
         while (not self.finished):
             self.finished_exception_lock.release()
-
-            update_cfg()
             
-            time.sleep(1)
+            time.sleep(5)
+            update_cfg()
             self.finished_exception_lock.acquire()
 
         self.finished_exception_lock.release()
+        
+        # print(self.cfgs)
+        # self.finished_exception_lock.acquire()
+        # if self.exception:
+            # print("Exception occured:", self.exception)
+        # self.finished_exception_lock.release()
         update_cfg()
-        print(self.cfgs)
-        # # there should be no other thread trying to access finished/exception
-        self.finished_exception_lock.acquire()
-        if self.exception:
-            print("Exception occured:", self.exception)    
-        self.finished_exception_lock.release()
         
-        
-        # genai.configure(api_key=os.getenv("GEN_AI_KEY"))
-        # model = genai.GenerativeModel("gemini-1.5-flash")
-        response_dict = {'cfg': self.cfgs, 'instructions': self.cfgs[module_name].display_instructions(), 'list of local variables at sequential line numbers': variables_by_line}
-        prompt = []
-        for k,v in response_dict.items():
-            prompt.append(f"here is my {k}:\n{v}")
-        prompt.append("\nCan you identify where the code could have an error?")
+        # response_dict = {'cfg': self.cfgs, 'instructions': self.cfgs[module_name].display_instructions(), 'list of local variables at sequential line numbers': variables_by_line}
+        # prompt = []
+        # for k,v in response_dict.items():
+        #     prompt.append(f"here is my {k}:\n{v}")
+        # prompt.append("\nCan you identify where the code could have an error?")
         # response = model.generate_content("".join(prompt))
 
         # print("PROMPT:\n")

@@ -56,9 +56,7 @@ class Block:
         self.exec_count = 0
         # Potentially use offset instead
         self.bytecode_offsets = set([instr.offset for instr in self.instructions if instr.offset != None])
-        
-        print(id, self.bytecode_offsets)
-        
+                
         
     def __repr__(self):
       instructions = "\n".join([str(instr) for instr in self.instructions])
