@@ -2,7 +2,6 @@
 
 import io
 import os
-import pickle
 import sys
 import sysconfig
 
@@ -24,7 +23,7 @@ class JacLanguageTests(TestCase):
         """Set up test."""
         SUPER_ROOT_ANCHOR.edges.clear()
         JacMachine(self.fixture_abs_path("./")).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None)
+            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
         return super().setUp()
 
@@ -103,6 +102,39 @@ class JacLanguageTests(TestCase):
             stdout_value,
             "Too high!\nToo low!\nToo high!\nCongratulations! You guessed correctly.\n",
         )
+
+    def test_multi_dim_arr_slice(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.tool(
+            "ir",
+            [
+                "ast",
+                self.fixture_abs_path("multi_dim_array_split.jac"),
+            ],
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        expected_outputs = [
+            "+-- AtomTrailer - Type: numpy.ndarray[Any, numpy.dtype[Any]]",
+            "    +-- Name - arr - Type: numpy.ndarray[Any, numpy.dtype[Any]],  SymbolTable: None",
+            "    +-- IndexSlice - [IndexSlice] - Type: builtins.slice,  SymbolTable: None",
+            "        +-- Token - [,",
+            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "        +-- Token - :,",
+            "        +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
+            "        +-- Token - ,,",
+            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "        +-- Token - :,",
+            "        +-- Token - :,",
+            "        +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
+            "        +-- Token - ],",
+        ]
+
+        for expected in expected_outputs:
+            self.assertIn(expected, stdout_value)
 
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
@@ -475,19 +507,15 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertNotIn("Error", stdout_value)
 
-        with open(
-            os.path.join(
-                self.fixture_abs_path("./"), "__jac_gen__", "registry.registry.pkl"
-            ),
-            "rb",
-        ) as f:
-            registry = pickle.load(f)
+        output_lines = stdout_value.strip().split("\n")
+        outputs = [
+            int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)
+        ]
 
-        self.assertEqual(len(registry.registry), 9)
-        self.assertEqual(len(list(registry.registry.items())[0][1]), 2)
-        self.assertEqual(list(registry.registry.items())[3][0].scope, "Person")
-        _, sem_info = registry.lookup(name="normal_ability")
-        self.assertEqual(len(sem_info.get_children(registry)), 2)
+        self.assertEqual(outputs[0], 9)
+        self.assertEqual(outputs[1], 2)
+        self.assertEqual(outputs[2], "Person")
+        self.assertEqual(outputs[3], 2)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
@@ -1184,3 +1212,23 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)
+
+    def test_global_multivar(self) -> None:
+        """Test supporting multiple global variable in a statement."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("glob_multivar_statement", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello World !", stdout_value[0])
+        self.assertIn("Welcome to Jaseci!", stdout_value[1])
+
+    def test_architype_def(self) -> None:
+        """Test architype definition bug."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("architype_def_bug", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyNode", stdout_value[0])
+        self.assertIn("MyWalker", stdout_value[1])

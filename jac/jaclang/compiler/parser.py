@@ -2436,8 +2436,11 @@ class JacParser(Pass):
         def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
             """Grammar rule.
 
-            index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
-                    | list_val
+            index_slice: LSQUARE                                                        \
+                            expression? COLON expression? (COLON expression?)?          \
+                            (COMMA expression? COLON expression? (COLON expression?)?)* \
+                         RSQUARE
+                        | list_val
             """
             if len(kid) == 1:
                 index = kid[0]
@@ -2454,9 +2457,9 @@ class JacParser(Pass):
                         kid = [expr]
                     return self.nu(
                         ast.IndexSlice(
-                            start=expr,
-                            stop=None,
-                            step=None,
+                            slices=[
+                                ast.IndexSlice.Slice(start=expr, stop=None, step=None)
+                            ],
                             is_range=False,
                             kid=kid,
                         )
@@ -2464,25 +2467,39 @@ class JacParser(Pass):
                 else:
                     raise self.ice()
             else:
-                expr1 = expr2 = expr3 = None
+                slices: list[ast.IndexSlice.Slice] = []
                 chomp = kid[1:]
-                if isinstance(chomp[0], ast.Expr):
-                    expr1 = chomp[0]
-                    chomp = chomp[1:]
-                chomp = chomp[1:]
-                if isinstance(chomp[0], ast.Expr):
-                    expr2 = chomp[0]
-                    chomp = chomp[1:]
-                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON:
-                    chomp = chomp[1:]
+
+                while not (
+                    isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.RSQUARE
+                ):
+                    expr1 = expr2 = expr3 = None
+
                     if isinstance(chomp[0], ast.Expr):
-                        expr3 = chomp[0]
-                        chomp = chomp[1:]
+                        expr1 = chomp[0]
+                        chomp.pop(0)
+                    chomp.pop(0)
+
+                    if isinstance(chomp[0], ast.Expr):
+                        expr2 = chomp[0]
+                        chomp.pop(0)
+
+                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON:
+                        chomp.pop(0)
+                        if isinstance(chomp[0], ast.Expr):
+                            expr3 = chomp[0]
+                            chomp.pop(0)
+
+                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COMMA:
+                        chomp.pop(0)
+
+                    slices.append(
+                        ast.IndexSlice.Slice(start=expr1, stop=expr2, step=expr3)
+                    )
+
                 return self.nu(
                     ast.IndexSlice(
-                        start=expr1,
-                        stop=expr2,
-                        step=expr3,
+                        slices=slices,
                         is_range=True,
                         kid=kid,
                     )
@@ -2800,25 +2817,14 @@ class JacParser(Pass):
         def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
             """Grammar rule.
 
-            name_list: (name_list COMMA)? NAME
+            name_list: (named_ref COMMA)* named_ref
             """
-            consume = None
-            name = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                name = kid[2]
-                new_kid = [*consume.kid, comma, name]
-            else:
-                name = kid[0]
-                new_kid = [name]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
+            valid_kid = [i for i in kid if isinstance(i, ast.Name)]
             return self.nu(
                 ast.SubNodeList[ast.Name](
                     items=valid_kid,
                     delim=Tok.COMMA,
-                    kid=new_kid,
+                    kid=kid,
                 )
             )
 

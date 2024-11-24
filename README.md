@@ -18,15 +18,19 @@
 
 </div>
 
-Welcome to the Jaseci project. 
+Welcome to the Jaseci project.
 
 This is a collection of libraries and frameworks in the Jaseci Ecosystem.
 
-* [`jaclang`](jac/): The Jac programming language, a drop-in replacement for and supersets Python.
-* [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
-* [`jac-cloud`](jac-cloud/): The cloud-native library for Jac programs. `jac-cloud` automatically converts your local application to a production-ready server stack.
-* [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
-* [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
+- [`jaclang`](jac/): The Jac programming language, a drop-in replacement for and supersets Python.
+- [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
+- [`jac-cloud`](jac-cloud/): The cloud-native library for Jac programs. `jac-cloud` automatically converts your local application to a production-ready server stack.
+- [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
+- [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
+
+## Showcase Projects
+ - [`Visit_Zoo`](https://github.com/Thamirawaran/Visit_Zoo): An interactive zoo simulation where players explore various zoo sections through clickable buttons, images, and videos.
+ - [`littleX`](https://github.com/Thamirawaran/littleX): A minimalistic social media platform prototype developed using the Jac programming language.
 
 ## Contributing
 
@@ -34,7 +38,7 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## License
 
-Jaclang is distributed under the terms of both the MIT license with a few other open source projects vendored
+All Jaseci open source software is distributed under the terms of both the MIT license with a few other open source projects vendored
 within with various other licenses that are very permissive.
 
 See [LICENSE-MIT](.guthub/LICENSE), and
@@ -42,12 +46,13 @@ See [LICENSE-MIT](.guthub/LICENSE), and
 
 ## Trademark
 
-[Jaseci][jaseci] owns and protects the Jaclang trademarks and logos (the "Jaclang Trademarks").
-
-If you want to use these names or brands, please read the [media guide][media-guide].
-
-Third-party logos may be subject to third-party copyrights and trademarks. See [Licenses][policies-licenses] for details.
+[Jaseci Labs, LLC][jaseci] owns and protects the Jaseci and Jac trademarks and logos.
+If you would like to use these names or brands, please reach out for approval.
 
 [jaseci]: https://jaseci.org/
-[media-guide]: https://jaseci.org/policies/logo-policy-and-media-guide/
-[policies-licenses]: https://www.jaseci.org/policies/licenses
+
+## University of Michigan Disclosure
+
+The Jaseci open-source software (OSS) is maintained by [Jaseci Labs, LLC][jaseci] for which the following University of Michigan employees have either an ownership or advisory interest in Jaseci Labs, LLC: Prof. Jason Mars, Prof. Lingjia Tang, and Dr. Yiping Kang.
+
+[jaseci]: https://jaseci.org/

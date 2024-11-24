@@ -23,6 +23,15 @@ walker update_node {
     }
 }
 
+walker update_node_forced {
+    has val: int;
+
+    can enter2 with A entry {
+        Jac.elevate_root();
+        here.val = self.val;
+    }
+}
+
 walker create_node {
     has val: int;
 

@@ -1011,8 +1011,7 @@ class SymTabBuildPass(Pass):
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
 
-        start: Optional[ExprType],
-        stop: Optional[ExprType],
+        slices: list[Slice],
         is_range: bool,
         """
         self.sync_node_to_scope(node)

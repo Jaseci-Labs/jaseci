@@ -2026,9 +2026,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             and (isinstance(step, ast.Expr) or step is None)
         ):
             return ast.IndexSlice(
-                start=lower,
-                stop=upper,
-                step=step,
+                slices=[ast.IndexSlice.Slice(lower, upper, step)],
                 is_range=True,
                 kid=valid_kid,
             )
@@ -2061,12 +2059,28 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         slice = self.convert(node.slice)
         if not isinstance(slice, ast.IndexSlice) and isinstance(slice, ast.Expr):
             slice = ast.IndexSlice(
-                start=slice,
-                stop=None,
-                step=None,
+                slices=[ast.IndexSlice.Slice(slice, None, None)],
                 is_range=False,
                 kid=[slice],
             )
+        if (
+            not isinstance(slice, ast.IndexSlice)
+            and isinstance(slice, ast.TupleVal)
+            and slice.values is not None
+        ):
+
+            slices: list[ast.IndexSlice.Slice] = []
+            for index_slice in slice.values.items:
+                if not isinstance(index_slice, ast.IndexSlice):
+                    raise self.ice()
+                slices.append(index_slice.slices[0])
+
+            slice = ast.IndexSlice(
+                slices=slices,
+                is_range=True,
+                kid=[slice],
+            )
+
         if isinstance(value, ast.Expr) and isinstance(slice, ast.IndexSlice):
             return ast.AtomTrailer(
                 target=value,

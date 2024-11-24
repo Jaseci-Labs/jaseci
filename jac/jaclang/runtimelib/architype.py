@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from enum import IntEnum
 from logging import getLogger
@@ -291,9 +292,19 @@ class DSFunc:
     """Data Spatial Function."""
 
     name: str
-    trigger: type | UnionType | tuple[type | UnionType, ...] | None
     func: Callable[[Any, Any], Any] | None = None
 
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
         self.func = getattr(cls, self.name)
+
+    def get_funcparam_annotations(
+        self, func: Callable[[Any, Any], Any] | None
+    ) -> type | UnionType | tuple[type | UnionType, ...] | None:
+        """Get function parameter annotations."""
+        if not func:
+            return None
+        annotation = (
+            inspect.signature(func, eval_str=True).parameters["_jac_here_"].annotation
+        )
+        return annotation if annotation != inspect._empty else None

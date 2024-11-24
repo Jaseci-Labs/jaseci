@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mtllm"
-version = "0.3.2"
+version = "0.3.4"
 description = "MTLLM Provides Easy to use APIs for different LLM Providers to be used with Jaseci's Jaclang Programming Language."
 authors = ["Jason Mars <jason@jaseci.org>"]
 maintainers = ["Jason Mars <jason@jaseci.org>"]
@@ -9,7 +9,7 @@ readme = "README.md"
 keywords = ["llm", "jaclang", "jaseci", "mtllm"]
 
 [tool.poetry.dependencies]
-jaclang = "~0.7.16"
+jaclang = "~0.7.25"
 loguru = "~0.7.2"
 openai = { version = "~1.30.4", optional = true }
 anthropic = { version = "~0.26.1", optional = true }
