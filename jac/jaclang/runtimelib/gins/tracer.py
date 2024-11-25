@@ -1,5 +1,5 @@
 import types
-from typing import Optional, Union
+from typing import Optional, Union, Callable
 import threading
 import sys
 import copy
@@ -39,7 +39,7 @@ class CFGTracker:
         return cpy
     
     
-    def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[types.TraceFunction]:
+    def trace_callback(self, frame: types.FrameType, event: str, arg: any) -> Optional[Callable]:
         if event == "call":
             frame.f_trace_opcodes = True
         # frame.f_trace_lines = False
