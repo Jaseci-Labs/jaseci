@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import dis
 import sys
 import types
 from collections import defaultdict
 import graphviz
+import asyncio
 from typing import Dict, Set, List, Tuple, Optional
 
 
@@ -82,7 +85,7 @@ class CFGTracker:
         self.cfg_cache[code] = blocks
         return blocks
 
-    def trace_callback(self, frame: types.FrameType, event: str, arg: Any) -> Optional[types.TraceFunction]:
+    def trace_callback(self, frame: types.FrameType, event: str) -> Optional[types.TraceFunction]:
         """Trace function to track executed branches"""
         if event != 'line':
             return self.trace_callback

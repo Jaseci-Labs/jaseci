@@ -3,18 +3,7 @@ digraph {
 	bb0 [label=BB0]
 	bb1 [label=BB1]
 	bb2 [label=BB2]
-	bb3 [label=BB3]
-	bb4 [label=BB4]
-	bb5 [label=BB5]
-	bb6 [label=BB6]
-	bb7 [label=BB7]
-	bb0 -> bb7
+	bb0 -> bb2
 	bb0 -> bb1
-	bb1 -> bb3
 	bb1 -> bb2
-	bb3 -> bb4
-	bb4 -> bb6
-	bb4 -> bb5
-	bb5 -> bb1
-	bb6 -> bb7
 }

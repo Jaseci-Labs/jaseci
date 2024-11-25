@@ -97,6 +97,8 @@ class JacMachine:
                 self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
             else:
                 self.jac_program.sem_ir = mod_sem_ir
+        if self.gin and mod_sem_ir:
+            self.gin.sem_ir = mod_sem_ir
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""
@@ -454,13 +456,14 @@ class ShellGhost:
         self.cfgs = None
         self.cfg_cv = threading.Condition()
         self.tracker = CFGTracker()
+        self.sem_ir = None
         
         self.finished_exception_lock = threading.Lock()
         self.exception = None
         self.finished = False
         self.variable_values = None
 
-        genai.configure(api_key=os.getenv("GEN_AI_KEY"))
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         self.model = genai.GenerativeModel("gemini-1.5-flash")
 
 
@@ -480,21 +483,22 @@ class ShellGhost:
         self.finished = True
         self.finished_exception_lock.release()
     
-    def prompt_llm(self):
+    def prompt_llm(self, verbose: bool = False):
         prompt = """I have a program.
 CFGS:
 {cfgs},
 Instructions per basic block:
-{instructions}"""
+{instructions}
+Semantic and Type information from source code:
+{sem_ir}"""
         
         cfg_string = ""
         ins_string = "" 
-
         for module, cfg in self.cfgs.items():
             cfg_string += f"Module: {module}\n{cfg}" 
             ins_string += f"Module: {module}\n{cfg.display_instructions()}"
         
-        prompt = prompt.format(cfgs=cfg_string, instructions=ins_string)
+        prompt = prompt.format(cfgs=cfg_string, instructions=ins_string, sem_ir=self.sem_ir)
 
         if self.variable_values != None:
             prompt += "\nCurrent variable values at the specified bytecode offset:"
@@ -509,9 +513,11 @@ Instructions per basic block:
 
         self.finished_exception_lock.release()
         
-        prompt += "\nCan you identity optimizations or where the code has an error?"
+        prompt += "\nCan you identity bottlneck optimizations or where the code can error out?"
+        prompt += "\n(Reason about the program using bytecode, cfg, semantic and type information to infer the source code indirectly)"
         
-        print(prompt)
+        if verbose:
+            print(prompt)
         
         response = self.model.generate_content(prompt)
         
@@ -539,33 +545,38 @@ Instructions per basic block:
             # don't prompt if there's nothing new
             if exec_insts == {}: return
             for module, offset_list in exec_insts.items():
-                
-                cfg = self.cfgs[module]                    
+                try: 
+                    cfg = self.cfgs[module]                    
 
-                if module not in current_executing_bbs: # this means start at bb0, set exec count for bb0 to 1
-                    current_executing_bbs[module] = 0
-                    cfg.block_map.idx_to_block[0].exec_count = 1
-                
-                for offset in offset_list:                
-                    if offset not in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets:
-                        for next in cfg.edges[current_executing_bbs[module]]:
-                            if offset in cfg.block_map.idx_to_block[next].bytecode_offsets:
-                                cfg.edge_counts[(current_executing_bbs[module], next)] += 1
-                                cfg.block_map.idx_to_block[next].exec_count += 1
+                    if module not in current_executing_bbs: # this means start at bb0, set exec count for bb0 to 1
+                        current_executing_bbs[module] = 0
+                        cfg.block_map.idx_to_block[0].exec_count = 1
+                    
+                    for offset in offset_list:                
+                        if offset not in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets:
+                            for next in cfg.edges[current_executing_bbs[module]]:
+                                if offset in cfg.block_map.idx_to_block[next].bytecode_offsets:
+                                    cfg.edge_counts[(current_executing_bbs[module], next)] += 1
+                                    cfg.block_map.idx_to_block[next].exec_count += 1
 
-                                current_executing_bbs[module] = next
-                                break                                    
-                    assert(offset in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets)
+                                    current_executing_bbs[module] = next
+                                    break                                    
+                        assert(offset in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets)
+                except Exception as e:
+                    self.set_finished(e)
+                    print(e)
+                    return
 
             self.variable_values = self.tracker.get_variable_values()
-            self.prompt_llm()
 
         self.finished_exception_lock.acquire()
         while (not self.finished):
             self.finished_exception_lock.release()
             
             time.sleep(5)
+            print('\nUpdating cfgs')
             update_cfg()
+            self.prompt_llm()
             self.finished_exception_lock.acquire()
 
         self.finished_exception_lock.release()
@@ -575,7 +586,9 @@ Instructions per basic block:
         # if self.exception:
             # print("Exception occured:", self.exception)
         # self.finished_exception_lock.release()
+        print('\nUpdating cfgs at the end')
         update_cfg()
+        self.prompt_llm()
         
         # response_dict = {'cfg': self.cfgs, 'instructions': self.cfgs[module_name].display_instructions(), 'list of local variables at sequential line numbers': variables_by_line}
         # prompt = []
