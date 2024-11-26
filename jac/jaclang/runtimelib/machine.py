@@ -5,12 +5,10 @@ from __future__ import annotations
 import inspect
 import marshal
 import os
-import time
 import sys
 import tempfile
 import types
-import google.generativeai as genai
-from threading import Thread
+
 from contextvars import ContextVar
 from typing import Optional, Union
 
@@ -25,6 +23,7 @@ from jaclang.runtimelib.architype import (
     NodeArchitype,
     WalkerArchitype,
 )
+from jaclang.runtimelib.gins.ghost import  ShellGhost
 from jaclang.utils.log import logging
 from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 
@@ -60,6 +59,7 @@ class JacMachine:
     def attach_gin(self, jac_gin: "ShellGhost") -> None:
         """Attach a JacProgram to the machine."""
         self.gin = jac_gin
+            
 
     def get_mod_bundle(self) -> Optional[Module]:
         """Retrieve the mod_bundle from the attached JacProgram."""
@@ -92,6 +92,8 @@ class JacMachine:
                 self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
             else:
                 self.jac_program.sem_ir = mod_sem_ir
+        if self.gin and mod_sem_ir:
+            self.gin.sem_ir = mod_sem_ir
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""
@@ -326,34 +328,3 @@ class JacProgram:
             return marshal.loads(result.ir.gen.py_bytecode)
         else:
             return None
-
-
-class ShellGhost:
-    def __init__(self):
-        self.cfgs = None
-
-    def set_cfgs(self,cfgs: any):
-        self.cfgs = cfgs
-
-    def start_ghost(self):
-        self.__ghost_thread:Thread = Thread(target=self.worker)
-        self.__ghost_thread.start()
-
-    def worker(self):
-        #this is temporary while developing 
-        print(self.cfgs)
-        # genai.configure(api_key=os.getenv("GEN_AI_KEY"))
-        # model = genai.GenerativeModel("gemini-1.5-flash")
-        response_dict = {'cfg': self.cfgs}
-        prompt = []
-        for k,v in response_dict.items():
-            prompt.append(f"here is my {k}:\n{v}")
-        prompt.append("\nCan you identify where the code could have an error?")
-        # response = model.generate_content("".join(prompt))
-
-        print("PROMPT:\n")
-        print("".join(prompt))
-        print("RESPONSE:\n")
-        # print(response.text)
-
-        print(self.cfgs['hot_path'].display_instructions())

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import dis
 import sys
 import types
 from collections import defaultdict
+import asyncio
 from typing import Dict, Set, List, Tuple, Optional
 
 

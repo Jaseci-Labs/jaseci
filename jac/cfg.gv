@@ -12,6 +12,7 @@ digraph {
 	bb0 -> bb1
 	bb1 -> bb3
 	bb1 -> bb2
+	bb2 -> bb4
 	bb3 -> bb4
 	bb4 -> bb6
 	bb4 -> bb5

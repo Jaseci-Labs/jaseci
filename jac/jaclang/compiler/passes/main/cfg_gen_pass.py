@@ -7,7 +7,7 @@ import ast
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.runtimelib.cfg import visualize_cfg, disassemble_bytecode, create_BBs, create_cfg
+from jaclang.runtimelib.gins.cfg import visualize_cfg, disassemble_bytecode, create_BBs, create_cfg
 
 class CfgGenPass(Pass):
     """Control flow graph generation pass."""
@@ -34,7 +34,7 @@ class CfgGenPass(Pass):
             for mod in mods:
                 bytecode = mod.gen.py_bytecode
                 instructions = disassemble_bytecode(bytecode)
-                BBs = create_BBs(instructions)         
+                BBs = create_BBs(instructions)
                 cfg = create_cfg(BBs)
                 module_cfgs[mod.name] = cfg
             for cfg in module_cfgs.values():
