@@ -387,6 +387,22 @@ class TestJaseciPlugin(TestCase):
 
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_target_node",
+            args=[20, self.nodes[1]],
+            session=session,
+            root=self.roots[0],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_target_node",
+            args=[10, self.nodes[0]],
+            session=session,
+            root=self.roots[1],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="check_node",
             args=[],
             session=session,
