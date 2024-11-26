@@ -12,6 +12,7 @@ from enum import Enum
 from os import getenv
 from pickle import dumps as pdumps
 from re import IGNORECASE, compile
+from types import UnionType
 from typing import (
     Any,
     ClassVar,
@@ -43,6 +44,7 @@ from jaclang.runtimelib.architype import (
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
 )
+from jaclang.runtimelib.utils import is_instance
 
 from orjson import dumps
 
@@ -102,13 +104,21 @@ def architype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object)
             else:
                 hinter = hintings[attr.name]
                 origin = get_origin(hinter)
-                if isinstance(val, origin or hinter):
+                if hinter == Any:
                     setattr(architype, attr.name, val)
-                else:
-                    raise ValueError(
-                        f"Data from datasource has type {val.__class__.__name__}"
-                        f" but {cls.__name__}.{attr.name} requires {hinter}."
-                    )
+                    continue
+                elif origin == UnionType or origin is None:
+                    if is_instance(val, hinter):
+                        setattr(architype, attr.name, val)
+                        continue
+                elif origin and is_instance(val, origin):
+                    setattr(architype, attr.name, val)
+                    continue
+                raise ValueError(
+                    f"Data from datasource has type {val.__class__.__name__}"
+                    f" but {cls.__name__}.{attr.name} requires {hinter}."
+                )
+
     architype.__dict__.update(data)
     architype.__dict__.update(kwargs)
     return architype
@@ -143,7 +153,8 @@ def _to_dataclass(cls: type[T], data: dict[str, Any]) -> None:
                         for key, value in enumerate(target):
                             target[key] = to_dataclass(inner_cls, value)
                     elif (
-                        issubclass(hint, Enum)
+                        origin != UnionType
+                        and issubclass(hint, Enum)
                         and isinstance(target, str)
                         and (enum := hint.__members__.get(target))
                     ):
