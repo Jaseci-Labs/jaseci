@@ -711,3 +711,13 @@ walker check_populated_graph {
         report count;
     }
 }
+
+walker check_memory_sync {
+    has other_node_id: str;
+    can enter with `root entry {
+        import:py from jac_cloud.core.architype {NodeAnchor}
+        n = &(self.other_node_id);
+        n.val = 4;
+        report n;
+    }
+}

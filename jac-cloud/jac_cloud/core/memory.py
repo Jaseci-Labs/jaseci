@@ -114,23 +114,14 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
 
         super().close()
 
-    def get_bulk_write(self) -> BulkWrite:
-        """Sync memory to database."""
-        bulk_write = BulkWrite()
-
-        for anchor in self.__gc__:
-            match anchor:
-                case NodeAnchor():
-                    bulk_write.del_node(anchor.id)
-                case EdgeAnchor():
-                    bulk_write.del_edge(anchor.id)
-                case WalkerAnchor():
-                    bulk_write.del_walker(anchor.id)
-                case _:
-                    pass
-
-        for anchor in self.__mem__.values():
-            if anchor.architype and anchor.persistent:
+    def sync_mem_to_db(self, bulk_write: BulkWrite, keys: Iterable[ObjectId]) -> None:
+        """Manually sync memory to db."""
+        for key in keys:
+            if (
+                (anchor := self.__mem__.get(key))
+                and anchor.architype
+                and anchor.persistent
+            ):
                 if not anchor.state.connected:
                     anchor.state.connected = True
                     anchor.sync_hash()
@@ -150,5 +141,28 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
                         bulk_write.del_node(anchor.id)
                     else:
                         anchor.update(bulk_write)
+
+    def get_bulk_write(self) -> BulkWrite:
+        """Sync memory to database."""
+        bulk_write = BulkWrite()
+
+        for anchor in self.__gc__:
+            match anchor:
+                case NodeAnchor():
+                    bulk_write.del_node(anchor.id)
+                case EdgeAnchor():
+                    bulk_write.del_edge(anchor.id)
+                case WalkerAnchor():
+                    bulk_write.del_walker(anchor.id)
+                case _:
+                    pass
+
+        keys = set(self.__mem__.keys())
+
+        # current memory
+        self.sync_mem_to_db(bulk_write, keys)
+
+        # additional after memory sync
+        self.sync_mem_to_db(bulk_write, set(self.__mem__.keys() - keys))
 
         return bulk_write
