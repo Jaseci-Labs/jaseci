@@ -108,20 +108,16 @@ def create_BBs(instructions: List[BytecodeOp]) -> BlockMap:
 
     def valid_offset(offset):
         return offset >= 0 and offset <= max_offset
+
     # Identify all block starts
     for instr in instructions:
         if instr.is_branch() or  instr.op == "FOR_ITER":
             next_instr_offset = instr.get_next_instruction_offset()
+            target_offset = instr.argval
 
-            if 0 <= next_instr_offset <= max_offset:
+            if valid_offset(next_instr_offset):
                 block_starts.add(next_instr_offset)
-            
-            #TODO: Confirm we can clean this up
-            if instr.is_relative_branch():
-                target_offset = instr.argval
-            else:
-                target_offset = instr.argval
-                
+
             if valid_offset(target_offset):
                 block_starts.add(target_offset)
         
