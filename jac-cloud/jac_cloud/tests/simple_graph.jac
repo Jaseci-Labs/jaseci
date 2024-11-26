@@ -4,6 +4,7 @@ import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
 import:py from jac_cloud.jaseci.utils {SendGridEmailer}
 import:py from dataclasses {dataclass}
 import:py from fastapi {UploadFile}
+import:py from typing {Any}
 
 class User:BaseUser: {
     has name: str;
@@ -54,11 +55,11 @@ node A {
 }
 
 node B {
-    has val: int;
+    has val: str | int;
 }
 
 node C {
-    has val: int;
+    has val: Any;
 }
 
 obj Child {
