@@ -3,11 +3,14 @@ with entry {
     y:int = 3;
     z:int = x + y;
     for i in range(3) {
-        x = 4 * i + y * (z);
-        if x % 2 {
-            y = y + x;
-            z = x + y;
-        }
+      if x % 2 {
+        y = y + x;
+        z = x + y;
+      }
+      x = 4 * i + y * (z);
     }
     z = 10;
+    if z == 10 {
+      z =4;
+    }
 }
