@@ -73,7 +73,7 @@ Semantic and Type information from source code:
         self.finished_exception_lock.release()
         
         prompt += "\nCan you identity bottlneck optimizations or where the code can error out?"
-        prompt += "\n(Reason about the program using bytecode, cfg, semantic and type information to infer the source code indirectly)"
+        prompt += "\n(Reason about the program using cfg, semantic and type information. Do not include python code fixes or bytecode in response.)"
         
         if verbose:
             print(prompt)
