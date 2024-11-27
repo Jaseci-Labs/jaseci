@@ -257,18 +257,11 @@ class PyImportPass(JacImportPass):
             # to import sys stub file again in the sys stub file and so on
             # This can be detected by iterating over all the parents and make sure
             # that the parent is in another file than the imported module
-            parent: Optional[ast.AstNode] = imported_mod.parent
-            while parent is not None:
-                if parent.loc.mod_path == imported_mod.loc.mod_path:
-                    self.__debug_print(
-                        f"\tCycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
-                    )
-                    return
-                else:
-                    if imported_mod.parent:
-                        parent = parent.parent
-                    else:
-                        parent = None
+            if self.__check_cyclic_imports(imp_node, imported_mod):
+                self.__debug_print(
+                    f"\tCycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
+                )
+                return
 
             if imported_mod.name == "builtins":
                 self.__debug_print(
@@ -375,7 +368,7 @@ class PyImportPass(JacImportPass):
             ),
         )
         if imported_mod:
-            if imp_node.loc.mod_path == imported_mod.loc.mod_path:
+            if self.__check_cyclic_imports(imp_node, imported_mod):
                 self.__debug_print(
                     f"\tCycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
                 )
@@ -494,3 +487,34 @@ class PyImportPass(JacImportPass):
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
         return None
+
+    def __handle_different_site_packages(self, mod_path: str) -> str:
+        if "site-packages" in mod_path:
+            mod_path = mod_path[mod_path.index("site-packages") :]
+        return mod_path
+
+    def __check_cyclic_imports(
+        self, imp_node: ast.AstNode, imported_module: ast.Module
+    ) -> bool:
+        """Check cyclic imports that might happen."""
+        # Example of cyclic imports is import os
+        # In the os stub file it imports the real os module which will cause os
+        # stub to be raised again and so on
+        # Another example is numpy. numpy init file imports multidim array file
+        # which imports again more items from numpy and so on.
+        imp_node_file = self.__handle_different_site_packages(imp_node.loc.mod_path)
+        imported_module_file = self.__handle_different_site_packages(
+            imported_module.loc.mod_path
+        )
+        if imp_node_file == imported_module_file:
+            return True
+
+        parent: Optional[ast.AstNode] = imp_node.parent
+        while parent is not None:
+            parent_file = self.__handle_different_site_packages(parent.loc.mod_path)
+            if parent_file == imported_module_file:
+                return True
+            else:
+                parent = parent.find_parent_of_type(ast.Module)
+
+        return False
