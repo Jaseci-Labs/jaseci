@@ -560,19 +560,19 @@ class SimpleGraphTest(JacCloudTest):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 15146,
+                                "size": 15376,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 15146,
+                                "size": 15376,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 15146,
+                                "size": 15376,
                             },
                         ],
                         "singleOptional": None,
@@ -619,6 +619,22 @@ class SimpleGraphTest(JacCloudTest):
         self.assertEqual(200, res["status"])
         self.assertEqual([None], res["returns"])
         self.assertEqual([1], res["reports"])
+
+    def trigger_memory_sync(self) -> None:
+        """Test memory sync."""
+        res = self.post_api("traverse_graph")
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None, None, None], res["returns"])
+
+        a_node = res["reports"].pop(1)
+        self.assertTrue(a_node["id"].startswith("n:A:"))
+        self.assertEqual({"val": 1}, a_node["context"])
+
+        res = self.post_api(
+            "check_memory_sync", json={"other_node_id": a_node["id"]}, user=1
+        )
+        self.assertEqual(200, res["status"])
 
     def test_all_features(self) -> None:
         """Test Full Features."""
@@ -716,3 +732,9 @@ class SimpleGraphTest(JacCloudTest):
         ###################################################
 
         self.trigger_reset_graph()
+
+        ###################################################
+        #                 TEST MEMORY SYNC                #
+        ###################################################
+
+        self.trigger_memory_sync()
