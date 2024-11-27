@@ -2,6 +2,7 @@
 import os
 import threading
 import time
+from collections import deque
 
 
 from jaclang.runtimelib.gins.tracer import CFGTracker
@@ -9,6 +10,25 @@ try:
     import google.generativeai as genai
 except Exception as e:
     print("google.generativeai module not present. Please install using 'pip install google.generativeai'.")
+
+# Helper class to maintain a fixed deque size
+class CfgDeque():
+  def __init__(self, max_size:int=10):
+    self.__max_size = max_size
+    self.__deque = deque()
+
+  def add_cfg(self, cfg_repr:str):
+    self.__deque.append(cfg_repr)
+    if len(self.__deque) > self.__max_size:
+      self.__deque.popleft()
+  
+  def display_cfgs(self):
+    print("CFG change over updates\n")
+    for cfg in self.__deque:
+      print("\n")
+      print(cfg)
+
+
 
 class ShellGhost:
     def __init__(self):
@@ -25,12 +45,23 @@ class ShellGhost:
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         self.model = genai.GenerativeModel("gemini-1.5-flash")
 
+        self.deque_lock = threading.Lock()
+        self.__cfg_deque = CfgDeque(2)
+
 
     def set_cfgs(self, cfgs):
         self.cfg_cv.acquire()
         self.cfgs = cfgs
         self.cfg_cv.notify()
         self.cfg_cv.release()
+
+    def update_cfg_deque(self,cfg):
+        self.deque_lock.acquire()
+        self.__cfg_deque.add_cfg(cfg)
+        self.deque_lock.release()
+    
+    def get_cfg_deque_repr(self):
+        return self.__cfg_deque.display_cfgs()
 
     def start_ghost(self):
         self.__ghost_thread = threading.Thread(target=self.worker)
@@ -44,12 +75,12 @@ class ShellGhost:
     
     def prompt_llm(self, verbose: bool = False):
         prompt = """I have a program.
-CFGS:
-{cfgs},
-Instructions per basic block:
-{instructions}
-Semantic and Type information from source code:
-{sem_ir}"""
+        CFGS:
+        {cfgs},
+        Instructions per basic block:
+        {instructions}
+        Semantic and Type information from source code:
+        {sem_ir}"""
         
         cfg_string = ""
         ins_string = "" 
@@ -83,10 +114,10 @@ Semantic and Type information from source code:
         print(response.text)
     
     def worker(self):
-
         # get static cfgs
         self.cfg_cv.acquire()
-        while (self.cfgs == None):
+        if self.cfgs == None:
+            print("waiting")
             self.cfg_cv.wait()
         # print(self.cfgs)
         # for module_name, cfg in self.cfgs.items():
@@ -94,15 +125,15 @@ Semantic and Type information from source code:
         self.cfg_cv.release()
         
         # Once cv has been notifie, self.cfgs is no longer accessed across threads
-
-        
         current_executing_bbs = {}   
 
         def update_cfg():
             exec_insts = self.tracker.get_exec_inst()
             
             # don't prompt if there's nothing new
-            if exec_insts == {}: return
+            if exec_insts == {}:
+                return
+            
             for module, offset_list in exec_insts.items():
                 try: 
                     cfg = self.cfgs[module]                    
@@ -113,12 +144,12 @@ Semantic and Type information from source code:
                     
                     for offset in offset_list:                
                         if offset not in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets:
-                            for next in cfg.edges[current_executing_bbs[module]]:
-                                if offset in cfg.block_map.idx_to_block[next].bytecode_offsets:
-                                    cfg.edge_counts[(current_executing_bbs[module], next)] += 1
-                                    cfg.block_map.idx_to_block[next].exec_count += 1
-
-                                    current_executing_bbs[module] = next
+                            for next_bb in cfg.edges[current_executing_bbs[module]]:
+                                if offset in cfg.block_map.idx_to_block[next_bb].bytecode_offsets:
+                                    cfg.edge_counts[(current_executing_bbs[module], next_bb)] += 1
+                                    #do some deque op
+                                    cfg.block_map.idx_to_block[next_bb].exec_count += 1
+                                    current_executing_bbs[module] = next_bb
                                     break                                    
                         assert(offset in cfg.block_map.idx_to_block[current_executing_bbs[module]].bytecode_offsets)
                 except Exception as e:
@@ -127,38 +158,24 @@ Semantic and Type information from source code:
                     return
 
             self.variable_values = self.tracker.get_variable_values()
+            self.update_cfg_deque(cfg.get_cfg_repr())
+            print(self.get_cfg_deque_repr())
+            
 
         self.finished_exception_lock.acquire()
         while (not self.finished):
             self.finished_exception_lock.release()
             
-            time.sleep(5)
+            time.sleep(1)
             print('\nUpdating cfgs')
             update_cfg()
-            self.prompt_llm()
+            # self.prompt_llm()
             self.finished_exception_lock.acquire()
 
         self.finished_exception_lock.release()
         
-        # print(self.cfgs)
-        # self.finished_exception_lock.acquire()
-        # if self.exception:
-            # print("Exception occured:", self.exception)
-        # self.finished_exception_lock.release()
         print('\nUpdating cfgs at the end')
         update_cfg()
-        self.prompt_llm()
-        
-        # response_dict = {'cfg': self.cfgs, 'instructions': self.cfgs[module_name].display_instructions(), 'list of local variables at sequential line numbers': variables_by_line}
-        # prompt = []
-        # for k,v in response_dict.items():
-        #     prompt.append(f"here is my {k}:\n{v}")
-        # prompt.append("\nCan you identify where the code could have an error?")
-        # response = model.generate_content("".join(prompt))
-
-        # print("PROMPT:\n")
-        # print("".join(prompt))
-        # print("RESPONSE:\n")
-        # print(response.text)
-
         # print(self.cfgs['hot_path'].display_instructions())
+        # self.prompt_llm()
+        

@@ -175,14 +175,17 @@ class CFG:
 
     def display_instructions(self):
         return repr(self.block_map)
+
+    def get_cfg_repr(self):
+      return self.__repr__()
         
     def __repr__(self):
         result = []
         for node in self.nodes:
-            result.append(f'Node bb{node} (exec count={self.block_map.idx_to_block[node].exec_count}):')
+            result.append(f'Node bb{node} (freq={self.block_map.idx_to_block[node].exec_count}):')
             if node in self.edges and self.edges[node]:
                 for succ in self.edges[node]:
-                    result.append(f'  -> bb{succ} (edge exec count={self.edge_counts[(node, succ)]})')
+                    result.append(f'(freq={self.edge_counts[(node, succ)]})-> bb{succ}')
         return "\n".join(result)
         
 def create_cfg(block_map: BlockMap) -> CFG:
