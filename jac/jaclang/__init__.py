@@ -10,6 +10,7 @@ __all__ = [
     "abstractmethod",
     "jac_import",
     "root",
+    "static",
 ]
 
 import inspect
@@ -17,7 +18,7 @@ import types
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, ClassVar, Dict, Tuple, Type, TypeVar
 
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as _Jac, plugin_manager
@@ -29,6 +30,7 @@ from jaclang.plugin.feature import JacFeature as _Jac, plugin_manager
 plugin_manager.register(JacFeatureImpl)
 plugin_manager.load_setuptools_entrypoints("jac")
 
+T = TypeVar("T")
 
 # ----------------------------------------------------------------------------
 # Meta classes.
@@ -200,8 +202,23 @@ def with_exit(func: Callable) -> Callable:
 # Functions.
 # ----------------------------------------------------------------------------
 
+
+def field_default(value: T, gen_func: None | Callable[[], T] = None) -> T:
+    """Set the default value to jac architype dataclass."""
+    if value is not None and gen_func is not None:
+        raise AssertionError("Cannot have both value and gen_func to be none.")
+    if not gen_func:
+        gen_func = lambda: value  # noqa: E731
+    return _Jac.has_instance_default(gen_func=gen_func)
+
+
 jac_import = _Jac.jac_import
 root = _Jac.get_root()
+static = ClassVar
+
+# ----------------------------------------------------------------------------
+# Initialize the root node.
+# ----------------------------------------------------------------------------
 
 root.spawn = types.MethodType(JacNode.spawn, root)
 root.connect = types.MethodType(JacNode.connect, root)

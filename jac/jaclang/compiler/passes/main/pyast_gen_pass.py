@@ -14,6 +14,7 @@ from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
 from jaclang.compiler.passes import Pass
 
 T = TypeVar("T", bound=ast3.AST)
+JACLIB_ALIAS = "jl"
 
 
 class PyastGenPass(Pass):
@@ -49,6 +50,25 @@ class PyastGenPass(Pass):
                     module="__future__",
                     names=[self.sync(ast3.alias(name="annotations", asname=None))],
                     level=0,
+                ),
+                jac_node=self.ir,
+            ),
+            # fixme(thakee): Remove this, added to make the tests pass in the wip branch.
+            self.sync(
+                ast3.ImportFrom(
+                    module="jaclang.plugin.feature",
+                    names=[
+                        self.sync(
+                            ast3.alias(name="JacFeature", asname=Con.JAC_FEATURE.value)
+                        ),
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            ),
+            self.sync(
+                ast3.Import(
+                    names=[self.sync(ast3.alias(name="jaclang", asname=JACLIB_ALIAS))]
                 ),
                 jac_node=self.ir,
             ),
@@ -110,24 +130,26 @@ class PyastGenPass(Pass):
         )
         self.already_added.append(self.needs_typing.__name__)
 
-    def needs_abc(self) -> None:
-        """Check if enum is needed."""
-        if self.needs_abc.__name__ in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.Import(
-                    names=[
-                        self.sync(
-                            ast3.alias(name="abc", asname="_jac_abc"),
-                            jac_node=self.ir,
-                        ),
-                    ]
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.already_added.append(self.needs_abc.__name__)
+    # (thakee): no longer needed.
+    #
+    # def needs_abc(self) -> None:
+    #     """Check if enum is needed."""
+    #     if self.needs_abc.__name__ in self.already_added:
+    #         return
+    #     self.preamble.append(
+    #         self.sync(
+    #             ast3.Import(
+    #                 names=[
+    #                     self.sync(
+    #                         ast3.alias(name="abc", asname="_jac_abc"),
+    #                         jac_node=self.ir,
+    #                     ),
+    #                 ]
+    #             ),
+    #             jac_node=self.ir,
+    #         )
+    #     )
+    #     self.already_added.append(self.needs_abc.__name__)
 
     def needs_enum(self) -> None:
         """Check if enum is needed."""
@@ -935,88 +957,29 @@ class PyastGenPass(Pass):
             else []
         )
 
-        ds_on_entry, ds_on_exit = self.collect_events(node)
-        if node.arch_type.name != Tok.KW_CLASS:
-            self.needs_jac_feature()
-            self.needs_dataclass()
-            decorators.append(
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr=f"make_{node.arch_type.value}",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="on_entry",
-                                    value=self.sync(
-                                        ast3.List(elts=ds_on_entry, ctx=ast3.Load())
-                                    ),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="on_exit",
-                                    value=self.sync(
-                                        ast3.List(elts=ds_on_exit, ctx=ast3.Load())
-                                    ),
-                                )
-                            ),
-                        ],
-                    )
-                )
-            )
-            decorators.append(
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Name(id="__jac_dataclass__", ctx=ast3.Load())
-                        ),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="eq",
-                                    value=self.sync(
-                                        ast3.Constant(value=False),
-                                    ),
-                                )
-                            )
-                        ],
-                    )
-                )
-            )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(
                 self.sync(
                     ast3.Attribute(
-                        value=self.sync(
-                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                        ),
-                        attr=node.arch_type.value.capitalize(),
+                        value=self.sync(ast3.Name(id=JACLIB_ALIAS, ctx=ast3.Load())),
+                        attr="Jac" + node.arch_type.value.capitalize(),
                         ctx=ast3.Load(),
                     )
                 )
             )
-        if node.is_abstract:
-            self.needs_abc()
-            base_classes.append(
-                self.sync(
-                    ast3.Attribute(
-                        value=self.sync(ast3.Name(id="_jac_abc", ctx=ast3.Load())),
-                        attr="ABC",
-                        ctx=ast3.Load(),
-                    )
-                )
-            )
+        # (thakee): No longer needed.
+        # if node.is_abstract:
+        #     self.needs_abc()
+        #     base_classes.append(
+        #         self.sync(
+        #             ast3.Attribute(
+        #                 value=self.sync(ast3.Name(id="_jac_abc", ctx=ast3.Load())),
+        #                 attr="ABC",
+        #                 ctx=ast3.Load(),
+        #             )
+        #         )
+        #     )
         node.gen.py_ast = [
             self.sync(
                 ast3.ClassDef(
@@ -1030,41 +993,44 @@ class PyastGenPass(Pass):
             )
         ]
 
-    def collect_events(
-        self, node: ast.Architype
-    ) -> tuple[list[ast3.AST], list[ast3.AST]]:
-        """Collect events."""
-        ds_on_entry: list[ast3.AST] = []
-        ds_on_exit: list[ast3.AST] = []
-        for i in (
-            node.body.body.items
-            if isinstance(node.body, ast.ArchDef)
-            else node.body.items if node.body else []
-        ):
-            if isinstance(i, ast.Ability) and isinstance(
-                i.signature, ast.EventSignature
-            ):
-                func_spec = self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="DSFunc",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[self.sync(ast3.Constant(value=i.sym_name))],
-                        keywords=[],
-                    )
-                )
-                (
-                    ds_on_entry.append(func_spec)
-                    if i.signature.event.name == Tok.KW_ENTRY
-                    else ds_on_exit.append(func_spec)
-                )
-        return ds_on_entry, ds_on_exit
+    # (thakee): This will return a list of abilities to put in the decorator, but since I have
+    # get rid of the decorator, this method is no longer needed.
+    #
+    # def collect_events(
+    #     self, node: ast.Architype
+    # ) -> tuple[list[ast3.AST], list[ast3.AST]]:
+    #     """Collect events."""
+    #     ds_on_entry: list[ast3.AST] = []
+    #     ds_on_exit: list[ast3.AST] = []
+    #     for i in (
+    #         node.body.body.items
+    #         if isinstance(node.body, ast.ArchDef)
+    #         else node.body.items if node.body else []
+    #     ):
+    #         if isinstance(i, ast.Ability) and isinstance(
+    #             i.signature, ast.EventSignature
+    #         ):
+    #             func_spec = self.sync(
+    #                 ast3.Call(
+    #                     func=self.sync(
+    #                         ast3.Attribute(
+    #                             value=self.sync(
+    #                                 ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+    #                             ),
+    #                             attr="DSFunc",
+    #                             ctx=ast3.Load(),
+    #                         )
+    #                     ),
+    #                     args=[self.sync(ast3.Constant(value=i.sym_name))],
+    #                     keywords=[],
+    #                 )
+    #             )
+    #             (
+    #                 ds_on_entry.append(func_spec)
+    #                 if i.signature.event.name == Tok.KW_ENTRY
+    #                 else ds_on_exit.append(func_spec)
+    #             )
+    #     return ds_on_entry, ds_on_exit
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -1207,6 +1173,24 @@ class PyastGenPass(Pass):
                 node,
             )
         decorator_list = node.decorators.gen.py_ast if node.decorators else []
+
+        if isinstance(node.signature, ast.EventSignature):
+            decorator_name = (
+                "with_entry"
+                if node.signature.event.name == Tok.KW_ENTRY
+                else "with_exit"
+            )
+            decorator_list.append(
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id=JACLIB_ALIAS, ctx=ast3.Load())),
+                        attr=decorator_name,
+                        ctx=ast3.Load(),
+                    )
+                )
+            )
+
+        # (thakee): Check the bellow code?
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.needs_jac_feature()
             decorator_list.append(
@@ -1236,11 +1220,10 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_abstract:
-            self.needs_abc()
             decorator_list.append(
                 self.sync(
                     ast3.Attribute(
-                        value=self.sync(ast3.Name(id="_jac_abc", ctx=ast3.Load())),
+                        value=self.sync(ast3.Name(id=JACLIB_ALIAS, ctx=ast3.Load())),
                         attr="abstractmethod",
                         ctx=ast3.Load(),
                     )
@@ -1498,13 +1481,16 @@ class PyastGenPass(Pass):
             )
         )
         if is_static_var:
-            self.needs_typing()
+            # (thakee): no longer needed.
+            # self.needs_typing()
             annotation = self.sync(
                 ast3.Subscript(
                     value=self.sync(
                         ast3.Attribute(
-                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
-                            attr="ClassVar",
+                            value=self.sync(
+                                ast3.Name(id=JACLIB_ALIAS, ctx=ast3.Load())
+                            ),
+                            attr="static",
                             ctx=ast3.Load(),
                         )
                     ),
@@ -1523,6 +1509,7 @@ class PyastGenPass(Pass):
                     ast3.AnnAssign(
                         target=node.name.gen.py_ast[0],
                         annotation=annotation,
+                        # (thakee): take care of the bellow thing.
                         value=(
                             self.sync(
                                 ast3.Call(
