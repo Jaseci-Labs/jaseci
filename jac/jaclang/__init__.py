@@ -17,7 +17,7 @@ import types
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as _Jac, plugin_manager
@@ -149,6 +149,24 @@ class JacNode(_JacArchiTypeBase, metaclass=JacMetaNode):
         )
         return node
 
+    def connected(
+        self,
+        dir: _Jac.EdgeDir,
+        filter_edge: Optional["JacEdge"],
+        target: Optional["JacNode"],
+        edges_only: bool = False,
+    ) -> list["JacNode"] | list["JacEdge"]:
+        """Return connected nodes or edges."""
+        filter_func = lambda x: (
+            [i for i in x if isinstance(i, filter_edge)] if filter_edge else None
+        )
+        return _Jac.edge_ref(
+            node_obj=self,
+            target_obj=target,
+            dir=dir,
+            filter_func=filter_func,
+            edges_only=edges_only,
+        )
 
 class JacEdge(_JacArchiTypeBase, metaclass=JacMetaEdge):
     """Base class for all the jac edge types."""
