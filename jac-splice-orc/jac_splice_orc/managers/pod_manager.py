@@ -122,15 +122,27 @@ class PodManager:
                     },
                 }
 
-                _ = self.v1.create_namespaced_config_map(
-                    self.namespace,
-                    body={
-                        "metadata": {"name": f"{module_name}-requirements"},
-                        "data": {
-                            "requirements.txt": open(requirements_file_path, "r").read()
-                        },
-                    },
-                )
+                try:
+                    existing_configmap = self.v1.read_namespaced_config_map(
+                        name=f"{module_name}-requirements",
+                        namespace=self.namespace
+                    )
+                    print(f"ConfigMap '{module_name}-requirements' already exists.")
+                except client.exceptions.ApiException as e:
+                    if e.status == 404: 
+                        # Create the ConfigMap
+                        print(f"ConfigMap '{module_name}-requirements' not found. Creating it...")
+                        _ = self.v1.create_namespaced_config_map(
+                            self.namespace,
+                            body={
+                                "metadata": {"name": f"{module_name}-requirements"},
+                                "data": {
+                                    "requirements.txt": open(requirements_file_path, "r").read()
+                                },
+                            },
+                        )
+                    else:
+                        raise
                 self.v1.create_namespaced_pod(self.namespace, body=pod_manifest)
                 logging.info(f"Pod {pod_name} created.")
                 self.wait_for_pod_ready(pod_name)
@@ -287,17 +299,17 @@ async def run_module(
 ):
     """Run a module and return the result."""
     return pod_manager.forward_to_pod(
-        module_name, method_name, obj_id, request.args, request.kwargs
+        module_name.replace("_", "-"), method_name, obj_id, request.args, request.kwargs
     )
 
 
 @app.post("/create_pod/{module_name}")
 def create_pod(module_name: str, module_config: dict = Body(...)) -> Any:
     """Create a pod and service for the given module and return the result."""
-    return pod_manager.create_pod(module_name, module_config)
+    return pod_manager.create_pod(module_name.replace("_", "-"), module_config)
 
 
 @app.delete("/delete_pod/{module_name}")
 def delete_pod(module_name: str) -> Any:
     """Delete the pod and service for the given module and return the result."""
-    return pod_manager.delete_pod(module_name)
+    return pod_manager.delete_pod(module_name.replace("_", "-"))
