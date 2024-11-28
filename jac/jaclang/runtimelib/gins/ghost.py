@@ -1,18 +1,12 @@
-"""The Shell Ghost code for gins"""
+"""The Shell Ghost code for gins
+"""
 
 import os
 import threading
 import time
 
-
+from jaclang.runtimelib.gins.model import Gemini
 from jaclang.runtimelib.gins.tracer import CFGTracker, CfgDeque
-
-try:
-    import google.generativeai as genai
-except Exception as e:
-    print(
-        "google.generativeai module not present. Please install using 'pip install google.generativeai'."
-    )
 
 
 # Helper class to maintain a fixed deque size
@@ -30,8 +24,7 @@ class ShellGhost:
         self.finished = False
         self.variable_values = None
 
-        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        self.model = Gemini()
 
         self.deque_lock = threading.Lock()
         self.__cfg_deque = CfgDeque(2)
@@ -98,9 +91,9 @@ class ShellGhost:
         if verbose:
             print(prompt)
 
-        response = self.model.generate_content(prompt)
+        response = self.model.generate(prompt)
 
-        print(response.text)
+        print(response)
 
     def worker(self):
         # get static cfgs
@@ -176,7 +169,7 @@ class ShellGhost:
             time.sleep(1)
             print("\nUpdating cfgs")
             update_cfg()
-            # self.prompt_llm()
+            self.prompt_llm()
             self.finished_exception_lock.acquire()
 
         self.finished_exception_lock.release()

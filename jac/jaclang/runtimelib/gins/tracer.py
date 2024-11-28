@@ -1,3 +1,6 @@
+"""Module to track executed branches and variables
+"""
+
 import types
 from typing import Optional, Callable
 import threading

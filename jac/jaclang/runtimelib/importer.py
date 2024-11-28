@@ -63,6 +63,7 @@ class ImportPathSpec:
                 chomp_target = chomp_target[1:]
         return path.join(caller_dir, self.dir_path)
 
+
 class ImportReturn:
     """Import Return Object."""
 
@@ -348,6 +349,7 @@ class JacImporter(Importer):
                     raise ImportError(f"No bytecode found for {spec.full_target}")
 
                 from jaclang.runtimelib.machine import JacMachine
+
                 if JacMachine.get().gin:
                     try:
                         with sys_path_context(spec.caller_dir):
