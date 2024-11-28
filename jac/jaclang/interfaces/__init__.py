@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import IntEnum
+from pickle import dumps as pdumps
 from types import UnionType
 from typing import (
     Any,
@@ -43,6 +44,18 @@ class BaseJID(Generic[_ANCHORS], ABC):
     type: Type[_ANCHORS]
     name: str
 
+    def __repr__(self) -> str:
+        """Override string representation."""
+        return f"{self.type.__class__.__name__[:1].lower()}:{self.name}:{self.id}"
+
+    def __str__(self) -> str:
+        """Override string parsing."""
+        return f"{self.type.__class__.__name__[:1].lower()}:{self.name}:{self.id}"
+
+    def __hash__(self) -> int:
+        """Return default hasher."""
+        return hash(pdumps(self))
+
 
 class AccessLevel(IntEnum):
     """Access level enum."""
@@ -68,9 +81,23 @@ class AccessLevel(IntEnum):
 class Access:
     """Access Structure."""
 
-    anchors: dict[str, AccessLevel] = field(default_factory=dict)
+    anchors: dict[
+        BaseJID[BaseNodeAnchor]
+        | BaseJID[BaseEdgeAnchor]
+        | BaseJID[BaseWalkerAnchor]
+        | BaseJID[BaseObjectAnchor],
+        AccessLevel,
+    ] = field(default_factory=dict)
 
-    def check(self, anchor: str) -> AccessLevel:
+    def check(
+        self,
+        anchor: (
+            BaseJID[BaseNodeAnchor]
+            | BaseJID[BaseEdgeAnchor]
+            | BaseJID[BaseWalkerAnchor]
+            | BaseJID[BaseObjectAnchor]
+        ),
+    ) -> AccessLevel:
         """Validate access."""
         return self.anchors.get(anchor, AccessLevel.NO_ACCESS)
 
@@ -98,18 +125,13 @@ class BaseAnchor(Generic[_SERIALIZE], ABC):
         | BaseJID[BaseWalkerAnchor]
         | BaseJID[BaseObjectAnchor]
     )
-    architype: "BaseNodeArchitype" | "BaseEdgeArchitype" | "BaseWalkerArchitype"
+    architype: "BaseNodeArchitype | BaseEdgeArchitype | BaseWalkerArchitype | BaseObjectArchitype"
     root: BaseJID[BaseNodeAnchor] | None
     access: Permission
 
     @abstractmethod
     def __serialize__(self) -> _SERIALIZE:
         """Override string representation."""
-
-    @classmethod
-    @abstractmethod
-    def __deserialize__(cls: Type[_DESERIALIZE], data: _SERIALIZE) -> _DESERIALIZE:
-        """Override string parsing."""
 
 
 @dataclass(kw_only=True)
@@ -141,10 +163,10 @@ class BaseWalkerAnchor(BaseAnchor[_SERIALIZE]):
 
 @dataclass(kw_only=True)
 class BaseObjectAnchor(BaseAnchor[_SERIALIZE]):
-    """WalkerAnchor Interface."""
+    """ObjectAnchor Interface."""
 
     jid: BaseJID[BaseObjectAnchor]
-    architype: "BaseWalkerArchitype"
+    architype: "BaseObjectArchitype"
 
 
 #########################################################################################
@@ -155,7 +177,9 @@ class BaseObjectAnchor(BaseAnchor[_SERIALIZE]):
 class BaseArchitype(Generic[_SERIALIZE], ABC):
     """Architype Interface."""
 
-    __jac_ref__: BaseNodeAnchor | BaseEdgeAnchor | BaseWalkerAnchor | BaseObjectAnchor
+    __jac_ref__: (
+        BaseNodeAnchor | BaseEdgeAnchor | BaseWalkerAnchor | BaseObjectAnchor | None
+    )
 
     @property
     @abstractmethod
@@ -177,7 +201,7 @@ class BaseArchitype(Generic[_SERIALIZE], ABC):
 class BaseNodeArchitype(BaseArchitype[_SERIALIZE]):
     """NodeArchitype Interface."""
 
-    __jac_ref__: BaseNodeAnchor
+    __jac_ref__: BaseNodeAnchor | None
 
     @property
     @abstractmethod
@@ -190,7 +214,7 @@ class BaseNodeArchitype(BaseArchitype[_SERIALIZE]):
 class BaseEdgeArchitype(BaseArchitype[_SERIALIZE]):
     """EdgeArchitype Interface."""
 
-    __jac_ref__: BaseEdgeAnchor
+    __jac_ref__: BaseEdgeAnchor | None
 
     @property
     @abstractmethod
@@ -203,7 +227,7 @@ class BaseEdgeArchitype(BaseArchitype[_SERIALIZE]):
 class BaseWalkerArchitype(BaseArchitype[_SERIALIZE]):
     """Walker Architype Interface."""
 
-    __jac_ref__: BaseWalkerAnchor
+    __jac_ref__: BaseWalkerAnchor | None
 
     @property
     @abstractmethod
@@ -216,7 +240,7 @@ class BaseWalkerArchitype(BaseArchitype[_SERIALIZE]):
 class BaseObjectArchitype(BaseArchitype[_SERIALIZE]):
     """Walker Architype Interface."""
 
-    __jac_ref__: BaseObjectAnchor
+    __jac_ref__: BaseObjectAnchor | None
 
     @property
     @abstractmethod
