@@ -3,10 +3,9 @@
 import os
 import threading
 import time
-from collections import deque
 
 
-from jaclang.runtimelib.gins.tracer import CFGTracker
+from jaclang.runtimelib.gins.tracer import CFGTracker, CfgDeque
 
 try:
     import google.generativeai as genai
@@ -17,21 +16,6 @@ except Exception as e:
 
 
 # Helper class to maintain a fixed deque size
-class CfgDeque:
-    def __init__(self, max_size: int = 10):
-        self.__max_size = max_size
-        self.__deque = deque()
-
-    def add_cfg(self, cfg_repr: str):
-        self.__deque.append(cfg_repr)
-        if len(self.__deque) > self.__max_size:
-            self.__deque.popleft()
-
-    def display_cfgs(self):
-        print("CFG change over updates\n")
-        for cfg in self.__deque:
-            print("\n")
-            print(cfg)
 
 
 class ShellGhost:

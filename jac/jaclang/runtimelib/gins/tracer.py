@@ -1,9 +1,27 @@
 import types
-from typing import Optional, Union, Callable
+from typing import Optional, Callable
 import threading
 import sys
 import copy
 import os
+from collections import deque
+
+
+class CfgDeque:
+    def __init__(self, max_size: int = 10):
+        self.__max_size = max_size
+        self.__deque = deque()
+
+    def add_cfg(self, cfg_repr: str):
+        self.__deque.append(cfg_repr)
+        if len(self.__deque) > self.__max_size:
+            self.__deque.popleft()
+
+    def display_cfgs(self):
+        print("CFG change over updates\n")
+        for cfg in self.__deque:
+            print("\n")
+            print(cfg)
 
 
 class CFGTracker:
