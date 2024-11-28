@@ -11,9 +11,7 @@ class ConfigLoader:
     def __init__(self, config_file_path=None):
         if config_file_path is None:
             # Default config file path
-            config_file_path = os.path.join(
-                os.path.dirname(__file__), "..", "config", "config.json"
-            )
+            config_file_path = os.path.join(os.path.dirname(__file__), "config.json")
         self.config_file_path = config_file_path
         self.config = self.load_config()
 
