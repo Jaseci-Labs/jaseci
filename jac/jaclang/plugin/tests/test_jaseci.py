@@ -387,6 +387,22 @@ class TestJaseciPlugin(TestCase):
 
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_target_node",
+            args=[20, self.nodes[1]],
+            session=session,
+            root=self.roots[0],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_target_node",
+            args=[10, self.nodes[0]],
+            session=session,
+            root=self.roots[1],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="check_node",
             args=[],
             session=session,
@@ -728,3 +744,75 @@ class TestJaseciPlugin(TestCase):
         )
 
         self._del_session(session)
+
+    def test_savable_object(self) -> None:
+        """Test ObjectAnchor save."""
+        global session
+        session = self.fixture_abs_path("other_root_access.session")
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="create_custom_object",
+            args=[],
+            session=session,
+        )
+
+        prints = self.capturedOutput.getvalue().strip().split("\n")
+        id = prints[0]
+
+        self.assertEqual(
+            "SavableObject(val=0, arr=[], json={}, parent=Parent(val=1, arr=[1], json"
+            "={'a': 1}, enum_field=<Enum.B: 'b'>, child=Child(val=2, arr=[1, 2], json"
+            "={'a': 1, 'b': 2}, enum_field=<Enum.C: 'c'>)), enum_field=<Enum.A: 'a'>)",
+            prints[1],
+        )
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="get_custom_object",
+            args=[id],
+            session=session,
+        )
+        self.assertEqual(
+            "SavableObject(val=0, arr=[], json={}, parent=Parent(val=1, arr=[1], json"
+            "={'a': 1}, enum_field=<Enum.B: 'b'>, child=Child(val=2, arr=[1, 2], json"
+            "={'a': 1, 'b': 2}, enum_field=<Enum.C: 'c'>)), enum_field=<Enum.A: 'a'>)",
+            self.capturedOutput.getvalue().strip(),
+        )
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="update_custom_object",
+            args=[id],
+            session=session,
+        )
+
+        self.assertEqual(
+            "SavableObject(val=1, arr=[1], json={'a': 1}, parent=Parent(val=2, arr=[1, 2], json"
+            "={'a': 1, 'b': 2}, enum_field=<Enum.C: 'c'>, child=Child(val=3, arr=[1, 2, 3], json"
+            "={'a': 1, 'b': 2, 'c': 3}, enum_field=<Enum.A: 'a'>)), enum_field=<Enum.B: 'b'>)",
+            self.capturedOutput.getvalue().strip(),
+        )
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="delete_custom_object",
+            args=[id],
+            session=session,
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="get_custom_object",
+            args=[id],
+            session=session,
+        )
+        self.assertEqual("None", self.capturedOutput.getvalue().strip())
