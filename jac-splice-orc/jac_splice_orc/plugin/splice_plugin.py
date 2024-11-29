@@ -447,7 +447,16 @@ class SpliceOrcPlugin:
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=module_config[target]
             )
-            return (remote_module_proxy,)
+            if items:
+                imported_items = []
+                for item_name, item_alias in items.items():
+                    item = getattr(remote_module_proxy, item_name)
+                    if item_alias:
+                        item.__name__ = item_alias
+                    imported_items.append(item)
+                return tuple(imported_items)
+            else:
+                return (remote_module_proxy,)
         spec = ImportPathSpec(
             target,
             base_path,
