@@ -226,6 +226,13 @@ class WalkerAnchor(Anchor):
     disengaged: bool = False
 
 
+@dataclass(eq=False, repr=False, kw_only=True)
+class ObjectAnchor(Anchor):
+    """Edge Anchor."""
+
+    architype: ObjectArchitype
+
+
 class Architype:
     """Architype Protocol."""
 
@@ -265,6 +272,16 @@ class WalkerArchitype(Architype):
     def __init__(self) -> None:
         """Create walker architype."""
         self.__jac__ = WalkerAnchor(architype=self)
+
+
+class ObjectArchitype(Architype):
+    """Walker Architype Protocol."""
+
+    __jac__: ObjectAnchor
+
+    def __init__(self) -> None:
+        """Create walker architype."""
+        self.__jac__ = ObjectAnchor(architype=self)
 
 
 @dataclass(eq=False)

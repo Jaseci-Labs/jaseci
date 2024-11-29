@@ -10,7 +10,7 @@ from grpc_local import module_service_pb2
 import logging
 import traceback
 
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 
 class ObjectRegistry:
@@ -48,7 +48,7 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
     def __init__(self, module_name):
         logging.debug(f"Initializing ModuleService with module '{module_name}'")
         try:
-            self.module = importlib.import_module(module_name)
+            self.module = importlib.import_module(module_name.replace("-", "_"))
             logging.info(f"Module '{module_name}' imported successfully.")
         except Exception as e:
             logging.error(f"Failed to import module '{module_name}': {e}")

@@ -6,14 +6,14 @@
             "deployment_name": "pod-manager-deployment",
             "service_account_name": "jac-orc-sa",
             "container_name": "pod-manager",
-            "image_name": "ashishmahendra/jac-splice-orc:0.1.8",
+            "image_name": "ashishmahendra/jac-splice-orc:0.0.6",
             "container_port": 8000,
             "service_name": "pod-manager-service",
             "service_type": "LoadBalancer",
             "env_vars": {
                 "SERVICE_TYPE": "pod_manager",
                 "NAMESPACE": "jac-splice-test",
-                "IMAGE_NAME": "ashishmahendra/jac-splice-orc:0.1.8"
+                "IMAGE_NAME": "ashishmahendra/jac-splice-orc:0.0.6"
             },
             "resources": {
                 "requests": {
@@ -49,6 +49,14 @@
             "dependency": [
                 "torch",
                 "transformers"
+            ],
+            "lib_cpu_req": "1.0",
+            "load_type": "remote"
+        },
+        "sentence_transformers": {
+            "lib_mem_size_req": "2000Mi",
+            "dependency": [
+                "sentence-transformers"
             ],
             "lib_cpu_req": "1.0",
             "load_type": "remote"
