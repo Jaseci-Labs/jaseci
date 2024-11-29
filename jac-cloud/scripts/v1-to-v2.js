@@ -1,11 +1,10 @@
-use jaclang;
+use jaseci;
 for (let c of ["node", "edge", "walker"]) {
     var col = db[c];
     col.find().forEach(row => {
 
         var roots = {}, access = {
             "roots": {
-                "whitelist": true,
                 "anchors": roots
             }
         };
@@ -20,6 +19,15 @@ for (let c of ["node", "edge", "walker"]) {
                 access["all"] = "NO_ACCESS"
         }
 
+        var set = { "access": access },
+            rename = { "edge": "edges" };
+
+        if (!row.context) {
+            set["architype"] = {};
+        } else {
+            rename["context"] = "architype";
+        }
+
         for (let root of row.access.roots[0]) {
             roots["n::" + root.toString()] = "READ";
         }
@@ -28,11 +36,10 @@ for (let c of ["node", "edge", "walker"]) {
             roots["n::" + root.toString()] = "WRITE";
         }
 
+
         col.update({ _id: row._id }, {
-            "$rename": { "context": "architype", "edge": "edges" },
-            "$set": {
-                "access": access
-            }
+            "$rename": rename,
+            "$set": set
         });
     })
 }

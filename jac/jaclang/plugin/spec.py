@@ -48,6 +48,12 @@ class JacAccessValidationSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def allow_root(
         architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:
@@ -246,8 +252,14 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def get_object(id: str) -> Architype | None:
-        """Get object by id."""
+    def reset_graph(root: Optional[Root]) -> int:
+        """Purge current or target graph."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object by id func."""
         raise NotImplementedError
 
     @staticmethod

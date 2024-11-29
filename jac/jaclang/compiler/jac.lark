@@ -358,7 +358,10 @@ atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
             | (atomic_call | atom | edge_ref_chain)
 
-index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
+index_slice: LSQUARE                                                             \
+                     expression? COLON expression? (COLON expression?)?          \
+                     (COMMA expression? COLON expression? (COLON expression?)?)* \
+              RSQUARE
            | list_val
 
 // Function calls

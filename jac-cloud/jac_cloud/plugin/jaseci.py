@@ -23,9 +23,13 @@ from fastapi import (
 from fastapi.responses import ORJSONResponse
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.default import JacFeatureImpl, hookimpl
+from jaclang.plugin.default import (
+    JacCallableImplementation as _JacCallableImplementation,
+    JacFeatureImpl,
+    hookimpl,
+)
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.architype import DSFunc
+from jaclang.runtimelib.architype import Architype, DSFunc
 
 from orjson import loads
 
@@ -37,7 +41,6 @@ from ..core.architype import (
     AccessLevel,
     Anchor,
     AnchorState,
-    Architype,
     BaseAnchor,
     EdgeAnchor,
     EdgeArchitype,
@@ -305,6 +308,22 @@ class DefaultSpecs:
     private: bool = False
 
 
+class JacCallableImplementation:
+    """Callable Implementations."""
+
+    @staticmethod
+    def get_object(id: str) -> Architype | None:
+        """Get object by id."""
+        if not FastAPI.is_enabled():
+            return _JacCallableImplementation.get_object(id=id)
+
+        with suppress(ValueError):
+            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
+                return architype
+
+        return None
+
+
 class JacAccessValidationPlugin:
     """Jac Access Validation Implementations."""
 
@@ -503,6 +522,37 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
+    def reset_graph(root: Root | None = None) -> int:
+        """Purge current or target graph."""
+        if not FastAPI.is_enabled():
+            return JacFeatureImpl.reset_graph(root=root)  # type: ignore[arg-type]
+
+        ctx = JaseciContext.get()
+        ranchor = root.__jac__ if root else ctx.root
+
+        deleted_count = 0  # noqa: SIM113
+
+        for node in NodeAnchor.Collection.find(
+            {"_id": {"$ne": ranchor.id}, "root": ranchor.id}
+        ):
+            ctx.mem.__mem__[node.id] = node
+            Jac.destroy(node)
+            deleted_count += 1
+
+        for edge in EdgeAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[edge.id] = edge
+            Jac.destroy(edge)
+            deleted_count += 1
+
+        for walker in WalkerAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[walker.id] = walker
+            Jac.destroy(walker)
+            deleted_count += 1
+
+        return deleted_count
+
+    @staticmethod
+    @hookimpl
     def make_architype(
         cls: type,
         arch_base: Type[Architype],
@@ -698,16 +748,9 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
-        """Get object via reference id."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_object(id=id)
-
-        with suppress(ValueError):
-            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
-                return architype
-
-        return None
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object by id func."""
+        return JacCallableImplementation.get_object
 
     @staticmethod
     @hookimpl
@@ -755,7 +798,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         if walker.next:
             current_node = walker.next[-1].architype
             for i in warch._jac_entry_funcs_:
-                if not i.trigger:
+                trigger = i.get_funcparam_annotations(i.func)
+                if not trigger:
                     if i.func:
                         walker.returns.append(i.func(warch, current_node))
                     else:
@@ -763,7 +807,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
                 for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             walker.returns.append(i.func(current_node, warch))
                         else:
@@ -771,27 +816,30 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(current_node, trigger):
+                        if i.func and trigger:
                             walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
+                        elif not trigger:
                             continue
                         else:
                             raise ValueError(f"No function {i.name} to call.")
                     if walker.disengaged:
                         return warch
                 for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
+                    trigger = i.get_funcparam_annotations(i.func)
+                    if not trigger or isinstance(warch, trigger):
                         if i.func:
                             walker.returns.append(i.func(current_node, warch))
                         else:
@@ -799,7 +847,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                     if walker.disengaged:
                         return warch
         for i in warch._jac_exit_funcs_:
-            if not i.trigger:
+            trigger = i.get_funcparam_annotations(i.func)
+            if not trigger:
                 if i.func:
                     walker.returns.append(i.func(warch, current_node))
                 else:

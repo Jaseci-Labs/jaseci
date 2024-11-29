@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import sys
 from contextlib import contextmanager
+from types import UnionType
 from typing import Callable, Iterator, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
@@ -215,3 +216,18 @@ def extract_params(
                             )
                             exclude_info.append((var_name, i.gen.py_ast[0]))
     return model_params, include_info, exclude_info
+
+
+def is_instance(
+    obj: object, target: type | UnionType | tuple[type | UnionType, ...]
+) -> bool:
+    """Check if object is instance of target type."""
+    match target:
+        case UnionType():
+            return any((is_instance(obj, trg) for trg in target.__args__))
+        case tuple():
+            return any((is_instance(obj, trg) for trg in target))
+        case type():
+            return isinstance(obj, target)
+        case _:
+            return False

@@ -42,6 +42,11 @@ class JacAccessValidation:
     """Jac Access Validation Specs."""
 
     @staticmethod
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        plugin_manager.hook.elevate_root()
+
+    @staticmethod
     def allow_root(
         architype: Architype,
         root_id: UUID,
@@ -255,9 +260,19 @@ class JacFeature(
         return plugin_manager.hook.get_context()
 
     @staticmethod
+    def reset_graph(root: Optional[Root] = None) -> int:
+        """Purge current or target graph."""
+        return plugin_manager.hook.reset_graph(root=root)
+
+    @staticmethod
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
-        return plugin_manager.hook.get_object(id=id)
+        return plugin_manager.hook.get_object_func()(id=id)
+
+    @staticmethod
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object given id."""
+        return plugin_manager.hook.get_object_func()
 
     @staticmethod
     def object_ref(obj: Architype) -> str:

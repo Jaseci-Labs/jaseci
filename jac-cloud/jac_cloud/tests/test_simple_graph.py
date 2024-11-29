@@ -1,82 +1,30 @@
 """JacLang Jaseci Unit Test."""
 
-from contextlib import suppress
-from os import getenv
-from typing import Literal, overload
-from unittest.async_case import IsolatedAsyncioTestCase
-
 from httpx import get, post
 
 from yaml import safe_load
 
+from .test_utils import JacCloudTest
 from ..jaseci.datasources import Collection
 
 
-class SimpleGraphTest(IsolatedAsyncioTestCase):
+class SimpleGraphTest(JacCloudTest):
     """JacLang Jaseci Feature Tests."""
 
-    async def asyncSetUp(self) -> None:
-        """Reset DB and wait for server."""
-        self.host = "http://0.0.0.0:8000"
+    def setUp(self) -> None:
+        """Override setUp."""
+        self.run_server("jac_cloud/tests/simple_graph.jac")
+
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
         self.q_node = Collection.get_collection("node")
         self.q_edge = Collection.get_collection("edge")
-        self.users: list[dict] = []
-        self.database = getenv("DATABASE_NAME", "jaseci")
-        count = 0
-        while True:
-            if count > 5:
-                self.check_server()
-                break
-            else:
-                with suppress(Exception):
-                    self.check_server()
-                    break
-            count += 1
 
-    async def asyncTearDown(self) -> None:
-        """Clean up DB."""
+    def tearDown(self) -> None:
+        """Override tearDown."""
         self.client.drop_database(self.database)
-
-    @overload
-    def post_api(self, api: str, json: dict | None = None, user: int = 0) -> dict:
-        pass
-
-    @overload
-    def post_api(
-        self,
-        api: str,
-        json: dict | None = None,
-        user: int = 0,
-        expect_error: Literal[True] = True,
-    ) -> int:
-        pass
-
-    def post_api(
-        self,
-        api: str,
-        json: dict | None = None,
-        user: int = 0,
-        expect_error: bool = False,
-    ) -> dict | int:
-        """Call walker post API."""
-        res = post(
-            f"{self.host}/walker/{api}", json=json, headers=self.users[user]["headers"]
-        )
-
-        if not expect_error:
-            res.raise_for_status()
-            return res.json()
-        else:
-            return res.status_code
-
-    def check_server(self) -> None:
-        """Retrieve OpenAPI Specs JSON."""
-        res = get(f"{self.host}/healthz")
-        res.raise_for_status()
-        self.assertEqual(200, res.status_code)
+        self.stop_server()
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
@@ -612,19 +560,19 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6992,
+                                "size": 17658,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6992,
+                                "size": 17658,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 6992,
+                                "size": 17658,
                             },
                         ],
                         "singleOptional": None,
@@ -633,12 +581,193 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
                 data["reports"],
             )
 
-    async def test_all_features(self) -> None:
+    def trigger_reset_graph(self) -> None:
+        """Test custom status code."""
+        res = self.post_api("populate_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None] * 31, res["returns"])
+
+        res = self.post_api("traverse_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None] * 63, res["returns"])
+        reports = res["reports"]
+
+        root = reports.pop(0)
+        self.assertTrue(root["id"].startswith("n::"))
+        self.assertEqual({}, root["context"])
+
+        cur = 0
+        max = 2
+        for node in ["D", "E", "F", "G", "H"]:
+            for idx in range(cur, cur + max):
+                self.assertTrue(reports[idx]["id"].startswith(f"n:{node}:"))
+                self.assertEqual({"id": idx % 2}, reports[idx]["context"])
+                cur += 1
+            max = max * 2
+
+        res = self.post_api("check_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None], res["returns"])
+        self.assertEqual([125], res["reports"])
+
+        res = self.post_api("purge_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None], res["returns"])
+        self.assertEqual([124], res["reports"])
+
+        res = self.post_api("check_populated_graph", user=2)
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None], res["returns"])
+        self.assertEqual([1], res["reports"])
+
+    def trigger_memory_sync(self) -> None:
+        """Test memory sync."""
+        res = self.post_api("traverse_graph")
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None, None, None], res["returns"])
+
+        a_node = res["reports"].pop(1)
+        self.assertTrue(a_node["id"].startswith("n:A:"))
+        self.assertEqual({"val": 1}, a_node["context"])
+
+        res = self.post_api(
+            "check_memory_sync", json={"other_node_id": a_node["id"]}, user=1
+        )
+        self.assertEqual(200, res["status"])
+
+    def trigger_create_custom_object_test(self) -> str:
+        """Test create custom object."""
+        res = self.post_api("create_custom_object", user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "json": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "json": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "json": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+            },
+            obj["context"],
+        )
+
+        res = self.post_api("get_custom_object", json={"object_id": obj["id"]}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "json": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "json": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "json": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+            },
+            obj["context"],
+        )
+
+        return obj["id"]
+
+    def trigger_update_custom_object_test(self, obj_id: str) -> None:
+        """Test update custom object."""
+        res = self.post_api("update_custom_object", json={"object_id": obj_id}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "json": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "json": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "json": {"a": 1, "b": 2, "c": 3},
+                        "enum_field": "A",
+                    },
+                    "enum_field": "C",
+                },
+                "enum_field": "B",
+            },
+            obj["context"],
+        )
+
+        res = self.post_api("get_custom_object", json={"object_id": obj_id}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "json": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "json": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "json": {"a": 1, "b": 2, "c": 3},
+                        "enum_field": "A",
+                    },
+                    "enum_field": "C",
+                },
+                "enum_field": "B",
+            },
+            obj["context"],
+        )
+
+    def trigger_delete_custom_object_test(self, obj_id: str) -> None:
+        """Test delete custom object."""
+        res = self.post_api("delete_custom_object", json={"object_id": obj_id}, user=1)
+        self.assertEqual(200, res["status"])
+
+        res = self.post_api("get_custom_object", json={"object_id": obj_id}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertIsNone(obj)
+
+    def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
 
         self.trigger_create_user_test()
         self.trigger_create_user_test(suffix="2")
+        self.trigger_create_user_test(suffix="3")
 
         self.trigger_create_graph_test()
         self.trigger_traverse_graph_test()
@@ -722,3 +851,23 @@ class SimpleGraphTest(IsolatedAsyncioTestCase):
         ###################################################
 
         self.trigger_upload_file()
+
+        ###################################################
+        #                   TEST PURGER                   #
+        ###################################################
+
+        self.trigger_reset_graph()
+
+        ###################################################
+        #                 TEST MEMORY SYNC                #
+        ###################################################
+
+        self.trigger_memory_sync()
+
+        ##################################################
+        #                 SAVABLE OBJECT                  #
+        ###################################################
+
+        obj_id = self.trigger_create_custom_object_test()
+        self.trigger_update_custom_object_test(obj_id)
+        self.trigger_delete_custom_object_test(obj_id)
