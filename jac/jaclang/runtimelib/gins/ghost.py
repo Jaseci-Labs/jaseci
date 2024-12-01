@@ -53,6 +53,38 @@ class ShellGhost:
         self.finished = True
         self.finished_exception_lock.release()
 
+    def prompt_direct(self):
+      script = """
+      with entry { 
+          x:int = 0;
+          y:int = 3;
+          z:int = x + y;
+          for i in range(49) {
+              x = 4 * i + y * (z);
+              if x % 2 {
+                  y= 0;
+              }
+              else {
+                y = 4;
+              }
+          }
+          z = x/y;
+          print(y);
+          print("hello");
+      }
+      """
+      prompt = f"""
+      I have the following script:
+      {script}
+
+      Can you identity bottlneck optimizations or where the code can error out?"
+      Reason about the program using the provided information, reason about the program itself and what improvements could be made.
+      """
+
+      response = self.model.generate(prompt)
+
+      print("\nGin Analysis(With static info):\n", response)
+
     def prompt_llm(self, verbose: bool = False):
         prompt = """I have a program.
         CFGS:
@@ -86,14 +118,15 @@ class ShellGhost:
         self.finished_exception_lock.release()
 
         prompt += "\nCan you identity bottlneck optimizations or where the code can error out?"
-        prompt += "\n(Reason about the program using cfg, semantic and type information. Do not include python code fixes or bytecode in response.)"
+        prompt += "\n(Reason about the program using cfg, semantic and type information. Instead of saying what BB could be improved, reason about the program itself and what improvements could be made.)"
+        prompt += "\n If variable values are available, reason about at what point did a variable cause an issue"
 
         if verbose:
             print(prompt)
 
         response = self.model.generate(prompt)
 
-        print("\nGin tought:\n", response)
+        print("\nGin Analysis:\n", response)
         return response
 
     def worker(self):
@@ -169,7 +202,7 @@ class ShellGhost:
             time.sleep(1)
             print("\nUpdating cfgs")
             update_cfg()
-            self.prompt_llm()
+            # self.prompt_llm()
             self.finished_exception_lock.acquire()
             time.sleep(5)
 
@@ -178,4 +211,7 @@ class ShellGhost:
         print("\nUpdating cfgs at the end")
         update_cfg()
         # print(self.cfgs['hot_path'].display_instructions())
-        # self.prompt_llm()
+        self.prompt_llm()
+
+        print("STATIC RESULT")
+        self.prompt_direct()
