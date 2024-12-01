@@ -67,7 +67,7 @@ with entry {
         print(
             f"Step {system_config['time_step']}: Power={current_power}W, " + f"Delta from base={current_power - system_config['base_load']}W"
         );
-        sleep(1);
+        sleep(0.25);
     }
 
     # Calculate final metrics if no error occurred
