@@ -56,7 +56,7 @@ class CFGTracker:
     def get_variable_values(self):
         self.curr_variables_lock.acquire()
         cpy = copy.deepcopy(self.curr_variables)
-        print(cpy)
+        # print(cpy)
         self.curr_variables_lock.release()
 
         return cpy

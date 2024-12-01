@@ -69,7 +69,7 @@ class ShellGhost:
             ins_string += f"Module: {module}\n{cfg.display_instructions()}"
 
         prompt = prompt.format(
-            cfgs=cfg_string, instructions=ins_string, sem_ir=self.sem_ir
+            cfgs=cfg_string, instructions=ins_string, sem_ir=self.sem_ir.pp()
         )
 
         if self.variable_values != None:
@@ -93,7 +93,8 @@ class ShellGhost:
 
         response = self.model.generate(prompt)
 
-        print(response)
+        print("\nGin tought:\n", response)
+        return response
 
     def worker(self):
         # get static cfgs
@@ -160,7 +161,6 @@ class ShellGhost:
 
             self.variable_values = self.tracker.get_variable_values()
             self.update_cfg_deque(cfg.get_cfg_repr())
-            print(self.get_cfg_deque_repr())
 
         self.finished_exception_lock.acquire()
         while not self.finished:
@@ -171,6 +171,7 @@ class ShellGhost:
             update_cfg()
             self.prompt_llm()
             self.finished_exception_lock.acquire()
+            time.sleep(5)
 
         self.finished_exception_lock.release()
 
