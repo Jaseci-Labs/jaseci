@@ -27,7 +27,7 @@ class ShellGhost:
         self.model = Gemini()
 
         self.deque_lock = threading.Lock()
-        self.__cfg_deque = CfgDeque(2)
+        self.__cfg_deque = CfgDeque(5)
 
     def set_cfgs(self, cfgs):
         self.cfg_cv.acquire()
@@ -193,13 +193,57 @@ class ShellGhost:
         print("\nGin Analysis:\n", response)
         return response
 
+    def prompt_llm_with_history(self, verbose: bool = False):
+        prompt = """I have a program.
+        Up to last 5 CFGs recorded:
+        {cfgs},
+        Instructions per basic block:
+        {instructions}
+        Semantic and Type information from source code:
+        {sem_ir}"""
+
+        cfg_string = ""
+        ins_string = ""
+        for module, cfg in self.cfgs.items():
+            cfg_string += f"Module: {module}\n{cfg}"
+            ins_string += f"Module: {module}\n{cfg.display_instructions()}"
+
+        prompt = prompt.format(
+            cfgs=self.__cfg_deque.get_cfg_repr(), instructions=ins_string, sem_ir=self.sem_ir.pp()
+        )
+
+        if self.variable_values != None:
+            prompt += "\nCurrent variable values at the specified bytecode offset:"
+
+            for module, var_map in self.variable_values.items():
+                prompt += f"\nModule {module}: Offset: {var_map[0]}, Variables: {str(var_map[1])}"
+
+        self.finished_exception_lock.acquire()
+
+        if self.exception:
+            prompt += f"\nException: {self.exception}"
+
+        self.finished_exception_lock.release()
+
+        prompt += "\nCan you identity bottlneck optimizations or where the code can error out?"
+        prompt += "\n(Reason about the program using cfg history, semantic and type information. Users will not have access to BB information, so try to reason about the logic and frequencies of blocks instead.)"
+        prompt += "\n Additionally, look for any cases where the hot path of the code appears to change at some point in the program"
+        prompt += "\n If variable values are available, can you provide tracing information to help find the root cause of any issues?"
+
+        if verbose:
+            print(prompt)
+
+        response = self.model.generate(prompt)
+
+        print("\nGin Analysis:\n", response)
+        return response
+
     def worker(self):
         # get static cfgs
         self.cfg_cv.acquire()
         if self.cfgs == None:
             print("waiting")
             self.cfg_cv.wait()
-        print(self.cfgs)
         # for module_name, cfg in self.cfgs.items():
         #     print(f"Name: {module_name}\n{cfg.display_instructions()}")
         self.cfg_cv.release()
@@ -251,6 +295,7 @@ class ShellGhost:
                                 current_executing_bbs[module]
                             ].bytecode_offsets
                         )
+                    self.__cfg_deque.add_cfg(cfg.get_cfg_repr())
                 except Exception as e:
                     self.set_finished(e)
                     print(e)
@@ -266,7 +311,7 @@ class ShellGhost:
             time.sleep(1)
             print("\nUpdating cfgs")
             update_cfg()
-            self.prompt_llm()
+            self.prompt_llm_with_history()
             self.finished_exception_lock.acquire()
             time.sleep(5)
 
@@ -274,9 +319,8 @@ class ShellGhost:
 
         print("\nUpdating cfgs at the end")
         update_cfg()
-        print(self.cfgs['hot_path'].display_instructions())
-        self.prompt_llm()
+        self.prompt_llm_with_history()
 
-        # print("STATIC RESULT")
-        # self.prompt_direct()
+        print("STATIC RESULT")
+        self.prompt_direct()
         

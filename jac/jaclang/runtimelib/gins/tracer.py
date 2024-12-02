@@ -20,11 +20,13 @@ class CfgDeque:
         if len(self.__deque) > self.__max_size:
             self.__deque.popleft()
 
-    def display_cfgs(self):
-        print("CFG change over updates\n")
-        for cfg in self.__deque:
-            print("\n")
-            print(cfg)
+    def get_cfg_repr(self):
+      res = [f"CFG Changes in last {len(self.__deque)} Updates:\n"]
+      for idx, cfg in enumerate(self.__deque):
+        res.append(f"\nCFG {idx+1} of {len(self.__deque)}\n")
+        res.append(cfg)
+      
+      return "".join(res)
 
 
 class CFGTracker:
