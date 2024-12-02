@@ -8,7 +8,7 @@ from dataclasses import MISSING
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
-from .architype import NodeAnchor, Root
+from .architype import JacLangJID, NodeAnchor, Root
 from .memory import Memory, ShelfStorage
 
 
@@ -39,7 +39,9 @@ class ExecutionContext:
     ) -> NodeAnchor:
         """Load initial anchors."""
         if anchor_id:
-            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
+            if isinstance(
+                anchor := self.mem.find_by_id(JacLangJID(anchor_id)), NodeAnchor
+            ):
                 return anchor
             raise ValueError(f"Invalid anchor id {anchor_id} !")
         return default
@@ -65,11 +67,11 @@ class ExecutionContext:
         ctx.reports = []
 
         if not isinstance(
-            system_root := ctx.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
+            system_root := ctx.mem.find_by_id(SUPER_ROOT_ANCHOR.jid), NodeAnchor
         ):
             system_root = Root().__jac__
             system_root.id = SUPER_ROOT_UUID
-            ctx.mem.set(system_root.id, system_root)
+            ctx.mem.set(system_root.jid, system_root)
 
         ctx.system_root = system_root
 

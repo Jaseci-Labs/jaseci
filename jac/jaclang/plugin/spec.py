@@ -15,7 +15,6 @@ from typing import (
     TypeVar,
     Union,
 )
-from uuid import UUID
 
 from jaclang.compiler import absyntree as ast
 from jaclang.compiler.constant import EdgeDir
@@ -27,6 +26,7 @@ from jaclang.runtimelib.constructs import (
     DSFunc,
     EdgeAnchor,
     EdgeArchitype,
+    JID,
     NodeAnchor,
     NodeArchitype,
     Root,
@@ -55,7 +55,7 @@ class JacAccessValidationSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def allow_root(
-        architype: Architype, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype, root_id: JID, level: AccessLevel | int | str
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         raise NotImplementedError
@@ -63,7 +63,7 @@ class JacAccessValidationSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def disallow_root(
-        architype: Architype, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype, root_id: JID, level: AccessLevel | int | str
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         raise NotImplementedError
@@ -258,13 +258,13 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def get_object_func() -> Callable[[str], Architype | None]:
+    def get_object_func() -> Callable[[str | JID], Architype | None]:
         """Get object by id func."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def object_ref(obj: Architype) -> str:
+    def object_ref(obj: Architype) -> JID:
         """Get object's id."""
         raise NotImplementedError
 

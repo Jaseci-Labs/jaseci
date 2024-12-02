@@ -1177,7 +1177,7 @@ class JacLanguageTests(TestCase):
         cli.run(self.fixture_abs_path("objref.jac"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
-        self.assertEqual(len(stdout_value[0]), 32)
+        self.assertEqual(len(stdout_value[0]), 45)
         self.assertEqual("MyNode(value=0)", stdout_value[1])
         self.assertEqual("valid: True", stdout_value[2])
 

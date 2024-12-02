@@ -37,14 +37,13 @@ def collect_node_connections(
     if current_node not in visited_nodes:
         visited_nodes.add(current_node)
         edges = current_node.edges
-        for edge_ in edges:
-            target = edge_.target
-            if target:
+        for jid in edges:
+            if (edge := jid.anchor) and (target := edge.target.anchor):
                 connections.add(
                     (
                         current_node.architype,
                         target.architype,
-                        edge_.__class__.__name__,
+                        edge.__class__.__name__,
                     )
                 )
                 collect_node_connections(target, visited_nodes, connections)
@@ -66,16 +65,18 @@ def traverse_graph(
     edge_limit: int,
 ) -> None:
     """Traverse the graph using Breadth-First Search (BFS) or Depth-First Search (DFS)."""
-    for edge in node.__jac__.edges:
-        is_self_loop = id(edge.source) == id(edge.target)
-        is_in_edge = edge.target == node.__jac__
+    for jid in node.__jac__.edges:
+        if not (edge := jid.anchor):
+            continue
+        is_self_loop = edge.source == edge.target
+        is_in_edge = edge.target == node.__jac__.jid
         if (traverse and is_in_edge) or edge.architype.__class__.__name__ in edge_type:
             continue
         if is_self_loop:
             continue  # lets skip self loop for a while, need to handle it later
-        elif (other_nda := edge.target if not is_in_edge else edge.source) and (
-            other_nd := other_nda.architype
-        ):
+        elif (
+            other_nda := edge.target.anchor if not is_in_edge else edge.source.anchor
+        ) and (other_nd := other_nda.architype):
             new_con = (
                 (node, other_nd, edge.architype)
                 if not is_in_edge

@@ -78,7 +78,7 @@ class TestJaseciPlugin(TestCase):
             session=session,
             entrypoint="traverse",
             args=[],
-            node=str(obj["id"]),
+            node=str(obj.jid),
         )
         output = self.capturedOutput.getvalue().strip()
         self.assertEqual(output, "node a\nnode b")
@@ -100,12 +100,12 @@ class TestJaseciPlugin(TestCase):
         )
         edge_obj = cli.get_object(
             filename=self.fixture_abs_path("simple_persistent.jac"),
-            id=obj["edges"][0].id.hex,
+            id=str(obj.edges[0]),
             session=session,
         )
         a_obj = cli.get_object(
             filename=self.fixture_abs_path("simple_persistent.jac"),
-            id=edge_obj["target"].id.hex,
+            id=str(edge_obj.target),
             session=session,
         )
         self._output2buffer()
@@ -113,7 +113,7 @@ class TestJaseciPlugin(TestCase):
             filename=self.fixture_abs_path("simple_persistent.jac"),
             session=session,
             entrypoint="traverse",
-            node=str(a_obj["id"]),
+            node=str(a_obj.jid),
             args=[],
         )
         output = self.capturedOutput.getvalue().strip()
@@ -132,28 +132,26 @@ class TestJaseciPlugin(TestCase):
             session=session,
             id="root",
         )
-        self.assertEqual(len(obj["edges"]), 2)
+        self.assertEqual(len(obj.edges), 2)
         edge_objs = [
             cli.get_object(
                 filename=self.fixture_abs_path("simple_node_connection.jac"),
                 session=session,
-                id=e.id.hex,
+                id=str(e),
             )
-            for e in obj["edges"]
+            for e in obj.edges
         ]
-        node_ids = [obj["target"].id.hex for obj in edge_objs]
+        node_ids = [str(obj.target) for obj in edge_objs]
         node_objs = [
             cli.get_object(
                 filename=self.fixture_abs_path("simple_node_connection.jac"),
                 session=session,
-                id=str(n_id),
+                id=n_id,
             )
             for n_id in node_ids
         ]
         self.assertEqual(len(node_objs), 2)
-        self.assertEqual(
-            {obj["architype"].tag for obj in node_objs}, {"first", "second"}
-        )
+        self.assertEqual({obj.architype.tag for obj in node_objs}, {"first", "second"})
         self._del_session(session)
 
     def test_filter_on_edge_get_edge(self) -> None:
