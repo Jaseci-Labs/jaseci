@@ -240,7 +240,7 @@ class ShellGhost:
 
         response = self.model.generate(prompt)
 
-        print("\nGin Analysis:\n", response)
+
         return response
 
     def worker(self):
@@ -315,13 +315,15 @@ class ShellGhost:
             time.sleep(1)
             print("\nUpdating cfgs")
             update_cfg()
-            self.prompt_llm_with_history()
+            # self.prompt_llm_with_history()
             self.finished_exception_lock.acquire()
-            time.sleep(5)
+            # time.sleep(5)
 
         self.finished_exception_lock.release()
 
         print("\nUpdating cfgs at the end")
         update_cfg()
-        self.prompt_llm_with_history(verbose=True)
+        # self.prompt_llm_with_history(verbose=True)
+        for module in self.cfgs.keys():
+            print(self.cfgs[module].to_json())
         

@@ -1,7 +1,7 @@
+import typing_extensions as typing
+
 """Generative AI model integration for GINS
 """
-
-
 class BaseModel:
     def __init__(self, model_name: str = "gemini-1.5-flash", **kwargs):
         self.model_name = model_name
