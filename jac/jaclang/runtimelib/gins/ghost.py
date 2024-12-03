@@ -154,7 +154,6 @@ class ShellGhost:
 
     def prompt_llm(self, verbose: bool = False):
         prompt = """I have a program.
-        CFGS:
         {cfgs},
         Instructions per basic block:
         {instructions}
@@ -198,7 +197,7 @@ class ShellGhost:
 
     def prompt_llm_with_history(self, verbose: bool = False):
         prompt = """I have a program.
-        Up to last 5 CFGs recorded:
+        Up to last {history_size} CFGs recorded:
         {cfgs},
         Instructions per basic block:
         {instructions}
@@ -208,11 +207,14 @@ class ShellGhost:
         cfg_string = ""
         ins_string = ""
         for module, cfg in self.cfgs.items():
-            cfg_string += f"Module: {module}\n{cfg}"
+            cfg_string += f"Module: {module}\n{self.__cfg_deque_dict[module].get_cfg_repr()}"
             ins_string += f"Module: {module}\n{cfg.display_instructions()}"
 
         prompt = prompt.format(
-            cfgs=self.__cfg_deque_dict['hot_path'].get_cfg_repr(), instructions=ins_string, sem_ir=self.sem_ir.pp()
+            history_size=self.__cfg_deque_size,
+            cfgs=cfg_string, 
+            instructions=ins_string, 
+            sem_ir=self.sem_ir.pp()
         )
 
         if self.variable_values != None:
