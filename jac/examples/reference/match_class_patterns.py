@@ -3,9 +3,18 @@ from jaclang.plugin.feature import JacFeature as Jac
 from dataclasses import dataclass as dataclass
 
 
+# Since the Animal class cannot be inherit from object, (cause the base class will be changed at run time)
+# we need a base class.
+#
+# reference: https://stackoverflow.com/a/9639512/10846399
+#
+class Base:
+    pass
+
+
 @Jac.make_obj(on_entry=[], on_exit=[])
 @dataclass(eq=False)
-class Point:
+class Point(Base):
     x: float
     y: float
 

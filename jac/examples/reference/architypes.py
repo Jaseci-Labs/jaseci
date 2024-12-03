@@ -6,8 +6,17 @@ def print_base_classes(cls: type) -> type:
     return cls
 
 
+# Since the Animal class cannot be inherit from object, (cause the base class will be changed at run time)
+# we need a base class.
+#
+# reference: https://stackoverflow.com/a/9639512/10846399
+#
+class Base:
+    pass
+
+
 @jac.make_obj(on_entry=[], on_exit=[])
-class Animal:
+class Animal(Base):
     pass
 
 
