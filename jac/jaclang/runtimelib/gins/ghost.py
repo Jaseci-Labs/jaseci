@@ -298,14 +298,12 @@ class ShellGhost:
                                 current_executing_bbs[module]
                             ].bytecode_offsets
                         )
-                    # self.__cfg_deque.add_cfg(cfg.get_cfg_repr())
                 except Exception as e:
                     self.set_finished(e)
                     print(e)
                     return
 
             self.variable_values = self.tracker.get_variable_values()
-            print("yeeee")
             self.update_cfg_deque(cfg.get_cfg_repr(), module)
 
         self.finished_exception_lock.acquire()
@@ -314,7 +312,6 @@ class ShellGhost:
 
             time.sleep(1)
             print("\nUpdating cfgs")
-            print(self.__cfg_deque_dict)
             update_cfg()
             self.prompt_llm_with_history()
             self.finished_exception_lock.acquire()
