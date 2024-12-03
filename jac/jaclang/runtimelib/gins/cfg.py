@@ -210,7 +210,7 @@ class CFG:
             }
             if node in self.edges and self.edges[node]:
                 for succ in self.edges[node]:
-                    edge_obj = {'edge_to':succ,'freq': self.edge_counts[(node, succ)]}
+                    edge_obj = {'edge_to_bb_id':succ,'freq': self.edge_counts[(node, succ)]}
                     bb_obj['edges'].append(edge_obj)
             bb_obj['edges'].append(edge_obj)
             obj['cfg_bbs'].append(bb_obj)
