@@ -1104,7 +1104,7 @@ class JacFeatureImpl(
         if Jac.check_write_access(anchor):
             match anchor:
                 case NodeAnchor():
-                    for edge in anchor.edges:
+                    for edge in set(anchor.edges):
                         if eanch := edge.anchor:
                             Jac.destroy(eanch)
                 case EdgeAnchor():

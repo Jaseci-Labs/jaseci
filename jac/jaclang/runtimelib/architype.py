@@ -20,14 +20,15 @@ JID_REGEX = compile(
     IGNORECASE,
 )
 _ANCHOR = TypeVar("_ANCHOR", bound="Anchor")
+_C_ANCHOR = TypeVar("_C_ANCHOR", bound="Anchor", covariant=True)
 
 
 @dataclass(kw_only=True)
-class JID(Generic[_ANCHOR]):
+class JID(Generic[_C_ANCHOR]):
     """Jaclang ID Interface."""
 
     id: Any
-    type: Type[_ANCHOR]
+    type: Type[_C_ANCHOR]
     name: str
 
     @cached_property
@@ -36,7 +37,7 @@ class JID(Generic[_ANCHOR]):
         return f"{self.type.__name__[:1].lower()}:{self.name}:{self.id}"
 
     @cached_property
-    def anchor(self) -> _ANCHOR | None:
+    def anchor(self) -> _C_ANCHOR | None:
         """Get architype."""
         from jaclang.plugin.feature import JacFeature
 
@@ -182,7 +183,7 @@ class Anchor:
 
         return jid
 
-    def report(self) -> AnchorReport:
+    def report(self) -> Any:  # noqa: ANN401
         """Report Anchor."""
         return AnchorReport(
             id=self.jid,

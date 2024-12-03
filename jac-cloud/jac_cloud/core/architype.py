@@ -9,6 +9,7 @@ from dataclasses import (
     is_dataclass,
 )
 from enum import Enum
+from functools import cached_property
 from os import getenv
 from pickle import dumps as pdumps
 from re import IGNORECASE, compile
@@ -18,6 +19,7 @@ from typing import (
     ClassVar,
     Iterable,
     Mapping,
+    Type,
     TypeVar,
     cast,
     get_args,
@@ -35,12 +37,12 @@ from jaclang.runtimelib.architype import (
     DSFunc,
     EdgeAnchor as _EdgeAnchor,
     EdgeArchitype as _EdgeArchitype,
+    JID,
     NodeAnchor as _NodeAnchor,
     NodeArchitype as _NodeArchitype,
     ObjectAnchor as _ObjectAnchor,
     ObjectArchitype as _ObjectArchitype,
     Permission as _Permission,
-    TANCH,
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
 )
@@ -56,13 +58,19 @@ from ..jaseci.datasources import Collection as BaseCollection
 from ..jaseci.utils import logger
 
 MANUAL_SAVE = getenv("MANUAL_SAVE")
-GENERIC_ID_REGEX = compile(r"^(n|e|w|o):([^:]*):([a-f\d]{24})$", IGNORECASE)
-NODE_ID_REGEX = compile(r"^n:([^:]*):([a-f\d]{24})$", IGNORECASE)
-EDGE_ID_REGEX = compile(r"^e:([^:]*):([a-f\d]{24})$", IGNORECASE)
-WALKER_ID_REGEX = compile(r"^w:([^:]*):([a-f\d]{24})$", IGNORECASE)
-OBJECT_ID_REGEX = compile(r"^o:([^:]*):([a-f\d]{24})$", IGNORECASE)
+JID_REGEX = compile(r"^(n|e|w|o):([^:]*):([a-f\d]{24})$", IGNORECASE)
 T = TypeVar("T")
 TBA = TypeVar("TBA", bound="BaseArchitype")
+
+_ANCHOR = TypeVar("_ANCHOR", "NodeAnchor", "EdgeAnchor", "WalkerAnchor", "ObjectAnchor")
+_C_ANCHOR = TypeVar(
+    "_C_ANCHOR",
+    "NodeAnchor",
+    "EdgeAnchor",
+    "WalkerAnchor",
+    "ObjectAnchor",
+    covariant=True,
+)
 
 
 def asdict_factory(data: Iterable[tuple]) -> dict[str, Any]:
@@ -296,7 +304,7 @@ class Access(_Access):
     def serialize(self) -> dict[str, object]:
         """Serialize Access."""
         return {
-            "anchors": {key: val.name for key, val in self.anchors.items()},
+            "anchors": {str(key): val.name for key, val in self.anchors.items()},
         }
 
     @classmethod
@@ -304,7 +312,9 @@ class Access(_Access):
         """Deserialize Access."""
         anchors = cast(dict[str, str], data.get("anchors"))
         return Access(
-            anchors={key: AccessLevel[val] for key, val in anchors.items()},
+            anchors={
+                JacCloudJID(key): AccessLevel[val] for key, val in anchors.items()
+            },
         )
 
 
@@ -338,14 +348,59 @@ class AnchorState:
     connected: bool = False
 
 
-@dataclass(eq=False, repr=False, kw_only=True)
+@dataclass(eq=False, kw_only=True)
+class JacCloudJID(JID[_C_ANCHOR]):
+    """Jaclang ID Implementation."""
+
+    def __init__(
+        self,
+        id: str | ObjectId | None = None,
+        type: Type[_C_ANCHOR] | None = None,
+        name: str = "",
+    ) -> None:
+        """Override JID initializer."""
+        match id:
+            case str():
+                if matched := JID_REGEX.search(id):
+                    self.id = ObjectId(matched.group(3))
+                    self.name = matched.group(2)
+                    # currently no way to base hinting on string regex!
+                    match matched.group(1).lower():
+                        case "n":
+                            self.type = NodeAnchor  # type: ignore [assignment]
+                        case "e":
+                            self.type = EdgeAnchor  # type: ignore [assignment]
+                        case "w":
+                            self.type = WalkerAnchor  # type: ignore [assignment]
+                        case _:
+                            self.type = ObjectAnchor  # type: ignore [assignment]
+                    return
+                raise ValueError("Not a valid JID format!")
+            case ObjectId():
+                self.id = id
+            case None:
+                self.id = ObjectId()
+            case _:
+                raise ValueError("Not a valid id for JID!")
+
+        if type is None:
+            raise ValueError("Type is required from non string JID!")
+        self.type = type
+        self.name = name
+
+    def __hash__(self) -> int:
+        """Return default hasher."""
+        return hash(self.__cached_repr__)
+
+
+@dataclass(eq=False, kw_only=True)
 class BaseAnchor:
     """Base Anchor."""
 
     architype: "BaseArchitype"
     name: str = ""
     id: ObjectId = field(default_factory=ObjectId)
-    root: ObjectId | None = None
+    root: JacCloudJID["NodeAnchor"] | None = None
     access: Permission
     state: AnchorState
 
@@ -354,33 +409,21 @@ class BaseAnchor:
 
         pass
 
-    @property
-    def ref_id(self) -> str:
-        """Return id in reference type."""
-        return f"{self.__class__.__name__[:1].lower()}:{self.name}:{self.id}"
+    @cached_property
+    def jid(self: _ANCHOR) -> JacCloudJID[_ANCHOR]:  # type: ignore[misc]
+        """Get JID representation."""
+        jid = JacCloudJID[_ANCHOR](
+            self.id,
+            self.__class__,
+            (
+                ""
+                if isinstance(self.architype, (GenericEdge, Root))
+                else self.architype.__class__.__name__
+            ),
+        )
+        jid.anchor = self
 
-    @staticmethod
-    def ref(ref_id: str) -> "BaseAnchor | Anchor":
-        """Return ObjectAnchor instance if ."""
-        if match := GENERIC_ID_REGEX.search(ref_id):
-            cls: type[BaseAnchor]
-
-            match match.group(1):
-                case "n":
-                    cls = NodeAnchor
-                case "e":
-                    cls = EdgeAnchor
-                case "w":
-                    cls = WalkerAnchor
-                case "o":
-                    cls = ObjectAnchor
-                case _:
-                    raise ValueError(f"[{ref_id}] is not a valid reference!")
-            anchor = object.__new__(cls)
-            anchor.name = str(match.group(2))
-            anchor.id = ObjectId(match.group(3))
-            return anchor
-        raise ValueError(f"[{ref_id}] is not a valid reference!")
+        return jid
 
     ####################################################
     #                 QUERY OPERATIONS                 #
@@ -451,33 +494,6 @@ class BaseAnchor:
     ####################################################
     #                POPULATE OPERATIONS               #
     ####################################################
-
-    def is_populated(self) -> bool:
-        """Check if populated."""
-        return "architype" in self.__dict__
-
-    def make_stub(self: "BaseAnchor | TANCH") -> "BaseAnchor | TANCH":
-        """Return unsynced copy of anchor."""
-        if self.is_populated():
-            unloaded = object.__new__(self.__class__)
-            # this will be refactored on abstraction
-            unloaded.name = self.name  # type: ignore[attr-defined]
-            unloaded.id = self.id  # type: ignore[attr-defined]
-            return unloaded  # type: ignore[return-value]
-        return self
-
-    def populate(self) -> None:
-        """Retrieve the Architype from db and return."""
-        from .context import JaseciContext
-
-        jsrc = JaseciContext.get().mem
-
-        if anchor := jsrc.find_by_id(self):
-            self.__dict__.update(anchor.__dict__)
-        else:
-            raise ValueError(
-                f"{self.__class__.__name__} [{self.ref_id}] is not a valid reference!"
-            )
 
     def build_query(
         self,
@@ -557,15 +573,15 @@ class BaseAnchor:
             ############################################################
             #                   POPULATE ADDED EDGES                   #
             ############################################################
-            added_edges: set[BaseAnchor | Anchor] = (
+            added_edges: set[BaseAnchor] = (
                 changes.get("$addToSet", {}).get("edges", {}).get("$each", [])
             )
             if added_edges:
                 _added_edges = []
                 for anchor in added_edges:
                     if propagate:
-                        anchor.build_query(bulk_write)  # type: ignore[operator]
-                    _added_edges.append(anchor.ref_id)
+                        anchor.build_query(bulk_write)
+                    _added_edges.append(str(anchor.jid))
                 changes["$addToSet"]["edges"]["$each"] = _added_edges
             else:
                 changes.pop("$addToSet", None)
@@ -575,17 +591,16 @@ class BaseAnchor:
             ############################################################
             #                  POPULATE REMOVED EDGES                  #
             ############################################################
-            pulled_edges: set[BaseAnchor | Anchor] = (
+            pulled_edges: set[BaseAnchor] = (
                 changes.get("$pull", {}).get("edges", {}).get("$in", [])
             )
             if pulled_edges:
                 _pulled_edges = []
                 for anchor in pulled_edges:
-                    # will be refactored on abstraction
-                    if propagate and anchor.state.deleted is not True:  # type: ignore[attr-defined]
-                        anchor.state.deleted = True  # type: ignore[attr-defined]
-                        bulk_write.del_edge(anchor.id)  # type: ignore[attr-defined, arg-type]
-                    _pulled_edges.append(anchor.ref_id)
+                    if propagate and anchor.state.deleted is not True:
+                        anchor.state.deleted = True
+                        bulk_write.del_edge(anchor.id)
+                    _pulled_edges.append(str(anchor.jid))
 
                 if added_edges:
                     # Isolate pull to avoid conflict with addToSet
@@ -618,26 +633,19 @@ class BaseAnchor:
 
     def sync_hash(self) -> None:
         """Sync current serialization hash."""
-        if is_dataclass(architype := self.architype) and not isinstance(
-            architype, type
-        ):
-            self.state.context_hashes = {
-                key: hash(val if isinstance(val, bytes) else dumps(val))
-                for key, val in architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
-            }
-            self.state.full_hash = hash(pdumps(self.serialize()))
+        self.state.context_hashes = {
+            key: hash(val if isinstance(val, bytes) else dumps(val))
+            for key, val in self.architype.__serialize__().items()
+        }
+        self.state.full_hash = hash(pdumps(self.serialize()))
 
     # ---------------------------------------------------------------------- #
 
     def report(self) -> dict[str, object]:
         """Report Anchor."""
         return {
-            "id": self.ref_id,
-            "context": (
-                self.architype.__serialize__()  # type:ignore[attr-defined] # mypy issue
-                if is_dataclass(self.architype) and not isinstance(self.architype, type)
-                else {}
-            ),
+            "id": str(self.jid),
+            "context": self.architype.__serialize__(),
         }
 
     def serialize(self) -> dict[str, object]:
@@ -645,35 +653,18 @@ class BaseAnchor:
         return {
             "_id": self.id,
             "name": self.name,
-            "root": self.root,
+            "root": str(self.root) if self.root else None,
             "access": self.access.serialize(),
-            "architype": (
-                self.architype.__serialize__()  # type:ignore[attr-defined] # mypy issue
-                if is_dataclass(self.architype) and not isinstance(self.architype, type)
-                else {}
-            ),
+            "architype": self.architype.__serialize__(),
         }
 
-    def __repr__(self) -> str:
-        """Override representation."""
-        if self.is_populated():
-            attrs = ""
-            for f in fields(self):
-                if f.name in self.__dict__:
-                    attrs += f"{f.name}={self.__dict__[f.name]}, "
-            attrs = attrs[:-2]
-        else:
-            attrs = f"name={self.name}, id={self.id}"
 
-        return f"{self.__class__.__name__}({attrs})"
-
-
-@dataclass(eq=False, repr=False, kw_only=True)
-class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
+@dataclass(eq=False, kw_only=True)
+class NodeAnchor(BaseAnchor, _NodeAnchor):  # type:ignore[misc]
     """Node Anchor."""
 
     architype: "NodeArchitype"
-    edges: list["EdgeAnchor"]  # type: ignore[assignment]
+    edges: list[JacCloudJID["EdgeAnchor"]]  # type:ignore[assignment]
 
     class Collection(BaseCollection["NodeAnchor"]):
         """NodeAnchor collection interface."""
@@ -695,7 +686,14 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
             anchor = NodeAnchor(
                 architype=architype,
                 id=doc.pop("_id"),
-                edges=[e for edge in doc.pop("edges") if (e := EdgeAnchor.ref(edge))],
+                root=(
+                    JacCloudJID[NodeAnchor](root) if (root := doc.pop("root")) else None
+                ),
+                edges=[
+                    e
+                    for edge in doc.pop("edges")
+                    if (e := JacCloudJID[EdgeAnchor](edge))
+                ],
                 access=Permission.deserialize(doc.pop("access")),
                 state=AnchorState(connected=True),
                 persistent=True,
@@ -705,30 +703,22 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
             anchor.sync_hash()
             return anchor
 
-    @classmethod
-    def ref(cls, ref_id: str) -> "NodeAnchor":
-        """Return NodeAnchor instance if existing."""
-        if match := NODE_ID_REGEX.search(ref_id):
-            anchor = object.__new__(cls)
-            anchor.name = str(match.group(1))
-            anchor.id = ObjectId(match.group(2))
-            return anchor
-        raise ValueError(f"[{ref_id}] is not a valid reference!")
-
     def insert(
         self,
         bulk_write: BulkWrite,
     ) -> None:
         """Append Insert Query."""
-        for edge in self.edges:
-            edge.build_query(bulk_write)
+        for jid in self.edges:
+            if anchor := jid.anchor:
+                anchor.build_query(bulk_write)
 
         bulk_write.operations[NodeAnchor].append(InsertOne(self.serialize()))
 
     def delete(self, bulk_write: BulkWrite) -> None:
         """Append Delete Query."""
-        for edge in self.edges:
-            edge.delete(bulk_write)
+        for jid in self.edges:
+            if anchor := jid.anchor:
+                anchor.delete(bulk_write)
 
         pulled_edges: set[EdgeAnchor] = self._pull.get("edges", {}).get("$in", [])
         for edge in pulled_edges:
@@ -740,18 +730,17 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
         """Serialize Node Anchor."""
         return {
             **super().serialize(),
-            "edges": [edge.ref_id for edge in self.edges],
+            "edges": [str(edge) for edge in self.edges],
         }
 
 
-@dataclass(eq=False, repr=False, kw_only=True)
+@dataclass(eq=False, kw_only=True)
 class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
     """Edge Anchor."""
 
     architype: "EdgeArchitype"
-    source: NodeAnchor
-    target: NodeAnchor
-    is_undirected: bool
+    source: JacCloudJID[NodeAnchor]
+    target: JacCloudJID[NodeAnchor]
 
     class Collection(BaseCollection["EdgeAnchor"]):
         """EdgeAnchor collection interface."""
@@ -772,8 +761,11 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
             anchor = EdgeAnchor(
                 architype=architype,
                 id=doc.pop("_id"),
-                source=NodeAnchor.ref(doc.pop("source")),
-                target=NodeAnchor.ref(doc.pop("target")),
+                root=(
+                    JacCloudJID[NodeAnchor](root) if (root := doc.pop("root")) else None
+                ),
+                source=JacCloudJID[NodeAnchor](doc.pop("source")),
+                target=JacCloudJID[NodeAnchor](doc.pop("target")),
                 access=Permission.deserialize(doc.pop("access")),
                 state=AnchorState(connected=True),
                 persistent=True,
@@ -783,32 +775,22 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
             anchor.sync_hash()
             return anchor
 
-    @classmethod
-    def ref(cls, ref_id: str) -> "EdgeAnchor":
-        """Return EdgeAnchor instance if existing."""
-        if match := EDGE_ID_REGEX.search(ref_id):
-            anchor = object.__new__(cls)
-            anchor.name = str(match.group(1))
-            anchor.id = ObjectId(match.group(2))
-            return anchor
-        raise ValueError(f"{ref_id}] is not a valid reference!")
-
     def insert(self, bulk_write: BulkWrite) -> None:
         """Append Insert Query."""
-        if source := self.source:
+        if source := self.source.anchor:
             source.build_query(bulk_write)
 
-        if target := self.target:
+        if target := self.target.anchor:
             target.build_query(bulk_write)
 
         bulk_write.operations[EdgeAnchor].append(InsertOne(self.serialize()))
 
     def delete(self, bulk_write: BulkWrite) -> None:
         """Append Delete Query."""
-        if source := self.source:
+        if source := self.source.anchor:
             source.build_query(bulk_write)
 
-        if target := self.target:
+        if target := self.target.anchor:
             target.build_query(bulk_write)
 
         bulk_write.del_edge(self.id)
@@ -817,13 +799,13 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
         """Serialize Node Anchor."""
         return {
             **super().serialize(),
-            "source": self.source.ref_id if self.source else None,
-            "target": self.target.ref_id if self.target else None,
+            "source": str(self.source) if self.source else None,
+            "target": str(self.target) if self.target else None,
             "is_undirected": self.is_undirected,
         }
 
 
-@dataclass(eq=False, repr=False, kw_only=True)
+@dataclass(eq=False, kw_only=True)
 class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     """Walker Anchor."""
 
@@ -832,7 +814,6 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     next: list[Anchor] = field(default_factory=list)
     returns: list[Any] = field(default_factory=list)
     ignores: list[Anchor] = field(default_factory=list)
-    disengaged: bool = False
 
     class Collection(BaseCollection["WalkerAnchor"]):
         """WalkerAnchor collection interface."""
@@ -853,6 +834,9 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
             anchor = WalkerAnchor(
                 architype=architype,
                 id=doc.pop("_id"),
+                root=(
+                    JacCloudJID[NodeAnchor](root) if (root := doc.pop("root")) else None
+                ),
                 access=Permission.deserialize(doc.pop("access")),
                 state=AnchorState(connected=True),
                 persistent=True,
@@ -861,16 +845,6 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
             architype.__jac__ = anchor
             anchor.sync_hash()
             return anchor
-
-    @classmethod
-    def ref(cls, ref_id: str) -> "WalkerAnchor":
-        """Return EdgeAnchor instance if existing."""
-        if match := WALKER_ID_REGEX.search(ref_id):
-            anchor = object.__new__(cls)
-            anchor.name = str(match.group(1))
-            anchor.id = ObjectId(match.group(2))
-            return anchor
-        raise ValueError(f"{ref_id}] is not a valid reference!")
 
     def insert(
         self,
@@ -884,7 +858,7 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
         bulk_write.del_walker(self.id)
 
 
-@dataclass(eq=False, repr=False, kw_only=True)
+@dataclass(eq=False, kw_only=True)
 class ObjectAnchor(BaseAnchor, _ObjectAnchor):  # type: ignore[misc]
     """Object Anchor."""
 
@@ -910,6 +884,9 @@ class ObjectAnchor(BaseAnchor, _ObjectAnchor):  # type: ignore[misc]
             anchor = ObjectAnchor(
                 architype=architype,
                 id=doc.pop("_id"),
+                root=(
+                    JacCloudJID[NodeAnchor](root) if (root := doc.pop("root")) else None
+                ),
                 access=Permission.deserialize(doc.pop("access")),
                 state=AnchorState(connected=True),
                 persistent=True,
@@ -918,16 +895,6 @@ class ObjectAnchor(BaseAnchor, _ObjectAnchor):  # type: ignore[misc]
             architype.__jac__ = anchor
             anchor.sync_hash()
             return anchor
-
-    @classmethod
-    def ref(cls, ref_id: str) -> "ObjectAnchor":
-        """Return NodeAnchor instance if existing."""
-        if match := NODE_ID_REGEX.search(ref_id):
-            anchor = object.__new__(cls)
-            anchor.name = str(match.group(1))
-            anchor.id = ObjectId(match.group(2))
-            return anchor
-        raise ValueError(f"[{ref_id}] is not a valid reference!")
 
     def insert(
         self,
@@ -947,7 +914,7 @@ class BaseArchitype:
     __jac_classes__: dict[str, type["BaseArchitype"]]
     __jac_hintings__: dict[str, type]
 
-    __jac__: Anchor
+    __jac__: BaseAnchor
 
     def __serialize__(self) -> dict[str, Any]:
         """Process default serialization."""

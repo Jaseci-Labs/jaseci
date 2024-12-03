@@ -16,6 +16,7 @@ from .architype import (
     Anchor,
     AnchorState,
     BaseArchitype,
+    JacCloudJID,
     NodeAnchor,
     Permission,
     Root,
@@ -29,8 +30,8 @@ JASECI_CONTEXT = ContextVar["JaseciContext | None"]("JaseciContext")
 
 SUPER_ROOT_ID = ObjectId("000000000000000000000000")
 PUBLIC_ROOT_ID = ObjectId("000000000000000000000001")
-SUPER_ROOT = NodeAnchor.ref(f"n::{SUPER_ROOT_ID}")
-PUBLIC_ROOT = NodeAnchor.ref(f"n::{PUBLIC_ROOT_ID}")
+SUPER_ROOT_JID = JacCloudJID[NodeAnchor](f"n::{SUPER_ROOT_ID}")
+PUBLIC_ROOT_JID = JacCloudJID[NodeAnchor](f"n::{PUBLIC_ROOT_ID}")
 
 RT = TypeVar("RT")
 
@@ -69,7 +70,7 @@ class JaseciContext(ExecutionContext):
         self.mem.close()
 
     @staticmethod
-    def create(request: Request, entry: NodeAnchor | None = None) -> "JaseciContext":  # type: ignore[override]
+    def create(request: Request, entry: str | None = None) -> "JaseciContext":  # type: ignore[override]
         """Create JacContext."""
         ctx = JaseciContext()
         ctx.base = ExecutionContext.get()
@@ -78,7 +79,9 @@ class JaseciContext(ExecutionContext):
         ctx.reports = []
         ctx.status = 200
 
-        if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
+        if not isinstance(
+            system_root := ctx.mem.find_by_id(SUPER_ROOT_JID), NodeAnchor
+        ):
             system_root = NodeAnchor(
                 architype=object.__new__(Root),
                 id=SUPER_ROOT_ID,
@@ -90,16 +93,16 @@ class JaseciContext(ExecutionContext):
             system_root.architype.__jac__ = system_root
             NodeAnchor.Collection.insert_one(system_root.serialize())
             system_root.sync_hash()
-            ctx.mem.set(system_root.id, system_root)
+            ctx.mem.set(system_root.jid, system_root)
 
         ctx.system_root = system_root
 
         if _root := getattr(request, "_root", None):
             ctx.root = _root
-            ctx.mem.set(_root.id, _root)
+            ctx.mem.set(_root.jid, _root)
         else:
             if not isinstance(
-                public_root := ctx.mem.find_by_id(PUBLIC_ROOT), NodeAnchor
+                public_root := ctx.mem.find_by_id(PUBLIC_ROOT_JID), NodeAnchor
             ):
                 public_root = NodeAnchor(
                     architype=object.__new__(Root),
@@ -110,13 +113,13 @@ class JaseciContext(ExecutionContext):
                     edges=[],
                 )
                 public_root.architype.__jac__ = public_root
-                ctx.mem.set(public_root.id, public_root)
+                ctx.mem.set(public_root.jid, public_root)
 
             ctx.root = public_root
 
         if entry:
-            if not isinstance(entry_node := ctx.mem.find_by_id(entry), NodeAnchor):
-                raise ValueError(f"Invalid anchor id {entry.ref_id} !")
+            if not (entry_node := ctx.mem.find_by_id(JacCloudJID[NodeAnchor](entry))):
+                raise ValueError(f"Invalid anchor id {entry} !")
             ctx.entry_node = entry_node
         else:
             ctx.entry_node = ctx.root
