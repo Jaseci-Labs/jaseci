@@ -9,10 +9,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        "jac_splice_orc.managers": ["pod_manager_deployment.yml"],
+        "jac_splice_orc.config": ["config.json"],
     },
     install_requires=[
-        "jaclang~=0.7.17",
         "fastapi",
         "uvicorn",
         "grpcio",
@@ -21,6 +20,7 @@ setup(
         "pydantic",
         "requests",
         "python-dotenv",
+        "numpy",
     ],
     entry_points={
         "jac": [
