@@ -27,7 +27,8 @@ class ShellGhost:
         self.model = Gemini()
 
         self.deque_lock = threading.Lock()
-        self.__cfg_deque = CfgDeque(5)
+        self.__cfg_deque_dict = dict()
+        self.__cfg_deque_size = 5
 
     def set_cfgs(self, cfgs):
         self.cfg_cv.acquire()
@@ -35,9 +36,11 @@ class ShellGhost:
         self.cfg_cv.notify()
         self.cfg_cv.release()
 
-    def update_cfg_deque(self, cfg):
+    def update_cfg_deque(self, cfg, module):
         self.deque_lock.acquire()
-        self.__cfg_deque.add_cfg(cfg)
+        if module not in self.__cfg_deque_dict:
+          self.__cfg_deque_dict[module] = CfgDeque(self.__cfg_deque_size)
+        self.__cfg_deque_dict[module].add_cfg(cfg)
         self.deque_lock.release()
 
     def get_cfg_deque_repr(self):
@@ -209,7 +212,7 @@ class ShellGhost:
             ins_string += f"Module: {module}\n{cfg.display_instructions()}"
 
         prompt = prompt.format(
-            cfgs=self.__cfg_deque.get_cfg_repr(), instructions=ins_string, sem_ir=self.sem_ir.pp()
+            cfgs=self.__cfg_deque_dict['hot_path'].get_cfg_repr(), instructions=ins_string, sem_ir=self.sem_ir.pp()
         )
 
         if self.variable_values != None:
@@ -295,14 +298,15 @@ class ShellGhost:
                                 current_executing_bbs[module]
                             ].bytecode_offsets
                         )
-                    self.__cfg_deque.add_cfg(cfg.get_cfg_repr())
+                    # self.__cfg_deque.add_cfg(cfg.get_cfg_repr())
                 except Exception as e:
                     self.set_finished(e)
                     print(e)
                     return
 
             self.variable_values = self.tracker.get_variable_values()
-            self.update_cfg_deque(cfg.get_cfg_repr())
+            print("yeeee")
+            self.update_cfg_deque(cfg.get_cfg_repr(), module)
 
         self.finished_exception_lock.acquire()
         while not self.finished:
@@ -310,6 +314,7 @@ class ShellGhost:
 
             time.sleep(1)
             print("\nUpdating cfgs")
+            print(self.__cfg_deque_dict)
             update_cfg()
             self.prompt_llm_with_history()
             self.finished_exception_lock.acquire()
@@ -319,8 +324,5 @@ class ShellGhost:
 
         print("\nUpdating cfgs at the end")
         update_cfg()
-        self.prompt_llm_with_history()
-
-        print("STATIC RESULT")
-        self.prompt_direct()
+        self.prompt_llm_with_history(verbose=True)
         
