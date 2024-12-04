@@ -694,7 +694,7 @@ paths:
   /user/login:
     post:
       description: Login user API.
-      operationId: root_user_login_post
+      operationId: login_user_login_post
       requestBody:
         content:
           application/json:
@@ -713,7 +713,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      summary: Root
+      summary: Login
       tags:
       - user
   /user/register:
