@@ -32,8 +32,8 @@ with entry {
 
     efficiency_metrics: list = [];
     total_operational_time: int = 0;
+
     PROGRAM_INPUT = power_readings;
-    total_operational_time: int = 0;
 
     # Process each power reading with different execution paths
     for (idx, current_power) in enumerate(power_readings) {

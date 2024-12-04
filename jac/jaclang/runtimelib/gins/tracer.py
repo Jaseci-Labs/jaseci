@@ -113,17 +113,14 @@ class CFGTracker:
                 # regular python (see test_tracer.py)
                 # NOTE: we're parsing jac lines as python, fingers crossed
                 with open(inspect.getsourcefile(frame.f_code)) as file:
-                    l = [line.lstrip() for line in file][frame.f_lineno - 1]
-                #print("                       ", l)
-                l.rstrip(';')
-                a = ast.parse(l)
-                line_ast = a.body[0]
+                    line_asts = ast.parse(file.readlines()[frame.f_lineno - 1].lstrip().rstrip(';'))
                 #print("                       ", frame.f_lineno, ast.unparse(line_ast))
             except (IndexError, SyntaxError):
                 return self.trace_callback
             #print(ast.dump(a))
             #print(len(a.body))
-            assert len(a.body) == 1 # we only parsed one line
+            assert len(line_asts.body) == 1 # we only parsed one line
+            line_ast = line_asts.body[0]
             if isinstance(line_ast, ast.Assign) or isinstance(line_ast, ast.AugAssign):
                 # yes, I know this isn't strictly necessary in python
                 lhs_ast = None
