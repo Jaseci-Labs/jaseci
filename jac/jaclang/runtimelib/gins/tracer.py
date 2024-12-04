@@ -113,12 +113,12 @@ class CFGTracker:
                 # regular python (see test_tracer.py)
                 # NOTE: we're parsing jac lines as python, fingers crossed
                 with open(inspect.getsourcefile(frame.f_code)) as file:
-                    l = [line.lstrip() for line in file][frame.f_lineno]
+                    l = [line.lstrip() for line in file][frame.f_lineno - 1]
                 #print("                       ", l)
                 l.rstrip(';')
                 a = ast.parse(l)
                 line_ast = a.body[0]
-                #print("                       ", ast.unparse(line_ast))
+                #print("                       ", frame.f_lineno, ast.unparse(line_ast))
             except (IndexError, SyntaxError):
                 return self.trace_callback
             #print(ast.dump(a))
@@ -133,7 +133,7 @@ class CFGTracker:
                     lhs_ast = line_ast.targets[0]
                 elif isinstance(line_ast, ast.AugAssign):
                     lhs_ast = line_ast.target
-                lhs_var = lhs_ast.id
+                lhs_var = ast.unparse(lhs_ast)
                 rhs_ast = line_ast.value
                 # NOTE: for some reason, eval(ast.Expression(rhs_ast)) doesn't work
                 rhs_value = eval(ast.unparse(rhs_ast), frame.f_globals, frame.f_locals)
