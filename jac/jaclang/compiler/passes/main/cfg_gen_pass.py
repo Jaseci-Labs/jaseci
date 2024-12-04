@@ -37,9 +37,9 @@ class CfgGenPass(Pass):
                 BBs = create_BBs(instructions)
                 cfg = create_cfg(BBs)
                 module_cfgs[mod.name] = cfg
-            # for cfg in module_cfgs.values():
-            #     dot = visualize_cfg(cfg)
-            #     dot.render('cfg.gv', view=True)
+                # for cfg in module_cfgs.values():
+                #     dot = visualize_cfg(cfg)
+                #     dot.render(f'cfg_{mod.name}.gv', view=True)
             if JacMachine.get().gin:
                 try:
                     JacMachine.get().gin.set_cfgs(cfgs=module_cfgs)

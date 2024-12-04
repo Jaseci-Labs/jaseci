@@ -1,9 +1,5 @@
 import:py os;
-
-with entry {
-  a:int = 0;
-  b:int = 0;
-  c:int = 0;
+can import_inputs() {
   current_directory = os.path.dirname(os.path.abspath(__file__));
   input_dir = os.path.join(current_directory,'inputs/test.txt');
   var = [];
@@ -13,14 +9,5 @@ with entry {
           var.append(int(line.strip()));  # .strip() removes trailing newlines
       }
   }
-  while a < 30000 {
-    if a % 2 == 0{
-      c = a+b+7;
-      
-    }
-    else {
-      b = 2 + c;
-    }
-    a += 1;
-  }
+  return var;
 }
