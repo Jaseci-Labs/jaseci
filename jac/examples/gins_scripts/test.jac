@@ -1,6 +1,5 @@
 import:py os;
-
-can getInput() -> list[int] {
+with entry {
   current_directory = os.path.dirname(os.path.abspath(__file__));
   input_dir = os.path.join(current_directory,'inputs/test.txt');
   print(input_dir);
@@ -9,23 +8,5 @@ can getInput() -> list[int] {
           # Process each line here
           print(line.strip());  # .strip() removes trailing newlines
       }
-  }
-  return [4,3,2,1];
-}
-
-with entry {
-  a:int = 0;
-  b:int = 0;
-  c:int = 0;
-  in_vals:list[int] = getInput();
-  while a < 30000 {
-    if a % 2 == 0{
-      c = a+b+7;
-      
-    }
-    else {
-      b = 2 + c;
-    }
-    a += 1;
   }
 }
