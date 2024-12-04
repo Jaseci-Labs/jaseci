@@ -207,7 +207,10 @@ class ShellGhost:
         cfg_string = ""
         ins_string = ""
         for module, cfg in self.cfgs.items():
-            cfg_string += f"Module: {module}\n{self.__cfg_deque_dict[module].get_cfg_repr()}"
+            cfg_history = "None at this time"
+            if module in self.__cfg_deque_dict:
+              cfg_history = self.__cfg_deque_dict[module].get_cfg_repr()
+            cfg_string += f"Module: {module}\n{cfg_history}"
             ins_string += f"Module: {module}\n{cfg.display_instructions()}"
 
         prompt = prompt.format(
@@ -249,9 +252,12 @@ class ShellGhost:
         if self.cfgs == None:
             print("waiting")
             self.cfg_cv.wait()
-        # for module_name, cfg in self.cfgs.items():
-        #     print(f"Name: {module_name}\n{cfg.display_instructions()}")
+        for module_name, cfg in self.cfgs.items():
+            print(f"Name: {module_name}")
         self.cfg_cv.release()
+        print("CFG INFO")
+        print(self.cfgs)
+        print("EO CFG INFO")
 
         # Once cv has been notifie, self.cfgs is no longer accessed across threads
         current_executing_bbs = {}
@@ -315,13 +321,17 @@ class ShellGhost:
             time.sleep(1)
             print("\nUpdating cfgs")
             update_cfg()
-            self.prompt_llm_with_history()
+            # self.prompt_llm_with_history()
             self.finished_exception_lock.acquire()
-            time.sleep(5)
+            time.sleep(1)
 
         self.finished_exception_lock.release()
 
         print("\nUpdating cfgs at the end")
         update_cfg()
-        self.prompt_llm_with_history(verbose=True)
+        print("CCURRRENT CFG STUFFFFFF")
+        for module, cfg in self.cfgs.items():
+          print(module)
+          print(cfg)
+        # self.prompt_llm_with_history(verbose=True)
         
