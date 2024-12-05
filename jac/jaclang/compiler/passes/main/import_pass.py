@@ -15,6 +15,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import DefUsePass, SubNodeTabPass, SymTabBuildPass
+from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 
@@ -286,7 +287,7 @@ class PyImportPass(JacImportPass):
                 self.__debug_print(
                     f"\tRefreshing symbol table for module:{ast.Module.get_href_path(imported_mod)}"
                 )
-            SymTabBuildPass(input_ir=imported_mod, prior=self, stop_inherit=True)
+            PyInspectSymTabBuildPass(input_ir=imported_mod, prior=self)
             DefUsePass(input_ir=imported_mod, prior=self)
 
     def __import_from_symbol_table_build(self) -> None:
@@ -311,7 +312,7 @@ class PyImportPass(JacImportPass):
                 self.__debug_print(
                     f"Refreshing symbol table for module:{ast.Module.get_href_path(imported_mod)}"
                 )
-                SymTabBuildPass(input_ir=imported_mod, prior=self, stop_inherit=True)
+                PyInspectSymTabBuildPass(input_ir=imported_mod, prior=self)
                 DefUsePass(input_ir=imported_mod, prior=self)
                 is_symbol_tabled_refreshed.append(imported_mod.loc.mod_path)
 
