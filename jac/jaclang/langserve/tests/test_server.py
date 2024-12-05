@@ -5,7 +5,6 @@ from jaclang.langserve.engine import JacLangServer
 from .session import LspSession
 
 import lsprotocol.types as lspt
-import pytest
 
 
 class TestJacLangServer(TestCase):
