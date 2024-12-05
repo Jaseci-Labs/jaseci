@@ -21,6 +21,9 @@ with entry {
     else {
       b = 2 + c;
     }
-    a += 1;
+    a = a+ 1;
+    if a == 0{
+      print("nothing");
+    }
   }
 }

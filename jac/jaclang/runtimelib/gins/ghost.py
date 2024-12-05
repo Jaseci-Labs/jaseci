@@ -4,6 +4,7 @@
 import os
 import threading
 import time
+import logging
 
 from jaclang.runtimelib.gins.model import Gemini
 from jaclang.runtimelib.gins.tracer import CFGTracker, CfgDeque
@@ -29,6 +30,19 @@ class ShellGhost:
         self.deque_lock = threading.Lock()
         self.__cfg_deque_dict = dict()
         self.__cfg_deque_size = 5
+
+        self.logger = logging.getLogger()
+        if self.logger.hasHandlers():
+          self.logger.handlers.clear()
+        logging.basicConfig(
+        level=logging.INFO,             # Set the log level
+        format='%(asctime)s - %(message)s', # Set the log message format
+        datefmt='%Y-%m-%d %H:%M:%S',    # Set the timestamp format
+          handlers=[
+              logging.FileHandler("test.txt", mode='a'),  # Log to a file in append mode
+          ]
+        )
+        
 
     def set_cfgs(self, cfgs):
         self.cfg_cv.acquire()
@@ -183,10 +197,10 @@ class ShellGhost:
 
         self.finished_exception_lock.release()
 
-        prompt += "\nCan you identity bottlneck optimizations or where the code can error out?"
-        prompt += "\n(Reason about the program using cfg, semantic and type information. Instead of saying what BB could be improved, reason about the program itself and what improvements could be made.)"
-        prompt += "\n If variable values are available, reason about at what point did a variable cause an issue"
-
+        # prompt += "\nCan you identity bottlneck optimizations or where the code can error out?"
+        # prompt += "\n(Reason about the program using cfg, semantic and type information. Instead of saying what BB could be improved, reason about the program itself and what improvements could be made.)"
+        # prompt += "\n If variable values are available, reason about at what point did a variable cause an issue"
+        prompt += "\n Please use the following information fill in predicted_edges[freq] for each BB edge with something completely random"
         if verbose:
             print(prompt)
 
@@ -252,12 +266,9 @@ class ShellGhost:
         if self.cfgs == None:
             print("waiting")
             self.cfg_cv.wait()
-        for module_name, cfg in self.cfgs.items():
-            print(f"Name: {module_name}")
+        # for module_name, cfg in self.cfgs.items():
+        #     print(f"Name: {module_name}")
         self.cfg_cv.release()
-        print("CFG INFO")
-        print(self.cfgs)
-        print("EO CFG INFO")
 
         # Once cv has been notifie, self.cfgs is no longer accessed across threads
         current_executing_bbs = {}
@@ -313,6 +324,7 @@ class ShellGhost:
 
             self.variable_values = self.tracker.get_variable_values()
             self.update_cfg_deque(cfg.get_cfg_repr(), module)
+            self.logger.info(cfg.to_json())
 
         self.finished_exception_lock.acquire()
         while not self.finished:
@@ -321,17 +333,15 @@ class ShellGhost:
             time.sleep(1)
             print("\nUpdating cfgs")
             update_cfg()
-            # self.prompt_llm_with_history()
+            self.logger.info(self.prompt_llm())
+            # print(f"history size: {len(self.__cfg_deque_dict['hot_path'])}")
             self.finished_exception_lock.acquire()
-            time.sleep(1)
+            # time.sleep(1)
 
         self.finished_exception_lock.release()
 
         print("\nUpdating cfgs at the end")
         update_cfg()
-        print("CCURRRENT CFG STUFFFFFF")
-        for module, cfg in self.cfgs.items():
-          print(module)
-          print(cfg)
-        # self.prompt_llm_with_history(verbose=True)
+        # print(self.__cfg_deque_dict['hot_path'].get_cfg_repr())
+        self.logger.info(self.prompt_llm())
         
