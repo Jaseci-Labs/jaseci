@@ -1,6 +1,7 @@
 """Constants across the project."""
 
-from enum import Enum, IntEnum, IntFlag, StrEnum
+from enum import Enum, IntEnum, IntFlag
+from backports.strenum import StrEnum
 
 
 class SymbolType(Enum):
