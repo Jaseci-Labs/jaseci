@@ -110,19 +110,6 @@ class ImportPassPassTests(TestCase):
             11,  # TODO: Need to only link the modules one time
         )
 
-    # def test_py_resolve_list(self) -> None:
-    #     """Basic test for pass."""
-    #     state: JacImportPass = jac_file_to_pass(
-    #         self.examples_abs_path("rpg_game/jac_impl/jac_impl_5/main.jac"),
-    #         JacImportPass,
-    #     )
-    #     self.assertGreater(len(state.py_resolve_list), 20)
-    #     self.assertIn("pygame.sprite.Sprite.__init__", state.py_resolve_list)
-    #     self.assertIn("pygame.mouse.get_pressed", state.py_resolve_list)
-    #     self.assertIn("pygame.K_SPACE", state.py_resolve_list)
-    #     self.assertIn("random.randint", state.py_resolve_list)
-    #     self.assertIn("pygame.font.Font", state.py_resolve_list)
-
     def test_double_empty_anx(self) -> None:
         """Test importing python."""
         captured_output = io.StringIO()
