@@ -30,6 +30,7 @@ from jaclang.compiler.constant import (
     SymbolType,
 )
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
+from jaclang.compiler.py_info import PyInfo
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
@@ -636,11 +637,10 @@ class Module(AstDocNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
-        self.py_mod_dep_map: dict[str, str] = {}
-        self.py_raise_map: dict[str, str] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
-        self.is_raised_from_py: bool = False
+        self.py_info: PyInfo = PyInfo()
+
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -692,6 +692,19 @@ class Module(AstDocNode):
         """Unparse module node."""
         super().unparse()
         return self.format()
+
+    @staticmethod
+    def get_href_path(node: AstNode) -> str:
+        """Return the full path of the module that contains this node."""
+        parent = node.find_parent_of_type(Module)
+        mod_list = []
+        if isinstance(node, Module):
+            mod_list.append(node)
+        while parent is not None:
+            mod_list.append(parent)
+            parent = parent.find_parent_of_type(Module)
+        mod_list.reverse()
+        return ".".join(p.name for p in mod_list)
 
 
 class GlobalVars(ElementStmt, AstAccessNode):
