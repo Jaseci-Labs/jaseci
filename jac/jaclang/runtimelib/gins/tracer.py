@@ -48,6 +48,9 @@ class CFGTracker:
         self.curr_variables_lock = threading.Lock()
         self.curr_variables = {}
 
+        #tracking inputs
+        self.inputs = []
+
     def start_tracking(self):
         """Start tracking branch coverage"""
         frame = sys._getframe()
@@ -66,6 +69,14 @@ class CFGTracker:
 
         return cpy
 
+    def get_inputs(self):
+        self.inst_lock.acquire()
+        cpy = copy.deepcopy(self.inputs)
+        self.inputs = []
+        self.inst_lock.release()
+
+        return cpy
+        
     def get_variable_values(self):
         self.curr_variables_lock.acquire()
         cpy = copy.deepcopy(self.curr_variables)
@@ -73,6 +84,7 @@ class CFGTracker:
         self.curr_variables_lock.release()
 
         return cpy
+    
 
     def trace_callback(
         self, frame: types.FrameType, event: str, arg: any
@@ -102,6 +114,9 @@ class CFGTracker:
             if "__annotations__" in frame.f_locals:
                 self.curr_variables_lock.acquire()
                 for var_name in frame.f_locals["__annotations__"]:
+                    if var_name == "input_val" and (len(self.inputs) == 0 or frame.f_locals[var_name] != self.inputs[-1]):
+                      self.inputs.append(frame.f_locals[var_name])
+
                     variable_dict[var_name] = frame.f_locals[var_name]
                 self.curr_variables[module] = (frame.f_lasti, variable_dict)
                 self.curr_variables_lock.release()

@@ -13,7 +13,7 @@ output_file = os.path.join(current_directory,'test_predict.txt')
 # random_numbers = list(np.random.normal(mean,std_dev, num_samples))
 # w_str = "\n".join(str(round(num,3)) for num in random_numbers)
 
-num_samples = 1000
+num_samples = 100
 start_value = 99
 end_avg = 105
 
@@ -36,4 +36,4 @@ for _ in range(num_samples):
 # Write data to output file
 with open(output_file, 'w') as file:
     for value in sensor_data:
-        file.write(f"{value:.2f}\n")
+        file.write(f"{value:.4f}\n")

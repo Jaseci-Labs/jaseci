@@ -358,6 +358,7 @@ class ShellGhost:
             self.variable_values = self.tracker.get_variable_values()
             self.update_cfg_deque(cfg.get_cfg_repr(), module)
             self.logger.info(cfg.to_json())
+            print(f"CURRENT INPUTS: {self.tracker.get_inputs()}")
 
         self.finished_exception_lock.acquire()
         while not self.finished:
