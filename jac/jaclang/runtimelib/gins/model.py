@@ -51,6 +51,10 @@ class Gemini(BaseModel):
             return None
 
     def generate(self, prompt: str):
+        response = self.model.generate_content(prompt)
+        return response.text
+        
+    def generate_structured(self, prompt: str):
         import google.generativeai as genai
         response = self.model.generate_content(
           prompt,
