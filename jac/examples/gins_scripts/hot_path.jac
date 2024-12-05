@@ -38,6 +38,6 @@ with entry {
   while test_val > 0 {
     reduce:float = random.uniform(5.0,10.0);
     test_val -= 100.0;
-    change_reduction_arr.append(test_val);
+    # change_reduction_arr.append(test_val);
   }
 }
