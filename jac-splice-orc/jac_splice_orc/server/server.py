@@ -10,6 +10,8 @@ from grpc_local import module_service_pb2
 import logging
 import traceback
 
+from grpc_health.v1 import health, health_pb2_grpc, health_pb2
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 
@@ -181,6 +183,14 @@ def serve(module_name):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     module_service_pb2_grpc.add_ModuleServiceServicer_to_server(
         ModuleService(module_name), server
+    )
+
+    health_servicer = health.HealthServicer()
+    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+
+    health_servicer.set(
+        service="ModuleService",
+        status=health_pb2.HealthCheckResponse.SERVING,
     )
     server.add_insecure_port("[::]:50051")
     server.start()
