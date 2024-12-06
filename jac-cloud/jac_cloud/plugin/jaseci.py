@@ -1,7 +1,6 @@
 """Jac Language Features."""
 
 from collections import OrderedDict
-from contextlib import suppress
 from dataclasses import Field, MISSING, fields, is_dataclass
 from functools import wraps
 from os import getenv
@@ -45,8 +44,11 @@ from ..core.architype import (
     EdgeAnchor,
     EdgeArchitype,
     GenericEdge,
+    JID,
+    JacCloudJID,
     NodeAnchor,
     NodeArchitype,
+    ObjectAnchor,
     ObjectArchitype,
     Permission,
     Root,
@@ -195,7 +197,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 except ValidationError as e:
                     return ORJSONResponse({"detail": e.errors()})
 
-            jctx = JaseciContext.create(request, NodeAnchor.ref(node) if node else None)
+            jctx = JaseciContext.create(request, node)
 
             wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
             if Jac.check_read_access(jctx.entry_node):
@@ -211,7 +213,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 return ORJSONResponse(resp, jctx.status)
             else:
                 error = {
-                    "error": f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!"
+                    "error": f"You don't have access on target entry {jctx.entry_node.jid}!"
                 }
                 jctx.close()
 
@@ -312,14 +314,16 @@ class JacCallableImplementation:
     """Callable Implementations."""
 
     @staticmethod
-    def get_object(id: str) -> Architype | None:
+    def get_object(id: str | JacCloudJID) -> Architype | None:
         """Get object by id."""
         if not FastAPI.is_enabled():
             return _JacCallableImplementation.get_object(id=id)
 
-        with suppress(ValueError):
-            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
-                return architype
+        if isinstance(id, str):
+            id = JacCloudJID(id)
+
+        if anchor := id.anchor:
+            return anchor.architype
 
         return None
 
@@ -330,32 +334,28 @@ class JacAccessValidationPlugin:
     @staticmethod
     @hookimpl
     def allow_root(
-        architype: Architype, root_id: BaseAnchor, level: AccessLevel | int | str
+        architype: Architype, root_id: JacCloudJID, level: AccessLevel | int | str
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         if not FastAPI.is_enabled():
-            JacFeatureImpl.allow_root(
-                architype=architype, root_id=root_id, level=level  # type: ignore[arg-type]
-            )
+            JacFeatureImpl.allow_root(architype=architype, root_id=root_id, level=level)
             return
 
         anchor = architype.__jac__
 
         level = AccessLevel.cast(level)
         access = anchor.access.roots
-        if (
-            isinstance(anchor, BaseAnchor)
-            and (ref_id := root_id.ref_id)
-            and level != access.anchors.get(ref_id, AccessLevel.NO_ACCESS)
+        if isinstance(anchor, BaseAnchor) and level != access.anchors.get(
+            root_id, AccessLevel.NO_ACCESS
         ):
-            access.anchors[ref_id] = level
-            anchor._set.update({f"access.roots.anchors.{ref_id}": level.name})
-            anchor._unset.pop(f"access.roots.anchors.{ref_id}", None)
+            access.anchors[root_id] = level
+            anchor._set.update({f"access.roots.anchors.{root_id}": level.name})
+            anchor._unset.pop(f"access.roots.anchors.{root_id}", None)
 
     @staticmethod
     @hookimpl
     def disallow_root(
-        architype: Architype, root_id: BaseAnchor, level: AccessLevel | int | str
+        architype: Architype, root_id: JacCloudJID, level: AccessLevel | int | str
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         if not FastAPI.is_enabled():
@@ -370,11 +370,10 @@ class JacAccessValidationPlugin:
         access = anchor.access.roots
         if (
             isinstance(anchor, BaseAnchor)
-            and (ref_id := root_id.ref_id)
-            and access.anchors.pop(ref_id, None) is not None
+            and access.anchors.pop(root_id, None) is not None
         ):
-            anchor._unset.update({f"access.roots.anchors.{ref_id}": True})
-            anchor._set.pop(f"access.roots.anchors.{ref_id}", None)
+            anchor._unset.update({f"access.roots.anchors.{root_id}": True})
+            anchor._set.pop(f"access.roots.anchors.{root_id}", None)
 
     @staticmethod
     @hookimpl
@@ -424,7 +423,7 @@ class JacAccessValidationPlugin:
         # if current root is system_root
         # if current root id is equal to target anchor's root id
         # if current root is the target anchor
-        if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
+        if jroot == jctx.system_root or jroot.jid == to.root or jroot == to:
             return AccessLevel.WRITE
 
         access_level = AccessLevel.NO_ACCESS
@@ -435,19 +434,17 @@ class JacAccessValidationPlugin:
 
         # if target anchor's root have set allowed roots
         # if current root is allowed to the whole graph of target anchor's root
-        if to.root and isinstance(
-            to_root := jctx.mem.find_by_id(NodeAnchor.ref(f"n::{to.root}")), Anchor
-        ):
+        if to.root and (to_root := to.root.anchor):
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
-            level = to_root.access.roots.check(jroot.ref_id)
+            level = to_root.access.roots.check(jroot.jid)
             if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
-        level = to_access.roots.check(jroot.ref_id)
+        level = to_access.roots.check(jroot.jid)
         if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
             access_level = level
 
@@ -501,11 +498,13 @@ class JacEdgePlugin:
             JacFeatureImpl.detach(edge=edge)
             return
 
-        Jac.remove_edge(node=edge.source, edge=edge)
-        edge.source.disconnect_edge(edge)
+        if source := edge.source.anchor:
+            Jac.remove_edge(node=source, edge=edge)
+            source.disconnect_edge(edge)
 
-        Jac.remove_edge(node=edge.target, edge=edge)
-        edge.target.disconnect_edge(edge)
+        if target := edge.target.anchor:
+            Jac.remove_edge(node=target, edge=edge)
+            target.disconnect_edge(edge)
 
 
 class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
@@ -529,24 +528,29 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
         ctx = JaseciContext.get()
         ranchor = root.__jac__ if root else ctx.root
-
+        ranchor_jid = str(ranchor.jid)
         deleted_count = 0  # noqa: SIM113
 
         for node in NodeAnchor.Collection.find(
-            {"_id": {"$ne": ranchor.id}, "root": ranchor.id}
+            {"_id": {"$ne": ranchor.id}, "root": ranchor_jid}
         ):
-            ctx.mem.__mem__[node.id] = node
+            ctx.mem.__mem__[node.jid] = node
             Jac.destroy(node)
             deleted_count += 1
 
-        for edge in EdgeAnchor.Collection.find({"root": ranchor.id}):
-            ctx.mem.__mem__[edge.id] = edge
+        for edge in EdgeAnchor.Collection.find({"root": ranchor_jid}):
+            ctx.mem.__mem__[edge.jid] = edge
             Jac.destroy(edge)
             deleted_count += 1
 
-        for walker in WalkerAnchor.Collection.find({"root": ranchor.id}):
-            ctx.mem.__mem__[walker.id] = walker
+        for walker in WalkerAnchor.Collection.find({"root": ranchor_jid}):
+            ctx.mem.__mem__[walker.jid] = walker
             Jac.destroy(walker)
+            deleted_count += 1
+
+        for obj in ObjectAnchor.Collection.find({"root": ranchor_jid}):
+            ctx.mem.__mem__[obj.jid] = obj
+            Jac.destroy(obj)
             deleted_count += 1
 
         return deleted_count
@@ -721,14 +725,14 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             eanch = edge.__jac__ = EdgeAnchor(
                 architype=edge,
                 name=("" if isinstance(edge, GenericEdge) else edge.__class__.__name__),
-                source=source,
-                target=target,
+                source=source.jid,
+                target=target.jid,
                 is_undirected=is_undirected,
                 access=Permission(),
                 state=AnchorState(),
             )
-            source.edges.append(eanch)
-            target.edges.append(eanch)
+            source.edges.append(eanch.jid)
+            target.edges.append(eanch.jid)
             source.connect_edge(eanch)
             target.connect_edge(eanch)
 
@@ -754,12 +758,12 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def object_ref(obj: Architype) -> str:
+    def object_ref(obj: Architype) -> JID:
         """Get object reference id."""
         if not FastAPI.is_enabled():
             return JacFeatureImpl.object_ref(obj=obj)
 
-        return str(obj.__jac__.ref_id)
+        return obj.__jac__.jid
 
     @staticmethod
     @hookimpl
@@ -775,8 +779,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             walker = op1.__jac__
             if isinstance(op2, NodeArchitype):
                 node = op2.__jac__
-            elif isinstance(op2, EdgeArchitype):
-                node = op2.__jac__.target
+            elif isinstance(op2, EdgeArchitype) and (
+                target := op2.__jac__.target.anchor
+            ):
+                node = target
             else:
                 raise TypeError("Invalid target object")
         elif isinstance(op2, WalkerArchitype):
@@ -784,8 +790,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             walker = op2.__jac__
             if isinstance(op1, NodeArchitype):
                 node = op1.__jac__
-            elif isinstance(op1, EdgeArchitype):
-                node = op1.__jac__.target
+            elif isinstance(op1, EdgeArchitype) and (
+                target := op1.__jac__.target.anchor
+            ):
+                node = target
             else:
                 raise TypeError("Invalid target object")
         else:
@@ -874,10 +882,11 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             match anchor:
                 case NodeAnchor():
                     for edge in anchor.edges:
-                        Jac.destroy(edge)
+                        if eanch := edge.anchor:
+                            Jac.destroy(eanch)
                 case EdgeAnchor():
                     Jac.detach(anchor)
                 case _:
                     pass
 
-            Jac.get_context().mem.remove(anchor.id)
+            Jac.get_context().mem.remove(anchor.jid)

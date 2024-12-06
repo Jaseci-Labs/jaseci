@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional
 
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.constructs import Architype, NodeArchitype
+from jaclang.runtimelib.constructs import Architype, JID, NodeArchitype
 
 
 def dotgen(
@@ -41,6 +41,6 @@ def dotgen(
     )
 
 
-def jid(obj: Architype) -> str:
+def jid(obj: Architype) -> JID:
     """Get the id of the object."""
     return Jac.object_ref(obj)

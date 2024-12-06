@@ -206,7 +206,7 @@ walker update_nested_node {
 
 walker detach_nested_node {
     can enter_root with `root entry {
-        report here del--> [-->(`?Nested)];
+        return here del--> [-->(`?Nested)];
     }
 }
 
@@ -214,14 +214,14 @@ walker visit_nested_node {
     can enter_root with `root entry {
         nesteds = [-->(`?Nested)];
         if nesteds {
-            report [-->(`?Nested)][0];
+            return [-->(`?Nested)][0];
         } else {
-            report nesteds;
+            return nesteds;
         }
     }
 
     can enter_nested with Nested entry {
-        report here;
+        return here;
     }
 }
 
@@ -251,8 +251,8 @@ walker allow_other_root_access {
         if self.via_all {
             Jac.unrestrict(here, self.level);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            import:py from jac_cloud.core.architype {JacCloudJID}
+            Jac.allow_root(here, JacCloudJID(self.root_id), self.level);
         }
     }
 
@@ -260,8 +260,8 @@ walker allow_other_root_access {
         if self.via_all {
             Jac.unrestrict(here, self.level);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            import:py from jac_cloud.core.architype {JacCloudJID}
+            Jac.allow_root(here, JacCloudJID(self.root_id), self.level);
         }
     }
 }
@@ -273,8 +273,8 @@ walker disallow_other_root_access {
         if self.via_all {
             Jac.restrict(here);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
+            import:py from jac_cloud.core.architype {JacCloudJID}
+            Jac.disallow_root(here, JacCloudJID(self.root_id));
         }
     }
 
@@ -282,8 +282,8 @@ walker disallow_other_root_access {
         if self.via_all {
             Jac.restrict(here);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
+            import:py from jac_cloud.core.architype {JacCloudJID}
+            Jac.disallow_root(here, JacCloudJID(self.root_id));
         }
     }
 }
@@ -461,23 +461,6 @@ walker different_return {
     class __specs__ {
         has auth: bool = False;
     }
-}
-
-:walker:detach_nested_node:can:enter_root {
-    return here del--> [-->(`?Nested)];
-}
-
-:walker:visit_nested_node:can:enter_root {
-    nesteds = [-->(`?Nested)];
-    if nesteds {
-        return [-->(`?Nested)][0];
-    } else {
-        return nesteds;
-    }
-}
-
-:walker:visit_nested_node:can:enter_nested {
-    return here;
 }
 
 walker manual_create_nested_node {
@@ -704,10 +687,11 @@ walker check_populated_graph {
     can enter with `root entry {
         import:py from jac_cloud.core.architype {NodeAnchor, EdgeAnchor, WalkerAnchor}
 
-        id = here.__jac__.id;
-        count = NodeAnchor.Collection.count({"$or": [{"_id": id}, {"root": id}]});
-        count += EdgeAnchor.Collection.count({"root": id});
-        count += WalkerAnchor.Collection.count({"root": id});
+        jid = here.__jac__.jid;
+        _jid = str(jid);
+        count = NodeAnchor.Collection.count({"$or": [{"_id": jid.id}, {"root": _jid}]});
+        count += EdgeAnchor.Collection.count({"root": _jid});
+        count += WalkerAnchor.Collection.count({"root": _jid});
 
         report count;
     }
@@ -793,14 +777,6 @@ walker delete_custom_object {
     has object_id: str;
 
     can enter1 with `root entry {
-        import:py from jac_cloud.core.architype {BaseAnchor}
         Jac.destroy(&(self.object_id));
-
-        # This is similar to
-        #
-        # Jac.destroy(BaseAnchor.ref(self.object_id));
-        #
-        # The only difference is BaseAnchor.ref doesn't
-        # load the actual object and just use it as reference
     }
 }

@@ -1,8 +1,8 @@
 """Memory abstraction for jaseci plugin."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from os import getenv
-from typing import Callable, Generator, Iterable, TypeVar, cast
+from typing import Callable, Generator, Iterable, TypeVar
 
 from bson import ObjectId
 
@@ -14,10 +14,9 @@ from pymongo import InsertOne
 from pymongo.client_session import ClientSession
 
 from .architype import (
-    Anchor,
-    BaseAnchor,
     BulkWrite,
     EdgeAnchor,
+    JacCloudJID,
     NodeAnchor,
     ObjectAnchor,
     Root,
@@ -27,78 +26,91 @@ from ..jaseci.datasources import Collection
 
 DISABLE_AUTO_CLEANUP = getenv("DISABLE_AUTO_CLEANUP") == "true"
 SINGLE_QUERY = getenv("SINGLE_QUERY") == "true"
-IDS = ObjectId | Iterable[ObjectId]
-BA = TypeVar("BA", bound="BaseAnchor")
+
+_ANCHOR = TypeVar("_ANCHOR", NodeAnchor, EdgeAnchor, WalkerAnchor, ObjectAnchor)
 
 
 @dataclass
-class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
+class MongoDB(Memory):
     """Shelf Handler."""
 
+    __mem__: dict[
+        JacCloudJID, NodeAnchor | EdgeAnchor | WalkerAnchor | ObjectAnchor
+    ] = field(
+        default_factory=dict
+    )  # type: ignore[assignment]
+    __gc__: set[JacCloudJID] = field(default_factory=set)  # type: ignore[assignment]
     __session__: ClientSession | None = None
 
-    def populate_data(self, edges: Iterable[EdgeAnchor]) -> None:
+    def populate_data(self, edges: Iterable[JacCloudJID[EdgeAnchor]]) -> None:
         """Populate data to avoid multiple query."""
         if not SINGLE_QUERY:
-            nodes: set[NodeAnchor] = set()
+            nodes: set[JacCloudJID] = set()
             for edge in self.find(edges):
-                if edge.source:
-                    nodes.add(edge.source)
-                if edge.target:
-                    nodes.add(edge.target)
+                nodes.add(edge.source)
+                nodes.add(edge.target)
             self.find(nodes)
 
     def find(  # type: ignore[override]
         self,
-        anchors: BA | Iterable[BA],
-        filter: Callable[[Anchor], Anchor] | None = None,
+        ids: JacCloudJID[_ANCHOR] | Iterable[JacCloudJID[_ANCHOR]],
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
         session: ClientSession | None = None,
-    ) -> Generator[BA, None, None]:
+    ) -> Generator[_ANCHOR, None, None]:
         """Find anchors from datasource by ids with filter."""
-        if not isinstance(anchors, Iterable):
-            anchors = [anchors]
+        if not isinstance(ids, Iterable):
+            ids = [ids]
 
-        collections: dict[type[Collection[BaseAnchor]], list[ObjectId]] = {}
-        for anchor in anchors:
-            if anchor.id not in self.__mem__ and anchor not in self.__gc__:
-                coll = collections.get(anchor.Collection)
+        collections: dict[
+            type[
+                Collection[NodeAnchor]
+                | Collection[EdgeAnchor]
+                | Collection[WalkerAnchor]
+                | Collection[ObjectAnchor]
+            ],
+            list[ObjectId],
+        ] = {}
+        for jid in ids:
+            if jid not in self.__mem__ and jid not in self.__gc__:
+                coll = collections.get(jid.type.Collection)
                 if coll is None:
-                    coll = collections[anchor.Collection] = []
+                    coll = collections[jid.type.Collection] = []
 
-                coll.append(anchor.id)
+                coll.append(jid.id)
 
-        for cl, ids in collections.items():
+        for cl, oids in collections.items():
             for anch_db in cl.find(
                 {
-                    "_id": {"$in": ids},
+                    "_id": {"$in": oids},
                 },
                 session=session or self.__session__,
             ):
-                self.__mem__[anch_db.id] = anch_db
+                self.__mem__[anch_db.jid] = anch_db
 
-        for anchor in anchors:
+        for jid in ids:
             if (
-                anchor not in self.__gc__
-                and (anch_mem := self.__mem__.get(anchor.id))
-                and (not filter or filter(anch_mem))  # type: ignore[arg-type]
+                jid not in self.__gc__
+                and (anch_mem := self.__mem__.get(jid))
+                and isinstance(anch_mem, jid.type)
+                and (not filter or filter(anch_mem))
             ):
-                yield cast(BA, anch_mem)
+                yield anch_mem
 
     def find_one(  # type: ignore[override]
         self,
-        anchors: BA | Iterable[BA],
-        filter: Callable[[Anchor], Anchor] | None = None,
+        ids: JacCloudJID[_ANCHOR] | Iterable[JacCloudJID[_ANCHOR]],
+        filter: Callable[[_ANCHOR], _ANCHOR] | None = None,
         session: ClientSession | None = None,
-    ) -> BA | None:
+    ) -> _ANCHOR | None:
         """Find one anchor from memory by ids with filter."""
-        return next(self.find(anchors, filter, session), None)
+        return next(self.find(ids, filter, session), None)
 
-    def find_by_id(self, anchor: BA) -> BA | None:
+    def find_by_id(self, id: JacCloudJID[_ANCHOR]) -> _ANCHOR | None:  # type: ignore[override]
         """Find one by id."""
-        data = super().find_by_id(anchor.id)
+        data = super().find_by_id(id)
 
-        if not data and (data := anchor.Collection.find_by_id(anchor.id)):
-            self.__mem__[data.id] = data
+        if not data and (data := id.type.Collection.find_by_id(id.id)):
+            self.__mem__[data.jid] = data
 
         return data
 
@@ -115,7 +127,9 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
 
         super().close()
 
-    def sync_mem_to_db(self, bulk_write: BulkWrite, keys: Iterable[ObjectId]) -> None:
+    def sync_mem_to_db(
+        self, bulk_write: BulkWrite, keys: Iterable[JacCloudJID]
+    ) -> None:
         """Manually sync memory to db."""
         for key in keys:
             if (
@@ -146,19 +160,18 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
     def get_bulk_write(self) -> BulkWrite:
         """Sync memory to database."""
         bulk_write = BulkWrite()
-
-        for anchor in self.__gc__:
-            match anchor:
-                case NodeAnchor():
-                    bulk_write.del_node(anchor.id)
-                case EdgeAnchor():
-                    bulk_write.del_edge(anchor.id)
-                case WalkerAnchor():
-                    bulk_write.del_walker(anchor.id)
-                case ObjectAnchor():
-                    bulk_write.del_object(anchor.id)
-                case _:
-                    pass
+        for jid in self.__gc__:
+            self.__mem__.pop(jid, None)
+            # match case doesn't work yet with
+            # type checking for type (not instance)
+            if jid.type is NodeAnchor:
+                bulk_write.del_node(jid.id)
+            elif jid.type is EdgeAnchor:
+                bulk_write.del_edge(jid.id)
+            elif jid.type is WalkerAnchor:
+                bulk_write.del_walker(jid.id)
+            elif jid.type is ObjectAnchor:
+                bulk_write.del_object(jid.id)
 
         keys = set(self.__mem__.keys())
 

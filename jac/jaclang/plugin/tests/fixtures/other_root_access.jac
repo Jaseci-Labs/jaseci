@@ -1,5 +1,4 @@
-import:py from jaclang.runtimelib.architype {Anchor}
-import:py from uuid {UUID}
+import:py from jaclang.runtimelib.architype {JacLangJID}
 
 node A {
     has val: int;
@@ -48,15 +47,15 @@ walker create_node {
     can enter with `root entry {
         a = A(val=self.val);
         here ++> a;
-        print(a.__jac__.id);
+        print(jid(a));
     }
 }
 
 walker create_other_root {
     can enter with `root entry {
-        other_root = `root().__jac__;
+        other_root = `root();
         Jac.save(other_root);
-        print(other_root.id);
+        print(jid(other_root));
     }
 }
 
@@ -67,7 +66,7 @@ walker allow_other_root_access {
         if self.via_all {
             Jac.unrestrict(here, self.level);
         } else {
-            Jac.allow_root(here, UUID(self.root_id), self.level);
+            Jac.allow_root(here, JacLangJID(self.root_id), self.level);
         }
     }
 
@@ -75,7 +74,7 @@ walker allow_other_root_access {
         if self.via_all {
             Jac.unrestrict(here, self.level);
         } else {
-            Jac.allow_root(here, UUID(self.root_id), self.level);
+            Jac.allow_root(here, JacLangJID(self.root_id), self.level);
         }
     }
 }
@@ -87,7 +86,7 @@ walker disallow_other_root_access {
         if self.via_all {
             Jac.restrict(here);
         } else {
-            Jac.disallow_root(here, UUID(self.root_id));
+            Jac.disallow_root(here, JacLangJID(self.root_id));
         }
     }
 
@@ -95,7 +94,7 @@ walker disallow_other_root_access {
         if self.via_all {
             Jac.restrict(here);
         } else {
-            Jac.disallow_root(here, UUID(self.root_id));
+            Jac.disallow_root(here, JacLangJID(self.root_id));
         }
     }
 }
