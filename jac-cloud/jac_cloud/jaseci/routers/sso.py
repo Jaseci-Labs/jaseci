@@ -46,6 +46,8 @@ SUPPORTED_PLATFORMS: dict[str, type[SSOBase]] = {
     "GITHUB": GithubSSO,
     "GITLAB": GitlabSSO,
     "GOOGLE": GoogleSSO,
+    "GOOGLE_ANDROID": GoogleSSO,
+    "GOOGLE_IOS": GoogleSSO,
     "KAKAO": KakaoSSO,
     "LINE": LineSSO,
     "LINKEDIN": LinkedInSSO,
