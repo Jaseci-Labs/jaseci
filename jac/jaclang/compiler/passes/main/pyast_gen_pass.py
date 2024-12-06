@@ -15,6 +15,9 @@ from jaclang.compiler.passes import Pass
 
 T = TypeVar("T", bound=ast3.AST)
 
+JACLIB_IMPORT_ALL = True  # TODO(thakee): Move this to settings.
+JACLIB_ALIAS = "jl"  # Will import jaclib as jl
+
 
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
@@ -52,6 +55,38 @@ class PyastGenPass(Pass):
                 ),
                 jac_node=self.ir,
             ),
+            # FIXME(thakee): Added for tests to pass, remove this.
+            self.sync(
+                ast3.ImportFrom(
+                    module="jaclang.plugin.feature",
+                    names=[
+                        self.sync(
+                            ast3.alias(name="JacFeature", asname=Con.JAC_FEATURE.value)
+                        ),
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            ),
+            (
+                self.sync(
+                    ast3.ImportFrom(
+                        module="jaclang",
+                        names=[self.sync(ast3.alias(name="*", asname=None))],
+                        level=0,
+                    ),
+                    jac_node=self.ir,
+                )
+                if JACLIB_IMPORT_ALL
+                else self.sync(
+                    ast3.Import(
+                        names=[
+                            self.sync(ast3.alias(name="jaclang", asname=JACLIB_ALIAS))
+                        ]
+                    ),
+                    jac_node=self.ir,
+                )
+            ),
         ]
 
     def enter_node(self, node: ast.AstNode) -> None:
@@ -70,6 +105,18 @@ class PyastGenPass(Pass):
         # TODO: USE THIS TO SYNC
         #     if isinstance(i, ast3.AST):
         #         i.jac_link = node
+
+    def jaclib_obj(self, obj_name: str) -> ast3.AST:
+        """Return the object from jaclib as ast node based on the import config."""
+        if JACLIB_IMPORT_ALL:
+            return self.sync(ast3.Name(id=obj_name, ctx=ast3.Load()))
+        return self.sync(
+            ast3.Attribute(
+                value=self.sync(ast3.Name(id=JACLIB_ALIAS, ctx=ast3.Load())),
+                attr=obj_name,
+                ctx=ast3.Load(),
+            )
+        )
 
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
@@ -109,25 +156,6 @@ class PyastGenPass(Pass):
             )
         )
         self.already_added.append(self.needs_typing.__name__)
-
-    def needs_abc(self) -> None:
-        """Check if enum is needed."""
-        if self.needs_abc.__name__ in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.Import(
-                    names=[
-                        self.sync(
-                            ast3.alias(name="abc", asname="_jac_abc"),
-                            jac_node=self.ir,
-                        ),
-                    ]
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.already_added.append(self.needs_abc.__name__)
 
     def needs_enum(self) -> None:
         """Check if enum is needed."""
@@ -177,44 +205,6 @@ class PyastGenPass(Pass):
             )
         )
         self.already_added.append(self.needs_jac_feature.__name__)
-
-    def needs_dataclass(self) -> None:
-        """Check if enum is needed."""
-        if self.needs_dataclass.__name__ in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.ImportFrom(
-                    module="dataclasses",
-                    names=[
-                        self.sync(
-                            ast3.alias(name="dataclass", asname="__jac_dataclass__")
-                        ),
-                    ],
-                    level=0,
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.already_added.append(self.needs_dataclass.__name__)
-
-    def needs_dataclass_field(self) -> None:
-        """Check if enum is needed."""
-        if self.needs_dataclass_field.__name__ in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.ImportFrom(
-                    module="dataclasses",
-                    names=[
-                        self.sync(ast3.alias(name="field", asname="__jac_field__")),
-                    ],
-                    level=0,
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.already_added.append(self.needs_dataclass_field.__name__)
 
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
@@ -935,87 +925,10 @@ class PyastGenPass(Pass):
             else []
         )
 
-        ds_on_entry, ds_on_exit = self.collect_events(node)
-        if node.arch_type.name != Tok.KW_CLASS:
-            self.needs_jac_feature()
-            self.needs_dataclass()
-            decorators.append(
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr=f"make_{node.arch_type.value}",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="on_entry",
-                                    value=self.sync(
-                                        ast3.List(elts=ds_on_entry, ctx=ast3.Load())
-                                    ),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="on_exit",
-                                    value=self.sync(
-                                        ast3.List(elts=ds_on_exit, ctx=ast3.Load())
-                                    ),
-                                )
-                            ),
-                        ],
-                    )
-                )
-            )
-            decorators.append(
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Name(id="__jac_dataclass__", ctx=ast3.Load())
-                        ),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="eq",
-                                    value=self.sync(
-                                        ast3.Constant(value=False),
-                                    ),
-                                )
-                            )
-                        ],
-                    )
-                )
-            )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(
-                self.sync(
-                    ast3.Attribute(
-                        value=self.sync(
-                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                        ),
-                        attr=node.arch_type.value.capitalize(),
-                        ctx=ast3.Load(),
-                    )
-                )
-            )
-        if node.is_abstract:
-            self.needs_abc()
-            base_classes.append(
-                self.sync(
-                    ast3.Attribute(
-                        value=self.sync(ast3.Name(id="_jac_abc", ctx=ast3.Load())),
-                        attr="ABC",
-                        ctx=ast3.Load(),
-                    )
-                )
+                self.jaclib_obj("Jac" + node.arch_type.value.capitalize())
             )
         node.gen.py_ast = [
             self.sync(
@@ -1029,42 +942,6 @@ class PyastGenPass(Pass):
                 )
             )
         ]
-
-    def collect_events(
-        self, node: ast.Architype
-    ) -> tuple[list[ast3.AST], list[ast3.AST]]:
-        """Collect events."""
-        ds_on_entry: list[ast3.AST] = []
-        ds_on_exit: list[ast3.AST] = []
-        for i in (
-            node.body.body.items
-            if isinstance(node.body, ast.ArchDef)
-            else node.body.items if node.body else []
-        ):
-            if isinstance(i, ast.Ability) and isinstance(
-                i.signature, ast.EventSignature
-            ):
-                func_spec = self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="DSFunc",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[self.sync(ast3.Constant(value=i.sym_name))],
-                        keywords=[],
-                    )
-                )
-                (
-                    ds_on_entry.append(func_spec)
-                    if i.signature.event.name == Tok.KW_ENTRY
-                    else ds_on_exit.append(func_spec)
-                )
-        return ds_on_entry, ds_on_exit
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -1207,6 +1084,16 @@ class PyastGenPass(Pass):
                 node,
             )
         decorator_list = node.decorators.gen.py_ast if node.decorators else []
+        if isinstance(node.signature, ast.EventSignature):
+            decorator_list.append(
+                self.jaclib_obj(
+                    "with_entry"
+                    if node.signature.event.name == Tok.KW_ENTRY
+                    else "with_exit"
+                )
+            )
+
+        # TODO(thakee): Check the bellow code?
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.needs_jac_feature()
             decorator_list.append(
@@ -1236,16 +1123,7 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_abstract:
-            self.needs_abc()
-            decorator_list.append(
-                self.sync(
-                    ast3.Attribute(
-                        value=self.sync(ast3.Name(id="_jac_abc", ctx=ast3.Load())),
-                        attr="abstractmethod",
-                        ctx=ast3.Load(),
-                    )
-                )
-            )
+            decorator_list.append(self.jaclib_obj("abstractmethod"))
         if node.is_override:
             self.needs_typing()
             decorator_list.append(
@@ -1498,70 +1376,63 @@ class PyastGenPass(Pass):
             )
         )
         if is_static_var:
-            self.needs_typing()
             annotation = self.sync(
                 ast3.Subscript(
-                    value=self.sync(
-                        ast3.Attribute(
-                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
-                            attr="ClassVar",
-                            ctx=ast3.Load(),
-                        )
-                    ),
+                    value=self.jaclib_obj("static"),
                     slice=annotation,
                     ctx=ast3.Load(),
                 )
             )
-        (
-            self.needs_dataclass_field()
-            if node.defer and not (is_static_var or is_in_class)
-            else None
-        )
+
         node.gen.py_ast = [
             (
                 self.sync(
                     ast3.AnnAssign(
                         target=node.name.gen.py_ast[0],
                         annotation=annotation,
+                        # TODO(thakee): Check this out.
                         value=(
                             self.sync(
                                 ast3.Call(
-                                    func=self.sync(
-                                        ast3.Attribute(
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id=Con.JAC_FEATURE.value,
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                            attr="has_instance_default",
-                                            ctx=ast3.Load(),
+                                    func=self.jaclib_obj("field_default"),
+                                    args=(
+                                        [node.value.gen.py_ast[0]]
+                                        if isinstance(
+                                            node.value.gen.py_ast[0], ast3.Constant
                                         )
+                                        else []
                                     ),
-                                    args=[],
-                                    keywords=[
-                                        self.sync(
-                                            ast3.keyword(
-                                                arg="gen_func",
-                                                value=self.sync(
-                                                    ast3.Lambda(
-                                                        args=self.sync(
-                                                            ast3.arguments(
-                                                                posonlyargs=[],
-                                                                args=[],
-                                                                kwonlyargs=[],
-                                                                vararg=None,
-                                                                kwargs=None,
-                                                                kw_defaults=[],
-                                                                defaults=[],
-                                                            )
-                                                        ),
-                                                        body=node.value.gen.py_ast[0],
-                                                    )
-                                                ),
+                                    keywords=(
+                                        [
+                                            self.sync(
+                                                ast3.keyword(
+                                                    arg="gen_func",
+                                                    value=self.sync(
+                                                        ast3.Lambda(
+                                                            args=self.sync(
+                                                                ast3.arguments(
+                                                                    posonlyargs=[],
+                                                                    args=[],
+                                                                    kwonlyargs=[],
+                                                                    vararg=None,
+                                                                    kwargs=None,
+                                                                    kw_defaults=[],
+                                                                    defaults=[],
+                                                                )
+                                                            ),
+                                                            body=node.value.gen.py_ast[
+                                                                0
+                                                            ],
+                                                        )
+                                                    ),
+                                                )
                                             )
+                                        ]
+                                        if not isinstance(
+                                            node.value.gen.py_ast[0], ast3.Constant
                                         )
-                                    ],
+                                        else []
+                                    ),
                                 )
                             )
                             if node.value
@@ -1569,19 +1440,14 @@ class PyastGenPass(Pass):
                             else (
                                 self.sync(
                                     ast3.Call(
-                                        func=self.sync(
-                                            ast3.Name(
-                                                id="__jac_field__",
-                                                ctx=ast3.Load(),
-                                            )
-                                        ),
+                                        func=self.jaclib_obj("field_default"),
                                         args=[],
                                         keywords=[
                                             self.sync(
                                                 ast3.keyword(
-                                                    arg="init",
+                                                    arg="postinit",
                                                     value=self.sync(
-                                                        ast3.Constant(value=False)
+                                                        ast3.Constant(value=True)
                                                     ),
                                                 )
                                             )
@@ -2299,50 +2165,77 @@ class PyastGenPass(Pass):
         op: Token | DisconnectOp | ConnectOp,
         """
         if isinstance(node.op, ast.ConnectOp):
+
+            left = (
+                node.right.gen.py_ast[0]
+                if node.op.edge_dir == EdgeDir.IN
+                else node.left.gen.py_ast[0]
+            )
+            right = (
+                node.left.gen.py_ast[0]
+                if node.op.edge_dir == EdgeDir.IN
+                else node.right.gen.py_ast[0]
+            )
+            conn_type = (
+                node.op.conn_type.gen.py_ast[0]
+                if node.op.conn_type
+                else self.sync(ast3.Constant(value=None))
+            )
+            undir = self.sync(ast3.Constant(value=node.op.edge_dir == EdgeDir.ANY))
+            conn_assign = (
+                node.op.conn_assign.gen.py_ast[0]
+                if node.op.conn_assign
+                else self.sync(ast3.Constant(value=None))
+            )
+
+            keywords = []
+            if not isinstance(conn_type, ast3.Constant) or conn_type.value is not None:
+                keywords.append(
+                    self.sync(
+                        ast3.keyword(
+                            arg="edge",
+                            value=conn_type,
+                        )
+                    )
+                )
+            if undir.value:  # default is Fault.
+                keywords.append(
+                    self.sync(
+                        ast3.keyword(
+                            arg="undir",
+                            value=undir,
+                        )
+                    )
+                )
+            if (
+                not isinstance(conn_assign, ast3.Constant)
+                or conn_assign.value is not None
+            ):
+                keywords.append(
+                    self.sync(
+                        ast3.keyword(
+                            arg="conn_assign",
+                            value=conn_assign,
+                        )
+                    )
+                )
+
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
+                                value=left,
                                 attr="connect",
                                 ctx=ast3.Load(),
-                            )
+                            ),
                         ),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="left",
-                                    value=(
-                                        node.right.gen.py_ast[0]
-                                        if node.op.edge_dir == EdgeDir.IN
-                                        else node.left.gen.py_ast[0]
-                                    ),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="right",
-                                    value=(
-                                        node.left.gen.py_ast[0]
-                                        if node.op.edge_dir == EdgeDir.IN
-                                        else node.right.gen.py_ast[0]
-                                    ),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="edge_spec",
-                                    value=node.op.gen.py_ast[0],
-                                )
-                            ),
-                        ],
+                        args=[right],
+                        keywords=keywords,
                     )
                 )
             ]
+
         elif isinstance(node.op, ast.DisconnectOp):
             node.gen.py_ast = [
                 self.sync(
@@ -3141,26 +3034,7 @@ class PyastGenPass(Pass):
                 )
             ]
         elif node.name == Tok.KW_ROOT:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(
-                                        id=Con.JAC_FEATURE.value,
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                attr="get_root",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[],
-                        keywords=[],
-                    )
-                )
-            ]
+            node.gen.py_ast = [self.jaclib_obj("root")]
 
         else:
             node.gen.py_ast = [
@@ -3238,71 +3112,116 @@ class PyastGenPass(Pass):
         self,
         loc: ast3.AST,
         node: ast.EdgeOpRef,
-        targ: Optional[ast3.AST],
+        targ: ast3.AST | None,
         edges_only: bool,
     ) -> ast3.AST:
         """Generate ast for edge op ref call."""
+        args = []
+        keywords = []
+
+        if node.filter_cond and node.filter_cond.f_type:
+            args.append(self.sync(node.filter_cond.f_type.gen.py_ast[0]))
+
+            edge_iter_name = "edge"
+            if node.filter_cond.compares:
+                args.append(
+                    self.sync(
+                        ast3.Lambda(
+                            args=self.sync(
+                                ast3.arguments(
+                                    posonlyargs=[],
+                                    args=[self.sync(ast3.arg(arg=edge_iter_name))],
+                                    kwonlyargs=[],
+                                    kw_defaults=[],
+                                    defaults=[],
+                                )
+                            ),
+                            body=self.sync(
+                                ast3.BoolOp(
+                                    op=self.sync(ast3.And()),
+                                    values=[
+                                        self.sync(
+                                            ast3.Compare(
+                                                left=self.sync(
+                                                    ast3.Attribute(
+                                                        value=self.sync(
+                                                            ast3.Name(
+                                                                id=edge_iter_name,
+                                                                ctx=ast3.Load(),
+                                                            ),
+                                                            jac_node=comp,
+                                                        ),
+                                                        attr=comp.gen.py_ast[0].left.id,
+                                                        ctx=ast3.Load(),
+                                                    ),
+                                                    jac_node=comp,
+                                                ),
+                                                ops=comp.gen.py_ast[0].ops,
+                                                comparators=comp.gen.py_ast[
+                                                    0
+                                                ].comparators,
+                                            ),
+                                            jac_node=comp,
+                                        )
+                                        for comp in node.filter_cond.compares.items
+                                        if isinstance(comp.gen.py_ast[0], ast3.Compare)
+                                        and isinstance(
+                                            comp.gen.py_ast[0].left, ast3.Name
+                                        )
+                                    ],
+                                ),
+                            ),
+                        )
+                    )
+                )
+
+        if targ is not None:
+            keywords.append(
+                self.sync(
+                    ast3.keyword(
+                        arg="target",
+                        value=self.sync(ast3.Constant(value=None)),
+                    )
+                )
+            )
+
+        if node.edge_dir != EdgeDir.OUT:
+            keywords.append(
+                self.sync(
+                    ast3.keyword(
+                        arg="dir",
+                        value=self.sync(
+                            ast3.Attribute(
+                                value=self.jaclib_obj("EdgeDir"),
+                                attr=node.edge_dir.name,
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                    )
+                )
+            )
+
+        if edges_only:
+            keywords.append(
+                self.sync(
+                    ast3.keyword(
+                        arg="edges_only",
+                        value=self.sync(ast3.Constant(value=edges_only)),
+                    )
+                )
+            )
+
         return self.sync(
             ast3.Call(
                 func=self.sync(
                     ast3.Attribute(
-                        value=self.sync(
-                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                        ),
-                        attr="edge_ref",
+                        value=loc,
+                        attr="connected",
                         ctx=ast3.Load(),
                     )
                 ),
-                args=[loc],
-                keywords=[
-                    self.sync(
-                        ast3.keyword(
-                            arg="target_obj",
-                            value=(
-                                targ if targ else self.sync(ast3.Constant(value=None))
-                            ),
-                        )
-                    ),
-                    self.sync(
-                        ast3.keyword(
-                            arg="dir",
-                            value=self.sync(
-                                ast3.Attribute(
-                                    value=self.sync(
-                                        ast3.Attribute(
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id=Con.JAC_FEATURE.value,
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                            attr="EdgeDir",
-                                            ctx=ast3.Load(),
-                                        )
-                                    ),
-                                    attr=node.edge_dir.name,
-                                    ctx=ast3.Load(),
-                                )
-                            ),
-                        )
-                    ),
-                    self.sync(
-                        ast3.keyword(
-                            arg="filter_func",
-                            value=self.sync(
-                                node.filter_cond.gen.py_ast[0]
-                                if node.filter_cond
-                                else self.sync(ast3.Constant(value=None))
-                            ),
-                        )
-                    ),
-                    self.sync(
-                        ast3.keyword(
-                            arg="edges_only",
-                            value=self.sync(ast3.Constant(value=edges_only)),
-                        )
-                    ),
-                ],
+                args=args,
+                keywords=keywords,
             )
         )
 
@@ -3372,6 +3291,7 @@ class PyastGenPass(Pass):
 
         compares: SubNodeList[BinaryExpr],
         """
+        # FIXME (thakee): Do I have to remove this?
         node.gen.py_ast = [
             self.sync(
                 ast3.Lambda(
