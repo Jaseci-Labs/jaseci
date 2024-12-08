@@ -8,6 +8,14 @@ from .user import (
     UserResetPassword,
     UserVerification,
 )
+from .websocket import (
+    ChannelEvent,
+    ClientEvent,
+    ConnectionEvent,
+    UserEvent,
+    WalkerEvent,
+    WebSocketEvent,
+)
 
 
 __all__ = [
@@ -18,4 +26,10 @@ __all__ = [
     "UserRequest",
     "UserResetPassword",
     "UserVerification",
+    "ChannelEvent",
+    "ClientEvent",
+    "ConnectionEvent",
+    "UserEvent",
+    "WalkerEvent",
+    "WebSocketEvent",
 ]

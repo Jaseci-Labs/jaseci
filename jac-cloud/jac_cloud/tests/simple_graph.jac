@@ -2,6 +2,7 @@
 import:py from jac_cloud.core.context {JaseciContext}
 import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
 import:py from jac_cloud.jaseci.utils {SendGridEmailer}
+import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 import:py from dataclasses {dataclass}
 import:py from fastapi {UploadFile}
 import:py from typing {Any}
@@ -802,5 +803,16 @@ walker delete_custom_object {
         #
         # The only difference is BaseAnchor.ref doesn't
         # load the actual object and just use it as reference
+    }
+}
+
+walker websocket {
+    has val: int;
+    can enter1 with `root entry {
+        socket.notify_self({"testing": self.val});
+    }
+
+    class __specs__ {
+        has methods: list = ["websocket"];
     }
 }
