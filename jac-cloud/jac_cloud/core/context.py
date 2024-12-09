@@ -16,6 +16,7 @@ from .architype import (
     Anchor,
     AnchorState,
     BaseArchitype,
+    JID,
     JacCloudJID,
     NodeAnchor,
     Permission,
@@ -170,6 +171,8 @@ class JaseciContext(ExecutionContext):
             case dict():
                 for key, dval in val.items():
                     self.clean_response(key, dval, val)
+            case JID():
+                cast(dict, obj)[key] = str(val)
             case Anchor():
                 cast(dict, obj)[key] = val.report()
             case BaseArchitype():
