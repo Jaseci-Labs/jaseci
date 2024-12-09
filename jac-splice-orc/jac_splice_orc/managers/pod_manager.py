@@ -110,7 +110,13 @@ class PodManager:
                                         "mountPath": f"/app/requirements/{module_name}",
                                     }
                                 ],
-                            }
+                                "readinessProbe": {"grpc": {"port": 50051}},
+                                "initialDelaySeconds": 10,
+                                "periodSeconds": 5,
+                                "timeoutSeconds": 5,
+                                "failureThreshold": 3,
+                                "successThreshold": 1,
+                            },
                         ],
                         "volumes": [
                             {
@@ -124,20 +130,23 @@ class PodManager:
 
                 try:
                     existing_configmap = self.v1.read_namespaced_config_map(
-                        name=f"{module_name}-requirements",
-                        namespace=self.namespace
+                        name=f"{module_name}-requirements", namespace=self.namespace
                     )
                     print(f"ConfigMap '{module_name}-requirements' already exists.")
                 except client.exceptions.ApiException as e:
-                    if e.status == 404: 
+                    if e.status == 404:
                         # Create the ConfigMap
-                        print(f"ConfigMap '{module_name}-requirements' not found. Creating it...")
+                        print(
+                            f"ConfigMap '{module_name}-requirements' not found. Creating it..."
+                        )
                         _ = self.v1.create_namespaced_config_map(
                             self.namespace,
                             body={
                                 "metadata": {"name": f"{module_name}-requirements"},
                                 "data": {
-                                    "requirements.txt": open(requirements_file_path, "r").read()
+                                    "requirements.txt": open(
+                                        requirements_file_path, "r"
+                                    ).read()
                                 },
                             },
                         )
@@ -199,20 +208,36 @@ class PodManager:
 
     def wait_for_pod_ready(self, pod_name: str) -> None:
         """Wait until the pod is ready."""
-        max_retries = 30
+        max_retries = 120
         retries = 0
         while retries < max_retries:
-            pod_info = self.v1.read_namespaced_pod(
-                name=pod_name, namespace=self.namespace
-            )
-            if pod_info.status.phase == "Running":
-                logging.info(
-                    f"Pod {pod_name} is running with IP {pod_info.status.pod_ip}"
+            try:
+                pod_info = self.v1.read_namespaced_pod(
+                    name=pod_name, namespace=self.namespace
                 )
+            except client.exceptions.ApiException as e:
+                logging.error(f"Error fetching pod info for {pod_name}: {e}")
+                raise Exception(f"Error fetching pod info for {pod_name}: {e}")
+
+            conditions = pod_info.status.conditions or []
+            ready = False
+            logging.info(f"Pod {pod_name} is in phase: {pod_info.status.phase}")
+            for condition in conditions:
+                logging.info(f"Condition: {condition.type} - {condition.status}")
+                if condition.type == "Ready" and condition.status == "True":
+                    ready = True
+                    break
+            if ready:
+                logging.info(f"Pod {pod_name} is ready and ready to serve requests.")
                 return
+            elif pod_info.status.phase in ["Failed", "Unknown"]:
+                raise Exception(f"Pod {pod_name} is in {pod_info.status.phase} phase.")
             retries += 1
+            logging.info(
+                f"Waiting for pod {pod_name} to be ready... (Attempt {retries}/{max_retries})"
+            )
             time.sleep(2)
-        raise Exception(f"Timeout: Pod {pod_name} failed to reach 'Running' state.")
+        raise Exception(f"Timeout: Pod {pod_name} failed to become ready.")
 
     def get_pod_service_ip(self, module_name: str) -> str:
         """Look up the service IP for the pod corresponding to the module."""
