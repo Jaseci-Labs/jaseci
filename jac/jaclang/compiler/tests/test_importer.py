@@ -62,3 +62,47 @@ class TestLoader(TestCase):
             "{SomeObj(a=10): 'check'} [MyObj(apple=5, banana=7), MyObj(apple=5, banana=7)]",
             stdout_value,
         )
+
+    def test_import_with_jacpath(self) -> None:
+        """Test module import using JACPATH."""
+        # Set up a temporary JACPATH environment variable
+        import os
+        import tempfile
+
+        jacpath_dir = tempfile.TemporaryDirectory()
+        os.environ["JACPATH"] = jacpath_dir.name
+
+        # Create a mock Jac file in the JACPATH directory
+        module_name = "test_module"
+        jac_file_path = os.path.join(jacpath_dir.name, f"{module_name}.jac")
+        with open(jac_file_path, "w") as f:
+            f.write(
+                """
+                with entry {
+                    "Hello from JACPATH!" :> print;
+                }
+                """
+            )
+
+        # Capture the output
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        try:
+            JacMachine(self.fixture_abs_path(__file__)).attach_program(
+                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            )
+            jac_import(module_name, base_path=__file__)
+            cli.run(jac_file_path)
+
+            # Reset stdout and get the output
+            sys.stdout = sys.__stdout__
+            stdout_value = captured_output.getvalue()
+
+            self.assertIn("Hello from JACPATH!", stdout_value)
+
+        finally:
+            captured_output.close()
+            JacMachine.detach()
+            os.environ.pop("JACPATH", None)
+            jacpath_dir.cleanup()
