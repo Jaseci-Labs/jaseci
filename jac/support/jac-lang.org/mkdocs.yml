@@ -45,6 +45,7 @@ nav:
       - Tools:
         - "for_coders/tools/testing.md"
         - "for_coders/tools/jac_streamlit.md"
+        - "for_coders/tools/cli.md"
       
   - For contributors:
       - "for_contributors/contrib.md"

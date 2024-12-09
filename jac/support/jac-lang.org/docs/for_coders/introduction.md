@@ -10,9 +10,9 @@ Join us on this exciting journey. Let's make code art with Jac.
 
 # Content
 
-- [**Introduction to Jac**](../start/about.md)
-- [**Why Jac**](../why.md)
-- [**Get Started with Jac**](../start.md)
+- [**Introduction to Jac**](getting_started.md)
+- [**Why Jac**](why_jac.md)
+<!-- - [**Get Started with Jac**](../start.md) -->
 - [**Language Basics**](language_basics.md)
     - ['```can```' abilities](language_basics.md#can-abilities)
     - [Object types](language_basics.md#object-type)
@@ -29,8 +29,8 @@ Join us on this exciting journey. Let's make code art with Jac.
 - [**Python Integration**](python_integration.md)
     - [How to use Python Libraries?](python_integration.md#how-to-use-python-libraries)
     - [Integrate jac into existing python programs](python_integration.md#integrate-jac-into-existing-python-programs)
-- [**MTLLM - Programming with LLMs**](../learn/with_llm.md)
-- [**Jac colud - Full Stack Deployment**](../learn/coders/jac-cloud/docs/jac_cloud.md)
+- [**MTLLM - Programming with LLMs**](mtllm/with_llm.md)
+- [**Jac colud - Full Stack Deployment**](jac-cloud/jac_cloud.md)
 - **Jac Tools**
     - [Testing](tools/testing.md)
     - [Jac-stramelit](tools/jac_streamlit.md)
