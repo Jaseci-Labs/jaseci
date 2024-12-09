@@ -83,27 +83,22 @@ def mock_kubernetes_and_grpc():
 
         mock_v1_api_instance.read_namespaced_pod.side_effect = read_pod_side_effect
 
-        # ConfigMap read -> assume not found to trigger creation
         mock_v1_api_instance.read_namespaced_config_map.side_effect = ApiException(
             status=404, reason="Not Found"
         )
 
-        # Creating configmap returns success
         mock_v1_api_instance.create_namespaced_config_map.return_value = MagicMock()
 
-        # Creating pod returns immediately a Pending pod (simulate creation success)
         mock_v1_api_instance.create_namespaced_pod.return_value = V1Pod(
             metadata=V1ObjectMeta(name="numpy-pod"),
             spec=V1PodSpec(containers=[]),
             status=V1PodStatus(phase="Pending", conditions=[]),
         )
 
-        # Creating service returns success
         mock_v1_api_instance.create_namespaced_service.return_value = V1Service(
             metadata=V1ObjectMeta(name="numpy-service")
         )
 
-        # Deletion returns success messages
         mock_v1_api_instance.delete_namespaced_pod.return_value = V1Status(
             message="Pod numpy-pod deleted successfully."
         )
@@ -111,14 +106,13 @@ def mock_kubernetes_and_grpc():
             message="Service numpy-service deleted successfully."
         )
 
-        # Mock PodManager actions
         mock_create_pod.return_value = {
             "message": "Pod numpy-pod and service numpy-service created."
         }
         mock_delete_pod.return_value = {
             "message": "Pod numpy-pod and service numpy-service deleted."
         }
-        mock_get_pod_service_ip.return_value = "127.0.0.1"  # mock IP
+        mock_get_pod_service_ip.return_value = "127.0.0.1"
         mock_forward_to_pod.return_value = "[1, 2, 3, 4]"
 
         yield
