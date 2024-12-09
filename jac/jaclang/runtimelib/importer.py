@@ -331,10 +331,7 @@ class JacImporter(Importer):
         for search_path in search_paths:
             candidate = os.path.join(search_path, "/".join(target_path_components))
             # Check if the candidate is a directory or a .jac file
-            if os.path.isdir(candidate):
-                found_path = candidate
-                break
-            elif os.path.isfile(candidate + ".jac"):
+            if (os.path.isdir(candidate)) or (os.path.isfile(candidate + ".jac")):
                 found_path = candidate
                 break
 
