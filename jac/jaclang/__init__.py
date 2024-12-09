@@ -121,6 +121,19 @@ class JacWalker(_JacArchiTypeBase, metaclass=JacMetaWalker):
         """Spawn a new node from the walker."""
         _Jac.spawn_call(self, node)  # type: ignore [arg-type]
 
+    def visit(
+        self,
+        expr: (
+            list["JacNode" | "JacEdge"]
+            | list["JacNode"]
+            | list["JacEdge"]
+            | "JacNode"
+            | "JacEdge"
+        ),
+    ) -> None:  # noqa: ANN401
+        """Visit nodes."""
+        _Jac.visit_node(self, expr)  # type: ignore [arg-type]
+
 
 class JacNode(_JacArchiTypeBase, metaclass=JacMetaNode):
     """Base class for all the jac node types."""
@@ -167,6 +180,7 @@ class JacNode(_JacArchiTypeBase, metaclass=JacMetaNode):
             filter_func=filter_func,
             edges_only=edges_only,
         )
+
 
 class JacEdge(_JacArchiTypeBase, metaclass=JacMetaEdge):
     """Base class for all the jac edge types."""
