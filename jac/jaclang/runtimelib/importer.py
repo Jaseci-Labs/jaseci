@@ -158,9 +158,6 @@ class ImportReturn:
             return getattr(new_module, name, new_module)
         except ImportError as e:
             logger.error(dump_traceback(e))
-            # logger.error(
-            #     f"Failed to load {name} from {jac_file_path} in {module.__name__}: {str(e)}"
-            # )
             return None
 
 
@@ -319,6 +316,35 @@ class JacImporter(Importer):
         """Run the import process for Jac modules."""
         unique_loaded_items: list[types.ModuleType] = []
         module = None
+        # Gather all possible search paths
+        jacpaths = os.environ.get("JACPATH", "")
+        search_paths = [spec.caller_dir]
+        if jacpaths:
+            for p in jacpaths.split(os.pathsep):
+                p = p.strip()
+                if p and p not in search_paths:
+                    search_paths.append(p)
+
+        # Attempt to locate the module file or directory
+        found_path = None
+        target_path_components = spec.target.split(".")
+        for search_path in search_paths:
+            candidate = os.path.join(search_path, "/".join(target_path_components))
+            # Check if the candidate is a directory or a .jac file
+            if os.path.isdir(candidate):
+                found_path = candidate
+                break
+            elif os.path.isfile(candidate + ".jac"):
+                found_path = candidate
+                break
+
+        # If a suitable path was found, update spec.full_target; otherwise, raise an error
+        if found_path:
+            spec.full_target = os.path.abspath(found_path)
+        else:
+            raise ImportError(
+                f"Unable to locate module '{spec.target}' in {search_paths}"
+            )
         if os.path.isfile(spec.full_target + ".jac"):
             module_name = self.get_sys_mod_name(spec.full_target + ".jac")
             module_name = spec.override_name if spec.override_name else module_name
