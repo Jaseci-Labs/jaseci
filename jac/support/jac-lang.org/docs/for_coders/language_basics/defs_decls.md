@@ -41,9 +41,6 @@ At first glance, one might conclude the pythonic style is more readable and easy
 Let’s look at a complex example using some code from Jac's compiler. Here we will take a look at the implementation of a pass of the Jac compiler that was written in Jac. This class is implemented across two files, one with the relevant declarations and the other with its definitions.
 
 ### Declarations in its Own File
-
-
-
 First lets look at the declarations
 
 **jaclang/jac/passes/purple/purple_pygen_pass.jac**

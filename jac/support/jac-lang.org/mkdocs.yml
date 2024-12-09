@@ -11,7 +11,7 @@ nav:
         - "for_coders/language_basics/types.md"
         - "for_coders/language_basics/can_abilities.md"
         - "for_coders/language_basics/import.md"
-        - "for_coders/language_basics/defs_decls.md"
+        - "for_coders/language_basics/impl_docs.md"
       - Data Spatial Programming:
         - "for_coders/data_spatial/dataspatial.md"
         - "for_coders/data_spatial/why_ds.md"
