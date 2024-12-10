@@ -243,17 +243,17 @@ class BulkWrite:
                 if ex.has_error_label("UnknownTransactionCommitResult"):
                     commit_retry += 1
                     logger.error(
-                        "Error commiting bulk write! "
+                        "Error commiting transaction! "
                         f"Retrying [{commit_retry}/{commit_max_retry}] ..."
                     )
                     continue
                 logger.error(
-                    f"Error commiting bulk write after max retry [{commit_max_retry}] !"
+                    f"Error commiting transaction after max retry [{commit_max_retry}] !"
                 )
                 raise
             except Exception:
                 session.abort_transaction()
-                logger.error("Error commiting bulk write!")
+                logger.error("Error commiting transaction!")
                 raise
 
     def execute(self, session: ClientSession) -> None:
@@ -276,16 +276,16 @@ class BulkWrite:
                 if ex.has_error_label("TransientTransactionError"):
                     transaction_retry += 1
                     logger.error(
-                        "Error executing bulk write! "
+                        "Error executing transaction! "
                         f"Retrying [{transaction_retry}/{transaction_max_retry}] ..."
                     )
                     continue
                 logger.error(
-                    f"Error executing bulk write after max retry [{transaction_max_retry}] !"
+                    f"Error executing transaction after max retry [{transaction_max_retry}] !"
                 )
                 raise
             except Exception:
-                logger.error("Error executing bulk write!")
+                logger.error("Error executing transaction!")
                 raise
 
 
