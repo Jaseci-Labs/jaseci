@@ -16,6 +16,7 @@ from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import DefUsePass, SubNodeTabPass, SymTabBuildPass
 from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
+from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 
@@ -295,7 +296,6 @@ class PyImportPass(JacImportPass):
         is_symbol_tabled_refreshed: list[str] = []
         self.import_from_build_list.reverse()
         for imp_node, imported_mod in self.import_from_build_list:
-
             # Need to build the symbol tables again to make sure that the
             # complete symbol table is built.
             #
@@ -319,35 +319,47 @@ class PyImportPass(JacImportPass):
             sym_tab = imported_mod.sym_tab
             parent_sym_tab = imp_node.parent_of_type(ast.Module).sym_tab
 
-            for i in imp_node.items.items:
-                assert isinstance(i, ast.ModuleItem)
-                needed_sym = sym_tab.lookup(i.name.sym_name)
+            if imp_node.import_all:
+                for symbol in sym_tab.tab.values():
+                    if symbol.sym_type == SymbolType.MODULE:
+                        continue
+                    self.__import_from_sym_table_add_symbols(symbol, parent_sym_tab)
+            else:
+                for i in imp_node.items.items:
+                    assert isinstance(i, ast.ModuleItem)
+                    needed_sym = sym_tab.lookup(i.name.sym_name)
 
-                if needed_sym and needed_sym.defn[0].parent:
-                    self.__debug_print(
-                        f"\tAdding {needed_sym.sym_type}:{needed_sym.sym_name} into {parent_sym_tab.name}"
-                    )
-                    assert isinstance(needed_sym.defn[0], ast.AstSymbolNode)
-                    parent_sym_tab.def_insert(
-                        node=needed_sym.defn[0],
-                        access_spec=needed_sym.access,
-                        force_overwrite=True,
-                    )
-
-                    if needed_sym.fetch_sym_tab:
-                        msg = f"\tAdding SymbolTable:{needed_sym.fetch_sym_tab.name} into "
-                        msg += f"SymbolTable:{parent_sym_tab.name} kids"
-                        self.__debug_print(msg)
-                        parent_sym_tab.kid.append(needed_sym.fetch_sym_tab)
-                    elif needed_sym.sym_type != SymbolType.VAR:
-                        raise AssertionError(
-                            "Unexpected symbol type that doesn't have a symbl table"
+                    if needed_sym and needed_sym.defn[0].parent:
+                        self.__import_from_sym_table_add_symbols(
+                            needed_sym, parent_sym_tab
+                        )
+                    else:
+                        self.__debug_print(
+                            f"Can't find a symbol matching {i.name.sym_name} in {sym_tab.name}"
                         )
 
-                else:
-                    self.__debug_print(
-                        f"Can't find a symbol matching {i.name.sym_name} in {sym_tab.name}"
-                    )
+    def __import_from_sym_table_add_symbols(
+        self, sym: Symbol, sym_table: SymbolTable
+    ) -> None:
+        self.__debug_print(
+            f"\tAdding {sym.sym_type}:{sym.sym_name} into {sym_table.name}"
+        )
+        assert isinstance(sym.defn[0], ast.AstSymbolNode)
+        sym_table.def_insert(
+            node=sym.defn[0],
+            access_spec=sym.access,
+            force_overwrite=True,
+        )
+
+        if sym.fetch_sym_tab:
+            msg = f"\tAdding SymbolTable:{sym.fetch_sym_tab.name} into "
+            msg += f"SymbolTable:{sym_table.name} kids"
+            self.__debug_print(msg)
+            sym_table.kid.append(sym.fetch_sym_tab)
+        elif sym.sym_type not in (SymbolType.VAR, SymbolType.MOD_VAR):
+            raise AssertionError(
+                f"Unexpected symbol type '{sym.sym_type}' that doesn't have a symbl table"
+            )
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -379,14 +391,34 @@ class PyImportPass(JacImportPass):
                     f"\tIgnoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
                 )
                 return
+
             self.__debug_print(
                 f"\tAttaching {imported_mod.name} into {ast.Module.get_href_path(imp_node)}"
             )
             self.attach_mod_to_node(imported_item, imported_mod)
-            self.__debug_print(
-                f"\tBuilding symbol table for module:{ast.Module.get_href_path(imported_mod)}"
-            )
-            SymTabBuildPass(input_ir=imported_mod, prior=self)
+
+            if imp_node.import_all:
+                msg = f"\tRegistering module:{imported_mod.name} to "
+                msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
+                self.__debug_print(msg)
+
+                self.import_from_build_list.append((imp_node, imported_mod))
+                if imported_mod._sym_tab is None:
+                    self.__debug_print(
+                        f"\tBuilding symbol table for module:{ast.Module.get_href_path(imported_mod)}"
+                    )
+                else:
+                    self.__debug_print(
+                        f"\tRefreshing symbol table for module:{ast.Module.get_href_path(imported_mod)}"
+                    )
+                PyInspectSymTabBuildPass(input_ir=imported_mod, prior=self)
+                DefUsePass(input_ir=imported_mod, prior=self)
+
+            else:
+                self.__debug_print(
+                    f"\tBuilding symbol table for module:{ast.Module.get_href_path(imported_mod)}"
+                )
+                SymTabBuildPass(input_ir=imported_mod, prior=self)
 
     def __import_py_module(
         self,
