@@ -133,8 +133,10 @@ def aott_raise(
     )
     if is_custom:
         try:
-            # This is a temporary solution to enable passing in custom parameters to custom models
-            # custom model should override the __call__ method to accept function_inputs parameter
+            # This is a temporary solution to enable passing in custom
+            # parameters to custom models
+            # custom model should override the __call__ method to
+            # accept function_inputs parameter
             return model(meaning_typed_input, media=media, function_inputs=inputs_information, **model_params)  # type: ignore
         except TypeError as e:
             # this is for backward compatibility, for any existing custom models that do not have the function_inputs parameter
