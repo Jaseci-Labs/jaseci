@@ -1,0 +1,4 @@
+digraph {
+node [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];
+0 [label="Root()"fillcolor="#FFE9E9"];
+}

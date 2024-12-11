@@ -1,1 +1,6 @@
 .jac_mypy_cache/
+.envrc
+
+#ignore generated visual files
+cfg.gv.pdf
+cfg.gv
