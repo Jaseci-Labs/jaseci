@@ -99,4 +99,20 @@ Replace `<TOKEN>` with the access token you received. This command will return t
 
 You can also do this in the browser by visiting the Swagger docs `http://localhost:8000/docs` and adding the `Authorization` header with the value `Bearer ACCESS TOKEN`.
 
+# Troubleshooting Common Issues
+1. If you see an error about "Transaction numbers are only allowed on a replica set member":
+    - Ensure MongoDB is running with the replica set configuration as shown in the "Setting Up MongoDB" section.
+    - Verify your `.env` file has the correct `MONGODB_URL`.
+
+2. If you see "Connection refused" errors:
+    - Make sure MongoDB is running.
+    - Verify you're using the correct port (27018 in our example).
+    - Check that the replica set was properly initialized.
+
+3. If registration fails:
+    - Ensure MongoDB is running in replica set mode.
+    - Try restarting both MongoDB and the Jac server.
+ 
+
+
 That's it! You have successfully set up your Jac application and served your first API. In the [next](2_building-a-rag-chatbot.md) part we will learn how to build a simple conversational agent using Jac.

@@ -501,4 +501,32 @@ curl -X POST http://localhost:8000/walkers/interact -d '{"message": "I am having
 
 Remember to replace `<TOKEN>` with the access token you saved. Note you might need to re-login to get an updated token if the token has expired or the server has been restarted since.
 
+
+[Screenshot: Successful Ollama model download]
+![Ollama Setup](images/2_ollama_setup.png)
+
+[Screenshot: Running Streamlit interface]
+![Streamlit Interface](images/2_streamlit_chat.png)
+
+[Screenshot: RAG in action - showing a query and response]
+![RAG Example](images/2_rag_example.png)
+
+## Testing
+1. Get authentication token:
+   TOKEN=$(curl -X POST http://localhost:8000/user/login \
+       -H "Content-Type: application/json" \
+       -d '{"email":"test@mail.com","password":"password"}' \
+       | jq -r '.token')
+    
+    Paste this on the terminal.
+       
+
+2. Test the chatbot:
+   curl -X POST http://localhost:8000/walkers/interact \
+       -H "Authorization: Bearer $TOKEN" \
+       -H "Content-Type: application/json" \
+       -d '{"message":"What topics are covered in the documents?","session_id":"123"}'
+
+    Paste this on the terminal.
+
 In the next part of the tutorial, we will enhance the chatbot by adding dialogue routing capabilities. We will direct the conversation to the appropriate dialogue model based on the user's input.
