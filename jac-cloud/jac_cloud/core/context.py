@@ -7,9 +7,9 @@ from typing import Any, Generic, TypeVar, cast
 
 from bson import ObjectId
 
-from fastapi import Request
+from fastapi import Request, WebSocket
 
-from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.context import EXECUTION_CONTEXT, ExecutionContext
 
 from .architype import (
     AccessLevel,
@@ -61,19 +61,21 @@ class JaseciContext(ExecutionContext):
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor
-    base: ExecutionContext
-    request: Request
+    base: ExecutionContext | None
+    connection: Request | WebSocket
 
     def close(self) -> None:
         """Clean up context."""
         self.mem.close()
 
     @staticmethod
-    def create(request: Request, entry: NodeAnchor | None = None) -> "JaseciContext":  # type: ignore[override]
+    def create(  # type: ignore[override]
+        connection: Request | WebSocket, entry: NodeAnchor | None = None
+    ) -> "JaseciContext":
         """Create JacContext."""
         ctx = JaseciContext()
-        ctx.base = ExecutionContext.get()
-        ctx.request = request
+        ctx.base = EXECUTION_CONTEXT.get(None)
+        ctx.connection = connection
         ctx.mem = MongoDB()
         ctx.reports = []
         ctx.status = 200
@@ -94,7 +96,7 @@ class JaseciContext(ExecutionContext):
 
         ctx.system_root = system_root
 
-        if _root := getattr(request, "_root", None):
+        if _root := getattr(connection, "_root", None):
             ctx.root = _root
             ctx.mem.set(_root.id, _root)
         else:
