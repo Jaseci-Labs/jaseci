@@ -8,11 +8,13 @@ import os
 import sys
 import tempfile
 import types
+
 from contextvars import ContextVar
 from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.compile import compile_jac
+from jaclang.compiler.compile import compile_jac, jac_file_to_pass
+
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.runtimelib.architype import (
@@ -21,8 +23,9 @@ from jaclang.runtimelib.architype import (
     NodeArchitype,
     WalkerArchitype,
 )
+from jaclang.runtimelib.gins.ghost import  ShellGhost
 from jaclang.utils.log import logging
-
+from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 
 logger = logging.getLogger(__name__)
 
@@ -45,12 +48,18 @@ class JacMachine:
             else os.path.abspath(base_path)
         )
         self.jac_program: Optional[JacProgram] = None
+        self.gin: Optional[ShellGhost] = None
 
         JACMACHINE_CONTEXT.set(self)
 
     def attach_program(self, jac_program: "JacProgram") -> None:
         """Attach a JacProgram to the machine."""
         self.jac_program = jac_program
+    
+    def attach_gin(self, jac_gin: "ShellGhost") -> None:
+        """Attach a JacProgram to the machine."""
+        self.gin = jac_gin
+            
 
     def get_mod_bundle(self) -> Optional[Module]:
         """Retrieve the mod_bundle from the attached JacProgram."""
@@ -68,9 +77,12 @@ class JacMachine:
     ) -> Optional[types.CodeType]:
         """Retrieve bytecode from the attached JacProgram."""
         if self.jac_program:
-            return self.jac_program.get_bytecode(
+            bytecode = self.jac_program.get_bytecode(
                 module_name, full_target, caller_dir, cachable, reload=reload
             )
+            if self.gin:
+                self.gin.start_ghost()
+            return bytecode
         return None
 
     def get_sem_ir(self, mod_sem_ir: SemRegistry | None) -> None:
@@ -80,6 +92,8 @@ class JacMachine:
                 self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
             else:
                 self.jac_program.sem_ir = mod_sem_ir
+        if self.gin and mod_sem_ir:
+            self.gin.sem_ir = mod_sem_ir
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""
@@ -308,8 +322,6 @@ class JacProgram:
         result = compile_jac(full_target, cache_result=cachable)
         if result.errors_had or not result.ir.gen.py_bytecode:
             for alrt in result.errors_had:
-                # We're not logging here, it already gets logged as the errors were added to the errors_had list.
-                # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
                 logger.error(alrt.pretty_print())
             return None
         if result.ir.gen.py_bytecode is not None:
