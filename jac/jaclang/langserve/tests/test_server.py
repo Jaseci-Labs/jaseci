@@ -330,7 +330,7 @@ class TestJacLangServer(TestCase):
                     "doubleinner",
                     "apply_red",
                 ],
-                8,
+                11,
             ),
             (
                 lspt.Position(65, 23),
@@ -359,7 +359,7 @@ class TestJacLangServer(TestCase):
                     "doubleinner",
                     "apply_red",
                 ],
-                8,
+                11,
             ),
             (
                 lspt.Position(73, 22),

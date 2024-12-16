@@ -20,6 +20,7 @@ from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .registry_pass import RegistryPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
+from .inheritance_pass import InheritancePass  # noqa: I100
 
 py_code_gen = [
     SubNodeTabPass,
@@ -38,6 +39,7 @@ type_checker_sched = [
     PyCollectDepsPass,
     PyImportPass,
     DefUsePass,
+    InheritancePass,
     FuseTypeInfoPass,
     AccessCheckPass,
 ]
