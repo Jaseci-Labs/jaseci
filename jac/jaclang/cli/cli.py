@@ -307,6 +307,7 @@ def enter(
 @cmd_registry.register
 def test(
     filepath: str,
+    test_name: str = "",
     filter: str = "",
     xit: bool = False,
     maxfail: int = None,  # type:ignore
@@ -316,6 +317,7 @@ def test(
     """Run the test suite in the specified .jac file.
 
     :param filepath: Path/to/file.jac
+    :param test_func: Run a specific test function.
     :param filter: Filter the files using Unix shell style conventions.
     :param xit(exit): Stop(exit) running tests as soon as finds an error.
     :param maxfail: Stop running tests after n failures.
@@ -328,6 +330,7 @@ def test(
 
     failcount = Jac.run_test(
         filepath=filepath,
+        func_name=("test_" + test_name) if test_name else None,
         filter=filter,
         xit=xit,
         maxfail=maxfail,
