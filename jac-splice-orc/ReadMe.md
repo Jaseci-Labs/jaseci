@@ -130,25 +130,15 @@ jac-splice-orc/
 
 Before you begin, ensure that you have the following installed and configured:
 
-- **Python** (version 3.9 or later): [Install Python](https://www.python.org/downloads/)
-- **Docker** (version 20.10 or later): [Install Docker](https://docs.docker.com/get-docker/)
-- **Kind** (Kubernetes IN Docker): [Install Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
-- **kubectl** command-line tool: [Install kubectl](https://kubernetes.io/docs/tasks/tools/)
-- **Jac**: [Install Jaclang](https://github.com/Jaseci-Labs/jasecii)
+- **Python** (version 3.11 or later)
+- **Docker** (version 20.10 or later)
+- **Kubernetes** (version 1.21 or later)
+- **kubectl** command-line tool
 - **Kubernetes Cluster**: Ensure you have access to a Kubernetes cluster (local or remote).
 
 Ensure that your Kubernetes cluster is up and running, and that you can connect to it using `kubectl`.
 
-### 1. Clone the Repository
-
-Clone the `jac-splice-orc` repository to your local machine:
-
-```bash
-git clone https://github.com/Jaseci-Labs/jac-splice-orc.git
-cd jac-splice-orc
-```
-
-### 2. Install Dependencies
+### 1. Install Dependencies
 
 Create a virtual environment and install the required Python packages:
 
@@ -157,8 +147,14 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
-
 **Note**: The `requirements.txt` file includes all necessary dependencies, such as `kubernetes`, `grpcio`, `PyYAML`, and others.
+
+### 2. Install via pip
+
+You can install `jac-splice-orc` directly from PyPI:
+```bash
+pip install jac-splice-orc
+```
 
 ### 3. Configure the System
 
