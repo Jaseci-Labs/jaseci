@@ -18,7 +18,8 @@ JAC Cloud Orchestrator (`jac-splice-orc`) is a system designed to dynamically im
   - [1. Clone the Repository](#1-clone-the-repository)
   - [2. Install Dependencies](#2-install-dependencies)
   - [3. Configure the System](#3-configure-the-system)
-  - [4. Initialize the System](#4-initialize-the-system)
+  - [4. Recreate the Kind Cluster with Port Mappings](#4-recreate-the-kind-cluster-with-port-mappings)
+  - [5. Initialize the System](#5-initialize-the-system)
 - [Docker Usage](#docker-usage)
 - [Usage](#usage)
   - [Client Application](#client-application)
@@ -129,25 +130,15 @@ jac-splice-orc/
 
 Before you begin, ensure that you have the following installed and configured:
 
-- **Python** (version 3.9 or later): [Install Python](https://www.python.org/downloads/)
-- **Docker** (version 20.10 or later): [Install Docker](https://docs.docker.com/get-docker/)
-- **Kubernetes** (version 1.21 or later): [Install Kubernetes](https://kubernetes.io/docs/setup/)
-- **kubectl** command-line tool: [Install kubectl](https://kubernetes.io/docs/tasks/tools/)
-- **Jac**: [Install Jaclang](https://github.com/Jaseci-Labs/jasecii)
+- **Python** (version 3.11 or later)
+- **Docker** (version 20.10 or later)
+- **Kubernetes** (version 1.21 or later)
+- **kubectl** command-line tool
 - **Kubernetes Cluster**: Ensure you have access to a Kubernetes cluster (local or remote).
 
 Ensure that your Kubernetes cluster is up and running, and that you can connect to it using `kubectl`.
 
-### 1. Clone the Repository
-
-Clone the `jac-splice-orc` repository to your local machine:
-
-```bash
-git clone https://github.com/Jaseci-Labs/jac-splice-orc.git
-cd jac-splice-orc
-```
-
-### 2. Install Dependencies
+### 1. Install Dependencies
 
 Create a virtual environment and install the required Python packages:
 
@@ -156,8 +147,14 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
-
 **Note**: The `requirements.txt` file includes all necessary dependencies, such as `kubernetes`, `grpcio`, `PyYAML`, and others.
+
+### 2. Install via pip
+
+You can install `jac-splice-orc` directly from PyPI:
+```bash
+pip install jac-splice-orc
+```
 
 ### 3. Configure the System
 
@@ -217,11 +214,97 @@ Edit `jac_splice_orc/config/config.json` to match your environment. Here's an ex
 - Replace `jaseci/jac-splice-orc:latest` with your own image if you have customized it.
 - Adjust resource requests and limits according to your environment.
 
-### 4. Initialize the System
+### 4. Recreate the Kind Cluster with Port Mappings
+
+To ensure that your Kubernetes cluster can expose services correctly, especially when using **Kind** (Kubernetes IN Docker), you need to recreate the Kind cluster with specific port mappings. This allows services like the Pod Manager to be accessible from your host machine without relying solely on port-forwarding.
+
+**Why Recreate the Kind Cluster?**
+
+- **Port Accessibility**: By mapping container ports to host ports, you can access Kubernetes services directly via `localhost:<port>` on your machine.
+- **Simplified Access**: Eliminates the need for manual port-forwarding or additional networking configurations.
+
+**Steps to Recreate the Kind Cluster with Port Mappings:**
+
+1. **Delete the Existing Kind Cluster**
+
+   If you already have a Kind cluster running, delete it to allow recreation with new configurations.
+
+   ```bash
+   kind delete cluster --name little-x-kind
+   ```
+
+   **Note**: Replace `jac-splice-orc with your cluster name if different.
+
+2. **Create a Kind Configuration File**
+
+   Create a YAML configuration file named `kind-config.yaml` with the desired port mappings. This file instructs Kind to map specific container ports to host ports.
+
+   ```yaml
+   kind: Cluster
+   apiVersion: kind.x-k8s.io/v1alpha4
+   nodes:
+     - role: control-plane
+       extraPortMappings:
+         - containerPort: 30080
+           hostPort: 30080
+           protocol: TCP
+   ```
+
+   **Explanation:**
+
+   - **containerPort**: The port inside the Kubernetes cluster (i.e., the port your service listens on).
+   - **hostPort**: The port on your local machine that maps to the `containerPort`.
+   - **protocol**: The network protocol (`TCP` or `UDP`).
+
+3. **Create the New Kind Cluster with Port Mappings**
+
+   Use the `kind-config.yaml` to create a new Kind cluster with the specified port mappings.
+
+   ```bash
+   kind create cluster --name little-x-kind --config kind-config.yaml
+   ```
+
+   **Output Example:**
+
+   ```
+   Creating cluster "little-x-kind" ...
+   ✓ Ensuring node image (kindest/node:v1.21.1) 🖼
+   ✓ Preparing nodes 📦
+   ✓ Writing configuration 📜
+   ✓ Starting control-plane node kind-control-plane 🕹️
+   ✓ Installing CNI 🔌
+   ✓ Installing StorageClass 💾
+   Set kubectl context to "kind-little-x-kind"
+   You can now use your cluster with:
+
+     kubectl cluster-info --context kind-little-x-kind
+
+   Thanks for using Kind! 🎉
+   ```
+
+
+### Summary of Steps:
+
+1. **Delete Existing Cluster**: `kind delete cluster --name jac-splice-orc
+2. **Create Config File**: Define `kind-config.yaml` with desired port mappings.
+3. **Create New Cluster**: `kind create cluster --name little-x-kind --config kind-config.yaml`
+4. **Verify Mappings**: Ensure ports are correctly mapped using `kubectl` and `docker` commands.
+
+**Important Considerations:**
+
+- **Port Conflicts**: Ensure that the `hostPort` values you choose are not already in use on your host machine.
+- **Cluster Name**: Adjust the cluster name (`jac-splice-orc) as per your preference or organizational standards.
+- **Security**: Exposing ports directly to `localhost` can have security implications. Ensure that only necessary ports are exposed and consider implementing authentication or network policies if needed.
+
+---
+
+### 5. Initialize the System
+
+Once the cluster is set up with the appropriate port mappings, proceed to initialize the Pod Manager and Kubernetes resources.
 
 Use the provided CLI command to initialize the Pod Manager and Kubernetes resources:
 
-```bash
+```jac
 jac orc_initialize jac-splice-orc
 ```
 
