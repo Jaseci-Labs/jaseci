@@ -10,7 +10,7 @@ Reason and return the output result(s) only, adhering to the provided Type in th
 [Output] <Result>
 """
 
-NORMAL_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format
+NORMAL_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format without using markdown formatting.
 
 [Output] <result>
 """  # noqa E501
@@ -30,7 +30,8 @@ Provide your answer adhering in the following format. tool_usage is a function c
 [Tool Usage] <tool_usage>
 """  # noqa E501
 
-class Google(BaseLLM):
+
+class Gemini(BaseLLM):
     """Google API client for MTLLM."""
 
     MTLLM_METHOD_PROMPTS: dict[str, str] = {
@@ -45,14 +46,33 @@ class Google(BaseLLM):
         verbose: bool = False,
         max_tries: int = 10,
         type_check: bool = False,
-        **kwargs: dict
+        **kwargs: dict,
     ) -> None:
         """Initialize the Google API client."""
-        import google.generativeai as genai  # type: ignore
+        from google import genai  # type: ignore
+        import os  # type: ignore
 
         super().__init__(verbose, max_tries, type_check)
-        self.client = genai
-        self.model_name = kwargs.get("model_name", "mixtral-8x7b-32768")
+        self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        self.model_name = kwargs.get("model_name", "gemini-1.5-flash")
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)
-    
+
+    def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
+        """Infer the output from the input meaning."""
+        if not isinstance(meaning_in, str):
+            assert self.model_name.startswith(
+                ("gemini-1.0", "aqa, text")
+            ), f"Model {self.model_name} does not support input of type {type(meaning_in)}. Choose a Multi-Modal model."
+        messages = [{"role": "user", "content": meaning_in}]
+        # messages = 'What is the earth\'s circumference'
+        config = {
+            "temperature": kwargs.get("temperature", self.temperature),
+            # "max_tokens": kwargs.get("max_tokens", self.max_tokens),
+        }
+        output = self.client.models.generate_content(
+            model=kwargs.get("model_name", self.model_name),
+            contents=meaning_in,
+            config=config,
+        )
+        return output.text
