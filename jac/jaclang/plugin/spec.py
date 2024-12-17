@@ -345,6 +345,7 @@ class JacFeatureSpec(
     @hookspec(firstresult=True)
     def run_test(
         filepath: str,
+        func_name: Optional[str],
         filter: Optional[str],
         xit: bool,
         maxfail: Optional[int],
