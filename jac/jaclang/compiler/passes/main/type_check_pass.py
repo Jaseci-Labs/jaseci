@@ -120,9 +120,9 @@ class JacTypeCheckPass(Pass):
             )
         }
         for i in mypy_graph:
-            self.ir.py_mod_dep_map[i] = mypy_graph[i].xpath
+            self.ir.py_info.py_mod_dep_map[i] = mypy_graph[i].xpath
             for j in mypy_graph[i].dependencies:
-                self.ir.py_mod_dep_map[j] = str(
+                self.ir.py_info.py_mod_dep_map[j] = str(
                     myab.find_module_with_reason(j, manager)
                 )
         myab.process_graph(mypy_graph, manager)
