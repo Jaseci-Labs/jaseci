@@ -110,11 +110,15 @@ def verify(req: UserVerification) -> ORJSONResponse:
 
 
 @router.post("/login")
-def root(req: UserRequest) -> ORJSONResponse:
+def login(req: UserRequest) -> ORJSONResponse:
     """Login user API."""
+    log = log_entry("login", req.email, {"email": req.email, "password": "****"})
+
     user: BaseUser = User.Collection.find_by_email(req.email)  # type: ignore
     if not user or not pbkdf2_sha512.verify(req.password, user.password):
-        raise HTTPException(status_code=400, detail="Invalid Email/Password!")
+        resp = {"message": "Invalid Email/Password!"}
+        log_exit(resp, log)
+        return ORJSONResponse(resp, 400)
 
     if RESTRICT_UNVERIFIED_USER and not user.is_activated:
         User.send_verification_code(create_code(user.id), req.email)
@@ -126,6 +130,7 @@ def root(req: UserRequest) -> ORJSONResponse:
     user_json = user.serialize()
     token = create_token(user_json)
 
+    log_exit({"token": "****", "user": {**user_json, "state": "****"}}, log)
     return ORJSONResponse(content={"token": token, "user": user_json})
 
 

@@ -35,7 +35,7 @@ class PyCollectDepsPass(Pass):
         if isinstance(node, ast.ModulePath):
             if node.path:
                 path = ".".join([i.value for i in node.path])
-            node.abs_path = self.ir.py_mod_dep_map.get(path)
+            node.abs_path = self.ir.py_info.py_mod_dep_map.get(path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
 
@@ -45,7 +45,7 @@ class PyCollectDepsPass(Pass):
             if mod_path_node.path:
                 path = ".".join([i.value for i in mod_path_node.path])
             path += f".{node.name.value}"
-            node.abs_path = self.ir.py_mod_dep_map.get(path)
+            node.abs_path = self.ir.py_info.py_mod_dep_map.get(path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
 
@@ -61,17 +61,17 @@ class PyCollectDepsPass(Pass):
             else:
                 mod_name = node_full_name
 
-            if mod_name not in self.ir.py_mod_dep_map:
+            if mod_name not in self.ir.py_info.py_mod_dep_map:
                 self.__debug_print(
                     f"Can't find a python file associated with {type(node)}::{node.loc}"
                 )
                 return
 
-            mode_path = self.ir.py_mod_dep_map[mod_name]
+            mode_path = self.ir.py_info.py_mod_dep_map[mod_name]
             if mode_path.endswith(".jac"):
                 return
 
-            self.ir.py_raise_map[mod_name] = mode_path
+            self.ir.py_info.py_raise_map[mod_name] = mode_path
         else:
             self.__debug_print(
                 f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
