@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import dataclass
 from typing import Callable, Optional
 
 
@@ -56,6 +57,16 @@ class JacTestCheck:
 
     test_case = unittest.TestCase()
     test_suite = unittest.TestSuite()
+
+    @dataclass
+    class TestSuite:
+        """Test Suite."""
+
+        test_case: unittest.FunctionTestCase
+        func_name: str
+
+    test_suite_path: dict[str, list[TestSuite]] = {}
+
     breaker = False
     failcount = 0
 
@@ -64,13 +75,45 @@ class JacTestCheck:
         """Clear the test suite."""
         JacTestCheck.test_case = unittest.TestCase()
         JacTestCheck.test_suite = unittest.TestSuite()
+        JacTestCheck.test_suite_path = {}
 
     @staticmethod
-    def run_test(xit: bool, maxfail: int | None, verbose: bool) -> None:
+    def run_test(
+        xit: bool,
+        maxfail: int | None,
+        verbose: bool,
+        filepath: str | None,
+        func_name: str | None,
+    ) -> None:
         """Run the test suite."""
         verb = 2 if verbose else 1
+        test_suite = JacTestCheck.test_suite
+
+        if filepath and filepath.endswith(".test.jac"):
+            filepath = filepath[:-9]
+        elif filepath and filepath.endswith(".jac"):
+            filepath = filepath[:-4]
+
+        if filepath:
+            test_cases = JacTestCheck.test_suite_path.get(filepath)
+            if test_cases is not None:
+                test_suite = unittest.TestSuite()
+                for test_case in test_cases:
+                    if func_name:
+                        if test_case.func_name == func_name:
+                            test_suite.addTest(test_case.test_case)
+                    else:
+                        test_suite.addTest(test_case.test_case)
+
+        elif func_name:
+            test_suite = unittest.TestSuite()
+            for test_cases in JacTestCheck.test_suite_path.values():
+                for test_case in test_cases:
+                    if test_case.func_name == func_name:
+                        test_suite.addTest(test_case.test_case)
+
         runner = JacTextTestRunner(max_failures=maxfail, failfast=xit, verbosity=verb)
-        result = runner.run(JacTestCheck.test_suite)
+        result = runner.run(test_suite)
         if result.wasSuccessful():
             print("Passed successfully.")
         else:
@@ -81,9 +124,21 @@ class JacTestCheck:
             )
 
     @staticmethod
-    def add_test(test_fun: Callable) -> None:
+    def add_test(filepath: str, func_name: str, test_func: Callable) -> None:
         """Create a new test."""
-        JacTestCheck.test_suite.addTest(unittest.FunctionTestCase(test_fun))
+        if filepath and filepath.endswith(".test.jac"):
+            filepath = filepath[:-9]
+        elif filepath and filepath.endswith(".jac"):
+            filepath = filepath[:-4]
+
+        if filepath not in JacTestCheck.test_suite_path:
+            JacTestCheck.test_suite_path[filepath] = []
+
+        test_case = unittest.FunctionTestCase(test_func)
+        JacTestCheck.test_suite_path[filepath].append(
+            JacTestCheck.TestSuite(test_case=test_case, func_name=func_name)
+        )
+        JacTestCheck.test_suite.addTest(test_case)
 
     def __getattr__(self, name: str) -> object:
         """Make convenient check.Equal(...) etc."""
