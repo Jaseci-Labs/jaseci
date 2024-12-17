@@ -4,15 +4,15 @@ from mtllm.llms.base import BaseLLM
 
 
 REASON_SUFFIX = """
-Reason and return the output result(s) only, adhering to the provided Type in the following format
+Reason and return the output result(s) only, adhering to the provided Type in the following format.
 
 [Reasoning] <Reason>
-[Output] <Result>
+[Output] <result>
 """
 
 NORMAL_SUFFIX = """Generate and return the output result(s) only, adhering to the provided Type in the following format without using markdown formatting.
 
-[Output] <result>
+[Output] <results>
 """  # noqa E501
 
 CHAIN_OF_THOUGHT_SUFFIX = """
