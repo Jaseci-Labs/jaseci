@@ -1,4 +1,10 @@
+import os
 from setuptools import setup, find_packages
+
+# Read the long description from README
+here = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
+    long_description = f.read()
 
 setup(
     name="jac-splice-orc",
@@ -6,6 +12,8 @@ setup(
     description="JAC Splice-Orchestrator: Kubernetes-based dynamic remote module management for JacLang",
     author="Jason Mars",
     author_email="jason@jaseci.org",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     packages=find_packages(),
     include_package_data=True,
     package_data={
@@ -22,10 +30,10 @@ setup(
         "python-dotenv",
         "numpy",
     ],
-    entry_points={
-        "jac": [
-            "splice_orc = jac_splice_orc.plugin.splice_plugin:SpliceOrcPlugin",
-        ],
-    },
     python_requires=">=3.11",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
 )
