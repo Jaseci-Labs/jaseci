@@ -11,6 +11,7 @@ setup(
         "pygments",
         "mkdocs",
         "mkdocs-material",
+        "mkdocs-video",
         "mkdocs-open-in-new-tab",
     ],
     entry_points="""
