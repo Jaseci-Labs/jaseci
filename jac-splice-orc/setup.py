@@ -21,6 +21,7 @@ setup(
         "requests",
         "python-dotenv",
         "numpy",
+        "jaclang",
     ],
     entry_points={
         "jac": [
