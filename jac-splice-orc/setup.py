@@ -29,6 +29,7 @@ setup(
         "requests",
         "python-dotenv",
         "numpy",
+        "jaclang",
     ],
     python_requires=">=3.11",
     classifiers=[
