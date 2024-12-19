@@ -8,7 +8,7 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="jac-splice-orc",
-    version="0.1.2",
+    version="0.1.3",
     description="JAC Splice-Orchestrator: Kubernetes-based dynamic remote module management for JacLang",
     author="Jason Mars",
     author_email="jason@jaseci.org",
@@ -31,6 +31,11 @@ setup(
         "numpy",
         "jaclang",
     ],
+    entry_points={
+        "jac": [
+            "splice_orc = jac_splice_orc.plugin.splice_plugin:SpliceOrcPlugin",
+        ],
+    },
     python_requires=">=3.11",
     classifiers=[
         "Programming Language :: Python :: 3",
