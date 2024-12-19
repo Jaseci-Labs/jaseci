@@ -1,32 +1,84 @@
 from abc import ABC, abstractmethod
+from functools import wraps
+from typing import Callable, Any, Dict, List
 
 
-class Calculator(ABC):
-    @staticmethod
-    def multiply(a: float, b: float) -> float:
-        return a * b
+# Custom Decorator
+def log_decorator(func: Callable) -> Callable:
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        print(f"Calling {func.__name__} and kwargs:{kwargs}")
+        result = func(*args, **kwargs)
+        print(f"{func.__name__} returned {result}")
+        return result
 
+    return wrapper
+
+
+# Standalone function
+@log_decorator
+def standalone_function(book_title: str) -> str:
+    print(f"Standalone function: Adding book '{book_title}' to the library.")
+    return book_title
+
+
+# Abstract Base Class
+class LibraryItem(ABC):
     @abstractmethod
-    def substract(self, x: float, y: float) -> float:
+    def item_info(self) -> str:
         pass
 
-    def add(self, number: float, *a: tuple) -> str:
-        return str(number * sum(a))
+
+# Derived Class with overridden abstract method
+class Book(LibraryItem):
+    def __init__(self, title: str, author: str) -> None:
+        self.title = title
+        self.author = author
+
+    def item_info(self) -> str:
+        return f"Book Title: {self.title}, Author: {self.author}"
+
+    # Static method
+    @staticmethod
+    def get_item_type() -> str:
+        return "Book"
+
+    # Class method
+    @classmethod
+    def create_from_dict(cls, info: Dict[str, str]) -> "Book":
+        return cls(info["title"], info["author"])
 
 
-class Substractor(Calculator):
-    def substract(self, x: float, y: float) -> float:
-        return x - y
+# Class with instance method and custom decorator
+class Library:
+    def __init__(self) -> None:
+        self.catalog: List[LibraryItem] = []
+
+    @log_decorator
+    def add_item(self, item: LibraryItem) -> None:
+        self.catalog.append(item)
+        print(f"Item '{item.item_info()}' added to the library catalog.")
+
+    def display_catalog(self) -> None:
+        for item in self.catalog:
+            print(item.item_info())
 
 
-class Divider:
-    def divide(self, x: float, y: float):
-        return x / y
+# Using the various functions and methods
+if __name__ == "__main__":
+    # Using standalone function
+    book_title: str = standalone_function("Python Programming")
 
+    # Creating a Book instance using a class method
+    book_info: Dict[str, str] = {"title": book_title, "author": "John Doe"}
+    book: Book = Book.create_from_dict(book_info)
 
-sub = Substractor()
-div = Divider()
-print(div.divide(55, 11))
-print(Calculator.multiply(9, -2))
-print(sub.add(5, 20, 34, 56))
-print(sub.substract(9, -2))
+    # Using static method
+    print(f"Item Type: {Book.get_item_type()}")
+
+    # Creating a Library instance and adding a book to the catalog
+    library: Library = Library()
+    library.add_item(book)
+
+    # Displaying the catalog
+    library.display_catalog()
