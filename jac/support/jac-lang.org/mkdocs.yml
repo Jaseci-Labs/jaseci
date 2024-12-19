@@ -22,21 +22,24 @@ nav:
       - Python Integration:
         - "for_coders/python_integration.md"
       - LLMs and AI Models:
-        - "for_coders/mtllm/with_llm.md"
-        - Quick Start:
-            - "for_coders/mtllm/quickstart/installation.md"
-            - "for_coders/mtllm/quickstart/minimal-working-example.md"
+        - "for_coders/jac-mtllm/with_llm.md"
+        - Quick Start Guide: "for_coders/jac-mtllm/quickstart.md"
+            # - "for_coders/mtllm/quickstart/installation.md"
+            # - "for_coders/mtllm/quickstart/minimal-working-example.md"
+        # - Building Blocks:
+        #     - "for_coders/mtllm/building_blocks/language_models.md"
+        #     - "for_coders/mtllm/building_blocks/semstrings.md"
+        #     - "for_coders/mtllm/building_blocks/functions_methods.md"
+        #     - "for_coders/mtllm/building_blocks/object_init.md"
+        - Models: "for_coders/jac-mtllm/model_declaration.md"
+        - Usage of MTLLM: "for_coders/jac-mtllm/usage.md"
+        - Optional Meaning Hints: "for_coders/jac-mtllm/semstrings.md"
+        - Using Multimodal models: "for_coders/jac-mtllm/multimodality.md"
+        - Python MTLLM Interface: "for_coders/jac-mtllm/python_integration.md"
+        - Tutorials: "for_coders/mtllm/tutorials/rpg_game.md"
         - Design and Implementation:
             - "for_coders/mtllm/design_impl/inference_engine.md"
             - "for_coders/mtllm/design_impl/sem_registry.md"
-        - Building Blocks:
-            - "for_coders/mtllm/building_blocks/language_models.md"
-            - "for_coders/mtllm/building_blocks/semstrings.md"
-            - "for_coders/mtllm/building_blocks/functions_methods.md"
-            - "for_coders/mtllm/building_blocks/object_init.md"
-            - "for_coders/mtllm/building_blocks/Multimodality.md"
-        - Tutorials:
-            - "for_coders/mtllm/tutorials/rpg_game.md"
       - Cloud Native Abstractions:
         - "for_coders/jac-cloud/jac_cloud.md"
         - "for_coders/jac-cloud/permission.md"
@@ -140,3 +143,8 @@ copyright: Copyright &copy; 2023 - 2024 Jac Hackers Everwhere
 plugins:
   - search
   - open-in-new-tab
+  - mkdocs-video:
+      is_video: True
+      video_autoplay: True
+      # video_loop: True
+      video_controls: False
