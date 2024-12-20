@@ -23,6 +23,22 @@ config_loader = ConfigLoader()
 class SpliceOrcPlugin:
     """JAC Splice-Orchestrator Plugin."""
 
+    @staticmethod
+    def is_kind_cluster():
+        """Detect if the cluster is a kind cluster."""
+        try:
+            contexts, current_context = config.list_kube_config_contexts()
+            current_context_name = current_context["name"]
+            if current_context_name.startswith("kind-"):
+                logging.info("Detected kind cluster.")
+                return True
+            else:
+                logging.info("Detected non-kind cluster.")
+                return False
+        except Exception as e:
+            logging.error(f"Error detecting cluster type: {e}")
+            return False
+
     @classmethod
     def create_namespace(cls, namespace_name):
         """Create a new namespace if it does not exist."""
@@ -178,7 +194,16 @@ class SpliceOrcPlugin:
         env_vars = pod_manager_config.get("env_vars", {})
         resources = pod_manager_config.get("resources", {})
         service_name = pod_manager_config.get("service_name", "pod-manager-service")
-        service_type = pod_manager_config.get("service_type", "LoadBalancer")
+
+        # Adjust service type based on cluster type
+        if cls.is_kind_cluster():
+            service_type = "NodePort"
+            node_port = 30080
+            logging.info("Using NodePort service type for kind cluster.")
+        else:
+            service_type = "LoadBalancer"
+            node_port = None 
+            logging.info("Using LoadBalancer service type.")
 
         # Create the Deployment object
         apps_v1 = client.AppsV1Api()
@@ -228,7 +253,7 @@ class SpliceOrcPlugin:
 
         # Create or update the Deployment
         try:
-            existing_deployment = apps_v1.read_namespaced_deployment(
+            apps_v1.read_namespaced_deployment(
                 name=deployment_name, namespace=namespace
             )
             # Update the deployment if it exists
@@ -251,6 +276,18 @@ class SpliceOrcPlugin:
                 logging.error(f"Error creating/updating Deployment: {e}")
                 raise
 
+        # Define the service ports
+        service_ports = [
+            client.V1ServicePort(
+                protocol="TCP",
+                port=container_port,
+                target_port=container_port,
+            )
+        ]
+
+        if node_port:
+            service_ports[0].node_port = node_port
+
         # Create the Service object
         v1 = client.CoreV1Api()
 
@@ -260,18 +297,14 @@ class SpliceOrcPlugin:
             metadata=client.V1ObjectMeta(name=service_name, namespace=namespace),
             spec=client.V1ServiceSpec(
                 selector={"app": container_name},
-                ports=[
-                    client.V1ServicePort(
-                        protocol="TCP", port=container_port, target_port=container_port
-                    )
-                ],
+                ports=service_ports,
                 type=service_type,
             ),
         )
 
         # Create or update the Service
         try:
-            _ = v1.read_namespaced_service(name=service_name, namespace=namespace)
+            v1.read_namespaced_service(name=service_name, namespace=namespace)
             # Update the service if it exists
             v1.patch_namespaced_service(
                 name=service_name, namespace=namespace, body=service
@@ -290,36 +323,35 @@ class SpliceOrcPlugin:
 
     @classmethod
     def configure_pod_manager_url(cls, namespace):
-        service_name = config_loader.get(
-            "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
-        )
-        if not namespace:
-            namespace = config_loader.get(
-                "kubernetes", "namespace", default="jac-splice-orc"
-            )
-
-        url = cls.get_loadbalancer_url(service_name, namespace)
-        if url:
-            pod_manager_url_local = f"http://{url}:8000"
-
-            # Update the config file with the new pod_manager_url
-            config_loader.set(["environment", "POD_MANAGER_URL"], pod_manager_url_local)
-            config_loader.save_config()
-
-            logging.info(
-                f"Pod manager URL updated in config file: {pod_manager_url_local}"
-            )
+        if cls.is_kind_cluster():
+            node_port = 30080  # The NodePort we have configured
+            pod_manager_url_local = f"http://localhost:{node_port}"
+            logging.info(f"Pod manager URL set to: {pod_manager_url_local}")
         else:
-            logging.error("Failed to retrieve the pod_manager_url.")
+            # Retrieve the external IP for LoadBalancer service
+            pod_manager_url_local = cls.get_load_balancer_url(namespace)
+            if not pod_manager_url_local:
+                logging.error("Failed to retrieve the LoadBalancer URL.")
+                return
+
+        # Update the config file with the new pod_manager_url
+        config_loader.set(["environment", "POD_MANAGER_URL"], pod_manager_url_local)
+        config_loader.save_config()
+
+        logging.info(f"Pod manager URL updated in config file: {pod_manager_url_local}")
 
     @classmethod
-    def get_loadbalancer_url(cls, service_name, namespace, timeout=60, interval=5):
+    def get_load_balancer_url(cls, namespace, timeout=300, interval=5):
+        """Retrieve the LoadBalancer service URL."""
         try:
             config.load_kube_config()
         except config.ConfigException:
             config.load_incluster_config()
 
         v1 = client.CoreV1Api()
+        service_name = config_loader.get(
+            "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
+        )
         start_time = time.time()
         while True:
             try:
@@ -330,13 +362,14 @@ class SpliceOrcPlugin:
                 if ingress:
                     ip = ingress[0].ip
                     hostname = ingress[0].hostname
+                    port = service.spec.ports[0].port
                     logging.info(f"ip: {ip}, host: {hostname}")
                     if ip:
-                        return ip
+                        return f"http://{ip}:{port}"
                     elif hostname:
-                        return hostname
-                    else:
-                        logging.info("Waiting for external IP to be assigned...")
+                        return f"http://{hostname}:{port}"
+                else:
+                    logging.info("Waiting for external IP to be assigned...")
             except client.exceptions.ApiException as e:
                 logging.error(f"Error retrieving LoadBalancer URL: {e}")
                 return None
@@ -345,7 +378,6 @@ class SpliceOrcPlugin:
                     f"Timed out after {timeout} seconds waiting for external IP."
                 )
                 return None
-
             time.sleep(interval)
 
     @staticmethod
@@ -415,7 +447,16 @@ class SpliceOrcPlugin:
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=module_config[target]
             )
-            return (remote_module_proxy,)
+            if items:
+                imported_items = []
+                for item_name, item_alias in items.items():
+                    item = getattr(remote_module_proxy, item_name)
+                    if item_alias:
+                        item.__name__ = item_alias
+                    imported_items.append(item)
+                return tuple(imported_items)
+            else:
+                return (remote_module_proxy,)
         spec = ImportPathSpec(
             target,
             base_path,

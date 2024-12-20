@@ -56,7 +56,7 @@ def aott_raise(
             inputs_information_repr.extend(input_info.to_list_dict())
     elif is_custom:
         media = [x for x in inputs_information if isinstance(x.value, PILImage.Image)]
-        inputs_information_repr = ""
+        inputs_information_repr = "\n".join([str(x) for x in inputs_information])
     else:
         inputs_information_repr = "\n".join([str(x) for x in inputs_information])
 
@@ -131,7 +131,27 @@ def aott_raise(
         if not (contains_media and not is_custom)
         else meaning_typed_input_list
     )
-    return model(meaning_typed_input, media=media, **model_params)  # type: ignore
+    if is_custom:
+        try:
+            # This is a temporary solution to enable passing in custom
+            # parameters to custom models
+            # custom model should override the __call__ method to
+            # accept function_inputs parameter
+            return model(
+                meaning_typed_input,  # type: ignore
+                media=media,  # type: ignore
+                function_inputs=inputs_information,  # type: ignore
+                **model_params,
+            )
+        except TypeError:
+            # this is for backward compatibility,
+            # for any existing custom models that do not have the
+            # function_inputs parameter
+            return model(
+                meaning_typed_input, media=media, **model_params  # type: ignore
+            )
+    else:
+        return model(meaning_typed_input, media=media, **model_params)  # type: ignore
 
 
 def execute_react(

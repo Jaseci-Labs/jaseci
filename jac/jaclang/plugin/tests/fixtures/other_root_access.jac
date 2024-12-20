@@ -23,6 +23,16 @@ walker update_node {
     }
 }
 
+walker update_target_node {
+    has val: int;
+    has node_id: str;
+
+    can enter with `root entry {
+        target_node = &(self.node_id);
+        target_node.val = self.val;
+    }
+}
+
 walker update_node_forced {
     has val: int;
 

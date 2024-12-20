@@ -382,6 +382,15 @@ components:
       - root_id
       title: allow_other_root_access_body_model
       type: object
+    check_memory_sync_body_model:
+      properties:
+        other_node_id:
+          title: Other Node Id
+          type: string
+      required:
+      - other_node_id
+      title: check_memory_sync_body_model
+      type: object
     combination1_body_model:
       properties:
         c:
@@ -409,6 +418,15 @@ components:
       - status
       title: custom_status_code_body_model
       type: object
+    delete_custom_object_body_model:
+      properties:
+        object_id:
+          title: Object Id
+          type: string
+      required:
+      - object_id
+      title: delete_custom_object_body_model
+      type: object
     disallow_other_root_access_body_model:
       properties:
         root_id:
@@ -420,6 +438,15 @@ components:
       required:
       - root_id
       title: disallow_other_root_access_body_model
+      type: object
+    get_custom_object_body_model:
+      properties:
+        object_id:
+          title: Object Id
+          type: string
+      required:
+      - object_id
+      title: get_custom_object_body_model
       type: object
     post_partial_excluded_body_model:
       properties:
@@ -438,6 +465,15 @@ components:
       required:
       - a
       title: post_with_body_body_model
+      type: object
+    update_custom_object_body_model:
+      properties:
+        object_id:
+          title: Object Id
+          type: string
+      required:
+      - object_id
+      title: update_custom_object_body_model
       type: object
   securitySchemes:
     HTTPBearer:
@@ -658,7 +694,7 @@ paths:
   /user/login:
     post:
       description: Login user API.
-      operationId: root_user_login_post
+      operationId: login_user_login_post
       requestBody:
         content:
           application/json:
@@ -677,7 +713,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      summary: Root
+      summary: Login
       tags:
       - user
   /user/register:
@@ -838,6 +874,77 @@ paths:
       security:
       - HTTPBearer: []
       summary: /allow_other_root_access/{node}
+      tags:
+      - walker
+      - walker
+  /walker/check_memory_sync:
+    post:
+      operationId: api_root_walker_check_memory_sync_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/check_memory_sync_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Check Memory Sync Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /check_memory_sync
+      tags:
+      - walker
+      - walker
+  /walker/check_memory_sync/{node}:
+    post:
+      operationId: api_entry_walker_check_memory_sync__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/check_memory_sync_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Check Memory Sync  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /check_memory_sync/{node}
       tags:
       - walker
       - walker
@@ -1814,6 +1921,59 @@ paths:
       tags:
       - walker
       - walker
+  /walker/create_custom_object:
+    post:
+      operationId: api_root_walker_create_custom_object_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Create Custom Object Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: /create_custom_object
+      tags:
+      - walker
+      - walker
+  /walker/create_custom_object/{node}:
+    post:
+      operationId: api_entry_walker_create_custom_object__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Create Custom Object  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /create_custom_object/{node}
+      tags:
+      - walker
+      - walker
   /walker/create_graph:
     post:
       operationId: api_root_walker_create_graph_post
@@ -2037,6 +2197,77 @@ paths:
       security:
       - HTTPBearer: []
       summary: /custom_status_code/{node}
+      tags:
+      - walker
+      - walker
+  /walker/delete_custom_object:
+    post:
+      operationId: api_root_walker_delete_custom_object_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/delete_custom_object_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Delete Custom Object Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /delete_custom_object
+      tags:
+      - walker
+      - walker
+  /walker/delete_custom_object/{node}:
+    post:
+      operationId: api_entry_walker_delete_custom_object__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/delete_custom_object_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Delete Custom Object  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /delete_custom_object/{node}
       tags:
       - walker
       - walker
@@ -2449,6 +2680,77 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: /get_all_query/{node}
+      tags:
+      - walker
+      - walker
+  /walker/get_custom_object:
+    post:
+      operationId: api_root_walker_get_custom_object_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/get_custom_object_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Get Custom Object Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /get_custom_object
+      tags:
+      - walker
+      - walker
+  /walker/get_custom_object/{node}:
+    post:
+      operationId: api_entry_walker_get_custom_object__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/get_custom_object_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Get Custom Object  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /get_custom_object/{node}
       tags:
       - walker
       - walker
@@ -3575,6 +3877,77 @@ paths:
       security:
       - HTTPBearer: []
       summary: /traverse_populated_graph/{node}
+      tags:
+      - walker
+      - walker
+  /walker/update_custom_object:
+    post:
+      operationId: api_root_walker_update_custom_object_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update_custom_object_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Update Custom Object Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /update_custom_object
+      tags:
+      - walker
+      - walker
+  /walker/update_custom_object/{node}:
+    post:
+      operationId: api_entry_walker_update_custom_object__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update_custom_object_body_model'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Update Custom Object  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /update_custom_object/{node}
       tags:
       - walker
       - walker

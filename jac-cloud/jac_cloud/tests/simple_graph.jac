@@ -4,6 +4,7 @@ import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
 import:py from jac_cloud.jaseci.utils {SendGridEmailer}
 import:py from dataclasses {dataclass}
 import:py from fastapi {UploadFile}
+import:py from typing {Any}
 
 class User:BaseUser: {
     has name: str;
@@ -54,11 +55,11 @@ node A {
 }
 
 node B {
-    has val: int;
+    has val: str | int;
 }
 
 node C {
-    has val: int;
+    has val: Any;
 }
 
 obj Child {
@@ -709,5 +710,97 @@ walker check_populated_graph {
         count += WalkerAnchor.Collection.count({"root": id});
 
         report count;
+    }
+}
+
+walker check_memory_sync {
+    has other_node_id: str;
+    can enter with `root entry {
+        import:py from jac_cloud.core.architype {NodeAnchor}
+        n = &(self.other_node_id);
+        n.val = 4;
+        report n;
+    }
+}
+
+#################################################################
+#                        SAVABLE OBJECT                         #
+#################################################################
+
+obj SavableObject {
+    has val: int, arr: list[int], json: dict[str, int], parent: Parent, enum_field: Enum;
+}
+
+walker create_custom_object {
+    can enter1 with `root entry {
+        o = SavableObject(
+            val=0,
+            arr=[],
+            json={},
+            parent=Parent(
+                val=1,
+                arr=[1],
+                json={"a": 1},
+                child=Child(
+                    val=2,
+                    arr=[1, 2],
+                    json={"a": 1, "b": 2},
+                    enum_field = Enum.C
+                ),
+                enum_field = Enum.B
+            ),
+            enum_field = Enum.A
+        );
+        Jac.save(o);
+        report o;
+    }
+}
+
+walker get_custom_object {
+    has object_id: str;
+
+    can enter1 with `root entry {
+        try {
+            report &(self.object_id);
+        } except Exception as e {
+            report None;
+        }
+    }
+}
+
+walker update_custom_object {
+    has object_id: str;
+
+    can enter1 with `root entry {
+        savable_object = &(self.object_id);
+        savable_object.parent.child.json["c"] = 3;
+        savable_object.parent.child.arr.append(3);
+        savable_object.parent.child.val = 3;
+        savable_object.parent.child.enum_field = Enum.A;
+        savable_object.parent.json["b"] = 2;
+        savable_object.parent.arr.append(2);
+        savable_object.parent.val = 2;
+        savable_object.parent.enum_field = Enum.C;
+        savable_object.json["a"] = 1;
+        savable_object.arr.append(1);
+        savable_object.val = 1;
+        savable_object.enum_field = Enum.B;
+        report savable_object;
+    }
+}
+
+walker delete_custom_object {
+    has object_id: str;
+
+    can enter1 with `root entry {
+        import:py from jac_cloud.core.architype {BaseAnchor}
+        Jac.destroy(&(self.object_id));
+
+        # This is similar to
+        #
+        # Jac.destroy(BaseAnchor.ref(self.object_id));
+        #
+        # The only difference is BaseAnchor.ref doesn't
+        # load the actual object and just use it as reference
     }
 }

@@ -117,11 +117,10 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
 
-        # print(arr[1:3, 1::2]);
         expected_outputs = [
-            "+-- AtomTrailer - Type: Any",
-            "    +-- Name - arr - Type: Any,  SymbolTable: None",
-            "    +-- IndexSlice - [IndexSlice] - Type: builtins.slice,  SymbolTable: None",
+            "+-- AtomTrailer - Type: builtins.list[builtins.int]",
+            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
+            "    +-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
             "        +-- Token - [,",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
             "        +-- Token - :,",
@@ -549,7 +548,7 @@ class JacLanguageTests(TestCase):
                 return f"Error While Jac to Py AST conversion: {e}"
 
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 7)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 21)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
@@ -612,7 +611,7 @@ class JacLanguageTests(TestCase):
 
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         self.assertEqual(
-            len(ir.get_all_sub_nodes(ast.Architype)), 8
+            len(ir.get_all_sub_nodes(ast.Architype)), 27
         )  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -666,7 +665,7 @@ class JacLanguageTests(TestCase):
 
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         self.assertEqual(
-            len(ir.get_all_sub_nodes(ast.Architype)), 38
+            len(ir.get_all_sub_nodes(ast.Architype)), 75
         )  # Because of the Architype from other imports
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -874,7 +873,7 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 269)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 586)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))

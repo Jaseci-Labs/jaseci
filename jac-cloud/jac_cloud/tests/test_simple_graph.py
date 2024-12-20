@@ -560,19 +560,19 @@ class SimpleGraphTest(JacCloudTest):
                             "single": {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 15146,
+                                "size": 17658,
                             }
                         },
                         "multiple": [
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 15146,
+                                "size": 17658,
                             },
                             {
                                 "name": "simple_graph.jac",
                                 "content_type": "application/octet-stream",
-                                "size": 15146,
+                                "size": 17658,
                             },
                         ],
                         "singleOptional": None,
@@ -619,6 +619,147 @@ class SimpleGraphTest(JacCloudTest):
         self.assertEqual(200, res["status"])
         self.assertEqual([None], res["returns"])
         self.assertEqual([1], res["reports"])
+
+    def trigger_memory_sync(self) -> None:
+        """Test memory sync."""
+        res = self.post_api("traverse_graph")
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None, None, None], res["returns"])
+
+        a_node = res["reports"].pop(1)
+        self.assertTrue(a_node["id"].startswith("n:A:"))
+        self.assertEqual({"val": 1}, a_node["context"])
+
+        res = self.post_api(
+            "check_memory_sync", json={"other_node_id": a_node["id"]}, user=1
+        )
+        self.assertEqual(200, res["status"])
+
+    def trigger_create_custom_object_test(self) -> str:
+        """Test create custom object."""
+        res = self.post_api("create_custom_object", user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "json": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "json": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "json": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+            },
+            obj["context"],
+        )
+
+        res = self.post_api("get_custom_object", json={"object_id": obj["id"]}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "json": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "json": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "json": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+            },
+            obj["context"],
+        )
+
+        return obj["id"]
+
+    def trigger_update_custom_object_test(self, obj_id: str) -> None:
+        """Test update custom object."""
+        res = self.post_api("update_custom_object", json={"object_id": obj_id}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "json": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "json": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "json": {"a": 1, "b": 2, "c": 3},
+                        "enum_field": "A",
+                    },
+                    "enum_field": "C",
+                },
+                "enum_field": "B",
+            },
+            obj["context"],
+        )
+
+        res = self.post_api("get_custom_object", json={"object_id": obj_id}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertTrue(obj["id"].startswith("o:SavableObject:"))
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "json": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "json": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "json": {"a": 1, "b": 2, "c": 3},
+                        "enum_field": "A",
+                    },
+                    "enum_field": "C",
+                },
+                "enum_field": "B",
+            },
+            obj["context"],
+        )
+
+    def trigger_delete_custom_object_test(self, obj_id: str) -> None:
+        """Test delete custom object."""
+        res = self.post_api("delete_custom_object", json={"object_id": obj_id}, user=1)
+        self.assertEqual(200, res["status"])
+
+        res = self.post_api("get_custom_object", json={"object_id": obj_id}, user=1)
+        obj = res["reports"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertIsNone(obj)
 
     def test_all_features(self) -> None:
         """Test Full Features."""
@@ -716,3 +857,17 @@ class SimpleGraphTest(JacCloudTest):
         ###################################################
 
         self.trigger_reset_graph()
+
+        ###################################################
+        #                 TEST MEMORY SYNC                #
+        ###################################################
+
+        self.trigger_memory_sync()
+
+        ##################################################
+        #                 SAVABLE OBJECT                  #
+        ###################################################
+
+        obj_id = self.trigger_create_custom_object_test()
+        self.trigger_update_custom_object_test(obj_id)
+        self.trigger_delete_custom_object_test(obj_id)
