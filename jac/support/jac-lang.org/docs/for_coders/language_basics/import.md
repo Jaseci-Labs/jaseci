@@ -21,7 +21,7 @@ import:jac module2 as mod;
 import:jac from module3 { foo as f, bar }
 ```
 
-The ```:jac``` annotation informs the jac compiler that it should be importing a jac module. The other main difference from regular python syntax is the use of ```from``` keyword which is used before the module unlike in python and all entities imported from the module are placed within curly braces. 
+The ```:jac``` annotation informs the jac compiler that it should be importing a jac module. The other main difference from regular python syntax is the use of ```from``` keyword which is used before the module unlike in python and all entities imported from the module are placed within curly braces.
 
 === "import:py"
 ```jac linenums="1"

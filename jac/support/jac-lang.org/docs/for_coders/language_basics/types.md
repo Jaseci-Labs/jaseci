@@ -9,19 +9,19 @@ can process_data(id: int) -> dict{
     # Integer and float
     count: int = 42;
     price: float = 19.99;
-    
+
     # String and boolean
     name: str = "item";
     active: bool = True;
-    
+
     # List and set
     items: list = [1, 2, 3];
     unique_tags: set = {"red", "blue"};
-    
+
     # Tuple and dictionary
     coords: tuple = (10, 20);
-    details: dict = {"id": id, "name": name, "price": price, 
-        "tags": list(unique_tags)}; 
+    details: dict = {"id": id, "name": name, "price": price,
+        "tags": list(unique_tags)};
 }
 
 with entry{
@@ -42,7 +42,7 @@ obj UserProfile{
     has email: str;
     has age: int = 0;
     has interests: list[str] = [];
-    
+
     """Validates and processes user data after initialization"""
     can post_init(self) -> None{
         self.username = self.username.lower();
