@@ -234,33 +234,33 @@ class BulkWrite:
     def commit(session: ClientSession) -> None:
         """Commit current session."""
         commit_retry = 0
-        commit_max_retry = BulkWrite.SESSION_MAX_COMMIT_RETRY
-        while commit_retry <= commit_max_retry:
+        while True:
             try:
                 session.commit_transaction()
                 break
             except (ConnectionFailure, OperationFailure) as ex:
-                if ex.has_error_label("UnknownTransactionCommitResult"):
+                if (
+                    ex.has_error_label("UnknownTransactionCommitResult")
+                    and commit_retry <= BulkWrite.SESSION_MAX_COMMIT_RETRY
+                ):
                     commit_retry += 1
-                    logger.error(
-                        "Error commiting bulk write! "
-                        f"Retrying [{commit_retry}/{commit_max_retry}] ..."
+                    logger.exception(
+                        "Error commiting session! "
+                        f"Retrying [{commit_retry}/{BulkWrite.SESSION_MAX_COMMIT_RETRY}] ..."
                     )
                     continue
-                logger.error(
-                    f"Error commiting bulk write after max retry [{commit_max_retry}] !"
+                logger.exception(
+                    f"Error commiting session after max retry [{BulkWrite.SESSION_MAX_COMMIT_RETRY}] !"
                 )
                 raise
             except Exception:
-                session.abort_transaction()
-                logger.error("Error commiting bulk write!")
+                logger.exception("Error commiting session!")
                 raise
 
     def execute(self, session: ClientSession) -> None:
         """Execute all operations."""
         transaction_retry = 0
-        transaction_max_retry = self.SESSION_MAX_TRANSACTION_RETRY
-        while transaction_retry <= transaction_max_retry:
+        while True:
             try:
                 if node_operation := self.operations[NodeAnchor]:
                     NodeAnchor.Collection.bulk_write(node_operation, False, session)
@@ -273,19 +273,22 @@ class BulkWrite:
                 self.commit(session)
                 break
             except (ConnectionFailure, OperationFailure) as ex:
-                if ex.has_error_label("TransientTransactionError"):
+                if (
+                    ex.has_error_label("TransientTransactionError")
+                    and transaction_retry <= self.SESSION_MAX_TRANSACTION_RETRY
+                ):
                     transaction_retry += 1
-                    logger.error(
+                    logger.exception(
                         "Error executing bulk write! "
-                        f"Retrying [{transaction_retry}/{transaction_max_retry}] ..."
+                        f"Retrying [{transaction_retry}/{self.SESSION_MAX_TRANSACTION_RETRY}] ..."
                     )
                     continue
-                logger.error(
-                    f"Error executing bulk write after max retry [{transaction_max_retry}] !"
+                logger.exception(
+                    f"Error executing bulk write after max retry [{self.SESSION_MAX_TRANSACTION_RETRY}] !"
                 )
                 raise
             except Exception:
-                logger.error("Error executing bulk write!")
+                logger.exception("Error executing bulk write!")
                 raise
 
 

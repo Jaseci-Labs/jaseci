@@ -135,8 +135,7 @@ class JacCmd:
                 )
 
                 retry = 0
-                max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
-                while retry <= max_retry:
+                while True:
                     try:
                         if not NodeAnchor.Collection.find_by_id(
                             SUPER_ROOT_ID, session=session
@@ -160,21 +159,24 @@ class JacCmd:
                         ).inserted_id:
                             BulkWrite.commit(session)
                             return f"System Admin created with id: {id}"
-                        session.abort_transaction()
+                        raise SystemError("Can't create System Admin!")
                     except (ConnectionFailure, OperationFailure) as ex:
-                        if ex.has_error_label("TransientTransactionError"):
+                        if (
+                            ex.has_error_label("TransientTransactionError")
+                            and retry <= BulkWrite.SESSION_MAX_TRANSACTION_RETRY
+                        ):
                             retry += 1
                             logger.error(
                                 "Error executing bulk write! "
-                                f"Retrying [{retry}/{max_retry}] ..."
+                                f"Retrying [{retry}/{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] ..."
                             )
                             continue
-                        logger.exception("Error executing bulk write!")
-                        session.abort_transaction()
+                        logger.exception(
+                            f"Error executing bulk write after max retry [{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] !"
+                        )
                         raise
                     except Exception:
                         logger.exception("Error executing bulk write!")
-                        session.abort_transaction()
                         raise
 
             raise Exception("Can't process registration. Please try again!")
