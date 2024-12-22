@@ -35,8 +35,24 @@ def generate_static_parser(force: bool = False) -> None:
             logging.error(f"Error generating reference files: {e}")
 
 
+def check_version() -> bool:
+    import tomllib
+
+    file_path = os.path.join(os.getcwd(), "..", "..", "pyproject.toml")
+    file_path = os.path.normpath(file_path)
+    with open(file_path, "rb") as file:
+        data = tomllib.load(file)
+    latest_version = data["tool"]["poetry"]["version"]
+    from importlib.metadata import version
+
+    installed_version = version("jaclang")
+    return latest_version != installed_version
+
+
 try:
     from jaclang.compiler.generated import jac_parser as jac_lark
+
+    generate_static_parser(force=check_version())
 except ModuleNotFoundError:
     generate_static_parser(force=True)
     from jaclang.compiler.generated import jac_parser as jac_lark
