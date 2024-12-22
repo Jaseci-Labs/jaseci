@@ -260,6 +260,21 @@ def pretty_print_source_location(
     return pretty_dump[:-1]  # Get rid of the last newline (of the last line).
 
 
+def check_version() -> bool:
+    """Check if the installed version of JacLang is outdated."""
+    import tomllib
+
+    file_path = os.path.join(os.getcwd(), "..", "..", "pyproject.toml")
+    file_path = os.path.normpath(file_path)
+    with open(file_path, "rb") as file:
+        data = tomllib.load(file)
+    latest_version = data["tool"]["poetry"]["version"]
+    from importlib.metadata import version
+
+    installed_version = version("jaclang")
+    return latest_version != installed_version
+
+
 class Jdb(pdb.Pdb):
     """Jac debugger."""
 

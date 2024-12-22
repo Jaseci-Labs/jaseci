@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 
-from jaclang.utils.helpers import auto_generate_refs
+from jaclang.utils.helpers import auto_generate_refs, check_version
 from jaclang.vendor.lark.tools import standalone
 
 
@@ -33,20 +33,6 @@ def generate_static_parser(force: bool = False) -> None:
             auto_generate_refs()
         except Exception as e:
             logging.error(f"Error generating reference files: {e}")
-
-
-def check_version() -> bool:
-    import tomllib
-
-    file_path = os.path.join(os.getcwd(), "..", "..", "pyproject.toml")
-    file_path = os.path.normpath(file_path)
-    with open(file_path, "rb") as file:
-        data = tomllib.load(file)
-    latest_version = data["tool"]["poetry"]["version"]
-    from importlib.metadata import version
-
-    installed_version = version("jaclang")
-    return latest_version != installed_version
 
 
 try:
