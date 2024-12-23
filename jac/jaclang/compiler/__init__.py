@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 
-from jaclang.utils.helpers import auto_generate_refs
+from jaclang.utils.helpers import auto_generate_refs, check_version
 from jaclang.vendor.lark.tools import standalone
 
 
@@ -37,6 +37,8 @@ def generate_static_parser(force: bool = False) -> None:
 
 try:
     from jaclang.compiler.generated import jac_parser as jac_lark
+
+    generate_static_parser(force=check_version())
 except ModuleNotFoundError:
     generate_static_parser(force=True)
     from jaclang.compiler.generated import jac_parser as jac_lark
