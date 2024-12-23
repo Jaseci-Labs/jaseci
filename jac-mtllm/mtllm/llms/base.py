@@ -186,22 +186,21 @@ class BaseLLM:
             logger.info(f"Meaning Out\n{meaning_out}")
             logger.info(f"Output Hint\n{output_hint.type}")
         primary_types = [
-        "str",
-        "int",
-        "float",
-        "bool",
-        "list",
-        "dict",
-        "tuple",
-        "set",
-        "Any",
-        "None",
-]
+            "str",
+            "int",
+            "float",
+            "bool",
+            "list",
+            "dict",
+            "tuple",
+            "set",
+            "Any",
+            "None",
+        ]
         if re.search(r"\[Output\]", meaning_out, re.IGNORECASE):
             output_match = re.search(r"\[Output\](.*)", meaning_out, re.DOTALL)
             if output_match:
                 output = output_match.group(1).strip()
-                print(output)
         else:
             # if output_hint.type.startswith("(") and output_hint.type.endswith(")"):
             #     tuple_pattern = re.compile(r"\(\s*(.*?)\s*\)", re.DOTALL)
@@ -213,7 +212,7 @@ class BaseLLM:
             #         output_match = None
             #     if self.verbose:
             #         logger.info(f"Tuple Output: {output_match}")
-            if output_hint.type.split('[')[0] in primary_types:
+            if output_hint.type.split("[")[0] in primary_types:
                 primary_patterns = {
                     "int": r"[-+]?\d+",
                     "float": r"[-+]?\d*\.\d+",
@@ -226,20 +225,26 @@ class BaseLLM:
                     "Any": r".+",
                     "None": r"None",
                 }
-                single_pattern = re.compile(primary_patterns[output_hint.type.split('[')[0]], re.DOTALL)
+                single_pattern = re.compile(
+                    primary_patterns[output_hint.type.split("[")[0]], re.DOTALL
+                )
                 single_match = single_pattern.search(meaning_out)
-                if not single_match and output_hint.type.split('[')[0] == 'str':
+                if not single_match and output_hint.type.split("[")[0] == "str":
                     meaning_out = meaning_out.rstrip()
                     single_match = re.match(r".*", meaning_out)
                 output_match = single_match
                 if self.verbose:
                     logger.info(f"Single Output: {single_match}")
             else:
-                custom_type_pattern = re.compile(rf"{output_hint.type}\s*\((.*)\)", re.DOTALL)
+                custom_type_pattern = re.compile(
+                    rf"{output_hint.type}\s*\((.*)\)", re.DOTALL
+                )
 
                 custom_match = custom_type_pattern.search(meaning_out)
                 if custom_match:
-                    extracted_output = f"{output_hint.type}({custom_match.group(1).strip()})"
+                    extracted_output = (
+                        f"{output_hint.type}({custom_match.group(1).strip()})"
+                    )
                     if self.verbose:
                         logger.info(f"Custom Type Output: {extracted_output}")
                     output_match = custom_match
@@ -254,7 +259,7 @@ class BaseLLM:
                 output_type_explanations,
                 self.max_tries,
             )
-            
+
         if self.type_check:
             is_in_desired_format = self._check_output(
                 output, output_hint.type, output_type_explanations

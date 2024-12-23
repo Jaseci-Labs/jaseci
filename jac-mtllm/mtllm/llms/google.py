@@ -64,7 +64,7 @@ class Gemini(BaseLLM):
             assert self.model_name.startswith(
                 ("gemini-1.0", "aqa, text")
             ), f"Model {self.model_name} does not support input of type {type(meaning_in)}. Choose a Multi-Modal model."
-        messages = [{"role": "user", "content": meaning_in}]
+        # messages = [{"role": "user", "content": meaning_in}]
         # messages = 'What is the earth\'s circumference'
         config = {
             "temperature": kwargs.get("temperature", self.temperature),
