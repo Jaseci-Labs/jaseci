@@ -289,16 +289,10 @@ expression: walrus_assign (KW_IF expression KW_ELSE expression)?
           | lambda_expr
 
 // Walrus assignments
-walrus_assign: (named_ref WALRUS_EQ)? pipe
+walrus_assign: (named_ref WALRUS_EQ)? elvis_check
 
 // Lambda expressions
 lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
-
-// Pipe expressions
-pipe: (pipe PIPE_FWD)? pipe_back
-
-// Pipe back expressions
-pipe_back: (pipe_back PIPE_BKWD)? elvis_check
 
 // Elvis expressions
 elvis_check: (elvis_check ELVIS_OP)? bitwise_or
@@ -348,7 +342,13 @@ ds_spawn: (ds_spawn KW_SPAWN)? unpack
 unpack: STAR_MUL? ref
 
 // References (unused)
-ref: BW_AND? pipe_call
+ref: BW_AND? pipe
+
+// Pipe expressions
+pipe: (pipe PIPE_FWD)? pipe_back
+
+// Pipe back expressions
+pipe_back: (pipe_back PIPE_BKWD)? pipe_call
 
 // Data spatial calls
 pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
