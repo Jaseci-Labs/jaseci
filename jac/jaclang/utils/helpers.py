@@ -1,6 +1,7 @@
 """Utility functions and classes for Jac compilation toolchain."""
 
 import dis
+import hashlib
 import marshal
 import os
 import pdb
@@ -258,6 +259,28 @@ def pretty_print_source_location(
         idx += 1
 
     return pretty_dump[:-1]  # Get rid of the last newline (of the last line).
+
+
+def get_file_timestamp(filepath: str) -> float:
+    """Get the timestamp of a file."""
+    return os.stat(filepath).st_mtime
+
+
+def hash_file_contents(filepath: str) -> str:
+    """Get the sha256 hash of a file."""
+    with open(filepath, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def needs_recompilation(source_file: str, compiled_file: str) -> bool:
+    """Check if a file needs recompilation."""
+    if not os.path.exists(compiled_file):
+        return True
+
+    source_time = get_file_timestamp(source_file)
+    compiled_time = get_file_timestamp(compiled_file)
+
+    return source_time > compiled_time
 
 
 class Jdb(pdb.Pdb):
