@@ -25,7 +25,7 @@ from fastapi_sso.sso.notion import NotionSSO
 from fastapi_sso.sso.twitter import TwitterSSO
 from fastapi_sso.sso.yandex import YandexSSO
 
-from pymongo.errors import ConnectionFailure, OperationFailure
+from pymongo.errors import ConnectionFailure, DuplicateKeyError, OperationFailure
 
 from ..dtos import AttachSSO, DetachSSO
 from ..models import NO_PASSWORD, User as BaseUser
@@ -242,6 +242,8 @@ def register(platform: str, open_id: OpenID) -> Response:
                     User.Collection.insert_one(ureq, session=session)
                 BulkWrite.commit(session)
                 return login(platform, open_id)
+            except DuplicateKeyError:
+                raise HTTPException(409, "Already Exists!")
             except (ConnectionFailure, OperationFailure) as ex:
                 if (
                     ex.has_error_label("TransientTransactionError")

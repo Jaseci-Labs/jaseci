@@ -8,7 +8,7 @@ from fastapi.responses import ORJSONResponse
 
 from passlib.hash import pbkdf2_sha512
 
-from pymongo.errors import ConnectionFailure, OperationFailure
+from pymongo.errors import ConnectionFailure, DuplicateKeyError, OperationFailure
 
 from ..dtos import (
     UserChangePassword,
@@ -62,6 +62,8 @@ def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
                     log_exit(resp, log)
                     return ORJSONResponse(resp, 201)
                 raise SystemError("Can't create System Admin!")
+            except DuplicateKeyError:
+                raise HTTPException(409, "Already Exists!")
             except (ConnectionFailure, OperationFailure) as ex:
                 if (
                     ex.has_error_label("TransientTransactionError")
