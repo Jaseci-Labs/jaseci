@@ -6,9 +6,9 @@ symbols are available for matching.
 """
 
 import ast as py_ast
-import marshal
 import os
 import pathlib
+import pickle
 from typing import Optional
 
 
@@ -473,7 +473,7 @@ class PyImportPass(JacImportPass):
         if mod_file_path.exists():
             print(f"Loading `mod` from {mod_file_path}")
             with open(mod_file_path, "rb") as mod_file:
-                mod = marshal.load(mod_file)
+                mod = pickle.load(mod_file)
         else:
             file_to_raise = str(
                 pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
@@ -492,7 +492,7 @@ class PyImportPass(JacImportPass):
                     ),
                 ).ir
                 with open(mod_file_path, "wb") as mod_file:
-                    marshal.dump(mod, mod_file)
+                    pickle.dump(mod, mod_file)
                 print(f"`mod` has been stored in {mod_file_path}")
             mod.parent = self.ir
             SubNodeTabPass(input_ir=mod, prior=self)
