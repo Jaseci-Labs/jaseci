@@ -6,9 +6,9 @@ symbols are available for matching.
 """
 
 import ast as py_ast
+import marshal
 import os
 import pathlib
-import marshal
 from typing import Optional
 
 
