@@ -6,7 +6,6 @@ symbols are available for matching.
 """
 
 import ast as py_ast
-import marshal
 import os
 import pathlib
 from typing import Optional
@@ -464,36 +463,23 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
-        base_dir = pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
-        jac_gen_dir = (
-            base_dir / "vendor" / "mypy" / "typeshed" / "stdlib" / "__jac__gen__"
+
+        file_to_raise = str(
+            pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
+            / "vendor"
+            / "mypy"
+            / "typeshed"
+            / "stdlib"
+            / "builtins.pyi"
         )
-        mod_file_path = jac_gen_dir / "builtins_mod.jbc"
-        jac_gen_dir.mkdir(parents=True, exist_ok=True)
-        if mod_file_path.exists():
-            print(f"Loading `mod` from {mod_file_path}")
-            with open(mod_file_path, "rb") as mod_file:
-                mod = marshal.load(mod_file)
-        else:
-            file_to_raise = str(
-                pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
-                / "vendor"
-                / "mypy"
-                / "typeshed"
-                / "stdlib"
-                / "builtins.pyi"
-            )
-            with open(file_to_raise, "r", encoding="utf-8") as f:
-                file_source = f.read()
-                mod = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
-                        py_ast.parse(file_source),
-                        orig_src=ast.JacSource(file_source, file_to_raise),
-                    ),
-                ).ir
-                with open(mod_file_path, "wb") as mod_file:
-                    marshal.dump(mod, mod_file)
-                print(f"`mod` has been stored in {mod_file_path}")
+        with open(file_to_raise, "r", encoding="utf-8") as f:
+            file_source = f.read()
+            mod = PyastBuildPass(
+                input_ir=ast.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, file_to_raise),
+                ),
+            ).ir
             mod.parent = self.ir
             SubNodeTabPass(input_ir=mod, prior=self)
             SymTabBuildPass(input_ir=mod, prior=self)
