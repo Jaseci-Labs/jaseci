@@ -471,7 +471,6 @@ class PyImportPass(JacImportPass):
         mod_file_path = jac_gen_dir / "builtins_mod.jbc"
         jac_gen_dir.mkdir(parents=True, exist_ok=True)
         if mod_file_path.exists():
-            print(f"Loading `mod` from {mod_file_path}")
             with open(mod_file_path, "rb") as mod_file:
                 mod = pickle.load(mod_file)
         else:
@@ -491,13 +490,12 @@ class PyImportPass(JacImportPass):
                         orig_src=ast.JacSource(file_source, file_to_raise),
                     ),
                 ).ir
-                with open(mod_file_path, "wb") as mod_file:
-                    pickle.dump(mod, mod_file)
-                print(f"`mod` has been stored in {mod_file_path}")
-            mod.parent = self.ir
-            SubNodeTabPass(input_ir=mod, prior=self)
-            SymTabBuildPass(input_ir=mod, prior=self)
-            mod.parent = None
+            with open(mod_file_path, "wb") as mod_file:
+                pickle.dump(mod, mod_file)
+        mod.parent = self.ir
+        SubNodeTabPass(input_ir=mod, prior=self)
+        SymTabBuildPass(input_ir=mod, prior=self)
+        mod.parent = None
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
