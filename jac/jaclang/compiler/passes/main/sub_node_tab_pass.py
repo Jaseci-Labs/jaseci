@@ -5,6 +5,9 @@ for fast lookup of nodes of a certain type in the AST. This is just a utility
 pass and is not required for any other pass to work.
 """
 
+import marshal
+import os
+import pickle
 from copy import copy
 
 import jaclang.compiler.absyntree as ast
@@ -18,6 +21,7 @@ class SubNodeTabPass(Pass):
         """Table builder."""
         super().enter_node(node)
         node._sub_node_tab = {}  # clears on entry
+        self.dumped_modules: dict = {}
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Table builder."""
@@ -35,12 +39,15 @@ class SubNodeTabPass(Pass):
             else:
                 node._sub_node_tab[type(i)] = [i]
         if isinstance(node, ast.Module) and node.mod_deps:
-            full_path = next(iter(node.mod_deps))
-            folder_path = os.path.join(os.path.dirname(full_path), "__jac_gen__")
-            os.makedirs(folder_path, exist_ok=True)
-            bc_file = os.path.join(folder_path, node.mod_deps[full_path].name + ".jbc")
-            for i in node.mod_deps:
-                self.dumped_modules[i] = pickle.dumps(node.mod_deps[i])
-            with open(bc_file, "wb") as f:
-                marshal.dump(self.dumped_modules, f)
-                
+            self.dump_module(node)
+
+    def dump_module(self, mod: ast.Module) -> None:
+        """Dump module dependencies."""
+        full_path = next(iter(mod.mod_deps))
+        folder_path = os.path.join(os.path.dirname(full_path), "__jac_gen__")
+        os.makedirs(folder_path, exist_ok=True)
+        bc_file = os.path.join(folder_path, mod.mod_deps[full_path].name + ".jbc")
+        for i in mod.mod_deps:
+            self.dumped_modules[i] = pickle.dumps(mod.mod_deps[i])
+        with open(bc_file, "wb") as f:
+            marshal.dump(self.dumped_modules, f)
