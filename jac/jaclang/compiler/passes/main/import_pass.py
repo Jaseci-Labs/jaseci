@@ -470,7 +470,7 @@ class PyImportPass(JacImportPass):
         )
         mod_file_path = jac_gen_dir / "builtins_mod.jbc"
         jac_gen_dir.mkdir(parents=True, exist_ok=True)
-        if mod_file_path.exists():
+        if mod_file_path.exists() and mod_file_path.stat().st_size > 0:
             with open(mod_file_path, "rb") as mod_file:
                 mod = pickle.load(mod_file)
         else:
