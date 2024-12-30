@@ -34,3 +34,13 @@ class SubNodeTabPass(Pass):
                 node._sub_node_tab[type(i)].append(i)
             else:
                 node._sub_node_tab[type(i)] = [i]
+        if isinstance(node, ast.Module) and node.mod_deps:
+            full_path = next(iter(node.mod_deps))
+            folder_path = os.path.join(os.path.dirname(full_path), "__jac_gen__")
+            os.makedirs(folder_path, exist_ok=True)
+            bc_file = os.path.join(folder_path, node.mod_deps[full_path].name + ".jbc")
+            for i in node.mod_deps:
+                self.dumped_modules[i] = pickle.dumps(node.mod_deps[i])
+            with open(bc_file, "wb") as f:
+                marshal.dump(self.dumped_modules, f)
+                
