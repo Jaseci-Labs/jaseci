@@ -37,19 +37,21 @@ class SubNodeTabPass(Pass):
                 node._sub_node_tab[type(i)].append(i)
             else:
                 node._sub_node_tab[type(i)] = [i]
-        if isinstance(node, ast.Module) and node.mod_deps:
-            self.dump_module(node)
 
-    def dump_module(self, mod: ast.Module) -> None:
+    def after_pass(self) -> None:
         """Dump module dependencies."""
-        full_path = next(iter(mod.mod_deps))
-        folder_path = os.path.join(os.path.dirname(full_path), "__jac_gen__")
-        os.makedirs(folder_path, exist_ok=True)
-        bc_file = os.path.join(folder_path, mod.mod_deps[full_path].name + ".pkl")
-        for i in mod.mod_deps.keys():
-            try:
-                self.dumped_modules[i] = pickle.dumps(mod.mod_deps[i])
-            except Exception as e:
-                print(f"Failed to pickle module '{i}': {str(e)}")
-        with open(bc_file, "wb") as f:
-            pickle.dump(self.dumped_modules, f)
+        super().after_pass()
+        if isinstance(self.ir, ast.Module) and self.ir.mod_deps:
+            full_path = next(iter(self.ir.mod_deps))
+            folder_path = os.path.join(os.path.dirname(full_path), "__jac_gen__")
+            os.makedirs(folder_path, exist_ok=True)
+            bc_file = os.path.join(
+                folder_path, self.ir.mod_deps[full_path].name + ".pkl"
+            )
+            for i in self.ir.mod_deps.keys():
+                try:
+                    self.dumped_modules[i] = pickle.dumps(self.ir.mod_deps[i])
+                except Exception as e:
+                    print(f"Failed to pickle module '{i}': {str(e)}")
+            with open(bc_file, "wb") as f:
+                pickle.dump(self.dumped_modules, f)
