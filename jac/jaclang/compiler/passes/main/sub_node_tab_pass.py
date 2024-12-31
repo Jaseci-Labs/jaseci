@@ -45,7 +45,7 @@ class SubNodeTabPass(Pass):
         full_path = next(iter(mod.mod_deps))
         folder_path = os.path.join(os.path.dirname(full_path), "__jac_gen__")
         os.makedirs(folder_path, exist_ok=True)
-        bc_file = os.path.join(folder_path, mod.mod_deps[full_path].name + ".jbc")
+        bc_file = os.path.join(folder_path, mod.mod_deps[full_path].name + ".pkl")
         for i in mod.mod_deps.keys():
             try:
                 self.dumped_modules[i] = pickle.dumps(mod.mod_deps[i])
