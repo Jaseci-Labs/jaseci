@@ -23,8 +23,6 @@ with entry {
     g = fool_me();
     c4: pygame_mock.color.Color = color.Color(g.CONST_VALUE2);
     a: argparse.ArgumentParser = argparse.ArgumentParser();
-    WIN_HEIGHT = 600;
-    WIN_WIDTH = 800;
     print("Hello", 1, b);
     pygame_mock.display.set_mode(WIN_WIDTH, WIN_HEIGHT);
     print(os.path.isfile("/jj"));
