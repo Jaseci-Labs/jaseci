@@ -119,7 +119,7 @@ def print_ast_tree(
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif (
             isinstance(node, ast.Module)
-            and node.is_raised_from_py
+            and node.py_info.is_raised_from_py
             and not print_py_raise
         ):
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
@@ -202,12 +202,13 @@ def print_ast_tree(
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if (
             isinstance(root, ast.Module)
-            and root.is_raised_from_py
+            and root.py_info.is_raised_from_py
             and not print_py_raise
         ):
             kids: list[AstNode] = [
                 *filter(
-                    lambda x: x.is_raised_from_py, root.get_all_sub_nodes(ast.Module)
+                    lambda x: x.py_info.is_raised_from_py,
+                    root.get_all_sub_nodes(ast.Module),
                 )
             ]
         else:
@@ -300,6 +301,8 @@ def _build_symbol_tree_common(
             ]
 
     for k in node.kid:
+        if k.name == "builtins":
+            continue
         _build_symbol_tree_common(k, children)
     return root
 
