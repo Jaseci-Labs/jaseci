@@ -54,7 +54,7 @@ class Gemini(BaseLLM):
 
         super().__init__(verbose, max_tries, type_check)
         self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-        self.model_name = kwargs.get("model_name", "gemini-1.5-flash")
+        self.model_name = str(kwargs.get("model_name", "gemini-1.5-flash"))
         self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)
 
