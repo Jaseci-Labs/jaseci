@@ -315,7 +315,6 @@ class Tokens(str, Enum):
     ABILITY_OP = "ABILITY_OP"
     A_PIPE_FWD = "A_PIPE_FWD"
     A_PIPE_BKWD = "A_PIPE_BKWD"
-    ELVIS_OP = "ELVIS_OP"
     RETURN_HINT = "RETURN_HINT"
     NULL_OK = "NULL_OK"
     DECOR_OP = "DECOR_OP"

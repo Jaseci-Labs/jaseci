@@ -2037,16 +2037,8 @@ class JacParser(Pass):
         def pipe_back(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
-            pipe_back: elvis_check PIPE_BKWD pipe_back
-                     | elvis_check
-            """
-            return self.binary_expr_unwind(kid)
-
-        def elvis_check(self, kid: list[ast.AstNode]) -> ast.Expr:
-            """Grammar rule.
-
-            elvis_check: bitwise_or ELVIS_OP elvis_check
-                       | bitwise_or
+            pipe_back: bitwise_or PIPE_BKWD pipe_back
+                     | bitwise_or
             """
             return self.binary_expr_unwind(kid)
 

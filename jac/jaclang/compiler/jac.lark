@@ -298,10 +298,7 @@ lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expressi
 pipe: (pipe PIPE_FWD)? pipe_back
 
 // Pipe back expressions
-pipe_back: (pipe_back PIPE_BKWD)? elvis_check
-
-// Elvis expressions
-elvis_check: (elvis_check ELVIS_OP)? bitwise_or
+pipe_back: (pipe_back PIPE_BKWD)? bitwise_or
 
 // Bitwise expressions
 bitwise_or: (bitwise_or BW_OR)? bitwise_xor
@@ -599,7 +596,6 @@ PIPE_BKWD: /<\|/
 DOT_FWD: /\.>/
 DOT_BKWD: /<\./
 RETURN_HINT: /->/
-ELVIS_OP: /\?:/
 NULL_OK: /\?/
 MATMUL_EQ: /@=/
 DECOR_OP: /@/
