@@ -18,7 +18,6 @@ class SubNodeTabPass(Pass):
         """Table builder."""
         super().enter_node(node)
         node._sub_node_tab = {}  # clears on entry
-        self.dumped_modules: dict = {}
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Table builder."""
