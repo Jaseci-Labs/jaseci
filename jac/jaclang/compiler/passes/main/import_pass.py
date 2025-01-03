@@ -179,7 +179,6 @@ class JacImportPass(Pass):
         """
         if node.alias and node.sub_module:
             node.sub_module.name = node.alias.value
-            print("node.sub_module", node.sub_module)
         # Items matched during def/decl pass
 
     def import_jac_module(self, node: ast.ModulePath) -> None:
@@ -520,38 +519,27 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
-        base_dir = pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
-        jac_gen_dir = (
-            base_dir / "vendor" / "mypy" / "typeshed" / "stdlib" / "__jac__gen__"
+
+        file_to_raise = str(
+            pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
+            / "vendor"
+            / "mypy"
+            / "typeshed"
+            / "stdlib"
+            / "builtins.pyi"
         )
-        mod_file_path = jac_gen_dir / "builtins_mod.jbc"
-        jac_gen_dir.mkdir(parents=True, exist_ok=True)
-        if mod_file_path.exists() and mod_file_path.stat().st_size > 0:
-            with open(mod_file_path, "rb") as mod_file:
-                mod = pickle.load(mod_file)
-        else:
-            file_to_raise = str(
-                pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
-                / "vendor"
-                / "mypy"
-                / "typeshed"
-                / "stdlib"
-                / "builtins.pyi"
-            )
-            with open(file_to_raise, "r", encoding="utf-8") as f:
-                file_source = f.read()
-                mod = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
-                        py_ast.parse(file_source),
-                        orig_src=ast.JacSource(file_source, file_to_raise),
-                    ),
-                ).ir
-            with open(mod_file_path, "wb") as mod_file:
-                pickle.dump(mod, mod_file)
-        mod.parent = self.ir
-        SubNodeTabPass(input_ir=mod, prior=self)
-        SymTabBuildPass(input_ir=mod, prior=self)
-        mod.parent = None
+        with open(file_to_raise, "r", encoding="utf-8") as f:
+            file_source = f.read()
+            mod = PyastBuildPass(
+                input_ir=ast.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, file_to_raise),
+                ),
+            ).ir
+            mod.parent = self.ir
+            SubNodeTabPass(input_ir=mod, prior=self)
+            SymTabBuildPass(input_ir=mod, prior=self)
+            mod.parent = None
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
