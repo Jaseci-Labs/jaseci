@@ -317,7 +317,7 @@ def test(
     """Run the test suite in the specified .jac file.
 
     :param filepath: Path/to/file.jac
-    :param test_func: Run a specific test function.
+    :param test_name: Run a specific test.
     :param filter: Filter the files using Unix shell style conventions.
     :param xit(exit): Stop(exit) running tests as soon as finds an error.
     :param maxfail: Stop running tests after n failures.
