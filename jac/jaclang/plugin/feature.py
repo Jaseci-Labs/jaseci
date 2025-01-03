@@ -201,6 +201,34 @@ class JacClassReferences:
     Edge: ClassVar[TypeAlias] = EdgeArchitype
     Walker: ClassVar[TypeAlias] = WalkerArchitype
 
+    @staticmethod
+    def type(type_name: str) -> Type[Architype]:
+        """Get the type of the object."""
+        type_map = {
+        "node": JacNode,
+        "walker": JacWalker,
+        "edge": JacEdge
+        }
+        import inspect
+        import re
+        try:
+            source = inspect.getsource(type(type_name))
+            lines = source.splitlines()
+            decorators = [line.strip() for line in lines if line.strip().startswith("@")]
+            for decorator in decorators:
+                for _type in type_map:
+                    if f'@_Jac.make_{_type}' in decorator:
+                        pattern = re.compile(r"@_Jac\.make_(node|edge|walker)").search(decorator).group(1)
+                        match = type_map[pattern]
+                        return match
+            return None
+        except Exception as e:
+            return str(e)
+
+
+        
+
+
 
 class JacBuiltin:
     """Jac Builtins."""
