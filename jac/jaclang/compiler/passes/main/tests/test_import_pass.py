@@ -1,6 +1,8 @@
 """Test pass module."""
 
 import io
+import os
+import pathlib
 import re
 import sys
 
@@ -121,3 +123,17 @@ class ImportPassPassTests(TestCase):
         self.assertIn("foo", stdout_value)
         self.assertIn("bar", stdout_value)
         self.assertIn("baz", stdout_value)
+
+    def test_cache_builtins(self) -> None:
+        """Test importing python."""
+        base_dir = pathlib.Path(os.path.dirname(__file__)).parent.parent.parent.parent
+        jac_gen_dir = (
+            base_dir / "vendor" / "mypy" / "typeshed" / "stdlib" / "__jac__gen__"
+        )
+        mod_file_path = jac_gen_dir / "builtins_mod.jbc"
+        if os.path.exists(mod_file_path):
+            os.remove(mod_file_path)
+        cli.check(self.fixture_abs_path("autoimpl.jac"))
+        self.assertTrue(os.path.exists(mod_file_path))
+        cli.check(self.fixture_abs_path("autoimpl.jac"))
+        os.remove(mod_file_path)
