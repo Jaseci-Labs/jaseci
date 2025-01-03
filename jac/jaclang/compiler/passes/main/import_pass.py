@@ -6,8 +6,10 @@ symbols are available for matching.
 """
 
 import ast as py_ast
+import hashlib
 import os
 import pathlib
+import pickle
 from typing import Optional
 
 
@@ -29,6 +31,7 @@ class JacImportPass(Pass):
     def before_pass(self) -> None:
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
+        self.CACHE_DIR = ""
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
@@ -47,11 +50,64 @@ class JacImportPass(Pass):
 
         node.mod_deps.update(self.import_table)
 
+    def after_pass(self) -> None:
+        """Cache compiled modules after the pass."""
+        base, mod = os.path.split(next(iter(self.import_table)))
+        self.CACHE_DIR = os.path.join(base, "__jac_gen__")
+        os.makedirs(self.CACHE_DIR, exist_ok=True)
+        for path, module in self.import_table.items():
+            cache_path = os.path.join(self.CACHE_DIR, f"{module.name}.pkl")
+            try:
+                with open(cache_path, "wb") as cache_file:
+                    pickle.dump(
+                        {"ast": module, "content_hash": self.compute_file_hash(path)},
+                        cache_file,
+                    )
+            except Exception as e:
+                logger.error(f"Failed to cache module {path}: {e}")
+
     def process_import(self, i: ast.ModulePath) -> None:
-        """Process an import."""
+        """Process an import with caching."""
         imp_node = i.parent_of_type(ast.Import)
+        base, mod = os.path.split(i.resolve_relative_path())
+        self.CACHE_DIR = os.path.join(base, "__jac_gen__")
         if imp_node.is_jac and not i.sub_module:
-            self.import_jac_module(node=i)
+            cached_ast = self.load_cached_ast(i)
+            if cached_ast:
+                self.attach_mod_to_node(i, cached_ast)
+            else:
+                self.import_jac_module(node=i)
+
+    def load_cached_ast(self, i: ast.ModulePath) -> Optional[ast.Module]:
+        """Load cached AST if the file and dependencies haven't changed."""
+        file_path = i.resolve_relative_path()
+        cache_path = os.path.join(self.CACHE_DIR, f"{i.sym_name}.pkl")
+        if not os.path.exists(cache_path):
+            return None
+
+        try:
+            with open(cache_path, "rb") as cache_file:
+                cached_data = pickle.load(cache_file)
+                cached_hash = cached_data.get("content_hash")
+                current_hash = self.compute_file_hash(file_path)
+
+                if cached_hash == current_hash:
+                    return cached_data["ast"]
+                else:
+                    return None
+        except Exception as e:
+            logger.error(f"Failed to load cached module {i.sym_name}: {e}")
+            return None
+
+    def compute_file_hash(self, file_path: str) -> str:
+        """Compute a content hash for a file."""
+        try:
+            with open(file_path, "rb") as file:
+                file_content = file.read()
+                return hashlib.md5(file_content).hexdigest()
+        except Exception as e:
+            logger.error(f"Failed to compute hash for {file_path}: {e}")
+            return ""
 
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
@@ -123,6 +179,7 @@ class JacImportPass(Pass):
         """
         if node.alias and node.sub_module:
             node.sub_module.name = node.alias.value
+            print("node.sub_module", node.sub_module)
         # Items matched during def/decl pass
 
     def import_jac_module(self, node: ast.ModulePath) -> None:
@@ -463,27 +520,38 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
-
-        file_to_raise = str(
-            pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
-            / "vendor"
-            / "mypy"
-            / "typeshed"
-            / "stdlib"
-            / "builtins.pyi"
+        base_dir = pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
+        jac_gen_dir = (
+            base_dir / "vendor" / "mypy" / "typeshed" / "stdlib" / "__jac__gen__"
         )
-        with open(file_to_raise, "r", encoding="utf-8") as f:
-            file_source = f.read()
-            mod = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
-                    py_ast.parse(file_source),
-                    orig_src=ast.JacSource(file_source, file_to_raise),
-                ),
-            ).ir
-            mod.parent = self.ir
-            SubNodeTabPass(input_ir=mod, prior=self)
-            SymTabBuildPass(input_ir=mod, prior=self)
-            mod.parent = None
+        mod_file_path = jac_gen_dir / "builtins_mod.jbc"
+        jac_gen_dir.mkdir(parents=True, exist_ok=True)
+        if mod_file_path.exists() and mod_file_path.stat().st_size > 0:
+            with open(mod_file_path, "rb") as mod_file:
+                mod = pickle.load(mod_file)
+        else:
+            file_to_raise = str(
+                pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
+                / "vendor"
+                / "mypy"
+                / "typeshed"
+                / "stdlib"
+                / "builtins.pyi"
+            )
+            with open(file_to_raise, "r", encoding="utf-8") as f:
+                file_source = f.read()
+                mod = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(
+                        py_ast.parse(file_source),
+                        orig_src=ast.JacSource(file_source, file_to_raise),
+                    ),
+                ).ir
+            with open(mod_file_path, "wb") as mod_file:
+                pickle.dump(mod, mod_file)
+        mod.parent = self.ir
+        SubNodeTabPass(input_ir=mod, prior=self)
+        SymTabBuildPass(input_ir=mod, prior=self)
+        mod.parent = None
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
