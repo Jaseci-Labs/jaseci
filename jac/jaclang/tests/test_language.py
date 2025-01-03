@@ -1232,3 +1232,20 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("MyNode", stdout_value[0])
         self.assertIn("MyWalker", stdout_value[1])
+
+    def test_type_op(self) -> None:
+        """Test architype definition bug."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("type_op", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        jac_types = [
+            "Root",
+            "NodeArchitype",
+            "WalkerArchitype",
+            "EdgeArchitype",
+            "Architype",
+        ]
+        for i in range(5):
+            self.assertIn(jac_types[i], stdout_value[i])
