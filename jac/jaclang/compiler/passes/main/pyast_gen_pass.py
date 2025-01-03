@@ -1396,10 +1396,27 @@ class PyastGenPass(Pass):
                 self.needs_typing()
                 node.gen.py_ast = [
                     self.sync(
-                        ast3.Attribute(
-                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
-                            attr=node.arch_name.sym_name,
-                            ctx=ast3.Load(),
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value,
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                    attr="type",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            args=[
+                                self.sync(
+                                    ast3.Name(
+                                        id=node.arch_name.sym_name, ctx=ast3.Load()
+                                    )
+                                )
+                            ],
+                            keywords=[],
                         )
                     )
                 ]

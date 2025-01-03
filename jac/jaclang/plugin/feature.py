@@ -201,6 +201,23 @@ class JacClassReferences:
     Edge: ClassVar[TypeAlias] = EdgeArchitype
     Walker: ClassVar[TypeAlias] = WalkerArchitype
 
+    @staticmethod
+    def type(instance: object) -> Type[Architype] | None:
+        """Get the type of the object."""
+        return (
+            NodeArchitype
+            if isinstance(instance, NodeArchitype)
+            else (
+                EdgeArchitype
+                if isinstance(instance, EdgeArchitype)
+                else (
+                    WalkerArchitype
+                    if isinstance(instance, WalkerArchitype)
+                    else Architype if isinstance(instance, Architype) else None
+                )
+            )
+        )
+
 
 class JacBuiltin:
     """Jac Builtins."""
