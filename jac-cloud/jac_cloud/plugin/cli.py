@@ -4,6 +4,7 @@ from getpass import getpass
 from os import getenv
 from os.path import split
 from pickle import load
+from typing import Any
 
 from jaclang import jac_import
 from jaclang.cli.cmdreg import cmd_registry
@@ -14,7 +15,7 @@ from jaclang.runtimelib.machine import JacMachine, JacProgram
 from pymongo.errors import ConnectionFailure, OperationFailure
 
 from ..core.architype import BulkWrite, NodeAnchor
-from ..core.context import SUPER_ROOT_ID
+from ..core.context import PUBLIC_ROOT_ID, SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
 from ..jaseci.models import User as BaseUser
 from ..jaseci.utils import logger
@@ -137,21 +138,29 @@ class JacCmd:
                 retry = 0
                 while True:
                     try:
+                        default_data: dict[str, Any] = {
+                            "name": None,
+                            "root": None,
+                            "access": {
+                                "all": "NO_ACCESS",
+                                "roots": {"anchors": {}},
+                            },
+                            "architype": {},
+                            "edges": [],
+                        }
+
+                        if not NodeAnchor.Collection.find_by_id(
+                            PUBLIC_ROOT_ID, session=session
+                        ):
+                            NodeAnchor.Collection.insert_one(
+                                {"_id": PUBLIC_ROOT_ID, **default_data},
+                                session=session,
+                            )
                         if not NodeAnchor.Collection.find_by_id(
                             SUPER_ROOT_ID, session=session
                         ):
                             NodeAnchor.Collection.insert_one(
-                                {
-                                    "_id": SUPER_ROOT_ID,
-                                    "name": None,
-                                    "root": None,
-                                    "access": {
-                                        "all": "NO_ACCESS",
-                                        "roots": {"anchors": {}},
-                                    },
-                                    "architype": {},
-                                    "edges": [],
-                                },
+                                {"_id": SUPER_ROOT_ID, **default_data},
                                 session=session,
                             )
                         if id := (
